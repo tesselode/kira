@@ -1,10 +1,16 @@
+use conductor::AudioManager;
 use ggez::{graphics, Context, GameResult};
+use std::error::Error;
 
-pub struct MainState {}
+pub struct MainState {
+	audio_manager: AudioManager,
+}
 
 impl MainState {
-	pub fn new() -> Self {
-		Self {}
+	pub fn new() -> Result<Self, Box<dyn Error>> {
+		Ok(Self {
+			audio_manager: AudioManager::new()?,
+		})
 	}
 }
 
@@ -29,7 +35,7 @@ fn main() -> GameResult {
 			..Default::default()
 		})
 		.build()?;
-	let mut main_state = MainState::new();
+	let mut main_state = MainState::new().unwrap();
 	ggez::event::run(&mut ctx, &mut event_loop, &mut main_state)?;
 	Ok(())
 }
