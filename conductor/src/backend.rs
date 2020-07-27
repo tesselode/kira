@@ -1,23 +1,19 @@
-use crate::stereo_sample::StereoSample;
-use std::f32::consts::PI;
+use crate::{sound_bank::SoundBank, stereo_sample::StereoSample};
 
 pub struct Backend {
 	sample_rate: u32,
-	phase: f32,
+	sound_bank: SoundBank,
 }
 
 impl Backend {
-	pub fn new(sample_rate: u32) -> Self {
+	pub fn new(sample_rate: u32, sound_bank: SoundBank) -> Self {
 		Self {
 			sample_rate,
-			phase: 0.0,
+			sound_bank,
 		}
 	}
 
 	pub fn process(&mut self) -> StereoSample {
-		self.phase += 440.0 / (self.sample_rate as f32);
-		self.phase %= 1.0;
-		let out = 0.25 * (self.phase * 2.0 * PI).sin();
-		StereoSample::from_mono(out)
+		StereoSample::from_mono(0.0)
 	}
 }
