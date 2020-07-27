@@ -13,13 +13,6 @@ pub struct MainState {
 
 impl MainState {
 	pub fn new() -> Result<Self, Box<dyn Error>> {
-		let mut audio_manager = AudioManager::new()?;
-		audio_manager.load_sound(
-			SoundName::Test,
-			&std::env::current_dir()
-				.unwrap()
-				.join("assets/hhclosed_stereo.ogg"),
-		)?;
 		Ok(Self {
 			audio_manager: AudioManager::new()?,
 		})
