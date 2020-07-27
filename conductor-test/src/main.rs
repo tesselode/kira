@@ -2,12 +2,24 @@ use conductor::AudioManager;
 use ggez::{graphics, Context, GameResult};
 use std::error::Error;
 
+#[derive(Eq, PartialEq, Hash)]
+enum SoundName {
+	Test,
+}
+
 pub struct MainState {
-	audio_manager: AudioManager,
+	audio_manager: AudioManager<SoundName>,
 }
 
 impl MainState {
 	pub fn new() -> Result<Self, Box<dyn Error>> {
+		let mut audio_manager = AudioManager::new()?;
+		audio_manager.load_sound(
+			SoundName::Test,
+			&std::env::current_dir()
+				.unwrap()
+				.join("assets/hhclosed_stereo.ogg"),
+		)?;
 		Ok(Self {
 			audio_manager: AudioManager::new()?,
 		})

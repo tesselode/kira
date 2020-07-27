@@ -330,6 +330,7 @@ name = "conductor"
 version = "0.1.0"
 dependencies = [
  "cpal 0.12.1",
+ "lewton 0.10.1",
  "ringbuf",
 ]
 
@@ -1000,6 +1001,17 @@ dependencies = [
  "byteorder",
  "ogg",
  "smallvec",
+]
+
+[[package]]
+name = "lewton"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be42bea7971f4ba0ea1e215730c29bc1ff9bd2a9c10013912f42a8dcf8d77c0d"
+dependencies = [
+ "byteorder",
+ "ogg",
+ "tinyvec",
 ]
 
 [[package]]
@@ -1771,7 +1783,7 @@ dependencies = [
  "cpal 0.8.2",
  "hound",
  "lazy_static",
- "lewton",
+ "lewton 0.9.4",
  "minimp3",
  "nalgebra",
 ]
@@ -2134,6 +2146,12 @@ dependencies = [
  "num-derive",
  "num-traits 0.2.12",
 ]
+
+[[package]]
+name = "tinyvec"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "53953d2d3a5ad81d9f844a32f14ebb121f50b650cd59d0ee2a07cf13c617efed"
 
 [[package]]
 name = "toml"
