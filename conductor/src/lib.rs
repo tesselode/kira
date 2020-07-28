@@ -1,4 +1,5 @@
 mod backend;
+pub mod event;
 mod sound;
 pub mod sound_bank;
 mod stereo_sample;
@@ -8,14 +9,19 @@ use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	Stream,
 };
-use sound_bank::SoundBank;
+use event::Command;
+use ringbuf::Producer;
+use sound_bank::{SoundBank, SoundId};
 use std::error::Error;
+
+const COMMAND_BUFFER_CAPACITY: usize = 100;
 
 pub enum SoundName {
 	Test,
 }
 
 pub struct AudioManager {
+	command_producer: Producer<Command>,
 	stream: Stream,
 }
 
@@ -31,7 +37,9 @@ impl AudioManager {
 		let config = supported_config.config();
 		let sample_rate = config.sample_rate.0;
 		let channels = config.channels;
-		let mut backend = Backend::new(sample_rate, sound_bank);
+		let (command_producer, command_consumer) =
+			ringbuf::RingBuffer::new(COMMAND_BUFFER_CAPACITY).split();
+		let mut backend = Backend::new(sample_rate, sound_bank, command_consumer);
 		let stream = device.build_output_stream(
 			&config,
 			move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
@@ -44,6 +52,16 @@ impl AudioManager {
 			move |err| {},
 		)?;
 		stream.play()?;
-		Ok(Self { stream: stream })
+		Ok(Self {
+			stream,
+			command_producer,
+		})
+	}
+
+	pub fn play_sound(&mut self, sound_id: SoundId) {
+		match self.command_producer.push(Command::PlaySound(sound_id)) {
+			Ok(_) => {}
+			Err(_) => {}
+		}
 	}
 }
