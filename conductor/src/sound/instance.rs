@@ -5,16 +5,16 @@ pub enum InstanceState {
 }
 
 pub struct Instance {
-	sound_length: usize,
-	position: usize,
+	duration: f32,
+	position: f32,
 	state: InstanceState,
 }
 
 impl Instance {
-	pub fn new(sound_length: usize) -> Self {
+	pub fn new(duration: f32) -> Self {
 		Self {
-			sound_length,
-			position: 0,
+			duration,
+			position: 0.0,
 			state: InstanceState::Stopped,
 		}
 	}
@@ -23,22 +23,23 @@ impl Instance {
 		self.state
 	}
 
-	pub fn position(&self) -> usize {
+	pub fn position(&self) -> f32 {
 		self.position
 	}
 
 	pub fn play(&mut self) {
-		self.position = 0;
+		self.position = 0.0;
 		self.state = InstanceState::Playing;
 	}
 
-	pub fn update(&mut self) -> Option<usize> {
+	pub fn update(&mut self, dt: f32) -> Option<f32> {
 		match self.state {
 			InstanceState::Stopped => None,
 			InstanceState::Playing => {
 				let position = self.position;
-				self.position += 1;
-				if self.position == self.sound_length {
+				self.position += dt;
+				if self.position >= self.duration {
+					self.position = self.duration;
 					self.state = InstanceState::Stopped;
 				}
 				Some(position)

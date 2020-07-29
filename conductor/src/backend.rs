@@ -6,7 +6,7 @@ use crate::{
 use ringbuf::Consumer;
 
 pub struct Backend {
-	sample_rate: u32,
+	dt: f32,
 	sound_bank: SoundBank,
 	command_consumer: Consumer<Command>,
 }
@@ -18,7 +18,7 @@ impl Backend {
 		command_consumer: Consumer<Command>,
 	) -> Self {
 		Self {
-			sample_rate,
+			dt: 1.0 / sample_rate as f32,
 			sound_bank,
 			command_consumer,
 		}
@@ -40,7 +40,7 @@ impl Backend {
 		}
 		let mut out = StereoSample::from_mono(0.0);
 		for sound in &mut self.sound_bank.sounds {
-			out += sound.process();
+			out += sound.process(self.dt);
 		}
 		out
 	}
