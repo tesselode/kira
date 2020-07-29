@@ -22,7 +22,7 @@ pub enum SoundName {
 
 pub struct AudioManager {
 	command_producer: Producer<Command>,
-	stream: Stream,
+	_stream: Stream,
 }
 
 impl AudioManager {
@@ -49,11 +49,11 @@ impl AudioManager {
 					frame[1] = out.right;
 				}
 			},
-			move |err| {},
+			move |_| {},
 		)?;
 		stream.play()?;
 		Ok(Self {
-			stream,
+			_stream: stream,
 			command_producer,
 		})
 	}
