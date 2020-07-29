@@ -1,11 +1,12 @@
 use conductor::{
+	manager::{AudioManager, PlaySoundSettings},
 	sound_bank::{SoundBank, SoundId},
-	AudioManager,
 };
 use ggez::{
 	event::{KeyCode, KeyMods},
 	graphics, Context, GameResult,
 };
+use rand::prelude::*;
 use std::error::Error;
 
 pub struct MainState {
@@ -38,7 +39,14 @@ impl ggez::event::EventHandler for MainState {
 		_repeat: bool,
 	) {
 		match keycode {
-			KeyCode::Space => self.audio_manager.play_sound(self.sound_id),
+			KeyCode::Space => self.audio_manager.play_sound(
+				self.sound_id,
+				PlaySoundSettings {
+					pitch: rand::thread_rng().gen_range(0.5, 1.5),
+					volume: rand::thread_rng().gen_range(0.1, 1.0),
+					..Default::default()
+				},
+			),
 			_ => {}
 		}
 	}

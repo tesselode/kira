@@ -1,6 +1,6 @@
 mod instance;
 
-use crate::stereo_sample::StereoSample;
+use crate::{manager::PlaySoundSettings, stereo_sample::StereoSample};
 use instance::{Instance, InstanceState};
 use lewton::{inside_ogg::OggStreamReader, samples::Samples};
 use std::{error::Error, fs::File, path::Path};
@@ -103,9 +103,9 @@ impl Sound {
 		None
 	}
 
-	pub fn play(&mut self) {
+	pub fn play(&mut self, settings: PlaySoundSettings) {
 		if let Some(index) = self.pick_instance_to_play() {
-			self.instances[index].play();
+			self.instances[index].play(settings);
 		}
 	}
 
@@ -113,7 +113,8 @@ impl Sound {
 		let mut out = StereoSample::from_mono(0.0);
 		for instance in &mut self.instances {
 			if let Some(position) = instance.update(dt) {
-				out += get_interpolated_sample(&self.samples, self.sample_rate, position);
+				out += get_interpolated_sample(&self.samples, self.sample_rate, position)
+					* instance.volume();
 			}
 		}
 		out

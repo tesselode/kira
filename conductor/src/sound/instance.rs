@@ -1,3 +1,5 @@
+use crate::manager::PlaySoundSettings;
+
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum InstanceState {
 	Stopped,
@@ -6,6 +8,8 @@ pub enum InstanceState {
 
 pub struct Instance {
 	duration: f32,
+	volume: f32,
+	pitch: f32,
 	position: f32,
 	state: InstanceState,
 }
@@ -14,6 +18,8 @@ impl Instance {
 	pub fn new(duration: f32) -> Self {
 		Self {
 			duration,
+			volume: 1.0,
+			pitch: 1.0,
 			position: 0.0,
 			state: InstanceState::Stopped,
 		}
@@ -27,7 +33,13 @@ impl Instance {
 		self.position
 	}
 
-	pub fn play(&mut self) {
+	pub fn volume(&self) -> f32 {
+		self.volume
+	}
+
+	pub fn play(&mut self, settings: PlaySoundSettings) {
+		self.volume = settings.volume;
+		self.pitch = settings.pitch;
 		self.position = 0.0;
 		self.state = InstanceState::Playing;
 	}
@@ -37,7 +49,7 @@ impl Instance {
 			InstanceState::Stopped => None,
 			InstanceState::Playing => {
 				let position = self.position;
-				self.position += dt;
+				self.position += self.pitch * dt;
 				if self.position >= self.duration {
 					self.position = self.duration;
 					self.state = InstanceState::Stopped;

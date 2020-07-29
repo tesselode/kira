@@ -1,5 +1,6 @@
 use crate::{
 	event::Command,
+	manager::PlaySoundSettings,
 	sound_bank::{SoundBank, SoundId},
 	stereo_sample::StereoSample,
 };
@@ -24,17 +25,17 @@ impl Backend {
 		}
 	}
 
-	fn play_sound(&mut self, sound_id: SoundId) {
+	fn play_sound(&mut self, sound_id: SoundId, settings: PlaySoundSettings) {
 		let index = sound_id.index;
 		let sound = &mut self.sound_bank.sounds[index];
-		sound.play();
+		sound.play(settings);
 	}
 
 	pub fn process(&mut self) -> StereoSample {
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
-				Command::PlaySound(id) => {
-					self.play_sound(id);
+				Command::PlaySound(id, settings) => {
+					self.play_sound(id, settings);
 				}
 			}
 		}

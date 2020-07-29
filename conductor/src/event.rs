@@ -1,5 +1,5 @@
-use crate::sound_bank::SoundId;
+use crate::{manager::PlaySoundSettings, sound_bank::SoundId};
 
 pub enum Command {
-	PlaySound(SoundId),
+	PlaySound(SoundId, PlaySoundSettings),
 }
