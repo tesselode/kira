@@ -1,10 +1,11 @@
 mod backend;
 
+use backend::Backend;
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	Stream,
 };
-use std::{error::Error, f32::consts::PI};
+use std::error::Error;
 
 pub struct AudioManager {
 	_stream: Stream,
@@ -22,16 +23,14 @@ impl AudioManager {
 		let config = supported_config.config();
 		let sample_rate = config.sample_rate.0;
 		let channels = config.channels;
-		let mut phase = 0.0;
+		let mut backend = Backend::new(sample_rate);
 		let stream = device.build_output_stream(
 			&config,
 			move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
 				for frame in data.chunks_exact_mut(channels as usize) {
-					phase += 440.0 / sample_rate as f32;
-					phase %= 1.0;
-					let out = 0.25 * (phase * 2.0 * PI).sin();
-					frame[0] = out;
-					frame[1] = out;
+					let out = backend.process();
+					frame[0] = out.left;
+					frame[1] = out.right;
 				}
 			},
 			move |_| {},
