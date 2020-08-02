@@ -40,7 +40,11 @@ impl Sound {
 		Ok(Self::new(reader.ident_hdr.audio_sample_rate, samples))
 	}
 
-	fn get_sample_at_position(&self, position: f32) -> StereoSample {
+	pub fn duration(&self) -> f32 {
+		self.samples.len() as f32 / self.sample_rate as f32
+	}
+
+	pub fn get_sample_at_position(&self, position: f32) -> StereoSample {
 		let sample_position = self.sample_rate as f32 * position;
 		let x = sample_position % 1.0;
 		let current_sample_index = sample_position as usize;

@@ -3,7 +3,7 @@ use std::{error::Error, path::Path};
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct SoundId {
-	pub(crate) index: usize,
+	index: usize,
 }
 
 pub struct Project {
@@ -21,5 +21,9 @@ impl Project {
 		};
 		self.sounds.push(Sound::from_ogg_file(path)?);
 		Ok(id)
+	}
+
+	pub(crate) fn get_sound(&self, id: SoundId) -> &Sound {
+		&self.sounds[id.index]
 	}
 }
