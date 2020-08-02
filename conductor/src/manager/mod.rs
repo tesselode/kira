@@ -6,23 +6,36 @@ use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	Stream,
 };
-use ringbuf::{Producer, RingBuffer};
+use ringbuf::{Consumer, Producer, RingBuffer};
 use std::error::Error;
 
 const COMMAND_QUEUE_CAPACITY: usize = 100;
+const EVENT_QUEUE_CAPACITY: usize = 100;
+
+#[derive(Debug)]
+pub enum Event {
+	MetronomeInterval(f32),
+}
 
 pub struct AudioManagerSettings {
 	pub num_instances: usize,
+	pub tempo: f32,
+	pub metronome_event_intervals: Vec<f32>,
 }
 
 impl Default for AudioManagerSettings {
 	fn default() -> Self {
-		Self { num_instances: 100 }
+		Self {
+			num_instances: 100,
+			tempo: 120.0,
+			metronome_event_intervals: vec![1.0],
+		}
 	}
 }
 
 pub struct AudioManager {
 	command_producer: Producer<Command>,
+	event_consumer: Consumer<Event>,
 	_stream: Stream,
 }
 
@@ -39,7 +52,14 @@ impl AudioManager {
 		let sample_rate = config.sample_rate.0;
 		let channels = config.channels;
 		let (command_producer, command_consumer) = RingBuffer::new(COMMAND_QUEUE_CAPACITY).split();
-		let mut backend = Backend::new(sample_rate, project, settings, command_consumer);
+		let (event_producer, event_consumer) = RingBuffer::new(EVENT_QUEUE_CAPACITY).split();
+		let mut backend = Backend::new(
+			sample_rate,
+			project,
+			settings,
+			command_consumer,
+			event_producer,
+		);
 		let stream = device.build_output_stream(
 			&config,
 			move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
@@ -54,6 +74,7 @@ impl AudioManager {
 		stream.play()?;
 		Ok(Self {
 			command_producer,
+			event_consumer,
 			_stream: stream,
 		})
 	}
@@ -63,5 +84,20 @@ impl AudioManager {
 			Ok(_) => {}
 			Err(_) => {}
 		}
+	}
+
+	pub fn start_metronome(&mut self) {
+		match self.command_producer.push(Command::StartMetronome) {
+			Ok(_) => {}
+			Err(_) => {}
+		}
+	}
+
+	pub fn events(&mut self) -> Vec<Event> {
+		let mut events = vec![];
+		while let Some(event) = self.event_consumer.pop() {
+			events.push(event);
+		}
+		events
 	}
 }

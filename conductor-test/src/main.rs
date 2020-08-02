@@ -18,8 +18,17 @@ impl MainState {
 		let mut project = Project::new();
 		let sound_id =
 			project.load_sound(&std::env::current_dir().unwrap().join("assets/hhclosed.ogg"))?;
+		let mut audio_manager = AudioManager::new(
+			project,
+			AudioManagerSettings {
+				tempo: 90.0,
+				metronome_event_intervals: vec![0.25, 0.5, 1.0],
+				..Default::default()
+			},
+		)?;
+		audio_manager.start_metronome();
 		Ok(Self {
-			audio_manager: AudioManager::new(project, AudioManagerSettings::default())?,
+			audio_manager,
 			sound_id,
 		})
 	}
@@ -27,6 +36,9 @@ impl MainState {
 
 impl ggez::event::EventHandler for MainState {
 	fn update(&mut self, _ctx: &mut Context) -> GameResult {
+		for event in self.audio_manager.events() {
+			println!("{:?}", event);
+		}
 		Ok(())
 	}
 

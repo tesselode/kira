@@ -1,9 +1,12 @@
-use super::AudioManagerSettings;
+mod metronome;
+
+use super::{AudioManagerSettings, Event};
 use crate::{
 	project::{Project, SoundId},
 	stereo_sample::StereoSample,
 };
-use ringbuf::Consumer;
+use metronome::Metronome;
+use ringbuf::{Consumer, Producer};
 
 #[derive(Eq, PartialEq)]
 enum InstanceState {
@@ -29,6 +32,7 @@ impl Instance {
 
 pub enum Command {
 	PlaySound(SoundId),
+	StartMetronome,
 }
 
 pub struct Backend {
@@ -36,6 +40,9 @@ pub struct Backend {
 	project: Project,
 	instances: Vec<Instance>,
 	command_consumer: Consumer<Command>,
+	event_producer: Producer<Event>,
+	metronome: Metronome,
+	metronome_event_intervals: Vec<f32>,
 }
 
 impl Backend {
@@ -44,6 +51,7 @@ impl Backend {
 		project: Project,
 		settings: AudioManagerSettings,
 		command_consumer: Consumer<Command>,
+		event_producer: Producer<Event>,
 	) -> Self {
 		let mut instances = vec![];
 		for _ in 0..settings.num_instances {
@@ -54,6 +62,9 @@ impl Backend {
 			project,
 			instances,
 			command_consumer,
+			event_producer,
+			metronome: Metronome::new(settings.tempo),
+			metronome_event_intervals: settings.metronome_event_intervals,
 		}
 	}
 
@@ -75,12 +86,29 @@ impl Backend {
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
 				Command::PlaySound(sound_id) => self.play_sound(sound_id),
+				Command::StartMetronome => self.metronome.start(),
+			}
+		}
+	}
+
+	pub fn update_metronome(&mut self) {
+		self.metronome.update(self.dt);
+		for interval in &self.metronome_event_intervals {
+			if self.metronome.interval_passed(*interval) {
+				match self
+					.event_producer
+					.push(Event::MetronomeInterval(*interval))
+				{
+					Ok(_) => {}
+					Err(_) => {}
+				}
 			}
 		}
 	}
 
 	pub fn process(&mut self) -> StereoSample {
 		self.process_commands();
+		self.update_metronome();
 		let mut out = StereoSample::from_mono(0.0);
 		for instance in &mut self.instances {
 			if instance.state == InstanceState::Playing {
