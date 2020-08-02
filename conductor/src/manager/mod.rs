@@ -1,5 +1,6 @@
 mod backend;
 
+use crate::project::Project;
 use backend::Backend;
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
@@ -12,7 +13,7 @@ pub struct AudioManager {
 }
 
 impl AudioManager {
-	pub fn new() -> Result<Self, Box<dyn Error>> {
+	pub fn new(project: Project) -> Result<Self, Box<dyn Error>> {
 		let host = cpal::default_host();
 		let device = host.default_output_device().unwrap();
 		let mut supported_configs_range = device.supported_output_configs().unwrap();
@@ -23,7 +24,7 @@ impl AudioManager {
 		let config = supported_config.config();
 		let sample_rate = config.sample_rate.0;
 		let channels = config.channels;
-		let mut backend = Backend::new(sample_rate);
+		let mut backend = Backend::new(sample_rate, project);
 		let stream = device.build_output_stream(
 			&config,
 			move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {

@@ -1,4 +1,4 @@
-use conductor::manager::AudioManager;
+use conductor::{manager::AudioManager, project::Project};
 use ggez::{graphics, Context, GameResult};
 use std::error::Error;
 
@@ -8,8 +8,10 @@ struct MainState {
 
 impl MainState {
 	pub fn new() -> Result<Self, Box<dyn Error>> {
+		let mut project = Project::new();
+		project.load_sound(&std::env::current_dir().unwrap().join("assets/hhclosed.ogg"))?;
 		Ok(Self {
-			audio_manager: AudioManager::new()?,
+			audio_manager: AudioManager::new(project)?,
 		})
 	}
 }
