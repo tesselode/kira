@@ -1,6 +1,6 @@
 use conductor::{
 	manager::{AudioManager, AudioManagerSettings},
-	project::{Project, SoundId},
+	project::{Project, SoundId, SoundSettings},
 };
 use ggez::{
 	event::{KeyCode, KeyMods},
@@ -16,8 +16,10 @@ struct MainState {
 impl MainState {
 	pub fn new() -> Result<Self, Box<dyn Error>> {
 		let mut project = Project::new();
-		let sound_id =
-			project.load_sound(&std::env::current_dir().unwrap().join("assets/hhclosed.ogg"))?;
+		let sound_id = project.load_sound(
+			&std::env::current_dir().unwrap().join("assets/hhclosed.ogg"),
+			SoundSettings::default(),
+		)?;
 		let mut audio_manager = AudioManager::new(
 			project,
 			AudioManagerSettings {

@@ -1,5 +1,12 @@
-use crate::sound::Sound;
+use crate::{sound::Sound, time::Time};
 use std::{error::Error, path::Path};
+
+#[derive(Default)]
+pub struct SoundSettings {
+	pub tempo: Option<f32>,
+	pub default_loop_start: Option<Time>,
+	pub default_loop_end: Option<Time>,
+}
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct SoundId {
@@ -15,11 +22,15 @@ impl Project {
 		Self { sounds: vec![] }
 	}
 
-	pub fn load_sound(&mut self, path: &Path) -> Result<SoundId, Box<dyn Error>> {
+	pub fn load_sound(
+		&mut self,
+		path: &Path,
+		settings: SoundSettings,
+	) -> Result<SoundId, Box<dyn Error>> {
 		let id = SoundId {
 			index: self.sounds.len(),
 		};
-		self.sounds.push(Sound::from_ogg_file(path)?);
+		self.sounds.push(Sound::from_ogg_file(path, settings)?);
 		Ok(id)
 	}
 

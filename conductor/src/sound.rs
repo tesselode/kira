@@ -1,21 +1,30 @@
-use crate::stereo_sample::StereoSample;
+use crate::{project::SoundSettings, stereo_sample::StereoSample, time::Time};
 use lewton::{inside_ogg::OggStreamReader, samples::Samples};
 use std::{error::Error, fs::File, path::Path};
 
 pub struct Sound {
 	sample_rate: u32,
 	samples: Vec<StereoSample>,
+	duration: f32,
+	tempo: Option<f32>,
+	default_loop_start: Time,
+	default_loop_end: Time,
 }
 
 impl Sound {
-	pub fn new(sample_rate: u32, samples: Vec<StereoSample>) -> Self {
+	pub fn new(sample_rate: u32, samples: Vec<StereoSample>, settings: SoundSettings) -> Self {
+		let duration = samples.len() as f32 / sample_rate as f32;
 		Self {
 			sample_rate,
 			samples,
+			duration,
+			tempo: settings.tempo,
+			default_loop_start: settings.default_loop_start.unwrap_or(Time::Seconds(0.0)),
+			default_loop_end: settings.default_loop_end.unwrap_or(Time::Seconds(duration)),
 		}
 	}
 
-	pub fn from_ogg_file(path: &Path) -> Result<Self, Box<dyn Error>> {
+	pub fn from_ogg_file(path: &Path, settings: SoundSettings) -> Result<Self, Box<dyn Error>> {
 		let mut reader = OggStreamReader::new(File::open(path)?)?;
 		let mut samples = vec![];
 		while let Some(packet) = reader.read_dec_packet_generic::<Vec<Vec<f32>>>()? {
@@ -37,11 +46,15 @@ impl Sound {
 				}
 			}
 		}
-		Ok(Self::new(reader.ident_hdr.audio_sample_rate, samples))
+		Ok(Self::new(
+			reader.ident_hdr.audio_sample_rate,
+			samples,
+			settings,
+		))
 	}
 
 	pub fn duration(&self) -> f32 {
-		self.samples.len() as f32 / self.sample_rate as f32
+		self.duration
 	}
 
 	pub fn get_sample_at_position(&self, position: f32) -> StereoSample {
