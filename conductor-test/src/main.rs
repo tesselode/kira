@@ -17,7 +17,7 @@ impl MainState {
 	pub fn new() -> Result<Self, Box<dyn Error>> {
 		let mut project = Project::new();
 		let sound_id = project.load_sound(
-			&std::env::current_dir().unwrap().join("assets/hhclosed.ogg"),
+			&std::env::current_dir().unwrap().join("assets/cymbal.ogg"),
 			SoundSettings::default(),
 		)?;
 		let mut audio_manager = AudioManager::new(
@@ -25,6 +25,7 @@ impl MainState {
 			AudioManagerSettings {
 				tempo: 90.0,
 				metronome_event_intervals: vec![0.25, 0.5, 1.0],
+				num_instances: 2,
 				..Default::default()
 			},
 		)?;
@@ -39,7 +40,7 @@ impl MainState {
 impl ggez::event::EventHandler for MainState {
 	fn update(&mut self, _ctx: &mut Context) -> GameResult {
 		for event in self.audio_manager.events() {
-			println!("{:?}", event);
+			//println!("{:?}", event);
 		}
 		Ok(())
 	}
@@ -51,7 +52,7 @@ impl ggez::event::EventHandler for MainState {
 		_keymods: KeyMods,
 		_repeat: bool,
 	) {
-		self.audio_manager.play_sound(self.sound_id);
+		println!("{:?}", self.audio_manager.play_sound(self.sound_id));
 	}
 
 	fn draw(&mut self, ctx: &mut Context) -> GameResult {

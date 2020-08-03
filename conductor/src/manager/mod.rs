@@ -1,6 +1,9 @@
 mod backend;
 
-use crate::project::{Project, SoundId};
+use crate::{
+	error::ConductorError,
+	project::{Project, SoundId},
+};
 use backend::{Backend, Command};
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
@@ -15,6 +18,11 @@ const EVENT_QUEUE_CAPACITY: usize = 100;
 #[derive(Debug)]
 pub enum Event {
 	MetronomeInterval(f32),
+}
+
+#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
+pub struct InstanceId {
+	id: usize,
 }
 
 pub struct AudioManagerSettings {
@@ -37,6 +45,7 @@ pub struct AudioManager {
 	command_producer: Producer<Command>,
 	event_consumer: Consumer<Event>,
 	_stream: Stream,
+	next_instance_id: usize,
 }
 
 impl AudioManager {
@@ -76,13 +85,21 @@ impl AudioManager {
 			command_producer,
 			event_consumer,
 			_stream: stream,
+			next_instance_id: 0,
 		})
 	}
 
-	pub fn play_sound(&mut self, sound_id: SoundId) {
-		match self.command_producer.push(Command::PlaySound(sound_id)) {
-			Ok(_) => {}
-			Err(_) => {}
+	pub fn play_sound(&mut self, sound_id: SoundId) -> Result<InstanceId, ConductorError> {
+		let instance_id = InstanceId {
+			id: self.next_instance_id,
+		};
+		self.next_instance_id += 1;
+		match self
+			.command_producer
+			.push(Command::PlaySound(sound_id, instance_id))
+		{
+			Ok(_) => Ok(instance_id),
+			Err(_) => Err(ConductorError::SendCommand),
 		}
 	}
 

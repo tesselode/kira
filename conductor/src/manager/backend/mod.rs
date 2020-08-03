@@ -1,44 +1,37 @@
 mod metronome;
 
-use super::{AudioManagerSettings, Event};
+use super::{AudioManagerSettings, Event, InstanceId};
 use crate::{
 	project::{Project, SoundId},
 	stereo_sample::StereoSample,
 };
 use metronome::Metronome;
 use ringbuf::{Consumer, Producer};
-
-#[derive(Eq, PartialEq)]
-enum InstanceState {
-	Stopped,
-	Playing,
-}
+use std::collections::HashMap;
 
 struct Instance {
-	sound_id: Option<SoundId>,
+	sound_id: SoundId,
 	position: f32,
-	state: InstanceState,
 }
 
 impl Instance {
-	pub fn new() -> Self {
+	pub fn new(sound_id: SoundId) -> Self {
 		Self {
-			sound_id: None,
+			sound_id,
 			position: 0.0,
-			state: InstanceState::Stopped,
 		}
 	}
 }
 
 pub enum Command {
-	PlaySound(SoundId),
+	PlaySound(SoundId, InstanceId),
 	StartMetronome,
 }
 
 pub struct Backend {
 	dt: f32,
 	project: Project,
-	instances: Vec<Instance>,
+	instances: HashMap<InstanceId, Instance>,
 	command_consumer: Consumer<Command>,
 	event_producer: Producer<Event>,
 	metronome: Metronome,
@@ -53,14 +46,10 @@ impl Backend {
 		command_consumer: Consumer<Command>,
 		event_producer: Producer<Event>,
 	) -> Self {
-		let mut instances = vec![];
-		for _ in 0..settings.num_instances {
-			instances.push(Instance::new());
-		}
 		Self {
 			dt: 1.0 / sample_rate as f32,
 			project,
-			instances,
+			instances: HashMap::with_capacity(settings.num_instances),
 			command_consumer,
 			event_producer,
 			metronome: Metronome::new(settings.tempo),
@@ -68,24 +57,16 @@ impl Backend {
 		}
 	}
 
-	fn pick_instance(&mut self) -> Option<&mut Instance> {
-		self.instances
-			.iter_mut()
-			.find(|instance| instance.state == InstanceState::Stopped)
-	}
-
-	fn play_sound(&mut self, sound_id: SoundId) {
-		if let Some(instance) = self.pick_instance() {
-			instance.sound_id = Some(sound_id);
-			instance.position = 0.0;
-			instance.state = InstanceState::Playing;
+	fn play_sound(&mut self, sound_id: SoundId, instance_id: InstanceId) {
+		if self.instances.len() < self.instances.capacity() {
+			self.instances.insert(instance_id, Instance::new(sound_id));
 		}
 	}
 
 	pub fn process_commands(&mut self) {
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
-				Command::PlaySound(sound_id) => self.play_sound(sound_id),
+				Command::PlaySound(sound_id, instance_id) => self.play_sound(sound_id, instance_id),
 				Command::StartMetronome => self.metronome.start(),
 			}
 		}
@@ -110,16 +91,17 @@ impl Backend {
 		self.process_commands();
 		self.update_metronome();
 		let mut out = StereoSample::from_mono(0.0);
-		for instance in &mut self.instances {
-			if instance.state == InstanceState::Playing {
-				let sound = self.project.get_sound(instance.sound_id.unwrap());
-				out += sound.get_sample_at_position(instance.position);
-				instance.position += self.dt;
-				if instance.position >= sound.duration() {
-					instance.position = sound.duration();
-					instance.state = InstanceState::Stopped;
-				}
+		let mut instance_ids_to_remove = vec![];
+		for (instance_id, instance) in &mut self.instances {
+			let sound = self.project.get_sound(instance.sound_id);
+			out += sound.get_sample_at_position(instance.position);
+			instance.position += self.dt;
+			if instance.position >= sound.duration() {
+				instance_ids_to_remove.push(*instance_id);
 			}
+		}
+		for instance_id in instance_ids_to_remove {
+			self.instances.remove(&instance_id);
 		}
 		out
 	}
