@@ -121,6 +121,34 @@ impl AudioManager {
 		}
 	}
 
+	pub fn set_instance_volume(
+		&mut self,
+		instance_id: InstanceId,
+		volume: f32,
+	) -> Result<(), ConductorError> {
+		match self
+			.command_producer
+			.push(Command::SetInstanceVolume(instance_id, volume))
+		{
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
+	pub fn set_instance_pitch(
+		&mut self,
+		instance_id: InstanceId,
+		pitch: f32,
+	) -> Result<(), ConductorError> {
+		match self
+			.command_producer
+			.push(Command::SetInstancePitch(instance_id, pitch))
+		{
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
 	pub fn start_metronome(&mut self) {
 		match self.command_producer.push(Command::StartMetronome) {
 			Ok(_) => {}

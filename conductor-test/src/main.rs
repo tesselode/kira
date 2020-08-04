@@ -1,5 +1,5 @@
 use conductor::{
-	manager::{AudioManager, AudioManagerSettings, InstanceSettings},
+	manager::{AudioManager, AudioManagerSettings, InstanceId, InstanceSettings},
 	project::{Project, SoundId, SoundSettings},
 };
 use ggez::{
@@ -11,6 +11,7 @@ use std::error::Error;
 struct MainState {
 	audio_manager: AudioManager,
 	sound_id: SoundId,
+	instance_id: Option<InstanceId>,
 }
 
 impl MainState {
@@ -20,11 +21,10 @@ impl MainState {
 			&std::env::current_dir().unwrap().join("assets/cymbal.ogg"),
 			SoundSettings::default(),
 		)?;
-		let mut audio_manager = AudioManager::new(project, AudioManagerSettings::default())?;
-		audio_manager.start_metronome();
 		Ok(Self {
-			audio_manager,
+			audio_manager: AudioManager::new(project, AudioManagerSettings::default())?,
 			sound_id,
+			instance_id: None,
 		})
 	}
 }
@@ -37,20 +37,27 @@ impl ggez::event::EventHandler for MainState {
 	fn key_down_event(
 		&mut self,
 		_ctx: &mut Context,
-		_keycode: KeyCode,
+		keycode: KeyCode,
 		_keymods: KeyMods,
 		_repeat: bool,
 	) {
-		println!(
-			"{:?}",
-			self.audio_manager.play_sound(
-				self.sound_id,
-				InstanceSettings {
-					volume: 0.5,
-					pitch: 0.25,
+		match keycode {
+			KeyCode::Space => {
+				self.instance_id = Some(
+					self.audio_manager
+						.play_sound(self.sound_id, InstanceSettings::default())
+						.unwrap(),
+				);
+			}
+			KeyCode::P => {
+				if let Some(instance_id) = self.instance_id {
+					self.audio_manager
+						.set_instance_volume(instance_id, 0.5)
+						.unwrap();
 				}
-			)
-		);
+			}
+			_ => {}
+		}
 	}
 
 	fn draw(&mut self, ctx: &mut Context) -> GameResult {

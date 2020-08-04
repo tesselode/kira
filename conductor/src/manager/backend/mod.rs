@@ -29,6 +29,8 @@ impl Instance {
 
 pub enum Command {
 	PlaySound(SoundId, InstanceId, InstanceSettings),
+	SetInstanceVolume(InstanceId, f32),
+	SetInstancePitch(InstanceId, f32),
 	StartMetronome,
 }
 
@@ -73,11 +75,29 @@ impl Backend {
 		}
 	}
 
+	fn set_instance_volume(&mut self, instance_id: InstanceId, volume: f32) {
+		if let Some(instance) = self.instances.get_mut(&instance_id) {
+			instance.volume = volume;
+		}
+	}
+
+	fn set_instance_pitch(&mut self, instance_id: InstanceId, pitch: f32) {
+		if let Some(instance) = self.instances.get_mut(&instance_id) {
+			instance.pitch = pitch;
+		}
+	}
+
 	pub fn process_commands(&mut self) {
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
 				Command::PlaySound(sound_id, instance_id, settings) => {
 					self.play_sound(sound_id, instance_id, settings)
+				}
+				Command::SetInstanceVolume(instance_id, volume) => {
+					self.set_instance_volume(instance_id, volume)
+				}
+				Command::SetInstancePitch(instance_id, pitch) => {
+					self.set_instance_pitch(instance_id, pitch)
 				}
 				Command::StartMetronome => self.metronome.start(),
 			}
