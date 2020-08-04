@@ -5,9 +5,10 @@ use crate::{
 	project::{Project, SoundId},
 	stereo_sample::StereoSample,
 };
+use bimap::BiMap;
+use generational_arena::{Arena, Index};
 use metronome::Metronome;
 use ringbuf::{Consumer, Producer};
-use std::collections::HashMap;
 
 struct Instance {
 	sound_id: SoundId,
@@ -37,7 +38,8 @@ pub enum Command {
 pub struct Backend {
 	dt: f32,
 	project: Project,
-	instances: HashMap<InstanceId, Instance>,
+	instances: Arena<Instance>,
+	instance_ids: BiMap<InstanceId, Index>,
 	command_consumer: Consumer<Command>,
 	event_producer: Producer<Event>,
 	metronome: Metronome,
@@ -55,7 +57,8 @@ impl Backend {
 		Self {
 			dt: 1.0 / sample_rate as f32,
 			project,
-			instances: HashMap::with_capacity(settings.num_instances),
+			instances: Arena::with_capacity(settings.num_instances),
+			instance_ids: BiMap::with_capacity(settings.num_instances),
 			command_consumer,
 			event_producer,
 			metronome: Metronome::new(settings.tempo),
@@ -66,23 +69,37 @@ impl Backend {
 	fn play_sound(
 		&mut self,
 		sound_id: SoundId,
-		instance_id: InstanceId,
+		instance_id: Option<InstanceId>,
 		settings: InstanceSettings,
 	) {
 		if self.instances.len() < self.instances.capacity() {
-			self.instances
-				.insert(instance_id, Instance::new(sound_id, settings));
+			let index = self.instances.insert(Instance::new(sound_id, settings));
+			if let Some(id) = instance_id {
+				self.instance_ids.insert(id, index);
+			}
 		}
 	}
 
+	fn get_instance(&mut self, instance_id: InstanceId) -> Option<&mut Instance> {
+		if let Some(index) = self.instance_ids.get_by_left(&instance_id) {
+			return self.instances.get_mut(*index);
+		}
+		None
+	}
+
+	fn remove_instance(&mut self, index: Index) {
+		self.instances.remove(index);
+		self.instance_ids.remove_by_right(&index);
+	}
+
 	fn set_instance_volume(&mut self, instance_id: InstanceId, volume: f32) {
-		if let Some(instance) = self.instances.get_mut(&instance_id) {
+		if let Some(instance) = self.get_instance(instance_id) {
 			instance.volume = volume;
 		}
 	}
 
 	fn set_instance_pitch(&mut self, instance_id: InstanceId, pitch: f32) {
-		if let Some(instance) = self.instances.get_mut(&instance_id) {
+		if let Some(instance) = self.get_instance(instance_id) {
 			instance.pitch = pitch;
 		}
 	}
@@ -91,7 +108,7 @@ impl Backend {
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
 				Command::PlaySound(sound_id, instance_id, settings) => {
-					self.play_sound(sound_id, instance_id, settings)
+					self.play_sound(sound_id, Some(instance_id), settings)
 				}
 				Command::SetInstanceVolume(instance_id, volume) => {
 					self.set_instance_volume(instance_id, volume)
@@ -123,17 +140,17 @@ impl Backend {
 		self.process_commands();
 		self.update_metronome();
 		let mut out = StereoSample::from_mono(0.0);
-		let mut instance_ids_to_remove = vec![];
-		for (instance_id, instance) in &mut self.instances {
+		let mut instance_indices_to_remove = vec![];
+		for (index, instance) in &mut self.instances {
 			let sound = self.project.get_sound(instance.sound_id);
 			out += sound.get_sample_at_position(instance.position) * instance.volume;
 			instance.position += instance.pitch * self.dt;
 			if instance.position >= sound.duration() {
-				instance_ids_to_remove.push(*instance_id);
+				instance_indices_to_remove.push(index);
 			}
 		}
-		for instance_id in instance_ids_to_remove {
-			self.instances.remove(&instance_id);
+		for index in instance_indices_to_remove {
+			self.remove_instance(index);
 		}
 		out
 	}

@@ -7,6 +7,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+bimap = "0.5.2"
 cpal = "0.12.1"
+generational-arena = "0.2.8"
 lewton = "0.10.1"
 ringbuf = "0.2.2"
