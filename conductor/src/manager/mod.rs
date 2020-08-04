@@ -35,8 +35,8 @@ impl Default for InstanceSettings {
 }
 
 #[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
-pub struct InstanceId {
-	id: usize,
+pub struct InstanceHandle {
+	index: usize,
 }
 
 pub struct AudioManagerSettings {
@@ -59,7 +59,7 @@ pub struct AudioManager {
 	command_producer: Producer<Command>,
 	event_consumer: Consumer<Event>,
 	_stream: Stream,
-	next_instance_id: usize,
+	next_instance_handle_index: usize,
 }
 
 impl AudioManager {
@@ -99,7 +99,7 @@ impl AudioManager {
 			command_producer,
 			event_consumer,
 			_stream: stream,
-			next_instance_id: 0,
+			next_instance_handle_index: 0,
 		})
 	}
 
@@ -107,28 +107,28 @@ impl AudioManager {
 		&mut self,
 		sound_id: SoundId,
 		settings: InstanceSettings,
-	) -> Result<InstanceId, ConductorError> {
-		let instance_id = InstanceId {
-			id: self.next_instance_id,
+	) -> Result<InstanceHandle, ConductorError> {
+		let instance_handle = InstanceHandle {
+			index: self.next_instance_handle_index,
 		};
-		self.next_instance_id += 1;
+		self.next_instance_handle_index += 1;
 		match self
 			.command_producer
-			.push(Command::PlaySound(sound_id, instance_id, settings))
+			.push(Command::PlaySound(sound_id, instance_handle, settings))
 		{
-			Ok(_) => Ok(instance_id),
+			Ok(_) => Ok(instance_handle),
 			Err(_) => Err(ConductorError::SendCommand),
 		}
 	}
 
 	pub fn set_instance_volume(
 		&mut self,
-		instance_id: InstanceId,
+		instance_handle: InstanceHandle,
 		volume: f32,
 	) -> Result<(), ConductorError> {
 		match self
 			.command_producer
-			.push(Command::SetInstanceVolume(instance_id, volume))
+			.push(Command::SetInstanceVolume(instance_handle, volume))
 		{
 			Ok(_) => Ok(()),
 			Err(_) => Err(ConductorError::SendCommand),
@@ -137,12 +137,12 @@ impl AudioManager {
 
 	pub fn set_instance_pitch(
 		&mut self,
-		instance_id: InstanceId,
+		instance_handle: InstanceHandle,
 		pitch: f32,
 	) -> Result<(), ConductorError> {
 		match self
 			.command_producer
-			.push(Command::SetInstancePitch(instance_id, pitch))
+			.push(Command::SetInstancePitch(instance_handle, pitch))
 		{
 			Ok(_) => Ok(()),
 			Err(_) => Err(ConductorError::SendCommand),

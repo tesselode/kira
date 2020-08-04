@@ -1,6 +1,6 @@
 mod metronome;
 
-use super::{AudioManagerSettings, Event, InstanceId, InstanceSettings};
+use super::{AudioManagerSettings, Event, InstanceHandle, InstanceSettings};
 use crate::{
 	project::{Project, SoundId},
 	stereo_sample::StereoSample,
@@ -29,9 +29,9 @@ impl Instance {
 }
 
 pub enum Command {
-	PlaySound(SoundId, InstanceId, InstanceSettings),
-	SetInstanceVolume(InstanceId, f32),
-	SetInstancePitch(InstanceId, f32),
+	PlaySound(SoundId, InstanceHandle, InstanceSettings),
+	SetInstanceVolume(InstanceHandle, f32),
+	SetInstancePitch(InstanceHandle, f32),
 	StartMetronome,
 }
 
@@ -39,7 +39,7 @@ pub struct Backend {
 	dt: f32,
 	project: Project,
 	instances: Arena<Instance>,
-	instance_ids: BiMap<InstanceId, Index>,
+	instance_handles: BiMap<InstanceHandle, Index>,
 	command_consumer: Consumer<Command>,
 	event_producer: Producer<Event>,
 	metronome: Metronome,
@@ -58,7 +58,7 @@ impl Backend {
 			dt: 1.0 / sample_rate as f32,
 			project,
 			instances: Arena::with_capacity(settings.num_instances),
-			instance_ids: BiMap::with_capacity(settings.num_instances),
+			instance_handles: BiMap::with_capacity(settings.num_instances),
 			command_consumer,
 			event_producer,
 			metronome: Metronome::new(settings.tempo),
@@ -69,19 +69,19 @@ impl Backend {
 	fn play_sound(
 		&mut self,
 		sound_id: SoundId,
-		instance_id: Option<InstanceId>,
+		instance_handle: Option<InstanceHandle>,
 		settings: InstanceSettings,
 	) {
 		if self.instances.len() < self.instances.capacity() {
 			let index = self.instances.insert(Instance::new(sound_id, settings));
-			if let Some(id) = instance_id {
-				self.instance_ids.insert(id, index);
+			if let Some(handle) = instance_handle {
+				self.instance_handles.insert(handle, index);
 			}
 		}
 	}
 
-	fn get_instance(&mut self, instance_id: InstanceId) -> Option<&mut Instance> {
-		if let Some(index) = self.instance_ids.get_by_left(&instance_id) {
+	fn get_instance(&mut self, instance_handle: InstanceHandle) -> Option<&mut Instance> {
+		if let Some(index) = self.instance_handles.get_by_left(&instance_handle) {
 			return self.instances.get_mut(*index);
 		}
 		None
@@ -89,17 +89,17 @@ impl Backend {
 
 	fn remove_instance(&mut self, index: Index) {
 		self.instances.remove(index);
-		self.instance_ids.remove_by_right(&index);
+		self.instance_handles.remove_by_right(&index);
 	}
 
-	fn set_instance_volume(&mut self, instance_id: InstanceId, volume: f32) {
-		if let Some(instance) = self.get_instance(instance_id) {
+	fn set_instance_volume(&mut self, instance_handle: InstanceHandle, volume: f32) {
+		if let Some(instance) = self.get_instance(instance_handle) {
 			instance.volume = volume;
 		}
 	}
 
-	fn set_instance_pitch(&mut self, instance_id: InstanceId, pitch: f32) {
-		if let Some(instance) = self.get_instance(instance_id) {
+	fn set_instance_pitch(&mut self, instance_handle: InstanceHandle, pitch: f32) {
+		if let Some(instance) = self.get_instance(instance_handle) {
 			instance.pitch = pitch;
 		}
 	}
@@ -107,14 +107,14 @@ impl Backend {
 	pub fn process_commands(&mut self) {
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
-				Command::PlaySound(sound_id, instance_id, settings) => {
-					self.play_sound(sound_id, Some(instance_id), settings)
+				Command::PlaySound(sound_id, instance_handle, settings) => {
+					self.play_sound(sound_id, Some(instance_handle), settings)
 				}
-				Command::SetInstanceVolume(instance_id, volume) => {
-					self.set_instance_volume(instance_id, volume)
+				Command::SetInstanceVolume(instance_handle, volume) => {
+					self.set_instance_volume(instance_handle, volume)
 				}
-				Command::SetInstancePitch(instance_id, pitch) => {
-					self.set_instance_pitch(instance_id, pitch)
+				Command::SetInstancePitch(instance_handle, pitch) => {
+					self.set_instance_pitch(instance_handle, pitch)
 				}
 				Command::StartMetronome => self.metronome.start(),
 			}

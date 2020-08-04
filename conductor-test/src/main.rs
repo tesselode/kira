@@ -1,5 +1,5 @@
 use conductor::{
-	manager::{AudioManager, AudioManagerSettings, InstanceId, InstanceSettings},
+	manager::{AudioManager, AudioManagerSettings, InstanceHandle, InstanceSettings},
 	project::{Project, SoundId, SoundSettings},
 };
 use ggez::{
@@ -11,7 +11,7 @@ use std::error::Error;
 struct MainState {
 	audio_manager: AudioManager,
 	sound_id: SoundId,
-	instance_id: Option<InstanceId>,
+	instance_handle: Option<InstanceHandle>,
 }
 
 impl MainState {
@@ -24,7 +24,7 @@ impl MainState {
 		Ok(Self {
 			audio_manager: AudioManager::new(project, AudioManagerSettings::default())?,
 			sound_id,
-			instance_id: None,
+			instance_handle: None,
 		})
 	}
 }
@@ -43,16 +43,16 @@ impl ggez::event::EventHandler for MainState {
 	) {
 		match keycode {
 			KeyCode::Space => {
-				self.instance_id = Some(
+				self.instance_handle = Some(
 					self.audio_manager
 						.play_sound(self.sound_id, InstanceSettings::default())
 						.unwrap(),
 				);
 			}
 			KeyCode::P => {
-				if let Some(instance_id) = self.instance_id {
+				if let Some(instance_handle) = self.instance_handle {
 					self.audio_manager
-						.set_instance_volume(instance_id, 0.5)
+						.set_instance_volume(instance_handle, 0.5)
 						.unwrap();
 				}
 			}
