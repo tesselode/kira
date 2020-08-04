@@ -1,6 +1,6 @@
 mod metronome;
 
-use super::{AudioManagerSettings, Event, InstanceId};
+use super::{AudioManagerSettings, Event, InstanceId, InstanceSettings};
 use crate::{
 	project::{Project, SoundId},
 	stereo_sample::StereoSample,
@@ -12,19 +12,23 @@ use std::collections::HashMap;
 struct Instance {
 	sound_id: SoundId,
 	position: f32,
+	volume: f32,
+	pitch: f32,
 }
 
 impl Instance {
-	pub fn new(sound_id: SoundId) -> Self {
+	pub fn new(sound_id: SoundId, settings: InstanceSettings) -> Self {
 		Self {
 			sound_id,
 			position: 0.0,
+			volume: settings.volume,
+			pitch: settings.pitch,
 		}
 	}
 }
 
 pub enum Command {
-	PlaySound(SoundId, InstanceId),
+	PlaySound(SoundId, InstanceId, InstanceSettings),
 	StartMetronome,
 }
 
@@ -57,16 +61,24 @@ impl Backend {
 		}
 	}
 
-	fn play_sound(&mut self, sound_id: SoundId, instance_id: InstanceId) {
+	fn play_sound(
+		&mut self,
+		sound_id: SoundId,
+		instance_id: InstanceId,
+		settings: InstanceSettings,
+	) {
 		if self.instances.len() < self.instances.capacity() {
-			self.instances.insert(instance_id, Instance::new(sound_id));
+			self.instances
+				.insert(instance_id, Instance::new(sound_id, settings));
 		}
 	}
 
 	pub fn process_commands(&mut self) {
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
-				Command::PlaySound(sound_id, instance_id) => self.play_sound(sound_id, instance_id),
+				Command::PlaySound(sound_id, instance_id, settings) => {
+					self.play_sound(sound_id, instance_id, settings)
+				}
 				Command::StartMetronome => self.metronome.start(),
 			}
 		}
@@ -94,8 +106,8 @@ impl Backend {
 		let mut instance_ids_to_remove = vec![];
 		for (instance_id, instance) in &mut self.instances {
 			let sound = self.project.get_sound(instance.sound_id);
-			out += sound.get_sample_at_position(instance.position);
-			instance.position += self.dt;
+			out += sound.get_sample_at_position(instance.position) * instance.volume;
+			instance.position += instance.pitch * self.dt;
 			if instance.position >= sound.duration() {
 				instance_ids_to_remove.push(*instance_id);
 			}

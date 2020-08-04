@@ -1,5 +1,5 @@
 use conductor::{
-	manager::{AudioManager, AudioManagerSettings},
+	manager::{AudioManager, AudioManagerSettings, InstanceSettings},
 	project::{Project, SoundId, SoundSettings},
 };
 use ggez::{
@@ -20,15 +20,7 @@ impl MainState {
 			&std::env::current_dir().unwrap().join("assets/cymbal.ogg"),
 			SoundSettings::default(),
 		)?;
-		let mut audio_manager = AudioManager::new(
-			project,
-			AudioManagerSettings {
-				tempo: 90.0,
-				metronome_event_intervals: vec![0.25, 0.5, 1.0],
-				num_instances: 2,
-				..Default::default()
-			},
-		)?;
+		let mut audio_manager = AudioManager::new(project, AudioManagerSettings::default())?;
 		audio_manager.start_metronome();
 		Ok(Self {
 			audio_manager,
@@ -39,9 +31,6 @@ impl MainState {
 
 impl ggez::event::EventHandler for MainState {
 	fn update(&mut self, _ctx: &mut Context) -> GameResult {
-		for event in self.audio_manager.events() {
-			//println!("{:?}", event);
-		}
 		Ok(())
 	}
 
@@ -52,7 +41,16 @@ impl ggez::event::EventHandler for MainState {
 		_keymods: KeyMods,
 		_repeat: bool,
 	) {
-		println!("{:?}", self.audio_manager.play_sound(self.sound_id));
+		println!(
+			"{:?}",
+			self.audio_manager.play_sound(
+				self.sound_id,
+				InstanceSettings {
+					volume: 0.5,
+					pitch: 0.25,
+				}
+			)
+		);
 	}
 
 	fn draw(&mut self, ctx: &mut Context) -> GameResult {

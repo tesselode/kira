@@ -20,6 +20,20 @@ pub enum Event {
 	MetronomeInterval(f32),
 }
 
+pub struct InstanceSettings {
+	pub volume: f32,
+	pub pitch: f32,
+}
+
+impl Default for InstanceSettings {
+	fn default() -> Self {
+		Self {
+			volume: 1.0,
+			pitch: 1.0,
+		}
+	}
+}
+
 #[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
 pub struct InstanceId {
 	id: usize,
@@ -89,14 +103,18 @@ impl AudioManager {
 		})
 	}
 
-	pub fn play_sound(&mut self, sound_id: SoundId) -> Result<InstanceId, ConductorError> {
+	pub fn play_sound(
+		&mut self,
+		sound_id: SoundId,
+		settings: InstanceSettings,
+	) -> Result<InstanceId, ConductorError> {
 		let instance_id = InstanceId {
 			id: self.next_instance_id,
 		};
 		self.next_instance_id += 1;
 		match self
 			.command_producer
-			.push(Command::PlaySound(sound_id, instance_id))
+			.push(Command::PlaySound(sound_id, instance_id, settings))
 		{
 			Ok(_) => Ok(instance_id),
 			Err(_) => Err(ConductorError::SendCommand),
