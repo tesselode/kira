@@ -1,3 +1,4 @@
+mod instance;
 mod metronome;
 
 use super::{AudioManagerSettings, Event, InstanceHandle, InstanceSettings};
@@ -7,26 +8,9 @@ use crate::{
 };
 use bimap::BiMap;
 use generational_arena::{Arena, Index};
+use instance::Instance;
 use metronome::Metronome;
 use ringbuf::{Consumer, Producer};
-
-struct Instance {
-	sound_id: SoundId,
-	position: f32,
-	volume: f32,
-	pitch: f32,
-}
-
-impl Instance {
-	pub fn new(sound_id: SoundId, settings: InstanceSettings) -> Self {
-		Self {
-			sound_id,
-			position: 0.0,
-			volume: settings.volume,
-			pitch: settings.pitch,
-		}
-	}
-}
 
 pub enum Command {
 	PlaySound(SoundId, InstanceHandle, InstanceSettings),
