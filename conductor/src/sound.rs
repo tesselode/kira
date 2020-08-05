@@ -6,9 +6,9 @@ pub struct Sound {
 	sample_rate: u32,
 	samples: Vec<StereoSample>,
 	duration: f32,
-	tempo: Option<f32>,
-	default_loop_start: Time,
-	default_loop_end: Time,
+	pub tempo: Option<f32>,
+	pub default_loop_start: Time,
+	pub default_loop_end: Time,
 }
 
 impl Sound {

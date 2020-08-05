@@ -1,3 +1,4 @@
+#[derive(Copy, Clone)]
 pub enum Time {
 	Seconds(f32),
 	Beats(f32),

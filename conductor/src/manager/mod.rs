@@ -3,6 +3,7 @@ mod backend;
 use crate::{
 	error::ConductorError,
 	project::{Project, SoundId},
+	time::Time,
 };
 use backend::{Backend, Command};
 use cpal::{
@@ -21,6 +22,7 @@ pub enum Event {
 }
 
 pub struct InstanceSettings {
+	pub position: Time,
 	pub volume: f32,
 	pub pitch: f32,
 }
@@ -28,6 +30,7 @@ pub struct InstanceSettings {
 impl Default for InstanceSettings {
 	fn default() -> Self {
 		Self {
+			position: Time::Seconds(0.0),
 			volume: 1.0,
 			pitch: 1.0,
 		}
@@ -39,8 +42,20 @@ pub struct InstanceHandle {
 	index: usize,
 }
 
+#[derive(Default)]
+pub struct LooperSettings {
+	start: Option<Time>,
+	end: Option<Time>,
+}
+
+#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
+pub struct LooperHandle {
+	index: usize,
+}
+
 pub struct AudioManagerSettings {
 	pub num_instances: usize,
+	pub num_loopers: usize,
 	pub tempo: f32,
 	pub metronome_event_intervals: Vec<f32>,
 }
@@ -49,6 +64,7 @@ impl Default for AudioManagerSettings {
 	fn default() -> Self {
 		Self {
 			num_instances: 100,
+			num_loopers: 50,
 			tempo: 120.0,
 			metronome_event_intervals: vec![1.0],
 		}
@@ -60,6 +76,7 @@ pub struct AudioManager {
 	event_consumer: Consumer<Event>,
 	_stream: Stream,
 	next_instance_handle_index: usize,
+	next_looper_handle_index: usize,
 }
 
 impl AudioManager {
@@ -100,6 +117,7 @@ impl AudioManager {
 			event_consumer,
 			_stream: stream,
 			next_instance_handle_index: 0,
+			next_looper_handle_index: 0,
 		})
 	}
 
@@ -145,6 +163,24 @@ impl AudioManager {
 			.push(Command::SetInstancePitch(instance_handle, pitch))
 		{
 			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
+	pub fn loop_sound(
+		&mut self,
+		sound_id: SoundId,
+		settings: LooperSettings,
+	) -> Result<LooperHandle, ConductorError> {
+		let handle = LooperHandle {
+			index: self.next_looper_handle_index,
+		};
+		self.next_looper_handle_index += 1;
+		match self
+			.command_producer
+			.push(Command::LoopSound(sound_id, handle, settings))
+		{
+			Ok(_) => Ok(handle),
 			Err(_) => Err(ConductorError::SendCommand),
 		}
 	}

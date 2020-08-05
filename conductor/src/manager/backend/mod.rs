@@ -1,22 +1,33 @@
-mod instance;
+mod looper;
 mod metronome;
 
-use super::{AudioManagerSettings, Event, InstanceHandle, InstanceSettings};
+use super::{
+	AudioManagerSettings, Event, InstanceHandle, InstanceSettings, LooperHandle, LooperSettings,
+};
 use crate::{
 	project::{Project, SoundId},
 	stereo_sample::StereoSample,
 };
 use bimap::BiMap;
 use generational_arena::{Arena, Index};
-use instance::Instance;
+use looper::Looper;
 use metronome::Metronome;
 use ringbuf::{Consumer, Producer};
+use std::collections::HashMap;
 
 pub enum Command {
 	PlaySound(SoundId, InstanceHandle, InstanceSettings),
 	SetInstanceVolume(InstanceHandle, f32),
 	SetInstancePitch(InstanceHandle, f32),
+	LoopSound(SoundId, LooperHandle, LooperSettings),
 	StartMetronome,
+}
+
+struct Instance {
+	sound_id: SoundId,
+	position: f32,
+	volume: f32,
+	pitch: f32,
 }
 
 pub struct Backend {
@@ -24,6 +35,7 @@ pub struct Backend {
 	project: Project,
 	instances: Arena<Instance>,
 	instance_handles: BiMap<InstanceHandle, Index>,
+	loopers: HashMap<LooperHandle, Looper>,
 	command_consumer: Consumer<Command>,
 	event_producer: Producer<Event>,
 	metronome: Metronome,
@@ -43,6 +55,7 @@ impl Backend {
 			project,
 			instances: Arena::with_capacity(settings.num_instances),
 			instance_handles: BiMap::with_capacity(settings.num_instances),
+			loopers: HashMap::new(),
 			command_consumer,
 			event_producer,
 			metronome: Metronome::new(settings.tempo),
@@ -56,11 +69,19 @@ impl Backend {
 		instance_handle: Option<InstanceHandle>,
 		settings: InstanceSettings,
 	) {
-		if self.instances.len() < self.instances.capacity() {
-			let index = self.instances.insert(Instance::new(sound_id, settings));
-			if let Some(handle) = instance_handle {
-				self.instance_handles.insert(handle, index);
-			}
+		if self.instances.len() >= self.instances.capacity() {
+			return;
+		}
+		let sound = self.project.get_sound(sound_id);
+		let tempo = sound.tempo.unwrap_or(self.metronome.tempo);
+		let index = self.instances.insert(Instance {
+			sound_id: sound_id,
+			position: settings.position.in_seconds(tempo),
+			volume: settings.volume,
+			pitch: settings.pitch,
+		});
+		if let Some(handle) = instance_handle {
+			self.instance_handles.insert(handle, index);
 		}
 	}
 
@@ -88,6 +109,20 @@ impl Backend {
 		}
 	}
 
+	fn loop_sound(
+		&mut self,
+		sound_id: SoundId,
+		looper_handle: LooperHandle,
+		settings: LooperSettings,
+	) {
+		let sound = self.project.get_sound(sound_id);
+		let start = settings.start.unwrap_or(sound.default_loop_start);
+		let end = settings.end.unwrap_or(sound.default_loop_end);
+		self.loopers
+			.insert(looper_handle, Looper::new(sound_id, start, end));
+		self.play_sound(sound_id, None, InstanceSettings::default());
+	}
+
 	pub fn process_commands(&mut self) {
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
@@ -100,8 +135,31 @@ impl Backend {
 				Command::SetInstancePitch(instance_handle, pitch) => {
 					self.set_instance_pitch(instance_handle, pitch)
 				}
+				Command::LoopSound(sound_id, looper_handle, settings) => {
+					self.loop_sound(sound_id, looper_handle, settings)
+				}
 				Command::StartMetronome => self.metronome.start(),
 			}
+		}
+	}
+
+	pub fn update_loopers(&mut self) {
+		let mut sounds_to_play = vec![];
+		for (_, looper) in &mut self.loopers {
+			let sound = self.project.get_sound(looper.sound_id);
+			if looper.update(self.dt, sound.tempo.unwrap_or(self.metronome.tempo)) {
+				sounds_to_play.push((looper.sound_id, looper.start));
+			}
+		}
+		for (sound_id, start_point) in sounds_to_play {
+			self.play_sound(
+				sound_id,
+				None,
+				InstanceSettings {
+					position: start_point,
+					..Default::default()
+				},
+			);
 		}
 	}
 
@@ -122,6 +180,7 @@ impl Backend {
 
 	pub fn process(&mut self) -> StereoSample {
 		self.process_commands();
+		self.update_loopers();
 		self.update_metronome();
 		let mut out = StereoSample::from_mono(0.0);
 		let mut instance_indices_to_remove = vec![];

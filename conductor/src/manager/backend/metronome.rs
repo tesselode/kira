@@ -5,7 +5,7 @@ enum MetronomeState {
 }
 
 pub struct Metronome {
-	tempo: f32,
+	pub tempo: f32,
 	state: MetronomeState,
 	position: f32,
 	previous_position: f32,

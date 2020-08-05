@@ -1,6 +1,7 @@
 use conductor::{
-	manager::{AudioManager, AudioManagerSettings, InstanceHandle, InstanceSettings},
+	manager::{AudioManager, AudioManagerSettings, LooperSettings},
 	project::{Project, SoundId, SoundSettings},
+	time::Time,
 };
 use ggez::{
 	event::{KeyCode, KeyMods},
@@ -11,20 +12,25 @@ use std::error::Error;
 struct MainState {
 	audio_manager: AudioManager,
 	sound_id: SoundId,
-	instance_handle: Option<InstanceHandle>,
 }
 
 impl MainState {
 	pub fn new() -> Result<Self, Box<dyn Error>> {
 		let mut project = Project::new();
 		let sound_id = project.load_sound(
-			&std::env::current_dir().unwrap().join("assets/cymbal.ogg"),
-			SoundSettings::default(),
+			&std::env::current_dir()
+				.unwrap()
+				.join("assets/test_loop.ogg"),
+			SoundSettings {
+				tempo: Some(128.0),
+				default_loop_start: Some(Time::Beats(2.0)),
+				default_loop_end: Some(Time::Beats(4.0)),
+				..Default::default()
+			},
 		)?;
 		Ok(Self {
 			audio_manager: AudioManager::new(project, AudioManagerSettings::default())?,
 			sound_id,
-			instance_handle: None,
 		})
 	}
 }
@@ -43,18 +49,9 @@ impl ggez::event::EventHandler for MainState {
 	) {
 		match keycode {
 			KeyCode::Space => {
-				self.instance_handle = Some(
-					self.audio_manager
-						.play_sound(self.sound_id, InstanceSettings::default())
-						.unwrap(),
-				);
-			}
-			KeyCode::P => {
-				if let Some(instance_handle) = self.instance_handle {
-					self.audio_manager
-						.set_instance_volume(instance_handle, 0.5)
-						.unwrap();
-				}
+				self.audio_manager
+					.loop_sound(self.sound_id, LooperSettings::default())
+					.unwrap();
 			}
 			_ => {}
 		}
