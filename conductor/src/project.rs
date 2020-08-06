@@ -8,7 +8,7 @@ pub struct SoundSettings {
 	pub default_loop_end: Option<Time>,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct SoundId {
 	index: usize,
 }

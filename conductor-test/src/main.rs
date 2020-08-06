@@ -1,6 +1,7 @@
 use conductor::{
-	manager::{AudioManager, AudioManagerSettings, LooperSettings},
+	manager::{AudioManager, AudioManagerSettings, InstanceSettings, LooperSettings},
 	project::{Project, SoundId, SoundSettings},
+	sequence::Sequence,
 	time::Time,
 };
 use ggez::{
@@ -11,26 +12,40 @@ use std::error::Error;
 
 struct MainState {
 	audio_manager: AudioManager,
-	sound_id: SoundId,
+	test_loop_id: SoundId,
+	cymbal_id: SoundId,
 }
 
 impl MainState {
 	pub fn new() -> Result<Self, Box<dyn Error>> {
 		let mut project = Project::new();
-		let sound_id = project.load_sound(
+		let test_loop_id = project.load_sound(
 			&std::env::current_dir()
 				.unwrap()
 				.join("assets/test_loop.ogg"),
 			SoundSettings {
 				tempo: Some(128.0),
-				default_loop_start: Some(Time::Beats(2.0)),
 				default_loop_end: Some(Time::Beats(4.0)),
 				..Default::default()
 			},
 		)?;
+		let cymbal_id = project.load_sound(
+			&std::env::current_dir().unwrap().join("assets/cymbal.ogg"),
+			SoundSettings::default(),
+		)?;
+		let mut audio_manager = AudioManager::new(
+			project,
+			AudioManagerSettings {
+				tempo: 128.0,
+				..Default::default()
+			},
+		)?;
+		audio_manager.start_metronome();
+		audio_manager.loop_sound(test_loop_id, LooperSettings::default())?;
 		Ok(Self {
-			audio_manager: AudioManager::new(project, AudioManagerSettings::default())?,
-			sound_id,
+			audio_manager,
+			test_loop_id,
+			cymbal_id,
 		})
 	}
 }
@@ -50,7 +65,13 @@ impl ggez::event::EventHandler for MainState {
 		match keycode {
 			KeyCode::Space => {
 				self.audio_manager
-					.loop_sound(self.sound_id, LooperSettings::default())
+					.start_sequence(
+						Sequence::new()
+							.on_interval(0.5)
+							.play_sound(self.cymbal_id, InstanceSettings::default())
+							.wait(Time::Beats(0.25))
+							.play_sound(self.cymbal_id, InstanceSettings::default()),
+					)
 					.unwrap();
 			}
 			_ => {}

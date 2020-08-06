@@ -3,9 +3,11 @@ mod metronome;
 
 use super::{
 	AudioManagerSettings, Event, InstanceHandle, InstanceSettings, LooperHandle, LooperSettings,
+	SequenceHandle,
 };
 use crate::{
 	project::{Project, SoundId},
+	sequence::{Sequence, SequenceCommand},
 	stereo_sample::StereoSample,
 };
 use bimap::BiMap;
@@ -21,6 +23,7 @@ pub enum Command {
 	SetInstancePitch(InstanceHandle, f32),
 	LoopSound(SoundId, LooperHandle, LooperSettings),
 	StartMetronome,
+	StartSequence(Sequence, SequenceHandle),
 }
 
 struct Instance {
@@ -40,6 +43,7 @@ pub struct Backend {
 	event_producer: Producer<Event>,
 	metronome: Metronome,
 	metronome_event_intervals: Vec<f32>,
+	sequences: HashMap<SequenceHandle, Sequence>,
 }
 
 impl Backend {
@@ -60,6 +64,7 @@ impl Backend {
 			event_producer,
 			metronome: Metronome::new(settings.tempo),
 			metronome_event_intervals: settings.metronome_event_intervals,
+			sequences: HashMap::new(),
 		}
 	}
 
@@ -123,6 +128,10 @@ impl Backend {
 		self.play_sound(sound_id, None, InstanceSettings::default());
 	}
 
+	fn start_sequence(&mut self, sequence: Sequence, sequence_handle: SequenceHandle) {
+		self.sequences.insert(sequence_handle, sequence);
+	}
+
 	pub fn process_commands(&mut self) {
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
@@ -139,6 +148,9 @@ impl Backend {
 					self.loop_sound(sound_id, looper_handle, settings)
 				}
 				Command::StartMetronome => self.metronome.start(),
+				Command::StartSequence(sequence, sequence_handle) => {
+					self.start_sequence(sequence, sequence_handle)
+				}
 			}
 		}
 	}
@@ -178,10 +190,50 @@ impl Backend {
 		}
 	}
 
+	pub fn update_sequences(&mut self) {
+		for (_, sequence) in &mut self.sequences {
+			while let Some(command) = sequence.commands.first() {
+				match command {
+					SequenceCommand::OnInterval(interval) => {
+						if !self.metronome.interval_passed(*interval) {
+							break;
+						}
+					}
+					SequenceCommand::Wait(time) => {
+						let time = time.in_seconds(self.metronome.tempo);
+						if let Some(wait_timer) = sequence.wait_timer.as_mut() {
+							*wait_timer -= self.dt / time;
+							if *wait_timer > 0.0 {
+								break;
+							}
+						}
+					}
+					SequenceCommand::PlaySound(sound_id, settings) => {
+						if self.instances.len() < self.instances.capacity() {
+							let sound = self.project.get_sound(*sound_id);
+							let tempo = sound.tempo.unwrap_or(self.metronome.tempo);
+							self.instances.insert(Instance {
+								sound_id: *sound_id,
+								position: settings.position.in_seconds(tempo),
+								volume: settings.volume,
+								pitch: settings.pitch,
+							});
+						}
+					}
+					SequenceCommand::LoopSound(sound_id, settings) => {
+						unimplemented!();
+					}
+				}
+				sequence.goto_next();
+			}
+		}
+	}
+
 	pub fn process(&mut self) -> StereoSample {
 		self.process_commands();
 		self.update_loopers();
 		self.update_metronome();
+		self.update_sequences();
 		let mut out = StereoSample::from_mono(0.0);
 		let mut instance_indices_to_remove = vec![];
 		for (index, instance) in &mut self.instances {

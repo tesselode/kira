@@ -3,6 +3,7 @@ mod backend;
 use crate::{
 	error::ConductorError,
 	project::{Project, SoundId},
+	sequence::Sequence,
 	time::Time,
 };
 use backend::{Backend, Command};
@@ -21,6 +22,7 @@ pub enum Event {
 	MetronomeInterval(f32),
 }
 
+#[derive(Debug)]
 pub struct InstanceSettings {
 	pub position: Time,
 	pub volume: f32,
@@ -42,7 +44,7 @@ pub struct InstanceHandle {
 	index: usize,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct LooperSettings {
 	start: Option<Time>,
 	end: Option<Time>,
@@ -53,9 +55,15 @@ pub struct LooperHandle {
 	index: usize,
 }
 
+#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
+pub struct SequenceHandle {
+	index: usize,
+}
+
 pub struct AudioManagerSettings {
 	pub num_instances: usize,
 	pub num_loopers: usize,
+	pub num_sequences: usize,
 	pub tempo: f32,
 	pub metronome_event_intervals: Vec<f32>,
 }
@@ -65,6 +73,7 @@ impl Default for AudioManagerSettings {
 		Self {
 			num_instances: 100,
 			num_loopers: 50,
+			num_sequences: 50,
 			tempo: 120.0,
 			metronome_event_intervals: vec![1.0],
 		}
@@ -77,6 +86,7 @@ pub struct AudioManager {
 	_stream: Stream,
 	next_instance_handle_index: usize,
 	next_looper_handle_index: usize,
+	next_sequence_handle_index: usize,
 }
 
 impl AudioManager {
@@ -118,6 +128,7 @@ impl AudioManager {
 			_stream: stream,
 			next_instance_handle_index: 0,
 			next_looper_handle_index: 0,
+			next_sequence_handle_index: 0,
 		})
 	}
 
@@ -189,6 +200,20 @@ impl AudioManager {
 		match self.command_producer.push(Command::StartMetronome) {
 			Ok(_) => {}
 			Err(_) => {}
+		}
+	}
+
+	pub fn start_sequence(&mut self, sequence: Sequence) -> Result<SequenceHandle, ConductorError> {
+		let handle = SequenceHandle {
+			index: self.next_sequence_handle_index,
+		};
+		self.next_sequence_handle_index += 1;
+		match self
+			.command_producer
+			.push(Command::StartSequence(sequence, handle))
+		{
+			Ok(_) => Ok(handle),
+			Err(_) => Err(ConductorError::SendCommand),
 		}
 	}
 
