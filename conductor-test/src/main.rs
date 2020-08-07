@@ -9,9 +9,6 @@ struct MainState {}
 
 impl MainState {
 	pub fn new() -> Result<Self, Box<dyn Error>> {
-		let id_1 = Id::<usize>::new();
-		let id_2 = id_1;
-		assert_eq!(id_1, id_2);
 		Ok(Self {})
 	}
 }
