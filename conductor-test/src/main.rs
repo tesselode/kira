@@ -1,14 +1,20 @@
+use conductor::{manager::AudioManager, project::Project};
 use ggez::{
 	event::{KeyCode, KeyMods},
 	graphics, Context, GameResult,
 };
 use std::error::Error;
 
-struct MainState {}
+struct MainState {
+	audio_manager: AudioManager,
+}
 
 impl MainState {
 	pub fn new() -> Result<Self, Box<dyn Error>> {
-		Ok(Self {})
+		let project = Project::new();
+		Ok(Self {
+			audio_manager: AudioManager::new(project)?,
+		})
 	}
 }
 
