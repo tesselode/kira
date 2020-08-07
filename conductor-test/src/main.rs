@@ -1,4 +1,7 @@
-use conductor::{manager::AudioManager, project::Project};
+use conductor::{
+	manager::{AudioManager, AudioManagerSettings},
+	project::Project,
+};
 use ggez::{
 	event::{KeyCode, KeyMods},
 	graphics, Context, GameResult,
@@ -13,7 +16,7 @@ impl MainState {
 	pub fn new() -> Result<Self, Box<dyn Error>> {
 		let project = Project::new();
 		Ok(Self {
-			audio_manager: AudioManager::new(project)?,
+			audio_manager: AudioManager::new(project, AudioManagerSettings::default())?,
 		})
 	}
 }
@@ -30,6 +33,7 @@ impl ggez::event::EventHandler for MainState {
 		_keymods: KeyMods,
 		_repeat: bool,
 	) {
+		self.audio_manager.test().unwrap();
 	}
 
 	fn draw(&mut self, ctx: &mut Context) -> GameResult {
