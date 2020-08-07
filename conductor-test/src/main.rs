@@ -1,4 +1,3 @@
-use conductor::id::Id;
 use ggez::{
 	event::{KeyCode, KeyMods},
 	graphics, Context, GameResult,

@@ -1,22 +1,15 @@
-use std::{
-	marker::PhantomData,
-	sync::atomic::{AtomicUsize, Ordering},
-};
+use std::sync::atomic::{AtomicUsize, Ordering};
 
-static NEXT_INDEX: AtomicUsize = AtomicUsize::new(0);
+static NEXT_SOUND_INDEX: AtomicUsize = AtomicUsize::new(0);
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub struct Id<T> {
+pub struct SoundId {
 	index: usize,
-	phantom_data: PhantomData<T>,
 }
 
-impl<T> Id<T> {
-	pub(crate) fn new() -> Self {
-		let index = NEXT_INDEX.fetch_add(1, Ordering::Relaxed);
-		Self {
-			index,
-			phantom_data: PhantomData,
-		}
+impl SoundId {
+	pub fn new() -> Self {
+		let index = NEXT_SOUND_INDEX.fetch_add(1, Ordering::Relaxed);
+		Self { index }
 	}
 }
