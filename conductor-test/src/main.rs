@@ -1,5 +1,6 @@
 use conductor::{
-	manager::{AudioManager, AudioManagerSettings},
+	id::SoundId,
+	manager::{AudioManager, AudioManagerSettings, InstanceSettings},
 	project::Project,
 };
 use ggez::{
@@ -10,13 +11,17 @@ use std::error::Error;
 
 struct MainState {
 	audio_manager: AudioManager,
+	sound_id: SoundId,
 }
 
 impl MainState {
 	pub fn new() -> Result<Self, Box<dyn Error>> {
-		let project = Project::new();
+		let mut project = Project::new();
+		let sound_id =
+			project.load_sound(&std::env::current_dir().unwrap().join("assets/hhclosed.ogg"))?;
 		Ok(Self {
 			audio_manager: AudioManager::new(project, AudioManagerSettings::default())?,
+			sound_id,
 		})
 	}
 }
@@ -29,11 +34,24 @@ impl ggez::event::EventHandler for MainState {
 	fn key_down_event(
 		&mut self,
 		_ctx: &mut Context,
-		_keycode: KeyCode,
+		keycode: KeyCode,
 		_keymods: KeyMods,
 		_repeat: bool,
 	) {
-		self.audio_manager.test().unwrap();
+		match keycode {
+			KeyCode::Space => {
+				self.audio_manager
+					.play_sound(
+						self.sound_id,
+						InstanceSettings {
+							volume: 0.25,
+							pitch: 0.5,
+						},
+					)
+					.unwrap();
+			}
+			_ => {}
+		}
 	}
 
 	fn draw(&mut self, ctx: &mut Context) -> GameResult {

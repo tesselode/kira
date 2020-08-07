@@ -330,6 +330,7 @@ name = "conductor"
 version = "0.1.0"
 dependencies = [
  "cpal 0.12.1",
+ "indexmap",
  "lewton 0.10.1",
  "ringbuf",
 ]
@@ -902,6 +903,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "hashbrown"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "34f595585f103464d8d2f6e9864682d74c1601fed5e07d62b1c9058dba8246fb"
+dependencies = [
+ "autocfg 1.0.0",
+]
+
+[[package]]
 name = "hermit-abi"
 version = "0.1.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -930,6 +940,16 @@ dependencies = [
  "num-traits 0.2.12",
  "png",
  "tiff",
+]
+
+[[package]]
+name = "indexmap"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5b88cd59ee5f71fea89a62248fc8f387d44400cefe05ef548466d61ced9029a7"
+dependencies = [
+ "autocfg 1.0.0",
+ "hashbrown",
 ]
 
 [[package]]

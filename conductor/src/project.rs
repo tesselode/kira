@@ -19,7 +19,7 @@ impl Project {
 		Ok(id)
 	}
 
-	pub(crate) fn get_sound(&self, id: &SoundId) -> Option<&Sound> {
-		self.sounds.get(id)
+	pub(crate) fn get_sound(&self, id: &SoundId) -> &Sound {
+		self.sounds.get(id).unwrap()
 	}
 }

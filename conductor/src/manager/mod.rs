@@ -1,6 +1,10 @@
 mod backend;
 
-use crate::{error::ConductorError, project::Project};
+use crate::{
+	error::ConductorError,
+	id::{InstanceId, SoundId},
+	project::Project,
+};
 use backend::{Backend, Command};
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
@@ -9,13 +13,31 @@ use cpal::{
 use ringbuf::{Producer, RingBuffer};
 use std::error::Error;
 
+pub struct InstanceSettings {
+	pub volume: f32,
+	pub pitch: f32,
+}
+
+impl Default for InstanceSettings {
+	fn default() -> Self {
+		Self {
+			volume: 1.0,
+			pitch: 1.0,
+		}
+	}
+}
+
 pub struct AudioManagerSettings {
 	pub num_commands: usize,
+	pub num_instances: usize,
 }
 
 impl Default for AudioManagerSettings {
 	fn default() -> Self {
-		Self { num_commands: 100 }
+		Self {
+			num_commands: 100,
+			num_instances: 100,
+		}
 	}
 }
 
@@ -37,7 +59,7 @@ impl AudioManager {
 		let sample_rate = config.sample_rate.0;
 		let channels = config.channels;
 		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
-		let mut backend = Backend::new(sample_rate, project, command_consumer);
+		let mut backend = Backend::new(sample_rate, project, command_consumer, settings);
 		let stream = device.build_output_stream(
 			&config,
 			move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
@@ -56,9 +78,17 @@ impl AudioManager {
 		})
 	}
 
-	pub fn test(&mut self) -> Result<(), ConductorError> {
-		match self.command_producer.push(Command::Test) {
-			Ok(_) => Ok(()),
+	pub fn play_sound(
+		&mut self,
+		sound_id: SoundId,
+		settings: InstanceSettings,
+	) -> Result<InstanceId, ConductorError> {
+		let instance_id = InstanceId::new();
+		match self
+			.command_producer
+			.push(Command::PlaySound(sound_id, instance_id, settings))
+		{
+			Ok(_) => Ok(instance_id),
 			Err(_) => Err(ConductorError::SendCommand),
 		}
 	}
