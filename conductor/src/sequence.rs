@@ -96,7 +96,7 @@ impl Sequence {
 			return;
 		}
 		if let Some(index) = self.current_command_index {
-			while let Some(command) = self.commands.get(index) {
+			if let Some(command) = self.commands.get(index) {
 				match command {
 					SequenceCommand::Wait(time) => {
 						let time = time.in_seconds(metronome.tempo);
@@ -104,16 +104,12 @@ impl Sequence {
 							*wait_timer -= dt / time;
 							if *wait_timer <= 0.0 {
 								self.go_to_next_command(command_queue);
-							} else {
-								break;
 							}
 						}
 					}
 					SequenceCommand::WaitForInterval(interval) => {
 						if metronome.interval_passed(*interval) {
 							self.go_to_next_command(command_queue);
-						} else {
-							break;
 						}
 					}
 					_ => {}
