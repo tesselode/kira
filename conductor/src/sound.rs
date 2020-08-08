@@ -1,8 +1,27 @@
 use crate::stereo_sample::StereoSample;
 use lewton::{inside_ogg::OggStreamReader, samples::Samples};
-use std::{error::Error, fs::File, path::Path};
+use std::{
+	error::Error,
+	fs::File,
+	path::Path,
+	sync::atomic::{AtomicUsize, Ordering},
+};
 
-pub struct Sound {
+static NEXT_SOUND_INDEX: AtomicUsize = AtomicUsize::new(0);
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct SoundId {
+	index: usize,
+}
+
+impl SoundId {
+	pub fn new() -> Self {
+		let index = NEXT_SOUND_INDEX.fetch_add(1, Ordering::Relaxed);
+		Self { index }
+	}
+}
+
+pub(crate) struct Sound {
 	sample_rate: u32,
 	samples: Vec<StereoSample>,
 	duration: f32,

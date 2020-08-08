@@ -1,31 +1,13 @@
-use super::{AudioManagerSettings, Event, InstanceSettings};
+use super::{AudioManagerSettings, Event};
 use crate::{
 	command::Command,
-	id::{InstanceId, SequenceId, SoundId},
+	instance::{Instance, InstanceId},
 	project::Project,
-	sequence::Sequence,
+	sequence::{Sequence, SequenceId},
 	stereo_sample::StereoSample,
 };
 use indexmap::IndexMap;
 use ringbuf::{Consumer, Producer};
-
-struct Instance {
-	sound_id: SoundId,
-	volume: f32,
-	pitch: f32,
-	position: f32,
-}
-
-impl Instance {
-	fn new(sound_id: SoundId, settings: InstanceSettings) -> Self {
-		Self {
-			sound_id,
-			volume: settings.volume,
-			pitch: settings.pitch,
-			position: 0.0,
-		}
-	}
-}
 
 pub struct Backend {
 	dt: f32,

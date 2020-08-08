@@ -1,8 +1,10 @@
 use conductor::{
-	id::{MetronomeId, SoundId},
-	manager::{AudioManager, AudioManagerSettings, InstanceSettings},
-	project::{MetronomeSettings, Project},
+	instance::InstanceSettings,
+	manager::{AudioManager, AudioManagerSettings},
+	metronome::{MetronomeId, MetronomeSettings},
+	project::Project,
 	sequence::Sequence,
+	sound::SoundId,
 	time::Time,
 };
 use ggez::{
@@ -11,6 +13,7 @@ use ggez::{
 };
 use std::error::Error;
 
+#[derive()]
 struct MainState {
 	audio_manager: AudioManager,
 	sound_id: SoundId,

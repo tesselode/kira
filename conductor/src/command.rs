@@ -1,7 +1,8 @@
 use crate::{
-	id::{InstanceId, MetronomeId, SequenceId, SoundId},
-	manager::InstanceSettings,
-	sequence::Sequence,
+	instance::{InstanceId, InstanceSettings},
+	metronome::MetronomeId,
+	sequence::{Sequence, SequenceId},
+	sound::SoundId,
 };
 
 #[derive(Debug, Clone)]

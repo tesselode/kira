@@ -1,10 +1,10 @@
 mod command;
 pub mod error;
-pub mod id;
+pub mod instance;
 pub mod manager;
-mod metronome;
+pub mod metronome;
 pub mod project;
 pub mod sequence;
-mod sound;
+pub mod sound;
 pub mod stereo_sample;
 pub mod time;

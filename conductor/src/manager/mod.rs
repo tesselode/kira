@@ -3,9 +3,11 @@ mod backend;
 use crate::{
 	command::Command,
 	error::ConductorError,
-	id::{InstanceId, MetronomeId, SequenceId, SoundId},
+	instance::{InstanceId, InstanceSettings},
+	metronome::MetronomeId,
 	project::Project,
-	sequence::Sequence,
+	sequence::{Sequence, SequenceId},
+	sound::SoundId,
 };
 use backend::Backend;
 use cpal::{
@@ -18,21 +20,6 @@ use std::error::Error;
 #[derive(Debug)]
 pub enum Event {
 	MetronomeIntervalPassed(MetronomeId, f32),
-}
-
-#[derive(Debug, Copy, Clone)]
-pub struct InstanceSettings {
-	pub volume: f32,
-	pub pitch: f32,
-}
-
-impl Default for InstanceSettings {
-	fn default() -> Self {
-		Self {
-			volume: 1.0,
-			pitch: 1.0,
-		}
-	}
 }
 
 pub struct AudioManagerSettings {

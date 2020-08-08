@@ -1,8 +1,8 @@
 use crate::{
 	command::Command,
-	id::{InstanceId, MetronomeId, SoundId},
-	manager::InstanceSettings,
-	metronome::Metronome,
+	instance::{InstanceId, InstanceSettings},
+	metronome::{Metronome, MetronomeId},
+	sound::SoundId,
 	time::Time,
 };
 use std::{
@@ -20,6 +20,20 @@ pub struct SequenceInstanceHandle {
 impl SequenceInstanceHandle {
 	pub fn new() -> Self {
 		let index = NEXT_INSTANCE_HANDLE_INDEX.fetch_add(1, Ordering::Relaxed);
+		Self { index }
+	}
+}
+
+static NEXT_SEQUENCE_INDEX: AtomicUsize = AtomicUsize::new(0);
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct SequenceId {
+	index: usize,
+}
+
+impl SequenceId {
+	pub fn new() -> Self {
+		let index = NEXT_SEQUENCE_INDEX.fetch_add(1, Ordering::Relaxed);
 		Self { index }
 	}
 }
