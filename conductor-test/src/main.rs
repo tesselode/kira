@@ -2,6 +2,7 @@ use conductor::{
 	id::{MetronomeId, SoundId},
 	manager::{AudioManager, AudioManagerSettings, InstanceSettings},
 	project::{MetronomeSettings, Project},
+	sequence::Sequence,
 };
 use ggez::{
 	event::{KeyCode, KeyMods},
@@ -26,8 +27,13 @@ impl MainState {
 				interval_events_to_emit: vec![0.25, 0.5, 1.0],
 			},
 		);
+		let mut audio_manager = AudioManager::new(project, AudioManagerSettings::default())?;
+		let mut sequence = Sequence::new(metronome_id);
+		sequence.on_interval(1.0);
+		sequence.play_sound(sound_id, InstanceSettings::default());
+		audio_manager.start_sequence(sequence).unwrap();
 		Ok(Self {
-			audio_manager: AudioManager::new(project, AudioManagerSettings::default())?,
+			audio_manager,
 			sound_id,
 			metronome_id,
 		})

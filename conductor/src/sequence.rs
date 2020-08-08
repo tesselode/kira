@@ -1,12 +1,12 @@
 use crate::{
 	command::Command,
-	id::{InstanceId, SoundId},
+	id::{InstanceId, MetronomeId, SoundId},
 	manager::InstanceSettings,
 	metronome::Metronome,
 	time::Time,
 };
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Clone)]
 enum SequenceCommand {
 	Wait(Time),
 	WaitForInterval(f32),
@@ -14,7 +14,9 @@ enum SequenceCommand {
 	Do(Command),
 }
 
+#[derive(Debug, Clone)]
 pub struct Sequence {
+	pub metronome_id: MetronomeId,
 	commands: Vec<SequenceCommand>,
 	playing: bool,
 	current_command_index: Option<usize>,
@@ -22,10 +24,11 @@ pub struct Sequence {
 }
 
 impl Sequence {
-	pub fn new() -> Self {
+	pub fn new(metronome_id: MetronomeId) -> Self {
 		Self {
+			metronome_id,
 			commands: vec![],
-			playing: true,
+			playing: false,
 			current_command_index: None,
 			wait_timer: None,
 		}
@@ -53,7 +56,7 @@ impl Sequence {
 	fn go_to_command(&mut self, index: usize, command_queue: &mut Vec<Command>) {
 		self.current_command_index = Some(index);
 		if let Some(command) = self.commands.get(index) {
-			let command = *command;
+			let command = command.clone();
 			if let SequenceCommand::Wait(_) = command {
 				self.wait_timer = Some(1.0);
 			} else {
@@ -78,6 +81,11 @@ impl Sequence {
 		}
 	}
 
+	pub(crate) fn start(&mut self, command_queue: &mut Vec<Command>) {
+		self.playing = true;
+		self.go_to_command(0, command_queue);
+	}
+
 	pub(crate) fn update(
 		&mut self,
 		dt: f32,
@@ -96,12 +104,16 @@ impl Sequence {
 							*wait_timer -= dt / time;
 							if *wait_timer <= 0.0 {
 								self.go_to_next_command(command_queue);
+							} else {
+								break;
 							}
 						}
 					}
 					SequenceCommand::WaitForInterval(interval) => {
 						if metronome.interval_passed(*interval) {
 							self.go_to_next_command(command_queue);
+						} else {
+							break;
 						}
 					}
 					_ => {}

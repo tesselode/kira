@@ -1,8 +1,9 @@
 use super::{AudioManagerSettings, Event, InstanceSettings};
 use crate::{
 	command::Command,
-	id::{InstanceId, SoundId},
+	id::{InstanceId, SequenceId, SoundId},
 	project::Project,
+	sequence::Sequence,
 	stereo_sample::StereoSample,
 };
 use indexmap::IndexMap;
@@ -30,9 +31,12 @@ pub struct Backend {
 	dt: f32,
 	project: Project,
 	instances: IndexMap<InstanceId, Instance>,
+	sequences: IndexMap<SequenceId, Sequence>,
 	command_consumer: Consumer<Command>,
 	event_producer: Producer<Event>,
+
 	metronome_interval_event_collector: Vec<f32>,
+	sequence_command_queue: Vec<Command>,
 	instances_to_remove: Vec<InstanceId>,
 }
 
@@ -48,30 +52,40 @@ impl Backend {
 			dt: 1.0 / sample_rate as f32,
 			project,
 			instances: IndexMap::with_capacity(settings.num_instances),
+			sequences: IndexMap::with_capacity(settings.num_sequences),
 			command_consumer,
 			event_producer,
 			metronome_interval_event_collector: Vec::with_capacity(settings.num_events),
+			sequence_command_queue: Vec::with_capacity(settings.num_commands),
 			instances_to_remove: Vec::with_capacity(settings.num_instances),
+		}
+	}
+
+	fn run_command(&mut self, command: Command) {
+		match command {
+			Command::PlaySound(sound_id, instance_id, settings) => {
+				self.instances
+					.insert(instance_id, Instance::new(sound_id, settings));
+			}
+			Command::StartMetronome(id) => {
+				self.project.metronomes.get_mut(&id).unwrap().start();
+			}
+			Command::PauseMetronome(id) => {
+				self.project.metronomes.get_mut(&id).unwrap().pause();
+			}
+			Command::StopMetronome(id) => {
+				self.project.metronomes.get_mut(&id).unwrap().stop();
+			}
+			Command::StartSequence(id, mut sequence) => {
+				sequence.start(&mut self.sequence_command_queue);
+				self.sequences.insert(id, sequence);
+			}
 		}
 	}
 
 	pub fn process_commands(&mut self) {
 		while let Some(command) = self.command_consumer.pop() {
-			match command {
-				Command::PlaySound(sound_id, instance_id, settings) => {
-					self.instances
-						.insert(instance_id, Instance::new(sound_id, settings));
-				}
-				Command::StartMetronome(id) => {
-					self.project.metronomes.get_mut(&id).unwrap().start();
-				}
-				Command::PauseMetronome(id) => {
-					self.project.metronomes.get_mut(&id).unwrap().pause();
-				}
-				Command::StopMetronome(id) => {
-					self.project.metronomes.get_mut(&id).unwrap().stop();
-				}
-			}
+			self.run_command(command);
 		}
 	}
 
@@ -90,9 +104,22 @@ impl Backend {
 		}
 	}
 
+	pub fn update_sequences(&mut self) {
+		for (_, sequence) in &mut self.sequences {
+			let metronome = self.project.metronomes.get(&sequence.metronome_id).unwrap();
+			sequence.update(self.dt, &metronome, &mut self.sequence_command_queue);
+		}
+		for i in 0..self.sequence_command_queue.len() {
+			let command = self.sequence_command_queue.get(i).unwrap().clone();
+			self.run_command(command);
+		}
+		self.sequence_command_queue.clear();
+	}
+
 	pub fn process(&mut self) -> StereoSample {
 		self.process_commands();
 		self.update_metronomes();
+		self.update_sequences();
 		let mut out = StereoSample::from_mono(0.0);
 		for (instance_id, instance) in &mut self.instances {
 			let sound = self.project.sounds.get(&instance.sound_id).unwrap();

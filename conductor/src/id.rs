@@ -41,3 +41,17 @@ impl MetronomeId {
 		Self { index }
 	}
 }
+
+static NEXT_SEQUENCE_INDEX: AtomicUsize = AtomicUsize::new(0);
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct SequenceId {
+	index: usize,
+}
+
+impl SequenceId {
+	pub fn new() -> Self {
+		let index = NEXT_SEQUENCE_INDEX.fetch_add(1, Ordering::Relaxed);
+		Self { index }
+	}
+}

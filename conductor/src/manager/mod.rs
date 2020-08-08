@@ -3,8 +3,9 @@ mod backend;
 use crate::{
 	command::Command,
 	error::ConductorError,
-	id::{InstanceId, MetronomeId, SoundId},
+	id::{InstanceId, MetronomeId, SequenceId, SoundId},
 	project::Project,
+	sequence::Sequence,
 };
 use backend::Backend;
 use cpal::{
@@ -19,7 +20,7 @@ pub enum Event {
 	MetronomeIntervalPassed(MetronomeId, f32),
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct InstanceSettings {
 	pub volume: f32,
 	pub pitch: f32,
@@ -38,6 +39,7 @@ pub struct AudioManagerSettings {
 	pub num_commands: usize,
 	pub num_events: usize,
 	pub num_instances: usize,
+	pub num_sequences: usize,
 }
 
 impl Default for AudioManagerSettings {
@@ -46,6 +48,7 @@ impl Default for AudioManagerSettings {
 			num_commands: 100,
 			num_events: 100,
 			num_instances: 100,
+			num_sequences: 50,
 		}
 	}
 }
@@ -131,6 +134,17 @@ impl AudioManager {
 		let instance_id = InstanceId::new();
 		match self.command_producer.push(Command::StopMetronome(id)) {
 			Ok(_) => Ok(instance_id),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
+	pub fn start_sequence(&mut self, sequence: Sequence) -> Result<SequenceId, ConductorError> {
+		let id = SequenceId::new();
+		match self
+			.command_producer
+			.push(Command::StartSequence(id, sequence))
+		{
+			Ok(_) => Ok(id),
 			Err(_) => Err(ConductorError::SendCommand),
 		}
 	}
