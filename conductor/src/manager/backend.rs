@@ -37,6 +37,7 @@ pub struct Backend {
 
 	metronome_interval_event_collector: Vec<f32>,
 	sequence_command_queue: Vec<Command>,
+	sequences_to_remove: Vec<SequenceId>,
 	instances_to_remove: Vec<InstanceId>,
 }
 
@@ -57,6 +58,7 @@ impl Backend {
 			event_producer,
 			metronome_interval_event_collector: Vec::with_capacity(settings.num_events),
 			sequence_command_queue: Vec::with_capacity(settings.num_commands),
+			sequences_to_remove: Vec::with_capacity(settings.num_sequences),
 			instances_to_remove: Vec::with_capacity(settings.num_instances),
 		}
 	}
@@ -105,9 +107,15 @@ impl Backend {
 	}
 
 	pub fn update_sequences(&mut self) {
-		for (_, sequence) in &mut self.sequences {
+		for (id, sequence) in &mut self.sequences {
 			let metronome = self.project.metronomes.get(&sequence.metronome_id).unwrap();
 			sequence.update(self.dt, &metronome, &mut self.sequence_command_queue);
+			if sequence.finished() {
+				self.sequences_to_remove.push(*id);
+			}
+		}
+		for id in self.sequences_to_remove.drain(..) {
+			self.sequences.remove(&id);
 		}
 		for i in 0..self.sequence_command_queue.len() {
 			let command = self.sequence_command_queue.get(i).unwrap().clone();

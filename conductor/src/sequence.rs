@@ -88,7 +88,7 @@ impl Sequence {
 	}
 
 	fn go_to_command(&mut self, index: usize, command_queue: &mut Vec<Command>) {
-		if index > self.commands.len() {
+		if index >= self.commands.len() {
 			self.state = SequenceState::Finished;
 			return;
 		}

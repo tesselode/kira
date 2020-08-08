@@ -36,6 +36,7 @@ impl MainState {
 		sequence.wait(Time::Beats(4.0));
 		sequence.go_to(0);
 		let mut audio_manager = AudioManager::new(project, AudioManagerSettings::default())?;
+		audio_manager.start_metronome(metronome_id).unwrap();
 		audio_manager.start_sequence(sequence).unwrap();
 		Ok(Self {
 			audio_manager,
