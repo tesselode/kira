@@ -1,14 +1,18 @@
+use crate::project::MetronomeSettings;
+
 pub struct Metronome {
 	tempo: f32,
+	settings: MetronomeSettings,
 	ticking: bool,
 	time: f32,
 	previous_time: f32,
 }
 
 impl Metronome {
-	pub fn new(tempo: f32) -> Self {
+	pub fn new(tempo: f32, settings: MetronomeSettings) -> Self {
 		Self {
 			tempo,
+			settings,
 			ticking: false,
 			time: 0.0,
 			previous_time: 0.0,
@@ -29,14 +33,16 @@ impl Metronome {
 		self.previous_time = 0.0;
 	}
 
-	pub fn update(&mut self, dt: f32) {
+	pub fn update(&mut self, dt: f32, interval_event_collector: &mut Vec<f32>) {
 		if !self.ticking {
 			return;
 		}
 		self.previous_time = self.time;
 		self.time += (self.tempo / 60.0) * dt;
-		if self.interval_passed(1.0) {
-			println!("beat");
+		for interval in &self.settings.interval_events_to_emit {
+			if self.interval_passed(*interval) {
+				interval_event_collector.push(*interval);
+			}
 		}
 	}
 

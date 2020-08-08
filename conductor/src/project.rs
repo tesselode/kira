@@ -5,6 +5,18 @@ use crate::{
 };
 use std::{collections::HashMap, error::Error, path::Path};
 
+pub struct MetronomeSettings {
+	pub interval_events_to_emit: Vec<f32>,
+}
+
+impl Default for MetronomeSettings {
+	fn default() -> Self {
+		Self {
+			interval_events_to_emit: vec![],
+		}
+	}
+}
+
 pub struct Project {
 	pub(crate) sounds: HashMap<SoundId, Sound>,
 	pub(crate) metronomes: HashMap<MetronomeId, Metronome>,
@@ -24,9 +36,9 @@ impl Project {
 		Ok(id)
 	}
 
-	pub fn create_metronome(&mut self, tempo: f32) -> MetronomeId {
+	pub fn create_metronome(&mut self, tempo: f32, settings: MetronomeSettings) -> MetronomeId {
 		let id = MetronomeId::new();
-		self.metronomes.insert(id, Metronome::new(tempo));
+		self.metronomes.insert(id, Metronome::new(tempo, settings));
 		id
 	}
 }

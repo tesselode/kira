@@ -1,7 +1,7 @@
 use conductor::{
 	id::{MetronomeId, SoundId},
 	manager::{AudioManager, AudioManagerSettings, InstanceSettings},
-	project::Project,
+	project::{MetronomeSettings, Project},
 };
 use ggez::{
 	event::{KeyCode, KeyMods},
@@ -20,7 +20,12 @@ impl MainState {
 		let mut project = Project::new();
 		let sound_id =
 			project.load_sound(&std::env::current_dir().unwrap().join("assets/hhclosed.ogg"))?;
-		let metronome_id = project.create_metronome(128.0);
+		let metronome_id = project.create_metronome(
+			128.0,
+			MetronomeSettings {
+				interval_events_to_emit: vec![0.25, 0.5, 1.0],
+			},
+		);
 		Ok(Self {
 			audio_manager: AudioManager::new(project, AudioManagerSettings::default())?,
 			sound_id,
@@ -31,6 +36,9 @@ impl MainState {
 
 impl ggez::event::EventHandler for MainState {
 	fn update(&mut self, _ctx: &mut Context) -> GameResult {
+		for event in self.audio_manager.events() {
+			println!("{:?}", event);
+		}
 		Ok(())
 	}
 
