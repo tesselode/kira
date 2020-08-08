@@ -1,5 +1,5 @@
 use conductor::{
-	id::SoundId,
+	id::{MetronomeId, SoundId},
 	manager::{AudioManager, AudioManagerSettings, InstanceSettings},
 	project::Project,
 };
@@ -12,6 +12,7 @@ use std::error::Error;
 struct MainState {
 	audio_manager: AudioManager,
 	sound_id: SoundId,
+	metronome_id: MetronomeId,
 }
 
 impl MainState {
@@ -19,9 +20,11 @@ impl MainState {
 		let mut project = Project::new();
 		let sound_id =
 			project.load_sound(&std::env::current_dir().unwrap().join("assets/hhclosed.ogg"))?;
+		let metronome_id = project.create_metronome(128.0);
 		Ok(Self {
 			audio_manager: AudioManager::new(project, AudioManagerSettings::default())?,
 			sound_id,
+			metronome_id,
 		})
 	}
 }
@@ -41,13 +44,7 @@ impl ggez::event::EventHandler for MainState {
 		match keycode {
 			KeyCode::Space => {
 				self.audio_manager
-					.play_sound(
-						self.sound_id,
-						InstanceSettings {
-							volume: 0.25,
-							pitch: 0.5,
-						},
-					)
+					.start_metronome(self.metronome_id)
 					.unwrap();
 			}
 			_ => {}

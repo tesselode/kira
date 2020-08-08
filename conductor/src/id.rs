@@ -27,3 +27,17 @@ impl InstanceId {
 		Self { index }
 	}
 }
+
+static NEXT_METRONOME_INDEX: AtomicUsize = AtomicUsize::new(0);
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct MetronomeId {
+	index: usize,
+}
+
+impl MetronomeId {
+	pub fn new() -> Self {
+		let index = NEXT_METRONOME_INDEX.fetch_add(1, Ordering::Relaxed);
+		Self { index }
+	}
+}

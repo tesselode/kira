@@ -2,7 +2,7 @@ mod backend;
 
 use crate::{
 	error::ConductorError,
-	id::{InstanceId, SoundId},
+	id::{InstanceId, MetronomeId, SoundId},
 	project::Project,
 };
 use backend::{Backend, Command};
@@ -88,6 +88,30 @@ impl AudioManager {
 			.command_producer
 			.push(Command::PlaySound(sound_id, instance_id, settings))
 		{
+			Ok(_) => Ok(instance_id),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
+	pub fn start_metronome(&mut self, id: MetronomeId) -> Result<InstanceId, ConductorError> {
+		let instance_id = InstanceId::new();
+		match self.command_producer.push(Command::StartMetronome(id)) {
+			Ok(_) => Ok(instance_id),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
+	pub fn pause_metronome(&mut self, id: MetronomeId) -> Result<InstanceId, ConductorError> {
+		let instance_id = InstanceId::new();
+		match self.command_producer.push(Command::PauseMetronome(id)) {
+			Ok(_) => Ok(instance_id),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
+	pub fn stop_metronome(&mut self, id: MetronomeId) -> Result<InstanceId, ConductorError> {
+		let instance_id = InstanceId::new();
+		match self.command_producer.push(Command::StopMetronome(id)) {
 			Ok(_) => Ok(instance_id),
 			Err(_) => Err(ConductorError::SendCommand),
 		}

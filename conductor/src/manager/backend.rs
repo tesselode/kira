@@ -1,6 +1,6 @@
 use super::{AudioManagerSettings, InstanceSettings};
 use crate::{
-	id::{InstanceId, SoundId},
+	id::{InstanceId, MetronomeId, SoundId},
 	project::Project,
 	stereo_sample::StereoSample,
 };
@@ -9,6 +9,9 @@ use ringbuf::Consumer;
 
 pub enum Command {
 	PlaySound(SoundId, InstanceId, InstanceSettings),
+	StartMetronome(MetronomeId),
+	PauseMetronome(MetronomeId),
+	StopMetronome(MetronomeId),
 }
 
 struct Instance {
@@ -60,15 +63,32 @@ impl Backend {
 					self.instances
 						.insert(instance_id, Instance::new(sound_id, settings));
 				}
+
+				Command::StartMetronome(id) => {
+					self.project.metronomes.get_mut(&id).unwrap().start();
+				}
+				Command::PauseMetronome(id) => {
+					self.project.metronomes.get_mut(&id).unwrap().pause();
+				}
+				Command::StopMetronome(id) => {
+					self.project.metronomes.get_mut(&id).unwrap().stop();
+				}
 			}
+		}
+	}
+
+	pub fn update_metronomes(&mut self) {
+		for (_, metronome) in &mut self.project.metronomes {
+			metronome.update(self.dt);
 		}
 	}
 
 	pub fn process(&mut self) -> StereoSample {
 		self.process_commands();
+		self.update_metronomes();
 		let mut out = StereoSample::from_mono(0.0);
 		for (instance_id, instance) in &mut self.instances {
-			let sound = self.project.get_sound(&instance.sound_id);
+			let sound = self.project.sounds.get(&instance.sound_id).unwrap();
 			out += sound.get_sample_at_position(instance.position) * instance.volume;
 			instance.position += instance.pitch * self.dt;
 			if instance.position >= sound.duration() {
