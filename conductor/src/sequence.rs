@@ -24,6 +24,13 @@ impl SequenceInstanceHandle {
 	}
 }
 
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub(crate) enum SequenceState {
+	Idle,
+	Playing(usize),
+	Finished,
+}
+
 #[derive(Debug, Clone)]
 enum SequenceCommand {
 	Wait(Time),
@@ -36,8 +43,7 @@ enum SequenceCommand {
 pub struct Sequence {
 	pub metronome_id: MetronomeId,
 	commands: Vec<SequenceCommand>,
-	playing: bool,
-	current_command_index: Option<usize>,
+	state: SequenceState,
 	wait_timer: Option<f32>,
 	instances: HashMap<SequenceInstanceHandle, InstanceId>,
 }
@@ -47,8 +53,7 @@ impl Sequence {
 		Self {
 			metronome_id,
 			commands: vec![],
-			playing: false,
-			current_command_index: None,
+			state: SequenceState::Idle,
 			wait_timer: None,
 			instances: HashMap::new(),
 		}
@@ -83,7 +88,11 @@ impl Sequence {
 	}
 
 	fn go_to_command(&mut self, index: usize, command_queue: &mut Vec<Command>) {
-		self.current_command_index = Some(index);
+		if index > self.commands.len() {
+			self.state = SequenceState::Finished;
+			return;
+		}
+		self.state = SequenceState::Playing(index);
 		if let Some(command) = self.commands.get(index) {
 			let command = command.clone();
 			if let SequenceCommand::Wait(_) = command {
@@ -106,14 +115,7 @@ impl Sequence {
 		}
 	}
 
-	fn go_to_next_command(&mut self, command_queue: &mut Vec<Command>) {
-		if let Some(index) = self.current_command_index {
-			self.go_to_command(index + 1, command_queue);
-		}
-	}
-
 	pub(crate) fn start(&mut self, command_queue: &mut Vec<Command>) {
-		self.playing = true;
 		self.go_to_command(0, command_queue);
 	}
 
@@ -123,10 +125,7 @@ impl Sequence {
 		metronome: &Metronome,
 		command_queue: &mut Vec<Command>,
 	) {
-		if !self.playing {
-			return;
-		}
-		if let Some(index) = self.current_command_index {
+		if let SequenceState::Playing(index) = self.state {
 			if let Some(command) = self.commands.get(index) {
 				match command {
 					SequenceCommand::Wait(time) => {
@@ -134,18 +133,22 @@ impl Sequence {
 						if let Some(wait_timer) = self.wait_timer.as_mut() {
 							*wait_timer -= dt / time;
 							if *wait_timer <= 0.0 {
-								self.go_to_next_command(command_queue);
+								self.go_to_command(index + 1, command_queue);
 							}
 						}
 					}
 					SequenceCommand::WaitForInterval(interval) => {
 						if metronome.interval_passed(*interval) {
-							self.go_to_next_command(command_queue);
+							self.go_to_command(index + 1, command_queue);
 						}
 					}
 					_ => {}
 				}
 			}
 		}
+	}
+
+	pub(crate) fn finished(&self) -> bool {
+		self.state == SequenceState::Finished
 	}
 }
