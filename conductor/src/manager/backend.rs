@@ -1,18 +1,12 @@
 use super::{AudioManagerSettings, Event, InstanceSettings};
 use crate::{
-	id::{InstanceId, MetronomeId, SoundId},
+	command::Command,
+	id::{InstanceId, SoundId},
 	project::Project,
 	stereo_sample::StereoSample,
 };
 use indexmap::IndexMap;
 use ringbuf::{Consumer, Producer};
-
-pub enum Command {
-	PlaySound(SoundId, InstanceId, InstanceSettings),
-	StartMetronome(MetronomeId),
-	PauseMetronome(MetronomeId),
-	StopMetronome(MetronomeId),
-}
 
 struct Instance {
 	sound_id: SoundId,

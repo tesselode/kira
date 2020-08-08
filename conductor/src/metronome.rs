@@ -1,7 +1,7 @@
 use crate::project::MetronomeSettings;
 
 pub struct Metronome {
-	tempo: f32,
+	pub tempo: f32,
 	settings: MetronomeSettings,
 	ticking: bool,
 	time: f32,

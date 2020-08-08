@@ -1,11 +1,12 @@
 mod backend;
 
 use crate::{
+	command::Command,
 	error::ConductorError,
 	id::{InstanceId, MetronomeId, SoundId},
 	project::Project,
 };
-use backend::{Backend, Command};
+use backend::Backend;
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	Stream,
@@ -18,6 +19,7 @@ pub enum Event {
 	MetronomeIntervalPassed(MetronomeId, f32),
 }
 
+#[derive(Copy, Clone)]
 pub struct InstanceSettings {
 	pub volume: f32,
 	pub pitch: f32,
