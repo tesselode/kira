@@ -61,7 +61,8 @@ impl Backend {
 				self.project.metronomes.get_mut(&id).unwrap().stop();
 			}
 			Command::StartSequence(id, mut sequence) => {
-				sequence.start(&mut self.sequence_command_queue);
+				let metronome = self.project.metronomes.get(&sequence.metronome_id).unwrap();
+				sequence.start(metronome, &mut self.sequence_command_queue);
 				self.sequences.insert(id, sequence);
 			}
 		}

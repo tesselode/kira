@@ -19,6 +19,7 @@ impl InstanceId {
 pub struct InstanceSettings {
 	pub volume: f32,
 	pub pitch: f32,
+	pub position: f32,
 }
 
 impl Default for InstanceSettings {
@@ -26,6 +27,7 @@ impl Default for InstanceSettings {
 		Self {
 			volume: 1.0,
 			pitch: 1.0,
+			position: 0.0,
 		}
 	}
 }
@@ -43,7 +45,7 @@ impl Instance {
 			sound_id,
 			volume: settings.volume,
 			pitch: settings.pitch,
-			position: 0.0,
+			position: settings.position,
 		}
 	}
 }

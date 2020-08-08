@@ -3,7 +3,7 @@ use conductor::{
 	manager::{AudioManager, AudioManagerSettings},
 	metronome::{MetronomeId, MetronomeSettings},
 	project::Project,
-	sequence::Sequence,
+	sequence::{Sequence, SequenceInstanceSettings},
 	sound::SoundId,
 	time::Time,
 };
@@ -13,7 +13,6 @@ use ggez::{
 };
 use std::error::Error;
 
-#[derive()]
 struct MainState {
 	audio_manager: AudioManager,
 	sound_id: SoundId,
@@ -35,9 +34,17 @@ impl MainState {
 			},
 		);
 		let mut sequence = Sequence::new(metronome_id);
-		sequence.play_sound(sound_id, InstanceSettings::default());
+		sequence.play_sound(sound_id, SequenceInstanceSettings::default());
 		sequence.wait(Time::Beats(4.0));
-		sequence.go_to(0);
+		sequence.play_sound(
+			sound_id,
+			SequenceInstanceSettings {
+				position: Time::Beats(2.0),
+				..Default::default()
+			},
+		);
+		sequence.wait(Time::Beats(2.0));
+		sequence.go_to(2);
 		let mut audio_manager = AudioManager::new(project, AudioManagerSettings::default())?;
 		audio_manager.start_metronome(metronome_id).unwrap();
 		audio_manager.start_sequence(sequence).unwrap();
