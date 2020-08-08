@@ -19,6 +19,14 @@ impl Metronome {
 		}
 	}
 
+	pub fn effective_tempo(&self) -> f32 {
+		if self.ticking {
+			self.tempo
+		} else {
+			0.0
+		}
+	}
+
 	pub fn start(&mut self) {
 		self.ticking = true;
 	}

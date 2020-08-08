@@ -5,13 +5,31 @@ use crate::{
 	metronome::Metronome,
 	time::Time,
 };
+use std::{
+	collections::HashMap,
+	sync::atomic::{AtomicUsize, Ordering},
+};
+
+static NEXT_INSTANCE_HANDLE_INDEX: AtomicUsize = AtomicUsize::new(0);
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct SequenceInstanceHandle {
+	index: usize,
+}
+
+impl SequenceInstanceHandle {
+	pub fn new() -> Self {
+		let index = NEXT_INSTANCE_HANDLE_INDEX.fetch_add(1, Ordering::Relaxed);
+		Self { index }
+	}
+}
 
 #[derive(Debug, Clone)]
 enum SequenceCommand {
 	Wait(Time),
 	WaitForInterval(f32),
 	GoTo(usize),
-	Do(Command),
+	PlaySound(SoundId, SequenceInstanceHandle, InstanceSettings),
 }
 
 #[derive(Debug, Clone)]
@@ -21,6 +39,7 @@ pub struct Sequence {
 	playing: bool,
 	current_command_index: Option<usize>,
 	wait_timer: Option<f32>,
+	instances: HashMap<SequenceInstanceHandle, InstanceId>,
 }
 
 impl Sequence {
@@ -31,6 +50,7 @@ impl Sequence {
 			playing: false,
 			current_command_index: None,
 			wait_timer: None,
+			instances: HashMap::new(),
 		}
 	}
 
@@ -43,14 +63,23 @@ impl Sequence {
 			.push(SequenceCommand::WaitForInterval(interval));
 	}
 
-	pub fn play_sound(&mut self, sound_id: SoundId, settings: InstanceSettings) -> InstanceId {
-		let instance_id = InstanceId::new();
-		self.commands.push(SequenceCommand::Do(Command::PlaySound(
+	pub fn play_sound(
+		&mut self,
+		sound_id: SoundId,
+		settings: InstanceSettings,
+	) -> SequenceInstanceHandle {
+		self.instances.reserve(1);
+		let sequence_instance_handle = SequenceInstanceHandle::new();
+		self.commands.push(SequenceCommand::PlaySound(
 			sound_id,
-			instance_id,
+			sequence_instance_handle,
 			settings,
-		)));
-		instance_id
+		));
+		sequence_instance_handle
+	}
+
+	pub fn go_to(&mut self, index: usize) {
+		self.commands.push(SequenceCommand::GoTo(index));
 	}
 
 	fn go_to_command(&mut self, index: usize, command_queue: &mut Vec<Command>) {
@@ -66,8 +95,10 @@ impl Sequence {
 				SequenceCommand::GoTo(index) => {
 					self.go_to_command(index, command_queue);
 				}
-				SequenceCommand::Do(command) => {
-					command_queue.push(command);
+				SequenceCommand::PlaySound(sound_id, sequence_instance_handle, settings) => {
+					let instance_id = InstanceId::new();
+					self.instances.insert(sequence_instance_handle, instance_id);
+					command_queue.push(Command::PlaySound(sound_id, instance_id, settings));
 					self.go_to_command(index + 1, command_queue);
 				}
 				_ => {}
@@ -99,7 +130,7 @@ impl Sequence {
 			if let Some(command) = self.commands.get(index) {
 				match command {
 					SequenceCommand::Wait(time) => {
-						let time = time.in_seconds(metronome.tempo);
+						let time = time.in_seconds(metronome.effective_tempo());
 						if let Some(wait_timer) = self.wait_timer.as_mut() {
 							*wait_timer -= dt / time;
 							if *wait_timer <= 0.0 {
