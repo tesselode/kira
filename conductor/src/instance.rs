@@ -1,8 +1,22 @@
+/*!
+Contains structs related to instances.
+
+Each time you play a sound, it creates an "instance", or occurrence, of that sound.
+Each instance can be controlled independently. Multiple instances of the same sound
+can be playing at once.
+*/
+
 use crate::{parameter::Parameter, sound::SoundId};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 static NEXT_INSTANCE_INDEX: AtomicUsize = AtomicUsize::new(0);
 
+/**
+A unique identifier for an `Instance`.
+
+You cannot create this manually - an `InstanceId` is created
+when you play a sound with an `AudioManager`.
+*/
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct InstanceId {
 	index: usize,
@@ -15,11 +29,17 @@ impl InstanceId {
 	}
 }
 
+/// Settings for an instance.
 #[derive(Debug, Copy, Clone)]
 pub struct InstanceSettings {
+	/// The volume of the instance.
 	pub volume: f32,
+	/// The pitch of the instance, as a factor of the original pitch.
 	pub pitch: f32,
+	/// The position to start playing the instance at (in seconds).
 	pub position: f32,
+	/// Whether to fade in the instance from silence, and if so,
+	/// how long the fade-in should last (in seconds).
 	pub fade_in_duration: Option<f32>,
 }
 
@@ -35,7 +55,7 @@ impl Default for InstanceSettings {
 }
 
 #[derive(PartialEq)]
-pub enum InstanceState {
+pub(crate) enum InstanceState {
 	Playing,
 	Paused,
 	Stopped,

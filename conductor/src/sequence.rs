@@ -26,6 +26,10 @@ impl SequenceInstanceHandle {
 
 static NEXT_SEQUENCE_INDEX: AtomicUsize = AtomicUsize::new(0);
 
+/// A unique identifier for a `Sequence`.
+///
+/// You cannot create this manually - a `SequenceId` is returned
+/// when you start a sequence with an `AudioManager`.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct SequenceId {
 	index: usize,
@@ -84,6 +88,15 @@ enum SequenceCommand {
 	StopInstance(SequenceInstanceHandle, Option<Time>),
 }
 
+/**
+A series of audio-related tasks to perform.
+
+A sequence performs tasks in order. A task can be:
+- A command for the `AudioManager`, like playing a sound,
+or changing the volume of an instance
+- Waiting for a duration of time or for a specific moment in time
+- Returning to a previous task (important for creating looping sequences)
+*/
 #[derive(Debug, Clone)]
 pub struct Sequence {
 	pub metronome_id: MetronomeId,
@@ -94,6 +107,7 @@ pub struct Sequence {
 }
 
 impl Sequence {
+	/// Creates a new sequence synced to the given metronome.
 	pub fn new(metronome_id: MetronomeId) -> Self {
 		Self {
 			metronome_id,
@@ -104,15 +118,20 @@ impl Sequence {
 		}
 	}
 
+	/// Adds a task to wait for a duration of time before
+	/// moving to the next task.
 	pub fn wait(&mut self, time: Time) {
 		self.commands.push(SequenceCommand::Wait(time));
 	}
 
+	/// Adds a task to wait for a certain metronome interval (in beats)
+	/// before moving to the next task.
 	pub fn on_interval(&mut self, interval: f32) {
 		self.commands
 			.push(SequenceCommand::WaitForInterval(interval));
 	}
 
+	/// Adds a task to play a sound.
 	pub fn play_sound(
 		&mut self,
 		sound_id: SoundId,
@@ -128,21 +147,25 @@ impl Sequence {
 		sequence_instance_handle
 	}
 
+	/// Adds a task to pause an instance of a sound.
 	pub fn pause_instance(&mut self, handle: SequenceInstanceHandle, fade_duration: Option<Time>) {
 		self.commands
 			.push(SequenceCommand::PauseInstance(handle, fade_duration));
 	}
 
+	/// Adds a task to resume an instance of a sound.
 	pub fn resume_instance(&mut self, handle: SequenceInstanceHandle, fade_duration: Option<Time>) {
 		self.commands
 			.push(SequenceCommand::ResumeInstance(handle, fade_duration));
 	}
 
+	/// Adds a task to stop an instance of a sound.
 	pub fn stop_instance(&mut self, handle: SequenceInstanceHandle, fade_duration: Option<Time>) {
 		self.commands
 			.push(SequenceCommand::StopInstance(handle, fade_duration));
 	}
 
+	/// Adds a task to jump to the nth task in the list.
 	pub fn go_to(&mut self, index: usize) {
 		self.commands.push(SequenceCommand::GoTo(index));
 	}

@@ -1,7 +1,18 @@
+/*!
+Contains structs related to metronomes.
+
+A metronome emits a steady pulse that other things, like `Sequence`s,
+can be synced to.
+*/
+
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 static NEXT_METRONOME_INDEX: AtomicUsize = AtomicUsize::new(0);
 
+/// A unique identifier for a `Metronome`.
+///
+/// You cannot create this manually - a `MetronomeId` is returned
+/// when you create a metronome with a `Project`.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct MetronomeId {
 	index: usize,
