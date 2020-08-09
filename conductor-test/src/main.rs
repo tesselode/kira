@@ -32,9 +32,9 @@ impl MainState {
 		let mut sequence = Sequence::new(metronome_id);
 		let handle = sequence.play_sound(sound_id, SequenceInstanceSettings::default());
 		sequence.wait(Time::Beats(3.5));
-		sequence.pause_instance(handle, Some(Time::Seconds(0.01)));
+		sequence.pause_instance(handle, Some(Time::Beats(0.25)));
 		sequence.wait(Time::Beats(0.25));
-		sequence.resume_instance(handle, Some(Time::Seconds(0.01)));
+		sequence.resume_instance(handle, Some(Time::Beats(0.25)));
 		sequence.wait(Time::Beats(0.25));
 		sequence.go_to(0);
 		audio_manager.start_metronome(metronome_id).unwrap();

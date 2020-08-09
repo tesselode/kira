@@ -3,6 +3,7 @@ pub mod error;
 pub mod instance;
 pub mod manager;
 pub mod metronome;
+mod parameter;
 pub mod project;
 pub mod sequence;
 pub mod sound;

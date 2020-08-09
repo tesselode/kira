@@ -1,4 +1,4 @@
-use crate::sound::SoundId;
+use crate::{parameter::Parameter, sound::SoundId};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 static NEXT_INSTANCE_INDEX: AtomicUsize = AtomicUsize::new(0);
@@ -39,9 +39,9 @@ pub enum InstanceState {
 	Playing,
 	Paused,
 	Stopped,
-	Resuming(f32),
-	Pausing(f32),
-	Stopping(f32),
+	Resuming,
+	Pausing,
+	Stopping,
 }
 
 pub(crate) struct Instance {
@@ -51,19 +51,20 @@ pub(crate) struct Instance {
 	pub pitch: f32,
 	state: InstanceState,
 	position: f32,
-	fade_volume: f32,
+	fade_volume: Parameter,
 }
 
 impl Instance {
 	pub fn new(sound_id: SoundId, settings: InstanceSettings, duration: f32) -> Self {
 		let state;
-		let fade_volume;
+		let mut fade_volume;
 		if let Some(duration) = settings.fade_in_duration {
-			state = InstanceState::Resuming(duration);
-			fade_volume = 0.0;
+			state = InstanceState::Resuming;
+			fade_volume = Parameter::new(0.0);
+			fade_volume.tween(1.0, duration);
 		} else {
 			state = InstanceState::Playing;
-			fade_volume = 1.0;
+			fade_volume = Parameter::new(1.0);
 		}
 		Self {
 			sound_id,
@@ -77,7 +78,7 @@ impl Instance {
 	}
 
 	pub fn effective_volume(&self) -> f32 {
-		self.volume * self.fade_volume
+		self.volume * self.fade_volume.value()
 	}
 
 	pub fn position(&self) -> f32 {
@@ -89,9 +90,9 @@ impl Instance {
 			InstanceState::Playing => true,
 			InstanceState::Paused => false,
 			InstanceState::Stopped => false,
-			InstanceState::Resuming(_) => true,
-			InstanceState::Pausing(_) => true,
-			InstanceState::Stopping(_) => true,
+			InstanceState::Resuming => true,
+			InstanceState::Pausing => true,
+			InstanceState::Stopping => true,
 		}
 	}
 
@@ -101,7 +102,8 @@ impl Instance {
 
 	pub fn pause(&mut self, fade_duration: Option<f32>) {
 		if let Some(duration) = fade_duration {
-			self.state = InstanceState::Pausing(duration);
+			self.state = InstanceState::Pausing;
+			self.fade_volume.tween(0.0, duration);
 		} else {
 			self.state = InstanceState::Paused;
 		}
@@ -109,7 +111,8 @@ impl Instance {
 
 	pub fn resume(&mut self, fade_duration: Option<f32>) {
 		if let Some(duration) = fade_duration {
-			self.state = InstanceState::Resuming(duration);
+			self.state = InstanceState::Resuming;
+			self.fade_volume.tween(1.0, duration);
 		} else {
 			self.state = InstanceState::Playing;
 		}
@@ -117,7 +120,8 @@ impl Instance {
 
 	pub fn stop(&mut self, fade_duration: Option<f32>) {
 		if let Some(duration) = fade_duration {
-			self.state = InstanceState::Stopping(duration);
+			self.state = InstanceState::Stopping;
+			self.fade_volume.tween(0.0, duration);
 		} else {
 			self.state = InstanceState::Stopped;
 		}
@@ -130,29 +134,20 @@ impl Instance {
 				self.state = InstanceState::Stopped;
 			}
 		}
-		match self.state {
-			InstanceState::Resuming(fade_duration) => {
-				self.fade_volume += dt / fade_duration;
-				if self.fade_volume >= 1.0 {
-					self.fade_volume = 1.0;
+		let finished = self.fade_volume.update(dt);
+		if finished {
+			match self.state {
+				InstanceState::Resuming => {
 					self.state = InstanceState::Playing;
 				}
-			}
-			InstanceState::Pausing(fade_duration) => {
-				self.fade_volume -= dt / fade_duration;
-				if self.fade_volume <= 0.0 {
-					self.fade_volume = 0.0;
+				InstanceState::Pausing => {
 					self.state = InstanceState::Paused;
 				}
-			}
-			InstanceState::Stopping(fade_duration) => {
-				self.fade_volume -= dt / fade_duration;
-				if self.fade_volume <= 0.0 {
-					self.fade_volume = 0.0;
+				InstanceState::Stopping => {
 					self.state = InstanceState::Stopped;
 				}
+				_ => {}
 			}
-			_ => {}
 		}
 	}
 }
