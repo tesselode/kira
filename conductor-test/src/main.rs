@@ -16,7 +16,6 @@ use std::error::Error;
 struct MainState {
 	audio_manager: AudioManager,
 	sound_id: SoundId,
-	instance_id: InstanceId,
 	paused: bool,
 }
 
@@ -26,22 +25,23 @@ impl MainState {
 		let sound_id = project.load_sound(
 			&std::env::current_dir()
 				.unwrap()
-				.join("assets/test_song.ogg"),
+				.join("assets/test_loop.ogg"),
 		)?;
+		let metronome_id = project.create_metronome(128.0, MetronomeSettings::default());
 		let mut audio_manager = AudioManager::new(project, AudioManagerSettings::default())?;
-		let instance_id = audio_manager
-			.play_sound(
-				sound_id,
-				InstanceSettings {
-					fade_in_duration: Some(3.0),
-					..Default::default()
-				},
-			)
-			.unwrap();
+		let mut sequence = Sequence::new(metronome_id);
+		let handle = sequence.play_sound(sound_id, SequenceInstanceSettings::default());
+		sequence.wait(Time::Beats(3.5));
+		sequence.pause_instance(handle, Some(Time::Seconds(0.01)));
+		sequence.wait(Time::Beats(0.25));
+		sequence.resume_instance(handle, Some(Time::Seconds(0.01)));
+		sequence.wait(Time::Beats(0.25));
+		sequence.go_to(0);
+		audio_manager.start_metronome(metronome_id).unwrap();
+		audio_manager.start_sequence(sequence).unwrap();
 		Ok(Self {
 			audio_manager,
 			sound_id,
-			instance_id,
 			paused: false,
 		})
 	}
@@ -60,21 +60,6 @@ impl ggez::event::EventHandler for MainState {
 		_keymods: KeyMods,
 		_repeat: bool,
 	) {
-		match keycode {
-			KeyCode::Space => {
-				if self.paused {
-					self.audio_manager
-						.resume_instance(self.instance_id, Some(1.0))
-						.unwrap();
-				} else {
-					self.audio_manager
-						.stop_instance(self.instance_id, Some(1.0))
-						.unwrap();
-				}
-				self.paused = !self.paused;
-			}
-			_ => {}
-		}
 	}
 
 	fn draw(&mut self, ctx: &mut Context) -> GameResult {

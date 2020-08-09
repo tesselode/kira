@@ -79,6 +79,9 @@ enum SequenceCommand {
 	WaitForInterval(f32),
 	GoTo(usize),
 	PlaySound(SoundId, SequenceInstanceHandle, SequenceInstanceSettings),
+	PauseInstance(SequenceInstanceHandle, Option<Time>),
+	ResumeInstance(SequenceInstanceHandle, Option<Time>),
+	StopInstance(SequenceInstanceHandle, Option<Time>),
 }
 
 #[derive(Debug, Clone)]
@@ -125,6 +128,21 @@ impl Sequence {
 		sequence_instance_handle
 	}
 
+	pub fn pause_instance(&mut self, handle: SequenceInstanceHandle, fade_duration: Option<Time>) {
+		self.commands
+			.push(SequenceCommand::PauseInstance(handle, fade_duration));
+	}
+
+	pub fn resume_instance(&mut self, handle: SequenceInstanceHandle, fade_duration: Option<Time>) {
+		self.commands
+			.push(SequenceCommand::ResumeInstance(handle, fade_duration));
+	}
+
+	pub fn stop_instance(&mut self, handle: SequenceInstanceHandle, fade_duration: Option<Time>) {
+		self.commands
+			.push(SequenceCommand::StopInstance(handle, fade_duration));
+	}
+
 	pub fn go_to(&mut self, index: usize) {
 		self.commands.push(SequenceCommand::GoTo(index));
 	}
@@ -159,6 +177,36 @@ impl Sequence {
 						instance_id,
 						settings.into_instance_settings(metronome.tempo),
 					));
+					self.go_to_command(index + 1, metronome, command_queue);
+				}
+				SequenceCommand::PauseInstance(handle, fade_duration) => {
+					if let Some(instance_id) = self.instances.get(&handle) {
+						let fade_duration = match fade_duration {
+							Some(time) => Some(time.in_seconds(metronome.tempo)),
+							None => None,
+						};
+						command_queue.push(Command::PauseInstance(*instance_id, fade_duration))
+					}
+					self.go_to_command(index + 1, metronome, command_queue);
+				}
+				SequenceCommand::ResumeInstance(handle, fade_duration) => {
+					if let Some(instance_id) = self.instances.get(&handle) {
+						let fade_duration = match fade_duration {
+							Some(time) => Some(time.in_seconds(metronome.tempo)),
+							None => None,
+						};
+						command_queue.push(Command::ResumeInstance(*instance_id, fade_duration))
+					}
+					self.go_to_command(index + 1, metronome, command_queue);
+				}
+				SequenceCommand::StopInstance(handle, fade_duration) => {
+					if let Some(instance_id) = self.instances.get(&handle) {
+						let fade_duration = match fade_duration {
+							Some(time) => Some(time.in_seconds(metronome.tempo)),
+							None => None,
+						};
+						command_queue.push(Command::StopInstance(*instance_id, fade_duration))
+					}
 					self.go_to_command(index + 1, metronome, command_queue);
 				}
 				_ => {}
