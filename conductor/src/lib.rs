@@ -102,5 +102,8 @@ mod parameter;
 pub mod project;
 pub mod sequence;
 pub mod sound;
-pub mod stereo_sample;
+mod stereo_sample;
 pub mod time;
+
+pub use manager::AudioManager;
+pub use project::Project;

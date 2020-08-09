@@ -8,7 +8,7 @@ pub struct MetronomeId {
 }
 
 impl MetronomeId {
-	pub fn new() -> Self {
+	pub(crate) fn new() -> Self {
 		let index = NEXT_METRONOME_INDEX.fetch_add(1, Ordering::Relaxed);
 		Self { index }
 	}

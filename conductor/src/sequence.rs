@@ -32,7 +32,7 @@ pub struct SequenceId {
 }
 
 impl SequenceId {
-	pub fn new() -> Self {
+	pub(crate) fn new() -> Self {
 		let index = NEXT_SEQUENCE_INDEX.fetch_add(1, Ordering::Relaxed);
 		Self { index }
 	}

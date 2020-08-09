@@ -15,7 +15,7 @@ pub struct SoundId {
 }
 
 impl SoundId {
-	pub fn new() -> Self {
+	pub(crate) fn new() -> Self {
 		let index = NEXT_SOUND_INDEX.fetch_add(1, Ordering::Relaxed);
 		Self { index }
 	}
