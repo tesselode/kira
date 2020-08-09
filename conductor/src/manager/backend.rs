@@ -48,8 +48,26 @@ impl Backend {
 	fn run_command(&mut self, command: Command) {
 		match command {
 			Command::PlaySound(sound_id, instance_id, settings) => {
-				self.instances
-					.insert(instance_id, Instance::new(sound_id, settings));
+				let sound = self.project.sounds.get(&sound_id).unwrap();
+				self.instances.insert(
+					instance_id,
+					Instance::new(sound_id, settings, sound.duration()),
+				);
+			}
+			Command::PauseInstance(instance_id, fade_duration) => {
+				if let Some(instance) = self.instances.get_mut(&instance_id) {
+					instance.pause(fade_duration);
+				}
+			}
+			Command::ResumeInstance(instance_id, fade_duration) => {
+				if let Some(instance) = self.instances.get_mut(&instance_id) {
+					instance.resume(fade_duration);
+				}
+			}
+			Command::StopInstance(instance_id, fade_duration) => {
+				if let Some(instance) = self.instances.get_mut(&instance_id) {
+					instance.stop(fade_duration);
+				}
 			}
 			Command::StartMetronome(id) => {
 				self.project.metronomes.get_mut(&id).unwrap().start();
@@ -113,12 +131,15 @@ impl Backend {
 		self.update_sequences();
 		let mut out = StereoSample::from_mono(0.0);
 		for (instance_id, instance) in &mut self.instances {
-			let sound = self.project.sounds.get(&instance.sound_id).unwrap();
-			out += sound.get_sample_at_position(instance.position) * instance.volume;
-			instance.position += instance.pitch * self.dt;
-			if instance.position >= sound.duration() {
+			if instance.playing() {
+				let sound = self.project.sounds.get(&instance.sound_id).unwrap();
+				out +=
+					sound.get_sample_at_position(instance.position()) * instance.effective_volume();
+			}
+			if instance.finished() {
 				self.instances_to_remove.push(*instance_id);
 			}
+			instance.update(self.dt);
 		}
 		for instance_id in self.instances_to_remove.drain(..) {
 			self.instances.remove(&instance_id);

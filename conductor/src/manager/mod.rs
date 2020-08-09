@@ -101,6 +101,48 @@ impl AudioManager {
 		}
 	}
 
+	pub fn pause_instance(
+		&mut self,
+		instance_id: InstanceId,
+		fade_duration: Option<f32>,
+	) -> Result<(), ConductorError> {
+		match self
+			.command_producer
+			.push(Command::PauseInstance(instance_id, fade_duration))
+		{
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
+	pub fn resume_instance(
+		&mut self,
+		instance_id: InstanceId,
+		fade_duration: Option<f32>,
+	) -> Result<(), ConductorError> {
+		match self
+			.command_producer
+			.push(Command::ResumeInstance(instance_id, fade_duration))
+		{
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
+	pub fn stop_instance(
+		&mut self,
+		instance_id: InstanceId,
+		fade_duration: Option<f32>,
+	) -> Result<(), ConductorError> {
+		match self
+			.command_producer
+			.push(Command::StopInstance(instance_id, fade_duration))
+		{
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
 	pub fn start_metronome(&mut self, id: MetronomeId) -> Result<InstanceId, ConductorError> {
 		let instance_id = InstanceId::new();
 		match self.command_producer.push(Command::StartMetronome(id)) {

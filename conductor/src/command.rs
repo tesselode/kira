@@ -8,6 +8,9 @@ use crate::{
 #[derive(Debug, Clone)]
 pub enum Command {
 	PlaySound(SoundId, InstanceId, InstanceSettings),
+	PauseInstance(InstanceId, Option<f32>),
+	ResumeInstance(InstanceId, Option<f32>),
+	StopInstance(InstanceId, Option<f32>),
 	StartMetronome(MetronomeId),
 	PauseMetronome(MetronomeId),
 	StopMetronome(MetronomeId),

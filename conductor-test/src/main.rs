@@ -1,5 +1,5 @@
 use conductor::{
-	instance::InstanceSettings,
+	instance::{InstanceId, InstanceSettings},
 	manager::{AudioManager, AudioManagerSettings},
 	metronome::{MetronomeId, MetronomeSettings},
 	project::Project,
@@ -16,7 +16,8 @@ use std::error::Error;
 struct MainState {
 	audio_manager: AudioManager,
 	sound_id: SoundId,
-	metronome_id: MetronomeId,
+	instance_id: InstanceId,
+	paused: bool,
 }
 
 impl MainState {
@@ -25,33 +26,23 @@ impl MainState {
 		let sound_id = project.load_sound(
 			&std::env::current_dir()
 				.unwrap()
-				.join("assets/test_loop.ogg"),
+				.join("assets/test_song.ogg"),
 		)?;
-		let metronome_id = project.create_metronome(
-			128.0,
-			MetronomeSettings {
-				interval_events_to_emit: vec![0.25, 0.5, 1.0],
-			},
-		);
-		let mut sequence = Sequence::new(metronome_id);
-		sequence.play_sound(sound_id, SequenceInstanceSettings::default());
-		sequence.wait(Time::Beats(4.0));
-		sequence.play_sound(
-			sound_id,
-			SequenceInstanceSettings {
-				position: Time::Beats(2.0),
-				..Default::default()
-			},
-		);
-		sequence.wait(Time::Beats(2.0));
-		sequence.go_to(2);
 		let mut audio_manager = AudioManager::new(project, AudioManagerSettings::default())?;
-		audio_manager.start_metronome(metronome_id).unwrap();
-		audio_manager.start_sequence(sequence).unwrap();
+		let instance_id = audio_manager
+			.play_sound(
+				sound_id,
+				InstanceSettings {
+					fade_in_duration: Some(3.0),
+					..Default::default()
+				},
+			)
+			.unwrap();
 		Ok(Self {
 			audio_manager,
 			sound_id,
-			metronome_id,
+			instance_id,
+			paused: false,
 		})
 	}
 }
@@ -71,9 +62,16 @@ impl ggez::event::EventHandler for MainState {
 	) {
 		match keycode {
 			KeyCode::Space => {
-				self.audio_manager
-					.start_metronome(self.metronome_id)
-					.unwrap();
+				if self.paused {
+					self.audio_manager
+						.resume_instance(self.instance_id, Some(1.0))
+						.unwrap();
+				} else {
+					self.audio_manager
+						.stop_instance(self.instance_id, Some(1.0))
+						.unwrap();
+				}
+				self.paused = !self.paused;
 			}
 			_ => {}
 		}

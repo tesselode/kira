@@ -51,6 +51,7 @@ impl SequenceInstanceSettings {
 			volume: self.volume,
 			pitch: self.pitch,
 			position: self.position.in_seconds(tempo),
+			fade_in_duration: None,
 		}
 	}
 }
