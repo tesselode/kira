@@ -1,3 +1,47 @@
+/*!
+Contains structs related to sequences.
+
+Sequences are useful for scripting a series of audio-related actions
+with precise timing. Sequence tasks can be synced to a metronome, which
+is useful if you want something to happen to the beat of some music.
+
+## Example
+
+```
+# use conductor::{
+# 	manager::AudioManagerSettings,
+# 	metronome::MetronomeSettings,
+# 	sequence::{PlaySoundTaskSettings, Sequence},
+# 	time::Time,
+# 	AudioManager, Project,
+# };
+# use std::{error::Error, path::PathBuf};
+#
+# fn main() -> Result<(), Box<dyn Error>> {
+# let mut project = Project::new();
+# let sound_id = project.load_sound(&PathBuf::from("whatever.ogg"))?;
+# let metronome_id = project.create_metronome(120.0, MetronomeSettings::default());
+# let mut audio_manager = AudioManager::new(project, AudioManagerSettings::default())?;
+// create a new sequence that uses a previously created metronome
+let mut sequence = Sequence::new(metronome_id);
+// let's define the steps for the sequence:
+// 1. wait for the next beat
+sequence.on_interval(1.0);
+// 2. play a sound
+let task = sequence.play_sound(sound_id, PlaySoundTaskSettings::default());
+// 3. wait for 4 beats
+sequence.wait(Time::Beats(4.0));
+// 4. stop the sound
+sequence.stop_instance(task, None);
+// 5. go to step 2
+sequence.go_to(1);
+// now that we've defined the sequence, let's start it
+audio_manager.start_sequence(sequence)?;
+# Ok(())
+# }
+```
+*/
+
 use crate::{
 	command::Command,
 	instance::{InstanceId, InstanceSettings},
@@ -10,16 +54,20 @@ use std::{
 	sync::atomic::{AtomicUsize, Ordering},
 };
 
-static NEXT_INSTANCE_HANDLE_INDEX: AtomicUsize = AtomicUsize::new(0);
+static NEXT_PLAY_SOUND_TASK_HANDLE_INDEX: AtomicUsize = AtomicUsize::new(0);
 
+/// A handle to a "play sound" task in a sequence.
+///
+/// This can be used to pause or resume an instance in a
+/// later task in the sequence.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub struct SequenceInstanceHandle {
+pub struct PlaySoundTaskHandle {
 	index: usize,
 }
 
-impl SequenceInstanceHandle {
+impl PlaySoundTaskHandle {
 	pub fn new() -> Self {
-		let index = NEXT_INSTANCE_HANDLE_INDEX.fetch_add(1, Ordering::Relaxed);
+		let index = NEXT_PLAY_SOUND_TASK_HANDLE_INDEX.fetch_add(1, Ordering::Relaxed);
 		Self { index }
 	}
 }
@@ -42,14 +90,22 @@ impl SequenceId {
 	}
 }
 
+/// Settings for playing a sound in a sequence.
+///
+/// This is almost identical to `InstanceSettings`, except
+/// the position of the instance can be specified in beats
+/// or seconds.
 #[derive(Debug, Clone)]
-pub struct SequenceInstanceSettings {
+pub struct PlaySoundTaskSettings {
+	/// The volume to play the sound with.
 	pub volume: f32,
+	/// The pitch to play the sound with (as a factor of the original pitch).
 	pub pitch: f32,
+	/// The position to start the sound at.
 	pub position: Time,
 }
 
-impl SequenceInstanceSettings {
+impl PlaySoundTaskSettings {
 	fn into_instance_settings(&self, tempo: f32) -> InstanceSettings {
 		InstanceSettings {
 			volume: self.volume,
@@ -60,7 +116,7 @@ impl SequenceInstanceSettings {
 	}
 }
 
-impl Default for SequenceInstanceSettings {
+impl Default for PlaySoundTaskSettings {
 	fn default() -> Self {
 		Self {
 			volume: 1.0,
@@ -82,10 +138,10 @@ enum SequenceTask {
 	Wait(Time),
 	WaitForInterval(f32),
 	GoTo(usize),
-	PlaySound(SoundId, SequenceInstanceHandle, SequenceInstanceSettings),
-	PauseInstance(SequenceInstanceHandle, Option<Time>),
-	ResumeInstance(SequenceInstanceHandle, Option<Time>),
-	StopInstance(SequenceInstanceHandle, Option<Time>),
+	PlaySound(SoundId, PlaySoundTaskHandle, PlaySoundTaskSettings),
+	PauseInstance(PlaySoundTaskHandle, Option<Time>),
+	ResumeInstance(PlaySoundTaskHandle, Option<Time>),
+	StopInstance(PlaySoundTaskHandle, Option<Time>),
 }
 
 /**
@@ -103,7 +159,7 @@ pub struct Sequence {
 	tasks: Vec<SequenceTask>,
 	state: SequenceState,
 	wait_timer: Option<f32>,
-	instances: HashMap<SequenceInstanceHandle, InstanceId>,
+	instances: HashMap<PlaySoundTaskHandle, InstanceId>,
 }
 
 impl Sequence {
@@ -134,10 +190,10 @@ impl Sequence {
 	pub fn play_sound(
 		&mut self,
 		sound_id: SoundId,
-		settings: SequenceInstanceSettings,
-	) -> SequenceInstanceHandle {
+		settings: PlaySoundTaskSettings,
+	) -> PlaySoundTaskHandle {
 		self.instances.reserve(1);
-		let sequence_instance_handle = SequenceInstanceHandle::new();
+		let sequence_instance_handle = PlaySoundTaskHandle::new();
 		self.tasks.push(SequenceTask::PlaySound(
 			sound_id,
 			sequence_instance_handle,
@@ -146,25 +202,25 @@ impl Sequence {
 		sequence_instance_handle
 	}
 
-	/// Adds a task to pause an instance of a sound.
-	pub fn pause_instance(&mut self, handle: SequenceInstanceHandle, fade_duration: Option<Time>) {
+	/// Adds a task to pause an instance of a sound created by a play sound task.
+	pub fn pause_instance(&mut self, handle: PlaySoundTaskHandle, fade_duration: Option<Time>) {
 		self.tasks
 			.push(SequenceTask::PauseInstance(handle, fade_duration));
 	}
 
-	/// Adds a task to resume an instance of a sound.
-	pub fn resume_instance(&mut self, handle: SequenceInstanceHandle, fade_duration: Option<Time>) {
+	/// Adds a task to resume an instance of a sound created by a play sound task.
+	pub fn resume_instance(&mut self, handle: PlaySoundTaskHandle, fade_duration: Option<Time>) {
 		self.tasks
 			.push(SequenceTask::ResumeInstance(handle, fade_duration));
 	}
 
-	/// Adds a task to stop an instance of a sound.
-	pub fn stop_instance(&mut self, handle: SequenceInstanceHandle, fade_duration: Option<Time>) {
+	/// Adds a task to stop an instance of a sound created by a play sound task.
+	pub fn stop_instance(&mut self, handle: PlaySoundTaskHandle, fade_duration: Option<Time>) {
 		self.tasks
 			.push(SequenceTask::StopInstance(handle, fade_duration));
 	}
 
-	/// Adds a task to jump to the nth task in the list.
+	/// Adds a task to jump to the nth task in the sequence.
 	pub fn go_to(&mut self, index: usize) {
 		self.tasks.push(SequenceTask::GoTo(index));
 	}
@@ -180,8 +236,8 @@ impl Sequence {
 			return;
 		}
 		self.state = SequenceState::Playing(index);
-		if let Some(command) = self.tasks.get(index) {
-			let command = command.clone();
+		if let Some(task) = self.tasks.get(index) {
+			let command = task.clone();
 			if let SequenceTask::Wait(_) = command {
 				self.wait_timer = Some(1.0);
 			} else {
@@ -247,8 +303,8 @@ impl Sequence {
 		command_queue: &mut Vec<Command>,
 	) {
 		if let SequenceState::Playing(index) = self.state {
-			if let Some(command) = self.tasks.get(index) {
-				match command {
+			if let Some(task) = self.tasks.get(index) {
+				match task {
 					SequenceTask::Wait(time) => {
 						let time = time.in_seconds(metronome.effective_tempo());
 						if let Some(wait_timer) = self.wait_timer.as_mut() {
