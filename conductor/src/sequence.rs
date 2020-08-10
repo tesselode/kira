@@ -78,7 +78,7 @@ pub(crate) enum SequenceState {
 }
 
 #[derive(Debug, Clone)]
-enum SequenceCommand {
+enum SequenceTask {
 	Wait(Time),
 	WaitForInterval(f32),
 	GoTo(usize),
@@ -100,7 +100,7 @@ or changing the volume of an instance
 #[derive(Debug, Clone)]
 pub struct Sequence {
 	pub metronome_id: MetronomeId,
-	commands: Vec<SequenceCommand>,
+	tasks: Vec<SequenceTask>,
 	state: SequenceState,
 	wait_timer: Option<f32>,
 	instances: HashMap<SequenceInstanceHandle, InstanceId>,
@@ -111,7 +111,7 @@ impl Sequence {
 	pub fn new(metronome_id: MetronomeId) -> Self {
 		Self {
 			metronome_id,
-			commands: vec![],
+			tasks: vec![],
 			state: SequenceState::Idle,
 			wait_timer: None,
 			instances: HashMap::new(),
@@ -121,14 +121,13 @@ impl Sequence {
 	/// Adds a task to wait for a duration of time before
 	/// moving to the next task.
 	pub fn wait(&mut self, time: Time) {
-		self.commands.push(SequenceCommand::Wait(time));
+		self.tasks.push(SequenceTask::Wait(time));
 	}
 
 	/// Adds a task to wait for a certain metronome interval (in beats)
 	/// before moving to the next task.
 	pub fn on_interval(&mut self, interval: f32) {
-		self.commands
-			.push(SequenceCommand::WaitForInterval(interval));
+		self.tasks.push(SequenceTask::WaitForInterval(interval));
 	}
 
 	/// Adds a task to play a sound.
@@ -139,7 +138,7 @@ impl Sequence {
 	) -> SequenceInstanceHandle {
 		self.instances.reserve(1);
 		let sequence_instance_handle = SequenceInstanceHandle::new();
-		self.commands.push(SequenceCommand::PlaySound(
+		self.tasks.push(SequenceTask::PlaySound(
 			sound_id,
 			sequence_instance_handle,
 			settings,
@@ -149,25 +148,25 @@ impl Sequence {
 
 	/// Adds a task to pause an instance of a sound.
 	pub fn pause_instance(&mut self, handle: SequenceInstanceHandle, fade_duration: Option<Time>) {
-		self.commands
-			.push(SequenceCommand::PauseInstance(handle, fade_duration));
+		self.tasks
+			.push(SequenceTask::PauseInstance(handle, fade_duration));
 	}
 
 	/// Adds a task to resume an instance of a sound.
 	pub fn resume_instance(&mut self, handle: SequenceInstanceHandle, fade_duration: Option<Time>) {
-		self.commands
-			.push(SequenceCommand::ResumeInstance(handle, fade_duration));
+		self.tasks
+			.push(SequenceTask::ResumeInstance(handle, fade_duration));
 	}
 
 	/// Adds a task to stop an instance of a sound.
 	pub fn stop_instance(&mut self, handle: SequenceInstanceHandle, fade_duration: Option<Time>) {
-		self.commands
-			.push(SequenceCommand::StopInstance(handle, fade_duration));
+		self.tasks
+			.push(SequenceTask::StopInstance(handle, fade_duration));
 	}
 
 	/// Adds a task to jump to the nth task in the list.
 	pub fn go_to(&mut self, index: usize) {
-		self.commands.push(SequenceCommand::GoTo(index));
+		self.tasks.push(SequenceTask::GoTo(index));
 	}
 
 	fn go_to_command(
@@ -176,23 +175,23 @@ impl Sequence {
 		metronome: &Metronome,
 		command_queue: &mut Vec<Command>,
 	) {
-		if index >= self.commands.len() {
+		if index >= self.tasks.len() {
 			self.state = SequenceState::Finished;
 			return;
 		}
 		self.state = SequenceState::Playing(index);
-		if let Some(command) = self.commands.get(index) {
+		if let Some(command) = self.tasks.get(index) {
 			let command = command.clone();
-			if let SequenceCommand::Wait(_) = command {
+			if let SequenceTask::Wait(_) = command {
 				self.wait_timer = Some(1.0);
 			} else {
 				self.wait_timer = None;
 			}
 			match command {
-				SequenceCommand::GoTo(index) => {
+				SequenceTask::GoTo(index) => {
 					self.go_to_command(index, metronome, command_queue);
 				}
-				SequenceCommand::PlaySound(sound_id, sequence_instance_handle, settings) => {
+				SequenceTask::PlaySound(sound_id, sequence_instance_handle, settings) => {
 					let instance_id = InstanceId::new();
 					self.instances.insert(sequence_instance_handle, instance_id);
 					command_queue.push(Command::PlaySound(
@@ -202,7 +201,7 @@ impl Sequence {
 					));
 					self.go_to_command(index + 1, metronome, command_queue);
 				}
-				SequenceCommand::PauseInstance(handle, fade_duration) => {
+				SequenceTask::PauseInstance(handle, fade_duration) => {
 					if let Some(instance_id) = self.instances.get(&handle) {
 						let fade_duration = match fade_duration {
 							Some(time) => Some(time.in_seconds(metronome.tempo)),
@@ -212,7 +211,7 @@ impl Sequence {
 					}
 					self.go_to_command(index + 1, metronome, command_queue);
 				}
-				SequenceCommand::ResumeInstance(handle, fade_duration) => {
+				SequenceTask::ResumeInstance(handle, fade_duration) => {
 					if let Some(instance_id) = self.instances.get(&handle) {
 						let fade_duration = match fade_duration {
 							Some(time) => Some(time.in_seconds(metronome.tempo)),
@@ -222,7 +221,7 @@ impl Sequence {
 					}
 					self.go_to_command(index + 1, metronome, command_queue);
 				}
-				SequenceCommand::StopInstance(handle, fade_duration) => {
+				SequenceTask::StopInstance(handle, fade_duration) => {
 					if let Some(instance_id) = self.instances.get(&handle) {
 						let fade_duration = match fade_duration {
 							Some(time) => Some(time.in_seconds(metronome.tempo)),
@@ -248,9 +247,9 @@ impl Sequence {
 		command_queue: &mut Vec<Command>,
 	) {
 		if let SequenceState::Playing(index) = self.state {
-			if let Some(command) = self.commands.get(index) {
+			if let Some(command) = self.tasks.get(index) {
 				match command {
-					SequenceCommand::Wait(time) => {
+					SequenceTask::Wait(time) => {
 						let time = time.in_seconds(metronome.effective_tempo());
 						if let Some(wait_timer) = self.wait_timer.as_mut() {
 							*wait_timer -= dt / time;
@@ -259,7 +258,7 @@ impl Sequence {
 							}
 						}
 					}
-					SequenceCommand::WaitForInterval(interval) => {
+					SequenceTask::WaitForInterval(interval) => {
 						if metronome.interval_passed(*interval) {
 							self.go_to_command(index + 1, metronome, command_queue);
 						}
