@@ -1,7 +1,7 @@
 mod backend;
 
 use crate::{
-	command::Command,
+	command::{Command, InstanceCommand},
 	error::ConductorError,
 	instance::{InstanceId, InstanceSettings},
 	metronome::MetronomeId,
@@ -126,8 +126,11 @@ impl AudioManager {
 		let instance_id = InstanceId::new();
 		match self
 			.command_producer
-			.push(Command::PlaySound(sound_id, instance_id, settings))
-		{
+			.push(Command::Instance(InstanceCommand::PlaySound(
+				sound_id,
+				instance_id,
+				settings,
+			))) {
 			Ok(_) => Ok(instance_id),
 			Err(_) => Err(ConductorError::SendCommand),
 		}
@@ -141,8 +144,9 @@ impl AudioManager {
 	) -> Result<(), ConductorError> {
 		match self
 			.command_producer
-			.push(Command::SetInstanceVolume(id, volume, tween))
-		{
+			.push(Command::Instance(InstanceCommand::SetInstanceVolume(
+				id, volume, tween,
+			))) {
 			Ok(_) => Ok(()),
 			Err(_) => Err(ConductorError::SendCommand),
 		}
@@ -156,8 +160,9 @@ impl AudioManager {
 	) -> Result<(), ConductorError> {
 		match self
 			.command_producer
-			.push(Command::SetInstancePitch(id, pitch, tween))
-		{
+			.push(Command::Instance(InstanceCommand::SetInstancePitch(
+				id, pitch, tween,
+			))) {
 			Ok(_) => Ok(()),
 			Err(_) => Err(ConductorError::SendCommand),
 		}
@@ -173,8 +178,10 @@ impl AudioManager {
 	) -> Result<(), ConductorError> {
 		match self
 			.command_producer
-			.push(Command::PauseInstance(instance_id, fade_tween))
-		{
+			.push(Command::Instance(InstanceCommand::PauseInstance(
+				instance_id,
+				fade_tween,
+			))) {
 			Ok(_) => Ok(()),
 			Err(_) => Err(ConductorError::SendCommand),
 		}
@@ -190,8 +197,10 @@ impl AudioManager {
 	) -> Result<(), ConductorError> {
 		match self
 			.command_producer
-			.push(Command::ResumeInstance(instance_id, fade_tween))
-		{
+			.push(Command::Instance(InstanceCommand::ResumeInstance(
+				instance_id,
+				fade_tween,
+			))) {
 			Ok(_) => Ok(()),
 			Err(_) => Err(ConductorError::SendCommand),
 		}
@@ -208,8 +217,10 @@ impl AudioManager {
 	) -> Result<(), ConductorError> {
 		match self
 			.command_producer
-			.push(Command::StopInstance(instance_id, fade_tween))
-		{
+			.push(Command::Instance(InstanceCommand::StopInstance(
+				instance_id,
+				fade_tween,
+			))) {
 			Ok(_) => Ok(()),
 			Err(_) => Err(ConductorError::SendCommand),
 		}

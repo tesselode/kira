@@ -1,3 +1,5 @@
+mod instances;
+
 use super::{AudioManagerSettings, Event};
 use crate::{
 	command::Command,
@@ -7,12 +9,13 @@ use crate::{
 	stereo_sample::StereoSample,
 };
 use indexmap::IndexMap;
+use instances::Instances;
 use ringbuf::{Consumer, Producer};
 
 pub struct Backend {
 	dt: f32,
 	project: Project,
-	instances: IndexMap<InstanceId, Instance>,
+	instances: Instances,
 	sequences: IndexMap<SequenceId, Sequence>,
 	command_consumer: Consumer<Command>,
 	event_producer: Producer<Event>,
@@ -20,7 +23,6 @@ pub struct Backend {
 	metronome_interval_event_collector: Vec<f32>,
 	sequence_command_queue: Vec<Command>,
 	sequences_to_remove: Vec<SequenceId>,
-	instances_to_remove: Vec<InstanceId>,
 }
 
 impl Backend {
@@ -34,47 +36,20 @@ impl Backend {
 		Self {
 			dt: 1.0 / sample_rate as f32,
 			project,
-			instances: IndexMap::with_capacity(settings.num_instances),
+			instances: Instances::new(settings.num_instances),
 			sequences: IndexMap::with_capacity(settings.num_sequences),
 			command_consumer,
 			event_producer,
 			metronome_interval_event_collector: Vec::with_capacity(settings.num_events),
 			sequence_command_queue: Vec::with_capacity(settings.num_commands),
 			sequences_to_remove: Vec::with_capacity(settings.num_sequences),
-			instances_to_remove: Vec::with_capacity(settings.num_instances),
 		}
 	}
 
 	fn run_command(&mut self, command: Command) {
 		match command {
-			Command::PlaySound(sound_id, instance_id, settings) => {
-				self.instances
-					.insert(instance_id, Instance::new(sound_id, settings));
-			}
-			Command::SetInstanceVolume(id, volume, tween) => {
-				if let Some(instance) = self.instances.get_mut(&id) {
-					instance.set_volume(volume, tween);
-				}
-			}
-			Command::SetInstancePitch(id, pitch, tween) => {
-				if let Some(instance) = self.instances.get_mut(&id) {
-					instance.set_pitch(pitch, tween);
-				}
-			}
-			Command::PauseInstance(id, fade_duration) => {
-				if let Some(instance) = self.instances.get_mut(&id) {
-					instance.pause(fade_duration);
-				}
-			}
-			Command::ResumeInstance(id, fade_duration) => {
-				if let Some(instance) = self.instances.get_mut(&id) {
-					instance.resume(fade_duration);
-				}
-			}
-			Command::StopInstance(id, fade_duration) => {
-				if let Some(instance) = self.instances.get_mut(&id) {
-					instance.stop(fade_duration);
-				}
+			Command::Instance(command) => {
+				self.instances.run_command(command);
 			}
 			Command::StartMetronome(id) => {
 				self.project.metronomes.get_mut(&id).unwrap().start();
@@ -136,21 +111,6 @@ impl Backend {
 		self.process_commands();
 		self.update_metronomes();
 		self.update_sequences();
-		let mut out = StereoSample::from_mono(0.0);
-		for (instance_id, instance) in &mut self.instances {
-			if instance.playing() {
-				let sound = self.project.sounds.get(&instance.sound_id).unwrap();
-				out +=
-					sound.get_sample_at_position(instance.position()) * instance.effective_volume();
-			}
-			if instance.finished() {
-				self.instances_to_remove.push(*instance_id);
-			}
-			instance.update(self.dt);
-		}
-		for instance_id in self.instances_to_remove.drain(..) {
-			self.instances.remove(&instance_id);
-		}
-		out
+		self.instances.process(self.dt, &self.project)
 	}
 }

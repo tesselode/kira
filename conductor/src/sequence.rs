@@ -43,7 +43,7 @@ audio_manager.start_sequence(sequence)?;
 */
 
 use crate::{
-	command::Command,
+	command::{Command, InstanceCommand},
 	instance::{InstanceId, InstanceSettings},
 	metronome::{Metronome, MetronomeId},
 	sound::SoundId,
@@ -255,11 +255,11 @@ impl Sequence {
 				SequenceTask::PlaySound(sound_id, sequence_instance_handle, settings) => {
 					let instance_id = InstanceId::new();
 					self.instances.insert(sequence_instance_handle, instance_id);
-					command_queue.push(Command::PlaySound(
+					command_queue.push(Command::Instance(InstanceCommand::PlaySound(
 						sound_id,
 						instance_id,
 						settings.into_instance_settings(metronome.tempo),
-					));
+					)));
 					self.go_to_command(index + 1, metronome, command_queue);
 				}
 				SequenceTask::PauseInstance(handle, fade_tween) => {
@@ -268,7 +268,10 @@ impl Sequence {
 							Some(tween) => Some(tween.in_seconds(metronome.tempo)),
 							None => None,
 						};
-						command_queue.push(Command::PauseInstance(*instance_id, fade_tween))
+						command_queue.push(Command::Instance(InstanceCommand::PauseInstance(
+							*instance_id,
+							fade_tween,
+						)))
 					}
 					self.go_to_command(index + 1, metronome, command_queue);
 				}
@@ -278,7 +281,10 @@ impl Sequence {
 							Some(tween) => Some(tween.in_seconds(metronome.tempo)),
 							None => None,
 						};
-						command_queue.push(Command::ResumeInstance(*instance_id, fade_tween))
+						command_queue.push(Command::Instance(InstanceCommand::ResumeInstance(
+							*instance_id,
+							fade_tween,
+						)))
 					}
 					self.go_to_command(index + 1, metronome, command_queue);
 				}
@@ -288,7 +294,10 @@ impl Sequence {
 							Some(tween) => Some(tween.in_seconds(metronome.tempo)),
 							None => None,
 						};
-						command_queue.push(Command::StopInstance(*instance_id, fade_tween))
+						command_queue.push(Command::Instance(InstanceCommand::StopInstance(
+							*instance_id,
+							fade_tween,
+						)))
 					}
 					self.go_to_command(index + 1, metronome, command_queue);
 				}
