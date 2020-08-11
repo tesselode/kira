@@ -1,7 +1,6 @@
 use conductor::{
-	instance::{InstanceId, InstanceSettings},
 	manager::{AudioManager, AudioManagerSettings},
-	metronome::{MetronomeId, MetronomeSettings},
+	metronome::MetronomeSettings,
 	project::Project,
 	sequence::{PlaySoundTaskSettings, Sequence},
 	sound::SoundId,

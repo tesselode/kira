@@ -6,7 +6,10 @@ Each instance can be controlled independently. Multiple instances of the same so
 can be playing at once.
 */
 
-use crate::{parameter::Parameter, sound::SoundId};
+use crate::{
+	parameter::{Parameter, Tween},
+	sound::SoundId,
+};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 static NEXT_INSTANCE_INDEX: AtomicUsize = AtomicUsize::new(0);
@@ -81,7 +84,7 @@ impl Instance {
 		if let Some(duration) = settings.fade_in_duration {
 			state = InstanceState::Resuming;
 			fade_volume = Parameter::new(0.0);
-			fade_volume.tween(1.0, duration);
+			fade_volume.change(1.0, Some(Tween(duration)));
 		} else {
 			state = InstanceState::Playing;
 			fade_volume = Parameter::new(1.0);
@@ -123,7 +126,7 @@ impl Instance {
 	pub fn pause(&mut self, fade_duration: Option<f32>) {
 		if let Some(duration) = fade_duration {
 			self.state = InstanceState::Pausing;
-			self.fade_volume.tween(0.0, duration);
+			self.fade_volume.change(0.0, Some(Tween(duration)));
 		} else {
 			self.state = InstanceState::Paused;
 		}
@@ -132,7 +135,7 @@ impl Instance {
 	pub fn resume(&mut self, fade_duration: Option<f32>) {
 		if let Some(duration) = fade_duration {
 			self.state = InstanceState::Resuming;
-			self.fade_volume.tween(1.0, duration);
+			self.fade_volume.change(1.0, Some(Tween(duration)));
 		} else {
 			self.state = InstanceState::Playing;
 		}
@@ -141,7 +144,7 @@ impl Instance {
 	pub fn stop(&mut self, fade_duration: Option<f32>) {
 		if let Some(duration) = fade_duration {
 			self.state = InstanceState::Stopping;
-			self.fade_volume.tween(0.0, duration);
+			self.fade_volume.change(0.0, Some(Tween(duration)));
 		} else {
 			self.state = InstanceState::Stopped;
 		}
