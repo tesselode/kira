@@ -48,11 +48,8 @@ impl Backend {
 	fn run_command(&mut self, command: Command) {
 		match command {
 			Command::PlaySound(sound_id, instance_id, settings) => {
-				let sound = self.project.sounds.get(&sound_id).unwrap();
-				self.instances.insert(
-					instance_id,
-					Instance::new(sound_id, settings, sound.duration()),
-				);
+				self.instances
+					.insert(instance_id, Instance::new(sound_id, settings));
 			}
 			Command::SetInstanceVolume(id, volume, tween) => {
 				if let Some(instance) = self.instances.get_mut(&id) {

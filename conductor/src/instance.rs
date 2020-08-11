@@ -66,7 +66,6 @@ pub(crate) enum InstanceState {
 
 pub(crate) struct Instance {
 	pub sound_id: SoundId,
-	duration: f32,
 	pub volume: Parameter,
 	pub pitch: Parameter,
 	state: InstanceState,
@@ -75,7 +74,7 @@ pub(crate) struct Instance {
 }
 
 impl Instance {
-	pub fn new(sound_id: SoundId, settings: InstanceSettings, duration: f32) -> Self {
+	pub fn new(sound_id: SoundId, settings: InstanceSettings) -> Self {
 		let state;
 		let mut fade_volume;
 		if let Some(duration) = settings.fade_in_duration {
@@ -88,7 +87,6 @@ impl Instance {
 		}
 		Self {
 			sound_id,
-			duration,
 			volume: Parameter::new(settings.volume),
 			pitch: Parameter::new(settings.pitch),
 			state,
@@ -160,7 +158,7 @@ impl Instance {
 			self.volume.update(dt);
 			self.pitch.update(dt);
 			self.position += self.pitch.value() * dt;
-			if self.position >= self.duration {
+			if self.position >= self.sound_id.duration() {
 				self.state = InstanceState::Stopped;
 			}
 		}

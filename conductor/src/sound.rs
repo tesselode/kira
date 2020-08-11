@@ -3,6 +3,7 @@ use lewton::{inside_ogg::OggStreamReader, samples::Samples};
 use std::{
 	error::Error,
 	fs::File,
+	hash::Hash,
 	path::Path,
 	sync::atomic::{AtomicUsize, Ordering},
 };
@@ -13,15 +14,36 @@ static NEXT_SOUND_INDEX: AtomicUsize = AtomicUsize::new(0);
 ///
 /// You cannot create this manually - a `SoundId` is returned
 /// when you load a sound with a `Project`.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone)]
 pub struct SoundId {
 	index: usize,
+	duration: f32,
 }
 
 impl SoundId {
-	pub(crate) fn new() -> Self {
+	pub fn duration(&self) -> f32 {
+		self.duration
+	}
+}
+
+impl PartialEq for SoundId {
+	fn eq(&self, other: &Self) -> bool {
+		self.index == other.index
+	}
+}
+
+impl Eq for SoundId {}
+
+impl Hash for SoundId {
+	fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+		self.index.hash(state);
+	}
+}
+
+impl SoundId {
+	pub(crate) fn new(duration: f32) -> Self {
 		let index = NEXT_SOUND_INDEX.fetch_add(1, Ordering::Relaxed);
-		Self { index }
+		Self { index, duration }
 	}
 }
 
