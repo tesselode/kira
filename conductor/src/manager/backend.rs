@@ -54,18 +54,28 @@ impl Backend {
 					Instance::new(sound_id, settings, sound.duration()),
 				);
 			}
-			Command::PauseInstance(instance_id, fade_duration) => {
-				if let Some(instance) = self.instances.get_mut(&instance_id) {
+			Command::SetInstanceVolume(id, volume, tween) => {
+				if let Some(instance) = self.instances.get_mut(&id) {
+					instance.set_volume(volume, tween);
+				}
+			}
+			Command::SetInstancePitch(id, pitch, tween) => {
+				if let Some(instance) = self.instances.get_mut(&id) {
+					instance.set_pitch(pitch, tween);
+				}
+			}
+			Command::PauseInstance(id, fade_duration) => {
+				if let Some(instance) = self.instances.get_mut(&id) {
 					instance.pause(fade_duration);
 				}
 			}
-			Command::ResumeInstance(instance_id, fade_duration) => {
-				if let Some(instance) = self.instances.get_mut(&instance_id) {
+			Command::ResumeInstance(id, fade_duration) => {
+				if let Some(instance) = self.instances.get_mut(&id) {
 					instance.resume(fade_duration);
 				}
 			}
-			Command::StopInstance(instance_id, fade_duration) => {
-				if let Some(instance) = self.instances.get_mut(&instance_id) {
+			Command::StopInstance(id, fade_duration) => {
+				if let Some(instance) = self.instances.get_mut(&id) {
 					instance.stop(fade_duration);
 				}
 			}

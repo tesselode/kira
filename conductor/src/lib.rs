@@ -104,6 +104,7 @@ pub mod sequence;
 pub mod sound;
 mod stereo_sample;
 pub mod time;
+pub mod tween;
 
 pub use manager::AudioManager;
 pub use project::Project;

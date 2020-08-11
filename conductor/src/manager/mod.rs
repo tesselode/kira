@@ -8,6 +8,7 @@ use crate::{
 	project::Project,
 	sequence::{Sequence, SequenceId},
 	sound::SoundId,
+	tween::Tween,
 };
 use backend::Backend;
 use cpal::{
@@ -128,6 +129,36 @@ impl AudioManager {
 			.push(Command::PlaySound(sound_id, instance_id, settings))
 		{
 			Ok(_) => Ok(instance_id),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
+	pub fn set_instance_volume(
+		&mut self,
+		id: InstanceId,
+		volume: f32,
+		tween: Option<Tween>,
+	) -> Result<(), ConductorError> {
+		match self
+			.command_producer
+			.push(Command::SetInstanceVolume(id, volume, tween))
+		{
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
+	pub fn set_instance_pitch(
+		&mut self,
+		id: InstanceId,
+		pitch: f32,
+		tween: Option<Tween>,
+	) -> Result<(), ConductorError> {
+		match self
+			.command_producer
+			.push(Command::SetInstancePitch(id, pitch, tween))
+		{
+			Ok(_) => Ok(()),
 			Err(_) => Err(ConductorError::SendCommand),
 		}
 	}
