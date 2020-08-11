@@ -48,6 +48,7 @@ use crate::{
 	metronome::{Metronome, MetronomeId},
 	sound::SoundId,
 	time::Time,
+	tween::Tween,
 };
 use std::{
 	collections::HashMap,
@@ -139,9 +140,9 @@ enum SequenceTask {
 	WaitForInterval(f32),
 	GoTo(usize),
 	PlaySound(SoundId, PlaySoundTaskHandle, PlaySoundTaskSettings),
-	PauseInstance(PlaySoundTaskHandle, Option<Time>),
-	ResumeInstance(PlaySoundTaskHandle, Option<Time>),
-	StopInstance(PlaySoundTaskHandle, Option<Time>),
+	PauseInstance(PlaySoundTaskHandle, Option<Tween<Time>>),
+	ResumeInstance(PlaySoundTaskHandle, Option<Tween<Time>>),
+	StopInstance(PlaySoundTaskHandle, Option<Tween<Time>>),
 }
 
 /**
@@ -203,21 +204,25 @@ impl Sequence {
 	}
 
 	/// Adds a task to pause an instance of a sound created by a play sound task.
-	pub fn pause_instance(&mut self, handle: PlaySoundTaskHandle, fade_duration: Option<Time>) {
+	pub fn pause_instance(&mut self, handle: PlaySoundTaskHandle, fade_tween: Option<Tween<Time>>) {
 		self.tasks
-			.push(SequenceTask::PauseInstance(handle, fade_duration));
+			.push(SequenceTask::PauseInstance(handle, fade_tween));
 	}
 
 	/// Adds a task to resume an instance of a sound created by a play sound task.
-	pub fn resume_instance(&mut self, handle: PlaySoundTaskHandle, fade_duration: Option<Time>) {
+	pub fn resume_instance(
+		&mut self,
+		handle: PlaySoundTaskHandle,
+		fade_tween: Option<Tween<Time>>,
+	) {
 		self.tasks
-			.push(SequenceTask::ResumeInstance(handle, fade_duration));
+			.push(SequenceTask::ResumeInstance(handle, fade_tween));
 	}
 
 	/// Adds a task to stop an instance of a sound created by a play sound task.
-	pub fn stop_instance(&mut self, handle: PlaySoundTaskHandle, fade_duration: Option<Time>) {
+	pub fn stop_instance(&mut self, handle: PlaySoundTaskHandle, fade_tween: Option<Tween<Time>>) {
 		self.tasks
-			.push(SequenceTask::StopInstance(handle, fade_duration));
+			.push(SequenceTask::StopInstance(handle, fade_tween));
 	}
 
 	/// Adds a task to jump to the nth task in the sequence.
@@ -257,33 +262,33 @@ impl Sequence {
 					));
 					self.go_to_command(index + 1, metronome, command_queue);
 				}
-				SequenceTask::PauseInstance(handle, fade_duration) => {
+				SequenceTask::PauseInstance(handle, fade_tween) => {
 					if let Some(instance_id) = self.instances.get(&handle) {
-						let fade_duration = match fade_duration {
-							Some(time) => Some(time.in_seconds(metronome.tempo)),
+						let fade_tween = match fade_tween {
+							Some(tween) => Some(tween.in_seconds(metronome.tempo)),
 							None => None,
 						};
-						command_queue.push(Command::PauseInstance(*instance_id, fade_duration))
+						command_queue.push(Command::PauseInstance(*instance_id, fade_tween))
 					}
 					self.go_to_command(index + 1, metronome, command_queue);
 				}
-				SequenceTask::ResumeInstance(handle, fade_duration) => {
+				SequenceTask::ResumeInstance(handle, fade_tween) => {
 					if let Some(instance_id) = self.instances.get(&handle) {
-						let fade_duration = match fade_duration {
-							Some(time) => Some(time.in_seconds(metronome.tempo)),
+						let fade_tween = match fade_tween {
+							Some(tween) => Some(tween.in_seconds(metronome.tempo)),
 							None => None,
 						};
-						command_queue.push(Command::ResumeInstance(*instance_id, fade_duration))
+						command_queue.push(Command::ResumeInstance(*instance_id, fade_tween))
 					}
 					self.go_to_command(index + 1, metronome, command_queue);
 				}
-				SequenceTask::StopInstance(handle, fade_duration) => {
+				SequenceTask::StopInstance(handle, fade_tween) => {
 					if let Some(instance_id) = self.instances.get(&handle) {
-						let fade_duration = match fade_duration {
-							Some(time) => Some(time.in_seconds(metronome.tempo)),
+						let fade_tween = match fade_tween {
+							Some(tween) => Some(tween.in_seconds(metronome.tempo)),
 							None => None,
 						};
-						command_queue.push(Command::StopInstance(*instance_id, fade_duration))
+						command_queue.push(Command::StopInstance(*instance_id, fade_tween))
 					}
 					self.go_to_command(index + 1, metronome, command_queue);
 				}

@@ -26,11 +26,18 @@ impl MainState {
 		let sound_id = project.load_sound(
 			&std::env::current_dir()
 				.unwrap()
-				.join("assets/test_song.ogg"),
+				.join("assets/test_loop.ogg"),
 		)?;
+		let metronome_id = project.create_metronome(128.0, MetronomeSettings::default());
+		let mut sequence = Sequence::new(metronome_id);
+		let handle = sequence.play_sound(sound_id, PlaySoundTaskSettings::default());
+		sequence.wait(Time::Beats(3.0));
+		sequence.stop_instance(handle, Some(Tween(Time::Beats(1.0))));
+		sequence.wait(Time::Beats(1.0));
+		sequence.go_to(0);
 		let mut audio_manager = AudioManager::new(project, AudioManagerSettings::default())?;
-		let instance_id = audio_manager.play_sound(sound_id, InstanceSettings::default())?;
-		audio_manager.set_instance_pitch(instance_id, 0.25, Some(Tween(4.0)))?;
+		audio_manager.start_metronome(metronome_id)?;
+		audio_manager.start_sequence(sequence)?;
 		Ok(Self {
 			audio_manager,
 			sound_id,

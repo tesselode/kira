@@ -1,7 +1,7 @@
 use crate::tween::Tween;
 
 struct TweenState {
-	tween: Tween,
+	tween: Tween<f32>,
 	start: f32,
 	target: f32,
 	progress: f32,
@@ -24,7 +24,7 @@ impl Parameter {
 		self.value
 	}
 
-	pub fn set(&mut self, target: f32, tween: Option<Tween>) {
+	pub fn set(&mut self, target: f32, tween: Option<Tween<f32>>) {
 		if let Some(tween) = tween {
 			self.tween_state = Some(TweenState {
 				tween,

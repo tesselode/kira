@@ -9,11 +9,11 @@ use crate::{
 #[derive(Debug, Clone)]
 pub enum Command {
 	PlaySound(SoundId, InstanceId, InstanceSettings),
-	SetInstanceVolume(InstanceId, f32, Option<Tween>),
-	SetInstancePitch(InstanceId, f32, Option<Tween>),
-	PauseInstance(InstanceId, Option<f32>),
-	ResumeInstance(InstanceId, Option<f32>),
-	StopInstance(InstanceId, Option<f32>),
+	SetInstanceVolume(InstanceId, f32, Option<Tween<f32>>),
+	SetInstancePitch(InstanceId, f32, Option<Tween<f32>>),
+	PauseInstance(InstanceId, Option<Tween<f32>>),
+	ResumeInstance(InstanceId, Option<Tween<f32>>),
+	StopInstance(InstanceId, Option<Tween<f32>>),
 	StartMetronome(MetronomeId),
 	PauseMetronome(MetronomeId),
 	StopMetronome(MetronomeId),

@@ -120,36 +120,36 @@ impl Instance {
 		self.state == InstanceState::Stopped
 	}
 
-	pub fn set_volume(&mut self, volume: f32, tween: Option<Tween>) {
+	pub fn set_volume(&mut self, volume: f32, tween: Option<Tween<f32>>) {
 		self.volume.set(volume, tween);
 	}
 
-	pub fn set_pitch(&mut self, pitch: f32, tween: Option<Tween>) {
+	pub fn set_pitch(&mut self, pitch: f32, tween: Option<Tween<f32>>) {
 		self.pitch.set(pitch, tween);
 	}
 
-	pub fn pause(&mut self, fade_duration: Option<f32>) {
-		if let Some(duration) = fade_duration {
+	pub fn pause(&mut self, fade_tween: Option<Tween<f32>>) {
+		if let Some(tween) = fade_tween {
 			self.state = InstanceState::Pausing;
-			self.fade_volume.set(0.0, Some(Tween(duration)));
+			self.fade_volume.set(0.0, Some(tween));
 		} else {
 			self.state = InstanceState::Paused;
 		}
 	}
 
-	pub fn resume(&mut self, fade_duration: Option<f32>) {
-		if let Some(duration) = fade_duration {
+	pub fn resume(&mut self, fade_tween: Option<Tween<f32>>) {
+		if let Some(tween) = fade_tween {
 			self.state = InstanceState::Resuming;
-			self.fade_volume.set(1.0, Some(Tween(duration)));
+			self.fade_volume.set(1.0, Some(tween));
 		} else {
 			self.state = InstanceState::Playing;
 		}
 	}
 
-	pub fn stop(&mut self, fade_duration: Option<f32>) {
-		if let Some(duration) = fade_duration {
+	pub fn stop(&mut self, fade_tween: Option<Tween<f32>>) {
+		if let Some(tween) = fade_tween {
 			self.state = InstanceState::Stopping;
-			self.fade_volume.set(0.0, Some(Tween(duration)));
+			self.fade_volume.set(0.0, Some(tween));
 		} else {
 			self.state = InstanceState::Stopped;
 		}

@@ -137,7 +137,7 @@ impl AudioManager {
 		&mut self,
 		id: InstanceId,
 		volume: f32,
-		tween: Option<Tween>,
+		tween: Option<Tween<f32>>,
 	) -> Result<(), ConductorError> {
 		match self
 			.command_producer
@@ -152,7 +152,7 @@ impl AudioManager {
 		&mut self,
 		id: InstanceId,
 		pitch: f32,
-		tween: Option<Tween>,
+		tween: Option<Tween<f32>>,
 	) -> Result<(), ConductorError> {
 		match self
 			.command_producer
@@ -169,11 +169,11 @@ impl AudioManager {
 	pub fn pause_instance(
 		&mut self,
 		instance_id: InstanceId,
-		fade_duration: Option<f32>,
+		fade_tween: Option<Tween<f32>>,
 	) -> Result<(), ConductorError> {
 		match self
 			.command_producer
-			.push(Command::PauseInstance(instance_id, fade_duration))
+			.push(Command::PauseInstance(instance_id, fade_tween))
 		{
 			Ok(_) => Ok(()),
 			Err(_) => Err(ConductorError::SendCommand),
@@ -186,11 +186,11 @@ impl AudioManager {
 	pub fn resume_instance(
 		&mut self,
 		instance_id: InstanceId,
-		fade_duration: Option<f32>,
+		fade_tween: Option<Tween<f32>>,
 	) -> Result<(), ConductorError> {
 		match self
 			.command_producer
-			.push(Command::ResumeInstance(instance_id, fade_duration))
+			.push(Command::ResumeInstance(instance_id, fade_tween))
 		{
 			Ok(_) => Ok(()),
 			Err(_) => Err(ConductorError::SendCommand),
@@ -204,11 +204,11 @@ impl AudioManager {
 	pub fn stop_instance(
 		&mut self,
 		instance_id: InstanceId,
-		fade_duration: Option<f32>,
+		fade_tween: Option<Tween<f32>>,
 	) -> Result<(), ConductorError> {
 		match self
 			.command_producer
-			.push(Command::StopInstance(instance_id, fade_duration))
+			.push(Command::StopInstance(instance_id, fade_tween))
 		{
 			Ok(_) => Ok(()),
 			Err(_) => Err(ConductorError::SendCommand),
