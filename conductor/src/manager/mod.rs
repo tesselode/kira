@@ -4,7 +4,7 @@ use crate::{
 	command::{Command, InstanceCommand},
 	error::ConductorError,
 	instance::{InstanceId, InstanceSettings},
-	metronome::MetronomeId,
+	metronome::MetronomeSettings,
 	project::Project,
 	sequence::{Sequence, SequenceId},
 	sound::SoundId,
@@ -31,7 +31,7 @@ pub enum Event {
 	The intervals that a metronome emits events for are defined
 	when the metronome is created.
 	*/
-	MetronomeIntervalPassed(MetronomeId, f32),
+	MetronomeIntervalPassed(f32),
 }
 
 /// Settings for an `AudioManager`.
@@ -48,6 +48,8 @@ pub struct AudioManagerSettings {
 	pub num_instances: usize,
 	/// The maximum number of sequences that can be running at a time.
 	pub num_sequences: usize,
+	/// The settings for the metronome.
+	pub metronome_settings: MetronomeSettings,
 }
 
 impl Default for AudioManagerSettings {
@@ -57,6 +59,7 @@ impl Default for AudioManagerSettings {
 			num_events: 100,
 			num_instances: 100,
 			num_sequences: 50,
+			metronome_settings: MetronomeSettings::default(),
 		}
 	}
 }
@@ -227,27 +230,27 @@ impl AudioManager {
 	}
 
 	/// Starts or resumes a metronome.
-	pub fn start_metronome(&mut self, id: MetronomeId) -> Result<InstanceId, ConductorError> {
+	pub fn start_metronome(&mut self) -> Result<InstanceId, ConductorError> {
 		let instance_id = InstanceId::new();
-		match self.command_producer.push(Command::StartMetronome(id)) {
+		match self.command_producer.push(Command::StartMetronome) {
 			Ok(_) => Ok(instance_id),
 			Err(_) => Err(ConductorError::SendCommand),
 		}
 	}
 
 	/// Pauses a metronome.
-	pub fn pause_metronome(&mut self, id: MetronomeId) -> Result<InstanceId, ConductorError> {
+	pub fn pause_metronome(&mut self) -> Result<InstanceId, ConductorError> {
 		let instance_id = InstanceId::new();
-		match self.command_producer.push(Command::PauseMetronome(id)) {
+		match self.command_producer.push(Command::PauseMetronome) {
 			Ok(_) => Ok(instance_id),
 			Err(_) => Err(ConductorError::SendCommand),
 		}
 	}
 
 	/// Stops and resets a metronome.
-	pub fn stop_metronome(&mut self, id: MetronomeId) -> Result<InstanceId, ConductorError> {
+	pub fn stop_metronome(&mut self) -> Result<InstanceId, ConductorError> {
 		let instance_id = InstanceId::new();
-		match self.command_producer.push(Command::StopMetronome(id)) {
+		match self.command_producer.push(Command::StopMetronome) {
 			Ok(_) => Ok(instance_id),
 			Err(_) => Err(ConductorError::SendCommand),
 		}

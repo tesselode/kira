@@ -5,28 +5,10 @@ A metronome emits a steady pulse that other things, like `Sequence`s,
 can be synced to.
 */
 
-use std::sync::atomic::{AtomicUsize, Ordering};
-
-static NEXT_METRONOME_INDEX: AtomicUsize = AtomicUsize::new(0);
-
-/// A unique identifier for a `Metronome`.
-///
-/// You cannot create this manually - a `MetronomeId` is returned
-/// when you create a metronome with a `Project`.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub struct MetronomeId {
-	index: usize,
-}
-
-impl MetronomeId {
-	pub(crate) fn new() -> Self {
-		let index = NEXT_METRONOME_INDEX.fetch_add(1, Ordering::Relaxed);
-		Self { index }
-	}
-}
-
 /// Settings for a metronome.
 pub struct MetronomeSettings {
+	/// The tempo of the metronome (in beats per minute).
+	pub tempo: f32,
 	/// Which intervals (in beats) the metronome should emit events for.
 	///
 	/// For example, if this is set to `vec![0.25, 0.5, 1.0]`, then
@@ -38,23 +20,22 @@ pub struct MetronomeSettings {
 impl Default for MetronomeSettings {
 	fn default() -> Self {
 		Self {
+			tempo: 120.0,
 			interval_events_to_emit: vec![],
 		}
 	}
 }
 
 pub(crate) struct Metronome {
-	pub tempo: f32,
-	settings: MetronomeSettings,
+	pub settings: MetronomeSettings,
 	ticking: bool,
 	time: f32,
 	previous_time: f32,
 }
 
 impl Metronome {
-	pub fn new(tempo: f32, settings: MetronomeSettings) -> Self {
+	pub fn new(settings: MetronomeSettings) -> Self {
 		Self {
-			tempo,
 			settings,
 			ticking: false,
 			time: 0.0,
@@ -64,7 +45,7 @@ impl Metronome {
 
 	pub fn effective_tempo(&self) -> f32 {
 		if self.ticking {
-			self.tempo
+			self.settings.tempo
 		} else {
 			0.0
 		}
@@ -89,7 +70,7 @@ impl Metronome {
 			return;
 		}
 		self.previous_time = self.time;
-		self.time += (self.tempo / 60.0) * dt;
+		self.time += (self.settings.tempo / 60.0) * dt;
 		for interval in &self.settings.interval_events_to_emit {
 			if self.interval_passed(*interval) {
 				interval_event_collector.push(*interval);

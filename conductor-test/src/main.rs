@@ -28,15 +28,23 @@ impl MainState {
 				.unwrap()
 				.join("assets/test_loop.ogg"),
 		)?;
-		let metronome_id = project.create_metronome(128.0, MetronomeSettings::default());
-		let mut sequence = Sequence::new(metronome_id);
+		let mut sequence = Sequence::new();
 		let handle = sequence.play_sound(sound_id, PlaySoundTaskSettings::default());
 		sequence.wait(Time::Beats(3.0));
 		sequence.stop_instance(handle, Some(Tween(Time::Beats(1.0))));
 		sequence.wait(Time::Beats(1.0));
 		sequence.go_to(0);
-		let mut audio_manager = AudioManager::new(project, AudioManagerSettings::default())?;
-		audio_manager.start_metronome(metronome_id)?;
+		let mut audio_manager = AudioManager::new(
+			project,
+			AudioManagerSettings {
+				metronome_settings: MetronomeSettings {
+					tempo: 128.0,
+					..Default::default()
+				},
+				..Default::default()
+			},
+		)?;
+		audio_manager.start_metronome()?;
 		audio_manager.start_sequence(sequence)?;
 		Ok(Self {
 			audio_manager,

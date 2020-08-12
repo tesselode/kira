@@ -3,7 +3,7 @@ mod instances;
 use super::{AudioManagerSettings, Event};
 use crate::{
 	command::Command,
-	instance::{Instance, InstanceId},
+	metronome::Metronome,
 	project::Project,
 	sequence::{Sequence, SequenceId},
 	stereo_sample::StereoSample,
@@ -16,6 +16,7 @@ pub struct Backend {
 	dt: f32,
 	project: Project,
 	instances: Instances,
+	metronome: Metronome,
 	sequences: IndexMap<SequenceId, Sequence>,
 	command_consumer: Consumer<Command>,
 	event_producer: Producer<Event>,
@@ -37,6 +38,7 @@ impl Backend {
 			dt: 1.0 / sample_rate as f32,
 			project,
 			instances: Instances::new(settings.num_instances),
+			metronome: Metronome::new(settings.metronome_settings),
 			sequences: IndexMap::with_capacity(settings.num_sequences),
 			command_consumer,
 			event_producer,
@@ -51,18 +53,17 @@ impl Backend {
 			Command::Instance(command) => {
 				self.instances.run_command(command);
 			}
-			Command::StartMetronome(id) => {
-				self.project.metronomes.get_mut(&id).unwrap().start();
+			Command::StartMetronome => {
+				self.metronome.start();
 			}
-			Command::PauseMetronome(id) => {
-				self.project.metronomes.get_mut(&id).unwrap().pause();
+			Command::PauseMetronome => {
+				self.metronome.pause();
 			}
-			Command::StopMetronome(id) => {
-				self.project.metronomes.get_mut(&id).unwrap().stop();
+			Command::StopMetronome => {
+				self.metronome.stop();
 			}
 			Command::StartSequence(id, mut sequence) => {
-				let metronome = self.project.metronomes.get(&sequence.metronome_id).unwrap();
-				sequence.start(metronome, &mut self.sequence_command_queue);
+				sequence.start(&self.metronome, &mut self.sequence_command_queue);
 				self.sequences.insert(id, sequence);
 			}
 		}
@@ -75,24 +76,22 @@ impl Backend {
 	}
 
 	pub fn update_metronomes(&mut self) {
-		for (id, metronome) in &mut self.project.metronomes {
-			metronome.update(self.dt, &mut self.metronome_interval_event_collector);
-			for interval in self.metronome_interval_event_collector.drain(..) {
-				match self
-					.event_producer
-					.push(Event::MetronomeIntervalPassed(*id, interval))
-				{
-					Ok(_) => {}
-					Err(_) => {}
-				}
+		self.metronome
+			.update(self.dt, &mut self.metronome_interval_event_collector);
+		for interval in self.metronome_interval_event_collector.drain(..) {
+			match self
+				.event_producer
+				.push(Event::MetronomeIntervalPassed(interval))
+			{
+				Ok(_) => {}
+				Err(_) => {}
 			}
 		}
 	}
 
 	pub fn update_sequences(&mut self) {
 		for (id, sequence) in &mut self.sequences {
-			let metronome = self.project.metronomes.get(&sequence.metronome_id).unwrap();
-			sequence.update(self.dt, &metronome, &mut self.sequence_command_queue);
+			sequence.update(self.dt, &self.metronome, &mut self.sequence_command_queue);
 			if sequence.finished() {
 				self.sequences_to_remove.push(*id);
 			}

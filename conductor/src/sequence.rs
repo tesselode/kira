@@ -45,7 +45,7 @@ audio_manager.start_sequence(sequence)?;
 use crate::{
 	command::{Command, InstanceCommand},
 	instance::{InstanceId, InstanceSettings},
-	metronome::{Metronome, MetronomeId},
+	metronome::Metronome,
 	sound::SoundId,
 	time::Time,
 	tween::Tween,
@@ -156,7 +156,6 @@ or changing the volume of an instance
 */
 #[derive(Debug, Clone)]
 pub struct Sequence {
-	pub metronome_id: MetronomeId,
 	tasks: Vec<SequenceTask>,
 	state: SequenceState,
 	wait_timer: Option<f32>,
@@ -165,9 +164,8 @@ pub struct Sequence {
 
 impl Sequence {
 	/// Creates a new sequence synced to the given metronome.
-	pub fn new(metronome_id: MetronomeId) -> Self {
+	pub fn new() -> Self {
 		Self {
-			metronome_id,
 			tasks: vec![],
 			state: SequenceState::Idle,
 			wait_timer: None,
@@ -258,14 +256,14 @@ impl Sequence {
 					command_queue.push(Command::Instance(InstanceCommand::PlaySound(
 						sound_id,
 						instance_id,
-						settings.into_instance_settings(metronome.tempo),
+						settings.into_instance_settings(metronome.settings.tempo),
 					)));
 					self.go_to_command(index + 1, metronome, command_queue);
 				}
 				SequenceTask::PauseInstance(handle, fade_tween) => {
 					if let Some(instance_id) = self.instances.get(&handle) {
 						let fade_tween = match fade_tween {
-							Some(tween) => Some(tween.in_seconds(metronome.tempo)),
+							Some(tween) => Some(tween.in_seconds(metronome.settings.tempo)),
 							None => None,
 						};
 						command_queue.push(Command::Instance(InstanceCommand::PauseInstance(
@@ -278,7 +276,7 @@ impl Sequence {
 				SequenceTask::ResumeInstance(handle, fade_tween) => {
 					if let Some(instance_id) = self.instances.get(&handle) {
 						let fade_tween = match fade_tween {
-							Some(tween) => Some(tween.in_seconds(metronome.tempo)),
+							Some(tween) => Some(tween.in_seconds(metronome.settings.tempo)),
 							None => None,
 						};
 						command_queue.push(Command::Instance(InstanceCommand::ResumeInstance(
@@ -291,7 +289,7 @@ impl Sequence {
 				SequenceTask::StopInstance(handle, fade_tween) => {
 					if let Some(instance_id) = self.instances.get(&handle) {
 						let fade_tween = match fade_tween {
-							Some(tween) => Some(tween.in_seconds(metronome.tempo)),
+							Some(tween) => Some(tween.in_seconds(metronome.settings.tempo)),
 							None => None,
 						};
 						command_queue.push(Command::Instance(InstanceCommand::StopInstance(

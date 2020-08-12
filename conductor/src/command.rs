@@ -1,6 +1,5 @@
 use crate::{
 	instance::{InstanceId, InstanceSettings},
-	metronome::MetronomeId,
 	sequence::{Sequence, SequenceId},
 	sound::SoundId,
 	tween::Tween,
@@ -19,8 +18,8 @@ pub enum InstanceCommand {
 #[derive(Debug, Clone)]
 pub enum Command {
 	Instance(InstanceCommand),
-	StartMetronome(MetronomeId),
-	PauseMetronome(MetronomeId),
-	StopMetronome(MetronomeId),
+	StartMetronome,
+	PauseMetronome,
+	StopMetronome,
 	StartSequence(SequenceId, Sequence),
 }
