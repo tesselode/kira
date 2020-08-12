@@ -16,10 +16,15 @@ pub enum InstanceCommand {
 }
 
 #[derive(Debug, Clone)]
-pub enum Command {
-	Instance(InstanceCommand),
+pub enum MetronomeCommand {
 	StartMetronome,
 	PauseMetronome,
 	StopMetronome,
+}
+
+#[derive(Debug, Clone)]
+pub enum Command {
+	Instance(InstanceCommand),
+	Metronome(MetronomeCommand),
 	StartSequence(SequenceId, Sequence),
 }

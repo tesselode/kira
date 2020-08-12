@@ -53,14 +53,8 @@ impl Backend {
 			Command::Instance(command) => {
 				self.instances.run_command(command);
 			}
-			Command::StartMetronome => {
-				self.metronome.start();
-			}
-			Command::PauseMetronome => {
-				self.metronome.pause();
-			}
-			Command::StopMetronome => {
-				self.metronome.stop();
+			Command::Metronome(command) => {
+				self.metronome.run_command(command);
 			}
 			Command::StartSequence(id, mut sequence) => {
 				sequence.start(&self.metronome, &mut self.sequence_command_queue);

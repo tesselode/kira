@@ -5,6 +5,8 @@ A metronome emits a steady pulse that other things, like `Sequence`s,
 can be synced to.
 */
 
+use crate::command::MetronomeCommand;
+
 /// Settings for a metronome.
 pub struct MetronomeSettings {
 	/// The tempo of the metronome (in beats per minute).
@@ -63,6 +65,14 @@ impl Metronome {
 		self.ticking = false;
 		self.time = 0.0;
 		self.previous_time = 0.0;
+	}
+
+	pub fn run_command(&mut self, command: MetronomeCommand) {
+		match command {
+			MetronomeCommand::StartMetronome => self.start(),
+			MetronomeCommand::PauseMetronome => self.pause(),
+			MetronomeCommand::StopMetronome => self.stop(),
+		}
 	}
 
 	pub fn update(&mut self, dt: f32, interval_event_collector: &mut Vec<f32>) {

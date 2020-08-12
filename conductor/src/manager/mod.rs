@@ -1,7 +1,7 @@
 mod backend;
 
 use crate::{
-	command::{Command, InstanceCommand},
+	command::{Command, InstanceCommand, MetronomeCommand},
 	error::ConductorError,
 	instance::{InstanceId, InstanceSettings},
 	metronome::MetronomeSettings,
@@ -232,7 +232,10 @@ impl AudioManager {
 	/// Starts or resumes a metronome.
 	pub fn start_metronome(&mut self) -> Result<InstanceId, ConductorError> {
 		let instance_id = InstanceId::new();
-		match self.command_producer.push(Command::StartMetronome) {
+		match self
+			.command_producer
+			.push(Command::Metronome(MetronomeCommand::StartMetronome))
+		{
 			Ok(_) => Ok(instance_id),
 			Err(_) => Err(ConductorError::SendCommand),
 		}
@@ -241,7 +244,10 @@ impl AudioManager {
 	/// Pauses a metronome.
 	pub fn pause_metronome(&mut self) -> Result<InstanceId, ConductorError> {
 		let instance_id = InstanceId::new();
-		match self.command_producer.push(Command::PauseMetronome) {
+		match self
+			.command_producer
+			.push(Command::Metronome(MetronomeCommand::PauseMetronome))
+		{
 			Ok(_) => Ok(instance_id),
 			Err(_) => Err(ConductorError::SendCommand),
 		}
@@ -250,7 +256,10 @@ impl AudioManager {
 	/// Stops and resets a metronome.
 	pub fn stop_metronome(&mut self) -> Result<InstanceId, ConductorError> {
 		let instance_id = InstanceId::new();
-		match self.command_producer.push(Command::StopMetronome) {
+		match self
+			.command_producer
+			.push(Command::Metronome(MetronomeCommand::StopMetronome))
+		{
 			Ok(_) => Ok(instance_id),
 			Err(_) => Err(ConductorError::SendCommand),
 		}
