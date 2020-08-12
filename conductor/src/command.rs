@@ -5,7 +5,7 @@ use crate::{
 	tween::Tween,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum InstanceCommand {
 	PlaySound(SoundId, InstanceId, InstanceSettings),
 	SetInstanceVolume(InstanceId, f32, Option<Tween<f32>>),
@@ -15,14 +15,14 @@ pub enum InstanceCommand {
 	StopInstance(InstanceId, Option<Tween<f32>>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum MetronomeCommand {
 	StartMetronome,
 	PauseMetronome,
 	StopMetronome,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum Command {
 	Instance(InstanceCommand),
 	Metronome(MetronomeCommand),

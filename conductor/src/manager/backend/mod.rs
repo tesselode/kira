@@ -93,11 +93,17 @@ impl Backend {
 		for id in self.sequences_to_remove.drain(..) {
 			self.sequences.remove(&id);
 		}
-		for i in 0..self.sequence_command_queue.len() {
-			let command = self.sequence_command_queue.get(i).unwrap().clone();
-			self.run_command(command);
+		for command in self.sequence_command_queue.drain(..) {
+			match command {
+				Command::Instance(command) => {
+					self.instances.run_command(command);
+				}
+				Command::Metronome(command) => {
+					self.metronome.run_command(command);
+				}
+				Command::StartSequence(_, _) => unimplemented!(),
+			}
 		}
-		self.sequence_command_queue.clear();
 	}
 
 	pub fn process(&mut self) -> StereoSample {

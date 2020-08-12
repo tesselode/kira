@@ -30,7 +30,7 @@ impl InstanceId {
 }
 
 /// Settings for an instance.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct InstanceSettings {
 	/// The volume of the instance.
 	pub volume: f32,

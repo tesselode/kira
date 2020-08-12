@@ -96,7 +96,7 @@ impl SequenceId {
 /// This is almost identical to `InstanceSettings`, except
 /// the position of the instance can be specified in beats
 /// or seconds.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PlaySoundTaskSettings {
 	/// The volume to play the sound with.
 	pub volume: f32,
@@ -127,14 +127,14 @@ impl Default for PlaySoundTaskSettings {
 	}
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub(crate) enum SequenceState {
 	Idle,
 	Playing(usize),
 	Finished,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 enum SequenceTask {
 	Wait(Time),
 	WaitForInterval(f32),
@@ -154,7 +154,7 @@ or changing the volume of an instance
 - Waiting for a duration of time or for a specific moment in time
 - Returning to a previous task (important for creating looping sequences)
 */
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Sequence {
 	tasks: Vec<SequenceTask>,
 	state: SequenceState,
@@ -248,13 +248,14 @@ impl Sequence {
 			}
 			match command {
 				SequenceTask::GoTo(index) => {
-					self.go_to_command(index, metronome, command_queue);
+					self.go_to_command(*index, metronome, command_queue);
 				}
 				SequenceTask::PlaySound(sound_id, sequence_instance_handle, settings) => {
 					let instance_id = InstanceId::new();
-					self.instances.insert(sequence_instance_handle, instance_id);
+					self.instances
+						.insert(*sequence_instance_handle, instance_id);
 					command_queue.push(Command::Instance(InstanceCommand::PlaySound(
-						sound_id,
+						*sound_id,
 						instance_id,
 						settings.into_instance_settings(metronome.settings.tempo),
 					)));
