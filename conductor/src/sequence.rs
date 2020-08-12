@@ -127,7 +127,7 @@ impl Default for PlaySoundTaskSettings {
 	}
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub(crate) enum SequenceState {
 	Idle,
 	Playing(usize),
