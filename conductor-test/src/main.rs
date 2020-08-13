@@ -55,8 +55,17 @@ impl ggez::event::EventHandler for MainState {
 	) {
 		match keycode {
 			KeyCode::Space => {
+				let sound_id = self
+					.audio_manager
+					.load_sound(
+						&std::env::current_dir()
+							.unwrap()
+							.join("assets/test_song.ogg"),
+						SoundMetadata::default(),
+					)
+					.unwrap();
 				self.audio_manager
-					.stop_instance(self.instance_id, Some(Tween(0.25)))
+					.play_sound(sound_id, InstanceSettings::default())
 					.unwrap();
 			}
 			_ => {}
