@@ -221,4 +221,56 @@ impl AudioManager {
 			Err(_) => Err(ConductorError::SendCommand),
 		}
 	}
+
+	/// Pauses all currently playing instances of a sound.
+	///
+	/// You can optionally provide a fade-out duration (in seconds).
+	pub fn pause_instances_of_sound(
+		&mut self,
+		sound_id: SoundId,
+		fade_tween: Option<Tween>,
+	) -> Result<(), ConductorError> {
+		match self
+			.command_producer
+			.push(Command::Instance(InstanceCommand::PauseInstancesOfSound(
+				sound_id, fade_tween,
+			))) {
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
+	/// Resumes all currently playing instances of a sound.
+	///
+	/// You can optionally provide a fade-out duration (in seconds).
+	pub fn resume_instances_of_sound(
+		&mut self,
+		sound_id: SoundId,
+		fade_tween: Option<Tween>,
+	) -> Result<(), ConductorError> {
+		match self.command_producer.push(Command::Instance(
+			InstanceCommand::ResumeInstancesOfSound(sound_id, fade_tween),
+		)) {
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
+	/// Stops all currently playing instances of a sound.
+	///
+	/// You can optionally provide a fade-out duration (in seconds).
+	pub fn stop_instances_of_sound(
+		&mut self,
+		sound_id: SoundId,
+		fade_tween: Option<Tween>,
+	) -> Result<(), ConductorError> {
+		match self
+			.command_producer
+			.push(Command::Instance(InstanceCommand::StopInstancesOfSound(
+				sound_id, fade_tween,
+			))) {
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
 }

@@ -1,7 +1,7 @@
 use conductor::{
 	instance::{InstanceId, InstanceSettings},
 	manager::{AudioManager, AudioManagerSettings},
-	sound::SoundMetadata,
+	sound::{SoundId, SoundMetadata},
 	tempo::Tempo,
 	tween::Tween,
 };
@@ -13,7 +13,7 @@ use std::error::Error;
 
 struct MainState {
 	audio_manager: AudioManager,
-	instance_id: InstanceId,
+	sound_id: SoundId,
 }
 
 impl MainState {
@@ -27,16 +27,9 @@ impl MainState {
 				tempo: Some(Tempo(128.0)),
 			},
 		)?;
-		let instance_id = audio_manager.play_sound(
-			sound_id,
-			InstanceSettings {
-				position: sound_id.metadata().tempo.unwrap().beats_to_seconds(2.0),
-				..Default::default()
-			},
-		)?;
 		Ok(Self {
 			audio_manager,
-			instance_id,
+			sound_id,
 		})
 	}
 }
@@ -55,17 +48,13 @@ impl ggez::event::EventHandler for MainState {
 	) {
 		match keycode {
 			KeyCode::Space => {
-				let sound_id = self
-					.audio_manager
-					.load_sound(
-						&std::env::current_dir()
-							.unwrap()
-							.join("assets/test_song.ogg"),
-						SoundMetadata::default(),
-					)
-					.unwrap();
 				self.audio_manager
-					.play_sound(sound_id, InstanceSettings::default())
+					.play_sound(self.sound_id, InstanceSettings::default())
+					.unwrap();
+			}
+			KeyCode::S => {
+				self.audio_manager
+					.stop_instances_of_sound(self.sound_id, Some(Tween(0.25)))
 					.unwrap();
 			}
 			_ => {}

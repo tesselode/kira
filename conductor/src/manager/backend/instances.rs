@@ -35,19 +35,40 @@ impl Instances {
 					instance.set_pitch(pitch, tween);
 				}
 			}
-			InstanceCommand::PauseInstance(id, fade_duration) => {
+			InstanceCommand::PauseInstance(id, fade_tween) => {
 				if let Some(instance) = self.instances.get_mut(&id) {
-					instance.pause(fade_duration);
+					instance.pause(fade_tween);
 				}
 			}
-			InstanceCommand::ResumeInstance(id, fade_duration) => {
+			InstanceCommand::ResumeInstance(id, fade_tween) => {
 				if let Some(instance) = self.instances.get_mut(&id) {
-					instance.resume(fade_duration);
+					instance.resume(fade_tween);
 				}
 			}
-			InstanceCommand::StopInstance(id, fade_duration) => {
+			InstanceCommand::StopInstance(id, fade_tween) => {
 				if let Some(instance) = self.instances.get_mut(&id) {
-					instance.stop(fade_duration);
+					instance.stop(fade_tween);
+				}
+			}
+			InstanceCommand::PauseInstancesOfSound(id, fade_tween) => {
+				for (_, instance) in &mut self.instances {
+					if instance.sound_id == id {
+						instance.pause(fade_tween);
+					}
+				}
+			}
+			InstanceCommand::ResumeInstancesOfSound(id, fade_tween) => {
+				for (_, instance) in &mut self.instances {
+					if instance.sound_id == id {
+						instance.resume(fade_tween);
+					}
+				}
+			}
+			InstanceCommand::StopInstancesOfSound(id, fade_tween) => {
+				for (_, instance) in &mut self.instances {
+					if instance.sound_id == id {
+						instance.stop(fade_tween);
+					}
 				}
 			}
 		}

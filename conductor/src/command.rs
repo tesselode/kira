@@ -15,6 +15,9 @@ pub(crate) enum InstanceCommand {
 	PauseInstance(InstanceId, Option<Tween>),
 	ResumeInstance(InstanceId, Option<Tween>),
 	StopInstance(InstanceId, Option<Tween>),
+	PauseInstancesOfSound(SoundId, Option<Tween>),
+	ResumeInstancesOfSound(SoundId, Option<Tween>),
+	StopInstancesOfSound(SoundId, Option<Tween>),
 }
 
 pub(crate) enum Command {
