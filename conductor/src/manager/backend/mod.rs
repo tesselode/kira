@@ -8,12 +8,13 @@ use crate::{
 };
 use indexmap::IndexMap;
 use instances::Instances;
-use ringbuf::Consumer;
+use ringbuf::{Consumer, Producer};
 
 pub(crate) struct Backend {
 	dt: f32,
 	sounds: IndexMap<SoundId, Sound>,
 	command_consumer: Consumer<Command>,
+	sounds_to_unload_producer: Producer<Sound>,
 	instances: Instances,
 }
 
@@ -22,11 +23,13 @@ impl Backend {
 		sample_rate: u32,
 		settings: AudioManagerSettings,
 		command_consumer: Consumer<Command>,
+		sounds_to_unload_producer: Producer<Sound>,
 	) -> Self {
 		Self {
 			dt: 1.0 / sample_rate as f32,
 			sounds: IndexMap::with_capacity(settings.num_sounds),
 			command_consumer,
+			sounds_to_unload_producer,
 			instances: Instances::new(settings.num_instances),
 		}
 	}
@@ -37,6 +40,15 @@ impl Backend {
 				Command::Sound(command) => match command {
 					SoundCommand::LoadSound(id, sound) => {
 						self.sounds.insert(id, sound);
+					}
+					SoundCommand::UnloadSound(id) => {
+						self.instances.stop_instances_of_sound(id, None);
+						if let Some(sound) = self.sounds.remove(&id) {
+							match self.sounds_to_unload_producer.push(sound) {
+								Ok(_) => {}
+								Err(_) => {}
+							}
+						}
 					}
 				},
 				Command::Instance(command) => {

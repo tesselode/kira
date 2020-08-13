@@ -13,13 +13,14 @@ use std::error::Error;
 
 struct MainState {
 	audio_manager: AudioManager,
-	sound_id: SoundId,
+	sound_id_1: SoundId,
+	sound_id_2: SoundId,
 }
 
 impl MainState {
 	pub fn new() -> Result<Self, Box<dyn Error>> {
 		let mut audio_manager = AudioManager::new(AudioManagerSettings::default())?;
-		let sound_id = audio_manager.load_sound(
+		let sound_id_1 = audio_manager.load_sound(
 			&std::env::current_dir()
 				.unwrap()
 				.join("assets/test_loop.ogg"),
@@ -27,15 +28,25 @@ impl MainState {
 				tempo: Some(Tempo(128.0)),
 			},
 		)?;
+		let sound_id_2 = audio_manager.load_sound(
+			&std::env::current_dir()
+				.unwrap()
+				.join("assets/test_song.ogg"),
+			SoundMetadata::default(),
+		)?;
+		audio_manager.play_sound(sound_id_1, InstanceSettings::default())?;
+		audio_manager.play_sound(sound_id_2, InstanceSettings::default())?;
 		Ok(Self {
 			audio_manager,
-			sound_id,
+			sound_id_1,
+			sound_id_2,
 		})
 	}
 }
 
 impl ggez::event::EventHandler for MainState {
 	fn update(&mut self, _ctx: &mut Context) -> GameResult {
+		self.audio_manager.events();
 		Ok(())
 	}
 
@@ -48,14 +59,7 @@ impl ggez::event::EventHandler for MainState {
 	) {
 		match keycode {
 			KeyCode::Space => {
-				self.audio_manager
-					.play_sound(self.sound_id, InstanceSettings::default())
-					.unwrap();
-			}
-			KeyCode::S => {
-				self.audio_manager
-					.stop_instances_of_sound(self.sound_id, Some(Tween(0.25)))
-					.unwrap();
+				self.audio_manager.unload_sound(self.sound_id_2).unwrap();
 			}
 			_ => {}
 		}

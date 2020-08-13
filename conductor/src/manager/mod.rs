@@ -10,7 +10,7 @@ use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	Stream,
 };
-use ringbuf::{Producer, RingBuffer};
+use ringbuf::{Consumer, Producer, RingBuffer};
 use std::{error::Error, path::Path};
 
 mod backend;
@@ -47,6 +47,7 @@ and the audio thread.
 pub struct AudioManager {
 	command_producer: Producer<Command>,
 	//event_consumer: Consumer<Event>,
+	sounds_to_unload_consumer: Consumer<Sound>,
 	_stream: Stream,
 }
 
@@ -67,12 +68,15 @@ impl AudioManager {
 		let sample_rate = config.sample_rate.0;
 		let channels = config.channels;
 		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
+		let (sounds_to_unload_producer, sounds_to_unload_consumer) =
+			RingBuffer::new(settings.num_sounds).split();
 		//let (event_producer, event_consumer) = RingBuffer::new(settings.num_events).split();
 		let mut backend = Backend::new(
 			sample_rate,
 			//project,
 			settings,
 			command_consumer,
+			sounds_to_unload_producer,
 			//event_producer,
 		);
 		let stream = device.build_output_stream(
@@ -90,6 +94,7 @@ impl AudioManager {
 		Ok(Self {
 			command_producer,
 			//event_consumer,
+			sounds_to_unload_consumer,
 			_stream: stream,
 		})
 	}
@@ -109,6 +114,17 @@ impl AudioManager {
 			.push(Command::Sound(SoundCommand::LoadSound(id, sound)))
 		{
 			Ok(_) => Ok(id),
+			Err(_) => Err(Box::new(ConductorError::SendCommand)),
+		}
+	}
+
+	/// Unloads a sound, deallocating its memory.
+	pub fn unload_sound(&mut self, id: SoundId) -> Result<(), Box<dyn Error>> {
+		match self
+			.command_producer
+			.push(Command::Sound(SoundCommand::UnloadSound(id)))
+		{
+			Ok(_) => Ok(()),
 			Err(_) => Err(Box::new(ConductorError::SendCommand)),
 		}
 	}
@@ -272,5 +288,10 @@ impl AudioManager {
 			Ok(_) => Ok(()),
 			Err(_) => Err(ConductorError::SendCommand),
 		}
+	}
+
+	pub fn events(&mut self) {
+		// unload sounds on the main thread
+		while let Some(_) = self.sounds_to_unload_consumer.pop() {}
 	}
 }

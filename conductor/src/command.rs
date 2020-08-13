@@ -6,6 +6,7 @@ use crate::{
 
 pub(crate) enum SoundCommand {
 	LoadSound(SoundId, Sound),
+	UnloadSound(SoundId),
 }
 
 pub(crate) enum InstanceCommand {

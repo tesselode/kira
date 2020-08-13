@@ -3,6 +3,7 @@ use crate::{
 	instance::{Instance, InstanceId},
 	sound::{Sound, SoundId},
 	stereo_sample::StereoSample,
+	tween::Tween,
 };
 use indexmap::IndexMap;
 
@@ -16,6 +17,14 @@ impl Instances {
 		Self {
 			instances: IndexMap::with_capacity(capacity),
 			instances_to_remove: Vec::with_capacity(capacity),
+		}
+	}
+
+	pub fn stop_instances_of_sound(&mut self, id: SoundId, fade_tween: Option<Tween>) {
+		for (_, instance) in &mut self.instances {
+			if instance.sound_id == id {
+				instance.stop(fade_tween);
+			}
 		}
 	}
 
@@ -65,11 +74,7 @@ impl Instances {
 				}
 			}
 			InstanceCommand::StopInstancesOfSound(id, fade_tween) => {
-				for (_, instance) in &mut self.instances {
-					if instance.sound_id == id {
-						instance.stop(fade_tween);
-					}
-				}
+				self.stop_instances_of_sound(id, fade_tween);
 			}
 		}
 	}
@@ -78,9 +83,10 @@ impl Instances {
 		let mut out = StereoSample::from_mono(0.0);
 		for (instance_id, instance) in &mut self.instances {
 			if instance.playing() {
-				let sound = sounds.get(&instance.sound_id).unwrap();
-				out +=
-					sound.get_sample_at_position(instance.position()) * instance.effective_volume();
+				if let Some(sound) = sounds.get(&instance.sound_id) {
+					out += sound.get_sample_at_position(instance.position())
+						* instance.effective_volume();
+				}
 			}
 			if instance.finished() {
 				self.instances_to_remove.push(*instance_id);
