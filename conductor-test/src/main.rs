@@ -1,6 +1,7 @@
 use conductor::{
 	instance::{InstanceId, InstanceSettings},
 	manager::{AudioManager, AudioManagerSettings},
+	metronome::MetronomeSettings,
 	sound::{SoundId, SoundMetadata},
 	tempo::Tempo,
 	tween::Tween,
@@ -19,7 +20,13 @@ struct MainState {
 
 impl MainState {
 	pub fn new() -> Result<Self, Box<dyn Error>> {
-		let mut audio_manager = AudioManager::new(AudioManagerSettings::default())?;
+		let mut audio_manager = AudioManager::new(AudioManagerSettings {
+			metronome_settings: MetronomeSettings {
+				tempo: Tempo(128.0),
+				interval_events_to_emit: vec![0.25, 0.5, 1.0],
+			},
+			..Default::default()
+		})?;
 		let sound_id_1 = audio_manager.load_sound(
 			&std::env::current_dir()
 				.unwrap()
@@ -36,6 +43,7 @@ impl MainState {
 		)?;
 		audio_manager.play_sound(sound_id_1, InstanceSettings::default())?;
 		audio_manager.play_sound(sound_id_2, InstanceSettings::default())?;
+		audio_manager.start_metronome()?;
 		Ok(Self {
 			audio_manager,
 			sound_id_1,
@@ -46,7 +54,9 @@ impl MainState {
 
 impl ggez::event::EventHandler for MainState {
 	fn update(&mut self, _ctx: &mut Context) -> GameResult {
-		self.audio_manager.events();
+		for event in self.audio_manager.events() {
+			println!("{:?}", event);
+		}
 		Ok(())
 	}
 

@@ -1,7 +1,8 @@
 use crate::{
-	command::{Command, InstanceCommand, SoundCommand},
+	command::{Command, InstanceCommand, MetronomeCommand, SoundCommand},
 	error::ConductorError,
 	instance::{InstanceId, InstanceSettings},
+	metronome::MetronomeSettings,
 	sound::{Sound, SoundId, SoundMetadata},
 	tween::Tween,
 };
@@ -15,6 +16,22 @@ use std::{error::Error, path::Path};
 
 mod backend;
 
+/// Events that can be sent by the audio thread.
+#[derive(Debug)]
+pub enum Event {
+	/**
+	Sent when the metronome passes a certain interval (in beats).
+
+	For example, an event with an interval of `1.0` will be sent
+	every beat, and an event with an interval of `0.25` will be
+	sent every sixteenth note (one quarter of a beat).
+
+	The intervals that a metronome emits events for are defined
+	when the metronome is created.
+	*/
+	MetronomeIntervalPassed(f32),
+}
+
 /// Settings for an `AudioManager`.
 pub struct AudioManagerSettings {
 	/// The number of commands that be sent to the audio thread at a time.
@@ -22,18 +39,24 @@ pub struct AudioManagerSettings {
 	/// Each action you take, like starting an instance or pausing a sequence,
 	/// queues up one command.
 	pub num_commands: usize,
+	/// The number of events the audio thread can send at a time.
+	pub num_events: usize,
 	/// The maximum number of sounds that can be loaded at once.
 	pub num_sounds: usize,
 	/// The maximum number of instances of sounds that can be playing at once.
 	pub num_instances: usize,
+	/// Settings for the metronome.
+	pub metronome_settings: MetronomeSettings,
 }
 
 impl Default for AudioManagerSettings {
 	fn default() -> Self {
 		Self {
 			num_commands: 100,
+			num_events: 100,
 			num_sounds: 100,
 			num_instances: 100,
+			metronome_settings: MetronomeSettings::default(),
 		}
 	}
 }
@@ -46,7 +69,7 @@ and the audio thread.
 */
 pub struct AudioManager {
 	command_producer: Producer<Command>,
-	//event_consumer: Consumer<Event>,
+	event_consumer: Consumer<Event>,
 	sounds_to_unload_consumer: Consumer<Sound>,
 	_stream: Stream,
 }
@@ -70,14 +93,13 @@ impl AudioManager {
 		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
 		let (sounds_to_unload_producer, sounds_to_unload_consumer) =
 			RingBuffer::new(settings.num_sounds).split();
-		//let (event_producer, event_consumer) = RingBuffer::new(settings.num_events).split();
+		let (event_producer, event_consumer) = RingBuffer::new(settings.num_events).split();
 		let mut backend = Backend::new(
 			sample_rate,
-			//project,
 			settings,
 			command_consumer,
+			event_producer,
 			sounds_to_unload_producer,
-			//event_producer,
 		);
 		let stream = device.build_output_stream(
 			&config,
@@ -93,7 +115,7 @@ impl AudioManager {
 		stream.play()?;
 		Ok(Self {
 			command_producer,
-			//event_consumer,
+			event_consumer,
 			sounds_to_unload_consumer,
 			_stream: stream,
 		})
@@ -290,8 +312,52 @@ impl AudioManager {
 		}
 	}
 
-	pub fn events(&mut self) {
+	/// Starts or resumes the metronome.
+	pub fn start_metronome(&mut self) -> Result<InstanceId, ConductorError> {
+		let instance_id = InstanceId::new();
+		match self
+			.command_producer
+			.push(Command::Metronome(MetronomeCommand::StartMetronome))
+		{
+			Ok(_) => Ok(instance_id),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
+	/// Pauses the metronome.
+	pub fn pause_metronome(&mut self) -> Result<InstanceId, ConductorError> {
+		let instance_id = InstanceId::new();
+		match self
+			.command_producer
+			.push(Command::Metronome(MetronomeCommand::PauseMetronome))
+		{
+			Ok(_) => Ok(instance_id),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
+	/// Stops and resets the metronome.
+	pub fn stop_metronome(&mut self) -> Result<InstanceId, ConductorError> {
+		let instance_id = InstanceId::new();
+		match self
+			.command_producer
+			.push(Command::Metronome(MetronomeCommand::StopMetronome))
+		{
+			Ok(_) => Ok(instance_id),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
+	/// Returns a list of all of the new events created by the audio thread
+	/// (since the last time `events` was called).
+	pub fn events(&mut self) -> Vec<Event> {
 		// unload sounds on the main thread
 		while let Some(_) = self.sounds_to_unload_consumer.pop() {}
+		// return events from the audio thread
+		let mut events = vec![];
+		while let Some(event) = self.event_consumer.pop() {
+			events.push(event);
+		}
+		events
 	}
 }

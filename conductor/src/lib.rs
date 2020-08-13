@@ -2,6 +2,7 @@ mod command;
 pub mod error;
 pub mod instance;
 pub mod manager;
+pub mod metronome;
 pub mod parameter;
 pub mod sound;
 mod stereo_sample;

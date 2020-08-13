@@ -21,7 +21,14 @@ pub(crate) enum InstanceCommand {
 	StopInstancesOfSound(SoundId, Option<Tween>),
 }
 
+pub(crate) enum MetronomeCommand {
+	StartMetronome,
+	PauseMetronome,
+	StopMetronome,
+}
+
 pub(crate) enum Command {
 	Sound(SoundCommand),
 	Instance(InstanceCommand),
+	Metronome(MetronomeCommand),
 }
