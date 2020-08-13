@@ -1,4 +1,4 @@
-use crate::stereo_sample::StereoSample;
+use crate::{stereo_sample::StereoSample, tempo::Tempo};
 use lewton::{inside_ogg::OggStreamReader, samples::Samples};
 use std::{
 	error::Error,
@@ -7,6 +7,15 @@ use std::{
 	path::Path,
 	sync::atomic::{AtomicUsize, Ordering},
 };
+
+/// Useful info about a `Sound`.
+///
+/// This is set entirely by the user when loading a sound
+/// and can be accessed via `SoundId`s.
+#[derive(Debug, Default, Copy, Clone)]
+pub struct SoundMetadata {
+	pub tempo: Option<Tempo>,
+}
 
 static NEXT_SOUND_INDEX: AtomicUsize = AtomicUsize::new(0);
 
@@ -18,11 +27,16 @@ static NEXT_SOUND_INDEX: AtomicUsize = AtomicUsize::new(0);
 pub struct SoundId {
 	index: usize,
 	duration: f32,
+	metadata: SoundMetadata,
 }
 
 impl SoundId {
 	pub fn duration(&self) -> f32 {
 		self.duration
+	}
+
+	pub fn metadata(&self) -> &SoundMetadata {
+		&self.metadata
 	}
 }
 
@@ -41,9 +55,13 @@ impl Hash for SoundId {
 }
 
 impl SoundId {
-	pub(crate) fn new(duration: f32) -> Self {
+	pub(crate) fn new(duration: f32, metadata: SoundMetadata) -> Self {
 		let index = NEXT_SOUND_INDEX.fetch_add(1, Ordering::Relaxed);
-		Self { index, duration }
+		Self {
+			index,
+			duration,
+			metadata,
+		}
 	}
 }
 

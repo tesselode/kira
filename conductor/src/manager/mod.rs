@@ -1,7 +1,7 @@
 use crate::{
 	command::{Command, SoundCommand},
 	error::ConductorError,
-	sound::{Sound, SoundId},
+	sound::{Sound, SoundId, SoundMetadata},
 };
 use backend::Backend;
 use cpal::{
@@ -89,9 +89,13 @@ impl AudioManager {
 		})
 	}
 
-	pub fn load_sound(&mut self, path: &Path) -> Result<SoundId, Box<dyn Error>> {
+	pub fn load_sound(
+		&mut self,
+		path: &Path,
+		metadata: SoundMetadata,
+	) -> Result<SoundId, Box<dyn Error>> {
 		let sound = Sound::from_ogg_file(path)?;
-		let id = SoundId::new(sound.duration());
+		let id = SoundId::new(sound.duration(), metadata);
 		match self
 			.command_producer
 			.push(Command::Sound(SoundCommand::LoadSound(id, sound)))

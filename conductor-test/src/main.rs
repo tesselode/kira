@@ -1,4 +1,8 @@
-use conductor::manager::{AudioManager, AudioManagerSettings};
+use conductor::{
+	manager::{AudioManager, AudioManagerSettings},
+	sound::SoundMetadata,
+	tempo::Tempo,
+};
 use ggez::{
 	event::{KeyCode, KeyMods},
 	graphics, Context, GameResult,
@@ -16,6 +20,9 @@ impl MainState {
 			&std::env::current_dir()
 				.unwrap()
 				.join("assets/test_loop.ogg"),
+			SoundMetadata {
+				tempo: Some(Tempo(128.0)),
+			},
 		)?;
 		println!("{:?}", sound_id);
 		Ok(Self { audio_manager })
