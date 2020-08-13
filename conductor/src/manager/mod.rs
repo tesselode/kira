@@ -1,7 +1,9 @@
 use crate::{
-	command::{Command, SoundCommand},
+	command::{Command, InstanceCommand, SoundCommand},
 	error::ConductorError,
+	instance::{InstanceId, InstanceSettings},
 	sound::{Sound, SoundId, SoundMetadata},
+	tween::Tween,
 };
 use backend::Backend;
 use cpal::{
@@ -22,6 +24,8 @@ pub struct AudioManagerSettings {
 	pub num_commands: usize,
 	/// The maximum number of sounds that can be loaded at once.
 	pub num_sounds: usize,
+	/// The maximum number of instances of sounds that can be playing at once.
+	pub num_instances: usize,
 }
 
 impl Default for AudioManagerSettings {
@@ -29,6 +33,7 @@ impl Default for AudioManagerSettings {
 		Self {
 			num_commands: 100,
 			num_sounds: 100,
+			num_instances: 100,
 		}
 	}
 }
@@ -64,7 +69,7 @@ impl AudioManager {
 		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
 		//let (event_producer, event_consumer) = RingBuffer::new(settings.num_events).split();
 		let mut backend = Backend::new(
-			//sample_rate,
+			sample_rate,
 			//project,
 			settings,
 			command_consumer,
@@ -89,6 +94,9 @@ impl AudioManager {
 		})
 	}
 
+	/// Loads a sound from a file path.
+	///
+	/// Returns a handle to the sound. Keep this so you can play the sound later.
 	pub fn load_sound(
 		&mut self,
 		path: &Path,
@@ -102,6 +110,115 @@ impl AudioManager {
 		{
 			Ok(_) => Ok(id),
 			Err(_) => Err(Box::new(ConductorError::SendCommand)),
+		}
+	}
+
+	/// Plays a sound.
+	pub fn play_sound(
+		&mut self,
+		sound_id: SoundId,
+		settings: InstanceSettings,
+	) -> Result<InstanceId, ConductorError> {
+		let instance_id = InstanceId::new();
+		match self
+			.command_producer
+			.push(Command::Instance(InstanceCommand::PlaySound(
+				sound_id,
+				instance_id,
+				settings,
+			))) {
+			Ok(_) => Ok(instance_id),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
+	pub fn set_instance_volume(
+		&mut self,
+		id: InstanceId,
+		volume: f32,
+		tween: Option<Tween>,
+	) -> Result<(), ConductorError> {
+		match self
+			.command_producer
+			.push(Command::Instance(InstanceCommand::SetInstanceVolume(
+				id, volume, tween,
+			))) {
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
+	pub fn set_instance_pitch(
+		&mut self,
+		id: InstanceId,
+		pitch: f32,
+		tween: Option<Tween>,
+	) -> Result<(), ConductorError> {
+		match self
+			.command_producer
+			.push(Command::Instance(InstanceCommand::SetInstancePitch(
+				id, pitch, tween,
+			))) {
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
+	/// Pauses a currently playing instance of a sound.
+	///
+	/// You can optionally provide a fade-out duration (in seconds).
+	pub fn pause_instance(
+		&mut self,
+		instance_id: InstanceId,
+		fade_tween: Option<Tween>,
+	) -> Result<(), ConductorError> {
+		match self
+			.command_producer
+			.push(Command::Instance(InstanceCommand::PauseInstance(
+				instance_id,
+				fade_tween,
+			))) {
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
+	/// Resumes a currently paused instance of a sound.
+	///
+	/// You can optionally provide a fade-in duration (in seconds).
+	pub fn resume_instance(
+		&mut self,
+		instance_id: InstanceId,
+		fade_tween: Option<Tween>,
+	) -> Result<(), ConductorError> {
+		match self
+			.command_producer
+			.push(Command::Instance(InstanceCommand::ResumeInstance(
+				instance_id,
+				fade_tween,
+			))) {
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
+	/// Stops a currently playing instance of a sound.
+	///
+	/// You can optionally provide a fade-out duration (in seconds). Once the
+	/// instance is stopped, it cannot be restarted.
+	pub fn stop_instance(
+		&mut self,
+		instance_id: InstanceId,
+		fade_tween: Option<Tween>,
+	) -> Result<(), ConductorError> {
+		match self
+			.command_producer
+			.push(Command::Instance(InstanceCommand::StopInstance(
+				instance_id,
+				fade_tween,
+			))) {
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::SendCommand),
 		}
 	}
 }

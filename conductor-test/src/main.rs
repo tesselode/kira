@@ -1,7 +1,9 @@
 use conductor::{
+	instance::{InstanceId, InstanceSettings},
 	manager::{AudioManager, AudioManagerSettings},
 	sound::SoundMetadata,
 	tempo::Tempo,
+	tween::Tween,
 };
 use ggez::{
 	event::{KeyCode, KeyMods},
@@ -11,6 +13,7 @@ use std::error::Error;
 
 struct MainState {
 	audio_manager: AudioManager,
+	instance_id: InstanceId,
 }
 
 impl MainState {
@@ -24,8 +27,17 @@ impl MainState {
 				tempo: Some(Tempo(128.0)),
 			},
 		)?;
-		println!("{:?}", sound_id);
-		Ok(Self { audio_manager })
+		let instance_id = audio_manager.play_sound(
+			sound_id,
+			InstanceSettings {
+				position: sound_id.metadata().tempo.unwrap().beats_to_seconds(2.0),
+				..Default::default()
+			},
+		)?;
+		Ok(Self {
+			audio_manager,
+			instance_id,
+		})
 	}
 }
 
@@ -41,6 +53,14 @@ impl ggez::event::EventHandler for MainState {
 		_keymods: KeyMods,
 		_repeat: bool,
 	) {
+		match keycode {
+			KeyCode::Space => {
+				self.audio_manager
+					.stop_instance(self.instance_id, Some(Tween(0.25)))
+					.unwrap();
+			}
+			_ => {}
+		}
 	}
 
 	fn draw(&mut self, ctx: &mut Context) -> GameResult {
