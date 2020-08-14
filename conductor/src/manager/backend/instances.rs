@@ -28,7 +28,7 @@ impl Instances {
 		}
 	}
 
-	pub fn run_command(&mut self, command: InstanceCommand) {
+	pub fn run_command(&mut self, command: InstanceCommand<InstanceId>) {
 		match command {
 			InstanceCommand::PlaySound(sound_id, instance_id, settings) => {
 				self.instances
