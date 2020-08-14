@@ -1,5 +1,6 @@
 use crate::{
 	instance::{InstanceId, InstanceSettings},
+	sequence::{Sequence, SequenceId},
 	sound::{Sound, SoundId},
 	tween::Tween,
 };
@@ -29,8 +30,13 @@ pub(crate) enum MetronomeCommand {
 	StopMetronome,
 }
 
+pub(crate) enum SequenceCommand {
+	StartSequence(SequenceId, Sequence),
+}
+
 pub(crate) enum Command {
 	Sound(SoundCommand),
 	Instance(InstanceCommand<InstanceId>),
 	Metronome(MetronomeCommand),
+	Sequence(SequenceCommand),
 }

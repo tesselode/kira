@@ -1,8 +1,9 @@
 use crate::{
-	command::{Command, InstanceCommand, MetronomeCommand, SoundCommand},
+	command::{Command, InstanceCommand, MetronomeCommand, SequenceCommand, SoundCommand},
 	error::ConductorError,
 	instance::{InstanceId, InstanceSettings},
 	metronome::MetronomeSettings,
+	sequence::{Sequence, SequenceId},
 	sound::{Sound, SoundId, SoundMetadata},
 	tween::Tween,
 };
@@ -45,6 +46,8 @@ pub struct AudioManagerSettings {
 	pub num_sounds: usize,
 	/// The maximum number of instances of sounds that can be playing at once.
 	pub num_instances: usize,
+	/// The maximum number of sequences that can be running at a time.
+	pub num_sequences: usize,
 	/// Settings for the metronome.
 	pub metronome_settings: MetronomeSettings,
 }
@@ -56,6 +59,7 @@ impl Default for AudioManagerSettings {
 			num_events: 100,
 			num_sounds: 100,
 			num_instances: 100,
+			num_sequences: 25,
 			metronome_settings: MetronomeSettings::default(),
 		}
 	}
@@ -344,6 +348,19 @@ impl AudioManager {
 			.push(Command::Metronome(MetronomeCommand::StopMetronome))
 		{
 			Ok(_) => Ok(instance_id),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
+	/// Starts a sequence.
+	pub fn start_sequence(&mut self, sequence: Sequence) -> Result<SequenceId, ConductorError> {
+		let id = SequenceId::new();
+		match self
+			.command_producer
+			.push(Command::Sequence(SequenceCommand::StartSequence(
+				id, sequence,
+			))) {
+			Ok(_) => Ok(id),
 			Err(_) => Err(ConductorError::SendCommand),
 		}
 	}

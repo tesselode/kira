@@ -1,7 +1,9 @@
 use conductor::{
+	duration::Duration,
 	instance::{InstanceId, InstanceSettings},
 	manager::{AudioManager, AudioManagerSettings},
 	metronome::MetronomeSettings,
+	sequence::Sequence,
 	sound::{SoundId, SoundMetadata},
 	tempo::Tempo,
 	tween::Tween,
@@ -14,8 +16,7 @@ use std::error::Error;
 
 struct MainState {
 	audio_manager: AudioManager,
-	sound_id_1: SoundId,
-	sound_id_2: SoundId,
+	sound_id: SoundId,
 }
 
 impl MainState {
@@ -27,7 +28,7 @@ impl MainState {
 			},
 			..Default::default()
 		})?;
-		let sound_id_1 = audio_manager.load_sound(
+		let sound_id = audio_manager.load_sound(
 			&std::env::current_dir()
 				.unwrap()
 				.join("assets/test_loop.ogg"),
@@ -35,28 +36,27 @@ impl MainState {
 				tempo: Some(Tempo(128.0)),
 			},
 		)?;
-		let sound_id_2 = audio_manager.load_sound(
-			&std::env::current_dir()
-				.unwrap()
-				.join("assets/test_song.ogg"),
-			SoundMetadata::default(),
-		)?;
-		audio_manager.play_sound(sound_id_1, InstanceSettings::default())?;
-		audio_manager.play_sound(sound_id_2, InstanceSettings::default())?;
+		let mut sequence = Sequence::new();
+		sequence.wait_for_interval(1.0);
+		let handle = sequence.play_sound(sound_id, InstanceSettings::default());
+		sequence.wait(Duration::Beats(3.0));
+		sequence.set_instance_volume(handle, 0.0, Some(Tween(0.25)));
+		sequence.wait(Duration::Beats(0.5));
+		sequence.set_instance_volume(handle, 1.0, Some(Tween(0.25)));
+		sequence.wait(Duration::Beats(0.5));
+		sequence.go_to(1);
+		audio_manager.start_sequence(sequence)?;
 		audio_manager.start_metronome()?;
 		Ok(Self {
 			audio_manager,
-			sound_id_1,
-			sound_id_2,
+			sound_id,
 		})
 	}
 }
 
 impl ggez::event::EventHandler for MainState {
 	fn update(&mut self, _ctx: &mut Context) -> GameResult {
-		for event in self.audio_manager.events() {
-			println!("{:?}", event);
-		}
+		self.audio_manager.events();
 		Ok(())
 	}
 
@@ -67,12 +67,6 @@ impl ggez::event::EventHandler for MainState {
 		_keymods: KeyMods,
 		_repeat: bool,
 	) {
-		match keycode {
-			KeyCode::Space => {
-				self.audio_manager.unload_sound(self.sound_id_2).unwrap();
-			}
-			_ => {}
-		}
 	}
 
 	fn draw(&mut self, ctx: &mut Context) -> GameResult {

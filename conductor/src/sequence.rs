@@ -1,5 +1,5 @@
 use crate::{
-	command::{InstanceCommand, MetronomeCommand},
+	command::{Command, InstanceCommand, MetronomeCommand},
 	duration::Duration,
 	instance::{InstanceId, InstanceSettings},
 	metronome::Metronome,
@@ -56,6 +56,15 @@ enum SequenceCommand {
 pub(crate) enum SequenceOutputCommand {
 	Instance(InstanceCommand<InstanceId>),
 	Metronome(MetronomeCommand),
+}
+
+impl Into<Command> for SequenceOutputCommand {
+	fn into(self) -> Command {
+		match self {
+			SequenceOutputCommand::Instance(command) => Command::Instance(command),
+			SequenceOutputCommand::Metronome(command) => Command::Metronome(command),
+		}
+	}
 }
 
 #[derive(Copy, Clone)]
@@ -214,14 +223,19 @@ impl Sequence {
 		}
 	}
 
-	fn convert_command_to_output_command(&self, command: SequenceCommand) -> SequenceOutputCommand {
+	pub(crate) fn start(&mut self) {
+		self.start_task(0);
+	}
+
+	fn transform_command(&mut self, command: SequenceCommand) -> SequenceOutputCommand {
 		match command {
 			SequenceCommand::Instance(command) => match command {
 				InstanceCommand::PlaySound(sound_id, handle, settings) => {
-					let instance_id = self.instances.get(&handle).unwrap();
+					let instance_id = InstanceId::new();
+					self.instances.insert(handle, instance_id);
 					SequenceOutputCommand::Instance(InstanceCommand::PlaySound(
 						sound_id,
-						*instance_id,
+						instance_id,
 						settings,
 					))
 				}
@@ -282,7 +296,7 @@ impl Sequence {
 		}
 	}
 
-	fn update(
+	pub(crate) fn update(
 		&mut self,
 		dt: f32,
 		metronome: &Metronome,
@@ -297,26 +311,34 @@ impl Sequence {
 							let duration = duration.in_seconds(metronome.effective_tempo());
 							*time -= dt / duration;
 							if *time <= 0.0 {
-								self.go_to(index + 1);
+								self.start_task(index + 1);
 							}
 							break;
 						}
 					}
 					SequenceTask::WaitForInterval(interval) => {
 						if metronome.interval_passed(interval) {
-							self.go_to(index + 1);
+							self.start_task(index + 1);
 						}
 						break;
 					}
 					SequenceTask::GoToTask(index) => {
-						self.go_to(index);
+						self.start_task(index);
 					}
 					SequenceTask::RunCommand(command) => {
-						output_command_queue.push(self.convert_command_to_output_command(command));
-						self.go_to(index + 1);
+						output_command_queue.push(self.transform_command(command));
+						self.start_task(index + 1);
 					}
 				}
 			}
+		}
+	}
+
+	pub(crate) fn finished(&self) -> bool {
+		if let SequenceState::Finished = self.state {
+			true
+		} else {
+			false
 		}
 	}
 }
