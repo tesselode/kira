@@ -65,6 +65,7 @@ impl SoundId {
 	}
 }
 
+#[derive(Debug)]
 pub(crate) struct Sound {
 	sample_rate: u32,
 	samples: Vec<StereoSample>,

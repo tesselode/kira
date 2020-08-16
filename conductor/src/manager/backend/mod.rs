@@ -65,7 +65,9 @@ impl Backend {
 						if let Some(sound) = self.sounds.remove(&id) {
 							match self.sounds_to_unload_producer.push(sound) {
 								Ok(_) => {}
-								Err(_) => {}
+								Err(sound) => {
+									self.sounds.insert(id, sound);
+								}
 							}
 						}
 					}
