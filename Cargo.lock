@@ -348,6 +348,7 @@ dependencies = [
 name = "conductor-lua"
 version = "0.1.0"
 dependencies = [
+ "conductor",
  "mlua",
  "mlua_derive",
 ]
