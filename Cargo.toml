@@ -1,5 +1,6 @@
 [workspace]
 members = [
 	"conductor",
-	"conductor-test"
+	"conductor-test",
+	"conductor-lua"
 ]

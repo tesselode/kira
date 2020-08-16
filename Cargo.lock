@@ -196,6 +196,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d8c1fef690941d3e7788d328517591fecc684c084084702d6ff1641e993699a"
 
 [[package]]
+name = "bstr"
+version = "0.2.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "31accafdb70df7871592c058eca3985b71104e15ac32f64706022c58867da931"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -333,6 +342,14 @@ dependencies = [
  "indexmap",
  "lewton 0.10.1",
  "ringbuf",
+]
+
+[[package]]
+name = "conductor-lua"
+version = "0.1.0"
+dependencies = [
+ "mlua",
+ "mlua_derive",
 ]
 
 [[package]]
@@ -1265,6 +1282,30 @@ name = "mint"
 version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d42e54f364a39ad5238e3072db2e8747785b37655368da756987d3b09ada91e0"
+
+[[package]]
+name = "mlua"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b5e4f6acfacd1b86a4a486c256ccf04058545000e9f429549b9d899a5a4aea58"
+dependencies = [
+ "bstr",
+ "cc",
+ "lazy_static",
+ "num-traits 0.2.12",
+ "pkg-config",
+]
+
+[[package]]
+name = "mlua_derive"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2a63d88d7ed834c4c6a803c4f50eef61e981012df21f15d707b363f73a777f5e"
+dependencies = [
+ "proc-macro2 1.0.19",
+ "quote 1.0.7",
+ "syn 1.0.35",
+]
 
 [[package]]
 name = "nalgebra"
