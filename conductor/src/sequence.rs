@@ -47,7 +47,7 @@ impl SequenceId {
 	}
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 enum SequenceCommand {
 	Instance(InstanceCommand<SequenceInstanceHandle>),
 	Metronome(MetronomeCommand),
@@ -67,7 +67,7 @@ impl Into<Command> for SequenceOutputCommand {
 	}
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 enum SequenceTask {
 	Wait(Duration),
 	WaitForInterval(f32),
@@ -75,12 +75,14 @@ enum SequenceTask {
 	RunCommand(SequenceCommand),
 }
 
+#[derive(Debug)]
 enum SequenceState {
 	Idle,
 	Playing(usize),
 	Finished,
 }
 
+#[derive(Debug)]
 pub struct Sequence {
 	tasks: Vec<SequenceTask>,
 	state: SequenceState,

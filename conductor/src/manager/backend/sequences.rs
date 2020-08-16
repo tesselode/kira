@@ -4,6 +4,7 @@ use crate::{
 	sequence::{Sequence, SequenceId, SequenceOutputCommand},
 };
 use indexmap::IndexMap;
+use ringbuf::Producer;
 use std::vec::Drain;
 
 pub(crate) struct Sequences {
@@ -30,7 +31,12 @@ impl Sequences {
 		}
 	}
 
-	pub fn update(&mut self, dt: f32, metronome: &Metronome) -> Drain<SequenceOutputCommand> {
+	pub fn update(
+		&mut self,
+		dt: f32,
+		metronome: &Metronome,
+		sequences_to_unload_producer: &mut Producer<Sequence>,
+	) -> Drain<SequenceOutputCommand> {
 		for (id, sequence) in &mut self.sequences {
 			sequence.update(dt, metronome, &mut self.output_command_queue);
 			if sequence.finished() {
@@ -38,7 +44,13 @@ impl Sequences {
 			}
 		}
 		for id in self.sequences_to_remove.drain(..) {
-			self.sequences.remove(&id);
+			let sequence = self.sequences.remove(&id).unwrap();
+			match sequences_to_unload_producer.push(sequence) {
+				Ok(_) => {}
+				Err(sequence) => {
+					self.sequences.insert(id, sequence);
+				}
+			}
 		}
 		self.output_command_queue.drain(..)
 	}

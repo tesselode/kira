@@ -75,14 +75,12 @@ pub struct AudioManager {
 	command_producer: Producer<Command>,
 	event_consumer: Consumer<Event>,
 	sounds_to_unload_consumer: Consumer<Sound>,
+	sequences_to_unload_consumer: Consumer<Sequence>,
 	_stream: Stream,
 }
 
 impl AudioManager {
 	/// Creates a new audio manager and starts an audio thread.
-	///
-	/// The `Project` is given to the audio thread, so make sure you've loaded all
-	/// the sounds you want to use before you create an `AudioManager`.
 	pub fn new(settings: AudioManagerSettings) -> Result<Self, Box<dyn Error>> {
 		let host = cpal::default_host();
 		let device = host.default_output_device().unwrap();
@@ -97,6 +95,8 @@ impl AudioManager {
 		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
 		let (sounds_to_unload_producer, sounds_to_unload_consumer) =
 			RingBuffer::new(settings.num_sounds).split();
+		let (sequences_to_unload_producer, sequences_to_unload_consumer) =
+			RingBuffer::new(settings.num_sequences).split();
 		let (event_producer, event_consumer) = RingBuffer::new(settings.num_events).split();
 		let mut backend = Backend::new(
 			sample_rate,
@@ -104,6 +104,7 @@ impl AudioManager {
 			command_consumer,
 			event_producer,
 			sounds_to_unload_producer,
+			sequences_to_unload_producer,
 		);
 		let stream = device.build_output_stream(
 			&config,
@@ -121,6 +122,7 @@ impl AudioManager {
 			command_producer,
 			event_consumer,
 			sounds_to_unload_consumer,
+			sequences_to_unload_consumer,
 			_stream: stream,
 		})
 	}
@@ -368,13 +370,17 @@ impl AudioManager {
 	/// Returns a list of all of the new events created by the audio thread
 	/// (since the last time `events` was called).
 	pub fn events(&mut self) -> Vec<Event> {
-		// unload sounds on the main thread
-		while let Some(_) = self.sounds_to_unload_consumer.pop() {}
-		// return events from the audio thread
 		let mut events = vec![];
 		while let Some(event) = self.event_consumer.pop() {
 			events.push(event);
 		}
 		events
+	}
+
+	/// Frees resources that are no longer in use, such as unloaded sounds
+	/// or finished sequences.
+	pub fn free_unused_resources(&mut self) {
+		while let Some(_) = self.sounds_to_unload_consumer.pop() {}
+		while let Some(_) = self.sequences_to_unload_consumer.pop() {}
 	}
 }

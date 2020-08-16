@@ -5,6 +5,7 @@ use super::{AudioManagerSettings, Event};
 use crate::{
 	command::{Command, SoundCommand},
 	metronome::Metronome,
+	sequence::Sequence,
 	sound::{Sound, SoundId},
 	stereo_sample::StereoSample,
 };
@@ -20,6 +21,7 @@ pub(crate) struct Backend {
 	command_consumer: Consumer<Command>,
 	event_producer: Producer<Event>,
 	sounds_to_unload_producer: Producer<Sound>,
+	sequences_to_unload_producer: Producer<Sequence>,
 	metronome: Metronome,
 	instances: Instances,
 	sequences: Sequences,
@@ -32,6 +34,7 @@ impl Backend {
 		command_consumer: Consumer<Command>,
 		event_producer: Producer<Event>,
 		sounds_to_unload_producer: Producer<Sound>,
+		sequences_to_unload_producer: Producer<Sequence>,
 	) -> Self {
 		Self {
 			dt: 1.0 / sample_rate as f32,
@@ -40,6 +43,7 @@ impl Backend {
 			command_consumer,
 			event_producer,
 			sounds_to_unload_producer,
+			sequences_to_unload_producer,
 			metronome: Metronome::new(settings.metronome_settings),
 			instances: Instances::new(settings.num_instances),
 			sequences: Sequences::new(settings.num_sequences, settings.num_commands),
@@ -92,7 +96,11 @@ impl Backend {
 	}
 
 	fn update_sequences(&mut self) {
-		for command in self.sequences.update(self.dt, &self.metronome) {
+		for command in self.sequences.update(
+			self.dt,
+			&self.metronome,
+			&mut self.sequences_to_unload_producer,
+		) {
 			self.command_queue.push(command.into());
 		}
 	}

@@ -10,7 +10,7 @@ pub(crate) enum SoundCommand {
 	UnloadSound(SoundId),
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub(crate) enum InstanceCommand<Id> {
 	PlaySound(SoundId, Id, InstanceSettings),
 	SetInstanceVolume(Id, f32, Option<Tween>),
@@ -23,7 +23,7 @@ pub(crate) enum InstanceCommand<Id> {
 	StopInstancesOfSound(SoundId, Option<Tween>),
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub(crate) enum MetronomeCommand {
 	StartMetronome,
 	PauseMetronome,
