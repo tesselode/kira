@@ -72,58 +72,68 @@ The `AudioManager` is responsible for all communication between the gameplay thr
 and the audio thread.
 */
 pub struct AudioManager {
+	quit_signal_producer: Producer<bool>,
 	command_producer: Producer<Command>,
 	event_consumer: Consumer<Event>,
 	sounds_to_unload_consumer: Consumer<Sound>,
 	sequences_to_unload_consumer: Consumer<Sequence>,
-	_stream: Stream,
 }
 
 impl AudioManager {
 	/// Creates a new audio manager and starts an audio thread.
 	pub fn new(settings: AudioManagerSettings) -> Result<Self, Box<dyn Error>> {
-		let host = cpal::default_host();
-		let device = host.default_output_device().unwrap();
-		let mut supported_configs_range = device.supported_output_configs().unwrap();
-		let supported_config = supported_configs_range
-			.next()
-			.unwrap()
-			.with_max_sample_rate();
-		let config = supported_config.config();
-		let sample_rate = config.sample_rate.0;
-		let channels = config.channels;
+		let (quit_signal_producer, mut quit_signal_consumer) = RingBuffer::new(1).split();
 		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
 		let (sounds_to_unload_producer, sounds_to_unload_consumer) =
 			RingBuffer::new(settings.num_sounds).split();
 		let (sequences_to_unload_producer, sequences_to_unload_consumer) =
 			RingBuffer::new(settings.num_sequences).split();
 		let (event_producer, event_consumer) = RingBuffer::new(settings.num_events).split();
-		let mut backend = Backend::new(
-			sample_rate,
-			settings,
-			command_consumer,
-			event_producer,
-			sounds_to_unload_producer,
-			sequences_to_unload_producer,
-		);
-		let stream = device.build_output_stream(
-			&config,
-			move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
-				for frame in data.chunks_exact_mut(channels as usize) {
-					let out = backend.process();
-					frame[0] = out.left;
-					frame[1] = out.right;
+		std::thread::spawn(move || {
+			let host = cpal::default_host();
+			let device = host.default_output_device().unwrap();
+			let mut supported_configs_range = device.supported_output_configs().unwrap();
+			let supported_config = supported_configs_range
+				.next()
+				.unwrap()
+				.with_max_sample_rate();
+			let config = supported_config.config();
+			let sample_rate = config.sample_rate.0;
+			let channels = config.channels;
+			let mut backend = Backend::new(
+				sample_rate,
+				settings,
+				command_consumer,
+				event_producer,
+				sounds_to_unload_producer,
+				sequences_to_unload_producer,
+			);
+			let stream = device
+				.build_output_stream(
+					&config,
+					move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
+						for frame in data.chunks_exact_mut(channels as usize) {
+							let out = backend.process();
+							frame[0] = out.left;
+							frame[1] = out.right;
+						}
+					},
+					move |_| {},
+				)
+				.unwrap();
+			stream.play().unwrap();
+			loop {
+				while let Some(_) = quit_signal_consumer.pop() {
+					break;
 				}
-			},
-			move |_| {},
-		)?;
-		stream.play()?;
+			}
+		});
 		Ok(Self {
+			quit_signal_producer,
 			command_producer,
 			event_consumer,
 			sounds_to_unload_consumer,
 			sequences_to_unload_consumer,
-			_stream: stream,
 		})
 	}
 
@@ -382,5 +392,11 @@ impl AudioManager {
 	pub fn free_unused_resources(&mut self) {
 		while let Some(_) = self.sounds_to_unload_consumer.pop() {}
 		while let Some(_) = self.sequences_to_unload_consumer.pop() {}
+	}
+}
+
+impl Drop for AudioManager {
+	fn drop(&mut self) {
+		self.quit_signal_producer.push(true).unwrap();
 	}
 }
