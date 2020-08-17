@@ -1,10 +1,12 @@
-use conductor::manager::{AudioManager, AudioManagerSettings};
+mod manager;
+mod sound;
+
+use manager::LAudioManager;
 use mlua::prelude::*;
 use mlua_derive::lua_module;
 
-fn new_manager(_: &Lua, _: ()) -> LuaResult<()> {
-	let audio_manager = AudioManager::new(AudioManagerSettings::default()).unwrap();
-	Ok(())
+fn new_manager(_: &Lua, _: ()) -> LuaResult<LAudioManager> {
+	Ok(LAudioManager::new().unwrap())
 }
 
 #[lua_module]
