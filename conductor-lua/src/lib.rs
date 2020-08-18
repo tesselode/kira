@@ -1,3 +1,4 @@
+mod instance;
 mod manager;
 mod sound;
 

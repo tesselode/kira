@@ -4,7 +4,7 @@ local conductor = require 'conductor'
 
 local manager = conductor.new_manager()
 local sound = manager:load_sound 'assets/test_loop.ogg'
-print(sound:duration())
+print(manager:play_sound(sound))
 
 function love.keypressed(key)
 	if key == 'escape' then

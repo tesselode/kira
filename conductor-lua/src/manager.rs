@@ -1,4 +1,4 @@
-use crate::sound::LSoundId;
+use crate::{instance::LInstanceId, sound::LSoundId};
 use conductor::{
 	instance::InstanceSettings,
 	manager::{AudioManager, AudioManagerSettings},
@@ -21,8 +21,16 @@ impl LuaUserData for LAudioManager {
 			let path = std::env::current_dir()
 				.unwrap()
 				.join(PathBuf::from(path.to_str()?));
-			let id = this.0.load_sound(&path, SoundMetadata::default()).unwrap();
-			Ok(LSoundId(id))
+			let sound_id = this.0.load_sound(&path, SoundMetadata::default()).unwrap();
+			Ok(LSoundId(sound_id))
 		});
+
+		methods.add_method_mut("play_sound", |_, this, id: LSoundId| {
+			let instance_id = this
+				.0
+				.play_sound(id.0, InstanceSettings::default())
+				.unwrap();
+			Ok(LInstanceId(instance_id))
+		})
 	}
 }
