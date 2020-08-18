@@ -13,6 +13,6 @@ fn new_manager(_: &Lua, _: ()) -> LuaResult<LAudioManager> {
 #[lua_module]
 fn conductor(lua: &Lua) -> LuaResult<LuaTable> {
 	let exports = lua.create_table()?;
-	exports.set("new_manager", lua.create_function(new_manager)?)?;
+	exports.set("newManager", lua.create_function(new_manager)?)?;
 	Ok(exports)
 }

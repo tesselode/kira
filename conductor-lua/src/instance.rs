@@ -22,8 +22,8 @@ impl<'lua> FromLua<'lua> for LInstanceSettings {
 				if table.contains_key("position")? {
 					settings.position = table.get("position")?;
 				}
-				if table.contains_key("fade_in_duration")? {
-					settings.fade_in_duration = Some(table.get("fade_in_duration")?);
+				if table.contains_key("fadeInDuration")? {
+					settings.fade_in_duration = Some(table.get("fadeInDuration")?);
 				}
 				settings
 			}

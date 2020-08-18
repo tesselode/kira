@@ -20,7 +20,7 @@ impl LAudioManager {
 
 impl LuaUserData for LAudioManager {
 	fn add_methods<'lua, M: LuaUserDataMethods<'lua, Self>>(methods: &mut M) {
-		methods.add_method_mut("load_sound", |_, this, path: LuaString| {
+		methods.add_method_mut("loadSound", |_, this, path: LuaString| {
 			let path = std::env::current_dir()
 				.unwrap()
 				.join(PathBuf::from(path.to_str()?));
@@ -29,7 +29,7 @@ impl LuaUserData for LAudioManager {
 		});
 
 		methods.add_method_mut(
-			"play_sound",
+			"playSound",
 			|_, this, (id, settings): (LSoundId, LInstanceSettings)| {
 				let instance_id = this.0.play_sound(id.0, settings.0).unwrap();
 				Ok(LInstanceId(instance_id))

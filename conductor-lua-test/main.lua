@@ -2,10 +2,10 @@ package.cpath = love.filesystem.getWorkingDirectory() .. '/target/release/?.dll'
 
 local conductor = require 'conductor'
 
-local manager = conductor.new_manager()
-local sound = manager:load_sound 'assets/test_loop.ogg'
-print(manager:play_sound(sound, {
-	fade_in_duration = 1,
+local manager = conductor.newManager()
+local sound = manager:loadSound 'assets/test_loop.ogg'
+print(manager:playSound(sound, {
+	fadeInDuration = 1,
 }))
 
 function love.keypressed(key)
