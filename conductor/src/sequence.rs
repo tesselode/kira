@@ -75,14 +75,14 @@ enum SequenceTask {
 	RunCommand(SequenceCommand),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum SequenceState {
 	Idle,
 	Playing(usize),
 	Finished,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Sequence {
 	tasks: Vec<SequenceTask>,
 	state: SequenceState,

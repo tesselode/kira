@@ -1,5 +1,6 @@
 use crate::{
 	instance::{LInstanceId, LInstanceSettings},
+	sequence::{LSequence, LSequenceId},
 	sound::LSoundId,
 };
 use conductor::{
@@ -34,6 +35,11 @@ impl LuaUserData for LAudioManager {
 				let instance_id = this.0.play_sound(id.0, settings.0).unwrap();
 				Ok(LInstanceId(instance_id))
 			},
-		)
+		);
+
+		methods.add_method_mut("startSequence", |_, this, sequence: LSequence| {
+			let id = this.0.start_sequence(sequence.0).unwrap();
+			Ok(LSequenceId(id))
+		});
 	}
 }
