@@ -1,4 +1,7 @@
-use crate::{instance::LInstanceId, sound::LSoundId};
+use crate::{
+	instance::{LInstanceId, LInstanceSettings},
+	sound::LSoundId,
+};
 use conductor::{
 	instance::InstanceSettings,
 	manager::{AudioManager, AudioManagerSettings},
@@ -25,12 +28,12 @@ impl LuaUserData for LAudioManager {
 			Ok(LSoundId(sound_id))
 		});
 
-		methods.add_method_mut("play_sound", |_, this, id: LSoundId| {
-			let instance_id = this
-				.0
-				.play_sound(id.0, InstanceSettings::default())
-				.unwrap();
-			Ok(LInstanceId(instance_id))
-		})
+		methods.add_method_mut(
+			"play_sound",
+			|_, this, (id, settings): (LSoundId, LInstanceSettings)| {
+				let instance_id = this.0.play_sound(id.0, settings.0).unwrap();
+				Ok(LInstanceId(instance_id))
+			},
+		)
 	}
 }
