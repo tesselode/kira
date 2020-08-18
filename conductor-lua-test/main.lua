@@ -3,10 +3,7 @@ package.cpath = love.filesystem.getWorkingDirectory() .. '/target/release/?.dll'
 local conductor = require 'conductor'
 
 local manager = conductor.newManager()
-local sound = manager:loadSound 'assets/test_loop.ogg'
-print(manager:playSound(sound, {
-	fadeInDuration = 1,
-}))
+conductor.test(5, conductor.DURATION_UNIT_BEATS)
 
 function love.keypressed(key)
 	if key == 'escape' then
