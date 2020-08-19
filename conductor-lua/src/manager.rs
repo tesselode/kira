@@ -2,6 +2,7 @@ use crate::{
 	instance::{LInstanceId, LInstanceSettings},
 	sequence::{LSequence, LSequenceId},
 	sound::{LSoundId, LSoundMetadata},
+	tween::LTween,
 };
 use conductor::{
 	instance::InstanceSettings,
@@ -37,6 +38,40 @@ impl LuaUserData for LAudioManager {
 			|_, this, (id, settings): (LSoundId, LInstanceSettings)| {
 				let instance_id = this.0.play_sound(id.0, settings.0).unwrap();
 				Ok(LInstanceId(instance_id))
+			},
+		);
+
+		methods.add_method_mut(
+			"setInstanceVolume",
+			|_, this, (id, volume, tween): (LInstanceId, f32, Option<LTween>)| {
+				this.0
+					.set_instance_volume(
+						id.0,
+						volume,
+						match tween {
+							Some(tween) => Some(tween.0),
+							None => None,
+						},
+					)
+					.unwrap();
+				Ok(())
+			},
+		);
+
+		methods.add_method_mut(
+			"setInstancePitch",
+			|_, this, (id, pitch, tween): (LInstanceId, f32, Option<LTween>)| {
+				this.0
+					.set_instance_pitch(
+						id.0,
+						pitch,
+						match tween {
+							Some(tween) => Some(tween.0),
+							None => None,
+						},
+					)
+					.unwrap();
+				Ok(())
 			},
 		);
 

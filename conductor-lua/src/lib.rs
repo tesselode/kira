@@ -3,6 +3,7 @@ mod instance;
 mod manager;
 mod sequence;
 mod sound;
+mod tween;
 
 use manager::LAudioManager;
 use mlua::prelude::*;

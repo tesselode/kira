@@ -1,6 +1,7 @@
 use conductor::instance::{InstanceId, InstanceSettings};
 use mlua::prelude::*;
 
+#[derive(Clone)]
 pub struct LInstanceId(pub InstanceId);
 
 impl LuaUserData for LInstanceId {}
