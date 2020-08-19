@@ -4,12 +4,10 @@ local conductor = require 'conductor'
 
 local manager = conductor.newManager()
 
-local soundId = manager:loadSound 'assets/test_loop.ogg'
-
-local sequence = conductor.newSequence()
-sequence:wait(1, 'seconds')
-sequence:playSound(soundId)
-manager:startSequence(sequence)
+local soundId = manager:loadSound('assets/test_loop.ogg', {
+	tempo = 128,
+})
+print(soundId:getMetadata():getTempo())
 
 function love.keypressed(key)
 	if key == 'escape' then

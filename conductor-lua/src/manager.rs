@@ -1,7 +1,7 @@
 use crate::{
 	instance::{LInstanceId, LInstanceSettings},
 	sequence::{LSequence, LSequenceId},
-	sound::LSoundId,
+	sound::{LSoundId, LSoundMetadata},
 };
 use conductor::{
 	instance::InstanceSettings,
@@ -21,13 +21,16 @@ impl LAudioManager {
 
 impl LuaUserData for LAudioManager {
 	fn add_methods<'lua, M: LuaUserDataMethods<'lua, Self>>(methods: &mut M) {
-		methods.add_method_mut("loadSound", |_, this, path: LuaString| {
-			let path = std::env::current_dir()
-				.unwrap()
-				.join(PathBuf::from(path.to_str()?));
-			let sound_id = this.0.load_sound(&path, SoundMetadata::default()).unwrap();
-			Ok(LSoundId(sound_id))
-		});
+		methods.add_method_mut(
+			"loadSound",
+			|_, this, (path, metadata): (LuaString, LSoundMetadata)| {
+				let path = std::env::current_dir()
+					.unwrap()
+					.join(PathBuf::from(path.to_str()?));
+				let sound_id = this.0.load_sound(&path, metadata.0).unwrap();
+				Ok(LSoundId(sound_id))
+			},
+		);
 
 		methods.add_method_mut(
 			"playSound",
