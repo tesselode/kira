@@ -7,7 +7,7 @@ local manager = conductor.newManager()
 local soundId = manager:loadSound 'assets/test_loop.ogg'
 
 local sequence = conductor.newSequence()
-sequence:wait(1, conductor.DURATION_UNIT_SECONDS)
+sequence:wait(1, 'seconds')
 sequence:playSound(soundId)
 manager:startSequence(sequence)
 

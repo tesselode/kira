@@ -20,8 +20,6 @@ fn new_sequence(_: &Lua, _: ()) -> LuaResult<LSequence> {
 #[lua_module]
 fn conductor(lua: &Lua) -> LuaResult<LuaTable> {
 	let exports = lua.create_table()?;
-	exports.set("DURATION_UNIT_SECONDS", 0)?;
-	exports.set("DURATION_UNIT_BEATS", 1)?;
 	exports.set("newManager", lua.create_function(new_manager)?)?;
 	exports.set("newSequence", lua.create_function(new_sequence)?)?;
 	Ok(exports)

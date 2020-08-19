@@ -9,11 +9,11 @@ pub enum DurationUnit {
 impl<'lua> FromLua<'lua> for DurationUnit {
 	fn from_lua(lua_value: LuaValue<'lua>, lua: &'lua Lua) -> LuaResult<Self> {
 		match lua_value {
-			LuaValue::Integer(integer) => match integer {
-				0 => Ok(DurationUnit::Seconds),
-				1 => Ok(DurationUnit::Beats),
+			LuaValue::String(string) => match string.to_str()? {
+				"seconds" => Ok(DurationUnit::Seconds),
+				"beats" => Ok(DurationUnit::Beats),
 				_ => Err(LuaError::FromLuaConversionError {
-					from: "number",
+					from: "string",
 					to: "DurationUnit",
 					message: None,
 				}),
