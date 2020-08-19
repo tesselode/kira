@@ -4,11 +4,7 @@ use crate::{
 	sound::{LSoundId, LSoundMetadata},
 	tween::LTween,
 };
-use conductor::{
-	instance::InstanceSettings,
-	manager::{AudioManager, AudioManagerSettings},
-	sound::SoundMetadata,
-};
+use conductor::manager::{AudioManager, AudioManagerSettings};
 use mlua::prelude::*;
 use std::{error::Error, path::PathBuf};
 
@@ -66,6 +62,102 @@ impl LuaUserData for LAudioManager {
 						id.0,
 						pitch,
 						match tween {
+							Some(tween) => Some(tween.0),
+							None => None,
+						},
+					)
+					.unwrap();
+				Ok(())
+			},
+		);
+
+		methods.add_method_mut(
+			"pauseInstance",
+			|_, this, (id, fade_tween): (LInstanceId, Option<LTween>)| {
+				this.0
+					.pause_instance(
+						id.0,
+						match fade_tween {
+							Some(tween) => Some(tween.0),
+							None => None,
+						},
+					)
+					.unwrap();
+				Ok(())
+			},
+		);
+
+		methods.add_method_mut(
+			"resumeInstance",
+			|_, this, (id, fade_tween): (LInstanceId, Option<LTween>)| {
+				this.0
+					.resume_instance(
+						id.0,
+						match fade_tween {
+							Some(tween) => Some(tween.0),
+							None => None,
+						},
+					)
+					.unwrap();
+				Ok(())
+			},
+		);
+
+		methods.add_method_mut(
+			"stopInstance",
+			|_, this, (id, fade_tween): (LInstanceId, Option<LTween>)| {
+				this.0
+					.stop_instance(
+						id.0,
+						match fade_tween {
+							Some(tween) => Some(tween.0),
+							None => None,
+						},
+					)
+					.unwrap();
+				Ok(())
+			},
+		);
+
+		methods.add_method_mut(
+			"pauseInstancesOfSound",
+			|_, this, (id, fade_tween): (LSoundId, Option<LTween>)| {
+				this.0
+					.pause_instances_of_sound(
+						id.0,
+						match fade_tween {
+							Some(tween) => Some(tween.0),
+							None => None,
+						},
+					)
+					.unwrap();
+				Ok(())
+			},
+		);
+
+		methods.add_method_mut(
+			"resumeInstancesOfSound",
+			|_, this, (id, fade_tween): (LSoundId, Option<LTween>)| {
+				this.0
+					.resume_instances_of_sound(
+						id.0,
+						match fade_tween {
+							Some(tween) => Some(tween.0),
+							None => None,
+						},
+					)
+					.unwrap();
+				Ok(())
+			},
+		);
+
+		methods.add_method_mut(
+			"stopInstancesOfSound",
+			|_, this, (id, fade_tween): (LSoundId, Option<LTween>)| {
+				this.0
+					.stop_instances_of_sound(
+						id.0,
+						match fade_tween {
 							Some(tween) => Some(tween.0),
 							None => None,
 						},

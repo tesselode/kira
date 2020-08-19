@@ -7,7 +7,7 @@ pub enum DurationUnit {
 }
 
 impl<'lua> FromLua<'lua> for DurationUnit {
-	fn from_lua(lua_value: LuaValue<'lua>, lua: &'lua Lua) -> LuaResult<Self> {
+	fn from_lua(lua_value: LuaValue<'lua>, _: &'lua Lua) -> LuaResult<Self> {
 		match lua_value {
 			LuaValue::String(string) => match string.to_str()? {
 				"seconds" => Ok(DurationUnit::Seconds),

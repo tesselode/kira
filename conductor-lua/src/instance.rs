@@ -9,7 +9,7 @@ impl LuaUserData for LInstanceId {}
 pub struct LInstanceSettings(pub InstanceSettings);
 
 impl<'lua> FromLua<'lua> for LInstanceSettings {
-	fn from_lua(lua_value: LuaValue<'lua>, lua: &'lua Lua) -> LuaResult<Self> {
+	fn from_lua(lua_value: LuaValue<'lua>, _: &'lua Lua) -> LuaResult<Self> {
 		Ok(LInstanceSettings(match lua_value {
 			LuaNil => InstanceSettings::default(),
 			LuaValue::Table(table) => {
