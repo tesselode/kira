@@ -329,37 +329,34 @@ impl AudioManager {
 	}
 
 	/// Starts or resumes the metronome.
-	pub fn start_metronome(&mut self) -> Result<InstanceId, ConductorError> {
-		let instance_id = InstanceId::new();
+	pub fn start_metronome(&mut self) -> Result<(), ConductorError> {
 		match self
 			.command_producer
 			.push(Command::Metronome(MetronomeCommand::StartMetronome))
 		{
-			Ok(_) => Ok(instance_id),
+			Ok(_) => Ok(()),
 			Err(_) => Err(ConductorError::SendCommand),
 		}
 	}
 
 	/// Pauses the metronome.
-	pub fn pause_metronome(&mut self) -> Result<InstanceId, ConductorError> {
-		let instance_id = InstanceId::new();
+	pub fn pause_metronome(&mut self) -> Result<(), ConductorError> {
 		match self
 			.command_producer
 			.push(Command::Metronome(MetronomeCommand::PauseMetronome))
 		{
-			Ok(_) => Ok(instance_id),
+			Ok(_) => Ok(()),
 			Err(_) => Err(ConductorError::SendCommand),
 		}
 	}
 
 	/// Stops and resets the metronome.
-	pub fn stop_metronome(&mut self) -> Result<InstanceId, ConductorError> {
-		let instance_id = InstanceId::new();
+	pub fn stop_metronome(&mut self) -> Result<(), ConductorError> {
 		match self
 			.command_producer
 			.push(Command::Metronome(MetronomeCommand::StopMetronome))
 		{
-			Ok(_) => Ok(instance_id),
+			Ok(_) => Ok(()),
 			Err(_) => Err(ConductorError::SendCommand),
 		}
 	}
