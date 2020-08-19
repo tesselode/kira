@@ -1,5 +1,7 @@
 use crate::{
+	event::LEvent,
 	instance::{LInstanceId, LInstanceSettings},
+	metronome::LMetronomeSettings,
 	sequence::{LSequence, LSequenceId},
 	sound::{LSoundId, LSoundMetadata},
 	tween::LTween,
@@ -8,11 +10,47 @@ use conductor::manager::{AudioManager, AudioManagerSettings};
 use mlua::prelude::*;
 use std::{error::Error, path::PathBuf};
 
+pub struct LAudioManagerSettings(AudioManagerSettings);
+
+impl LuaUserData for LAudioManagerSettings {}
+
+impl<'lua> FromLua<'lua> for LAudioManagerSettings {
+	fn from_lua(lua_value: LuaValue<'lua>, _lua: &'lua Lua) -> LuaResult<Self> {
+		match lua_value {
+			LuaNil => Ok(LAudioManagerSettings(AudioManagerSettings::default())),
+			LuaValue::Table(table) => {
+				let mut settings = AudioManagerSettings::default();
+				if table.contains_key("numCommands")? {
+					settings.num_commands = table.get("numCommands")?;
+				}
+				if table.contains_key("numEvents")? {
+					settings.num_events = table.get("numEvents")?;
+				}
+				if table.contains_key("numSounds")? {
+					settings.num_sounds = table.get("numSounds")?;
+				}
+				if table.contains_key("numInstances")? {
+					settings.num_instances = table.get("numInstances")?;
+				}
+				if table.contains_key("numSequences")? {
+					settings.num_sequences = table.get("numCommands")?;
+				}
+				if table.contains_key("metronomeSettings")? {
+					let metronome_settings: LMetronomeSettings = table.get("metronomeSettings")?;
+					settings.metronome_settings = metronome_settings.0;
+				}
+				Ok(LAudioManagerSettings(settings))
+			}
+			_ => panic!(),
+		}
+	}
+}
+
 pub struct LAudioManager(AudioManager);
 
 impl LAudioManager {
-	pub fn new() -> Result<Self, Box<dyn Error>> {
-		Ok(Self(AudioManager::new(AudioManagerSettings::default())?))
+	pub fn new(settings: LAudioManagerSettings) -> Result<Self, Box<dyn Error>> {
+		Ok(Self(AudioManager::new(settings.0)?))
 	}
 }
 
@@ -167,9 +205,35 @@ impl LuaUserData for LAudioManager {
 			},
 		);
 
+		methods.add_method_mut("startMetronome", |_, this, _: ()| {
+			this.0.start_metronome().unwrap();
+			Ok(())
+		});
+
+		methods.add_method_mut("pauseMetronome", |_, this, _: ()| {
+			this.0.pause_metronome().unwrap();
+			Ok(())
+		});
+
+		methods.add_method_mut("stopMetronome", |_, this, _: ()| {
+			this.0.stop_metronome().unwrap();
+			Ok(())
+		});
+
 		methods.add_method_mut("startSequence", |_, this, sequence: LSequence| {
 			let id = this.0.start_sequence(sequence.0).unwrap();
 			Ok(LSequenceId(id))
 		});
+
+		methods.add_method_mut("getEvents", |lua, this, _: ()| {
+			Ok(LuaValue::Table(lua.create_sequence_from(
+				this.0.events().iter().map(|event| LEvent(*event)),
+			)?))
+		});
+
+		methods.add_method_mut("freeUnusedResources", |_, this, _: ()| {
+			this.0.free_unused_resources();
+			Ok(())
+		})
 	}
 }

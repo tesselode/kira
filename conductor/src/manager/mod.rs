@@ -18,7 +18,7 @@ use std::{error::Error, path::Path};
 mod backend;
 
 /// Events that can be sent by the audio thread.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Event {
 	/**
 	Sent when the metronome passes a certain interval (in beats).

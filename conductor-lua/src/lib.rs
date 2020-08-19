@@ -1,17 +1,19 @@
 mod duration;
+mod event;
 mod instance;
 mod manager;
+mod metronome;
 mod sequence;
 mod sound;
 mod tween;
 
-use manager::LAudioManager;
+use manager::{LAudioManager, LAudioManagerSettings};
 use mlua::prelude::*;
 use mlua_derive::lua_module;
 use sequence::LSequence;
 
-fn new_manager(_: &Lua, _: ()) -> LuaResult<LAudioManager> {
-	Ok(LAudioManager::new().unwrap())
+fn new_manager(_: &Lua, settings: LAudioManagerSettings) -> LuaResult<LAudioManager> {
+	Ok(LAudioManager::new(settings).unwrap())
 }
 
 fn new_sequence(_: &Lua, _: ()) -> LuaResult<LSequence> {
