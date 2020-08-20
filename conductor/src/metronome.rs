@@ -73,6 +73,7 @@ impl Metronome {
 
 	pub fn run_command(&mut self, command: MetronomeCommand) {
 		match command {
+			MetronomeCommand::SetMetronomeTempo(tempo) => self.settings.tempo = tempo,
 			MetronomeCommand::StartMetronome => self.start(),
 			MetronomeCommand::PauseMetronome => self.pause(),
 			MetronomeCommand::StopMetronome => self.stop(),

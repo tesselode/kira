@@ -2,6 +2,7 @@ use crate::{
 	instance::{InstanceId, InstanceSettings},
 	sequence::{Sequence, SequenceId},
 	sound::{Sound, SoundId},
+	tempo::Tempo,
 	tween::Tween,
 };
 
@@ -25,6 +26,7 @@ pub(crate) enum InstanceCommand<Id> {
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) enum MetronomeCommand {
+	SetMetronomeTempo(Tempo),
 	StartMetronome,
 	PauseMetronome,
 	StopMetronome,

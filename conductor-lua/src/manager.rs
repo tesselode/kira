@@ -6,7 +6,10 @@ use crate::{
 	sound::{LSoundId, LSoundMetadata},
 	tween::LTween,
 };
-use conductor::manager::{AudioManager, AudioManagerSettings};
+use conductor::{
+	manager::{AudioManager, AudioManagerSettings},
+	tempo::Tempo,
+};
 use mlua::prelude::*;
 use std::{error::Error, path::PathBuf};
 
@@ -204,6 +207,11 @@ impl LuaUserData for LAudioManager {
 				Ok(())
 			},
 		);
+
+		methods.add_method_mut("setMetronomeTempo", |_, this, tempo: f32| {
+			this.0.set_metronome_tempo(Tempo(tempo)).unwrap();
+			Ok(())
+		});
 
 		methods.add_method_mut("startMetronome", |_, this, _: ()| {
 			this.0.start_metronome().unwrap();

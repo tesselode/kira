@@ -5,6 +5,7 @@ use crate::{
 	metronome::MetronomeSettings,
 	sequence::{Sequence, SequenceId},
 	sound::{Sound, SoundId, SoundMetadata},
+	tempo::Tempo,
 	tween::Tween,
 };
 use backend::Backend;
@@ -322,6 +323,18 @@ impl AudioManager {
 			.command_producer
 			.push(Command::Instance(InstanceCommand::StopInstancesOfSound(
 				sound_id, fade_tween,
+			))) {
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
+	/// Sets the tempo of the metronome.
+	pub fn set_metronome_tempo(&mut self, tempo: Tempo) -> Result<(), ConductorError> {
+		match self
+			.command_producer
+			.push(Command::Metronome(MetronomeCommand::SetMetronomeTempo(
+				tempo,
 			))) {
 			Ok(_) => Ok(()),
 			Err(_) => Err(ConductorError::SendCommand),

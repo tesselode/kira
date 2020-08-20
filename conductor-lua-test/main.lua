@@ -28,6 +28,7 @@ function love.keypressed(key)
 	if key == 'space' then
 		manager:startMetronome()
 	end
+	if key == 's' then manager:setMetronomeTempo(150) end
 	if key == 'escape' then
 		love.event.quit()
 	end
