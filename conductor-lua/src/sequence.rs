@@ -2,6 +2,7 @@ use crate::{
 	duration::{DurationUnit, LDuration},
 	instance::LInstanceSettings,
 	sound::LSoundId,
+	tween::LTween,
 };
 use conductor::sequence::{Sequence, SequenceId, SequenceInstanceHandle};
 use mlua::prelude::*;
@@ -10,6 +11,7 @@ pub struct LSequenceId(pub SequenceId);
 
 impl LuaUserData for LSequenceId {}
 
+#[derive(Clone)]
 pub struct LSequenceInstanceHandle(SequenceInstanceHandle);
 
 impl LuaUserData for LSequenceInstanceHandle {}
@@ -37,7 +39,7 @@ impl LuaUserData for LSequence {
 		});
 
 		methods.add_method_mut("goTo", |_, this, index: usize| {
-			this.0.go_to(index);
+			this.0.go_to(index - 1);
 			Ok(())
 		});
 
@@ -48,5 +50,134 @@ impl LuaUserData for LSequence {
 				Ok(LSequenceInstanceHandle(handle))
 			},
 		);
+
+		methods.add_method_mut(
+			"setInstanceVolume",
+			|_, this, (handle, volume, tween): (LSequenceInstanceHandle, f32, Option<LTween>)| {
+				this.0.set_instance_volume(
+					handle.0,
+					volume,
+					match tween {
+						Some(tween) => Some(tween.0),
+						None => None,
+					},
+				);
+				Ok(())
+			},
+		);
+
+		methods.add_method_mut(
+			"setInstancePitch",
+			|_, this, (handle, pitch, tween): (LSequenceInstanceHandle, f32, Option<LTween>)| {
+				this.0.set_instance_pitch(
+					handle.0,
+					pitch,
+					match tween {
+						Some(tween) => Some(tween.0),
+						None => None,
+					},
+				);
+				Ok(())
+			},
+		);
+
+		methods.add_method_mut(
+			"pauseInstance",
+			|_, this, (handle, fade_tween): (LSequenceInstanceHandle, Option<LTween>)| {
+				this.0.pause_instance(
+					handle.0,
+					match fade_tween {
+						Some(tween) => Some(tween.0),
+						None => None,
+					},
+				);
+				Ok(())
+			},
+		);
+
+		methods.add_method_mut(
+			"resumeInstance",
+			|_, this, (handle, fade_tween): (LSequenceInstanceHandle, Option<LTween>)| {
+				this.0.resume_instance(
+					handle.0,
+					match fade_tween {
+						Some(tween) => Some(tween.0),
+						None => None,
+					},
+				);
+				Ok(())
+			},
+		);
+
+		methods.add_method_mut(
+			"stopInstance",
+			|_, this, (handle, fade_tween): (LSequenceInstanceHandle, Option<LTween>)| {
+				this.0.stop_instance(
+					handle.0,
+					match fade_tween {
+						Some(tween) => Some(tween.0),
+						None => None,
+					},
+				);
+				Ok(())
+			},
+		);
+
+		methods.add_method_mut(
+			"pauseInstancesOfSound",
+			|_, this, (id, fade_tween): (LSoundId, Option<LTween>)| {
+				this.0.pause_instances_of_sound(
+					id.0,
+					match fade_tween {
+						Some(tween) => Some(tween.0),
+						None => None,
+					},
+				);
+				Ok(())
+			},
+		);
+
+		methods.add_method_mut(
+			"resumeInstancesOfSound",
+			|_, this, (id, fade_tween): (LSoundId, Option<LTween>)| {
+				this.0.resume_instances_of_sound(
+					id.0,
+					match fade_tween {
+						Some(tween) => Some(tween.0),
+						None => None,
+					},
+				);
+				Ok(())
+			},
+		);
+
+		methods.add_method_mut(
+			"stopInstancesOfSound",
+			|_, this, (id, fade_tween): (LSoundId, Option<LTween>)| {
+				this.0.stop_instances_of_sound(
+					id.0,
+					match fade_tween {
+						Some(tween) => Some(tween.0),
+						None => None,
+					},
+				);
+				Ok(())
+			},
+		);
+
+		methods.add_method_mut("startMetronome", |_, this, _: ()| {
+			this.0.start_metronome();
+			Ok(())
+		});
+
+		methods.add_method_mut("pauseMetronome", |_, this, _: ()| {
+			this.0.pause_metronome();
+			Ok(())
+		});
+
+		methods.add_method_mut("stopMetronome", |_, this, _: ()| {
+			this.0.stop_metronome();
+			Ok(())
+		});
 	}
 }
