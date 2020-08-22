@@ -91,6 +91,7 @@ pub struct Sequence<CustomEvent> {
 	state: SequenceState,
 	wait_timer: Option<f32>,
 	instances: HashMap<SequenceInstanceHandle, InstanceId>,
+	muted: bool,
 }
 
 impl<CustomEvent: Copy> Sequence<CustomEvent> {
@@ -100,6 +101,7 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 			state: SequenceState::Idle,
 			wait_timer: None,
 			instances: HashMap::new(),
+			muted: false,
 		}
 	}
 
@@ -239,6 +241,14 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 		self.start_task(0);
 	}
 
+	pub(crate) fn mute(&mut self) {
+		self.muted = true;
+	}
+
+	pub(crate) fn unmute(&mut self) {
+		self.muted = false;
+	}
+
 	fn transform_command(
 		&mut self,
 		command: SequenceCommand<CustomEvent>,
@@ -344,7 +354,9 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 						self.start_task(index);
 					}
 					SequenceTask::RunCommand(command) => {
-						output_command_queue.push(self.transform_command(command));
+						if !self.muted {
+							output_command_queue.push(self.transform_command(command));
+						}
 						self.start_task(index + 1);
 					}
 				}

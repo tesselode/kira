@@ -3,7 +3,7 @@ use conductor::{
 	instance::{InstanceId, InstanceSettings},
 	manager::{AudioManager, AudioManagerSettings},
 	metronome::MetronomeSettings,
-	sequence::Sequence,
+	sequence::{Sequence, SequenceId},
 	sound::{SoundId, SoundMetadata},
 	tempo::Tempo,
 	tween::Tween,
@@ -21,7 +21,8 @@ enum CustomEvent {
 
 struct MainState {
 	audio_manager: AudioManager<CustomEvent>,
-	sound_id: SoundId,
+	hat_sequence_id: SequenceId,
+	hat_sequence_muted: bool,
 }
 
 impl MainState {
@@ -33,7 +34,7 @@ impl MainState {
 			},
 			..Default::default()
 		})?;
-		let sound_id = audio_manager.load_sound(
+		let test_loop_sound_id = audio_manager.load_sound(
 			&std::env::current_dir()
 				.unwrap()
 				.join("assets/test_loop.ogg"),
@@ -41,30 +42,36 @@ impl MainState {
 				tempo: Some(Tempo(128.0)),
 			},
 		)?;
-		let mut sequence = Sequence::new();
-		sequence.wait_for_interval(1.0);
-		let handle = sequence.play_sound(sound_id, InstanceSettings::default());
-		sequence.wait(Duration::Beats(3.0));
-		sequence.set_instance_volume(handle, 0.0, Some(Tween(0.25)));
-		sequence.wait(Duration::Beats(0.5));
-		sequence.set_instance_volume(handle, 1.0, Some(Tween(0.25)));
-		sequence.wait(Duration::Beats(0.5));
-		sequence.emit_custom_event(CustomEvent::Test);
-		sequence.go_to(1);
-		audio_manager.start_sequence(sequence)?;
+		let hat_sound_id = audio_manager.load_sound(
+			&std::env::current_dir().unwrap().join("assets/cymbal.ogg"),
+			SoundMetadata {
+				tempo: Some(Tempo(128.0)),
+			},
+		)?;
+		let mut test_loop_sequence = Sequence::new();
+		test_loop_sequence.wait_for_interval(1.0);
+		test_loop_sequence.play_sound(test_loop_sound_id, InstanceSettings::default());
+		test_loop_sequence.wait(Duration::Beats(4.0));
+		test_loop_sequence.go_to(1);
+		audio_manager.start_sequence(test_loop_sequence)?;
+		let mut hat_sequence = Sequence::new();
+		hat_sequence.wait_for_interval(1.0);
+		hat_sequence.play_sound(hat_sound_id, InstanceSettings::default());
+		hat_sequence.wait(Duration::Beats(0.25));
+		hat_sequence.go_to(1);
+		let hat_sequence_id = audio_manager.start_sequence(hat_sequence)?;
 		audio_manager.start_metronome()?;
 		Ok(Self {
 			audio_manager,
-			sound_id,
+			hat_sequence_id,
+			hat_sequence_muted: false,
 		})
 	}
 }
 
 impl ggez::event::EventHandler for MainState {
 	fn update(&mut self, _ctx: &mut Context) -> GameResult {
-		for event in self.audio_manager.events() {
-			println!("{:?}", event);
-		}
+		self.audio_manager.events();
 		self.audio_manager.free_unused_resources();
 		Ok(())
 	}
@@ -76,6 +83,21 @@ impl ggez::event::EventHandler for MainState {
 		_keymods: KeyMods,
 		_repeat: bool,
 	) {
+		match keycode {
+			KeyCode::Space => {
+				if self.hat_sequence_muted {
+					self.audio_manager
+						.unmute_sequence(self.hat_sequence_id)
+						.unwrap();
+				} else {
+					self.audio_manager
+						.mute_sequence(self.hat_sequence_id)
+						.unwrap();
+				}
+				self.hat_sequence_muted = !self.hat_sequence_muted;
+			}
+			_ => {}
+		}
 	}
 
 	fn draw(&mut self, ctx: &mut Context) -> GameResult {

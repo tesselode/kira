@@ -388,6 +388,32 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 		}
 	}
 
+	/// Mutes a sequence.
+	///
+	/// When a sequence is muted, it will continue waiting for durations and intervals,
+	/// but it will not change anything that changes the audio, like starting new sounds
+	/// or settings the metronome tempo.
+	pub fn mute_sequence(&mut self, id: SequenceId) -> Result<(), ConductorError> {
+		match self
+			.command_producer
+			.push(Command::Sequence(SequenceCommand::MuteSequence(id)))
+		{
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
+	/// Unmutes a sequence.
+	pub fn unmute_sequence(&mut self, id: SequenceId) -> Result<(), ConductorError> {
+		match self
+			.command_producer
+			.push(Command::Sequence(SequenceCommand::UnmuteSequence(id)))
+		{
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::SendCommand),
+		}
+	}
+
 	/// Returns a list of all of the new events created by the audio thread
 	/// (since the last time `events` was called).
 	pub fn events(&mut self) -> Vec<Event<CustomEvent>> {

@@ -28,6 +28,16 @@ impl<CustomEvent: Copy> Sequences<CustomEvent> {
 				sequence.start();
 				self.sequences.insert(id, sequence);
 			}
+			SequenceCommand::MuteSequence(id) => {
+				if let Some(sequence) = self.sequences.get_mut(&id) {
+					sequence.mute();
+				}
+			}
+			SequenceCommand::UnmuteSequence(id) => {
+				if let Some(sequence) = self.sequences.get_mut(&id) {
+					sequence.unmute();
+				}
+			}
 		}
 	}
 

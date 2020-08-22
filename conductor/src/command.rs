@@ -34,6 +34,8 @@ pub(crate) enum MetronomeCommand {
 
 pub(crate) enum SequenceCommand<CustomEvent> {
 	StartSequence(SequenceId, Sequence<CustomEvent>),
+	MuteSequence(SequenceId),
+	UnmuteSequence(SequenceId),
 }
 
 pub(crate) enum Command<CustomEvent> {
