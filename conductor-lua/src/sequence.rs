@@ -17,7 +17,7 @@ pub struct LSequenceInstanceHandle(SequenceInstanceHandle);
 impl LuaUserData for LSequenceInstanceHandle {}
 
 #[derive(Clone)]
-pub struct LSequence(pub Sequence);
+pub struct LSequence(pub Sequence<usize>);
 
 impl LSequence {
 	pub fn new() -> Self {
@@ -179,5 +179,10 @@ impl LuaUserData for LSequence {
 			this.0.stop_metronome();
 			Ok(())
 		});
+
+		methods.add_method_mut("emitCustomEvent", |_, this, index: usize| {
+			this.0.emit_custom_event(index);
+			Ok(())
+		})
 	}
 }

@@ -16,12 +16,18 @@ sequence:setInstanceVolume(handle, 0, {duration = .25})
 sequence:wait(.5, 'beats')
 sequence:setInstanceVolume(handle, 1, {duration = .25})
 sequence:wait(.5, 'beats')
+sequence:emitCustomEvent(1)
+sequence:emitCustomEvent(5)
 sequence:goTo(2)
 manager:startSequence(sequence)
 
 function love.update(dt)
 	manager:freeUnusedResources()
-	manager:getEvents()
+	for _, event in ipairs(manager:getEvents()) do
+		if event.event == 'custom' then
+			print(event.index)
+		end
+	end
 end
 
 function love.keypressed(key)

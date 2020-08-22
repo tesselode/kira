@@ -49,7 +49,7 @@ impl<'lua> FromLua<'lua> for LAudioManagerSettings {
 	}
 }
 
-pub struct LAudioManager(AudioManager);
+pub struct LAudioManager(AudioManager<usize>);
 
 impl LAudioManager {
 	pub fn new(settings: LAudioManagerSettings) -> Result<Self, Box<dyn Error>> {
