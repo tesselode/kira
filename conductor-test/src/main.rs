@@ -29,7 +29,7 @@ impl MainState {
 	pub fn new() -> Result<Self, Box<dyn Error>> {
 		let mut audio_manager = AudioManager::new(AudioManagerSettings {
 			metronome_settings: MetronomeSettings {
-				tempo: Tempo(128.0),
+				tempo: Tempo(120.0),
 				interval_events_to_emit: vec![0.25, 0.5, 1.0],
 			},
 			..Default::default()
@@ -43,21 +43,21 @@ impl MainState {
 			},
 		)?;
 		let hat_sound_id = audio_manager.load_sound(
-			std::env::current_dir().unwrap().join("assets/cymbal.ogg"),
+			std::env::current_dir().unwrap().join("assets/hhclosed.ogg"),
 			SoundMetadata {
 				tempo: Some(Tempo(128.0)),
 			},
 		)?;
-		let mut test_loop_sequence = Sequence::new();
+		/* let mut test_loop_sequence = Sequence::new();
 		test_loop_sequence.wait_for_interval(1.0);
 		test_loop_sequence.play_sound(test_loop_sound_id, InstanceSettings::default());
 		test_loop_sequence.wait(Duration::Beats(4.0));
 		test_loop_sequence.go_to(1);
-		audio_manager.start_sequence(test_loop_sequence)?;
+		audio_manager.start_sequence(test_loop_sequence)?; */
 		let mut hat_sequence = Sequence::new();
 		hat_sequence.wait_for_interval(1.0);
 		hat_sequence.play_sound(hat_sound_id, InstanceSettings::default());
-		hat_sequence.wait(Duration::Beats(0.25));
+		hat_sequence.wait_for_interval(1.0);
 		hat_sequence.go_to(1);
 		let hat_sequence_id = audio_manager.start_sequence(hat_sequence)?;
 		audio_manager.start_metronome()?;
