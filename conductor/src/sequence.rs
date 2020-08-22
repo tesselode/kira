@@ -48,31 +48,34 @@ impl SequenceId {
 }
 
 #[derive(Debug, Copy, Clone)]
-enum SequenceCommand {
+enum SequenceCommand<CustomEvent> {
 	Instance(InstanceCommand<SequenceInstanceHandle>),
 	Metronome(MetronomeCommand),
+	EmitCustomEvent(CustomEvent),
 }
 
-pub(crate) enum SequenceOutputCommand {
+pub(crate) enum SequenceOutputCommand<CustomEvent> {
 	Instance(InstanceCommand<InstanceId>),
 	Metronome(MetronomeCommand),
+	EmitCustomEvent(CustomEvent),
 }
 
-impl Into<Command> for SequenceOutputCommand {
-	fn into(self) -> Command {
+impl<CustomEvent> Into<Command<CustomEvent>> for SequenceOutputCommand<CustomEvent> {
+	fn into(self) -> Command<CustomEvent> {
 		match self {
 			SequenceOutputCommand::Instance(command) => Command::Instance(command),
 			SequenceOutputCommand::Metronome(command) => Command::Metronome(command),
+			SequenceOutputCommand::EmitCustomEvent(event) => Command::EmitCustomEvent(event),
 		}
 	}
 }
 
 #[derive(Debug, Copy, Clone)]
-enum SequenceTask {
+enum SequenceTask<CustomEvent> {
 	Wait(Duration),
 	WaitForInterval(f32),
 	GoToTask(usize),
-	RunCommand(SequenceCommand),
+	RunCommand(SequenceCommand<CustomEvent>),
 }
 
 #[derive(Debug, Clone)]
@@ -83,14 +86,14 @@ enum SequenceState {
 }
 
 #[derive(Debug, Clone)]
-pub struct Sequence {
-	tasks: Vec<SequenceTask>,
+pub struct Sequence<CustomEvent> {
+	tasks: Vec<SequenceTask<CustomEvent>>,
 	state: SequenceState,
 	wait_timer: Option<f32>,
 	instances: HashMap<SequenceInstanceHandle, InstanceId>,
 }
 
-impl Sequence {
+impl<CustomEvent: Copy> Sequence<CustomEvent> {
 	pub fn new() -> Self {
 		Self {
 			tasks: vec![],
@@ -212,6 +215,13 @@ impl Sequence {
 			)));
 	}
 
+	pub fn emit_custom_event(&mut self, event: CustomEvent) {
+		self.tasks
+			.push(SequenceTask::RunCommand(SequenceCommand::EmitCustomEvent(
+				event,
+			)));
+	}
+
 	fn start_task(&mut self, index: usize) {
 		if let Some(task) = self.tasks.get(index) {
 			self.state = SequenceState::Playing(index);
@@ -229,7 +239,10 @@ impl Sequence {
 		self.start_task(0);
 	}
 
-	fn transform_command(&mut self, command: SequenceCommand) -> SequenceOutputCommand {
+	fn transform_command(
+		&mut self,
+		command: SequenceCommand<CustomEvent>,
+	) -> SequenceOutputCommand<CustomEvent> {
 		match command {
 			SequenceCommand::Instance(command) => match command {
 				InstanceCommand::PlaySound(sound_id, handle, settings) => {
@@ -295,6 +308,9 @@ impl Sequence {
 				}
 			},
 			SequenceCommand::Metronome(command) => SequenceOutputCommand::Metronome(command),
+			SequenceCommand::EmitCustomEvent(event) => {
+				SequenceOutputCommand::EmitCustomEvent(event)
+			}
 		}
 	}
 
@@ -302,7 +318,7 @@ impl Sequence {
 		&mut self,
 		dt: f32,
 		metronome: &Metronome,
-		output_command_queue: &mut Vec<SequenceOutputCommand>,
+		output_command_queue: &mut Vec<SequenceOutputCommand<CustomEvent>>,
 	) {
 		while let SequenceState::Playing(index) = self.state {
 			if let Some(task) = self.tasks.get(index) {

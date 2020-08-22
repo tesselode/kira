@@ -14,8 +14,13 @@ use ggez::{
 };
 use std::error::Error;
 
+#[derive(Debug, Copy, Clone)]
+enum CustomEvent {
+	Test,
+}
+
 struct MainState {
-	audio_manager: AudioManager,
+	audio_manager: AudioManager<CustomEvent>,
 	sound_id: SoundId,
 }
 
@@ -44,7 +49,8 @@ impl MainState {
 		sequence.wait(Duration::Beats(0.5));
 		sequence.set_instance_volume(handle, 1.0, Some(Tween(0.25)));
 		sequence.wait(Duration::Beats(0.5));
-		//sequence.go_to(1);
+		sequence.emit_custom_event(CustomEvent::Test);
+		sequence.go_to(1);
 		audio_manager.start_sequence(sequence)?;
 		audio_manager.start_metronome()?;
 		Ok(Self {
@@ -56,7 +62,9 @@ impl MainState {
 
 impl ggez::event::EventHandler for MainState {
 	fn update(&mut self, _ctx: &mut Context) -> GameResult {
-		self.audio_manager.events();
+		for event in self.audio_manager.events() {
+			println!("{:?}", event);
+		}
 		self.audio_manager.free_unused_resources();
 		Ok(())
 	}

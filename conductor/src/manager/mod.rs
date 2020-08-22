@@ -9,10 +9,7 @@ use crate::{
 	tween::Tween,
 };
 use backend::Backend;
-use cpal::{
-	traits::{DeviceTrait, HostTrait, StreamTrait},
-	Stream,
-};
+use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use ringbuf::{Consumer, Producer, RingBuffer};
 use std::{error::Error, path::Path};
 
@@ -20,7 +17,7 @@ mod backend;
 
 /// Events that can be sent by the audio thread.
 #[derive(Debug, Copy, Clone)]
-pub enum Event {
+pub enum Event<CustomEvent: Send + 'static> {
 	/**
 	Sent when the metronome passes a certain interval (in beats).
 
@@ -32,6 +29,7 @@ pub enum Event {
 	when the metronome is created.
 	*/
 	MetronomeIntervalPassed(f32),
+	Custom(CustomEvent),
 }
 
 /// Settings for an `AudioManager`.
@@ -72,15 +70,15 @@ Plays and manages audio.
 The `AudioManager` is responsible for all communication between the gameplay thread
 and the audio thread.
 */
-pub struct AudioManager {
+pub struct AudioManager<CustomEvent: Send + 'static = ()> {
 	quit_signal_producer: Producer<bool>,
-	command_producer: Producer<Command>,
-	event_consumer: Consumer<Event>,
+	command_producer: Producer<Command<CustomEvent>>,
+	event_consumer: Consumer<Event<CustomEvent>>,
 	sounds_to_unload_consumer: Consumer<Sound>,
-	sequences_to_unload_consumer: Consumer<Sequence>,
+	sequences_to_unload_consumer: Consumer<Sequence<CustomEvent>>,
 }
 
-impl AudioManager {
+impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 	/// Creates a new audio manager and starts an audio thread.
 	pub fn new(settings: AudioManagerSettings) -> Result<Self, Box<dyn Error>> {
 		let (quit_signal_producer, mut quit_signal_consumer) = RingBuffer::new(1).split();
@@ -375,7 +373,10 @@ impl AudioManager {
 	}
 
 	/// Starts a sequence.
-	pub fn start_sequence(&mut self, sequence: Sequence) -> Result<SequenceId, ConductorError> {
+	pub fn start_sequence(
+		&mut self,
+		sequence: Sequence<CustomEvent>,
+	) -> Result<SequenceId, ConductorError> {
 		let id = SequenceId::new();
 		match self
 			.command_producer
@@ -389,7 +390,7 @@ impl AudioManager {
 
 	/// Returns a list of all of the new events created by the audio thread
 	/// (since the last time `events` was called).
-	pub fn events(&mut self) -> Vec<Event> {
+	pub fn events(&mut self) -> Vec<Event<CustomEvent>> {
 		let mut events = vec![];
 		while let Some(event) = self.event_consumer.pop() {
 			events.push(event);
@@ -405,7 +406,7 @@ impl AudioManager {
 	}
 }
 
-impl Drop for AudioManager {
+impl<CustomEvent: Send + 'static> Drop for AudioManager<CustomEvent> {
 	fn drop(&mut self) {
 		self.quit_signal_producer.push(true).unwrap();
 	}

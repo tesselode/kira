@@ -14,27 +14,27 @@ use instances::Instances;
 use ringbuf::{Consumer, Producer};
 use sequences::Sequences;
 
-pub(crate) struct Backend {
+pub(crate) struct Backend<CustomEvent: Send + 'static> {
 	dt: f32,
 	sounds: IndexMap<SoundId, Sound>,
-	command_queue: Vec<Command>,
-	command_consumer: Consumer<Command>,
-	event_producer: Producer<Event>,
+	command_queue: Vec<Command<CustomEvent>>,
+	command_consumer: Consumer<Command<CustomEvent>>,
+	event_producer: Producer<Event<CustomEvent>>,
 	sounds_to_unload_producer: Producer<Sound>,
-	sequences_to_unload_producer: Producer<Sequence>,
+	sequences_to_unload_producer: Producer<Sequence<CustomEvent>>,
 	metronome: Metronome,
 	instances: Instances,
-	sequences: Sequences,
+	sequences: Sequences<CustomEvent>,
 }
 
-impl Backend {
+impl<CustomEvent: Copy + Send + 'static> Backend<CustomEvent> {
 	pub fn new(
 		sample_rate: u32,
 		settings: AudioManagerSettings,
-		command_consumer: Consumer<Command>,
-		event_producer: Producer<Event>,
+		command_consumer: Consumer<Command<CustomEvent>>,
+		event_producer: Producer<Event<CustomEvent>>,
 		sounds_to_unload_producer: Producer<Sound>,
-		sequences_to_unload_producer: Producer<Sequence>,
+		sequences_to_unload_producer: Producer<Sequence<CustomEvent>>,
 	) -> Self {
 		Self {
 			dt: 1.0 / sample_rate as f32,
@@ -80,6 +80,12 @@ impl Backend {
 				}
 				Command::Sequence(command) => {
 					self.sequences.run_command(command);
+				}
+				Command::EmitCustomEvent(event) => {
+					match self.event_producer.push(Event::Custom(event)) {
+						Ok(_) => {}
+						Err(_) => {}
+					}
 				}
 			}
 		}

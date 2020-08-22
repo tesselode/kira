@@ -7,13 +7,13 @@ use indexmap::IndexMap;
 use ringbuf::Producer;
 use std::vec::Drain;
 
-pub(crate) struct Sequences {
-	sequences: IndexMap<SequenceId, Sequence>,
+pub(crate) struct Sequences<CustomEvent> {
+	sequences: IndexMap<SequenceId, Sequence<CustomEvent>>,
 	sequences_to_remove: Vec<SequenceId>,
-	output_command_queue: Vec<SequenceOutputCommand>,
+	output_command_queue: Vec<SequenceOutputCommand<CustomEvent>>,
 }
 
-impl Sequences {
+impl<CustomEvent: Copy> Sequences<CustomEvent> {
 	pub fn new(sequence_capacity: usize, command_capacity: usize) -> Self {
 		Self {
 			sequences: IndexMap::with_capacity(sequence_capacity),
@@ -22,7 +22,7 @@ impl Sequences {
 		}
 	}
 
-	pub fn run_command(&mut self, command: SequenceCommand) {
+	pub fn run_command(&mut self, command: SequenceCommand<CustomEvent>) {
 		match command {
 			SequenceCommand::StartSequence(id, mut sequence) => {
 				sequence.start();
@@ -35,8 +35,8 @@ impl Sequences {
 		&mut self,
 		dt: f32,
 		metronome: &Metronome,
-		sequences_to_unload_producer: &mut Producer<Sequence>,
-	) -> Drain<SequenceOutputCommand> {
+		sequences_to_unload_producer: &mut Producer<Sequence<CustomEvent>>,
+	) -> Drain<SequenceOutputCommand<CustomEvent>> {
 		for (id, sequence) in &mut self.sequences {
 			sequence.update(dt, metronome, &mut self.output_command_queue);
 			if sequence.finished() {

@@ -32,13 +32,14 @@ pub(crate) enum MetronomeCommand {
 	StopMetronome,
 }
 
-pub(crate) enum SequenceCommand {
-	StartSequence(SequenceId, Sequence),
+pub(crate) enum SequenceCommand<CustomEvent> {
+	StartSequence(SequenceId, Sequence<CustomEvent>),
 }
 
-pub(crate) enum Command {
+pub(crate) enum Command<CustomEvent> {
 	Sound(SoundCommand),
 	Instance(InstanceCommand<InstanceId>),
 	Metronome(MetronomeCommand),
-	Sequence(SequenceCommand),
+	Sequence(SequenceCommand<CustomEvent>),
+	EmitCustomEvent(CustomEvent),
 }
