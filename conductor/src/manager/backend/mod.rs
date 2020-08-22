@@ -15,7 +15,7 @@ use ringbuf::{Consumer, Producer};
 use sequences::Sequences;
 
 pub(crate) struct Backend<CustomEvent: Send + 'static> {
-	dt: f32,
+	dt: f64,
 	sounds: IndexMap<SoundId, Sound>,
 	command_queue: Vec<Command<CustomEvent>>,
 	command_consumer: Consumer<Command<CustomEvent>>,
@@ -37,7 +37,7 @@ impl<CustomEvent: Copy + Send + 'static> Backend<CustomEvent> {
 		sequences_to_unload_producer: Producer<Sequence<CustomEvent>>,
 	) -> Self {
 		Self {
-			dt: 1.0 / sample_rate as f32,
+			dt: 1.0 / sample_rate as f64,
 			sounds: IndexMap::with_capacity(settings.num_sounds),
 			command_queue: Vec::with_capacity(settings.num_commands),
 			command_consumer,

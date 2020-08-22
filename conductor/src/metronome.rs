@@ -17,7 +17,7 @@ pub struct MetronomeSettings {
 	/// For example, if this is set to `vec![0.25, 0.5, 1.0]`, then
 	/// the audio manager will receive `OnMetronomeIntervalPassed` events
 	/// every quarter of a beat, half of a beat, and beat.
-	pub interval_events_to_emit: Vec<f32>,
+	pub interval_events_to_emit: Vec<f64>,
 }
 
 impl Default for MetronomeSettings {
@@ -32,9 +32,9 @@ impl Default for MetronomeSettings {
 pub(crate) struct Metronome {
 	pub settings: MetronomeSettings,
 	ticking: bool,
-	time: f32,
-	previous_time: f32,
-	interval_event_queue: Vec<f32>,
+	time: f64,
+	previous_time: f64,
+	interval_event_queue: Vec<f64>,
 }
 
 impl Metronome {
@@ -80,7 +80,7 @@ impl Metronome {
 		}
 	}
 
-	pub fn update(&mut self, dt: f32) -> Drain<f32> {
+	pub fn update(&mut self, dt: f64) -> Drain<f64> {
 		if self.ticking {
 			self.previous_time = self.time;
 			self.time += (self.settings.tempo.0 / 60.0) * dt;
@@ -93,7 +93,7 @@ impl Metronome {
 		self.interval_event_queue.drain(..)
 	}
 
-	pub fn interval_passed(&self, interval: f32) -> bool {
+	pub fn interval_passed(&self, interval: f64) -> bool {
 		self.ticking && ((self.previous_time % interval) > (self.time % interval))
 	}
 }

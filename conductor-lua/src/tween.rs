@@ -5,7 +5,7 @@ pub struct LTween(pub Tween);
 
 impl LuaUserData for LTween {
 	fn add_methods<'lua, M: LuaUserDataMethods<'lua, Self>>(methods: &mut M) {
-		methods.add_method_mut("setDuration", |_, this, duration: f32| {
+		methods.add_method_mut("setDuration", |_, this, duration: f64| {
 			(this.0).0 = duration;
 			Ok(())
 		});

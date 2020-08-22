@@ -1,2 +1,2 @@
 #[derive(Debug, Copy, Clone)]
-pub struct Tween(pub f32);
+pub struct Tween(pub f64);

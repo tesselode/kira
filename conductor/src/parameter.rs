@@ -2,29 +2,29 @@ use crate::tween::Tween;
 
 struct TweenState {
 	tween: Tween,
-	start: f32,
-	target: f32,
-	progress: f32,
+	start: f64,
+	target: f64,
+	progress: f64,
 }
 
 pub struct Parameter {
-	value: f32,
+	value: f64,
 	tween_state: Option<TweenState>,
 }
 
 impl Parameter {
-	pub fn new(value: f32) -> Self {
+	pub fn new(value: f64) -> Self {
 		Self {
 			value,
 			tween_state: None,
 		}
 	}
 
-	pub fn value(&self) -> f32 {
+	pub fn value(&self) -> f64 {
 		self.value
 	}
 
-	pub fn set(&mut self, target: f32, tween: Option<Tween>) {
+	pub fn set(&mut self, target: f64, tween: Option<Tween>) {
 		if let Some(tween) = tween {
 			self.tween_state = Some(TweenState {
 				tween,
@@ -37,7 +37,7 @@ impl Parameter {
 		}
 	}
 
-	pub fn update(&mut self, dt: f32) -> bool {
+	pub fn update(&mut self, dt: f64) -> bool {
 		if let Some(tween_state) = &mut self.tween_state {
 			let duration = tween_state.tween.0;
 			tween_state.progress += dt / duration;

@@ -28,13 +28,13 @@ impl LSequence {
 
 impl LuaUserData for LSequence {
 	fn add_methods<'lua, M: LuaUserDataMethods<'lua, Self>>(methods: &mut M) {
-		methods.add_method_mut("wait", |_, this, (value, unit): (f32, DurationUnit)| {
+		methods.add_method_mut("wait", |_, this, (value, unit): (f64, DurationUnit)| {
 			let duration = LDuration::new(value, unit);
 			this.0.wait(duration.0);
 			Ok(())
 		});
 
-		methods.add_method_mut("waitForInterval", |_, this, interval: f32| {
+		methods.add_method_mut("waitForInterval", |_, this, interval: f64| {
 			this.0.wait_for_interval(interval);
 			Ok(())
 		});
@@ -54,7 +54,7 @@ impl LuaUserData for LSequence {
 
 		methods.add_method_mut(
 			"setInstanceVolume",
-			|_, this, (handle, volume, tween): (LSequenceInstanceHandle, f32, Option<LTween>)| {
+			|_, this, (handle, volume, tween): (LSequenceInstanceHandle, f64, Option<LTween>)| {
 				this.0.set_instance_volume(
 					handle.0,
 					volume,
@@ -69,7 +69,7 @@ impl LuaUserData for LSequence {
 
 		methods.add_method_mut(
 			"setInstancePitch",
-			|_, this, (handle, pitch, tween): (LSequenceInstanceHandle, f32, Option<LTween>)| {
+			|_, this, (handle, pitch, tween): (LSequenceInstanceHandle, f64, Option<LTween>)| {
 				this.0.set_instance_pitch(
 					handle.0,
 					pitch,

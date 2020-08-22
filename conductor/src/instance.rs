@@ -33,14 +33,14 @@ impl InstanceId {
 #[derive(Debug, Copy, Clone)]
 pub struct InstanceSettings {
 	/// The volume of the instance.
-	pub volume: f32,
+	pub volume: f64,
 	/// The pitch of the instance, as a factor of the original pitch.
-	pub pitch: f32,
+	pub pitch: f64,
 	/// The position to start playing the instance at (in seconds).
-	pub position: f32,
+	pub position: f64,
 	/// Whether to fade in the instance from silence, and if so,
 	/// how long the fade-in should last (in seconds).
-	pub fade_in_duration: Option<f32>,
+	pub fade_in_duration: Option<f64>,
 }
 
 impl Default for InstanceSettings {
@@ -69,7 +69,7 @@ pub(crate) struct Instance {
 	pub volume: Parameter,
 	pub pitch: Parameter,
 	state: InstanceState,
-	position: f32,
+	position: f64,
 	fade_volume: Parameter,
 }
 
@@ -95,11 +95,11 @@ impl Instance {
 		}
 	}
 
-	pub fn effective_volume(&self) -> f32 {
+	pub fn effective_volume(&self) -> f64 {
 		self.volume.value() * self.fade_volume.value()
 	}
 
-	pub fn position(&self) -> f32 {
+	pub fn position(&self) -> f64 {
 		self.position
 	}
 
@@ -118,11 +118,11 @@ impl Instance {
 		self.state == InstanceState::Stopped
 	}
 
-	pub fn set_volume(&mut self, volume: f32, tween: Option<Tween>) {
+	pub fn set_volume(&mut self, volume: f64, tween: Option<Tween>) {
 		self.volume.set(volume, tween);
 	}
 
-	pub fn set_pitch(&mut self, pitch: f32, tween: Option<Tween>) {
+	pub fn set_pitch(&mut self, pitch: f64, tween: Option<Tween>) {
 		self.pitch.set(pitch, tween);
 	}
 
@@ -153,7 +153,7 @@ impl Instance {
 		}
 	}
 
-	pub fn update(&mut self, dt: f32) {
+	pub fn update(&mut self, dt: f64) {
 		if self.playing() {
 			self.volume.update(dt);
 			self.pitch.update(dt);

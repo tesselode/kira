@@ -30,7 +30,7 @@ impl<'lua> FromLua<'lua> for DurationUnit {
 pub struct LDuration(pub Duration);
 
 impl LDuration {
-	pub fn new(value: f32, unit: DurationUnit) -> Self {
+	pub fn new(value: f64, unit: DurationUnit) -> Self {
 		Self(match unit {
 			DurationUnit::Seconds => Duration::Seconds(value),
 			DurationUnit::Beats => Duration::Beats(value),

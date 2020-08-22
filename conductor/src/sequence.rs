@@ -73,7 +73,7 @@ impl<CustomEvent> Into<Command<CustomEvent>> for SequenceOutputCommand<CustomEve
 #[derive(Debug, Copy, Clone)]
 enum SequenceTask<CustomEvent> {
 	Wait(Duration),
-	WaitForInterval(f32),
+	WaitForInterval(f64),
 	GoToTask(usize),
 	RunCommand(SequenceCommand<CustomEvent>),
 }
@@ -89,7 +89,7 @@ enum SequenceState {
 pub struct Sequence<CustomEvent> {
 	tasks: Vec<SequenceTask<CustomEvent>>,
 	state: SequenceState,
-	wait_timer: Option<f32>,
+	wait_timer: Option<f64>,
 	instances: HashMap<SequenceInstanceHandle, InstanceId>,
 	muted: bool,
 }
@@ -109,7 +109,7 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 		self.tasks.push(SequenceTask::Wait(duration));
 	}
 
-	pub fn wait_for_interval(&mut self, interval: f32) {
+	pub fn wait_for_interval(&mut self, interval: f64) {
 		self.tasks.push(SequenceTask::WaitForInterval(interval));
 	}
 
@@ -133,7 +133,7 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 	pub fn set_instance_volume(
 		&mut self,
 		handle: SequenceInstanceHandle,
-		volume: f32,
+		volume: f64,
 		tween: Option<Tween>,
 	) {
 		self.tasks
@@ -145,7 +145,7 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 	pub fn set_instance_pitch(
 		&mut self,
 		handle: SequenceInstanceHandle,
-		pitch: f32,
+		pitch: f64,
 		tween: Option<Tween>,
 	) {
 		self.tasks
@@ -326,7 +326,7 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 
 	pub(crate) fn update(
 		&mut self,
-		dt: f32,
+		dt: f64,
 		metronome: &Metronome,
 		output_command_queue: &mut Vec<SequenceOutputCommand<CustomEvent>>,
 	) {

@@ -43,7 +43,7 @@ impl<CustomEvent: Copy> Sequences<CustomEvent> {
 
 	pub fn update(
 		&mut self,
-		dt: f32,
+		dt: f64,
 		metronome: &Metronome,
 		sequences_to_unload_producer: &mut Producer<Sequence<CustomEvent>>,
 	) -> Drain<SequenceOutputCommand<CustomEvent>> {

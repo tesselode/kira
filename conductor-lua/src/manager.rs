@@ -11,7 +11,7 @@ use conductor::{
 	tempo::Tempo,
 };
 use mlua::prelude::*;
-use std::{error::Error, path::PathBuf};
+use std::error::Error;
 
 pub struct LAudioManagerSettings(AudioManagerSettings);
 
@@ -77,7 +77,7 @@ impl LuaUserData for LAudioManager {
 
 		methods.add_method_mut(
 			"setInstanceVolume",
-			|_, this, (id, volume, tween): (LInstanceId, f32, Option<LTween>)| {
+			|_, this, (id, volume, tween): (LInstanceId, f64, Option<LTween>)| {
 				this.0
 					.set_instance_volume(
 						id.0,
@@ -94,7 +94,7 @@ impl LuaUserData for LAudioManager {
 
 		methods.add_method_mut(
 			"setInstancePitch",
-			|_, this, (id, pitch, tween): (LInstanceId, f32, Option<LTween>)| {
+			|_, this, (id, pitch, tween): (LInstanceId, f64, Option<LTween>)| {
 				this.0
 					.set_instance_pitch(
 						id.0,
@@ -205,7 +205,7 @@ impl LuaUserData for LAudioManager {
 			},
 		);
 
-		methods.add_method_mut("setMetronomeTempo", |_, this, tempo: f32| {
+		methods.add_method_mut("setMetronomeTempo", |_, this, tempo: f64| {
 			this.0.set_metronome_tempo(Tempo(tempo)).unwrap();
 			Ok(())
 		});

@@ -26,12 +26,12 @@ static NEXT_SOUND_INDEX: AtomicUsize = AtomicUsize::new(0);
 #[derive(Debug, Copy, Clone)]
 pub struct SoundId {
 	index: usize,
-	duration: f32,
+	duration: f64,
 	metadata: SoundMetadata,
 }
 
 impl SoundId {
-	pub fn duration(&self) -> f32 {
+	pub fn duration(&self) -> f64 {
 		self.duration
 	}
 
@@ -55,7 +55,7 @@ impl Hash for SoundId {
 }
 
 impl SoundId {
-	pub(crate) fn new(duration: f32, metadata: SoundMetadata) -> Self {
+	pub(crate) fn new(duration: f64, metadata: SoundMetadata) -> Self {
 		let index = NEXT_SOUND_INDEX.fetch_add(1, Ordering::Relaxed);
 		Self {
 			index,
@@ -69,12 +69,12 @@ impl SoundId {
 pub(crate) struct Sound {
 	sample_rate: u32,
 	samples: Vec<StereoSample>,
-	duration: f32,
+	duration: f64,
 }
 
 impl Sound {
 	pub fn new(sample_rate: u32, samples: Vec<StereoSample>) -> Self {
-		let duration = samples.len() as f32 / sample_rate as f32;
+		let duration = samples.len() as f64 / sample_rate as f64;
 		Self {
 			sample_rate,
 			samples,
@@ -110,13 +110,13 @@ impl Sound {
 		Ok(Self::new(reader.ident_hdr.audio_sample_rate, samples))
 	}
 
-	pub fn duration(&self) -> f32 {
+	pub fn duration(&self) -> f64 {
 		self.duration
 	}
 
-	pub fn get_sample_at_position(&self, position: f32) -> StereoSample {
-		let sample_position = self.sample_rate as f32 * position;
-		let x = sample_position % 1.0;
+	pub fn get_sample_at_position(&self, position: f64) -> StereoSample {
+		let sample_position = self.sample_rate as f64 * position;
+		let x = (sample_position % 1.0) as f32;
 		let current_sample_index = sample_position as usize;
 		let y0 = if current_sample_index == 0 {
 			StereoSample::from_mono(0.0)

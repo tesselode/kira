@@ -79,13 +79,13 @@ impl Instances {
 		}
 	}
 
-	pub fn process(&mut self, dt: f32, sounds: &IndexMap<SoundId, Sound>) -> StereoSample {
+	pub fn process(&mut self, dt: f64, sounds: &IndexMap<SoundId, Sound>) -> StereoSample {
 		let mut out = StereoSample::from_mono(0.0);
 		for (instance_id, instance) in &mut self.instances {
 			if instance.playing() {
 				if let Some(sound) = sounds.get(&instance.sound_id) {
 					out += sound.get_sample_at_position(instance.position())
-						* instance.effective_volume();
+						* (instance.effective_volume() as f32);
 				}
 			}
 			if instance.finished() {

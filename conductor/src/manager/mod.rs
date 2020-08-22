@@ -28,7 +28,7 @@ pub enum Event<CustomEvent: Send + 'static> {
 	The intervals that a metronome emits events for are defined
 	when the metronome is created.
 	*/
-	MetronomeIntervalPassed(f32),
+	MetronomeIntervalPassed(f64),
 	Custom(CustomEvent),
 }
 
@@ -191,7 +191,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 	pub fn set_instance_volume(
 		&mut self,
 		id: InstanceId,
-		volume: f32,
+		volume: f64,
 		tween: Option<Tween>,
 	) -> Result<(), ConductorError> {
 		match self
@@ -207,7 +207,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 	pub fn set_instance_pitch(
 		&mut self,
 		id: InstanceId,
-		pitch: f32,
+		pitch: f64,
 		tween: Option<Tween>,
 	) -> Result<(), ConductorError> {
 		match self
