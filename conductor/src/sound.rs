@@ -82,7 +82,10 @@ impl Sound {
 		}
 	}
 
-	pub fn from_ogg_file(path: &Path) -> Result<Self, Box<dyn Error>> {
+	pub fn from_ogg_file<P>(path: P) -> Result<Self, Box<dyn Error>>
+	where
+		P: AsRef<Path>,
+	{
 		let mut reader = OggStreamReader::new(File::open(path)?)?;
 		let mut samples = vec![];
 		while let Some(packet) = reader.read_dec_packet_generic::<Vec<Vec<f32>>>()? {

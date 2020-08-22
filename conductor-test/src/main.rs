@@ -35,7 +35,7 @@ impl MainState {
 			..Default::default()
 		})?;
 		let test_loop_sound_id = audio_manager.load_sound(
-			&std::env::current_dir()
+			std::env::current_dir()
 				.unwrap()
 				.join("assets/test_loop.ogg"),
 			SoundMetadata {
@@ -43,7 +43,7 @@ impl MainState {
 			},
 		)?;
 		let hat_sound_id = audio_manager.load_sound(
-			&std::env::current_dir().unwrap().join("assets/cymbal.ogg"),
+			std::env::current_dir().unwrap().join("assets/cymbal.ogg"),
 			SoundMetadata {
 				tempo: Some(Tempo(128.0)),
 			},

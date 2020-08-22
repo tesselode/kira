@@ -139,11 +139,14 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 	/// Loads a sound from a file path.
 	///
 	/// Returns a handle to the sound. Keep this so you can play the sound later.
-	pub fn load_sound(
+	pub fn load_sound<P>(
 		&mut self,
-		path: &Path,
+		path: P,
 		metadata: SoundMetadata,
-	) -> Result<SoundId, Box<dyn Error>> {
+	) -> Result<SoundId, Box<dyn Error>>
+	where
+		P: AsRef<Path>,
+	{
 		let sound = Sound::from_ogg_file(path)?;
 		let id = SoundId::new(sound.duration(), metadata);
 		match self
