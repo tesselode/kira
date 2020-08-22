@@ -233,6 +233,16 @@ impl LuaUserData for LAudioManager {
 			Ok(LSequenceId(id))
 		});
 
+		methods.add_method_mut("muteSequence", |_, this, id: LSequenceId| {
+			this.0.mute_sequence(id.0).unwrap();
+			Ok(())
+		});
+
+		methods.add_method_mut("unmuteSequence", |_, this, id: LSequenceId| {
+			this.0.unmute_sequence(id.0).unwrap();
+			Ok(())
+		});
+
 		methods.add_method_mut("getEvents", |lua, this, _: ()| {
 			Ok(LuaValue::Table(lua.create_sequence_from(
 				this.0.events().iter().map(|event| LEvent(*event)),

@@ -7,6 +7,7 @@ use crate::{
 use conductor::sequence::{Sequence, SequenceId, SequenceInstanceHandle};
 use mlua::prelude::*;
 
+#[derive(Clone)]
 pub struct LSequenceId(pub SequenceId);
 
 impl LuaUserData for LSequenceId {}
