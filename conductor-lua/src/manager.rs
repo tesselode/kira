@@ -62,10 +62,7 @@ impl LuaUserData for LAudioManager {
 		methods.add_method_mut(
 			"loadSound",
 			|_, this, (path, metadata): (LuaString, LSoundMetadata)| {
-				let path = std::env::current_dir()
-					.unwrap()
-					.join(PathBuf::from(path.to_str()?));
-				let sound_id = this.0.load_sound(&path, metadata.0).unwrap();
+				let sound_id = this.0.load_sound(path.to_str()?, metadata.0).unwrap();
 				Ok(LSoundId(sound_id))
 			},
 		);
