@@ -8,13 +8,13 @@ impl<'lua> ToLua<'lua> for LEvent {
 		match self.0 {
 			Event::MetronomeIntervalPassed(interval) => {
 				let table = lua.create_table()?;
-				table.set("event", "metronomeIntervalPassed")?;
+				table.set("kind", "metronomeIntervalPassed")?;
 				table.set("interval", interval)?;
 				Ok(LuaValue::Table(table))
 			}
 			Event::Custom(index) => {
 				let table = lua.create_table()?;
-				table.set("event", "custom")?;
+				table.set("kind", "custom")?;
 				table.set("index", index)?;
 				Ok(LuaValue::Table(table))
 			}
