@@ -15,6 +15,8 @@ use std::{error::Error, path::Path};
 
 mod backend;
 
+const WRAPPER_THREAD_SLEEP_DURATION: f64 = 1.0 / 60.0;
+
 /// Events that can be sent by the audio thread.
 #[derive(Debug, Copy, Clone)]
 pub enum Event<CustomEvent: Send + 'static> {
@@ -121,10 +123,10 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 				)
 				.unwrap();
 			stream.play().unwrap();
-			loop {
-				while let Some(_) = quit_signal_consumer.pop() {
-					break;
-				}
+			while let None = quit_signal_consumer.pop() {
+				std::thread::sleep(std::time::Duration::from_secs_f64(
+					WRAPPER_THREAD_SLEEP_DURATION,
+				));
 			}
 		});
 		Ok(Self {
