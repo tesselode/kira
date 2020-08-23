@@ -7,7 +7,7 @@ use crate::{
 	tween::LTween,
 };
 use conductor::{
-	manager::{AudioManager, AudioManagerSettings},
+	manager::{AudioManager, AudioManagerSettings, Event},
 	tempo::Tempo,
 };
 use mlua::prelude::*;
@@ -240,10 +240,28 @@ impl LuaUserData for LAudioManager {
 			Ok(())
 		});
 
-		methods.add_method_mut("getEvents", |lua, this, _: ()| {
-			Ok(LuaValue::Table(lua.create_sequence_from(
-				this.0.events().iter().map(|event| LEvent(*event)),
-			)?))
+		methods.add_method_mut("getEvents", |_, this, callbacks: Option<LuaTable>| {
+			for event in this.0.events() {
+				if let Some(callbacks) = &callbacks {
+					match event {
+						Event::MetronomeIntervalPassed(interval) => {
+							if let Some(callback) = callbacks
+								.get::<&str, Option<LuaFunction>>("metronomeIntervalPassed")?
+							{
+								callback.call(interval)?;
+							}
+						}
+						Event::Custom(index) => {
+							if let Some(callback) =
+								callbacks.get::<&str, Option<LuaFunction>>("custom")?
+							{
+								callback.call(index)?;
+							}
+						}
+					}
+				}
+			}
+			Ok(())
 		});
 
 		methods.add_method_mut("freeUnusedResources", |_, this, _: ()| {

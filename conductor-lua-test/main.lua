@@ -5,6 +5,7 @@ local conductor = require 'conductor'
 local manager = conductor.newManager {
 	metronomeSettings = {
 		tempo = 128,
+		intervalEventsToEmit = {0.25, 0.5, 1.0},
 	},
 }
 local loopSoundId = manager:loadSound 'assets/test_loop.ogg'
@@ -24,9 +25,18 @@ local hatSequenceId = manager:startSequence(hatSequence)
 manager:startMetronome()
 local hatSequenceMuted = false
 
+local callbacks = {
+	metronomeIntervalPassed = function(interval)
+		print('interval passed:', interval)
+	end,
+	custom = function(index)
+		print('custom event emitted:', index)
+	end,
+}
+
 function love.update(dt)
 	manager:freeUnusedResources()
-	manager:getEvents()
+	manager:getEvents(callbacks)
 end
 
 function love.keypressed(key)
