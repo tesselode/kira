@@ -28,11 +28,20 @@ impl Instances {
 		}
 	}
 
-	pub fn run_command(&mut self, command: InstanceCommand<InstanceId>) {
+	pub fn run_command(
+		&mut self,
+		command: InstanceCommand<InstanceId>,
+		sounds: &mut IndexMap<SoundId, Sound>,
+	) {
 		match command {
 			InstanceCommand::PlaySound(sound_id, instance_id, settings) => {
-				self.instances
-					.insert(instance_id, Instance::new(sound_id, settings));
+				if let Some(sound) = sounds.get_mut(&sound_id) {
+					if !sound.cooling_down() {
+						self.instances
+							.insert(instance_id, Instance::new(sound_id, settings));
+						sound.start_cooldown();
+					}
+				}
 			}
 			InstanceCommand::SetInstanceVolume(id, volume, tween) => {
 				if let Some(instance) = self.instances.get_mut(&id) {

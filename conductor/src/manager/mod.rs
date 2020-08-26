@@ -4,7 +4,7 @@ use crate::{
 	instance::{InstanceId, InstanceSettings},
 	metronome::MetronomeSettings,
 	sequence::{Sequence, SequenceId},
-	sound::{Sound, SoundId, SoundMetadata},
+	sound::{Sound, SoundId, SoundSettings},
 	tempo::Tempo,
 	tween::Tween,
 };
@@ -144,13 +144,13 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 	pub fn load_sound<P>(
 		&mut self,
 		path: P,
-		metadata: SoundMetadata,
+		settings: SoundSettings,
 	) -> Result<SoundId, Box<dyn Error>>
 	where
 		P: AsRef<Path>,
 	{
-		let sound = Sound::from_ogg_file(path)?;
-		let id = SoundId::new(sound.duration(), metadata);
+		let sound = Sound::from_ogg_file(path, &settings)?;
+		let id = SoundId::new(sound.duration(), settings.metadata);
 		match self
 			.command_producer
 			.push(Command::Sound(SoundCommand::LoadSound(id, sound)))

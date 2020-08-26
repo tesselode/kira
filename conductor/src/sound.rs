@@ -1,4 +1,4 @@
-use crate::{stereo_sample::StereoSample, tempo::Tempo};
+use crate::{instance::Instance, stereo_sample::StereoSample, tempo::Tempo};
 use lewton::{inside_ogg::OggStreamReader, samples::Samples};
 use std::{
 	error::Error,
@@ -66,23 +66,42 @@ impl SoundId {
 }
 
 #[derive(Debug)]
+pub struct SoundSettings {
+	pub cooldown: Option<f64>,
+	pub metadata: SoundMetadata,
+}
+
+impl Default for SoundSettings {
+	fn default() -> Self {
+		Self {
+			cooldown: Some(0.0001),
+			metadata: SoundMetadata::default(),
+		}
+	}
+}
+
+#[derive(Debug)]
 pub(crate) struct Sound {
 	sample_rate: u32,
 	samples: Vec<StereoSample>,
 	duration: f64,
+	cooldown: Option<f64>,
+	cooldown_timer: f64,
 }
 
 impl Sound {
-	pub fn new(sample_rate: u32, samples: Vec<StereoSample>) -> Self {
+	pub fn new(sample_rate: u32, samples: Vec<StereoSample>, settings: &SoundSettings) -> Self {
 		let duration = samples.len() as f64 / sample_rate as f64;
 		Self {
 			sample_rate,
 			samples,
 			duration,
+			cooldown: settings.cooldown,
+			cooldown_timer: 0.0,
 		}
 	}
 
-	pub fn from_ogg_file<P>(path: P) -> Result<Self, Box<dyn Error>>
+	pub fn from_ogg_file<P>(path: P, settings: &SoundSettings) -> Result<Self, Box<dyn Error>>
 	where
 		P: AsRef<Path>,
 	{
@@ -107,7 +126,11 @@ impl Sound {
 				}
 			}
 		}
-		Ok(Self::new(reader.ident_hdr.audio_sample_rate, samples))
+		Ok(Self::new(
+			reader.ident_hdr.audio_sample_rate,
+			samples,
+			settings,
+		))
 	}
 
 	pub fn duration(&self) -> f64 {
@@ -143,5 +166,21 @@ impl Sound {
 		let c2 = y0 - y1 * 2.5 + y2 * 2.0 - y3 * 0.5;
 		let c3 = (y3 - y0) * 0.5 + (y1 - y2) * 1.5;
 		((c3 * x + c2) * x + c1) * x + c0
+	}
+
+	pub(crate) fn start_cooldown(&mut self) {
+		if let Some(cooldown) = self.cooldown {
+			self.cooldown_timer = cooldown;
+		}
+	}
+
+	pub(crate) fn update_cooldown(&mut self, dt: f64) {
+		if self.cooldown_timer > 0.0 {
+			self.cooldown_timer -= dt;
+		}
+	}
+
+	pub(crate) fn cooling_down(&self) -> bool {
+		self.cooldown_timer > 0.0
 	}
 }

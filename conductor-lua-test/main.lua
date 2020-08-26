@@ -8,22 +8,20 @@ local manager = conductor.newManager {
 		intervalEventsToEmit = {0.25, 0.5, 1.0},
 	},
 }
-local loopSoundId = manager:loadSound 'assets/test_loop.ogg'
-local hatSoundId = manager:loadSound 'assets/hhclosed.ogg'
-local loopSequence = conductor.newSequence()
-loopSequence:waitForInterval(1)
-loopSequence:playSound(loopSoundId)
-loopSequence:wait(4, 'beats')
-loopSequence:goTo(2)
-manager:startSequence(loopSequence)
+local hatSoundId = manager:loadSound('assets/hhclosed.ogg', {
+	cooldown = 0,
+	metadata = {
+		tempo = 120,
+	}
+})
+print(hatSoundId:getMetadata():getTempo())
 local hatSequence = conductor.newSequence()
-hatSequence:waitForInterval(1)
 hatSequence:playSound(hatSoundId)
-hatSequence:wait(.25, 'beats')
-hatSequence:goTo(2)
-local hatSequenceId = manager:startSequence(hatSequence)
+hatSequence:playSound(hatSoundId, {pitch = 0.25})
+hatSequence:wait(1, 'beats')
+hatSequence:goTo(1)
+manager:startSequence(hatSequence)
 manager:startMetronome()
-local hatSequenceMuted = false
 
 local callbacks = {
 	metronomeIntervalPassed = function(interval)
@@ -40,15 +38,5 @@ function love.update(dt)
 end
 
 function love.keypressed(key)
-	if key == 'space' then
-		if hatSequenceMuted then
-			manager:unmuteSequence(hatSequenceId)
-		else
-			manager:muteSequence(hatSequenceId)
-		end
-		hatSequenceMuted = not hatSequenceMuted
-	end
-	if key == 'escape' then
-		love.event.quit()
-	end
+	if key == 'escape' then love.event.quit() end
 end

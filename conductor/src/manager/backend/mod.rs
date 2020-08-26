@@ -76,7 +76,7 @@ impl<CustomEvent: Copy + Send + 'static> Backend<CustomEvent> {
 					self.metronome.run_command(command);
 				}
 				Command::Instance(command) => {
-					self.instances.run_command(command);
+					self.instances.run_command(command, &mut self.sounds);
 				}
 				Command::Sequence(command) => {
 					self.sequences.run_command(command);
@@ -88,6 +88,12 @@ impl<CustomEvent: Copy + Send + 'static> Backend<CustomEvent> {
 					}
 				}
 			}
+		}
+	}
+
+	fn update_sounds(&mut self) {
+		for (_, sound) in &mut self.sounds {
+			sound.update_cooldown(self.dt);
 		}
 	}
 
@@ -115,6 +121,7 @@ impl<CustomEvent: Copy + Send + 'static> Backend<CustomEvent> {
 
 	pub fn process(&mut self) -> StereoSample {
 		self.process_commands();
+		self.update_sounds();
 		self.update_metronome();
 		self.update_sequences();
 		self.instances.process(self.dt, &self.sounds)

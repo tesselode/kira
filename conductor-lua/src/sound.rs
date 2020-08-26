@@ -1,5 +1,5 @@
 use conductor::{
-	sound::{SoundId, SoundMetadata},
+	sound::{SoundId, SoundMetadata, SoundSettings},
 	tempo::Tempo,
 };
 use mlua::prelude::*;
@@ -44,6 +44,32 @@ impl<'lua> FromLua<'lua> for LSoundMetadata {
 			_ => Err(LuaError::FromLuaConversionError {
 				from: "table",
 				to: "SoundMetadata",
+				message: None,
+			}),
+		}
+	}
+}
+
+pub struct LSoundSettings(pub SoundSettings);
+
+impl<'lua> FromLua<'lua> for LSoundSettings {
+	fn from_lua(lua_value: LuaValue<'lua>, lua: &'lua Lua) -> LuaResult<Self> {
+		match lua_value {
+			LuaNil => Ok(LSoundSettings(SoundSettings::default())),
+			LuaValue::Table(table) => {
+				let mut settings = SoundSettings::default();
+				if table.contains_key("cooldown")? {
+					settings.cooldown = Some(table.get("cooldown")?);
+				}
+				if table.contains_key("metadata")? {
+					let l_metadata: LSoundMetadata = table.get("metadata")?;
+					settings.metadata = l_metadata.0;
+				}
+				Ok(LSoundSettings(settings))
+			}
+			_ => Err(LuaError::FromLuaConversionError {
+				from: "table",
+				to: "SoundSettings",
 				message: None,
 			}),
 		}

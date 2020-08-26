@@ -3,7 +3,7 @@ use crate::{
 	instance::{LInstanceId, LInstanceSettings},
 	metronome::LMetronomeSettings,
 	sequence::{LSequence, LSequenceId},
-	sound::{LSoundId, LSoundMetadata},
+	sound::{LSoundId, LSoundMetadata, LSoundSettings},
 	tween::LTween,
 };
 use conductor::{
@@ -61,8 +61,8 @@ impl LuaUserData for LAudioManager {
 	fn add_methods<'lua, M: LuaUserDataMethods<'lua, Self>>(methods: &mut M) {
 		methods.add_method_mut(
 			"loadSound",
-			|_, this, (path, metadata): (LuaString, LSoundMetadata)| {
-				let sound_id = this.0.load_sound(path.to_str()?, metadata.0).unwrap();
+			|_, this, (path, settings): (LuaString, LSoundSettings)| {
+				let sound_id = this.0.load_sound(path.to_str()?, settings.0).unwrap();
 				Ok(LSoundId(sound_id))
 			},
 		);

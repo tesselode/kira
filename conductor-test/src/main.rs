@@ -4,7 +4,7 @@ use conductor::{
 	manager::{AudioManager, AudioManagerSettings},
 	metronome::MetronomeSettings,
 	sequence::{Sequence, SequenceId},
-	sound::{SoundId, SoundMetadata},
+	sound::{SoundId, SoundMetadata, SoundSettings},
 	tempo::Tempo,
 	tween::Tween,
 };
@@ -38,14 +38,21 @@ impl MainState {
 			std::env::current_dir()
 				.unwrap()
 				.join("assets/test_loop.ogg"),
-			SoundMetadata {
-				tempo: Some(Tempo(128.0)),
+			SoundSettings {
+				metadata: SoundMetadata {
+					tempo: Some(Tempo(128.0)),
+				},
+				..Default::default()
 			},
 		)?;
 		let hat_sound_id = audio_manager.load_sound(
 			std::env::current_dir().unwrap().join("assets/hhclosed.ogg"),
-			SoundMetadata {
-				tempo: Some(Tempo(128.0)),
+			SoundSettings {
+				cooldown: None,
+				metadata: SoundMetadata {
+					tempo: Some(Tempo(128.0)),
+				},
+				..Default::default()
 			},
 		)?;
 		/* let mut test_loop_sequence = Sequence::new();
@@ -57,6 +64,13 @@ impl MainState {
 		let mut hat_sequence = Sequence::new();
 		hat_sequence.wait_for_interval(1.0);
 		hat_sequence.play_sound(hat_sound_id, InstanceSettings::default());
+		hat_sequence.play_sound(
+			hat_sound_id,
+			InstanceSettings {
+				pitch: 0.25,
+				..Default::default()
+			},
+		);
 		hat_sequence.wait_for_interval(1.0);
 		hat_sequence.go_to(1);
 		let hat_sequence_id = audio_manager.start_sequence(hat_sequence)?;
