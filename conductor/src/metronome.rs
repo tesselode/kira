@@ -94,6 +94,12 @@ impl Metronome {
 	}
 
 	pub fn interval_passed(&self, interval: f64) -> bool {
-		self.ticking && ((self.previous_time % interval) > (self.time % interval))
+		if !self.ticking {
+			return false;
+		}
+		if self.previous_time == 0.0 {
+			return true;
+		}
+		(self.previous_time % interval) > (self.time % interval)
 	}
 }
