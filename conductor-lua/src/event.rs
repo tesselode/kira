@@ -1,23 +1,23 @@
-use conductor::manager::Event;
 use mlua::prelude::*;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
-pub struct LEvent(pub Event<usize>);
+static NEXT_CUSTOM_EVENT_INDEX: AtomicUsize = AtomicUsize::new(0);
 
-impl<'lua> ToLua<'lua> for LEvent {
-	fn to_lua(self, lua: &'lua Lua) -> LuaResult<LuaValue<'lua>> {
-		match self.0 {
-			Event::MetronomeIntervalPassed(interval) => {
-				let table = lua.create_table()?;
-				table.set("kind", "metronomeIntervalPassed")?;
-				table.set("interval", interval)?;
-				Ok(LuaValue::Table(table))
-			}
-			Event::Custom(index) => {
-				let table = lua.create_table()?;
-				table.set("kind", "custom")?;
-				table.set("index", index)?;
-				Ok(LuaValue::Table(table))
-			}
-		}
+#[derive(Copy, Clone)]
+pub struct LCustomEventHandle(pub usize);
+
+impl LCustomEventHandle {
+	pub fn new() -> Self {
+		let index = NEXT_CUSTOM_EVENT_INDEX.fetch_add(1, Ordering::Relaxed);
+		LCustomEventHandle(index)
+	}
+}
+
+impl LuaUserData for LCustomEventHandle {
+	fn add_methods<'lua, M: LuaUserDataMethods<'lua, Self>>(methods: &mut M) {
+		methods.add_meta_method(
+			LuaMetaMethod::Eq,
+			|_: &Lua, a: &LCustomEventHandle, b: LCustomEventHandle| Ok(a.0 == b.0),
+		);
 	}
 }

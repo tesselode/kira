@@ -1,5 +1,6 @@
 use crate::{
 	duration::{DurationUnit, LDuration},
+	event::LCustomEventHandle,
 	instance::LInstanceSettings,
 	sound::LSoundId,
 	tween::LTween,
@@ -18,7 +19,7 @@ pub struct LSequenceInstanceHandle(SequenceInstanceHandle);
 impl LuaUserData for LSequenceInstanceHandle {}
 
 #[derive(Clone)]
-pub struct LSequence(pub Sequence<usize>);
+pub struct LSequence(pub Sequence<LCustomEventHandle>);
 
 impl LSequence {
 	pub fn new() -> Self {
@@ -181,8 +182,8 @@ impl LuaUserData for LSequence {
 			Ok(())
 		});
 
-		methods.add_method_mut("emitCustomEvent", |_, this, index: usize| {
-			this.0.emit_custom_event(index);
+		methods.add_method_mut("emitCustomEvent", |_, this, handle: LCustomEventHandle| {
+			this.0.emit_custom_event(handle);
 			Ok(())
 		})
 	}

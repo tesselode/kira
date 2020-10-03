@@ -1,9 +1,9 @@
 use crate::{
-	event::LEvent,
+	event::LCustomEventHandle,
 	instance::{LInstanceId, LInstanceSettings},
 	metronome::LMetronomeSettings,
 	sequence::{LSequence, LSequenceId},
-	sound::{LSoundId, LSoundMetadata, LSoundSettings},
+	sound::{LSoundId, LSoundSettings},
 	tween::LTween,
 };
 use conductor::{
@@ -49,7 +49,7 @@ impl<'lua> FromLua<'lua> for LAudioManagerSettings {
 	}
 }
 
-pub struct LAudioManager(AudioManager<usize>);
+pub struct LAudioManager(AudioManager<LCustomEventHandle>);
 
 impl LAudioManager {
 	pub fn new(settings: LAudioManagerSettings) -> Result<Self, Box<dyn Error>> {
@@ -251,11 +251,11 @@ impl LuaUserData for LAudioManager {
 								callback.call(interval)?;
 							}
 						}
-						Event::Custom(index) => {
+						Event::Custom(handle) => {
 							if let Some(callback) =
 								callbacks.get::<&str, Option<LuaFunction>>("custom")?
 							{
-								callback.call(index)?;
+								callback.call(handle)?;
 							}
 						}
 					}

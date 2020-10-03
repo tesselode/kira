@@ -53,7 +53,7 @@ impl<'lua> FromLua<'lua> for LSoundMetadata {
 pub struct LSoundSettings(pub SoundSettings);
 
 impl<'lua> FromLua<'lua> for LSoundSettings {
-	fn from_lua(lua_value: LuaValue<'lua>, lua: &'lua Lua) -> LuaResult<Self> {
+	fn from_lua(lua_value: LuaValue<'lua>, _: &'lua Lua) -> LuaResult<Self> {
 		match lua_value {
 			LuaNil => Ok(LSoundSettings(SoundSettings::default())),
 			LuaValue::Table(table) => {

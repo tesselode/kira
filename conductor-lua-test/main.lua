@@ -8,27 +8,24 @@ local manager = conductor.newManager {
 		intervalEventsToEmit = {0.25, 0.5, 1.0},
 	},
 }
-local hatSoundId = manager:loadSound('assets/hhclosed.ogg', {
-	cooldown = 0,
-	metadata = {
-		tempo = 120,
-	}
-})
-print(hatSoundId:getMetadata():getTempo())
-local hatSequence = conductor.newSequence()
-hatSequence:playSound(hatSoundId)
-hatSequence:playSound(hatSoundId, {pitch = 0.25})
-hatSequence:wait(1, 'beats')
-hatSequence:goTo(1)
-manager:startSequence(hatSequence)
+local customEventHandle = conductor.newCustomEventHandle()
+local testSequence = conductor.newSequence()
+testSequence:wait(1, 'beats')
+testSequence:emitCustomEvent(customEventHandle)
+testSequence:goTo(1)
+manager:startSequence(testSequence)
 manager:startMetronome()
 
 local callbacks = {
 	metronomeIntervalPassed = function(interval)
 		print('interval passed:', interval)
 	end,
-	custom = function(index)
-		print('custom event emitted:', index)
+	custom = function(handle)
+		if handle == customEventHandle then
+			print 'custom event'
+		else
+			print 'idk what this is'
+		end
 	end,
 }
 
