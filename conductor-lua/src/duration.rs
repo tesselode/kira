@@ -10,7 +10,9 @@ impl<'lua> FromLua<'lua> for DurationUnit {
 	fn from_lua(lua_value: LuaValue<'lua>, _: &'lua Lua) -> LuaResult<Self> {
 		match lua_value {
 			LuaValue::String(string) => match string.to_str()? {
+				"second" => Ok(DurationUnit::Seconds),
 				"seconds" => Ok(DurationUnit::Seconds),
+				"beat" => Ok(DurationUnit::Beats),
 				"beats" => Ok(DurationUnit::Beats),
 				_ => Err(LuaError::FromLuaConversionError {
 					from: "string",

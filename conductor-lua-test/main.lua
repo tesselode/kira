@@ -10,7 +10,7 @@ local manager = conductor.newManager {
 }
 local customEventHandle = conductor.newCustomEventHandle()
 local testSequence = conductor.newSequence()
-testSequence:wait(1, 'beats')
+testSequence:wait(1, 'beat')
 testSequence:emitCustomEvent(customEventHandle)
 testSequence:goTo(1)
 manager:startSequence(testSequence)
