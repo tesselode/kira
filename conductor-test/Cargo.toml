@@ -8,5 +8,3 @@ edition = "2018"
 
 [dependencies]
 conductor = {path = "../conductor"}
-ggez = "0.5.1"
-rand = "0.7.3"
