@@ -4,3 +4,6 @@ members = [
 	"conductor-test",
 	"conductor-lua"
 ]
+
+[profile.dev]
+opt-level = 3
