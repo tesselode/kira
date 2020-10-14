@@ -1,4 +1,4 @@
-package.cpath = love.filesystem.getWorkingDirectory() .. '/target/release/?.dll'
+package.cpath = love.filesystem.getWorkingDirectory() .. '/target/debug/?.dll'
 
 local conductor = require 'conductor'
 

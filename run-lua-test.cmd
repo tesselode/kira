@@ -1,3 +1,3 @@
 @echo off
-cargo build -p conductor-lua --release
+cargo build -p conductor-lua
 lovec conductor-lua-test
