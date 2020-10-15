@@ -1,6 +1,7 @@
 use crate::{
 	command::{Command, InstanceCommand, MetronomeCommand, SequenceCommand, SoundCommand},
 	error::ConductorError,
+	error::ConductorResult,
 	instance::{InstanceId, InstanceSettings},
 	metronome::MetronomeSettings,
 	sequence::{Sequence, SequenceId},
@@ -82,7 +83,7 @@ pub struct AudioManager<CustomEvent: Send + 'static = ()> {
 
 impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 	/// Creates a new audio manager and starts an audio thread.
-	pub fn new(settings: AudioManagerSettings) -> Result<Self, Box<dyn Error>> {
+	pub fn new(settings: AudioManagerSettings) -> ConductorResult<Self> {
 		let (quit_signal_producer, mut quit_signal_consumer) = RingBuffer::new(1).split();
 		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
 		let (sounds_to_unload_producer, sounds_to_unload_consumer) =
@@ -141,11 +142,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 	/// Loads a sound from a file path.
 	///
 	/// Returns a handle to the sound. Keep this so you can play the sound later.
-	pub fn load_sound<P>(
-		&mut self,
-		path: P,
-		settings: SoundSettings,
-	) -> Result<SoundId, Box<dyn Error>>
+	pub fn load_sound<P>(&mut self, path: P, settings: SoundSettings) -> ConductorResult<SoundId>
 	where
 		P: AsRef<Path>,
 	{
@@ -156,7 +153,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 			.push(Command::Sound(SoundCommand::LoadSound(id, sound)))
 		{
 			Ok(_) => Ok(id),
-			Err(_) => Err(Box::new(ConductorError::SendCommand)),
+			Err(_) => Err(ConductorError::CommandQueueFull),
 		}
 	}
 
@@ -167,7 +164,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 			.push(Command::Sound(SoundCommand::UnloadSound(id)))
 		{
 			Ok(_) => Ok(()),
-			Err(_) => Err(Box::new(ConductorError::SendCommand)),
+			Err(_) => Err(Box::new(ConductorError::CommandQueueFull)),
 		}
 	}
 
@@ -186,7 +183,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 				settings,
 			))) {
 			Ok(_) => Ok(instance_id),
-			Err(_) => Err(ConductorError::SendCommand),
+			Err(_) => Err(ConductorError::CommandQueueFull),
 		}
 	}
 
@@ -202,7 +199,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 				id, volume, tween,
 			))) {
 			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::SendCommand),
+			Err(_) => Err(ConductorError::CommandQueueFull),
 		}
 	}
 
@@ -218,7 +215,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 				id, pitch, tween,
 			))) {
 			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::SendCommand),
+			Err(_) => Err(ConductorError::CommandQueueFull),
 		}
 	}
 
@@ -237,7 +234,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 				fade_tween,
 			))) {
 			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::SendCommand),
+			Err(_) => Err(ConductorError::CommandQueueFull),
 		}
 	}
 
@@ -256,7 +253,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 				fade_tween,
 			))) {
 			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::SendCommand),
+			Err(_) => Err(ConductorError::CommandQueueFull),
 		}
 	}
 
@@ -276,7 +273,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 				fade_tween,
 			))) {
 			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::SendCommand),
+			Err(_) => Err(ConductorError::CommandQueueFull),
 		}
 	}
 
@@ -294,7 +291,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 				sound_id, fade_tween,
 			))) {
 			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::SendCommand),
+			Err(_) => Err(ConductorError::CommandQueueFull),
 		}
 	}
 
@@ -310,7 +307,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 			InstanceCommand::ResumeInstancesOfSound(sound_id, fade_tween),
 		)) {
 			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::SendCommand),
+			Err(_) => Err(ConductorError::CommandQueueFull),
 		}
 	}
 
@@ -328,7 +325,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 				sound_id, fade_tween,
 			))) {
 			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::SendCommand),
+			Err(_) => Err(ConductorError::CommandQueueFull),
 		}
 	}
 
@@ -340,7 +337,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 				tempo,
 			))) {
 			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::SendCommand),
+			Err(_) => Err(ConductorError::CommandQueueFull),
 		}
 	}
 
@@ -351,7 +348,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 			.push(Command::Metronome(MetronomeCommand::StartMetronome))
 		{
 			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::SendCommand),
+			Err(_) => Err(ConductorError::CommandQueueFull),
 		}
 	}
 
@@ -362,7 +359,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 			.push(Command::Metronome(MetronomeCommand::PauseMetronome))
 		{
 			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::SendCommand),
+			Err(_) => Err(ConductorError::CommandQueueFull),
 		}
 	}
 
@@ -373,7 +370,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 			.push(Command::Metronome(MetronomeCommand::StopMetronome))
 		{
 			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::SendCommand),
+			Err(_) => Err(ConductorError::CommandQueueFull),
 		}
 	}
 
@@ -389,7 +386,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 				id, sequence,
 			))) {
 			Ok(_) => Ok(id),
-			Err(_) => Err(ConductorError::SendCommand),
+			Err(_) => Err(ConductorError::CommandQueueFull),
 		}
 	}
 
@@ -404,7 +401,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 			.push(Command::Sequence(SequenceCommand::MuteSequence(id)))
 		{
 			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::SendCommand),
+			Err(_) => Err(ConductorError::CommandQueueFull),
 		}
 	}
 
@@ -415,7 +412,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 			.push(Command::Sequence(SequenceCommand::UnmuteSequence(id)))
 		{
 			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::SendCommand),
+			Err(_) => Err(ConductorError::CommandQueueFull),
 		}
 	}
 

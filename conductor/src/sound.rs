@@ -1,4 +1,6 @@
-use crate::{stereo_sample::StereoSample, tempo::Tempo};
+use crate::{
+	error::ConductorError, error::ConductorResult, stereo_sample::StereoSample, tempo::Tempo,
+};
 use claxon::FlacReader;
 use lewton::{inside_ogg::OggStreamReader, samples::Samples};
 use std::{
@@ -102,7 +104,7 @@ impl Sound {
 		}
 	}
 
-	pub fn from_ogg_file<P>(path: P, settings: &SoundSettings) -> Result<Self, Box<dyn Error>>
+	pub fn from_ogg_file<P>(path: P, settings: &SoundSettings) -> ConductorResult<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -122,9 +124,7 @@ impl Sound {
 						samples.push(StereoSample::new(packet[0][i], packet[1][i]));
 					}
 				}
-				_ => {
-					panic!("Only mono and stereo audio can be loaded");
-				}
+				_ => return Err(ConductorError::UnsupportedChannelConfiguration),
 			}
 		}
 		Ok(Self::new(
@@ -134,7 +134,7 @@ impl Sound {
 		))
 	}
 
-	pub fn from_flac_file<P>(path: P, settings: &SoundSettings) -> Result<Self, Box<dyn Error>>
+	pub fn from_flac_file<P>(path: P, settings: &SoundSettings) -> ConductorResult<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -164,9 +164,7 @@ impl Sound {
 					}
 				}
 			}
-			_ => {
-				panic!("Only mono and stereo audio can be loaded");
-			}
+			_ => return Err(ConductorError::UnsupportedChannelConfiguration),
 		}
 		Ok(Self::new(
 			reader.streaminfo().sample_rate,
@@ -175,7 +173,7 @@ impl Sound {
 		))
 	}
 
-	pub fn from_file<P>(path: P, settings: &SoundSettings) -> Result<Self, Box<dyn Error>>
+	pub fn from_file<P>(path: P, settings: &SoundSettings) -> ConductorResult<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -188,7 +186,7 @@ impl Sound {
 				}
 			}
 		}
-		panic!("Unsupported file format");
+		Err(ConductorError::UnsupportedAudioFileFormat)
 	}
 
 	pub fn duration(&self) -> f64 {
