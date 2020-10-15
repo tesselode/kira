@@ -128,6 +128,7 @@ version = "0.1.0"
 dependencies = [
  "claxon",
  "cpal",
+ "hound",
  "indexmap",
  "lewton",
  "ringbuf",
@@ -206,6 +207,12 @@ name = "hashbrown"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d7afe4a420e3fe79967a00898cc1f4db7c8a49a9333a29f8a4bd76a253d5cd04"
+
+[[package]]
+name = "hound"
+version = "3.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a164bb2ceaeff4f42542bdb847c41517c78a60f5649671b2a07312b6e117549"
 
 [[package]]
 name = "indexmap"

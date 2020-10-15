@@ -9,7 +9,7 @@ use conductor::{
 fn main() -> Result<(), Box<dyn Error>> {
 	let mut manager = AudioManager::<()>::new(AudioManagerSettings::default())?;
 	let sound_id = manager.load_sound(
-		std::env::current_dir()?.join("assets/test.flac"),
+		std::env::current_dir()?.join("assets/test.wav"),
 		SoundSettings::default(),
 	)?;
 	manager.play_sound(sound_id, InstanceSettings::default())?;

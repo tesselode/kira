@@ -2,6 +2,7 @@ use crate::{
 	error::ConductorError, error::ConductorResult, stereo_sample::StereoSample, tempo::Tempo,
 };
 use claxon::FlacReader;
+use hound::WavReader;
 use lewton::{inside_ogg::OggStreamReader, samples::Samples};
 use std::{
 	error::Error,
@@ -173,6 +174,70 @@ impl Sound {
 		))
 	}
 
+	pub fn from_wav_file<P>(path: P, settings: &SoundSettings) -> ConductorResult<Self>
+	where
+		P: AsRef<Path>,
+	{
+		let mut reader = WavReader::open(path)?;
+		let mut samples = vec![];
+		match reader.spec().sample_format {
+			hound::SampleFormat::Float => match reader.spec().channels {
+				1 => {
+					for sample in reader.samples() {
+						let sample = sample?;
+						samples.push(StereoSample::from_mono(sample));
+					}
+				}
+				2 => {
+					let mut stereo_sample = StereoSample::new(0.0, 0.0);
+					let mut reading_right_channel = false;
+					for sample in reader.samples() {
+						let sample = sample?;
+						if reading_right_channel {
+							stereo_sample.right = sample;
+							samples.push(stereo_sample);
+							stereo_sample = StereoSample::new(0.0, 0.0);
+							reading_right_channel = false;
+						} else {
+							stereo_sample.left = sample;
+							reading_right_channel = true;
+						}
+					}
+				}
+				_ => return Err(ConductorError::UnsupportedChannelConfiguration),
+			},
+			hound::SampleFormat::Int => {
+				let range = (1 << reader.spec().bits_per_sample) / 2;
+				match reader.spec().channels {
+					1 => {
+						for sample in reader.samples::<i32>() {
+							let sample = sample?;
+							samples.push(StereoSample::from_mono(sample as f32 / range as f32));
+						}
+					}
+					2 => {
+						let mut stereo_sample = StereoSample::new(0.0, 0.0);
+						let mut reading_right_channel = false;
+						for sample in reader.samples::<i32>() {
+							let sample = sample?;
+							if reading_right_channel {
+								stereo_sample.right = sample as f32 / range as f32;
+								samples.push(stereo_sample);
+								stereo_sample = StereoSample::new(0.0, 0.0);
+								reading_right_channel = false;
+							} else {
+								stereo_sample.left = sample as f32 / range as f32;
+								reading_right_channel = true;
+							}
+						}
+					}
+					_ => return Err(ConductorError::UnsupportedChannelConfiguration),
+				}
+			}
+		}
+		Ok(Self::new(reader.spec().sample_rate, samples, settings))
+	}
+
 	pub fn from_file<P>(path: P, settings: &SoundSettings) -> ConductorResult<Self>
 	where
 		P: AsRef<Path>,
@@ -182,6 +247,7 @@ impl Sound {
 				match extension_str {
 					"ogg" => return Self::from_ogg_file(path, settings),
 					"flac" => return Self::from_flac_file(path, settings),
+					"wav" => return Self::from_wav_file(path, settings),
 					_ => {}
 				}
 			}

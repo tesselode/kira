@@ -10,6 +10,7 @@ pub enum ConductorError {
 	IoError(std::io::Error),
 	OggError(VorbisError),
 	FlacError(claxon::Error),
+	WavError(hound::Error),
 }
 
 impl Display for ConductorError {
@@ -22,11 +23,12 @@ impl Display for ConductorError {
 				f.write_str("Only mono and stereo audio is supported")
 			}
 			ConductorError::UnsupportedAudioFileFormat => {
-				f.write_str("Only .ogg and .flac files are supported")
+				f.write_str("Only .ogg .flac, and .wav files are supported")
 			}
 			ConductorError::IoError(error) => f.write_str(&format!("{}", error)),
 			ConductorError::OggError(error) => f.write_str(&format!("{}", error)),
 			ConductorError::FlacError(error) => f.write_str(&format!("{}", error)),
+			ConductorError::WavError(error) => f.write_str(&format!("{}", error)),
 		}
 	}
 }
@@ -48,6 +50,12 @@ impl From<VorbisError> for ConductorError {
 impl From<claxon::Error> for ConductorError {
 	fn from(error: claxon::Error) -> Self {
 		Self::FlacError(error)
+	}
+}
+
+impl From<hound::Error> for ConductorError {
+	fn from(error: hound::Error) -> Self {
+		Self::WavError(error)
 	}
 }
 
