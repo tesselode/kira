@@ -149,7 +149,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 	where
 		P: AsRef<Path>,
 	{
-		let sound = Sound::from_ogg_file(path, &settings)?;
+		let sound = Sound::from_file(path, &settings)?;
 		let id = SoundId::new(sound.duration(), settings.metadata);
 		match self
 			.command_producer
