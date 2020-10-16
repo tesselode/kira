@@ -110,19 +110,19 @@ impl Sound {
 		P: AsRef<Path>,
 	{
 		let mut reader = OggStreamReader::new(File::open(path)?)?;
-		let mut samples = vec![];
+		let mut stereo_samples = vec![];
 		while let Some(packet) = reader.read_dec_packet_generic::<Vec<Vec<f32>>>()? {
 			let num_channels = packet.len();
 			let num_samples = packet.num_samples();
 			match num_channels {
 				1 => {
 					for i in 0..num_samples {
-						samples.push(StereoSample::from_mono(packet[0][i]));
+						stereo_samples.push(StereoSample::from_mono(packet[0][i]));
 					}
 				}
 				2 => {
 					for i in 0..num_samples {
-						samples.push(StereoSample::new(packet[0][i], packet[1][i]));
+						stereo_samples.push(StereoSample::new(packet[0][i], packet[1][i]));
 					}
 				}
 				_ => return Err(ConductorError::UnsupportedChannelConfiguration),
@@ -130,7 +130,7 @@ impl Sound {
 		}
 		Ok(Self::new(
 			reader.ident_hdr.audio_sample_rate,
-			samples,
+			stereo_samples,
 			settings,
 		))
 	}
@@ -140,38 +140,32 @@ impl Sound {
 		P: AsRef<Path>,
 	{
 		let mut reader = FlacReader::open(path)?;
-		let mut samples = vec![];
-		let range = (1 << reader.streaminfo().bits_per_sample) / 2;
+		let streaminfo = reader.streaminfo();
+		let mut stereo_samples = vec![];
 		match reader.streaminfo().channels {
 			1 => {
 				for sample in reader.samples() {
 					let sample = sample?;
-					samples.push(StereoSample::from_mono(sample as f32 / range as f32));
+					stereo_samples.push(StereoSample::from_i32(
+						sample,
+						sample,
+						streaminfo.bits_per_sample,
+					));
 				}
 			}
 			2 => {
-				let mut stereo_sample = StereoSample::new(0.0, 0.0);
-				let mut reading_right_channel = false;
-				for sample in reader.samples() {
-					let sample = sample?;
-					if reading_right_channel {
-						stereo_sample.right = sample as f32 / range as f32;
-						samples.push(stereo_sample);
-						stereo_sample = StereoSample::new(0.0, 0.0);
-						reading_right_channel = false;
-					} else {
-						stereo_sample.left = sample as f32 / range as f32;
-						reading_right_channel = true;
-					}
+				let mut iter = reader.samples();
+				while let (Some(left), Some(right)) = (iter.next(), iter.next()) {
+					stereo_samples.push(StereoSample::from_i32(
+						left?,
+						right?,
+						streaminfo.bits_per_sample,
+					));
 				}
 			}
 			_ => return Err(ConductorError::UnsupportedChannelConfiguration),
 		}
-		Ok(Self::new(
-			reader.streaminfo().sample_rate,
-			samples,
-			settings,
-		))
+		Ok(Self::new(streaminfo.sample_rate, stereo_samples, settings))
 	}
 
 	pub fn from_wav_file<P>(path: P, settings: &SoundSettings) -> ConductorResult<Self>
@@ -179,63 +173,51 @@ impl Sound {
 		P: AsRef<Path>,
 	{
 		let mut reader = WavReader::open(path)?;
-		let mut samples = vec![];
-		match reader.spec().sample_format {
-			hound::SampleFormat::Float => match reader.spec().channels {
-				1 => {
-					for sample in reader.samples() {
-						let sample = sample?;
-						samples.push(StereoSample::from_mono(sample));
+		let spec = reader.spec();
+		let mut stereo_samples = vec![];
+		match reader.spec().channels {
+			1 => match spec.sample_format {
+				hound::SampleFormat::Float => {
+					for sample in reader.samples::<f32>() {
+						stereo_samples.push(StereoSample::from_mono(sample?))
 					}
 				}
-				2 => {
-					let mut stereo_sample = StereoSample::new(0.0, 0.0);
-					let mut reading_right_channel = false;
-					for sample in reader.samples() {
+				hound::SampleFormat::Int => {
+					for sample in reader.samples::<i32>() {
 						let sample = sample?;
-						if reading_right_channel {
-							stereo_sample.right = sample;
-							samples.push(stereo_sample);
-							stereo_sample = StereoSample::new(0.0, 0.0);
-							reading_right_channel = false;
-						} else {
-							stereo_sample.left = sample;
-							reading_right_channel = true;
-						}
+						stereo_samples.push(StereoSample::from_i32(
+							sample,
+							sample,
+							spec.bits_per_sample.into(),
+						));
 					}
 				}
-				_ => return Err(ConductorError::UnsupportedChannelConfiguration),
 			},
-			hound::SampleFormat::Int => {
-				let range = (1 << reader.spec().bits_per_sample) / 2;
-				match reader.spec().channels {
-					1 => {
-						for sample in reader.samples::<i32>() {
-							let sample = sample?;
-							samples.push(StereoSample::from_mono(sample as f32 / range as f32));
-						}
+			2 => match spec.sample_format {
+				hound::SampleFormat::Float => {
+					let mut iter = reader.samples::<f32>();
+					while let (Some(left), Some(right)) = (iter.next(), iter.next()) {
+						stereo_samples.push(StereoSample::new(left?, right?));
 					}
-					2 => {
-						let mut stereo_sample = StereoSample::new(0.0, 0.0);
-						let mut reading_right_channel = false;
-						for sample in reader.samples::<i32>() {
-							let sample = sample?;
-							if reading_right_channel {
-								stereo_sample.right = sample as f32 / range as f32;
-								samples.push(stereo_sample);
-								stereo_sample = StereoSample::new(0.0, 0.0);
-								reading_right_channel = false;
-							} else {
-								stereo_sample.left = sample as f32 / range as f32;
-								reading_right_channel = true;
-							}
-						}
-					}
-					_ => return Err(ConductorError::UnsupportedChannelConfiguration),
 				}
-			}
+				hound::SampleFormat::Int => {
+					let mut iter = reader.samples::<i32>();
+					while let (Some(left), Some(right)) = (iter.next(), iter.next()) {
+						stereo_samples.push(StereoSample::from_i32(
+							left?,
+							right?,
+							spec.bits_per_sample.into(),
+						));
+					}
+				}
+			},
+			_ => return Err(ConductorError::UnsupportedChannelConfiguration),
 		}
-		Ok(Self::new(reader.spec().sample_rate, samples, settings))
+		Ok(Self::new(
+			reader.spec().sample_rate,
+			stereo_samples,
+			settings,
+		))
 	}
 
 	pub fn from_file<P>(path: P, settings: &SoundSettings) -> ConductorResult<Self>
