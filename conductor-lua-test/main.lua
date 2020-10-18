@@ -7,4 +7,4 @@ local soundId = manager:loadSound('assets/loop.ogg', {
 		semanticDuration = {1, 'beat'},
 	},
 })
-print(unpack(soundId:getMetadata().semanticDuration))
+print(manager:playSound(soundId, {pitch = .5, fadeInDuration = .25}))

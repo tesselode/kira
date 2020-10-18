@@ -1,6 +1,7 @@
 mod duration;
 mod error;
 mod event;
+mod instance;
 mod manager;
 mod metronome;
 mod sound;

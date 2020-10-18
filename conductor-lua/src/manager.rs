@@ -2,8 +2,8 @@ use conductor::manager::{AudioManager, AudioManagerSettings};
 use mlua::prelude::*;
 
 use crate::{
-	error::ConductorLuaError, event::LEvent, metronome::LMetronomeSettings, sound::LSoundId,
-	sound::LSoundSettings,
+	error::ConductorLuaError, event::LEvent, instance::LInstanceId, instance::LInstanceSettings,
+	metronome::LMetronomeSettings, sound::LSoundId, sound::LSoundSettings,
 };
 
 pub struct LAudioManagerSettings(pub AudioManagerSettings);
@@ -62,6 +62,16 @@ impl LuaUserData for LAudioManager {
 			{
 				Ok(id) => Ok(LSoundId(id)),
 				Err(error) => Err(LuaError::external(error)),
+			},
+		);
+
+		methods.add_method_mut(
+			"playSound",
+			|_: &Lua, this: &mut Self, (sound_id, settings): (LSoundId, LInstanceSettings)| {
+				match this.0.play_sound(sound_id.0, settings.0) {
+					Ok(id) => Ok(LInstanceId(id)),
+					Err(error) => Err(LuaError::external(error)),
+				}
 			},
 		);
 	}
