@@ -9,8 +9,9 @@ impl<'lua> FromLua<'lua> for LTempo {
 	fn from_lua(lua_value: LuaValue<'lua>, _: &'lua Lua) -> LuaResult<Self> {
 		match lua_value {
 			LuaValue::Number(bpm) => Ok(LTempo(Tempo(bpm))),
-			_ => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
-				"tempo", "number",
+			LuaValue::Integer(bpm) => Ok(LTempo(Tempo(bpm as f64))),
+			value => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
+				"tempo", "number", value,
 			))),
 		}
 	}

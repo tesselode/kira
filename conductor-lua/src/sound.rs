@@ -20,9 +20,10 @@ impl<'lua> FromLua<'lua> for LSoundMetadata {
 				}
 				Ok(LSoundMetadata(metadata))
 			}
-			_ => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
+			value => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
 				"sound metadata",
 				"table",
+				value,
 			))),
 		}
 	}
@@ -53,9 +54,10 @@ impl<'lua> FromLua<'lua> for LSoundSettings {
 					.map(|metadata| metadata.0)
 					.unwrap_or_default(),
 			})),
-			_ => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
+			value => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
 				"sound settings",
 				"table",
+				value,
 			))),
 		}
 	}

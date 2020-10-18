@@ -36,9 +36,10 @@ impl<'lua> FromLua<'lua> for LAudioManagerSettings {
 				}
 				Ok(LAudioManagerSettings(settings))
 			}
-			_ => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
+			value => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
 				"audio manager settings",
 				"table",
+				value,
 			))),
 		}
 	}

@@ -10,9 +10,10 @@ impl<'lua> FromLua<'lua> for LTween {
 		match lua_value {
 			LuaValue::Number(duration) => Ok(LTween(Tween(duration))),
 			LuaValue::Table(table) => Ok(LTween(Tween(table.get(1)?))),
-			_ => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
+			value => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
 				"tween",
 				"table or number",
+				value,
 			))),
 		}
 	}

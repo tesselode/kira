@@ -25,9 +25,10 @@ impl<'lua> FromLua<'lua> for LInstanceSettings {
 				}
 				Ok(LInstanceSettings(settings))
 			}
-			_ => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
+			value => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
 				"instance settings",
 				"table",
+				value,
 			))),
 		}
 	}

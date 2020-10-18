@@ -20,9 +20,10 @@ impl<'lua> FromLua<'lua> for LMetronomeSettings {
 				}
 				Ok(LMetronomeSettings(settings))
 			}
-			_ => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
+			value => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
 				"metronome settings",
 				"table",
+				value,
 			))),
 		}
 	}

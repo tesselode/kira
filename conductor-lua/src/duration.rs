@@ -19,8 +19,8 @@ impl<'lua> FromLua<'lua> for LDuration {
 					return Err(LuaError::external(ConductorLuaError::InvalidDurationUnit));
 				}
 			}
-			_ => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
-				"duration", "table",
+			value => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
+				"duration", "table", value,
 			))),
 		}
 	}
