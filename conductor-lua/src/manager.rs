@@ -12,27 +12,29 @@ impl<'lua> FromLua<'lua> for LAudioManagerSettings {
 	fn from_lua(lua_value: LuaValue<'lua>, _: &'lua Lua) -> LuaResult<Self> {
 		match lua_value {
 			LuaNil => Ok(LAudioManagerSettings(AudioManagerSettings::default())),
-			LuaValue::Table(table) => Ok(LAudioManagerSettings(AudioManagerSettings {
-				num_commands: table
-					.get::<_, Option<usize>>("numCommands")?
-					.unwrap_or(AudioManagerSettings::default().num_commands),
-				num_events: table
-					.get::<_, Option<usize>>("numEvents")?
-					.unwrap_or(AudioManagerSettings::default().num_events),
-				num_sounds: table
-					.get::<_, Option<usize>>("numSounds")?
-					.unwrap_or(AudioManagerSettings::default().num_sounds),
-				num_instances: table
-					.get::<_, Option<usize>>("numInstances")?
-					.unwrap_or(AudioManagerSettings::default().num_instances),
-				num_sequences: table
-					.get::<_, Option<usize>>("numSequences")?
-					.unwrap_or(AudioManagerSettings::default().num_sequences),
-				metronome_settings: table
-					.get::<_, Option<LMetronomeSettings>>("metronomeSettings")?
-					.map(|settings| settings.0)
-					.unwrap_or_default(),
-			})),
+			LuaValue::Table(table) => {
+				let mut settings = AudioManagerSettings::default();
+				if table.contains_key("numCommands")? {
+					settings.num_commands = table.get("numCommands")?;
+				}
+				if table.contains_key("numEvents")? {
+					settings.num_events = table.get("numEvents")?;
+				}
+				if table.contains_key("numSounds")? {
+					settings.num_sounds = table.get("numSounds")?;
+				}
+				if table.contains_key("numInstances")? {
+					settings.num_instances = table.get("numInstances")?;
+				}
+				if table.contains_key("numSequences")? {
+					settings.num_sequences = table.get("numSequences")?;
+				}
+				if table.contains_key("metronomeSettings")? {
+					settings.metronome_settings =
+						table.get::<_, LMetronomeSettings>("metronomeSettings")?.0;
+				}
+				Ok(LAudioManagerSettings(settings))
+			}
 			_ => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
 				"audio manager settings",
 				"table",

@@ -9,18 +9,22 @@ impl<'lua> FromLua<'lua> for LInstanceSettings {
 	fn from_lua(lua_value: LuaValue<'lua>, _: &'lua Lua) -> LuaResult<Self> {
 		match lua_value {
 			LuaNil => Ok(LInstanceSettings(InstanceSettings::default())),
-			LuaValue::Table(table) => Ok(LInstanceSettings(InstanceSettings {
-				volume: table
-					.get::<_, Option<f64>>("volume")?
-					.unwrap_or(InstanceSettings::default().volume),
-				pitch: table
-					.get::<_, Option<f64>>("pitch")?
-					.unwrap_or(InstanceSettings::default().pitch),
-				position: table
-					.get::<_, Option<f64>>("position")?
-					.unwrap_or(InstanceSettings::default().position),
-				fade_in_duration: table.get::<_, Option<f64>>("fadeInDuration")?,
-			})),
+			LuaValue::Table(table) => {
+				let mut settings = InstanceSettings::default();
+				if table.contains_key("volume")? {
+					settings.volume = table.get("volume")?;
+				}
+				if table.contains_key("pitch")? {
+					settings.pitch = table.get("pitch")?;
+				}
+				if table.contains_key("position")? {
+					settings.position = table.get("position")?;
+				}
+				if table.contains_key("fadeInDuration")? {
+					settings.fade_in_duration = table.get("fadeInDuration")?;
+				}
+				Ok(LInstanceSettings(settings))
+			}
 			_ => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
 				"instance settings",
 				"table",

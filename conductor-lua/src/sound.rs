@@ -9,14 +9,17 @@ impl<'lua> FromLua<'lua> for LSoundMetadata {
 	fn from_lua(lua_value: LuaValue<'lua>, _: &'lua Lua) -> LuaResult<Self> {
 		match lua_value {
 			LuaNil => Ok(LSoundMetadata(SoundMetadata::default())),
-			LuaValue::Table(table) => Ok(LSoundMetadata(SoundMetadata {
-				tempo: table
-					.get::<_, Option<LTempo>>("tempo")?
-					.map(|tempo| tempo.0),
-				semantic_duration: table
-					.get::<_, Option<LDuration>>("semanticDuration")?
-					.map(|duration| duration.0),
-			})),
+			LuaValue::Table(table) => {
+				let mut metadata = SoundMetadata::default();
+				if table.contains_key("tempo")? {
+					metadata.tempo = Some(table.get::<_, LTempo>("tempo")?.0);
+				}
+				if table.contains_key("semanticDuration")? {
+					metadata.semantic_duration =
+						Some(table.get::<_, LDuration>("semanticDuration")?.0);
+				}
+				Ok(LSoundMetadata(metadata))
+			}
 			_ => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
 				"sound metadata",
 				"table",
