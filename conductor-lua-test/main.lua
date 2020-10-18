@@ -12,5 +12,7 @@ manager:setMetronomeTempo(128)
 manager:startMetronome()
 
 function love.update(dt)
-	print(inspect(manager:getEvents()))
+	manager:getEvents {
+		metronomeIntervalPassed = function(...) print(...) end,
+	}
 end
