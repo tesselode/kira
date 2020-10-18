@@ -1,6 +1,8 @@
 use crate::{
 	command::{Command, InstanceCommand, MetronomeCommand},
 	duration::Duration,
+	error::ConductorError,
+	error::ConductorResult,
 	instance::{InstanceId, InstanceSettings},
 	metronome::Metronome,
 	sound::SoundId,
@@ -223,6 +225,15 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 			.push(SequenceTask::RunCommand(SequenceCommand::EmitCustomEvent(
 				event,
 			)));
+	}
+
+	pub(crate) fn validate(&self) -> ConductorResult<()> {
+		if let Some(loop_point) = self.loop_point {
+			if loop_point >= self.tasks.len() {
+				return Err(ConductorError::InvalidSequenceLoopPoint);
+			}
+		}
+		Ok(())
 	}
 
 	fn start_task(&mut self, index: usize) {

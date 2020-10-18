@@ -7,6 +7,7 @@ pub enum ConductorError {
 	CommandQueueFull,
 	UnsupportedChannelConfiguration,
 	UnsupportedAudioFileFormat,
+	InvalidSequenceLoopPoint,
 	IoError(std::io::Error),
 	OggError(VorbisError),
 	FlacError(claxon::Error),
@@ -24,6 +25,9 @@ impl Display for ConductorError {
 			}
 			ConductorError::UnsupportedAudioFileFormat => {
 				f.write_str("Only .ogg .flac, and .wav files are supported")
+			}
+			ConductorError::InvalidSequenceLoopPoint => {
+				f.write_str("The loop point of a sequence cannot be at the very end")
 			}
 			ConductorError::IoError(error) => f.write_str(&format!("{}", error)),
 			ConductorError::OggError(error) => f.write_str(&format!("{}", error)),

@@ -4,6 +4,7 @@ use conductor::{
 	duration::Duration,
 	instance::InstanceSettings,
 	manager::{AudioManager, AudioManagerSettings, LoopSettings},
+	sequence::Sequence,
 	sound::SoundMetadata,
 	sound::SoundSettings,
 	tempo::Tempo,
@@ -21,14 +22,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 			..Default::default()
 		},
 	)?;
-	manager.loop_sound(
-		sound_id,
-		LoopSettings::default(),
-		InstanceSettings {
-			position: sound_id.metadata().tempo.unwrap().beats_to_seconds(15.0),
-			..Default::default()
-		},
-	)?;
+	let mut sequence = Sequence::new();
+	sequence.wait(Duration::Seconds(1.0));
+	sequence.start_loop();
+	sequence.wait(Duration::Seconds(1.0));
+	manager.start_sequence(sequence)?;
 	let mut input = String::new();
 	stdin().read_line(&mut input)?;
 	Ok(())

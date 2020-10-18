@@ -386,6 +386,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 		&mut self,
 		sequence: Sequence<CustomEvent>,
 	) -> Result<SequenceId, ConductorError> {
+		sequence.validate()?;
 		let id = SequenceId::new();
 		match self
 			.command_producer
