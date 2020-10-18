@@ -40,8 +40,8 @@ impl LuaUserData for LSequence {
 			Ok(())
 		});
 
-		methods.add_method_mut("goTo", |_, this, index: usize| {
-			this.0.go_to(index - 1);
+		methods.add_method_mut("startLoop", |_, this, _: ()| {
+			this.0.start_loop();
 			Ok(())
 		});
 

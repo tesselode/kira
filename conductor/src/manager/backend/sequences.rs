@@ -51,6 +51,7 @@ impl<CustomEvent: Copy> Sequences<CustomEvent> {
 				let mut sequence = Sequence::new();
 				sequence.play_sound(sound_id, instance_settings);
 				sequence.wait(Duration::Seconds(end - instance_settings.position));
+				sequence.start_loop();
 				sequence.play_sound(
 					sound_id,
 					InstanceSettings {
@@ -59,7 +60,6 @@ impl<CustomEvent: Copy> Sequences<CustomEvent> {
 					},
 				);
 				sequence.wait(Duration::Seconds(end - start));
-				sequence.go_to(2);
 				self.start_sequence(id, sequence);
 			}
 			SequenceCommand::MuteSequence(id) => {

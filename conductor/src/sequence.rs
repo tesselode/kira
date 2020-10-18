@@ -74,7 +74,6 @@ impl<CustomEvent> Into<Command<CustomEvent>> for SequenceOutputCommand<CustomEve
 enum SequenceTask<CustomEvent> {
 	Wait(Duration),
 	WaitForInterval(f64),
-	GoToTask(usize),
 	RunCommand(SequenceCommand<CustomEvent>),
 }
 
@@ -88,6 +87,7 @@ enum SequenceState {
 #[derive(Debug, Clone)]
 pub struct Sequence<CustomEvent> {
 	tasks: Vec<SequenceTask<CustomEvent>>,
+	loop_point: Option<usize>,
 	state: SequenceState,
 	wait_timer: Option<f64>,
 	instances: HashMap<SequenceInstanceHandle, InstanceId>,
@@ -98,6 +98,7 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 	pub fn new() -> Self {
 		Self {
 			tasks: vec![],
+			loop_point: None,
 			state: SequenceState::Idle,
 			wait_timer: None,
 			instances: HashMap::new(),
@@ -113,8 +114,8 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 		self.tasks.push(SequenceTask::WaitForInterval(interval));
 	}
 
-	pub fn go_to(&mut self, index: usize) {
-		self.tasks.push(SequenceTask::GoToTask(index));
+	pub fn start_loop(&mut self) {
+		self.loop_point = Some(self.tasks.len())
 	}
 
 	pub fn play_sound(
@@ -232,6 +233,8 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 			} else {
 				self.wait_timer = None;
 			}
+		} else if let Some(loop_point) = self.loop_point {
+			self.start_task(loop_point);
 		} else {
 			self.state = SequenceState::Finished;
 		}
@@ -349,9 +352,6 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 							self.start_task(index + 1);
 						}
 						break;
-					}
-					SequenceTask::GoToTask(index) => {
-						self.start_task(index);
 					}
 					SequenceTask::RunCommand(command) => {
 						if !self.muted {
