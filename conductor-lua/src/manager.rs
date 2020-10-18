@@ -1,7 +1,7 @@
 use conductor::manager::{AudioManager, AudioManagerSettings};
 use mlua::prelude::*;
 
-use crate::{error::LConductorError, metronome::LMetronomeSettings};
+use crate::{error::ConductorLuaError, metronome::LMetronomeSettings};
 
 pub struct LAudioManagerSettings(pub AudioManagerSettings);
 
@@ -30,7 +30,7 @@ impl<'lua> FromLua<'lua> for LAudioManagerSettings {
 					.map(|settings| settings.0)
 					.unwrap_or_default(),
 			})),
-			_ => Err(LConductorError::wrong_argument_type(
+			_ => Err(ConductorLuaError::wrong_argument_type(
 				"audio manager settings",
 				"table",
 			)),

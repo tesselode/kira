@@ -1,7 +1,7 @@
 use conductor::{metronome::MetronomeSettings, tempo::Tempo};
 use mlua::prelude::*;
 
-use crate::{error::LConductorError, tempo::LTempo};
+use crate::{error::ConductorLuaError, tempo::LTempo};
 
 pub struct LMetronomeSettings(pub MetronomeSettings);
 
@@ -18,7 +18,7 @@ impl<'lua> FromLua<'lua> for LMetronomeSettings {
 					.get::<_, Option<Vec<f64>>>("intervalEventsToEmit")?
 					.unwrap_or(vec![]),
 			})),
-			_ => Err(LConductorError::wrong_argument_type(
+			_ => Err(ConductorLuaError::wrong_argument_type(
 				"metronome settings",
 				"table",
 			)),
