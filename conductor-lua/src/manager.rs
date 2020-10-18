@@ -1,7 +1,7 @@
 use conductor::manager::{AudioManager, AudioManagerSettings};
 use mlua::prelude::*;
 
-use crate::{error::ConductorLuaError, metronome::LMetronomeSettings};
+use crate::{error::ConductorLuaError, event::LEvent, metronome::LMetronomeSettings};
 
 pub struct LAudioManagerSettings(pub AudioManagerSettings);
 
@@ -37,7 +37,7 @@ impl<'lua> FromLua<'lua> for LAudioManagerSettings {
 	}
 }
 
-pub struct LAudioManager(pub AudioManager);
+pub struct LAudioManager(pub AudioManager<LEvent>);
 
 impl LAudioManager {
 	pub fn new(settings: LAudioManagerSettings) -> LuaResult<Self> {
