@@ -1,9 +1,9 @@
-use mlua::prelude::*;
 use std::{error::Error, fmt::Display};
 
 #[derive(Debug)]
 pub enum ConductorLuaError {
 	WrongArgumentType(String, String),
+	InvalidDurationUnit,
 }
 
 impl ConductorLuaError {
@@ -18,14 +18,11 @@ impl Display for ConductorLuaError {
 			ConductorLuaError::WrongArgumentType(thing, correct_type) => {
 				f.write_str(&format!("{} must be a {}", thing, correct_type))
 			}
+			ConductorLuaError::InvalidDurationUnit => {
+				f.write_str("duration unit must be 'second(s)' or 'beat(s)'")
+			}
 		}
 	}
 }
 
 impl Error for ConductorLuaError {}
-
-impl Into<LuaError> for ConductorLuaError {
-	fn into(self) -> LuaError {
-		LuaError::external(self)
-	}
-}

@@ -5,7 +5,7 @@ use mlua::prelude::*;
 static NEXT_EVENT_INDEX: AtomicUsize = AtomicUsize::new(0);
 
 #[derive(Debug, Copy, Clone)]
-pub struct LEvent(usize);
+pub struct LEvent(pub usize);
 
 impl LEvent {
 	pub fn new() -> Self {

@@ -1,7 +1,10 @@
 use conductor::manager::{AudioManager, AudioManagerSettings};
 use mlua::prelude::*;
 
-use crate::{error::ConductorLuaError, event::LEvent, metronome::LMetronomeSettings};
+use crate::{
+	error::ConductorLuaError, event::LEvent, metronome::LMetronomeSettings, sound::LSoundId,
+	sound::LSoundSettings,
+};
 
 pub struct LAudioManagerSettings(pub AudioManagerSettings);
 
@@ -30,9 +33,10 @@ impl<'lua> FromLua<'lua> for LAudioManagerSettings {
 					.map(|settings| settings.0)
 					.unwrap_or_default(),
 			})),
-			_ => Err(
-				ConductorLuaError::wrong_argument_type("audio manager settings", "table").into(),
-			),
+			_ => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
+				"audio manager settings",
+				"table",
+			))),
 		}
 	}
 }
@@ -48,4 +52,17 @@ impl LAudioManager {
 	}
 }
 
-impl LuaUserData for LAudioManager {}
+impl LuaUserData for LAudioManager {
+	fn add_methods<'lua, M: LuaUserDataMethods<'lua, Self>>(methods: &mut M) {
+		methods.add_method_mut(
+			"loadSound",
+			|_: &Lua, this: &mut Self, (path, settings): (LuaString, LSoundSettings)| match this
+				.0
+				.load_sound(path.to_str()?, settings.0)
+			{
+				Ok(id) => Ok(LSoundId(id)),
+				Err(error) => Err(LuaError::external(error)),
+			},
+		);
+	}
+}

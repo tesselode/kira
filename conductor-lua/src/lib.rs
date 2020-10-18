@@ -1,7 +1,9 @@
+mod duration;
 mod error;
 mod event;
 mod manager;
 mod metronome;
+mod sound;
 mod tempo;
 
 use event::LEvent;
