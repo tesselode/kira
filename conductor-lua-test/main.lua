@@ -2,30 +2,23 @@ package.cpath = love.filesystem.getWorkingDirectory() .. '/target/debug/?.dll'
 
 local conductor = require 'conductor'
 
-local manager = conductor.newManager {
-	metronomeSettings = {
+local manager = conductor.newManager()
+local soundId = manager:loadSound('assets/loop.ogg', {
+	metadata = {
 		tempo = 128,
-		intervalEventsToEmit = {0.25, 0.5, 1.0},
+		semanticDuration = {16, 'beats'},
 	},
-}
-local customEventHandle = conductor.newCustomEventHandle()
-local testSequence = conductor.newSequence()
-testSequence:wait(1, 'beat')
-testSequence:emitCustomEvent(customEventHandle)
-testSequence:goTo(1)
-manager:startSequence(testSequence)
-manager:startMetronome()
+})
+manager:loopSound(soundId, {
+	startPoint = {8, 'beats'},
+})
 
 local callbacks = {
 	metronomeIntervalPassed = function(interval)
 		print('interval passed:', interval)
 	end,
 	custom = function(handle)
-		if handle == customEventHandle then
-			print 'custom event'
-		else
-			print 'idk what this is'
-		end
+		print('custom event:', handle)
 	end,
 }
 

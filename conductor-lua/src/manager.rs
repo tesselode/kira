@@ -1,4 +1,5 @@
 use crate::{
+	duration::LDuration,
 	event::LCustomEventHandle,
 	instance::{LInstanceId, LInstanceSettings},
 	metronome::LMetronomeSettings,
@@ -7,18 +8,35 @@ use crate::{
 	tween::LTween,
 };
 use conductor::{
-	manager::{AudioManager, AudioManagerSettings, Event},
+	manager::{AudioManager, AudioManagerSettings, Event, LoopSettings},
 	tempo::Tempo,
 };
 use mlua::prelude::*;
 use std::error::Error;
 
+pub struct LLoopSettings(LoopSettings);
+
+impl<'lua> FromLua<'lua> for LLoopSettings {
+	fn from_lua(lua_value: LuaValue<'lua>, _: &'lua Lua) -> LuaResult<Self> {
+		Ok(LLoopSettings(match lua_value {
+			LuaNil => LoopSettings::default(),
+			LuaValue::Table(table) => LoopSettings {
+				start: table
+					.get::<_, Option<LDuration>>("startPoint")?
+					.map(|l_duration| l_duration.0),
+				end: table
+					.get::<_, Option<LDuration>>("endPoint")?
+					.map(|l_duration| l_duration.0),
+			},
+			_ => panic!(),
+		}))
+	}
+}
+
 pub struct LAudioManagerSettings(AudioManagerSettings);
 
-impl LuaUserData for LAudioManagerSettings {}
-
 impl<'lua> FromLua<'lua> for LAudioManagerSettings {
-	fn from_lua(lua_value: LuaValue<'lua>, _lua: &'lua Lua) -> LuaResult<Self> {
+	fn from_lua(lua_value: LuaValue<'lua>, _: &'lua Lua) -> LuaResult<Self> {
 		match lua_value {
 			LuaNil => Ok(LAudioManagerSettings(AudioManagerSettings::default())),
 			LuaValue::Table(table) => {
@@ -229,6 +247,23 @@ impl LuaUserData for LAudioManager {
 			let id = this.0.start_sequence(sequence.0).unwrap();
 			Ok(LSequenceId(id))
 		});
+
+		methods.add_method_mut(
+			"loopSound",
+			|_,
+			 this,
+			 (sound_id, loop_settings, instance_settings): (
+				LSoundId,
+				LLoopSettings,
+				LInstanceSettings,
+			)| {
+				let id = this
+					.0
+					.loop_sound(sound_id.0, loop_settings.0, instance_settings.0)
+					.unwrap();
+				Ok(LSequenceId(id))
+			},
+		);
 
 		methods.add_method_mut("muteSequence", |_, this, id: LSequenceId| {
 			this.0.mute_sequence(id.0).unwrap();

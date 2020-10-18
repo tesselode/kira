@@ -4,6 +4,8 @@ use conductor::{
 };
 use mlua::prelude::*;
 
+use crate::duration::LDuration;
+
 #[derive(Copy, Clone)]
 pub struct LSoundId(pub SoundId);
 
@@ -26,6 +28,13 @@ impl LuaUserData for LSoundMetadata {
 				Some(tempo) => LuaValue::Number(tempo.0 as f64),
 				None => LuaValue::Nil,
 			})
+		});
+
+		methods.add_method("getSemanticDuration", |lua, this, _: ()| {
+			Ok(match this.0.semantic_duration {
+				Some(duration) => LDuration(duration).to_lua(lua)?,
+				None => LuaValue::Nil,
+			})
 		})
 	}
 }
@@ -34,13 +43,14 @@ impl<'lua> FromLua<'lua> for LSoundMetadata {
 	fn from_lua(lua_value: LuaValue<'lua>, _: &'lua Lua) -> LuaResult<Self> {
 		match lua_value {
 			LuaNil => Ok(LSoundMetadata(SoundMetadata::default())),
-			LuaValue::Table(table) => {
-				let mut metadata = SoundMetadata::default();
-				if table.contains_key("tempo")? {
-					metadata.tempo = Some(Tempo(table.get("tempo")?));
-				}
-				Ok(LSoundMetadata(metadata))
-			}
+			LuaValue::Table(table) => Ok(LSoundMetadata(SoundMetadata {
+				tempo: table
+					.get::<_, Option<f64>>("tempo")?
+					.map(|tempo| Tempo(tempo)),
+				semantic_duration: table
+					.get::<_, Option<LDuration>>("semanticDuration")?
+					.map(|duration| duration.0),
+			})),
 			_ => Err(LuaError::FromLuaConversionError {
 				from: "table",
 				to: "SoundMetadata",

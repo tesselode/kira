@@ -40,4 +40,30 @@ impl LDuration {
 	}
 }
 
-impl LuaUserData for LDuration {}
+impl<'lua> FromLua<'lua> for LDuration {
+	fn from_lua(lua_value: LuaValue<'lua>, _: &'lua Lua) -> LuaResult<Self> {
+		match lua_value {
+			LuaValue::Table(table) => Ok(LDuration::new(table.get(1)?, table.get(2)?)),
+			_ => panic!(),
+		}
+	}
+}
+
+impl<'lua> ToLua<'lua> for LDuration {
+	fn to_lua(self, lua: &'lua Lua) -> LuaResult<LuaValue<'lua>> {
+		Ok(LuaValue::Table(match self.0 {
+			Duration::Seconds(seconds) => {
+				let table = lua.create_table()?;
+				table.set(1, seconds)?;
+				table.set(2, lua.create_string("seconds")?)?;
+				table
+			}
+			Duration::Beats(beats) => {
+				let table = lua.create_table()?;
+				table.set(1, beats)?;
+				table.set(2, lua.create_string("beats")?)?;
+				table
+			}
+		}))
+	}
+}
