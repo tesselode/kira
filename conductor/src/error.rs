@@ -1,9 +1,15 @@
 use std::{error::Error, fmt::Display};
 
+use cpal::{BuildStreamError, PlayStreamError, SupportedStreamConfigsError};
 use lewton::VorbisError;
 
 #[derive(Debug)]
 pub enum ConductorError {
+	NoDefaultOutputDevice,
+	SupportedStreamConfigsError(SupportedStreamConfigsError),
+	NoSupportedAudioConfig,
+	BuildStreamError(BuildStreamError),
+	PlayStreamError(PlayStreamError),
 	CommandQueueFull,
 	UnsupportedChannelConfiguration,
 	UnsupportedAudioFileFormat,
@@ -17,6 +23,17 @@ pub enum ConductorError {
 impl Display for ConductorError {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		match self {
+			ConductorError::NoDefaultOutputDevice => {
+				f.write_str("Cannot find the default audio output device")
+			}
+			ConductorError::SupportedStreamConfigsError(error) => {
+				f.write_str(&format!("{}", error))
+			}
+			ConductorError::NoSupportedAudioConfig => {
+				f.write_str("No supported audio configurations")
+			}
+			ConductorError::BuildStreamError(error) => f.write_str(&format!("{}", error)),
+			ConductorError::PlayStreamError(error) => f.write_str(&format!("{}", error)),
 			ConductorError::CommandQueueFull => {
 				f.write_str("Cannot send a command to the audio thread because the queue is full")
 			}

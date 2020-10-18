@@ -92,6 +92,8 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 	/// Creates a new audio manager and starts an audio thread.
 	pub fn new(settings: AudioManagerSettings) -> ConductorResult<Self> {
 		let (quit_signal_producer, mut quit_signal_consumer) = RingBuffer::new(1).split();
+		let (mut setup_result_producer, mut setup_result_consumer) =
+			RingBuffer::<ConductorResult<()>>::new(1).split();
 		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
 		let (sounds_to_unload_producer, sounds_to_unload_consumer) =
 			RingBuffer::new(settings.num_sounds).split();
@@ -100,12 +102,34 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 		let (event_producer, event_consumer) = RingBuffer::new(settings.num_events).split();
 		std::thread::spawn(move || {
 			let host = cpal::default_host();
-			let device = host.default_output_device().unwrap();
-			let mut supported_configs_range = device.supported_output_configs().unwrap();
-			let supported_config = supported_configs_range
-				.next()
-				.unwrap()
-				.with_max_sample_rate();
+			let device = match host.default_output_device() {
+				Some(device) => device,
+				None => {
+					setup_result_producer
+						.push(Err(ConductorError::NoDefaultOutputDevice))
+						.unwrap();
+					return;
+				}
+			};
+			let mut supported_configs_range = match device.supported_output_configs() {
+				Ok(range) => range,
+				Err(error) => {
+					setup_result_producer
+						.push(Err(ConductorError::SupportedStreamConfigsError(error)))
+						.unwrap();
+					return;
+				}
+			};
+			let supported_config = match supported_configs_range.next() {
+				Some(config) => config,
+				None => {
+					setup_result_producer
+						.push(Err(ConductorError::NoSupportedAudioConfig))
+						.unwrap();
+					return;
+				}
+			}
+			.with_max_sample_rate();
 			let config = supported_config.config();
 			let sample_rate = config.sample_rate.0;
 			let channels = config.channels;
@@ -117,26 +141,50 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 				sounds_to_unload_producer,
 				sequences_to_unload_producer,
 			);
-			let stream = device
-				.build_output_stream(
-					&config,
-					move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
-						for frame in data.chunks_exact_mut(channels as usize) {
-							let out = backend.process();
-							frame[0] = out.left;
-							frame[1] = out.right;
-						}
-					},
-					move |_| {},
-				)
-				.unwrap();
-			stream.play().unwrap();
+			let stream = match device.build_output_stream(
+				&config,
+				move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
+					for frame in data.chunks_exact_mut(channels as usize) {
+						let out = backend.process();
+						frame[0] = out.left;
+						frame[1] = out.right;
+					}
+				},
+				move |_| {},
+			) {
+				Ok(stream) => stream,
+				Err(error) => {
+					setup_result_producer
+						.push(Err(ConductorError::BuildStreamError(error)))
+						.unwrap();
+					return;
+				}
+			};
+			match stream.play() {
+				Ok(_) => {}
+				Err(error) => {
+					setup_result_producer
+						.push(Err(ConductorError::PlayStreamError(error)))
+						.unwrap();
+					return;
+				}
+			}
+			setup_result_producer.push(Ok(())).unwrap();
 			while let None = quit_signal_consumer.pop() {
 				std::thread::sleep(std::time::Duration::from_secs_f64(
 					WRAPPER_THREAD_SLEEP_DURATION,
 				));
 			}
 		});
+		// wait for the audio thread to report back a result
+		loop {
+			if let Some(result) = setup_result_consumer.pop() {
+				match result {
+					Ok(_) => break,
+					Err(error) => return Err(error),
+				}
+			}
+		}
 		Ok(Self {
 			quit_signal_producer,
 			command_producer,
