@@ -1,10 +1,7 @@
-use conductor::{
-	manager::{AudioManager, AudioManagerSettings},
-	metronome::MetronomeSettings,
-};
+use conductor::manager::{AudioManager, AudioManagerSettings};
 use mlua::prelude::*;
 
-use crate::error::LConductorError;
+use crate::{error::LConductorError, metronome::LMetronomeSettings};
 
 pub struct LAudioManagerSettings(pub AudioManagerSettings);
 
@@ -28,7 +25,10 @@ impl<'lua> FromLua<'lua> for LAudioManagerSettings {
 				num_sequences: table
 					.get::<_, Option<usize>>("numSequences")?
 					.unwrap_or(AudioManagerSettings::default().num_sequences),
-				metronome_settings: MetronomeSettings::default(),
+				metronome_settings: table
+					.get::<_, Option<LMetronomeSettings>>("metronomeSettings")?
+					.map(|settings| settings.0)
+					.unwrap_or_default(),
 			})),
 			_ => Err(LConductorError::wrong_argument_type(
 				"audio manager settings",

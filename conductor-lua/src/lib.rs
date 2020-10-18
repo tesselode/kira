@@ -1,5 +1,7 @@
 mod error;
 mod manager;
+mod metronome;
+mod tempo;
 
 use manager::{LAudioManager, LAudioManagerSettings};
 use mlua::prelude::*;
