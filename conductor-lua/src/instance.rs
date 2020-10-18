@@ -33,6 +33,7 @@ impl<'lua> FromLua<'lua> for LInstanceSettings {
 	}
 }
 
+#[derive(Debug, Clone)]
 pub struct LInstanceId(pub InstanceId);
 
 impl LuaUserData for LInstanceId {}

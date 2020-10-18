@@ -6,6 +6,7 @@ mod manager;
 mod metronome;
 mod sound;
 mod tempo;
+mod tween;
 
 use event::LEvent;
 use manager::{LAudioManager, LAudioManagerSettings};
