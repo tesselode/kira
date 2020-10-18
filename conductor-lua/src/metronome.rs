@@ -18,10 +18,7 @@ impl<'lua> FromLua<'lua> for LMetronomeSettings {
 					.get::<_, Option<Vec<f64>>>("intervalEventsToEmit")?
 					.unwrap_or(vec![]),
 			})),
-			_ => Err(ConductorLuaError::wrong_argument_type(
-				"metronome settings",
-				"table",
-			)),
+			_ => Err(ConductorLuaError::wrong_argument_type("metronome settings", "table").into()),
 		}
 	}
 }

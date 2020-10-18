@@ -30,10 +30,9 @@ impl<'lua> FromLua<'lua> for LAudioManagerSettings {
 					.map(|settings| settings.0)
 					.unwrap_or_default(),
 			})),
-			_ => Err(ConductorLuaError::wrong_argument_type(
-				"audio manager settings",
-				"table",
-			)),
+			_ => Err(
+				ConductorLuaError::wrong_argument_type("audio manager settings", "table").into(),
+			),
 		}
 	}
 }

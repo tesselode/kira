@@ -7,8 +7,8 @@ pub enum ConductorLuaError {
 }
 
 impl ConductorLuaError {
-	pub fn wrong_argument_type(thing: &str, correct_type: &str) -> LuaError {
-		Self::WrongArgumentType(thing.into(), correct_type.into()).into()
+	pub fn wrong_argument_type(thing: &str, correct_type: &str) -> Self {
+		Self::WrongArgumentType(thing.into(), correct_type.into())
 	}
 }
 
