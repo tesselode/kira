@@ -8,7 +8,7 @@ mod sound;
 mod tempo;
 mod tween;
 
-use event::LEvent;
+use event::CustomEvent;
 use manager::{LAudioManager, LAudioManagerSettings};
 use mlua::prelude::*;
 use mlua_derive::lua_module;
@@ -24,7 +24,7 @@ fn conductor(lua: &Lua) -> LuaResult<LuaTable> {
 	)?;
 	table.set(
 		"newCustomEvent",
-		lua.create_function(|_: &Lua, _: ()| Ok(LEvent::new()))?,
+		lua.create_function(|_: &Lua, _: ()| Ok(CustomEvent::new()))?,
 	)?;
 	Ok(table)
 }

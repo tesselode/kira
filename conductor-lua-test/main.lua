@@ -1,12 +1,16 @@
 package.cpath = love.filesystem.getWorkingDirectory() .. '/target/debug/?.dll'
 
 local conductor = require 'conductor'
-local manager = conductor.newManager()
-local soundId = manager:loadSound 'assets/loop.ogg'
-local instanceId = manager:playSound(soundId)
+local inspect = require 'inspect'
 
-function love.keypressed(key)
-	if key == 'space' then
-		manager:pauseInstancesOfSound(soundId, .5)
-	end
+local manager = conductor.newManager {
+	metronomeSettings = {
+		intervalEventsToEmit = {.25, .5, 1},
+	}
+}
+manager:setMetronomeTempo(128)
+manager:startMetronome()
+
+function love.update(dt)
+	print(inspect(manager:getEvents()))
 end

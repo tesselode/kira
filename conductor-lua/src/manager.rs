@@ -2,9 +2,9 @@ use conductor::manager::{AudioManager, AudioManagerSettings};
 use mlua::prelude::*;
 
 use crate::{
-	error::ConductorLuaError, event::LEvent, instance::LInstanceId, instance::LInstanceSettings,
-	metronome::LMetronomeSettings, sound::LSoundId, sound::LSoundSettings, tempo::LTempo,
-	tween::LTween,
+	error::ConductorLuaError, event::CustomEvent, event::LEvent, instance::LInstanceId,
+	instance::LInstanceSettings, metronome::LMetronomeSettings, sound::LSoundId,
+	sound::LSoundSettings, tempo::LTempo, tween::LTween,
 };
 
 pub struct LAudioManagerSettings(pub AudioManagerSettings);
@@ -45,7 +45,7 @@ impl<'lua> FromLua<'lua> for LAudioManagerSettings {
 	}
 }
 
-pub struct LAudioManager(pub AudioManager<LEvent>);
+pub struct LAudioManager(pub AudioManager<CustomEvent>);
 
 impl LAudioManager {
 	pub fn new(settings: LAudioManagerSettings) -> LuaResult<Self> {
@@ -202,5 +202,14 @@ impl LuaUserData for LAudioManager {
 				Err(error) => Err(LuaError::external(error)),
 			},
 		);
+
+		methods.add_method_mut("getEvents", |_: &Lua, this: &mut Self, _: ()| {
+			Ok(this
+				.0
+				.events()
+				.iter()
+				.map(|event| LEvent(*event))
+				.collect::<Vec<LEvent>>())
+		});
 	}
 }
