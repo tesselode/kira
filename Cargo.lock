@@ -313,9 +313,9 @@ checksum = "3728d817d99e5ac407411fa471ff9800a778d88a24685968b36824eaf4bee400"
 
 [[package]]
 name = "mlua"
-version = "0.4.1"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b5e4f6acfacd1b86a4a486c256ccf04058545000e9f429549b9d899a5a4aea58"
+checksum = "f778acf55b288d9e0b81e7189988766499f4ec7f774b0965e30140295221e01d"
 dependencies = [
  "bstr",
  "cc",

@@ -12,5 +12,5 @@ crate-type = ["cdylib"]
 
 [dependencies]
 conductor = { path = "../conductor" }
-mlua = { version = "0.4.1", features = ["luajit", "module", "send"] }
+mlua = { version = "0.4.2", features = ["luajit", "module"] }
 mlua_derive = "0.4"
