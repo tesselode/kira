@@ -79,7 +79,7 @@ impl<CustomEvent: Copy + Send + 'static> Backend<CustomEvent> {
 					self.instances.run_command(command, &mut self.sounds);
 				}
 				Command::Sequence(command) => {
-					self.sequences.run_command(command);
+					self.sequences.run_command(command, &self.metronome);
 				}
 				Command::EmitCustomEvent(event) => {
 					match self.event_producer.push(Event::Custom(event)) {

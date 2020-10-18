@@ -85,12 +85,6 @@ enum SequenceState {
 	Finished,
 }
 
-#[derive(Debug, Default)]
-pub struct SoundLoopSettings {
-	pub start_point: Option<f64>,
-	pub end_point: Option<f64>,
-}
-
 #[derive(Debug, Clone)]
 pub struct Sequence<CustomEvent> {
 	tasks: Vec<SequenceTask<CustomEvent>>,
@@ -109,33 +103,6 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 			instances: HashMap::new(),
 			muted: false,
 		}
-	}
-
-	pub fn new_sound_loop(
-		sound_id: SoundId,
-		loop_settings: SoundLoopSettings,
-		instance_settings: InstanceSettings,
-	) -> Self {
-		let start = loop_settings.start_point.unwrap_or(0.0);
-		let end = loop_settings.end_point.unwrap_or(
-			sound_id
-				.metadata()
-				.semantic_duration
-				.unwrap_or(sound_id.duration()),
-		);
-		let mut sequence = Self::new();
-		sequence.play_sound(sound_id, instance_settings);
-		sequence.wait(Duration::Seconds(end - instance_settings.position));
-		sequence.play_sound(
-			sound_id,
-			InstanceSettings {
-				position: start,
-				..instance_settings
-			},
-		);
-		sequence.wait(Duration::Seconds(end - start));
-		sequence.go_to(2);
-		sequence
 	}
 
 	pub fn wait(&mut self, duration: Duration) {

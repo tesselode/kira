@@ -1,5 +1,6 @@
 use crate::{
 	instance::{InstanceId, InstanceSettings},
+	manager::LoopSettings,
 	sequence::{Sequence, SequenceId},
 	sound::{Sound, SoundId},
 	tempo::Tempo,
@@ -34,6 +35,7 @@ pub(crate) enum MetronomeCommand {
 
 pub(crate) enum SequenceCommand<CustomEvent> {
 	StartSequence(SequenceId, Sequence<CustomEvent>),
+	LoopSound(SequenceId, SoundId, LoopSettings, InstanceSettings),
 	MuteSequence(SequenceId),
 	UnmuteSequence(SequenceId),
 }

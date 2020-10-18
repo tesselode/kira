@@ -1,4 +1,4 @@
-use crate::tempo::Tempo;
+use crate::{duration::Duration, tempo::Tempo};
 
 /// Useful info about a `Sound`.
 ///
@@ -7,5 +7,5 @@ use crate::tempo::Tempo;
 #[derive(Debug, Default, Copy, Clone)]
 pub struct SoundMetadata {
 	pub tempo: Option<Tempo>,
-	pub semantic_duration: Option<f64>,
+	pub semantic_duration: Option<Duration>,
 }
