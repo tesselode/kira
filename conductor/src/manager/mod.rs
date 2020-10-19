@@ -13,7 +13,7 @@ use crate::{
 use backend::Backend;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use ringbuf::{Consumer, Producer, RingBuffer};
-use std::{error::Error, path::Path};
+use std::path::Path;
 
 mod backend;
 
@@ -213,13 +213,13 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 	}
 
 	/// Unloads a sound, deallocating its memory.
-	pub fn unload_sound(&mut self, id: SoundId) -> Result<(), Box<dyn Error>> {
+	pub fn unload_sound(&mut self, id: SoundId) -> ConductorResult<()> {
 		match self
 			.command_producer
 			.push(Command::Sound(SoundCommand::UnloadSound(id)))
 		{
 			Ok(_) => Ok(()),
-			Err(_) => Err(Box::new(ConductorError::CommandQueueFull)),
+			Err(_) => Err(ConductorError::CommandQueueFull),
 		}
 	}
 

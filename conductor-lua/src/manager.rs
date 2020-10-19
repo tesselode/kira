@@ -1,11 +1,35 @@
-use conductor::manager::{AudioManager, AudioManagerSettings, Event};
+use conductor::manager::{AudioManager, AudioManagerSettings, Event, LoopSettings};
 use mlua::prelude::*;
 
 use crate::{
-	error::ConductorLuaError, event::CustomEvent, event::LEvent, instance::LInstanceId,
-	instance::LInstanceSettings, metronome::LMetronomeSettings, sound::LSoundId,
-	sound::LSoundSettings, tempo::LTempo, tween::LTween,
+	duration::LDuration, error::ConductorLuaError, event::CustomEvent, event::LEvent,
+	instance::LInstanceId, instance::LInstanceSettings, metronome::LMetronomeSettings,
+	sequence::LSequence, sequence::LSequenceId, sound::LSoundId, sound::LSoundSettings,
+	tempo::LTempo, tween::LTween,
 };
+
+pub struct LLoopSettings(pub LoopSettings);
+
+impl<'lua> FromLua<'lua> for LLoopSettings {
+	fn from_lua(lua_value: LuaValue<'lua>, _: &'lua Lua) -> LuaResult<Self> {
+		match lua_value {
+			LuaNil => Ok(LLoopSettings(LoopSettings::default())),
+			LuaValue::Table(table) => {
+				let mut settings = LoopSettings::default();
+				if table.contains_key("startPoint")? {
+					settings.start = Some(table.get::<_, LDuration>("startPoint")?.0);
+				}
+				if table.contains_key("endPoint")? {
+					settings.end = Some(table.get::<_, LDuration>("endPoint")?.0);
+				}
+				Ok(LLoopSettings(settings))
+			}
+			value => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
+				"sequence", "table", value,
+			))),
+		}
+	}
+}
 
 pub struct LAudioManagerSettings(pub AudioManagerSettings);
 
@@ -65,6 +89,14 @@ impl LuaUserData for LAudioManager {
 				.load_sound(path.to_str()?, settings.0)
 			{
 				Ok(id) => Ok(LSoundId(id)),
+				Err(error) => Err(LuaError::external(error)),
+			},
+		);
+
+		methods.add_method_mut(
+			"unloadSound",
+			|_: &Lua, this: &mut Self, id: LSoundId| match this.0.unload_sound(id.0) {
+				Ok(_) => Ok(()),
 				Err(error) => Err(LuaError::external(error)),
 			},
 		);
@@ -204,6 +236,50 @@ impl LuaUserData for LAudioManager {
 		);
 
 		methods.add_method_mut(
+			"startSequence",
+			|_: &Lua, this: &mut Self, sequence: LSequence| match this.0.start_sequence(sequence.0)
+			{
+				Ok(id) => Ok(LSequenceId(id)),
+				Err(error) => Err(LuaError::external(error)),
+			},
+		);
+
+		methods.add_method_mut(
+			"loopSound",
+			|_: &Lua,
+			 this: &mut Self,
+			 (sound_id, loop_settings, instance_settings): (
+				LSoundId,
+				LLoopSettings,
+				LInstanceSettings,
+			)| {
+				match this
+					.0
+					.loop_sound(sound_id.0, loop_settings.0, instance_settings.0)
+				{
+					Ok(id) => Ok(LSequenceId(id)),
+					Err(error) => Err(LuaError::external(error)),
+				}
+			},
+		);
+
+		methods.add_method_mut(
+			"muteSequence",
+			|_: &Lua, this: &mut Self, id: LSequenceId| match this.0.mute_sequence(id.0) {
+				Ok(_) => Ok(()),
+				Err(error) => Err(LuaError::external(error)),
+			},
+		);
+
+		methods.add_method_mut(
+			"unmuteSequence",
+			|_: &Lua, this: &mut Self, id: LSequenceId| match this.0.unmute_sequence(id.0) {
+				Ok(_) => Ok(()),
+				Err(error) => Err(LuaError::external(error)),
+			},
+		);
+
+		methods.add_method_mut(
 			"getEvents",
 			|lua: &Lua, this: &mut Self, callbacks: Option<LuaTable>| {
 				if let Some(callbacks) = callbacks {
@@ -229,5 +305,9 @@ impl LuaUserData for LAudioManager {
 				}
 			},
 		);
+
+		methods.add_method_mut("freeUnusedResources", |_: &Lua, this: &mut Self, _: ()| {
+			Ok(this.0.free_unused_resources())
+		})
 	}
 }

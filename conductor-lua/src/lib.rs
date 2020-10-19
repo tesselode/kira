@@ -4,14 +4,17 @@ mod event;
 mod instance;
 mod manager;
 mod metronome;
+mod sequence;
 mod sound;
 mod tempo;
 mod tween;
 
+use conductor::sequence::Sequence;
 use event::CustomEvent;
 use manager::{LAudioManager, LAudioManagerSettings};
 use mlua::prelude::*;
 use mlua_derive::lua_module;
+use sequence::LSequence;
 
 #[lua_module]
 fn conductor(lua: &Lua) -> LuaResult<LuaTable> {
@@ -21,6 +24,10 @@ fn conductor(lua: &Lua) -> LuaResult<LuaTable> {
 		lua.create_function(|_: &Lua, settings: LAudioManagerSettings| {
 			LAudioManager::new(settings)
 		})?,
+	)?;
+	table.set(
+		"newSequence",
+		lua.create_function(|_: &Lua, _: ()| Ok(LSequence(Sequence::new())))?,
 	)?;
 	table.set(
 		"newCustomEvent",
