@@ -19,8 +19,12 @@ manager:setMetronomeTempo(128)
 manager:startMetronome()
 
 function love.update(dt)
-	manager:getEvents {
-		metronomeIntervalPassed = function(...) print('metronomeIntervalPassed', ...) end,
-		custom = function(event) print('custom', event == customEvent) end,
-	}
+	local events = manager:getEvents()
+	for _, event in ipairs(events) do
+		if event.kind == 'metronomeIntervalPassed' then
+			print('metronomeIntervalPassed', event.interval)
+		elseif event.kind == 'custom' then
+			print('custom', event.event == customEvent)
+		end
+	end
 end

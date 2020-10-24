@@ -279,32 +279,11 @@ impl LuaUserData for LAudioManager {
 			},
 		);
 
-		methods.add_method_mut(
-			"getEvents",
-			|lua: &Lua, this: &mut Self, callbacks: Option<LuaTable>| {
-				if let Some(callbacks) = callbacks {
-					for event in this.0.events() {
-						match event {
-							Event::MetronomeIntervalPassed(interval) => {
-								if callbacks.contains_key("metronomeIntervalPassed")? {
-									callbacks.call_function("metronomeIntervalPassed", interval)?;
-								}
-							}
-							Event::Custom(event) => {
-								if callbacks.contains_key("custom")? {
-									callbacks.call_function("custom", event)?;
-								}
-							}
-						}
-					}
-					Ok(LuaValue::Nil)
-				} else {
-					Ok(LuaValue::Table(lua.create_sequence_from(
-						this.0.events().iter().map(|event| LEvent(*event)),
-					)?))
-				}
-			},
-		);
+		methods.add_method_mut("getEvents", |lua: &Lua, this: &mut Self, _: ()| {
+			Ok(LuaValue::Table(lua.create_sequence_from(
+				this.0.events().iter().map(|event| LEvent(*event)),
+			)?))
+		});
 
 		methods.add_method_mut("freeUnusedResources", |_: &Lua, this: &mut Self, _: ()| {
 			Ok(this.0.free_unused_resources())
