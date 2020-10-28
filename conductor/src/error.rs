@@ -55,7 +55,7 @@ impl Display for ConductorError {
 				f.write_str("mp3s with variable sample rates are not supported")
 			}
 			ConductorError::UnknownMp3SampleRate => {
-				f.write_str("could not get the sample rate of the mp3")
+				f.write_str("Could not get the sample rate of the mp3")
 			}
 			ConductorError::OggError(error) => f.write_str(&format!("{}", error)),
 			ConductorError::FlacError(error) => f.write_str(&format!("{}", error)),
