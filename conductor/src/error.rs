@@ -80,4 +80,22 @@ impl From<hound::Error> for ConductorError {
 	}
 }
 
+impl From<SupportedStreamConfigsError> for ConductorError {
+	fn from(error: SupportedStreamConfigsError) -> Self {
+		Self::SupportedStreamConfigsError(error)
+	}
+}
+
+impl From<BuildStreamError> for ConductorError {
+	fn from(error: BuildStreamError) -> Self {
+		Self::BuildStreamError(error)
+	}
+}
+
+impl From<PlayStreamError> for ConductorError {
+	fn from(error: PlayStreamError) -> Self {
+		Self::PlayStreamError(error)
+	}
+}
+
 pub type ConductorResult<T> = Result<T, ConductorError>;
