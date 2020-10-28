@@ -15,6 +15,9 @@ pub enum ConductorError {
 	UnsupportedAudioFileFormat,
 	InvalidSequenceLoopPoint,
 	IoError(std::io::Error),
+	Mp3Error(minimp3::Error),
+	VariableMp3SampleRate,
+	UnknownMp3SampleRate,
 	OggError(VorbisError),
 	FlacError(claxon::Error),
 	WavError(hound::Error),
@@ -41,12 +44,19 @@ impl Display for ConductorError {
 				f.write_str("Only mono and stereo audio is supported")
 			}
 			ConductorError::UnsupportedAudioFileFormat => {
-				f.write_str("Only .ogg .flac, and .wav files are supported")
+				f.write_str("Only .mp3, .ogg, .flac, and .wav files are supported")
 			}
 			ConductorError::InvalidSequenceLoopPoint => {
 				f.write_str("The loop point of a sequence cannot be at the very end")
 			}
 			ConductorError::IoError(error) => f.write_str(&format!("{}", error)),
+			ConductorError::Mp3Error(error) => f.write_str(&format!("{}", error)),
+			ConductorError::VariableMp3SampleRate => {
+				f.write_str("mp3s with variable sample rates are not supported")
+			}
+			ConductorError::UnknownMp3SampleRate => {
+				f.write_str("could not get the sample rate of the mp3")
+			}
 			ConductorError::OggError(error) => f.write_str(&format!("{}", error)),
 			ConductorError::FlacError(error) => f.write_str(&format!("{}", error)),
 			ConductorError::WavError(error) => f.write_str(&format!("{}", error)),
@@ -59,6 +69,12 @@ impl Error for ConductorError {}
 impl From<std::io::Error> for ConductorError {
 	fn from(error: std::io::Error) -> Self {
 		Self::IoError(error)
+	}
+}
+
+impl From<minimp3::Error> for ConductorError {
+	fn from(error: minimp3::Error) -> Self {
+		Self::Mp3Error(error)
 	}
 }
 

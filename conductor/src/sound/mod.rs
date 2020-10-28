@@ -46,6 +46,59 @@ impl Sound {
 		}
 	}
 
+	pub fn from_mp3_file<P>(path: P, settings: &SoundSettings) -> ConductorResult<Self>
+	where
+		P: AsRef<Path>,
+	{
+		let mut decoder = minimp3::Decoder::new(File::open(path)?);
+		let mut sample_rate = None;
+		let mut stereo_samples = vec![];
+		loop {
+			match decoder.next_frame() {
+				Ok(frame) => {
+					if let Some(sample_rate) = sample_rate {
+						if sample_rate != frame.sample_rate {
+							return Err(ConductorError::VariableMp3SampleRate);
+						}
+					} else {
+						sample_rate = Some(frame.sample_rate);
+					}
+					match frame.channels {
+						1 => {
+							for sample in frame.data {
+								stereo_samples.push(StereoSample::from_i32(
+									sample.into(),
+									sample.into(),
+									16,
+								))
+							}
+						}
+						2 => {
+							let mut iter = frame.data.iter();
+							while let (Some(left), Some(right)) = (iter.next(), iter.next()) {
+								stereo_samples.push(StereoSample::from_i32(
+									(*left).into(),
+									(*right).into(),
+									16,
+								))
+							}
+						}
+						_ => return Err(ConductorError::UnsupportedChannelConfiguration),
+					}
+				}
+				Err(error) => match error {
+					minimp3::Error::Eof => break,
+					error => return Err(error.into()),
+				},
+			}
+		}
+		let sample_rate = match sample_rate {
+			Some(sample_rate) => sample_rate,
+			None => return Err(ConductorError::UnknownMp3SampleRate),
+		};
+		Ok(Self::new(sample_rate as u32, stereo_samples, settings))
+	}
+
 	pub fn from_ogg_file<P>(path: P, settings: &SoundSettings) -> ConductorResult<Self>
 	where
 		P: AsRef<Path>,
@@ -168,6 +221,7 @@ impl Sound {
 		if let Some(extension) = path.as_ref().extension() {
 			if let Some(extension_str) = extension.to_str() {
 				match extension_str {
+					"mp3" => return Self::from_mp3_file(path, settings),
 					"ogg" => return Self::from_ogg_file(path, settings),
 					"flac" => return Self::from_flac_file(path, settings),
 					"wav" => return Self::from_wav_file(path, settings),
