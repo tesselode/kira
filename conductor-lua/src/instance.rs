@@ -17,6 +17,9 @@ impl<'lua> FromLua<'lua> for LInstanceSettings {
 				if table.contains_key("pitch")? {
 					settings.pitch = table.get("pitch")?;
 				}
+				if table.contains_key("reverse")? {
+					settings.reverse = table.get("reverse")?;
+				}
 				if table.contains_key("position")? {
 					settings.position = table.get("position")?;
 				}

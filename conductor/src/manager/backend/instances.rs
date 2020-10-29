@@ -22,7 +22,7 @@ impl Instances {
 
 	pub fn stop_instances_of_sound(&mut self, id: SoundId, fade_tween: Option<Tween>) {
 		for (_, instance) in &mut self.instances {
-			if instance.sound_id == id {
+			if instance.sound_id() == id {
 				instance.stop(fade_tween);
 			}
 		}
@@ -70,14 +70,14 @@ impl Instances {
 			}
 			InstanceCommand::PauseInstancesOfSound(id, fade_tween) => {
 				for (_, instance) in &mut self.instances {
-					if instance.sound_id == id {
+					if instance.sound_id() == id {
 						instance.pause(fade_tween);
 					}
 				}
 			}
 			InstanceCommand::ResumeInstancesOfSound(id, fade_tween) => {
 				for (_, instance) in &mut self.instances {
-					if instance.sound_id == id {
+					if instance.sound_id() == id {
 						instance.resume(fade_tween);
 					}
 				}
@@ -92,7 +92,7 @@ impl Instances {
 		let mut out = StereoSample::from_mono(0.0);
 		for (instance_id, instance) in &mut self.instances {
 			if instance.playing() {
-				if let Some(sound) = sounds.get(&instance.sound_id) {
+				if let Some(sound) = sounds.get(&instance.sound_id()) {
 					out += sound.get_sample_at_position(instance.position())
 						* (instance.effective_volume() as f32);
 				}

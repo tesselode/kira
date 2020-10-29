@@ -36,6 +36,8 @@ pub struct InstanceSettings {
 	pub volume: f64,
 	/// The pitch of the instance, as a factor of the original pitch.
 	pub pitch: f64,
+	/// Whether the instance should be played in reverse.
+	pub reverse: bool,
 	/// The position to start playing the instance at (in seconds).
 	pub position: f64,
 	/// Whether to fade in the instance from silence, and if so,
@@ -48,6 +50,7 @@ impl Default for InstanceSettings {
 		Self {
 			volume: 1.0,
 			pitch: 1.0,
+			reverse: false,
 			position: 0.0,
 			fade_in_duration: None,
 		}
@@ -65,9 +68,10 @@ pub(crate) enum InstanceState {
 }
 
 pub(crate) struct Instance {
-	pub sound_id: SoundId,
-	pub volume: Parameter,
-	pub pitch: Parameter,
+	sound_id: SoundId,
+	volume: Parameter,
+	pitch: Parameter,
+	reverse: bool,
 	state: InstanceState,
 	position: f64,
 	fade_volume: Parameter,
@@ -89,10 +93,15 @@ impl Instance {
 			sound_id,
 			volume: Parameter::new(settings.volume),
 			pitch: Parameter::new(settings.pitch),
+			reverse: settings.reverse,
 			state,
 			position: settings.position,
 			fade_volume,
 		}
+	}
+
+	pub fn sound_id(&self) -> SoundId {
+		self.sound_id
 	}
 
 	pub fn effective_volume(&self) -> f64 {
@@ -100,7 +109,11 @@ impl Instance {
 	}
 
 	pub fn position(&self) -> f64 {
-		self.position
+		if self.reverse {
+			self.sound_id.duration() - self.position
+		} else {
+			self.position
+		}
 	}
 
 	pub fn playing(&self) -> bool {
@@ -158,7 +171,7 @@ impl Instance {
 			self.volume.update(dt);
 			self.pitch.update(dt);
 			self.position += self.pitch.value() * dt;
-			if self.position >= self.sound_id.duration() {
+			if self.position >= self.sound_id.duration() || self.position < 0.0 {
 				self.state = InstanceState::Stopped;
 			}
 		}
