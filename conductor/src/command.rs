@@ -38,6 +38,9 @@ pub(crate) enum SequenceCommand<CustomEvent> {
 	LoopSound(SequenceId, SoundId, LoopSettings, InstanceSettings),
 	MuteSequence(SequenceId),
 	UnmuteSequence(SequenceId),
+	PauseSequence(SequenceId),
+	ResumeSequence(SequenceId),
+	StopSequence(SequenceId),
 }
 
 pub(crate) enum Command<CustomEvent> {

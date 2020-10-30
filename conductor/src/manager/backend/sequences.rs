@@ -72,6 +72,21 @@ impl<CustomEvent: Copy> Sequences<CustomEvent> {
 					sequence.unmute();
 				}
 			}
+			SequenceCommand::PauseSequence(id) => {
+				if let Some(sequence) = self.sequences.get_mut(&id) {
+					sequence.pause();
+				}
+			}
+			SequenceCommand::ResumeSequence(id) => {
+				if let Some(sequence) = self.sequences.get_mut(&id) {
+					sequence.resume();
+				}
+			}
+			SequenceCommand::StopSequence(id) => {
+				if let Some(sequence) = self.sequences.get_mut(&id) {
+					sequence.stop();
+				}
+			}
 		}
 	}
 

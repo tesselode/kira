@@ -342,6 +342,18 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 		}
 	}
 
+	pub(crate) fn pause(&mut self) {
+		self.state = SequenceState::Paused;
+	}
+
+	pub(crate) fn resume(&mut self) {
+		self.state = SequenceState::Playing;
+	}
+
+	pub(crate) fn stop(&mut self) {
+		self.state = SequenceState::Finished;
+	}
+
 	pub(crate) fn update(
 		&mut self,
 		dt: f64,

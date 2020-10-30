@@ -24,15 +24,24 @@ fn main() -> Result<(), Box<dyn Error>> {
 	)?;
 	let mut sequence = Sequence::new();
 	sequence.wait_for_interval(1.0);
-	sequence.play_sound(sound_id, InstanceSettings::default());
-	sequence.wait_for_interval(1.0);
-	sequence.wait(Duration::Beats(1.0));
 	sequence.start_loop();
-	sequence.play_sound(sound_id, InstanceSettings::default());
-	sequence.wait(sound_id.metadata().semantic_duration.unwrap());
-	manager.start_sequence(sequence)?;
+	sequence.play_sound(
+		sound_id,
+		InstanceSettings {
+			pitch: 4.0,
+			..Default::default()
+		},
+	);
+	sequence.wait(sound_id.metadata().semantic_duration.unwrap() / 4.0);
+	let sequence_id = manager.start_sequence(sequence)?;
 	manager.set_metronome_tempo(sound_id.metadata().tempo.unwrap())?;
 	manager.start_metronome()?;
+	let mut input = String::new();
+	stdin().read_line(&mut input)?;
+	manager.stop_sequence(sequence_id)?;
+	let mut input = String::new();
+	stdin().read_line(&mut input)?;
+	manager.resume_sequence(sequence_id)?;
 	let mut input = String::new();
 	stdin().read_line(&mut input)?;
 	Ok(())

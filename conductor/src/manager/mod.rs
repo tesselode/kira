@@ -476,6 +476,39 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 		}
 	}
 
+	/// Pauses a sequence.
+	pub fn pause_sequence(&mut self, id: SequenceId) -> Result<(), ConductorError> {
+		match self
+			.command_producer
+			.push(Command::Sequence(SequenceCommand::PauseSequence(id)))
+		{
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::CommandQueueFull),
+		}
+	}
+
+	/// Resumes a sequence.
+	pub fn resume_sequence(&mut self, id: SequenceId) -> Result<(), ConductorError> {
+		match self
+			.command_producer
+			.push(Command::Sequence(SequenceCommand::ResumeSequence(id)))
+		{
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::CommandQueueFull),
+		}
+	}
+
+	/// Stops a sequence.
+	pub fn stop_sequence(&mut self, id: SequenceId) -> Result<(), ConductorError> {
+		match self
+			.command_producer
+			.push(Command::Sequence(SequenceCommand::StopSequence(id)))
+		{
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::CommandQueueFull),
+		}
+	}
+
 	/// Returns a list of all of the new events created by the audio thread
 	/// (since the last time `events` was called).
 	pub fn events(&mut self) -> Vec<Event<CustomEvent>> {
