@@ -28,11 +28,7 @@ impl Instances {
 		}
 	}
 
-	pub fn run_command(
-		&mut self,
-		command: InstanceCommand<InstanceId>,
-		sounds: &mut IndexMap<SoundId, Sound>,
-	) {
+	pub fn run_command(&mut self, command: InstanceCommand, sounds: &mut IndexMap<SoundId, Sound>) {
 		match command {
 			InstanceCommand::PlaySound(sound_id, instance_id, settings) => {
 				if let Some(sound) = sounds.get_mut(&sound_id) {

@@ -6,6 +6,7 @@ use crate::{
 	instance::{InstanceId, InstanceSettings},
 	metronome::Metronome,
 	sound::SoundId,
+	tempo::Tempo,
 	tween::Tween,
 };
 use std::{
@@ -50,33 +51,28 @@ impl SequenceId {
 }
 
 #[derive(Debug, Copy, Clone)]
-enum SequenceCommand<CustomEvent> {
-	Instance(InstanceCommand<SequenceInstanceHandle>),
-	Metronome(MetronomeCommand),
+pub(crate) enum SequenceOutputCommand<InstanceIdKind, CustomEvent> {
+	PlaySound(SoundId, InstanceIdKind, InstanceSettings),
+	SetInstanceVolume(InstanceIdKind, f64, Option<Tween>),
+	SetInstancePitch(InstanceIdKind, f64, Option<Tween>),
+	PauseInstance(InstanceIdKind, Option<Tween>),
+	ResumeInstance(InstanceIdKind, Option<Tween>),
+	StopInstance(InstanceIdKind, Option<Tween>),
+	PauseInstancesOfSound(SoundId, Option<Tween>),
+	ResumeInstancesOfSound(SoundId, Option<Tween>),
+	StopInstancesOfSound(SoundId, Option<Tween>),
+	SetMetronomeTempo(Tempo),
+	StartMetronome,
+	PauseMetronome,
+	StopMetronome,
 	EmitCustomEvent(CustomEvent),
-}
-
-pub(crate) enum SequenceOutputCommand<CustomEvent> {
-	Instance(InstanceCommand<InstanceId>),
-	Metronome(MetronomeCommand),
-	EmitCustomEvent(CustomEvent),
-}
-
-impl<CustomEvent> Into<Command<CustomEvent>> for SequenceOutputCommand<CustomEvent> {
-	fn into(self) -> Command<CustomEvent> {
-		match self {
-			SequenceOutputCommand::Instance(command) => Command::Instance(command),
-			SequenceOutputCommand::Metronome(command) => Command::Metronome(command),
-			SequenceOutputCommand::EmitCustomEvent(event) => Command::EmitCustomEvent(event),
-		}
-	}
 }
 
 #[derive(Debug, Copy, Clone)]
-enum SequenceTask<CustomEvent> {
+pub(crate) enum SequenceTask<InstanceIdKind, CustomEvent> {
 	Wait(Duration),
 	WaitForInterval(f64),
-	RunCommand(SequenceCommand<CustomEvent>),
+	RunCommand(SequenceOutputCommand<InstanceIdKind, CustomEvent>),
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -90,7 +86,7 @@ enum SequenceState {
 
 #[derive(Debug, Clone)]
 pub struct Sequence<CustomEvent> {
-	tasks: Vec<SequenceTask<CustomEvent>>,
+	tasks: Vec<SequenceTask<SequenceInstanceHandle, CustomEvent>>,
 	loop_point: Option<usize>,
 	state: SequenceState,
 	position: usize,
@@ -131,8 +127,8 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 	) -> SequenceInstanceHandle {
 		let handle = SequenceInstanceHandle::new();
 		self.tasks
-			.push(SequenceTask::RunCommand(SequenceCommand::Instance(
-				InstanceCommand::PlaySound(sound_id, handle, settings),
+			.push(SequenceTask::RunCommand(SequenceOutputCommand::PlaySound(
+				sound_id, handle, settings,
 			)));
 		handle
 	}
@@ -143,10 +139,9 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 		volume: f64,
 		tween: Option<Tween>,
 	) {
-		self.tasks
-			.push(SequenceTask::RunCommand(SequenceCommand::Instance(
-				InstanceCommand::SetInstanceVolume(handle, volume, tween),
-			)));
+		self.tasks.push(SequenceTask::RunCommand(
+			SequenceOutputCommand::SetInstanceVolume(handle, volume, tween),
+		));
 	}
 
 	pub fn set_instance_pitch(
@@ -155,80 +150,69 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 		pitch: f64,
 		tween: Option<Tween>,
 	) {
-		self.tasks
-			.push(SequenceTask::RunCommand(SequenceCommand::Instance(
-				InstanceCommand::SetInstancePitch(handle, pitch, tween),
-			)));
+		self.tasks.push(SequenceTask::RunCommand(
+			SequenceOutputCommand::SetInstancePitch(handle, pitch, tween),
+		));
 	}
 
 	pub fn pause_instance(&mut self, handle: SequenceInstanceHandle, fade_tween: Option<Tween>) {
-		self.tasks
-			.push(SequenceTask::RunCommand(SequenceCommand::Instance(
-				InstanceCommand::PauseInstance(handle, fade_tween),
-			)));
+		self.tasks.push(SequenceTask::RunCommand(
+			SequenceOutputCommand::PauseInstance(handle, fade_tween),
+		));
 	}
 
 	pub fn resume_instance(&mut self, handle: SequenceInstanceHandle, fade_tween: Option<Tween>) {
-		self.tasks
-			.push(SequenceTask::RunCommand(SequenceCommand::Instance(
-				InstanceCommand::ResumeInstance(handle, fade_tween),
-			)));
+		self.tasks.push(SequenceTask::RunCommand(
+			SequenceOutputCommand::ResumeInstance(handle, fade_tween),
+		));
 	}
 
 	pub fn stop_instance(&mut self, handle: SequenceInstanceHandle, fade_tween: Option<Tween>) {
-		self.tasks
-			.push(SequenceTask::RunCommand(SequenceCommand::Instance(
-				InstanceCommand::StopInstance(handle, fade_tween),
-			)));
+		self.tasks.push(SequenceTask::RunCommand(
+			SequenceOutputCommand::StopInstance(handle, fade_tween),
+		));
 	}
 
 	pub fn pause_instances_of_sound(&mut self, id: SoundId, fade_tween: Option<Tween>) {
-		self.tasks
-			.push(SequenceTask::RunCommand(SequenceCommand::Instance(
-				InstanceCommand::PauseInstancesOfSound(id, fade_tween),
-			)));
+		self.tasks.push(SequenceTask::RunCommand(
+			SequenceOutputCommand::PauseInstancesOfSound(id, fade_tween),
+		));
 	}
 
 	pub fn resume_instances_of_sound(&mut self, id: SoundId, fade_tween: Option<Tween>) {
-		self.tasks
-			.push(SequenceTask::RunCommand(SequenceCommand::Instance(
-				InstanceCommand::ResumeInstancesOfSound(id, fade_tween),
-			)));
+		self.tasks.push(SequenceTask::RunCommand(
+			SequenceOutputCommand::ResumeInstancesOfSound(id, fade_tween),
+		));
 	}
 
 	pub fn stop_instances_of_sound(&mut self, id: SoundId, fade_tween: Option<Tween>) {
-		self.tasks
-			.push(SequenceTask::RunCommand(SequenceCommand::Instance(
-				InstanceCommand::StopInstancesOfSound(id, fade_tween),
-			)));
+		self.tasks.push(SequenceTask::RunCommand(
+			SequenceOutputCommand::StopInstancesOfSound(id, fade_tween),
+		));
 	}
 
 	pub fn start_metronome(&mut self) {
-		self.tasks
-			.push(SequenceTask::RunCommand(SequenceCommand::Metronome(
-				MetronomeCommand::StartMetronome,
-			)));
+		self.tasks.push(SequenceTask::RunCommand(
+			SequenceOutputCommand::StartMetronome,
+		));
 	}
 
 	pub fn pause_metronome(&mut self) {
-		self.tasks
-			.push(SequenceTask::RunCommand(SequenceCommand::Metronome(
-				MetronomeCommand::PauseMetronome,
-			)));
+		self.tasks.push(SequenceTask::RunCommand(
+			SequenceOutputCommand::PauseMetronome,
+		));
 	}
 
 	pub fn stop_metronome(&mut self) {
-		self.tasks
-			.push(SequenceTask::RunCommand(SequenceCommand::Metronome(
-				MetronomeCommand::StopMetronome,
-			)));
+		self.tasks.push(SequenceTask::RunCommand(
+			SequenceOutputCommand::StopMetronome,
+		));
 	}
 
 	pub fn emit_custom_event(&mut self, event: CustomEvent) {
-		self.tasks
-			.push(SequenceTask::RunCommand(SequenceCommand::EmitCustomEvent(
-				event,
-			)));
+		self.tasks.push(SequenceTask::RunCommand(
+			SequenceOutputCommand::EmitCustomEvent(event),
+		));
 	}
 
 	pub(crate) fn validate(&self) -> ConductorResult<()> {
@@ -267,81 +251,6 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 		self.muted = false;
 	}
 
-	fn transform_command(
-		&mut self,
-		command: SequenceCommand<CustomEvent>,
-	) -> SequenceOutputCommand<CustomEvent> {
-		match command {
-			SequenceCommand::Instance(command) => match command {
-				InstanceCommand::PlaySound(sound_id, handle, settings) => {
-					let instance_id = InstanceId::new();
-					self.instances.insert(handle, instance_id);
-					SequenceOutputCommand::Instance(InstanceCommand::PlaySound(
-						sound_id,
-						instance_id,
-						settings,
-					))
-				}
-				InstanceCommand::SetInstanceVolume(handle, volume, tween) => {
-					let instance_id = self.instances.get(&handle).unwrap();
-					SequenceOutputCommand::Instance(InstanceCommand::SetInstanceVolume(
-						*instance_id,
-						volume,
-						tween,
-					))
-				}
-				InstanceCommand::SetInstancePitch(handle, pitch, tween) => {
-					let instance_id = self.instances.get(&handle).unwrap();
-					SequenceOutputCommand::Instance(InstanceCommand::SetInstancePitch(
-						*instance_id,
-						pitch,
-						tween,
-					))
-				}
-				InstanceCommand::PauseInstance(handle, fade_tween) => {
-					let instance_id = self.instances.get(&handle).unwrap();
-					SequenceOutputCommand::Instance(InstanceCommand::PauseInstance(
-						*instance_id,
-						fade_tween,
-					))
-				}
-				InstanceCommand::ResumeInstance(handle, fade_tween) => {
-					let instance_id = self.instances.get(&handle).unwrap();
-					SequenceOutputCommand::Instance(InstanceCommand::ResumeInstance(
-						*instance_id,
-						fade_tween,
-					))
-				}
-				InstanceCommand::StopInstance(handle, fade_tween) => {
-					let instance_id = self.instances.get(&handle).unwrap();
-					SequenceOutputCommand::Instance(InstanceCommand::StopInstance(
-						*instance_id,
-						fade_tween,
-					))
-				}
-				InstanceCommand::PauseInstancesOfSound(id, fade_tween) => {
-					SequenceOutputCommand::Instance(InstanceCommand::PauseInstancesOfSound(
-						id, fade_tween,
-					))
-				}
-				InstanceCommand::ResumeInstancesOfSound(id, fade_tween) => {
-					SequenceOutputCommand::Instance(InstanceCommand::ResumeInstancesOfSound(
-						id, fade_tween,
-					))
-				}
-				InstanceCommand::StopInstancesOfSound(id, fade_tween) => {
-					SequenceOutputCommand::Instance(InstanceCommand::StopInstancesOfSound(
-						id, fade_tween,
-					))
-				}
-			},
-			SequenceCommand::Metronome(command) => SequenceOutputCommand::Metronome(command),
-			SequenceCommand::EmitCustomEvent(event) => {
-				SequenceOutputCommand::EmitCustomEvent(event)
-			}
-		}
-	}
-
 	pub(crate) fn pause(&mut self) {
 		self.state = SequenceState::Paused;
 	}
@@ -354,11 +263,62 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 		self.state = SequenceState::Finished;
 	}
 
+	fn transform_output_command(
+		&mut self,
+		task: SequenceOutputCommand<SequenceInstanceHandle, CustomEvent>,
+	) -> SequenceOutputCommand<InstanceId, CustomEvent> {
+		match task {
+			SequenceOutputCommand::PlaySound(sound_id, handle, settings) => {
+				let instance_id = InstanceId::new();
+				self.instances.insert(handle, instance_id);
+				SequenceOutputCommand::PlaySound(sound_id, instance_id, settings)
+			}
+			SequenceOutputCommand::SetInstanceVolume(handle, volume, tween) => {
+				let instance_id = self.instances.get(&handle).unwrap();
+				SequenceOutputCommand::SetInstanceVolume(*instance_id, volume, tween)
+			}
+			SequenceOutputCommand::SetInstancePitch(handle, pitch, tween) => {
+				let instance_id = self.instances.get(&handle).unwrap();
+				SequenceOutputCommand::SetInstancePitch(*instance_id, pitch, tween)
+			}
+			SequenceOutputCommand::PauseInstance(handle, fade_tween) => {
+				let instance_id = self.instances.get(&handle).unwrap();
+				SequenceOutputCommand::PauseInstance(*instance_id, fade_tween)
+			}
+			SequenceOutputCommand::ResumeInstance(handle, fade_tween) => {
+				let instance_id = self.instances.get(&handle).unwrap();
+				SequenceOutputCommand::ResumeInstance(*instance_id, fade_tween)
+			}
+			SequenceOutputCommand::StopInstance(handle, fade_tween) => {
+				let instance_id = self.instances.get(&handle).unwrap();
+				SequenceOutputCommand::StopInstance(*instance_id, fade_tween)
+			}
+			SequenceOutputCommand::PauseInstancesOfSound(sound_id, fade_tween) => {
+				SequenceOutputCommand::PauseInstancesOfSound(sound_id, fade_tween)
+			}
+			SequenceOutputCommand::ResumeInstancesOfSound(sound_id, fade_tween) => {
+				SequenceOutputCommand::ResumeInstancesOfSound(sound_id, fade_tween)
+			}
+			SequenceOutputCommand::StopInstancesOfSound(sound_id, fade_tween) => {
+				SequenceOutputCommand::StopInstancesOfSound(sound_id, fade_tween)
+			}
+			SequenceOutputCommand::SetMetronomeTempo(tempo) => {
+				SequenceOutputCommand::SetMetronomeTempo(tempo)
+			}
+			SequenceOutputCommand::StartMetronome => SequenceOutputCommand::StartMetronome,
+			SequenceOutputCommand::PauseMetronome => SequenceOutputCommand::PauseMetronome,
+			SequenceOutputCommand::StopMetronome => SequenceOutputCommand::StopMetronome,
+			SequenceOutputCommand::EmitCustomEvent(event) => {
+				SequenceOutputCommand::EmitCustomEvent(event)
+			}
+		}
+	}
+
 	pub(crate) fn update(
 		&mut self,
 		dt: f64,
 		metronome: &Metronome,
-		output_command_queue: &mut Vec<SequenceOutputCommand<CustomEvent>>,
+		output_command_queue: &mut Vec<SequenceOutputCommand<InstanceId, CustomEvent>>,
 	) {
 		loop {
 			match self.state {
@@ -387,7 +347,8 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 							}
 							SequenceTask::RunCommand(command) => {
 								if !self.muted {
-									output_command_queue.push(self.transform_command(command));
+									output_command_queue
+										.push(self.transform_output_command(command));
 								}
 								self.start_task(self.position + 1);
 							}

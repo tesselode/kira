@@ -38,7 +38,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 	manager.start_metronome()?;
 	let mut input = String::new();
 	stdin().read_line(&mut input)?;
-	manager.stop_sequence(sequence_id)?;
+	manager.pause_sequence(sequence_id)?;
 	let mut input = String::new();
 	stdin().read_line(&mut input)?;
 	manager.resume_sequence(sequence_id)?;

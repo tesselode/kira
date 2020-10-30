@@ -13,13 +13,13 @@ pub(crate) enum SoundCommand {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub(crate) enum InstanceCommand<Id> {
-	PlaySound(SoundId, Id, InstanceSettings),
-	SetInstanceVolume(Id, f64, Option<Tween>),
-	SetInstancePitch(Id, f64, Option<Tween>),
-	PauseInstance(Id, Option<Tween>),
-	ResumeInstance(Id, Option<Tween>),
-	StopInstance(Id, Option<Tween>),
+pub(crate) enum InstanceCommand {
+	PlaySound(SoundId, InstanceId, InstanceSettings),
+	SetInstanceVolume(InstanceId, f64, Option<Tween>),
+	SetInstancePitch(InstanceId, f64, Option<Tween>),
+	PauseInstance(InstanceId, Option<Tween>),
+	ResumeInstance(InstanceId, Option<Tween>),
+	StopInstance(InstanceId, Option<Tween>),
 	PauseInstancesOfSound(SoundId, Option<Tween>),
 	ResumeInstancesOfSound(SoundId, Option<Tween>),
 	StopInstancesOfSound(SoundId, Option<Tween>),
@@ -45,7 +45,7 @@ pub(crate) enum SequenceCommand<CustomEvent> {
 
 pub(crate) enum Command<CustomEvent> {
 	Sound(SoundCommand),
-	Instance(InstanceCommand<InstanceId>),
+	Instance(InstanceCommand),
 	Metronome(MetronomeCommand),
 	Sequence(SequenceCommand<CustomEvent>),
 	EmitCustomEvent(CustomEvent),

@@ -1,9 +1,12 @@
 use crate::{
-	command::SequenceCommand,
+	command::InstanceCommand,
+	command::MetronomeCommand,
+	command::{Command, SequenceCommand},
 	duration::Duration,
-	instance::InstanceSettings,
+	instance::{InstanceId, InstanceSettings},
 	metronome::Metronome,
-	sequence::{Sequence, SequenceId, SequenceOutputCommand},
+	sequence::SequenceOutputCommand,
+	sequence::{Sequence, SequenceId, SequenceTask},
 };
 use indexmap::IndexMap;
 use ringbuf::Producer;
@@ -12,7 +15,8 @@ use std::vec::Drain;
 pub(crate) struct Sequences<CustomEvent> {
 	sequences: IndexMap<SequenceId, Sequence<CustomEvent>>,
 	sequences_to_remove: Vec<SequenceId>,
-	output_command_queue: Vec<SequenceOutputCommand<CustomEvent>>,
+	sequence_output_command_queue: Vec<SequenceOutputCommand<InstanceId, CustomEvent>>,
+	output_command_queue: Vec<Command<CustomEvent>>,
 }
 
 impl<CustomEvent: Copy> Sequences<CustomEvent> {
@@ -20,6 +24,7 @@ impl<CustomEvent: Copy> Sequences<CustomEvent> {
 		Self {
 			sequences: IndexMap::with_capacity(sequence_capacity),
 			sequences_to_remove: Vec::with_capacity(sequence_capacity),
+			sequence_output_command_queue: Vec::with_capacity(command_capacity),
 			output_command_queue: Vec::with_capacity(command_capacity),
 		}
 	}
@@ -95,13 +100,15 @@ impl<CustomEvent: Copy> Sequences<CustomEvent> {
 		dt: f64,
 		metronome: &Metronome,
 		sequences_to_unload_producer: &mut Producer<Sequence<CustomEvent>>,
-	) -> Drain<SequenceOutputCommand<CustomEvent>> {
+	) -> Drain<Command<CustomEvent>> {
+		// update sequences and collect their commands
 		for (id, sequence) in &mut self.sequences {
-			sequence.update(dt, metronome, &mut self.output_command_queue);
+			sequence.update(dt, metronome, &mut self.sequence_output_command_queue);
 			if sequence.finished() {
 				self.sequences_to_remove.push(*id);
 			}
 		}
+		// remove finished sequences
 		for id in self.sequences_to_remove.drain(..) {
 			let sequence = self.sequences.remove(&id).unwrap();
 			match sequences_to_unload_producer.push(sequence) {
@@ -110,6 +117,58 @@ impl<CustomEvent: Copy> Sequences<CustomEvent> {
 					self.sequences.insert(id, sequence);
 				}
 			}
+		}
+		// convert sequence commands to commands that can be consumed
+		// by the backend
+		for command in self.sequence_output_command_queue.drain(..) {
+			self.output_command_queue.push(match command {
+				SequenceOutputCommand::PlaySound(sound_id, instance_id, settings) => {
+					Command::Instance(InstanceCommand::PlaySound(sound_id, instance_id, settings))
+				}
+				SequenceOutputCommand::SetInstanceVolume(instance_id, volume, tween) => {
+					Command::Instance(InstanceCommand::SetInstanceVolume(
+						instance_id,
+						volume,
+						tween,
+					))
+				}
+				SequenceOutputCommand::SetInstancePitch(instance_id, pitch, tween) => {
+					Command::Instance(InstanceCommand::SetInstancePitch(instance_id, pitch, tween))
+				}
+				SequenceOutputCommand::PauseInstance(instance_id, fade_tween) => {
+					Command::Instance(InstanceCommand::PauseInstance(instance_id, fade_tween))
+				}
+				SequenceOutputCommand::ResumeInstance(instance_id, fade_tween) => {
+					Command::Instance(InstanceCommand::ResumeInstance(instance_id, fade_tween))
+				}
+				SequenceOutputCommand::StopInstance(instance_id, fade_tween) => {
+					Command::Instance(InstanceCommand::StopInstance(instance_id, fade_tween))
+				}
+				SequenceOutputCommand::PauseInstancesOfSound(sound_id, fade_tween) => {
+					Command::Instance(InstanceCommand::PauseInstancesOfSound(sound_id, fade_tween))
+				}
+				SequenceOutputCommand::ResumeInstancesOfSound(sound_id, fade_tween) => {
+					Command::Instance(InstanceCommand::ResumeInstancesOfSound(
+						sound_id, fade_tween,
+					))
+				}
+				SequenceOutputCommand::StopInstancesOfSound(sound_id, fade_tween) => {
+					Command::Instance(InstanceCommand::StopInstancesOfSound(sound_id, fade_tween))
+				}
+				SequenceOutputCommand::SetMetronomeTempo(tempo) => {
+					Command::Metronome(MetronomeCommand::SetMetronomeTempo(tempo))
+				}
+				SequenceOutputCommand::StartMetronome => {
+					Command::Metronome(MetronomeCommand::StartMetronome)
+				}
+				SequenceOutputCommand::PauseMetronome => {
+					Command::Metronome(MetronomeCommand::PauseMetronome)
+				}
+				SequenceOutputCommand::StopMetronome => {
+					Command::Metronome(MetronomeCommand::StopMetronome)
+				}
+				SequenceOutputCommand::EmitCustomEvent(event) => Command::EmitCustomEvent(event),
+			});
 		}
 		self.output_command_queue.drain(..)
 	}
