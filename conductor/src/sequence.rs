@@ -79,10 +79,12 @@ enum SequenceTask<CustomEvent> {
 	RunCommand(SequenceCommand<CustomEvent>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 enum SequenceState {
-	Idle,
-	Playing(usize),
+	Playing,
+	Pausing,
+	Paused,
+	Stopping,
 	Finished,
 }
 
@@ -91,6 +93,7 @@ pub struct Sequence<CustomEvent> {
 	tasks: Vec<SequenceTask<CustomEvent>>,
 	loop_point: Option<usize>,
 	state: SequenceState,
+	position: usize,
 	wait_timer: Option<f64>,
 	instances: HashMap<SequenceInstanceHandle, InstanceId>,
 	muted: bool,
@@ -101,7 +104,8 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 		Self {
 			tasks: vec![],
 			loop_point: None,
-			state: SequenceState::Idle,
+			state: SequenceState::Playing,
+			position: 0,
 			wait_timer: None,
 			instances: HashMap::new(),
 			muted: false,
@@ -238,7 +242,7 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 
 	fn start_task(&mut self, index: usize) {
 		if let Some(task) = self.tasks.get(index) {
-			self.state = SequenceState::Playing(index);
+			self.position = index;
 			if let SequenceTask::Wait(_) = task {
 				self.wait_timer = Some(1.0);
 			} else {
@@ -344,31 +348,38 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 		metronome: &Metronome,
 		output_command_queue: &mut Vec<SequenceOutputCommand<CustomEvent>>,
 	) {
-		while let SequenceState::Playing(index) = self.state {
-			if let Some(task) = self.tasks.get(index) {
-				let task = *task;
-				match task {
-					SequenceTask::Wait(duration) => {
-						if let Some(time) = self.wait_timer.as_mut() {
-							let duration = duration.in_seconds(metronome.effective_tempo());
-							*time -= dt / duration;
-							if *time <= 0.0 {
-								self.start_task(index + 1);
+		loop {
+			match self.state {
+				SequenceState::Paused | SequenceState::Finished => {
+					break;
+				}
+				_ => {
+					if let Some(task) = self.tasks.get(self.position) {
+						let task = *task;
+						match task {
+							SequenceTask::Wait(duration) => {
+								if let Some(time) = self.wait_timer.as_mut() {
+									let duration = duration.in_seconds(metronome.effective_tempo());
+									*time -= dt / duration;
+									if *time <= 0.0 {
+										self.start_task(self.position + 1);
+									}
+									break;
+								}
 							}
-							break;
+							SequenceTask::WaitForInterval(interval) => {
+								if metronome.interval_passed(interval) {
+									self.start_task(self.position + 1);
+								}
+								break;
+							}
+							SequenceTask::RunCommand(command) => {
+								if !self.muted {
+									output_command_queue.push(self.transform_command(command));
+								}
+								self.start_task(self.position + 1);
+							}
 						}
-					}
-					SequenceTask::WaitForInterval(interval) => {
-						if metronome.interval_passed(interval) {
-							self.start_task(index + 1);
-						}
-						break;
-					}
-					SequenceTask::RunCommand(command) => {
-						if !self.muted {
-							output_command_queue.push(self.transform_command(command));
-						}
-						self.start_task(index + 1);
 					}
 				}
 			}
