@@ -52,7 +52,7 @@ impl SequenceId {
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) enum SequenceOutputCommand<InstanceIdKind, CustomEvent> {
-	PlaySound(SoundId, InstanceIdKind, InstanceSettings),
+	PlaySound(InstanceIdKind, SoundId, InstanceSettings),
 	SetInstanceVolume(InstanceIdKind, f64, Option<Tween>),
 	SetInstancePitch(InstanceIdKind, f64, Option<Tween>),
 	PauseInstance(InstanceIdKind, Option<Tween>),
@@ -128,7 +128,7 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 		let handle = SequenceInstanceHandle::new();
 		self.tasks
 			.push(SequenceTask::RunCommand(SequenceOutputCommand::PlaySound(
-				sound_id, handle, settings,
+				handle, sound_id, settings,
 			)));
 		handle
 	}
@@ -268,10 +268,10 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 		task: SequenceOutputCommand<SequenceInstanceHandle, CustomEvent>,
 	) -> SequenceOutputCommand<InstanceId, CustomEvent> {
 		match task {
-			SequenceOutputCommand::PlaySound(sound_id, handle, settings) => {
+			SequenceOutputCommand::PlaySound(handle, sound_id, settings) => {
 				let instance_id = InstanceId::new();
 				self.instances.insert(handle, instance_id);
-				SequenceOutputCommand::PlaySound(sound_id, instance_id, settings)
+				SequenceOutputCommand::PlaySound(instance_id, sound_id, settings)
 			}
 			SequenceOutputCommand::SetInstanceVolume(handle, volume, tween) => {
 				let instance_id = self.instances.get(&handle).unwrap();

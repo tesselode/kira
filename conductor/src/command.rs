@@ -14,7 +14,7 @@ pub(crate) enum SoundCommand {
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) enum InstanceCommand {
-	PlaySound(SoundId, InstanceId, InstanceSettings),
+	PlaySound(InstanceId, SoundId, InstanceSettings),
 	SetInstanceVolume(InstanceId, f64, Option<Tween>),
 	SetInstancePitch(InstanceId, f64, Option<Tween>),
 	PauseInstance(InstanceId, Option<Tween>),

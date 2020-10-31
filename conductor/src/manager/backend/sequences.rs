@@ -122,8 +122,8 @@ impl<CustomEvent: Copy> Sequences<CustomEvent> {
 		// by the backend
 		for command in self.sequence_output_command_queue.drain(..) {
 			self.output_command_queue.push(match command {
-				SequenceOutputCommand::PlaySound(sound_id, instance_id, settings) => {
-					Command::Instance(InstanceCommand::PlaySound(sound_id, instance_id, settings))
+				SequenceOutputCommand::PlaySound(instance_id, sound_id, settings) => {
+					Command::Instance(InstanceCommand::PlaySound(instance_id, sound_id, settings))
 				}
 				SequenceOutputCommand::SetInstanceVolume(instance_id, volume, tween) => {
 					Command::Instance(InstanceCommand::SetInstanceVolume(

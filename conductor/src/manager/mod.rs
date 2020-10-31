@@ -216,8 +216,8 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 		match self
 			.command_producer
 			.push(Command::Instance(InstanceCommand::PlaySound(
-				sound_id,
 				instance_id,
+				sound_id,
 				settings,
 			))) {
 			Ok(_) => Ok(instance_id),
