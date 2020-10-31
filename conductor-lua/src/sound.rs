@@ -11,12 +11,8 @@ impl<'lua> FromLua<'lua> for LSoundMetadata {
 			LuaNil => Ok(LSoundMetadata(SoundMetadata::default())),
 			LuaValue::Table(table) => {
 				let mut metadata = SoundMetadata::default();
-				if table.contains_key("tempo")? {
-					metadata.tempo = Some(table.get::<_, LTempo>("tempo")?.0);
-				}
 				if table.contains_key("semanticDuration")? {
-					metadata.semantic_duration =
-						Some(table.get::<_, LDuration>("semanticDuration")?.0);
+					metadata.semantic_duration = Some(table.get("semanticDuration")?);
 				}
 				Ok(LSoundMetadata(metadata))
 			}
@@ -32,11 +28,7 @@ impl<'lua> FromLua<'lua> for LSoundMetadata {
 impl<'lua> ToLua<'lua> for LSoundMetadata {
 	fn to_lua(self, lua: &'lua Lua) -> LuaResult<LuaValue<'lua>> {
 		let table = lua.create_table()?;
-		table.set("tempo", self.0.tempo.map(|tempo| LTempo(tempo)))?;
-		table.set(
-			"semanticDuration",
-			self.0.semantic_duration.map(|duration| LDuration(duration)),
-		)?;
+		table.set("semanticDuration", self.0.semantic_duration)?;
 		Ok(LuaValue::Table(table))
 	}
 }

@@ -1,4 +1,7 @@
-use conductor::manager::{AudioManager, AudioManagerSettings, Event, LoopSettings};
+use conductor::{
+	instance::LoopSettings,
+	manager::{AudioManager, AudioManagerSettings},
+};
 use mlua::prelude::*;
 
 use crate::{
@@ -7,29 +10,6 @@ use crate::{
 	sequence::LSequence, sequence::LSequenceId, sound::LSoundId, sound::LSoundSettings,
 	tempo::LTempo, tween::LTween,
 };
-
-pub struct LLoopSettings(pub LoopSettings);
-
-impl<'lua> FromLua<'lua> for LLoopSettings {
-	fn from_lua(lua_value: LuaValue<'lua>, _: &'lua Lua) -> LuaResult<Self> {
-		match lua_value {
-			LuaNil => Ok(LLoopSettings(LoopSettings::default())),
-			LuaValue::Table(table) => {
-				let mut settings = LoopSettings::default();
-				if table.contains_key("startPoint")? {
-					settings.start = Some(table.get::<_, LDuration>("startPoint")?.0);
-				}
-				if table.contains_key("endPoint")? {
-					settings.end = Some(table.get::<_, LDuration>("endPoint")?.0);
-				}
-				Ok(LLoopSettings(settings))
-			}
-			value => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
-				"sequence", "table", value,
-			))),
-		}
-	}
-}
 
 pub struct LAudioManagerSettings(pub AudioManagerSettings);
 
@@ -241,25 +221,6 @@ impl LuaUserData for LAudioManager {
 			{
 				Ok(id) => Ok(LSequenceId(id)),
 				Err(error) => Err(LuaError::external(error)),
-			},
-		);
-
-		methods.add_method_mut(
-			"loopSound",
-			|_: &Lua,
-			 this: &mut Self,
-			 (sound_id, loop_settings, instance_settings): (
-				LSoundId,
-				LLoopSettings,
-				LInstanceSettings,
-			)| {
-				match this
-					.0
-					.loop_sound(sound_id.0, loop_settings.0, instance_settings.0)
-				{
-					Ok(id) => Ok(LSequenceId(id)),
-					Err(error) => Err(LuaError::external(error)),
-				}
 			},
 		);
 
