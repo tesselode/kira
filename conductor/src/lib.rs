@@ -1,5 +1,6 @@
 mod command;
 pub mod duration;
+pub mod effect;
 pub mod error;
 pub mod instance;
 pub mod manager;
@@ -9,4 +10,5 @@ pub mod sequence;
 pub mod sound;
 mod stereo_sample;
 pub mod tempo;
+pub mod track;
 pub mod tween;

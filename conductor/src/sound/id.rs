@@ -3,6 +3,8 @@ use std::{
 	sync::atomic::{AtomicUsize, Ordering},
 };
 
+use crate::track::index::TrackIndex;
+
 use super::SoundMetadata;
 
 static NEXT_SOUND_INDEX: AtomicUsize = AtomicUsize::new(0);
@@ -15,12 +17,17 @@ static NEXT_SOUND_INDEX: AtomicUsize = AtomicUsize::new(0);
 pub struct SoundId {
 	index: usize,
 	duration: f64,
+	default_track_index: TrackIndex,
 	metadata: SoundMetadata,
 }
 
 impl SoundId {
 	pub fn duration(&self) -> f64 {
 		self.duration
+	}
+
+	pub fn default_track_index(&self) -> TrackIndex {
+		self.default_track_index
 	}
 
 	pub fn metadata(&self) -> &SoundMetadata {
@@ -43,11 +50,16 @@ impl Hash for SoundId {
 }
 
 impl SoundId {
-	pub(crate) fn new(duration: f64, metadata: SoundMetadata) -> Self {
+	pub(crate) fn new(
+		duration: f64,
+		default_track_index: TrackIndex,
+		metadata: SoundMetadata,
+	) -> Self {
 		let index = NEXT_SOUND_INDEX.fetch_add(1, Ordering::Relaxed);
 		Self {
 			index,
 			duration,
+			default_track_index,
 			metadata,
 		}
 	}

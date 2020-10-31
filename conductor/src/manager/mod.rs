@@ -1,4 +1,5 @@
 use crate::{
+	command::MixerCommand,
 	command::{Command, InstanceCommand, MetronomeCommand, SequenceCommand, SoundCommand},
 	error::ConductorError,
 	error::ConductorResult,
@@ -7,6 +8,8 @@ use crate::{
 	sequence::{Sequence, SequenceId},
 	sound::{Sound, SoundId, SoundSettings},
 	tempo::Tempo,
+	track::id::SubTrackId,
+	track::TrackSettings,
 	tween::Tween,
 };
 use backend::Backend;
@@ -170,6 +173,17 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 		})
 	}
 
+	pub fn add_sub_track(&mut self, settings: TrackSettings) -> ConductorResult<SubTrackId> {
+		let id = SubTrackId::new();
+		match self
+			.command_producer
+			.push(Command::Mixer(MixerCommand::AddSubTrack(id, settings)))
+		{
+			Ok(_) => Ok(id),
+			Err(_) => Err(ConductorError::CommandQueueFull),
+		}
+	}
+
 	/// Loads a sound from a file path.
 	///
 	/// Returns a handle to the sound. Keep this so you can play the sound later.
@@ -178,7 +192,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 		P: AsRef<Path>,
 	{
 		let sound = Sound::from_file(path, &settings)?;
-		let id = SoundId::new(sound.duration(), settings.metadata);
+		let id = SoundId::new(sound.duration(), settings.default_track, settings.metadata);
 		match self
 			.command_producer
 			.push(Command::Sound(SoundCommand::LoadSound(id, sound)))

@@ -1,5 +1,8 @@
 mod instances;
+mod mixer;
 mod sequences;
+
+use self::mixer::Mixer;
 
 use super::{AudioManagerSettings, Event};
 use crate::{
@@ -25,6 +28,7 @@ pub(crate) struct Backend<CustomEvent: Send + 'static> {
 	metronome: Metronome,
 	instances: Instances,
 	sequences: Sequences<CustomEvent>,
+	mixer: Mixer,
 }
 
 impl<CustomEvent: Copy + Send + 'static> Backend<CustomEvent> {
@@ -47,6 +51,7 @@ impl<CustomEvent: Copy + Send + 'static> Backend<CustomEvent> {
 			metronome: Metronome::new(settings.metronome_settings),
 			instances: Instances::new(settings.num_instances),
 			sequences: Sequences::new(settings.num_sequences, settings.num_commands),
+			mixer: Mixer::new(),
 		}
 	}
 
@@ -80,6 +85,9 @@ impl<CustomEvent: Copy + Send + 'static> Backend<CustomEvent> {
 				}
 				Command::Sequence(command) => {
 					self.sequences.run_command(command);
+				}
+				Command::Mixer(command) => {
+					self.mixer.run_command(command);
 				}
 				Command::EmitCustomEvent(event) => {
 					match self.event_producer.push(Event::Custom(event)) {
@@ -124,6 +132,8 @@ impl<CustomEvent: Copy + Send + 'static> Backend<CustomEvent> {
 		self.update_sounds();
 		self.update_metronome();
 		self.update_sequences();
-		self.instances.process(self.dt, &self.sounds)
+		self.instances
+			.process(self.dt, &self.sounds, &mut self.mixer);
+		self.mixer.process(self.dt)
 	}
 }

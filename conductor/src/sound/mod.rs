@@ -4,7 +4,10 @@ pub mod metadata;
 pub use id::SoundId;
 pub use metadata::SoundMetadata;
 
-use crate::{error::ConductorError, error::ConductorResult, stereo_sample::StereoSample};
+use crate::{
+	error::ConductorError, error::ConductorResult, stereo_sample::StereoSample,
+	track::index::TrackIndex,
+};
 use claxon::FlacReader;
 use hound::WavReader;
 use lewton::{inside_ogg::OggStreamReader, samples::Samples};
@@ -12,6 +15,7 @@ use std::{fs::File, path::Path};
 
 #[derive(Debug)]
 pub struct SoundSettings {
+	pub default_track: TrackIndex,
 	pub cooldown: Option<f64>,
 	pub metadata: SoundMetadata,
 }
@@ -19,6 +23,7 @@ pub struct SoundSettings {
 impl Default for SoundSettings {
 	fn default() -> Self {
 		Self {
+			default_track: TrackIndex::Main,
 			cooldown: Some(0.0001),
 			metadata: SoundMetadata::default(),
 		}

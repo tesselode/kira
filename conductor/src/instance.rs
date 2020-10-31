@@ -11,6 +11,7 @@ use crate::{
 	sequence::SequenceId,
 	sound::{Sound, SoundId},
 	stereo_sample::StereoSample,
+	track::index::TrackIndex,
 	tween::Tween,
 };
 use std::{
@@ -68,6 +69,9 @@ pub struct InstanceSettings {
 	/// Whether the instance should loop, and if so, settings
 	/// for how it should loop.
 	pub loop_settings: Option<LoopSettings>,
+	/// Which track to play the instance on. Defaults to the
+	/// sound's default track.
+	pub track: Option<TrackIndex>,
 }
 
 impl Default for InstanceSettings {
@@ -79,6 +83,7 @@ impl Default for InstanceSettings {
 			position: 0.0,
 			fade_in_duration: None,
 			loop_settings: None,
+			track: None,
 		}
 	}
 }
@@ -109,6 +114,7 @@ pub(crate) enum InstanceState {
 
 pub(crate) struct Instance {
 	sound_id: SoundId,
+	track_index: TrackIndex,
 	sequence_id: Option<SequenceId>,
 	volume: Parameter,
 	pitch: Parameter,
@@ -140,6 +146,7 @@ impl Instance {
 		sub_instances[0] = Some(SubInstance::new(settings.position));
 		Self {
 			sound_id,
+			track_index: settings.track.unwrap_or(sound_id.default_track_index()),
 			sequence_id,
 			volume: Parameter::new(settings.volume),
 			pitch: Parameter::new(settings.pitch),
@@ -165,6 +172,10 @@ impl Instance {
 
 	pub fn sound_id(&self) -> SoundId {
 		self.sound_id
+	}
+
+	pub fn track_index(&self) -> TrackIndex {
+		self.track_index
 	}
 
 	pub fn sequence_id(&self) -> Option<SequenceId> {

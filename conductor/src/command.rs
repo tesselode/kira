@@ -3,6 +3,7 @@ use crate::{
 	sequence::{Sequence, SequenceId},
 	sound::{Sound, SoundId},
 	tempo::Tempo,
+	track::{id::SubTrackId, TrackSettings},
 	tween::Tween,
 };
 
@@ -44,10 +45,15 @@ pub(crate) enum SequenceCommand<CustomEvent> {
 	StopSequence(SequenceId),
 }
 
+pub(crate) enum MixerCommand {
+	AddSubTrack(SubTrackId, TrackSettings),
+}
+
 pub(crate) enum Command<CustomEvent> {
 	Sound(SoundCommand),
 	Instance(InstanceCommand),
 	Metronome(MetronomeCommand),
 	Sequence(SequenceCommand<CustomEvent>),
+	Mixer(MixerCommand),
 	EmitCustomEvent(CustomEvent),
 }

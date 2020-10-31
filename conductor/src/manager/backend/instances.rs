@@ -7,6 +7,8 @@ use crate::{
 };
 use indexmap::IndexMap;
 
+use super::mixer::Mixer;
+
 pub(crate) struct Instances {
 	instances: IndexMap<InstanceId, Instance>,
 	instances_to_remove: Vec<InstanceId>,
@@ -105,12 +107,11 @@ impl Instances {
 		}
 	}
 
-	pub fn process(&mut self, dt: f64, sounds: &IndexMap<SoundId, Sound>) -> StereoSample {
-		let mut out = StereoSample::from_mono(0.0);
+	pub fn process(&mut self, dt: f64, sounds: &IndexMap<SoundId, Sound>, mixer: &mut Mixer) {
 		for (instance_id, instance) in &mut self.instances {
 			if instance.playing() {
 				if let Some(sound) = sounds.get(&instance.sound_id()) {
-					out += instance.get_sample(sound);
+					mixer.add_input(instance.track_index(), instance.get_sample(sound));
 				}
 			}
 			if instance.finished() {
@@ -121,6 +122,5 @@ impl Instances {
 		for instance_id in self.instances_to_remove.drain(..) {
 			self.instances.remove(&instance_id);
 		}
-		out
 	}
 }
