@@ -188,6 +188,12 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 		));
 	}
 
+	pub fn set_metronome_tempo(&mut self, tempo: Tempo) {
+		self.tasks.push(SequenceTask::RunCommand(
+			SequenceOutputCommand::SetMetronomeTempo(tempo),
+		));
+	}
+
 	pub fn start_metronome(&mut self) {
 		self.tasks.push(SequenceTask::RunCommand(
 			SequenceOutputCommand::StartMetronome,
