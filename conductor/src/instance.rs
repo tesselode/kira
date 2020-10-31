@@ -6,7 +6,7 @@ Each instance can be controlled independently. Multiple instances of the same so
 can be playing at once.
 */
 
-use crate::{parameter::Parameter, sound::SoundId, tween::Tween};
+use crate::{parameter::Parameter, sequence::SequenceId, sound::SoundId, tween::Tween};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 static NEXT_INSTANCE_INDEX: AtomicUsize = AtomicUsize::new(0);
@@ -69,6 +69,7 @@ pub(crate) enum InstanceState {
 
 pub(crate) struct Instance {
 	sound_id: SoundId,
+	sequence_id: Option<SequenceId>,
 	volume: Parameter,
 	pitch: Parameter,
 	reverse: bool,
@@ -78,7 +79,11 @@ pub(crate) struct Instance {
 }
 
 impl Instance {
-	pub fn new(sound_id: SoundId, settings: InstanceSettings) -> Self {
+	pub fn new(
+		sound_id: SoundId,
+		sequence_id: Option<SequenceId>,
+		settings: InstanceSettings,
+	) -> Self {
 		let state;
 		let mut fade_volume;
 		if let Some(duration) = settings.fade_in_duration {
@@ -91,6 +96,7 @@ impl Instance {
 		}
 		Self {
 			sound_id,
+			sequence_id,
 			volume: Parameter::new(settings.volume),
 			pitch: Parameter::new(settings.pitch),
 			reverse: settings.reverse,
@@ -102,6 +108,10 @@ impl Instance {
 
 	pub fn sound_id(&self) -> SoundId {
 		self.sound_id
+	}
+
+	pub fn sequence_id(&self) -> Option<SequenceId> {
+		self.sequence_id
 	}
 
 	pub fn effective_volume(&self) -> f64 {

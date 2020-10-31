@@ -7,7 +7,6 @@ use conductor::{
 	sequence::Sequence,
 	sound::{SoundMetadata, SoundSettings},
 	tempo::Tempo,
-	tween::Tween,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -38,10 +37,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 	manager.start_metronome()?;
 	let mut input = String::new();
 	stdin().read_line(&mut input)?;
-	manager.pause_sequence(sequence_id)?;
+	manager.pause_sequence_and_instances(sequence_id, None)?;
 	let mut input = String::new();
 	stdin().read_line(&mut input)?;
-	manager.resume_sequence(sequence_id)?;
+	manager.resume_sequence_and_instances(sequence_id, None)?;
 	let mut input = String::new();
 	stdin().read_line(&mut input)?;
 	Ok(())

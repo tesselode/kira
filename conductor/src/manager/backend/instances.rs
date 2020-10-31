@@ -7,6 +7,8 @@ use crate::{
 };
 use indexmap::IndexMap;
 
+use super::sequences::Sequences;
+
 pub(crate) struct Instances {
 	instances: IndexMap<InstanceId, Instance>,
 	instances_to_remove: Vec<InstanceId>,
@@ -30,11 +32,11 @@ impl Instances {
 
 	pub fn run_command(&mut self, command: InstanceCommand, sounds: &mut IndexMap<SoundId, Sound>) {
 		match command {
-			InstanceCommand::PlaySound(instance_id, sound_id, settings) => {
+			InstanceCommand::PlaySound(instance_id, sound_id, sequence_id, settings) => {
 				if let Some(sound) = sounds.get_mut(&sound_id) {
 					if !sound.cooling_down() {
 						self.instances
-							.insert(instance_id, Instance::new(sound_id, settings));
+							.insert(instance_id, Instance::new(sound_id, sequence_id, settings));
 						sound.start_cooldown();
 					}
 				}
@@ -80,6 +82,27 @@ impl Instances {
 			}
 			InstanceCommand::StopInstancesOfSound(id, fade_tween) => {
 				self.stop_instances_of_sound(id, fade_tween);
+			}
+			InstanceCommand::PauseInstancesOfSequence(id, fade_tween) => {
+				for (_, instance) in &mut self.instances {
+					if instance.sequence_id() == Some(id) {
+						instance.pause(fade_tween);
+					}
+				}
+			}
+			InstanceCommand::ResumeInstancesOfSequence(id, fade_tween) => {
+				for (_, instance) in &mut self.instances {
+					if instance.sequence_id() == Some(id) {
+						instance.resume(fade_tween);
+					}
+				}
+			}
+			InstanceCommand::StopInstancesOfSequence(id, fade_tween) => {
+				for (_, instance) in &mut self.instances {
+					if instance.sequence_id() == Some(id) {
+						instance.stop(fade_tween);
+					}
+				}
 			}
 		}
 	}

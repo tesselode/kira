@@ -1,5 +1,4 @@
 use crate::{
-	command::{Command, InstanceCommand, MetronomeCommand},
 	duration::Duration,
 	error::ConductorError,
 	error::ConductorResult,
@@ -78,9 +77,7 @@ pub(crate) enum SequenceTask<InstanceIdKind, CustomEvent> {
 #[derive(Debug, Clone, Eq, PartialEq)]
 enum SequenceState {
 	Playing,
-	Pausing,
 	Paused,
-	Stopping,
 	Finished,
 }
 

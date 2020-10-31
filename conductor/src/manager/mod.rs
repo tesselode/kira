@@ -218,6 +218,7 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 			.push(Command::Instance(InstanceCommand::PlaySound(
 				instance_id,
 				sound_id,
+				None,
 				settings,
 			))) {
 			Ok(_) => Ok(instance_id),
@@ -504,6 +505,69 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 			.command_producer
 			.push(Command::Sequence(SequenceCommand::StopSequence(id)))
 		{
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::CommandQueueFull),
+		}
+	}
+
+	/// Pauses a sequence and any instances played by that sequence.
+	pub fn pause_sequence_and_instances(
+		&mut self,
+		id: SequenceId,
+		fade_tween: Option<Tween>,
+	) -> Result<(), ConductorError> {
+		match self
+			.command_producer
+			.push(Command::Sequence(SequenceCommand::PauseSequence(id)))
+		{
+			Ok(_) => {}
+			Err(_) => return Err(ConductorError::CommandQueueFull),
+		}
+		match self.command_producer.push(Command::Instance(
+			InstanceCommand::PauseInstancesOfSequence(id, fade_tween),
+		)) {
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::CommandQueueFull),
+		}
+	}
+
+	/// Resumes a sequence and any instances played by that sequence.
+	pub fn resume_sequence_and_instances(
+		&mut self,
+		id: SequenceId,
+		fade_tween: Option<Tween>,
+	) -> Result<(), ConductorError> {
+		match self
+			.command_producer
+			.push(Command::Sequence(SequenceCommand::ResumeSequence(id)))
+		{
+			Ok(_) => {}
+			Err(_) => return Err(ConductorError::CommandQueueFull),
+		}
+		match self.command_producer.push(Command::Instance(
+			InstanceCommand::ResumeInstancesOfSequence(id, fade_tween),
+		)) {
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::CommandQueueFull),
+		}
+	}
+
+	/// Stops a sequence and any instances played by that sequence.
+	pub fn stop_sequence_and_instances(
+		&mut self,
+		id: SequenceId,
+		fade_tween: Option<Tween>,
+	) -> Result<(), ConductorError> {
+		match self
+			.command_producer
+			.push(Command::Sequence(SequenceCommand::StopSequence(id)))
+		{
+			Ok(_) => {}
+			Err(_) => return Err(ConductorError::CommandQueueFull),
+		}
+		match self.command_producer.push(Command::Instance(
+			InstanceCommand::StopInstancesOfSequence(id, fade_tween),
+		)) {
 			Ok(_) => Ok(()),
 			Err(_) => Err(ConductorError::CommandQueueFull),
 		}
