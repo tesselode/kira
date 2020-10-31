@@ -40,9 +40,14 @@ impl InstanceId {
 	}
 }
 
+/// Settings for how an instance should loop.
 #[derive(Debug, Copy, Clone, Default)]
 pub struct LoopSettings {
+	/// Where the loop starts. Defaults to the beginning of the sound.
 	pub start: Option<f64>,
+	/// Where the loop ends. Defaults to the semantic duration
+	/// of the sound if it's defined, or the very end of the sound
+	/// otherwise.
 	pub end: Option<f64>,
 }
 
@@ -60,6 +65,8 @@ pub struct InstanceSettings {
 	/// Whether to fade in the instance from silence, and if so,
 	/// how long the fade-in should last (in seconds).
 	pub fade_in_duration: Option<f64>,
+	/// Whether the instance should loop, and if so, settings
+	/// for how it should loop.
 	pub loop_settings: Option<LoopSettings>,
 }
 
