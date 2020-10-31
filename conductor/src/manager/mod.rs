@@ -39,12 +39,6 @@ pub enum Event<CustomEvent: Send + 'static> {
 	Custom(CustomEvent),
 }
 
-#[derive(Debug, Default)]
-pub struct LoopSettings {
-	pub start: Option<Duration>,
-	pub end: Option<Duration>,
-}
-
 /// Settings for an `AudioManager`.
 pub struct AudioManagerSettings {
 	/// The number of commands that be sent to the audio thread at a time.
@@ -424,27 +418,6 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 			.command_producer
 			.push(Command::Sequence(SequenceCommand::StartSequence(
 				id, sequence,
-			))) {
-			Ok(_) => Ok(id),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
-	}
-
-	/// Starts a sequence that loops a single sound.
-	pub fn loop_sound(
-		&mut self,
-		sound_id: SoundId,
-		loop_settings: LoopSettings,
-		instance_settings: InstanceSettings,
-	) -> Result<SequenceId, ConductorError> {
-		let id = SequenceId::new();
-		match self
-			.command_producer
-			.push(Command::Sequence(SequenceCommand::LoopSound(
-				id,
-				sound_id,
-				loop_settings,
-				instance_settings,
 			))) {
 			Ok(_) => Ok(id),
 			Err(_) => Err(ConductorError::CommandQueueFull),

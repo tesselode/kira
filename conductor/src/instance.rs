@@ -6,8 +6,21 @@ Each instance can be controlled independently. Multiple instances of the same so
 can be playing at once.
 */
 
-use crate::{parameter::Parameter, sequence::SequenceId, sound::SoundId, tween::Tween};
-use std::sync::atomic::{AtomicUsize, Ordering};
+use crate::{
+	duration::Duration,
+	metronome::Metronome,
+	parameter::Parameter,
+	sequence::SequenceId,
+	sound::{Sound, SoundId},
+	stereo_sample::StereoSample,
+	tween::Tween,
+};
+use std::{
+	ops::Range,
+	sync::atomic::{AtomicUsize, Ordering},
+};
+
+const MAX_SUB_INSTANCES: usize = 10;
 
 static NEXT_INSTANCE_INDEX: AtomicUsize = AtomicUsize::new(0);
 
@@ -29,6 +42,12 @@ impl InstanceId {
 	}
 }
 
+#[derive(Debug, Copy, Clone, Default)]
+pub struct LoopSettings {
+	pub start: Option<f64>,
+	pub end: Option<f64>,
+}
+
 /// Settings for an instance.
 #[derive(Debug, Copy, Clone)]
 pub struct InstanceSettings {
@@ -43,6 +62,7 @@ pub struct InstanceSettings {
 	/// Whether to fade in the instance from silence, and if so,
 	/// how long the fade-in should last (in seconds).
 	pub fade_in_duration: Option<f64>,
+	pub loop_settings: Option<LoopSettings>,
 }
 
 impl Default for InstanceSettings {
@@ -53,6 +73,21 @@ impl Default for InstanceSettings {
 			reverse: false,
 			position: 0.0,
 			fade_in_duration: None,
+			loop_settings: None,
+		}
+	}
+}
+
+struct SubInstance {
+	position: f64,
+	previous_position: f64,
+}
+
+impl SubInstance {
+	fn new(position: f64) -> Self {
+		Self {
+			position,
+			previous_position: position,
 		}
 	}
 }
@@ -74,8 +109,10 @@ pub(crate) struct Instance {
 	pitch: Parameter,
 	reverse: bool,
 	state: InstanceState,
-	position: f64,
+	sub_instances: [Option<SubInstance>; MAX_SUB_INSTANCES],
+	next_sub_instance_index: usize,
 	fade_volume: Parameter,
+	loop_region: Option<Range<f64>>,
 }
 
 impl Instance {
@@ -94,6 +131,8 @@ impl Instance {
 			state = InstanceState::Playing;
 			fade_volume = Parameter::new(1.0);
 		}
+		let mut sub_instances: [Option<SubInstance>; MAX_SUB_INSTANCES] = Default::default();
+		sub_instances[0] = Some(SubInstance::new(settings.position));
 		Self {
 			sound_id,
 			sequence_id,
@@ -101,8 +140,21 @@ impl Instance {
 			pitch: Parameter::new(settings.pitch),
 			reverse: settings.reverse,
 			state,
-			position: settings.position,
+			sub_instances,
+			next_sub_instance_index: 1 % MAX_SUB_INSTANCES,
 			fade_volume,
+			loop_region: match settings.loop_settings {
+				Some(loop_settings) => Some(
+					loop_settings.start.unwrap_or(0.0)
+						..loop_settings.end.unwrap_or(
+							sound_id
+								.metadata()
+								.semantic_duration
+								.unwrap_or(sound_id.duration()),
+						),
+				),
+				None => None,
+			},
 		}
 	}
 
@@ -116,14 +168,6 @@ impl Instance {
 
 	pub fn effective_volume(&self) -> f64 {
 		self.volume.value() * self.fade_volume.value()
-	}
-
-	pub fn position(&self) -> f64 {
-		if self.reverse {
-			self.sound_id.duration() - self.position
-		} else {
-			self.position
-		}
 	}
 
 	pub fn playing(&self) -> bool {
@@ -180,8 +224,41 @@ impl Instance {
 		if self.playing() {
 			self.volume.update(dt);
 			self.pitch.update(dt);
-			self.position += self.pitch.value() * dt;
-			if self.position >= self.sound_id.duration() || self.position < 0.0 {
+			// increment positions of existing sub-instances
+			for sub_instance in &mut self.sub_instances {
+				if let Some(sub_instance) = sub_instance {
+					sub_instance.previous_position = sub_instance.position;
+					sub_instance.position += self.pitch.value() * dt;
+				}
+			}
+			// start new sub-instances if previous sub-instances reach the loop point
+			if let Some(loop_region) = &self.loop_region {
+				for i in 0..self.sub_instances.len() {
+					let passed_loop_point = match &self.sub_instances[i] {
+						Some(sub_instance) => {
+							sub_instance.position >= loop_region.end
+								&& sub_instance.previous_position < loop_region.end
+						}
+						None => false,
+					};
+					if passed_loop_point {
+						self.sub_instances[self.next_sub_instance_index] =
+							Some(SubInstance::new(loop_region.start));
+						self.next_sub_instance_index += 1;
+						self.next_sub_instance_index %= MAX_SUB_INSTANCES;
+					}
+				}
+			}
+			// remove finished sub-instances
+			for sub_instance in &mut self.sub_instances {
+				if let Some(instance) = sub_instance {
+					if instance.position >= self.sound_id.duration() || instance.position < 0.0 {
+						*sub_instance = None;
+					}
+				}
+			}
+			// if all sub-instances are finished, stop the instance
+			if self.sub_instances.iter().all(|position| position.is_none()) {
 				self.state = InstanceState::Stopped;
 			}
 		}
@@ -200,5 +277,19 @@ impl Instance {
 				_ => {}
 			}
 		}
+	}
+
+	pub fn get_sample(&self, sound: &Sound) -> StereoSample {
+		let mut out = StereoSample::from_mono(0.0);
+		for sub_instance in &self.sub_instances {
+			if let Some(sub_instance) = sub_instance {
+				if self.reverse {
+					out += sound.get_sample_at_position(sound.duration() - sub_instance.position);
+				} else {
+					out += sound.get_sample_at_position(sub_instance.position);
+				}
+			}
+		}
+		out * (self.effective_volume() as f32)
 	}
 }

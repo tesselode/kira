@@ -1,6 +1,7 @@
 use crate::{
 	command::InstanceCommand,
 	instance::{Instance, InstanceId},
+	metronome::Metronome,
 	sound::{Sound, SoundId},
 	stereo_sample::StereoSample,
 	tween::Tween,
@@ -112,8 +113,7 @@ impl Instances {
 		for (instance_id, instance) in &mut self.instances {
 			if instance.playing() {
 				if let Some(sound) = sounds.get(&instance.sound_id()) {
-					out += sound.get_sample_at_position(instance.position())
-						* (instance.effective_volume() as f32);
+					out += instance.get_sample(sound);
 				}
 			}
 			if instance.finished() {

@@ -12,5 +12,13 @@
             "environment": [],
             "externalConsole": true
         },
+        {
+            "name": "(OSX) Launch",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceRoot}/target/debug/conductor-test",
+            "args": [],
+            "cwd": "${workspaceRoot}",
+        }
     ]
 }

@@ -39,34 +39,6 @@ impl<CustomEvent: Copy> Sequences<CustomEvent> {
 			SequenceCommand::StartSequence(id, sequence) => {
 				self.start_sequence(id, sequence);
 			}
-			SequenceCommand::LoopSound(id, sound_id, loop_settings, instance_settings) => {
-				let tempo = sound_id
-					.metadata()
-					.tempo
-					.unwrap_or(metronome.settings.tempo);
-				let duration = sound_id
-					.metadata()
-					.semantic_duration
-					.unwrap_or(Duration::Seconds(sound_id.duration()));
-				let start = loop_settings
-					.start
-					.unwrap_or(Duration::Seconds(0.0))
-					.in_seconds(tempo);
-				let end = loop_settings.end.unwrap_or(duration).in_seconds(tempo);
-				let mut sequence = Sequence::new();
-				sequence.play_sound(sound_id, instance_settings);
-				sequence.wait(Duration::Seconds(end - instance_settings.position));
-				sequence.start_loop();
-				sequence.play_sound(
-					sound_id,
-					InstanceSettings {
-						position: start,
-						..instance_settings
-					},
-				);
-				sequence.wait(Duration::Seconds(end - start));
-				self.start_sequence(id, sequence);
-			}
 			SequenceCommand::MuteSequence(id) => {
 				if let Some(sequence) = self.sequences.get_mut(&id) {
 					sequence.mute();
