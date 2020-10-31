@@ -2,8 +2,7 @@ use crate::{
 	command::InstanceCommand,
 	command::MetronomeCommand,
 	command::{Command, SequenceCommand},
-	duration::Duration,
-	instance::{InstanceId, InstanceSettings},
+	instance::InstanceId,
 	metronome::Metronome,
 	sequence::SequenceOutputCommand,
 	sequence::{Sequence, SequenceId},
@@ -34,7 +33,7 @@ impl<CustomEvent: Copy> Sequences<CustomEvent> {
 		self.sequences.insert(id, sequence);
 	}
 
-	pub fn run_command(&mut self, command: SequenceCommand<CustomEvent>, metronome: &Metronome) {
+	pub fn run_command(&mut self, command: SequenceCommand<CustomEvent>) {
 		match command {
 			SequenceCommand::StartSequence(id, sequence) => {
 				self.start_sequence(id, sequence);

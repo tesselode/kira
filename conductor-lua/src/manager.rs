@@ -1,14 +1,10 @@
-use conductor::{
-	instance::LoopSettings,
-	manager::{AudioManager, AudioManagerSettings},
-};
+use conductor::manager::{AudioManager, AudioManagerSettings};
 use mlua::prelude::*;
 
 use crate::{
-	duration::LDuration, error::ConductorLuaError, event::CustomEvent, event::LEvent,
-	instance::LInstanceId, instance::LInstanceSettings, metronome::LMetronomeSettings,
-	sequence::LSequence, sequence::LSequenceId, sound::LSoundId, sound::LSoundSettings,
-	tempo::LTempo, tween::LTween,
+	error::ConductorLuaError, event::CustomEvent, event::LEvent, instance::LInstanceId,
+	instance::LInstanceSettings, metronome::LMetronomeSettings, sequence::LSequence,
+	sequence::LSequenceId, sound::LSoundId, sound::LSoundSettings, tempo::LTempo, tween::LTween,
 };
 
 pub struct LAudioManagerSettings(pub AudioManagerSettings);

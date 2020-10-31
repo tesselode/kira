@@ -7,8 +7,6 @@ can be playing at once.
 */
 
 use crate::{
-	duration::Duration,
-	metronome::Metronome,
 	parameter::Parameter,
 	sequence::SequenceId,
 	sound::{Sound, SoundId},

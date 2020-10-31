@@ -1,7 +1,7 @@
 use conductor::sound::{SoundId, SoundMetadata, SoundSettings};
 use mlua::prelude::*;
 
-use crate::{duration::LDuration, error::ConductorLuaError, tempo::LTempo};
+use crate::error::ConductorLuaError;
 
 pub struct LSoundMetadata(SoundMetadata);
 

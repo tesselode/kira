@@ -3,7 +3,6 @@ use std::{error::Error, io::stdin};
 use conductor::{
 	instance::{InstanceSettings, LoopSettings},
 	manager::{AudioManager, AudioManagerSettings},
-	sequence::Sequence,
 	sound::{SoundMetadata, SoundSettings},
 	tempo::Tempo,
 };

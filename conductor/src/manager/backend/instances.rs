@@ -1,14 +1,11 @@
 use crate::{
 	command::InstanceCommand,
 	instance::{Instance, InstanceId},
-	metronome::Metronome,
 	sound::{Sound, SoundId},
 	stereo_sample::StereoSample,
 	tween::Tween,
 };
 use indexmap::IndexMap;
-
-use super::sequences::Sequences;
 
 pub(crate) struct Instances {
 	instances: IndexMap<InstanceId, Instance>,

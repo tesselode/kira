@@ -1,6 +1,5 @@
 use crate::{
 	command::{Command, InstanceCommand, MetronomeCommand, SequenceCommand, SoundCommand},
-	duration::Duration,
 	error::ConductorError,
 	error::ConductorResult,
 	instance::{InstanceId, InstanceSettings},
