@@ -3,7 +3,9 @@ use crate::{
 	sequence::{Sequence, SequenceId},
 	sound::{Sound, SoundId},
 	tempo::Tempo,
-	track::{id::SubTrackId, TrackSettings},
+	track::effect::Effect,
+	track::effect::EffectId,
+	track::{id::SubTrackId, index::TrackIndex, EffectSettings, TrackSettings},
 	tween::Tween,
 };
 
@@ -47,6 +49,7 @@ pub(crate) enum SequenceCommand<CustomEvent> {
 
 pub(crate) enum MixerCommand {
 	AddSubTrack(SubTrackId, TrackSettings),
+	AddEffect(TrackIndex, EffectId, Box<dyn Effect + Send>, EffectSettings),
 }
 
 pub(crate) enum Command<CustomEvent> {

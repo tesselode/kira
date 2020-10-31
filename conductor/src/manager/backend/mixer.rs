@@ -24,6 +24,15 @@ impl Mixer {
 			MixerCommand::AddSubTrack(id, settings) => {
 				self.sub_tracks.insert(id, Track::new(settings));
 			}
+			MixerCommand::AddEffect(index, id, effect, settings) => {
+				let track = match index {
+					TrackIndex::Main => Some(&mut self.main_track),
+					TrackIndex::Sub(id) => self.sub_tracks.get_mut(&id),
+				};
+				if let Some(track) = track {
+					track.add_effect(id, effect, settings);
+				}
+			}
 		}
 	}
 

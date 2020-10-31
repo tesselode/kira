@@ -1,6 +1,5 @@
 mod command;
 pub mod duration;
-pub mod effect;
 pub mod error;
 pub mod instance;
 pub mod manager;

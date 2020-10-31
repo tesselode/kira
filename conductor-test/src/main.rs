@@ -5,13 +5,24 @@ use conductor::{
 	manager::{AudioManager, AudioManagerSettings},
 	sound::{SoundMetadata, SoundSettings},
 	tempo::Tempo,
-	track::index::TrackIndex,
+	track::effect::svf::StateVariableFilter,
+	track::effect::svf::StateVariableFilterSettings,
 	track::TrackSettings,
+	track::{effect::svf::StateVariableFilterMode, index::TrackIndex, EffectSettings},
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
 	let mut manager = AudioManager::<()>::new(AudioManagerSettings::default())?;
-	let sub_track_1 = manager.add_sub_track(TrackSettings { volume: 0.1 })?;
+	let sub_track_1 = manager.add_sub_track(TrackSettings::default())?;
+	manager.add_effect_to_track(
+		TrackIndex::Sub(sub_track_1),
+		Box::new(StateVariableFilter::new(StateVariableFilterSettings {
+			mode: StateVariableFilterMode::LowPass,
+			cutoff: 0.25,
+			resonance: 0.5,
+		})),
+		EffectSettings::default(),
+	)?;
 	let sub_track_2 = manager.add_sub_track(TrackSettings::default())?;
 	let sound_id = manager.load_sound(
 		std::env::current_dir()?.join("assets/loop.ogg"),

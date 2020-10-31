@@ -1,10 +1,26 @@
+pub mod effect;
 pub mod effect_slot;
 pub mod id;
 pub mod index;
 
+use indexmap::IndexMap;
+
 use crate::stereo_sample::StereoSample;
 
-use self::effect_slot::EffectSlot;
+use self::{
+	effect::{Effect, EffectId},
+	effect_slot::EffectSlot,
+};
+
+pub struct EffectSettings {
+	enabled: bool,
+}
+
+impl Default for EffectSettings {
+	fn default() -> Self {
+		Self { enabled: true }
+	}
+}
 
 pub struct TrackSettings {
 	pub volume: f64,
@@ -18,7 +34,7 @@ impl Default for TrackSettings {
 
 pub(crate) struct Track {
 	volume: f64,
-	effect_slots: Vec<EffectSlot>,
+	effect_slots: IndexMap<EffectId, EffectSlot>,
 	input: StereoSample,
 }
 
@@ -26,9 +42,19 @@ impl Track {
 	pub fn new(settings: TrackSettings) -> Self {
 		Self {
 			volume: settings.volume,
-			effect_slots: vec![],
+			effect_slots: IndexMap::new(),
 			input: StereoSample::from_mono(0.0),
 		}
+	}
+
+	pub fn add_effect(
+		&mut self,
+		id: EffectId,
+		effect: Box<dyn Effect + Send>,
+		settings: EffectSettings,
+	) {
+		self.effect_slots
+			.insert(id, EffectSlot::new(effect, settings));
 	}
 
 	pub fn add_input(&mut self, input: StereoSample) {
@@ -38,7 +64,7 @@ impl Track {
 	pub fn process(&mut self, dt: f64) -> StereoSample {
 		let mut input = self.input;
 		self.input = StereoSample::from_mono(0.0);
-		for effect_slot in &mut self.effect_slots {
+		for (_, effect_slot) in &mut self.effect_slots {
 			input = effect_slot.process(dt, input);
 		}
 		input * (self.volume as f32)

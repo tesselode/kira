@@ -1,4 +1,6 @@
-use crate::{effect::Effect, stereo_sample::StereoSample};
+use crate::stereo_sample::StereoSample;
+
+use super::{effect::Effect, EffectSettings};
 
 pub struct EffectSlot {
 	effect: Box<dyn Effect + Send>,
@@ -6,10 +8,10 @@ pub struct EffectSlot {
 }
 
 impl EffectSlot {
-	pub fn new(effect: Box<dyn Effect + Send>) -> Self {
+	pub fn new(effect: Box<dyn Effect + Send>, settings: EffectSettings) -> Self {
 		Self {
 			effect,
-			enabled: true,
+			enabled: settings.enabled,
 		}
 	}
 

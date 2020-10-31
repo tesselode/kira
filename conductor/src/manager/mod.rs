@@ -8,7 +8,11 @@ use crate::{
 	sequence::{Sequence, SequenceId},
 	sound::{Sound, SoundId, SoundSettings},
 	tempo::Tempo,
+	track::effect::Effect,
+	track::effect::EffectId,
 	track::id::SubTrackId,
+	track::index::TrackIndex,
+	track::EffectSettings,
 	track::TrackSettings,
 	tween::Tween,
 };
@@ -180,6 +184,26 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 			.push(Command::Mixer(MixerCommand::AddSubTrack(id, settings)))
 		{
 			Ok(_) => Ok(id),
+			Err(_) => Err(ConductorError::CommandQueueFull),
+		}
+	}
+
+	pub fn add_effect_to_track(
+		&mut self,
+		track_index: TrackIndex,
+		effect: Box<dyn Effect + Send>,
+		settings: EffectSettings,
+	) -> ConductorResult<EffectId> {
+		let effect_id = EffectId::new();
+		match self
+			.command_producer
+			.push(Command::Mixer(MixerCommand::AddEffect(
+				track_index,
+				effect_id,
+				effect,
+				settings,
+			))) {
+			Ok(_) => Ok(effect_id),
 			Err(_) => Err(ConductorError::CommandQueueFull),
 		}
 	}
