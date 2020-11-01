@@ -20,6 +20,13 @@ impl StereoSample {
 		let scale = 1.0 / max_int as f32;
 		Self::new(left as f32 * scale, right as f32 * scale)
 	}
+
+	pub fn atan(self) -> Self {
+		Self {
+			left: self.left.atan(),
+			right: self.right.atan(),
+		}
+	}
 }
 
 impl Add for StereoSample {

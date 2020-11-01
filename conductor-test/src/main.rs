@@ -19,7 +19,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 		Box::new(StateVariableFilter::new(StateVariableFilterSettings {
 			mode: StateVariableFilterMode::LowPass,
 			cutoff: 0.25,
-			resonance: 0.5,
+			resonance: 2.0,
+			drive: 1.0,
+			..Default::default()
 		})),
 		EffectSettings::default(),
 	)?;
