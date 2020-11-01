@@ -4,11 +4,7 @@ use crate::stereo_sample::StereoSample;
 
 use super::Effect;
 
-// https://www.musicdsp.org/en/latest/Filters/142-state-variable-filter-chamberlin-version.html
-
-fn drive(x: StereoSample, amount: f32) -> StereoSample {
-	(x * amount).atan() / amount
-}
+// https://github.com/wrl/baseplug/blob/trunk/examples/svf/svf_simper.rs
 
 pub enum StateVariableFilterMode {
 	LowPass,
@@ -21,7 +17,6 @@ pub struct StateVariableFilterSettings {
 	pub mode: StateVariableFilterMode,
 	pub cutoff: f64,
 	pub resonance: f64,
-	pub drive: f64,
 }
 
 impl Default for StateVariableFilterSettings {
@@ -30,7 +25,6 @@ impl Default for StateVariableFilterSettings {
 			mode: StateVariableFilterMode::LowPass,
 			cutoff: 1.0,
 			resonance: 0.0,
-			drive: 0.1,
 		}
 	}
 }
@@ -39,9 +33,8 @@ pub struct StateVariableFilter {
 	mode: StateVariableFilterMode,
 	cutoff: f64,
 	resonance: f64,
-	drive: f64,
-	low: StereoSample,
-	band: StereoSample,
+	ic1eq: StereoSample,
+	ic2eq: StereoSample,
 }
 
 impl StateVariableFilter {
@@ -50,27 +43,25 @@ impl StateVariableFilter {
 			mode: settings.mode,
 			cutoff: settings.cutoff,
 			resonance: settings.resonance,
-			drive: settings.drive,
-			low: StereoSample::from_mono(0.0),
-			band: StereoSample::from_mono(0.0),
+			ic1eq: StereoSample::from_mono(0.0),
+			ic2eq: StereoSample::from_mono(0.0),
 		}
 	}
 }
 
 impl Effect for StateVariableFilter {
-	fn process(&mut self, _dt: f64, input: StereoSample) -> StereoSample {
-		let cutoff = self.cutoff as f32;
-		let drive_amount = self.drive as f32;
-		self.low += self.band * cutoff;
-		let high = input - self.low - self.band * ((1.0 - self.resonance) as f32);
-		self.band += high * cutoff;
-		self.low = (self.low * drive_amount).atan() / drive_amount;
-		self.band = (self.band * drive_amount).atan() / drive_amount;
-		match self.mode {
-			StateVariableFilterMode::LowPass => self.low,
-			StateVariableFilterMode::BandPass => self.band,
-			StateVariableFilterMode::HighPass => drive(high, drive_amount),
-			StateVariableFilterMode::Notch => drive(high + self.low, drive_amount),
-		}
+	fn process(&mut self, dt: f64, input: StereoSample) -> StereoSample {
+		let sample_rate = 1.0 / dt;
+		let g = (PI * (self.cutoff / sample_rate)).tan();
+		let k = 2.0 - (1.9 * self.resonance.min(1.0).max(0.0));
+		let a1 = 1.0 / (1.0 + (g * (g + k)));
+		let a2 = g * a1;
+		let a3 = g * a2;
+		let v3 = input - self.ic2eq;
+		let v1 = (self.ic1eq * (a1 as f32)) + (v3 * (a2 as f32));
+		let v2 = self.ic2eq + (self.ic1eq * (a2 as f32)) + (v3 * (a3 as f32));
+		self.ic1eq = (v1 * 2.0) - self.ic1eq;
+		self.ic2eq = (v2 * 2.0) - self.ic2eq;
+		v2
 	}
 }

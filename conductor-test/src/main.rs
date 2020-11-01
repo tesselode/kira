@@ -1,7 +1,7 @@
 use std::{error::Error, io::stdin};
 
 use conductor::{
-	instance::{InstanceSettings, LoopSettings},
+	instance::InstanceSettings,
 	manager::{AudioManager, AudioManagerSettings},
 	sound::{SoundMetadata, SoundSettings},
 	tempo::Tempo,
@@ -18,9 +18,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 		TrackIndex::Sub(sub_track_1),
 		Box::new(StateVariableFilter::new(StateVariableFilterSettings {
 			mode: StateVariableFilterMode::LowPass,
-			cutoff: 0.25,
-			resonance: 2.0,
-			drive: 1.0,
+			cutoff: 4000.0,
+			resonance: 1.0,
 			..Default::default()
 		})),
 		EffectSettings::default(),
