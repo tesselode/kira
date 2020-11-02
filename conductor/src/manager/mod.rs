@@ -80,6 +80,21 @@ impl Default for AudioManagerSettings {
 	}
 }
 
+macro_rules! try_push_command {
+	($self:ident, $e:expr) => {
+		match $self.command_producer.push($e) {
+			Ok(_) => Ok(()),
+			Err(_) => Err(ConductorError::CommandQueueFull),
+			}
+	};
+	($self:ident, $e:expr, $i:ident) => {
+		match $self.command_producer.push($e) {
+			Ok(_) => Ok($i),
+			Err(_) => Err(ConductorError::CommandQueueFull),
+			}
+	};
+}
+
 /**
 Plays and manages audio.
 
@@ -182,13 +197,11 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 
 	pub fn add_sub_track(&mut self, settings: TrackSettings) -> ConductorResult<SubTrackId> {
 		let id = SubTrackId::new();
-		match self
-			.command_producer
-			.push(Command::Mixer(MixerCommand::AddSubTrack(id, settings)))
-		{
-			Ok(_) => Ok(id),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(
+			self,
+			Command::Mixer(MixerCommand::AddSubTrack(id, settings)),
+			id
+		)
 	}
 
 	pub fn add_effect_to_track(
@@ -198,17 +211,16 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 		settings: EffectSettings,
 	) -> ConductorResult<EffectId> {
 		let effect_id = EffectId::new();
-		match self
-			.command_producer
-			.push(Command::Mixer(MixerCommand::AddEffect(
+		try_push_command!(
+			self,
+			Command::Mixer(MixerCommand::AddEffect(
 				track_index,
 				effect_id,
 				effect,
 				settings,
-			))) {
-			Ok(_) => Ok(effect_id),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+			)),
+			effect_id
+		)
 	}
 
 	/// Loads a sound from a file path.
@@ -220,24 +232,12 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 	{
 		let sound = Sound::from_file(path, &settings)?;
 		let id = SoundId::new(sound.duration(), settings.default_track, settings.metadata);
-		match self
-			.command_producer
-			.push(Command::Sound(SoundCommand::LoadSound(id, sound)))
-		{
-			Ok(_) => Ok(id),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(self, Command::Sound(SoundCommand::LoadSound(id, sound)), id)
 	}
 
 	/// Unloads a sound, deallocating its memory.
 	pub fn unload_sound(&mut self, id: SoundId) -> ConductorResult<()> {
-		match self
-			.command_producer
-			.push(Command::Sound(SoundCommand::UnloadSound(id)))
-		{
-			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(self, Command::Sound(SoundCommand::UnloadSound(id)))
 	}
 
 	/// Plays a sound.
@@ -247,17 +247,16 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 		settings: InstanceSettings,
 	) -> Result<InstanceId, ConductorError> {
 		let instance_id = InstanceId::new();
-		match self
-			.command_producer
-			.push(Command::Instance(InstanceCommand::PlaySound(
+		try_push_command!(
+			self,
+			Command::Instance(InstanceCommand::PlaySound(
 				instance_id,
 				sound_id,
 				None,
 				settings,
-			))) {
-			Ok(_) => Ok(instance_id),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+			)),
+			instance_id
+		)
 	}
 
 	pub fn set_instance_volume(
@@ -266,14 +265,10 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 		volume: f64,
 		tween: Option<Tween>,
 	) -> Result<(), ConductorError> {
-		match self
-			.command_producer
-			.push(Command::Instance(InstanceCommand::SetInstanceVolume(
-				id, volume, tween,
-			))) {
-			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(
+			self,
+			Command::Instance(InstanceCommand::SetInstanceVolume(id, volume, tween,))
+		)
 	}
 
 	pub fn set_instance_pitch(
@@ -282,14 +277,10 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 		pitch: f64,
 		tween: Option<Tween>,
 	) -> Result<(), ConductorError> {
-		match self
-			.command_producer
-			.push(Command::Instance(InstanceCommand::SetInstancePitch(
-				id, pitch, tween,
-			))) {
-			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(
+			self,
+			Command::Instance(InstanceCommand::SetInstancePitch(id, pitch, tween,))
+		)
 	}
 
 	/// Pauses a currently playing instance of a sound.
@@ -300,15 +291,10 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 		instance_id: InstanceId,
 		fade_tween: Option<Tween>,
 	) -> Result<(), ConductorError> {
-		match self
-			.command_producer
-			.push(Command::Instance(InstanceCommand::PauseInstance(
-				instance_id,
-				fade_tween,
-			))) {
-			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(
+			self,
+			Command::Instance(InstanceCommand::PauseInstance(instance_id, fade_tween,))
+		)
 	}
 
 	/// Resumes a currently paused instance of a sound.
@@ -319,15 +305,10 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 		instance_id: InstanceId,
 		fade_tween: Option<Tween>,
 	) -> Result<(), ConductorError> {
-		match self
-			.command_producer
-			.push(Command::Instance(InstanceCommand::ResumeInstance(
-				instance_id,
-				fade_tween,
-			))) {
-			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(
+			self,
+			Command::Instance(InstanceCommand::ResumeInstance(instance_id, fade_tween,))
+		)
 	}
 
 	/// Stops a currently playing instance of a sound.
@@ -339,15 +320,10 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 		instance_id: InstanceId,
 		fade_tween: Option<Tween>,
 	) -> Result<(), ConductorError> {
-		match self
-			.command_producer
-			.push(Command::Instance(InstanceCommand::StopInstance(
-				instance_id,
-				fade_tween,
-			))) {
-			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(
+			self,
+			Command::Instance(InstanceCommand::StopInstance(instance_id, fade_tween,))
+		)
 	}
 
 	/// Pauses all currently playing instances of a sound.
@@ -358,14 +334,10 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 		sound_id: SoundId,
 		fade_tween: Option<Tween>,
 	) -> Result<(), ConductorError> {
-		match self
-			.command_producer
-			.push(Command::Instance(InstanceCommand::PauseInstancesOfSound(
-				sound_id, fade_tween,
-			))) {
-			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(
+			self,
+			Command::Instance(InstanceCommand::PauseInstancesOfSound(sound_id, fade_tween,))
+		)
 	}
 
 	/// Resumes all currently playing instances of a sound.
@@ -376,12 +348,12 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 		sound_id: SoundId,
 		fade_tween: Option<Tween>,
 	) -> Result<(), ConductorError> {
-		match self.command_producer.push(Command::Instance(
-			InstanceCommand::ResumeInstancesOfSound(sound_id, fade_tween),
-		)) {
-			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(
+			self,
+			Command::Instance(InstanceCommand::ResumeInstancesOfSound(
+				sound_id, fade_tween
+			))
+		)
 	}
 
 	/// Stops all currently playing instances of a sound.
@@ -392,59 +364,33 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 		sound_id: SoundId,
 		fade_tween: Option<Tween>,
 	) -> Result<(), ConductorError> {
-		match self
-			.command_producer
-			.push(Command::Instance(InstanceCommand::StopInstancesOfSound(
-				sound_id, fade_tween,
-			))) {
-			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(
+			self,
+			Command::Instance(InstanceCommand::StopInstancesOfSound(sound_id, fade_tween,))
+		)
 	}
 
 	/// Sets the tempo of the metronome.
 	pub fn set_metronome_tempo(&mut self, tempo: Tempo) -> Result<(), ConductorError> {
-		match self
-			.command_producer
-			.push(Command::Metronome(MetronomeCommand::SetMetronomeTempo(
-				tempo,
-			))) {
-			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(
+			self,
+			Command::Metronome(MetronomeCommand::SetMetronomeTempo(tempo,))
+		)
 	}
 
 	/// Starts or resumes the metronome.
 	pub fn start_metronome(&mut self) -> Result<(), ConductorError> {
-		match self
-			.command_producer
-			.push(Command::Metronome(MetronomeCommand::StartMetronome))
-		{
-			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(self, Command::Metronome(MetronomeCommand::StartMetronome))
 	}
 
 	/// Pauses the metronome.
 	pub fn pause_metronome(&mut self) -> Result<(), ConductorError> {
-		match self
-			.command_producer
-			.push(Command::Metronome(MetronomeCommand::PauseMetronome))
-		{
-			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(self, Command::Metronome(MetronomeCommand::PauseMetronome))
 	}
 
 	/// Stops and resets the metronome.
 	pub fn stop_metronome(&mut self) -> Result<(), ConductorError> {
-		match self
-			.command_producer
-			.push(Command::Metronome(MetronomeCommand::StopMetronome))
-		{
-			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(self, Command::Metronome(MetronomeCommand::StopMetronome))
 	}
 
 	/// Starts a sequence.
@@ -454,14 +400,11 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 	) -> Result<SequenceId, ConductorError> {
 		sequence.validate()?;
 		let id = SequenceId::new();
-		match self
-			.command_producer
-			.push(Command::Sequence(SequenceCommand::StartSequence(
-				id, sequence,
-			))) {
-			Ok(_) => Ok(id),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(
+			self,
+			Command::Sequence(SequenceCommand::StartSequence(id, sequence,)),
+			id
+		)
 	}
 
 	/// Mutes a sequence.
@@ -470,57 +413,27 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 	/// but it will not change anything that changes the audio, like starting new sounds
 	/// or settings the metronome tempo.
 	pub fn mute_sequence(&mut self, id: SequenceId) -> Result<(), ConductorError> {
-		match self
-			.command_producer
-			.push(Command::Sequence(SequenceCommand::MuteSequence(id)))
-		{
-			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(self, Command::Sequence(SequenceCommand::MuteSequence(id)))
 	}
 
 	/// Unmutes a sequence.
 	pub fn unmute_sequence(&mut self, id: SequenceId) -> Result<(), ConductorError> {
-		match self
-			.command_producer
-			.push(Command::Sequence(SequenceCommand::UnmuteSequence(id)))
-		{
-			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(self, Command::Sequence(SequenceCommand::UnmuteSequence(id)))
 	}
 
 	/// Pauses a sequence.
 	pub fn pause_sequence(&mut self, id: SequenceId) -> Result<(), ConductorError> {
-		match self
-			.command_producer
-			.push(Command::Sequence(SequenceCommand::PauseSequence(id)))
-		{
-			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(self, Command::Sequence(SequenceCommand::PauseSequence(id)))
 	}
 
 	/// Resumes a sequence.
 	pub fn resume_sequence(&mut self, id: SequenceId) -> Result<(), ConductorError> {
-		match self
-			.command_producer
-			.push(Command::Sequence(SequenceCommand::ResumeSequence(id)))
-		{
-			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(self, Command::Sequence(SequenceCommand::ResumeSequence(id)))
 	}
 
 	/// Stops a sequence.
 	pub fn stop_sequence(&mut self, id: SequenceId) -> Result<(), ConductorError> {
-		match self
-			.command_producer
-			.push(Command::Sequence(SequenceCommand::StopSequence(id)))
-		{
-			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(self, Command::Sequence(SequenceCommand::StopSequence(id)))
 	}
 
 	/// Pauses a sequence and any instances played by that sequence.
@@ -529,19 +442,11 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 		id: SequenceId,
 		fade_tween: Option<Tween>,
 	) -> Result<(), ConductorError> {
-		match self
-			.command_producer
-			.push(Command::Sequence(SequenceCommand::PauseSequence(id)))
-		{
-			Ok(_) => {}
-			Err(_) => return Err(ConductorError::CommandQueueFull),
-		}
-		match self.command_producer.push(Command::Instance(
-			InstanceCommand::PauseInstancesOfSequence(id, fade_tween),
-		)) {
-			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(self, Command::Sequence(SequenceCommand::PauseSequence(id)))?;
+		try_push_command!(
+			self,
+			Command::Instance(InstanceCommand::PauseInstancesOfSequence(id, fade_tween),)
+		)
 	}
 
 	/// Resumes a sequence and any instances played by that sequence.
@@ -550,19 +455,11 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 		id: SequenceId,
 		fade_tween: Option<Tween>,
 	) -> Result<(), ConductorError> {
-		match self
-			.command_producer
-			.push(Command::Sequence(SequenceCommand::ResumeSequence(id)))
-		{
-			Ok(_) => {}
-			Err(_) => return Err(ConductorError::CommandQueueFull),
-		}
-		match self.command_producer.push(Command::Instance(
-			InstanceCommand::ResumeInstancesOfSequence(id, fade_tween),
-		)) {
-			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(self, Command::Sequence(SequenceCommand::ResumeSequence(id)))?;
+		try_push_command!(
+			self,
+			Command::Instance(InstanceCommand::ResumeInstancesOfSequence(id, fade_tween),)
+		)
 	}
 
 	/// Stops a sequence and any instances played by that sequence.
@@ -571,19 +468,11 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 		id: SequenceId,
 		fade_tween: Option<Tween>,
 	) -> Result<(), ConductorError> {
-		match self
-			.command_producer
-			.push(Command::Sequence(SequenceCommand::StopSequence(id)))
-		{
-			Ok(_) => {}
-			Err(_) => return Err(ConductorError::CommandQueueFull),
-		}
-		match self.command_producer.push(Command::Instance(
-			InstanceCommand::StopInstancesOfSequence(id, fade_tween),
-		)) {
-			Ok(_) => Ok(()),
-			Err(_) => Err(ConductorError::CommandQueueFull),
-		}
+		try_push_command!(self, Command::Sequence(SequenceCommand::StopSequence(id)))?;
+		try_push_command!(
+			self,
+			Command::Instance(InstanceCommand::StopInstancesOfSequence(id, fade_tween),)
+		)
 	}
 
 	/// Returns a list of all of the new events created by the audio thread
