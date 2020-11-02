@@ -24,7 +24,7 @@ use cpal::{
 use ringbuf::{Consumer, Producer, RingBuffer};
 use std::path::Path;
 
-mod backend;
+pub(crate) mod backend;
 
 const WRAPPER_THREAD_SLEEP_DURATION: f64 = 1.0 / 60.0;
 
@@ -56,6 +56,8 @@ pub struct AudioManagerSettings {
 	pub num_events: usize,
 	/// The maximum number of sounds that can be loaded at once.
 	pub num_sounds: usize,
+	/// The maximum number of parameters that can exist at once.
+	pub num_parameters: usize,
 	/// The maximum number of instances of sounds that can be playing at once.
 	pub num_instances: usize,
 	/// The maximum number of sequences that can be running at a time.
@@ -70,6 +72,7 @@ impl Default for AudioManagerSettings {
 			num_commands: 100,
 			num_events: 100,
 			num_sounds: 100,
+			num_parameters: 100,
 			num_instances: 100,
 			num_sequences: 25,
 			metronome_settings: MetronomeSettings::default(),

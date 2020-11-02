@@ -9,6 +9,7 @@ use conductor::{
 	track::effect::svf::StateVariableFilterSettings,
 	track::TrackSettings,
 	track::{effect::svf::StateVariableFilterMode, index::TrackIndex, EffectSettings},
+	value::Value,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -18,8 +19,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 		TrackIndex::Sub(sub_track_1),
 		Box::new(StateVariableFilter::new(StateVariableFilterSettings {
 			mode: StateVariableFilterMode::LowPass,
-			cutoff: 4000.0,
-			resonance: 1.0,
+			cutoff: Value::Fixed(4000.0),
+			resonance: Value::Fixed(1.0),
 			..Default::default()
 		})),
 		EffectSettings::default(),

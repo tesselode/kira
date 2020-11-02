@@ -8,6 +8,7 @@ use super::{AudioManagerSettings, Event};
 use crate::{
 	command::{Command, SoundCommand},
 	metronome::Metronome,
+	parameters::Parameters,
 	sequence::Sequence,
 	sound::{Sound, SoundId},
 	stereo_sample::StereoSample,
@@ -26,6 +27,7 @@ pub(crate) struct Backend<CustomEvent: Send + 'static> {
 	sounds_to_unload_producer: Producer<Sound>,
 	sequences_to_unload_producer: Producer<Sequence<CustomEvent>>,
 	metronome: Metronome,
+	parameters: Parameters,
 	instances: Instances,
 	sequences: Sequences<CustomEvent>,
 	mixer: Mixer,
@@ -48,6 +50,7 @@ impl<CustomEvent: Copy + Send + 'static> Backend<CustomEvent> {
 			event_producer,
 			sounds_to_unload_producer,
 			sequences_to_unload_producer,
+			parameters: Parameters::new(settings.num_parameters),
 			metronome: Metronome::new(settings.metronome_settings),
 			instances: Instances::new(settings.num_instances),
 			sequences: Sequences::new(settings.num_sequences, settings.num_commands),
@@ -88,6 +91,9 @@ impl<CustomEvent: Copy + Send + 'static> Backend<CustomEvent> {
 				}
 				Command::Mixer(command) => {
 					self.mixer.run_command(command);
+				}
+				Command::Parameter(command) => {
+					self.parameters.run_command(command);
 				}
 				Command::EmitCustomEvent(event) => {
 					match self.event_producer.push(Event::Custom(event)) {
@@ -134,6 +140,6 @@ impl<CustomEvent: Copy + Send + 'static> Backend<CustomEvent> {
 		self.update_sequences();
 		self.instances
 			.process(self.dt, &self.sounds, &mut self.mixer);
-		self.mixer.process(self.dt)
+		self.mixer.process(self.dt, &self.parameters)
 	}
 }

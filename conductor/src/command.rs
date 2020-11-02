@@ -1,5 +1,6 @@
 use crate::{
 	instance::{InstanceId, InstanceSettings},
+	parameter::ParameterId,
 	sequence::{Sequence, SequenceId},
 	sound::{Sound, SoundId},
 	tempo::Tempo,
@@ -7,6 +8,7 @@ use crate::{
 	track::effect::EffectId,
 	track::{id::SubTrackId, index::TrackIndex, EffectSettings, TrackSettings},
 	tween::Tween,
+	value::Value,
 };
 
 pub(crate) enum SoundCommand {
@@ -52,11 +54,17 @@ pub(crate) enum MixerCommand {
 	AddEffect(TrackIndex, EffectId, Box<dyn Effect + Send>, EffectSettings),
 }
 
+pub(crate) enum ParameterCommand {
+	AddParameter(ParameterId, f64),
+	SetParameter(ParameterId, f64, Option<Tween>),
+}
+
 pub(crate) enum Command<CustomEvent> {
 	Sound(SoundCommand),
 	Instance(InstanceCommand),
 	Metronome(MetronomeCommand),
 	Sequence(SequenceCommand<CustomEvent>),
 	Mixer(MixerCommand),
+	Parameter(ParameterCommand),
 	EmitCustomEvent(CustomEvent),
 }

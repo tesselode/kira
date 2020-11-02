@@ -1,4 +1,26 @@
+use std::sync::atomic::{AtomicUsize, Ordering};
+
 use crate::tween::Tween;
+
+static NEXT_PARAMETER_INDEX: AtomicUsize = AtomicUsize::new(0);
+
+/**
+A unique identifier for an `Parameter`.
+
+You cannot create this manually - an `ParameterId` is created
+when you create a parameter with an `AudioManager`.
+*/
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct ParameterId {
+	index: usize,
+}
+
+impl ParameterId {
+	pub(crate) fn new() -> Self {
+		let index = NEXT_PARAMETER_INDEX.fetch_add(1, Ordering::Relaxed);
+		Self { index }
+	}
+}
 
 struct TweenState {
 	tween: Tween,

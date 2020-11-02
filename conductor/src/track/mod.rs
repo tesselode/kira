@@ -5,7 +5,7 @@ pub mod index;
 
 use indexmap::IndexMap;
 
-use crate::stereo_sample::StereoSample;
+use crate::{parameters::Parameters, stereo_sample::StereoSample};
 
 use self::{
 	effect::{Effect, EffectId},
@@ -61,11 +61,11 @@ impl Track {
 		self.input += input;
 	}
 
-	pub fn process(&mut self, dt: f64) -> StereoSample {
+	pub fn process(&mut self, dt: f64, parameters: &Parameters) -> StereoSample {
 		let mut input = self.input;
 		self.input = StereoSample::from_mono(0.0);
 		for (_, effect_slot) in &mut self.effect_slots {
-			input = effect_slot.process(dt, input);
+			input = effect_slot.process(dt, input, parameters);
 		}
 		input * (self.volume as f32)
 	}

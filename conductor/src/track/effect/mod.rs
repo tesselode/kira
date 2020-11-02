@@ -2,7 +2,7 @@ pub mod svf;
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use crate::stereo_sample::StereoSample;
+use crate::{parameters::Parameters, stereo_sample::StereoSample, value::CachedValue};
 
 static NEXT_EFFECT_INDEX: AtomicUsize = AtomicUsize::new(0);
 
@@ -19,5 +19,5 @@ impl EffectId {
 }
 
 pub trait Effect {
-	fn process(&mut self, dt: f64, input: StereoSample) -> StereoSample;
+	fn process(&mut self, dt: f64, input: StereoSample, parameters: &Parameters) -> StereoSample;
 }

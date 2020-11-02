@@ -2,6 +2,7 @@ use indexmap::IndexMap;
 
 use crate::{
 	command::MixerCommand,
+	parameters::Parameters,
 	stereo_sample::StereoSample,
 	track::{id::SubTrackId, index::TrackIndex, Track, TrackSettings},
 };
@@ -44,12 +45,12 @@ impl Mixer {
 		track.add_input(input);
 	}
 
-	pub fn process(&mut self, dt: f64) -> StereoSample {
+	pub fn process(&mut self, dt: f64, parameters: &Parameters) -> StereoSample {
 		let mut main_input = StereoSample::from_mono(0.0);
 		for (_, sub_track) in &mut self.sub_tracks {
-			main_input += sub_track.process(dt);
+			main_input += sub_track.process(dt, parameters);
 		}
 		self.main_track.add_input(main_input);
-		self.main_track.process(dt)
+		self.main_track.process(dt, parameters)
 	}
 }

@@ -1,8 +1,8 @@
-use crate::stereo_sample::StereoSample;
+use crate::{parameters::Parameters, stereo_sample::StereoSample};
 
 use super::{effect::Effect, EffectSettings};
 
-pub struct EffectSlot {
+pub(crate) struct EffectSlot {
 	effect: Box<dyn Effect + Send>,
 	enabled: bool,
 }
@@ -15,9 +15,14 @@ impl EffectSlot {
 		}
 	}
 
-	pub(super) fn process(&mut self, dt: f64, input: StereoSample) -> StereoSample {
+	pub(super) fn process(
+		&mut self,
+		dt: f64,
+		input: StereoSample,
+		parameters: &Parameters,
+	) -> StereoSample {
 		if self.enabled {
-			self.effect.process(dt, input)
+			self.effect.process(dt, input, parameters)
 		} else {
 			input
 		}

@@ -1,6 +1,10 @@
 use std::f64::consts::PI;
 
-use crate::stereo_sample::StereoSample;
+use crate::{
+	parameters::Parameters,
+	stereo_sample::StereoSample,
+	value::{CachedValue, Value},
+};
 
 use super::Effect;
 
@@ -15,24 +19,24 @@ pub enum StateVariableFilterMode {
 
 pub struct StateVariableFilterSettings {
 	pub mode: StateVariableFilterMode,
-	pub cutoff: f64,
-	pub resonance: f64,
+	pub cutoff: Value,
+	pub resonance: Value,
 }
 
 impl Default for StateVariableFilterSettings {
 	fn default() -> Self {
 		Self {
 			mode: StateVariableFilterMode::LowPass,
-			cutoff: 1.0,
-			resonance: 0.0,
+			cutoff: 1.0.into(),
+			resonance: 0.0.into(),
 		}
 	}
 }
 
 pub struct StateVariableFilter {
 	mode: StateVariableFilterMode,
-	cutoff: f64,
-	resonance: f64,
+	cutoff: CachedValue,
+	resonance: CachedValue,
 	ic1eq: StereoSample,
 	ic2eq: StereoSample,
 }
@@ -41,8 +45,8 @@ impl StateVariableFilter {
 	pub fn new(settings: StateVariableFilterSettings) -> Self {
 		Self {
 			mode: settings.mode,
-			cutoff: settings.cutoff,
-			resonance: settings.resonance,
+			cutoff: CachedValue::new(settings.cutoff, 10000.0),
+			resonance: CachedValue::new(settings.resonance, 0.0),
 			ic1eq: StereoSample::from_mono(0.0),
 			ic2eq: StereoSample::from_mono(0.0),
 		}
@@ -50,10 +54,12 @@ impl StateVariableFilter {
 }
 
 impl Effect for StateVariableFilter {
-	fn process(&mut self, dt: f64, input: StereoSample) -> StereoSample {
+	fn process(&mut self, dt: f64, input: StereoSample, parameters: &Parameters) -> StereoSample {
+		self.cutoff.update(parameters);
+		self.resonance.update(parameters);
 		let sample_rate = 1.0 / dt;
-		let g = (PI * (self.cutoff / sample_rate)).tan();
-		let k = 2.0 - (1.9 * self.resonance.min(1.0).max(0.0));
+		let g = (PI * (self.cutoff.value() / sample_rate)).tan();
+		let k = 2.0 - (1.9 * self.resonance.value().min(1.0).max(0.0));
 		let a1 = 1.0 / (1.0 + (g * (g + k)));
 		let a2 = g * a1;
 		let a3 = g * a2;
