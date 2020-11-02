@@ -135,6 +135,7 @@ impl<CustomEvent: Copy + Send + 'static> Backend<CustomEvent> {
 
 	pub fn process(&mut self) -> StereoSample {
 		self.process_commands();
+		self.parameters.update(self.dt);
 		self.update_sounds();
 		self.update_metronome();
 		self.update_sequences();

@@ -1,10 +1,12 @@
 use crate::{
 	command::MixerCommand,
+	command::ParameterCommand,
 	command::{Command, InstanceCommand, MetronomeCommand, SequenceCommand, SoundCommand},
 	error::ConductorError,
 	error::ConductorResult,
 	instance::{InstanceId, InstanceSettings},
 	metronome::MetronomeSettings,
+	parameter::ParameterId,
 	sequence::{Sequence, SequenceId},
 	sound::{Sound, SoundId, SoundSettings},
 	tempo::Tempo,
@@ -15,6 +17,7 @@ use crate::{
 	track::EffectSettings,
 	track::TrackSettings,
 	tween::Tween,
+	value::Value,
 };
 use backend::Backend;
 use cpal::{
@@ -185,6 +188,25 @@ impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
 			Ok(_) => Ok(()),
 			Err(_) => Err(ConductorError::CommandQueueFull),
 		}
+	}
+
+	pub fn add_parameter(&mut self, value: f64) -> ConductorResult<ParameterId> {
+		let id = ParameterId::new();
+		self.send_command_to_backend(Command::Parameter(ParameterCommand::AddParameter(
+			id, value,
+		)))?;
+		Ok(id)
+	}
+
+	pub fn set_parameter(
+		&mut self,
+		id: ParameterId,
+		value: f64,
+		tween: Option<Tween>,
+	) -> ConductorResult<()> {
+		self.send_command_to_backend(Command::Parameter(ParameterCommand::SetParameter(
+			id, value, tween,
+		)))
 	}
 
 	pub fn add_sub_track(&mut self, settings: TrackSettings) -> ConductorResult<SubTrackId> {
