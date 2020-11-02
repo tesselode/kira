@@ -12,6 +12,7 @@ use self::{
 	effect_slot::EffectSlot,
 };
 
+#[derive(Debug, Clone)]
 pub struct EffectSettings {
 	enabled: bool,
 }
@@ -22,6 +23,7 @@ impl Default for EffectSettings {
 	}
 }
 
+#[derive(Debug, Clone)]
 pub struct TrackSettings {
 	pub volume: f64,
 }

@@ -42,7 +42,7 @@ impl InstanceId {
 }
 
 /// Settings for how an instance should loop.
-#[derive(Debug, Copy, Clone, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct LoopSettings {
 	/// Where the loop starts. Defaults to the beginning of the sound.
 	pub start: Option<f64>,
@@ -88,6 +88,7 @@ impl Default for InstanceSettings {
 	}
 }
 
+#[derive(Debug, Clone)]
 struct SubInstance {
 	position: f64,
 	previous_position: f64,
@@ -102,7 +103,7 @@ impl SubInstance {
 	}
 }
 
-#[derive(PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub(crate) enum InstanceState {
 	Playing,
 	Paused,
@@ -112,6 +113,7 @@ pub(crate) enum InstanceState {
 	Stopping,
 }
 
+#[derive(Debug, Clone)]
 pub(crate) struct Instance {
 	sound_id: SoundId,
 	track_index: TrackIndex,

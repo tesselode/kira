@@ -127,7 +127,7 @@ pub(crate) enum SequenceTask<InstanceIdKind, CustomEvent> {
 	RunCommand(SequenceOutputCommand<InstanceIdKind, CustomEvent>),
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 enum SequenceState {
 	Playing,
 	Paused,

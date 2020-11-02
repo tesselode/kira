@@ -8,6 +8,7 @@ can be synced to.
 use crate::{command::MetronomeCommand, tempo::Tempo};
 use std::vec::Drain;
 
+#[derive(Debug, Clone)]
 /// Settings for a metronome.
 pub struct MetronomeSettings {
 	/// The tempo of the metronome (in beats per minute).
@@ -29,6 +30,7 @@ impl Default for MetronomeSettings {
 	}
 }
 
+#[derive(Debug, Clone)]
 pub(crate) struct Metronome {
 	pub settings: MetronomeSettings,
 	ticking: bool,

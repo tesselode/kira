@@ -3,7 +3,7 @@ use std::ops::{Div, DivAssign, Mul, MulAssign};
 use crate::tempo::Tempo;
 
 /// Represents a duration of time.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Duration {
 	/// Represents a duration of time in seconds.
 	Seconds(f64),

@@ -13,7 +13,7 @@ use hound::WavReader;
 use lewton::{inside_ogg::OggStreamReader, samples::Samples};
 use std::{fs::File, path::Path};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SoundSettings {
 	pub default_track: TrackIndex,
 	pub cooldown: Option<f64>,

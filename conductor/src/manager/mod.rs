@@ -97,7 +97,7 @@ pub struct AudioManager<CustomEvent: Send + 'static = ()> {
 	sequences_to_unload_consumer: Consumer<Sequence<CustomEvent>>,
 }
 
-impl<CustomEvent: Copy + Send + 'static> AudioManager<CustomEvent> {
+impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEvent> {
 	/// Creates a new audio manager and starts an audio thread.
 	pub fn new(settings: AudioManagerSettings) -> ConductorResult<Self> {
 		// set up various ringbuffers for communication between threads

@@ -10,6 +10,7 @@ use super::Effect;
 
 // https://github.com/wrl/baseplug/blob/trunk/examples/svf/svf_simper.rs
 
+#[derive(Debug, Copy, Clone)]
 pub enum StateVariableFilterMode {
 	LowPass,
 	BandPass,
@@ -17,6 +18,7 @@ pub enum StateVariableFilterMode {
 	Notch,
 }
 
+#[derive(Debug, Clone)]
 pub struct StateVariableFilterSettings {
 	pub mode: StateVariableFilterMode,
 	pub cutoff: Value,
@@ -33,6 +35,7 @@ impl Default for StateVariableFilterSettings {
 	}
 }
 
+#[derive(Debug, Clone)]
 pub struct StateVariableFilter {
 	mode: StateVariableFilterMode,
 	cutoff: CachedValue,

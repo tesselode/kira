@@ -27,6 +27,7 @@ impl From<ParameterId> for Value {
 	}
 }
 
+#[derive(Debug, Clone)]
 pub(crate) struct CachedValue {
 	value: Value,
 	default_value: f64,

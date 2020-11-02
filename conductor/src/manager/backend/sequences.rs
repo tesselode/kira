@@ -11,14 +11,14 @@ use indexmap::IndexMap;
 use ringbuf::Producer;
 use std::vec::Drain;
 
-pub(crate) struct Sequences<CustomEvent> {
+pub(crate) struct Sequences<CustomEvent: std::fmt::Debug> {
 	sequences: IndexMap<SequenceId, Sequence<CustomEvent>>,
 	sequences_to_remove: Vec<SequenceId>,
 	sequence_output_command_queue: Vec<SequenceOutputCommand<InstanceId, CustomEvent>>,
 	output_command_queue: Vec<Command<CustomEvent>>,
 }
 
-impl<CustomEvent: Copy> Sequences<CustomEvent> {
+impl<CustomEvent: Copy + std::fmt::Debug> Sequences<CustomEvent> {
 	pub fn new(sequence_capacity: usize, command_capacity: usize) -> Self {
 		Self {
 			sequences: IndexMap::with_capacity(sequence_capacity),

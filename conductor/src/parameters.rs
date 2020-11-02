@@ -5,6 +5,7 @@ use crate::{
 	parameter::{Parameter, ParameterId},
 };
 
+#[derive(Debug, Clone)]
 pub struct Parameters {
 	parameters: IndexMap<ParameterId, Parameter>,
 }

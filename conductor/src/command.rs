@@ -11,6 +11,7 @@ use crate::{
 	value::Value,
 };
 
+#[derive(Debug)]
 pub(crate) enum SoundCommand {
 	LoadSound(SoundId, Sound),
 	UnloadSound(SoundId),
@@ -32,7 +33,7 @@ pub(crate) enum InstanceCommand {
 	StopInstancesOfSequence(SequenceId, Option<Tween>),
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub(crate) enum MetronomeCommand {
 	SetMetronomeTempo(Tempo),
 	StartMetronome,
@@ -40,6 +41,7 @@ pub(crate) enum MetronomeCommand {
 	StopMetronome,
 }
 
+#[derive(Debug, Clone)]
 pub(crate) enum SequenceCommand<CustomEvent> {
 	StartSequence(SequenceId, Sequence<CustomEvent>),
 	MuteSequence(SequenceId),
@@ -54,6 +56,7 @@ pub(crate) enum MixerCommand {
 	AddEffect(TrackIndex, EffectId, Box<dyn Effect + Send>, EffectSettings),
 }
 
+#[derive(Debug, Clone)]
 pub(crate) enum ParameterCommand {
 	AddParameter(ParameterId, f64),
 	SetParameter(ParameterId, f64, Option<Tween>),
