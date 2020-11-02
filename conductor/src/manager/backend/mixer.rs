@@ -2,10 +2,11 @@ use indexmap::IndexMap;
 
 use crate::{
 	command::MixerCommand,
-	parameters::Parameters,
 	stereo_sample::StereoSample,
 	track::{id::SubTrackId, index::TrackIndex, Track, TrackSettings},
 };
+
+use super::parameters::Parameters;
 
 pub(crate) struct Mixer {
 	main_track: Track,

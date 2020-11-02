@@ -2,7 +2,7 @@ pub mod svf;
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use crate::{parameters::Parameters, stereo_sample::StereoSample};
+use crate::{manager::backend::parameters::Parameters, stereo_sample::StereoSample};
 
 static NEXT_EFFECT_INDEX: AtomicUsize = AtomicUsize::new(0);
 

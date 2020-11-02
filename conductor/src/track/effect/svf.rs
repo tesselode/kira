@@ -1,7 +1,7 @@
 use std::f64::consts::PI;
 
 use crate::{
-	parameters::Parameters,
+	manager::backend::parameters::Parameters,
 	stereo_sample::StereoSample,
 	value::{CachedValue, Value},
 };

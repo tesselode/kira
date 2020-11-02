@@ -1,3 +1,5 @@
+pub(crate) mod backend;
+
 use crate::{
 	command::MixerCommand,
 	command::ParameterCommand,
@@ -17,7 +19,6 @@ use crate::{
 	track::EffectSettings,
 	track::TrackSettings,
 	tween::Tween,
-	value::Value,
 };
 use backend::Backend;
 use cpal::{
@@ -26,8 +27,6 @@ use cpal::{
 };
 use ringbuf::{Consumer, Producer, RingBuffer};
 use std::path::Path;
-
-pub(crate) mod backend;
 
 const WRAPPER_THREAD_SLEEP_DURATION: f64 = 1.0 / 60.0;
 

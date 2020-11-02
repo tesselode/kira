@@ -5,7 +5,6 @@ pub mod instance;
 pub mod manager;
 pub mod metronome;
 pub mod parameter;
-pub mod parameters;
 pub mod sequence;
 pub mod sound;
 mod stereo_sample;

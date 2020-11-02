@@ -1,14 +1,14 @@
 mod instances;
 mod mixer;
+pub mod parameters;
 mod sequences;
 
-use self::mixer::Mixer;
+use self::{mixer::Mixer, parameters::Parameters};
 
 use super::{AudioManagerSettings, Event};
 use crate::{
 	command::{Command, SoundCommand},
 	metronome::Metronome,
-	parameters::Parameters,
 	sequence::Sequence,
 	sound::{Sound, SoundId},
 	stereo_sample::StereoSample,

@@ -5,7 +5,7 @@ pub mod index;
 
 use indexmap::IndexMap;
 
-use crate::{parameters::Parameters, stereo_sample::StereoSample};
+use crate::{manager::backend::parameters::Parameters, stereo_sample::StereoSample};
 
 use self::{
 	effect::{Effect, EffectId},

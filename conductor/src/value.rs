@@ -1,4 +1,4 @@
-use crate::{parameter::ParameterId, parameters::Parameters};
+use crate::{manager::backend::parameters::Parameters, parameter::ParameterId};
 
 #[derive(Debug, Copy, Clone)]
 pub enum Value {
