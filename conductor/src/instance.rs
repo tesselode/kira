@@ -53,7 +53,7 @@ pub struct LoopSettings {
 }
 
 /// Settings for an instance.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct InstanceSettings {
 	/// The volume of the instance.
 	pub volume: f64,
