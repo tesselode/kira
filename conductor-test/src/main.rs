@@ -44,7 +44,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 	)?;
 	let mut input = String::new();
 	stdin().read_line(&mut input)?;
-	manager.remove_effect_from_track(TrackIndex::Sub(track_id), effect_id)?;
+	manager.remove_effect(effect_id)?;
 	let mut input = String::new();
 	stdin().read_line(&mut input)?;
 	Ok(())

@@ -243,7 +243,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		effect: Box<dyn Effect + Send>,
 		settings: EffectSettings,
 	) -> ConductorResult<EffectId> {
-		let effect_id = EffectId::new();
+		let effect_id = EffectId::new(track_index);
 		self.send_command_to_backend(Command::Mixer(MixerCommand::AddEffect(
 			track_index,
 			effect_id,
@@ -253,15 +253,8 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		Ok(effect_id)
 	}
 
-	pub fn remove_effect_from_track(
-		&mut self,
-		track_index: TrackIndex,
-		effect_id: EffectId,
-	) -> ConductorResult<()> {
-		self.send_command_to_backend(Command::Mixer(MixerCommand::RemoveEffect(
-			track_index,
-			effect_id,
-		)))
+	pub fn remove_effect(&mut self, effect_id: EffectId) -> ConductorResult<()> {
+		self.send_command_to_backend(Command::Mixer(MixerCommand::RemoveEffect(effect_id)))
 	}
 
 	/// Loads a sound from a file path.

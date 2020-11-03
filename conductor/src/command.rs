@@ -55,7 +55,7 @@ pub(crate) enum MixerCommand {
 	AddSubTrack(SubTrackId, TrackSettings),
 	RemoveSubTrack(SubTrackId),
 	AddEffect(TrackIndex, EffectId, Box<dyn Effect + Send>, EffectSettings),
-	RemoveEffect(TrackIndex, EffectId),
+	RemoveEffect(EffectId),
 }
 
 #[derive(Debug, Clone)]

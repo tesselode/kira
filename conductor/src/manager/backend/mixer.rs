@@ -49,8 +49,8 @@ impl Mixer {
 					}
 				}
 			}
-			MixerCommand::RemoveEffect(track_index, effect_id) => {
-				let track = match track_index {
+			MixerCommand::RemoveEffect(effect_id) => {
+				let track = match effect_id.track_index() {
 					TrackIndex::Main => Some(&mut self.main_track),
 					TrackIndex::Sub(id) => self.sub_tracks.get_mut(&id),
 				};
