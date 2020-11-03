@@ -59,6 +59,10 @@ impl Track {
 			.insert(id, EffectSlot::new(effect, settings));
 	}
 
+	pub fn remove_effect(&mut self, id: EffectId) -> Option<EffectSlot> {
+		self.effect_slots.remove(&id)
+	}
+
 	pub fn add_input(&mut self, input: StereoSample) {
 		self.input += input;
 	}

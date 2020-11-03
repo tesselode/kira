@@ -14,9 +14,11 @@ use crate::{
 	tempo::Tempo,
 	track::effect::Effect,
 	track::effect::EffectId,
+	track::effect_slot::EffectSlot,
 	track::id::SubTrackId,
 	track::index::TrackIndex,
 	track::EffectSettings,
+	track::Track,
 	track::TrackSettings,
 	tween::Tween,
 	value::Value,
@@ -65,6 +67,10 @@ pub struct AudioManagerSettings {
 	pub num_instances: usize,
 	/// The maximum number of sequences that can be running at a time.
 	pub num_sequences: usize,
+	/// The maximum number of mixer tracks that can be used at a time.
+	pub num_tracks: usize,
+	/// The maximum number of effects that can be running at a time on a track.
+	pub num_effects_per_track: usize,
 	/// Settings for the metronome.
 	pub metronome_settings: MetronomeSettings,
 }
@@ -78,6 +84,8 @@ impl Default for AudioManagerSettings {
 			num_parameters: 100,
 			num_instances: 100,
 			num_sequences: 25,
+			num_tracks: 100,
+			num_effects_per_track: 10,
 			metronome_settings: MetronomeSettings::default(),
 		}
 	}
@@ -95,6 +103,8 @@ pub struct AudioManager<CustomEvent: Send + 'static = ()> {
 	event_consumer: Consumer<Event<CustomEvent>>,
 	sounds_to_unload_consumer: Consumer<Sound>,
 	sequences_to_unload_consumer: Consumer<Sequence<CustomEvent>>,
+	tracks_to_unload_consumer: Consumer<Track>,
+	effect_slots_to_unload_consumer: Consumer<EffectSlot>,
 }
 
 impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEvent> {
@@ -109,6 +119,10 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 			RingBuffer::new(settings.num_sounds).split();
 		let (sequences_to_unload_producer, sequences_to_unload_consumer) =
 			RingBuffer::new(settings.num_sequences).split();
+		let (tracks_to_unload_producer, tracks_to_unload_consumer) =
+			RingBuffer::new(settings.num_tracks).split();
+		let (effect_slots_to_unload_producer, effect_slots_to_unload_consumer) =
+			RingBuffer::new(settings.num_tracks * settings.num_effects_per_track).split();
 		let (event_producer, event_consumer) = RingBuffer::new(settings.num_events).split();
 		// set up a cpal stream on a new thread. we could do this on the main thread,
 		// but that causes issues with LÖVE.
@@ -134,6 +148,8 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 					event_producer,
 					sounds_to_unload_producer,
 					sequences_to_unload_producer,
+					tracks_to_unload_producer,
+					effect_slots_to_unload_producer,
 				);
 				let stream = device.build_output_stream(
 					&config,
@@ -180,6 +196,8 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 			event_consumer,
 			sounds_to_unload_consumer,
 			sequences_to_unload_consumer,
+			tracks_to_unload_consumer,
+			effect_slots_to_unload_consumer,
 		})
 	}
 
@@ -215,6 +233,10 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		Ok(id)
 	}
 
+	pub fn remove_sub_track(&mut self, id: SubTrackId) -> ConductorResult<()> {
+		self.send_command_to_backend(Command::Mixer(MixerCommand::RemoveSubTrack(id)))
+	}
+
 	pub fn add_effect_to_track(
 		&mut self,
 		track_index: TrackIndex,
@@ -229,6 +251,17 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 			settings,
 		)))?;
 		Ok(effect_id)
+	}
+
+	pub fn remove_effect_from_track(
+		&mut self,
+		track_index: TrackIndex,
+		effect_id: EffectId,
+	) -> ConductorResult<()> {
+		self.send_command_to_backend(Command::Mixer(MixerCommand::RemoveEffect(
+			track_index,
+			effect_id,
+		)))
 	}
 
 	/// Loads a sound from a file path.
@@ -482,6 +515,8 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	pub fn free_unused_resources(&mut self) {
 		while let Some(_) = self.sounds_to_unload_consumer.pop() {}
 		while let Some(_) = self.sequences_to_unload_consumer.pop() {}
+		while let Some(_) = self.tracks_to_unload_consumer.pop() {}
+		while let Some(_) = self.effect_slots_to_unload_consumer.pop() {}
 	}
 }
 

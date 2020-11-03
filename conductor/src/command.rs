@@ -53,12 +53,15 @@ pub(crate) enum SequenceCommand<CustomEvent> {
 
 pub(crate) enum MixerCommand {
 	AddSubTrack(SubTrackId, TrackSettings),
+	RemoveSubTrack(SubTrackId),
 	AddEffect(TrackIndex, EffectId, Box<dyn Effect + Send>, EffectSettings),
+	RemoveEffect(TrackIndex, EffectId),
 }
 
 #[derive(Debug, Clone)]
 pub(crate) enum ParameterCommand {
 	AddParameter(ParameterId, f64),
+	RemoveParameter(ParameterId),
 	SetParameter(ParameterId, f64, Option<Tween>),
 }
 

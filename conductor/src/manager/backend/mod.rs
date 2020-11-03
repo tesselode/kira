@@ -12,6 +12,9 @@ use crate::{
 	sequence::Sequence,
 	sound::{Sound, SoundId},
 	stereo_sample::StereoSample,
+	track::effect::Effect,
+	track::effect_slot::EffectSlot,
+	track::Track,
 };
 use indexmap::IndexMap;
 use instances::Instances;
@@ -26,6 +29,8 @@ pub(crate) struct Backend<CustomEvent: Send + 'static + std::fmt::Debug> {
 	event_producer: Producer<Event<CustomEvent>>,
 	sounds_to_unload_producer: Producer<Sound>,
 	sequences_to_unload_producer: Producer<Sequence<CustomEvent>>,
+	tracks_to_unload_producer: Producer<Track>,
+	effect_slots_to_unload_producer: Producer<EffectSlot>,
 	metronome: Metronome,
 	parameters: Parameters,
 	instances: Instances,
@@ -41,6 +46,8 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> 
 		event_producer: Producer<Event<CustomEvent>>,
 		sounds_to_unload_producer: Producer<Sound>,
 		sequences_to_unload_producer: Producer<Sequence<CustomEvent>>,
+		tracks_to_unload_producer: Producer<Track>,
+		effect_slots_to_unload_producer: Producer<EffectSlot>,
 	) -> Self {
 		Self {
 			dt: 1.0 / sample_rate as f64,
@@ -50,6 +57,8 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> 
 			event_producer,
 			sounds_to_unload_producer,
 			sequences_to_unload_producer,
+			tracks_to_unload_producer,
+			effect_slots_to_unload_producer,
 			parameters: Parameters::new(settings.num_parameters),
 			metronome: Metronome::new(settings.metronome_settings),
 			instances: Instances::new(settings.num_instances),
@@ -87,7 +96,11 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> 
 					self.sequences.run_command(command);
 				}
 				Command::Mixer(command) => {
-					self.mixer.run_command(command);
+					self.mixer.run_command(
+						command,
+						&mut self.tracks_to_unload_producer,
+						&mut self.effect_slots_to_unload_producer,
+					);
 				}
 				Command::Parameter(command) => {
 					self.parameters.run_command(command);

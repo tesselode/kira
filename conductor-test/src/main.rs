@@ -15,10 +15,20 @@ use conductor::{
 
 fn main() -> Result<(), Box<dyn Error>> {
 	let mut manager = AudioManager::<()>::new(AudioManagerSettings::default())?;
-	let pitch_parameter_id = manager.add_parameter(1.0)?;
+	let track_id = manager.add_sub_track(TrackSettings::default())?;
+	let effect_id = manager.add_effect_to_track(
+		TrackIndex::Sub(track_id),
+		Box::new(StateVariableFilter::new(StateVariableFilterSettings {
+			mode: StateVariableFilterMode::LowPass,
+			cutoff: 1000.0.into(),
+			..Default::default()
+		})),
+		EffectSettings::default(),
+	)?;
 	let sound_id = manager.load_sound(
 		std::env::current_dir().unwrap().join("assets/loop.ogg"),
 		SoundSettings {
+			default_track: TrackIndex::Sub(track_id),
 			metadata: SoundMetadata {
 				semantic_duration: Some(Tempo(128.0).beats_to_seconds(16.0)),
 			},
@@ -28,14 +38,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 	manager.play_sound(
 		sound_id,
 		InstanceSettings {
-			pitch: Value::Parameter(pitch_parameter_id),
 			loop_settings: Some(LoopSettings::default()),
 			..Default::default()
 		},
 	)?;
 	let mut input = String::new();
 	stdin().read_line(&mut input)?;
-	manager.set_parameter(pitch_parameter_id, 0.25, Some(Tween(5.0)))?;
+	manager.remove_effect_from_track(TrackIndex::Sub(track_id), effect_id)?;
 	let mut input = String::new();
 	stdin().read_line(&mut input)?;
 	Ok(())

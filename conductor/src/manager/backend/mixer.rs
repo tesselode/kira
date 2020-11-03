@@ -1,9 +1,11 @@
 use indexmap::IndexMap;
+use ringbuf::Producer;
 
 use crate::{
 	command::MixerCommand,
 	stereo_sample::StereoSample,
-	track::{id::SubTrackId, index::TrackIndex, Track, TrackSettings},
+	track::effect::Effect,
+	track::{effect_slot::EffectSlot, id::SubTrackId, index::TrackIndex, Track, TrackSettings},
 };
 
 use super::parameters::Parameters;
@@ -21,7 +23,12 @@ impl Mixer {
 		}
 	}
 
-	pub fn run_command(&mut self, command: MixerCommand) {
+	pub fn run_command(
+		&mut self,
+		command: MixerCommand,
+		tracks_to_unload_producer: &mut Producer<Track>,
+		effect_slots_to_unload_producer: &mut Producer<EffectSlot>,
+	) {
 		match command {
 			MixerCommand::AddSubTrack(id, settings) => {
 				self.sub_tracks.insert(id, Track::new(settings));
@@ -33,6 +40,26 @@ impl Mixer {
 				};
 				if let Some(track) = track {
 					track.add_effect(id, effect, settings);
+				}
+			}
+			MixerCommand::RemoveSubTrack(id) => {
+				if let Some(track) = self.sub_tracks.remove(&id) {
+					match tracks_to_unload_producer.push(track) {
+						_ => {}
+					}
+				}
+			}
+			MixerCommand::RemoveEffect(track_index, effect_id) => {
+				let track = match track_index {
+					TrackIndex::Main => Some(&mut self.main_track),
+					TrackIndex::Sub(id) => self.sub_tracks.get_mut(&id),
+				};
+				if let Some(track) = track {
+					if let Some(effect_slot) = track.remove_effect(effect_id) {
+						match effect_slots_to_unload_producer.push(effect_slot) {
+							_ => {}
+						}
+					}
 				}
 			}
 		}

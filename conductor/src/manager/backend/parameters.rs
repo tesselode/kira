@@ -32,6 +32,9 @@ impl Parameters {
 					parameter.set(value, tween);
 				}
 			}
+			ParameterCommand::RemoveParameter(id) => {
+				self.parameters.remove(&id);
+			}
 		}
 	}
 
