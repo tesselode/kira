@@ -3,7 +3,7 @@ use mlua::prelude::*;
 
 use crate::{
 	duration::LDuration, event::CustomEvent, instance::LInstanceSettings, sound::LSoundId,
-	tween::LTween,
+	tween::LTween, value::LValue,
 };
 
 #[derive(Debug, Clone)]
@@ -45,23 +45,15 @@ impl LuaUserData for LSequence {
 
 		methods.add_method_mut(
 			"setInstanceVolume",
-			|_: &Lua,
-			 this: &mut Self,
-			 (handle, volume, tween): (LSequenceInstanceHandle, f64, Option<LTween>)| {
-				Ok(this
-					.0
-					.set_instance_volume(handle.0, volume, tween.map(|tween| tween.0)))
+			|_: &Lua, this: &mut Self, (handle, volume): (LSequenceInstanceHandle, LValue)| {
+				Ok(this.0.set_instance_volume(handle.0, volume.0))
 			},
 		);
 
 		methods.add_method_mut(
 			"setInstancePitch",
-			|_: &Lua,
-			 this: &mut Self,
-			 (handle, pitch, tween): (LSequenceInstanceHandle, f64, Option<LTween>)| {
-				Ok(this
-					.0
-					.set_instance_pitch(handle.0, pitch, tween.map(|tween| tween.0)))
+			|_: &Lua, this: &mut Self, (handle, pitch): (LSequenceInstanceHandle, LValue)| {
+				Ok(this.0.set_instance_pitch(handle.0, pitch.0))
 			},
 		);
 

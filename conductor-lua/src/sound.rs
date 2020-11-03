@@ -1,7 +1,10 @@
-use conductor::sound::{SoundId, SoundMetadata, SoundSettings};
+use conductor::{
+	sound::{SoundId, SoundMetadata, SoundSettings},
+	track::index::TrackIndex,
+};
 use mlua::prelude::*;
 
-use crate::error::ConductorLuaError;
+use crate::{error::ConductorLuaError, track::LTrackIndex};
 
 pub struct LSoundMetadata(SoundMetadata);
 
@@ -40,6 +43,10 @@ impl<'lua> FromLua<'lua> for LSoundSettings {
 		match lua_value {
 			LuaNil => Ok(LSoundSettings(SoundSettings::default())),
 			LuaValue::Table(table) => Ok(LSoundSettings(SoundSettings {
+				default_track: table
+					.get::<_, Option<LTrackIndex>>("defaultTrack")?
+					.unwrap_or(LTrackIndex(TrackIndex::Main))
+					.0,
 				cooldown: Some(table.get::<_, Option<f64>>("cooldown")?.unwrap_or(0.0001)),
 				metadata: table
 					.get::<_, Option<LSoundMetadata>>("metadata")?

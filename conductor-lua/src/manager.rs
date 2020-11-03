@@ -5,6 +5,7 @@ use crate::{
 	error::ConductorLuaError, event::CustomEvent, event::LEvent, instance::LInstanceId,
 	instance::LInstanceSettings, metronome::LMetronomeSettings, sequence::LSequence,
 	sequence::LSequenceId, sound::LSoundId, sound::LSoundSettings, tempo::LTempo, tween::LTween,
+	value::LValue,
 };
 
 pub struct LAudioManagerSettings(pub AudioManagerSettings);
@@ -89,27 +90,23 @@ impl LuaUserData for LAudioManager {
 
 		methods.add_method_mut(
 			"setInstanceVolume",
-			|_: &Lua, this: &mut Self, (id, volume, tween): (LInstanceId, f64, Option<LTween>)| {
-				match this
-					.0
-					.set_instance_volume(id.0, volume, tween.map(|tween| tween.0))
-				{
-					Ok(_) => Ok(()),
-					Err(error) => Err(LuaError::external(error)),
-				}
+			|_: &Lua, this: &mut Self, (id, volume): (LInstanceId, LValue)| match this
+				.0
+				.set_instance_volume(id.0, volume.0)
+			{
+				Ok(_) => Ok(()),
+				Err(error) => Err(LuaError::external(error)),
 			},
 		);
 
 		methods.add_method_mut(
 			"setInstancePitch",
-			|_: &Lua, this: &mut Self, (id, pitch, tween): (LInstanceId, f64, Option<LTween>)| {
-				match this
-					.0
-					.set_instance_pitch(id.0, pitch, tween.map(|tween| tween.0))
-				{
-					Ok(_) => Ok(()),
-					Err(error) => Err(LuaError::external(error)),
-				}
+			|_: &Lua, this: &mut Self, (id, pitch): (LInstanceId, LValue)| match this
+				.0
+				.set_instance_pitch(id.0, pitch.0)
+			{
+				Ok(_) => Ok(()),
+				Err(error) => Err(LuaError::external(error)),
 			},
 		);
 
