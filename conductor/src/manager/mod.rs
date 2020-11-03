@@ -216,6 +216,10 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		Ok(id)
 	}
 
+	pub fn remove_parameter(&mut self, id: ParameterId) -> ConductorResult<()> {
+		self.send_command_to_backend(Command::Parameter(ParameterCommand::RemoveParameter(id)))
+	}
+
 	pub fn set_parameter(
 		&mut self,
 		id: ParameterId,

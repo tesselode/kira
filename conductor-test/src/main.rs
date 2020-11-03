@@ -15,12 +15,13 @@ use conductor::{
 
 fn main() -> Result<(), Box<dyn Error>> {
 	let mut manager = AudioManager::<()>::new(AudioManagerSettings::default())?;
+	let filter_cutoff_parameter_id = manager.add_parameter(1000.0)?;
 	let track_id = manager.add_sub_track(TrackSettings::default())?;
 	let effect_id = manager.add_effect_to_track(
 		TrackIndex::Sub(track_id),
 		Box::new(StateVariableFilter::new(StateVariableFilterSettings {
 			mode: StateVariableFilterMode::LowPass,
-			cutoff: 1000.0.into(),
+			cutoff: filter_cutoff_parameter_id.into(),
 			..Default::default()
 		})),
 		EffectSettings::default(),
@@ -42,9 +43,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 			..Default::default()
 		},
 	)?;
+	manager.set_parameter(filter_cutoff_parameter_id, 4000.0, Some(Tween(5.0)))?;
 	let mut input = String::new();
 	stdin().read_line(&mut input)?;
-	manager.remove_effect(effect_id)?;
+	manager.remove_parameter(filter_cutoff_parameter_id)?;
 	let mut input = String::new();
 	stdin().read_line(&mut input)?;
 	Ok(())
