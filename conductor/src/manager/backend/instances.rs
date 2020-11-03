@@ -7,7 +7,7 @@ use crate::{
 };
 use indexmap::IndexMap;
 
-use super::mixer::Mixer;
+use super::{mixer::Mixer, parameters::Parameters};
 
 pub(crate) struct Instances {
 	instances: IndexMap<InstanceId, Instance>,
@@ -41,14 +41,14 @@ impl Instances {
 					}
 				}
 			}
-			InstanceCommand::SetInstanceVolume(id, volume, tween) => {
+			InstanceCommand::SetInstanceVolume(id, value) => {
 				if let Some(instance) = self.instances.get_mut(&id) {
-					instance.set_volume(volume, tween);
+					instance.set_volume(value);
 				}
 			}
-			InstanceCommand::SetInstancePitch(id, pitch, tween) => {
+			InstanceCommand::SetInstancePitch(id, value) => {
 				if let Some(instance) = self.instances.get_mut(&id) {
-					instance.set_pitch(pitch, tween);
+					instance.set_pitch(value);
 				}
 			}
 			InstanceCommand::PauseInstance(id, fade_tween) => {
@@ -107,7 +107,13 @@ impl Instances {
 		}
 	}
 
-	pub fn process(&mut self, dt: f64, sounds: &IndexMap<SoundId, Sound>, mixer: &mut Mixer) {
+	pub fn process(
+		&mut self,
+		dt: f64,
+		sounds: &IndexMap<SoundId, Sound>,
+		mixer: &mut Mixer,
+		parameters: &Parameters,
+	) {
 		for (instance_id, instance) in &mut self.instances {
 			if instance.playing() {
 				if let Some(sound) = sounds.get(&instance.sound_id()) {
@@ -117,7 +123,7 @@ impl Instances {
 			if instance.finished() {
 				self.instances_to_remove.push(*instance_id);
 			}
-			instance.update(dt);
+			instance.update(dt, parameters);
 		}
 		for instance_id in self.instances_to_remove.drain(..) {
 			self.instances.remove(&instance_id);

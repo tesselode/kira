@@ -19,6 +19,7 @@ use crate::{
 	track::EffectSettings,
 	track::TrackSettings,
 	tween::Tween,
+	value::Value,
 };
 use backend::Backend;
 use cpal::{
@@ -267,22 +268,20 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	pub fn set_instance_volume(
 		&mut self,
 		id: InstanceId,
-		volume: f64,
-		tween: Option<Tween>,
+		volume: Value,
 	) -> Result<(), ConductorError> {
 		self.send_command_to_backend(Command::Instance(InstanceCommand::SetInstanceVolume(
-			id, volume, tween,
+			id, volume,
 		)))
 	}
 
 	pub fn set_instance_pitch(
 		&mut self,
 		id: InstanceId,
-		pitch: f64,
-		tween: Option<Tween>,
+		pitch: Value,
 	) -> Result<(), ConductorError> {
 		self.send_command_to_backend(Command::Instance(InstanceCommand::SetInstancePitch(
-			id, pitch, tween,
+			id, pitch,
 		)))
 	}
 

@@ -7,12 +7,15 @@ can be playing at once.
 */
 
 use crate::{
+	manager::backend::parameters::Parameters,
 	parameter::Parameter,
 	sequence::SequenceId,
 	sound::{Sound, SoundId},
 	stereo_sample::StereoSample,
 	track::index::TrackIndex,
 	tween::Tween,
+	value::CachedValue,
+	value::Value,
 };
 use std::{
 	ops::Range,
@@ -56,9 +59,9 @@ pub struct LoopSettings {
 #[derive(Debug, Clone)]
 pub struct InstanceSettings {
 	/// The volume of the instance.
-	pub volume: f64,
+	pub volume: Value,
 	/// The pitch of the instance, as a factor of the original pitch.
-	pub pitch: f64,
+	pub pitch: Value,
 	/// Whether the instance should be played in reverse.
 	pub reverse: bool,
 	/// The position to start playing the instance at (in seconds).
@@ -77,8 +80,8 @@ pub struct InstanceSettings {
 impl Default for InstanceSettings {
 	fn default() -> Self {
 		Self {
-			volume: 1.0,
-			pitch: 1.0,
+			volume: Value::Fixed(1.0),
+			pitch: Value::Fixed(1.0),
 			reverse: false,
 			position: 0.0,
 			fade_in_duration: None,
@@ -118,8 +121,8 @@ pub(crate) struct Instance {
 	sound_id: SoundId,
 	track_index: TrackIndex,
 	sequence_id: Option<SequenceId>,
-	volume: Parameter,
-	pitch: Parameter,
+	volume: CachedValue,
+	pitch: CachedValue,
 	reverse: bool,
 	state: InstanceState,
 	sub_instances: [Option<SubInstance>; MAX_SUB_INSTANCES],
@@ -150,8 +153,8 @@ impl Instance {
 			sound_id,
 			track_index: settings.track.unwrap_or(sound_id.default_track_index()),
 			sequence_id,
-			volume: Parameter::new(settings.volume),
-			pitch: Parameter::new(settings.pitch),
+			volume: CachedValue::new(settings.volume, 1.0),
+			pitch: CachedValue::new(settings.pitch, 1.0),
 			reverse: settings.reverse,
 			state,
 			sub_instances,
@@ -203,12 +206,12 @@ impl Instance {
 		self.state == InstanceState::Stopped
 	}
 
-	pub fn set_volume(&mut self, volume: f64, tween: Option<Tween>) {
-		self.volume.set(volume, tween);
+	pub fn set_volume(&mut self, volume: Value) {
+		self.volume.set(volume);
 	}
 
-	pub fn set_pitch(&mut self, pitch: f64, tween: Option<Tween>) {
-		self.pitch.set(pitch, tween);
+	pub fn set_pitch(&mut self, pitch: Value) {
+		self.pitch.set(pitch);
 	}
 
 	pub fn pause(&mut self, fade_tween: Option<Tween>) {
@@ -238,10 +241,10 @@ impl Instance {
 		}
 	}
 
-	pub fn update(&mut self, dt: f64) {
+	pub fn update(&mut self, dt: f64, parameters: &Parameters) {
 		if self.playing() {
-			self.volume.update(dt);
-			self.pitch.update(dt);
+			self.volume.update(parameters);
+			self.pitch.update(parameters);
 			// increment positions of existing sub-instances
 			for sub_instance in &mut self.sub_instances {
 				if let Some(sub_instance) = sub_instance {

@@ -140,7 +140,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> 
 		self.update_metronome();
 		self.update_sequences();
 		self.instances
-			.process(self.dt, &self.sounds, &mut self.mixer);
+			.process(self.dt, &self.sounds, &mut self.mixer, &self.parameters);
 		self.mixer.process(self.dt, &self.parameters)
 	}
 }

@@ -87,19 +87,11 @@ impl<CustomEvent: Copy + std::fmt::Debug> Sequences<CustomEvent> {
 							settings,
 						))
 					}
-					SequenceOutputCommand::SetInstanceVolume(instance_id, volume, tween) => {
-						Command::Instance(InstanceCommand::SetInstanceVolume(
-							instance_id,
-							volume,
-							tween,
-						))
+					SequenceOutputCommand::SetInstanceVolume(instance_id, volume) => {
+						Command::Instance(InstanceCommand::SetInstanceVolume(instance_id, volume))
 					}
-					SequenceOutputCommand::SetInstancePitch(instance_id, pitch, tween) => {
-						Command::Instance(InstanceCommand::SetInstancePitch(
-							instance_id,
-							pitch,
-							tween,
-						))
+					SequenceOutputCommand::SetInstancePitch(instance_id, pitch) => {
+						Command::Instance(InstanceCommand::SetInstancePitch(instance_id, pitch))
 					}
 					SequenceOutputCommand::PauseInstance(instance_id, fade_tween) => {
 						Command::Instance(InstanceCommand::PauseInstance(instance_id, fade_tween))

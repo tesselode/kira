@@ -7,6 +7,7 @@ use crate::{
 	sound::SoundId,
 	tempo::Tempo,
 	tween::Tween,
+	value::Value,
 };
 use std::{
 	collections::HashMap,
@@ -52,8 +53,8 @@ impl SequenceId {
 #[derive(Debug, Clone)]
 pub(crate) enum SequenceOutputCommand<InstanceIdKind, CustomEvent> {
 	PlaySound(InstanceIdKind, SoundId, InstanceSettings),
-	SetInstanceVolume(InstanceIdKind, f64, Option<Tween>),
-	SetInstancePitch(InstanceIdKind, f64, Option<Tween>),
+	SetInstanceVolume(InstanceIdKind, Value),
+	SetInstancePitch(InstanceIdKind, Value),
 	PauseInstance(InstanceIdKind, Option<Tween>),
 	ResumeInstance(InstanceIdKind, Option<Tween>),
 	StopInstance(InstanceIdKind, Option<Tween>),
@@ -78,13 +79,13 @@ impl<CustomEvent: Copy> SequenceOutputCommand<SequenceInstanceHandle, CustomEven
 				instances.insert(*handle, instance_id);
 				SequenceOutputCommand::PlaySound(instance_id, *sound_id, settings.clone())
 			}
-			SequenceOutputCommand::SetInstanceVolume(handle, volume, tween) => {
+			SequenceOutputCommand::SetInstanceVolume(handle, value) => {
 				let instance_id = instances.get(&handle).unwrap();
-				SequenceOutputCommand::SetInstanceVolume(*instance_id, *volume, *tween)
+				SequenceOutputCommand::SetInstanceVolume(*instance_id, *value)
 			}
-			SequenceOutputCommand::SetInstancePitch(handle, pitch, tween) => {
+			SequenceOutputCommand::SetInstancePitch(handle, value) => {
 				let instance_id = instances.get(&handle).unwrap();
-				SequenceOutputCommand::SetInstancePitch(*instance_id, *pitch, *tween)
+				SequenceOutputCommand::SetInstancePitch(*instance_id, *value)
 			}
 			SequenceOutputCommand::PauseInstance(handle, fade_tween) => {
 				let instance_id = instances.get(&handle).unwrap();
@@ -183,25 +184,15 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 		handle
 	}
 
-	pub fn set_instance_volume(
-		&mut self,
-		handle: SequenceInstanceHandle,
-		volume: f64,
-		tween: Option<Tween>,
-	) {
+	pub fn set_instance_volume(&mut self, handle: SequenceInstanceHandle, volume: Value) {
 		self.tasks.push(SequenceTask::RunCommand(
-			SequenceOutputCommand::SetInstanceVolume(handle, volume, tween),
+			SequenceOutputCommand::SetInstanceVolume(handle, volume),
 		));
 	}
 
-	pub fn set_instance_pitch(
-		&mut self,
-		handle: SequenceInstanceHandle,
-		pitch: f64,
-		tween: Option<Tween>,
-	) {
+	pub fn set_instance_pitch(&mut self, handle: SequenceInstanceHandle, pitch: Value) {
 		self.tasks.push(SequenceTask::RunCommand(
-			SequenceOutputCommand::SetInstancePitch(handle, pitch, tween),
+			SequenceOutputCommand::SetInstancePitch(handle, pitch),
 		));
 	}
 

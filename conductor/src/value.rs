@@ -30,7 +30,6 @@ impl From<ParameterId> for Value {
 #[derive(Debug, Clone)]
 pub(crate) struct CachedValue {
 	value: Value,
-	default_value: f64,
 	last_value: f64,
 }
 
@@ -38,14 +37,12 @@ impl CachedValue {
 	pub fn new(value: Value, default_value: f64) -> Self {
 		Self {
 			value,
-			default_value,
 			last_value: default_value,
 		}
 	}
 
-	pub fn set(&mut self, value: Value, parameters: &Parameters) {
+	pub fn set(&mut self, value: Value) {
 		self.value = value;
-		self.last_value = value.get(parameters).unwrap_or(self.default_value);
 	}
 
 	pub fn update(&mut self, parameters: &Parameters) {
