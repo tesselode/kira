@@ -20,7 +20,9 @@ impl<'lua> FromLua<'lua> for LLoopSettings {
 				Ok(LLoopSettings(settings))
 			}
 			value => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
-				"sequence", "table", value,
+				"loopSettings",
+				"table",
+				value,
 			))),
 		}
 	}
@@ -29,7 +31,7 @@ impl<'lua> FromLua<'lua> for LLoopSettings {
 pub struct LInstanceSettings(pub InstanceSettings);
 
 impl<'lua> FromLua<'lua> for LInstanceSettings {
-	fn from_lua(lua_value: LuaValue<'lua>, _: &'lua Lua) -> LuaResult<Self> {
+	fn from_lua(lua_value: LuaValue<'lua>, lua: &'lua Lua) -> LuaResult<Self> {
 		match lua_value {
 			LuaNil => Ok(LInstanceSettings(InstanceSettings::default())),
 			LuaValue::Table(table) => {
@@ -49,13 +51,23 @@ impl<'lua> FromLua<'lua> for LInstanceSettings {
 				if table.contains_key("fadeInDuration")? {
 					settings.fade_in_duration = table.get("fadeInDuration")?;
 				}
-				if table.contains_key("loopSettings")? {
-					settings.loop_settings = Some(table.get::<_, LLoopSettings>("loopSettings")?.0);
+				if table.contains_key("loop")? {
+					match table.get::<_, LuaValue>("loop")? {
+						LuaValue::Boolean(boolean) => {
+							if boolean {
+								settings.loop_settings = Some(LoopSettings::default());
+							}
+						}
+						lua_value => {
+							settings.loop_settings =
+								Some(LLoopSettings::from_lua(lua_value, lua)?.0);
+						}
+					}
 				}
 				Ok(LInstanceSettings(settings))
 			}
 			value => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
-				"instance settings",
+				"instanceSettings",
 				"table",
 				value,
 			))),

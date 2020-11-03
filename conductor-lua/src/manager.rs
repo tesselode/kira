@@ -3,9 +3,9 @@ use mlua::prelude::*;
 
 use crate::{
 	error::ConductorLuaError, event::CustomEvent, event::LEvent, instance::LInstanceId,
-	instance::LInstanceSettings, metronome::LMetronomeSettings, sequence::LSequence,
-	sequence::LSequenceId, sound::LSoundId, sound::LSoundSettings, tempo::LTempo, tween::LTween,
-	value::LValue,
+	instance::LInstanceSettings, metronome::LMetronomeSettings, parameter::LParameterId,
+	sequence::LSequence, sequence::LSequenceId, sound::LSoundId, sound::LSoundSettings,
+	tempo::LTempo, track::LSubTrackId, track::LTrackSettings, tween::LTween, value::LValue,
 };
 
 pub struct LAudioManagerSettings(pub AudioManagerSettings);
@@ -25,11 +25,20 @@ impl<'lua> FromLua<'lua> for LAudioManagerSettings {
 				if table.contains_key("numSounds")? {
 					settings.num_sounds = table.get("numSounds")?;
 				}
+				if table.contains_key("numParameters")? {
+					settings.num_parameters = table.get("numParameters")?;
+				}
 				if table.contains_key("numInstances")? {
 					settings.num_instances = table.get("numInstances")?;
 				}
 				if table.contains_key("numSequences")? {
 					settings.num_sequences = table.get("numSequences")?;
+				}
+				if table.contains_key("numTracks")? {
+					settings.num_tracks = table.get("numTracks")?;
+				}
+				if table.contains_key("numEffectsPerTrack")? {
+					settings.num_effects_per_track = table.get("numEffectsPerTrack")?;
 				}
 				if table.contains_key("metronomeSettings")? {
 					settings.metronome_settings =
@@ -59,6 +68,50 @@ impl LAudioManager {
 
 impl LuaUserData for LAudioManager {
 	fn add_methods<'lua, M: LuaUserDataMethods<'lua, Self>>(methods: &mut M) {
+		methods.add_method_mut("addParameter", |_: &Lua, this: &mut Self, value: f64| {
+			this.0
+				.add_parameter(value)
+				.map(|id| LParameterId(id))
+				.map_err(|error| LuaError::external(error))
+		});
+
+		methods.add_method_mut(
+			"removeParameter",
+			|_: &Lua, this: &mut Self, id: LParameterId| {
+				this.0
+					.remove_parameter(id.0)
+					.map_err(|error| LuaError::external(error))
+			},
+		);
+
+		methods.add_method_mut(
+			"setParameter",
+			|_: &Lua, this: &mut Self, (id, value, tween): (LParameterId, f64, Option<LTween>)| {
+				this.0
+					.set_parameter(id.0, value, tween.map(|tween| tween.0))
+					.map_err(|error| LuaError::external(error))
+			},
+		);
+
+		methods.add_method_mut(
+			"addSubTrack",
+			|_: &Lua, this: &mut Self, settings: LTrackSettings| {
+				this.0
+					.add_sub_track(settings.0)
+					.map(|id| LSubTrackId(id))
+					.map_err(|error| LuaError::external(error))
+			},
+		);
+
+		methods.add_method_mut(
+			"removeSubTrack",
+			|_: &Lua, this: &mut Self, id: LSubTrackId| {
+				this.0
+					.remove_sub_track(id.0)
+					.map_err(|error| LuaError::external(error))
+			},
+		);
+
 		methods.add_method_mut(
 			"loadSound",
 			|_: &Lua, this: &mut Self, (path, settings): (LuaString, LSoundSettings)| match this
@@ -219,17 +272,73 @@ impl LuaUserData for LAudioManager {
 
 		methods.add_method_mut(
 			"muteSequence",
-			|_: &Lua, this: &mut Self, id: LSequenceId| match this.0.mute_sequence(id.0) {
-				Ok(_) => Ok(()),
-				Err(error) => Err(LuaError::external(error)),
+			|_: &Lua, this: &mut Self, id: LSequenceId| {
+				this.0
+					.mute_sequence(id.0)
+					.map_err(|error| LuaError::external(error))
 			},
 		);
 
 		methods.add_method_mut(
 			"unmuteSequence",
-			|_: &Lua, this: &mut Self, id: LSequenceId| match this.0.unmute_sequence(id.0) {
-				Ok(_) => Ok(()),
-				Err(error) => Err(LuaError::external(error)),
+			|_: &Lua, this: &mut Self, id: LSequenceId| {
+				this.0
+					.unmute_sequence(id.0)
+					.map_err(|error| LuaError::external(error))
+			},
+		);
+
+		methods.add_method_mut(
+			"pauseSequence",
+			|_: &Lua, this: &mut Self, id: LSequenceId| {
+				this.0
+					.pause_sequence(id.0)
+					.map_err(|error| LuaError::external(error))
+			},
+		);
+
+		methods.add_method_mut(
+			"resumeSequence",
+			|_: &Lua, this: &mut Self, id: LSequenceId| {
+				this.0
+					.resume_sequence(id.0)
+					.map_err(|error| LuaError::external(error))
+			},
+		);
+
+		methods.add_method_mut(
+			"stopSequence",
+			|_: &Lua, this: &mut Self, id: LSequenceId| {
+				this.0
+					.stop_sequence(id.0)
+					.map_err(|error| LuaError::external(error))
+			},
+		);
+
+		methods.add_method_mut(
+			"pauseSequenceAndInstances",
+			|_: &Lua, this: &mut Self, (id, fade_tween): (LSequenceId, Option<LTween>)| {
+				this.0
+					.pause_sequence_and_instances(id.0, fade_tween.map(|tween| tween.0))
+					.map_err(|error| LuaError::external(error))
+			},
+		);
+
+		methods.add_method_mut(
+			"resumeSequenceAndInstances",
+			|_: &Lua, this: &mut Self, (id, fade_tween): (LSequenceId, Option<LTween>)| {
+				this.0
+					.resume_sequence_and_instances(id.0, fade_tween.map(|tween| tween.0))
+					.map_err(|error| LuaError::external(error))
+			},
+		);
+
+		methods.add_method_mut(
+			"stopSequenceAndInstances",
+			|_: &Lua, this: &mut Self, (id, fade_tween): (LSequenceId, Option<LTween>)| {
+				this.0
+					.stop_sequence_and_instances(id.0, fade_tween.map(|tween| tween.0))
+					.map_err(|error| LuaError::external(error))
 			},
 		);
 

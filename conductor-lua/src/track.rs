@@ -1,8 +1,31 @@
-use conductor::track::{id::SubTrackId, index::TrackIndex};
+use conductor::track::{id::SubTrackId, index::TrackIndex, TrackSettings};
 use mlua::prelude::*;
 
 use crate::error::ConductorLuaError;
 
+pub struct LTrackSettings(pub TrackSettings);
+
+impl<'lua> FromLua<'lua> for LTrackSettings {
+	fn from_lua(lua_value: LuaValue<'lua>, _: &'lua Lua) -> LuaResult<Self> {
+		match lua_value {
+			LuaNil => Ok(LTrackSettings(TrackSettings::default())),
+			LuaValue::Table(table) => {
+				let mut settings = TrackSettings::default();
+				if table.contains_key("volume")? {
+					settings.volume = table.get("volume")?;
+				}
+				Ok(LTrackSettings(settings))
+			}
+			value => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
+				"trackSettings",
+				"table",
+				value,
+			))),
+		}
+	}
+}
+
+#[derive(Debug, Clone)]
 pub struct LSubTrackId(pub SubTrackId);
 
 impl LuaUserData for LSubTrackId {}
