@@ -72,10 +72,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> 
 						self.instances.stop_instances_of_sound(id, None);
 						if let Some(sound) = self.sounds.remove(&id) {
 							match self.sounds_to_unload_producer.push(sound) {
-								Ok(_) => {}
-								Err(sound) => {
-									self.sounds.insert(id, sound);
-								}
+								_ => {}
 							}
 						}
 					}
