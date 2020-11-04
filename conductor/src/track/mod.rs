@@ -23,6 +23,12 @@ impl Default for EffectSettings {
 	}
 }
 
+impl From<()> for EffectSettings {
+	fn from(_: ()) -> Self {
+		Self::default()
+	}
+}
+
 #[derive(Debug, Clone)]
 pub struct TrackSettings {
 	pub volume: f64,
@@ -31,6 +37,12 @@ pub struct TrackSettings {
 impl Default for TrackSettings {
 	fn default() -> Self {
 		Self { volume: 1.0 }
+	}
+}
+
+impl From<()> for TrackSettings {
+	fn from(_: ()) -> Self {
+		Self::default()
 	}
 }
 

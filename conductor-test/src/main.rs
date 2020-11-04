@@ -26,23 +26,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 		})),
 		EffectSettings::default(),
 	)?;
-	let sound_id = manager.load_sound(
-		std::env::current_dir().unwrap().join("assets/loop.ogg"),
-		SoundSettings {
-			default_track: TrackIndex::Sub(track_id),
-			metadata: SoundMetadata {
-				semantic_duration: Some(Tempo(128.0).beats_to_seconds(16.0)),
-			},
-			..Default::default()
-		},
-	)?;
-	manager.play_sound(
-		sound_id,
-		InstanceSettings {
-			loop_settings: Some(LoopSettings::default()),
-			..Default::default()
-		},
-	)?;
+	let sound_id =
+		manager.load_sound(std::env::current_dir().unwrap().join("assets/loop.ogg"), ())?;
+	manager.play_sound(sound_id, ())?;
 	manager.set_parameter(filter_cutoff_parameter_id, 4000.0, Some(Tween(5.0)))?;
 	let mut input = String::new();
 	stdin().read_line(&mut input)?;

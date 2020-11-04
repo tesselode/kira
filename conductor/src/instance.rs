@@ -91,6 +91,12 @@ impl Default for InstanceSettings {
 	}
 }
 
+impl From<()> for InstanceSettings {
+    fn from(_: ()) -> Self {
+        Self::default()
+    }
+}
+
 #[derive(Debug, Clone)]
 struct SubInstance {
 	position: f64,

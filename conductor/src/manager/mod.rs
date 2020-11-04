@@ -91,6 +91,12 @@ impl Default for AudioManagerSettings {
 	}
 }
 
+impl From<()> for AudioManagerSettings {
+	fn from(_: ()) -> Self {
+		Self::default()
+	}
+}
+
 /**
 Plays and manages audio.
 
@@ -264,10 +270,15 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	/// Loads a sound from a file path.
 	///
 	/// Returns a handle to the sound. Keep this so you can play the sound later.
-	pub fn load_sound<P>(&mut self, path: P, settings: SoundSettings) -> ConductorResult<SoundId>
+	pub fn load_sound<P, S: Into<SoundSettings>>(
+		&mut self,
+		path: P,
+		settings: S,
+	) -> ConductorResult<SoundId>
 	where
 		P: AsRef<Path>,
 	{
+		let settings = settings.into();
 		let sound = Sound::from_file(path, &settings)?;
 		let id = SoundId::new(sound.duration(), settings.default_track, settings.metadata);
 		self.send_command_to_backend(Command::Sound(SoundCommand::LoadSound(id, sound)))?;
@@ -280,17 +291,17 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	}
 
 	/// Plays a sound.
-	pub fn play_sound(
+	pub fn play_sound<S: Into<InstanceSettings>>(
 		&mut self,
 		sound_id: SoundId,
-		settings: InstanceSettings,
+		settings: S,
 	) -> Result<InstanceId, ConductorError> {
 		let instance_id = InstanceId::new();
 		self.send_command_to_backend(Command::Instance(InstanceCommand::PlaySound(
 			instance_id,
 			sound_id,
 			None,
-			settings,
+			settings.into(),
 		)))?;
 		Ok(instance_id)
 	}

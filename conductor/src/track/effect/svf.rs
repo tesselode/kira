@@ -35,6 +35,12 @@ impl Default for StateVariableFilterSettings {
 	}
 }
 
+impl From<()> for StateVariableFilterSettings {
+	fn from(_: ()) -> Self {
+		Self::default()
+	}
+}
+
 #[derive(Debug, Clone)]
 pub struct StateVariableFilter {
 	mode: StateVariableFilterMode,

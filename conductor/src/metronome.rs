@@ -30,6 +30,12 @@ impl Default for MetronomeSettings {
 	}
 }
 
+impl From<()> for MetronomeSettings {
+	fn from(_: ()) -> Self {
+		Self::default()
+	}
+}
+
 #[derive(Debug, Clone)]
 pub(crate) struct Metronome {
 	pub settings: MetronomeSettings,
