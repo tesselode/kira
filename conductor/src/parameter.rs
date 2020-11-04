@@ -31,7 +31,7 @@ struct TweenState {
 }
 
 #[derive(Debug, Clone)]
-pub struct Parameter {
+pub(crate) struct Parameter {
 	value: f64,
 	tween_state: Option<TweenState>,
 }
