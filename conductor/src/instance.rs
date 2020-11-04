@@ -18,7 +18,7 @@ use crate::{
 	value::Value,
 };
 use std::{
-	ops::Range,
+	ops::{Range, RangeFrom, RangeFull, RangeTo},
 	sync::atomic::{AtomicUsize, Ordering},
 };
 
@@ -44,15 +44,83 @@ impl InstanceId {
 	}
 }
 
-/// Settings for how an instance should loop.
-#[derive(Debug, Clone, Default)]
-pub struct LoopSettings {
+#[derive(Debug, Copy, Clone)]
+pub enum LoopPoint {
+	Default,
+	Custom(f64),
+}
+
+impl LoopPoint {
+	fn unwrap_or(&self, default: f64) -> f64 {
+		match self {
+			LoopPoint::Default => default,
+			LoopPoint::Custom(time) => *time,
+		}
+	}
+}
+
+impl Default for LoopPoint {
+	fn default() -> Self {
+		Self::Default
+	}
+}
+
+#[derive(Debug, Copy, Clone, Default)]
+pub struct LoopRegion {
 	/// Where the loop starts. Defaults to the beginning of the sound.
-	pub start: Option<f64>,
+	pub start: LoopPoint,
 	/// Where the loop ends. Defaults to the semantic duration
 	/// of the sound if it's defined, or the very end of the sound
 	/// otherwise.
-	pub end: Option<f64>,
+	pub end: LoopPoint,
+}
+
+impl LoopRegion {
+	fn to_time_range(&self, sound_id: &SoundId) -> Range<f64> {
+		(self.start.unwrap_or(0.0))
+			..(self.end.unwrap_or(
+				sound_id
+					.metadata()
+					.semantic_duration
+					.unwrap_or(sound_id.duration()),
+			))
+	}
+}
+
+impl From<RangeFull> for LoopRegion {
+	fn from(_: RangeFull) -> Self {
+		Self {
+			start: LoopPoint::Default,
+			end: LoopPoint::Default,
+		}
+	}
+}
+
+impl From<RangeFrom<f64>> for LoopRegion {
+	fn from(range: RangeFrom<f64>) -> Self {
+		Self {
+			start: LoopPoint::Custom(range.start),
+			end: LoopPoint::Default,
+		}
+	}
+}
+
+impl From<RangeTo<f64>> for LoopRegion {
+	fn from(range: RangeTo<f64>) -> Self {
+		Self {
+			start: LoopPoint::Default,
+			end: LoopPoint::Custom(range.end),
+		}
+	}
+}
+
+impl From<Range<f64>> for LoopRegion {
+	fn from(range: Range<f64>) -> Self {
+		Self {
+			start: LoopPoint::Custom(range.start),
+			end: LoopPoint::Custom(range.end),
+		}
+	}
 }
 
 /// Settings for an instance.
@@ -71,10 +139,19 @@ pub struct InstanceSettings {
 	pub fade_in_duration: Option<f64>,
 	/// Whether the instance should loop, and if so, settings
 	/// for how it should loop.
-	pub loop_settings: Option<LoopSettings>,
+	pub loop_region: Option<LoopRegion>,
 	/// Which track to play the instance on. Defaults to the
 	/// sound's default track.
 	pub track: Option<TrackIndex>,
+}
+
+impl InstanceSettings {
+	pub fn loop_region<L: Into<LoopRegion>>(self, region: L) -> Self {
+		Self {
+			loop_region: Some(region.into()),
+			..self
+		}
+	}
 }
 
 impl Default for InstanceSettings {
@@ -85,16 +162,16 @@ impl Default for InstanceSettings {
 			reverse: false,
 			position: 0.0,
 			fade_in_duration: None,
-			loop_settings: None,
+			loop_region: None,
 			track: None,
 		}
 	}
 }
 
 impl From<()> for InstanceSettings {
-    fn from(_: ()) -> Self {
-        Self::default()
-    }
+	fn from(_: ()) -> Self {
+		Self::default()
+	}
 }
 
 #[derive(Debug, Clone)]
@@ -166,18 +243,9 @@ impl Instance {
 			sub_instances,
 			next_sub_instance_index: 1 % MAX_SUB_INSTANCES,
 			fade_volume,
-			loop_region: match settings.loop_settings {
-				Some(loop_settings) => Some(
-					loop_settings.start.unwrap_or(0.0)
-						..loop_settings.end.unwrap_or(
-							sound_id
-								.metadata()
-								.semantic_duration
-								.unwrap_or(sound_id.duration()),
-						),
-				),
-				None => None,
-			},
+			loop_region: settings
+				.loop_region
+				.map(|region| region.to_time_range(&sound_id)),
 		}
 	}
 

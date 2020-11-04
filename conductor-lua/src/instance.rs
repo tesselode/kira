@@ -1,16 +1,16 @@
-use conductor::instance::{InstanceId, InstanceSettings, LoopSettings};
+use conductor::instance::{InstanceId, InstanceSettings, LoopRegion};
 use mlua::prelude::*;
 
 use crate::{error::ConductorLuaError, value::LValue};
 
-pub struct LLoopSettings(pub LoopSettings);
+pub struct LLoopSettings(pub LoopRegion);
 
 impl<'lua> FromLua<'lua> for LLoopSettings {
 	fn from_lua(lua_value: LuaValue<'lua>, _: &'lua Lua) -> LuaResult<Self> {
 		match lua_value {
-			LuaNil => Ok(LLoopSettings(LoopSettings::default())),
+			LuaNil => Ok(LLoopSettings(LoopRegion::default())),
 			LuaValue::Table(table) => {
-				let mut settings = LoopSettings::default();
+				let mut settings = LoopRegion::default();
 				if table.contains_key("startPoint")? {
 					settings.start = Some(table.get("startPoint")?);
 				}
@@ -55,12 +55,11 @@ impl<'lua> FromLua<'lua> for LInstanceSettings {
 					match table.get::<_, LuaValue>("loop")? {
 						LuaValue::Boolean(boolean) => {
 							if boolean {
-								settings.loop_settings = Some(LoopSettings::default());
+								settings.loop_region = Some(LoopRegion::default());
 							}
 						}
 						lua_value => {
-							settings.loop_settings =
-								Some(LLoopSettings::from_lua(lua_value, lua)?.0);
+							settings.loop_region = Some(LLoopSettings::from_lua(lua_value, lua)?.0);
 						}
 					}
 				}
