@@ -6,3 +6,9 @@ impl Tempo {
 		(60.0 / self.0) * beats
 	}
 }
+
+impl From<f64> for Tempo {
+	fn from(bpm: f64) -> Self {
+		Self(bpm)
+	}
+}
