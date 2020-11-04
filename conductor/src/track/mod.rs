@@ -61,12 +61,7 @@ impl Track {
 		}
 	}
 
-	pub fn add_effect(
-		&mut self,
-		id: EffectId,
-		effect: Box<dyn Effect + Send>,
-		settings: EffectSettings,
-	) {
+	pub fn add_effect(&mut self, id: EffectId, effect: Box<dyn Effect>, settings: EffectSettings) {
 		self.effect_slots
 			.insert(id, EffectSlot::new(effect, settings));
 	}

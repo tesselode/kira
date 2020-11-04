@@ -54,7 +54,7 @@ pub(crate) enum SequenceCommand<CustomEvent> {
 pub(crate) enum MixerCommand {
 	AddSubTrack(SubTrackId, TrackSettings),
 	RemoveSubTrack(SubTrackId),
-	AddEffect(TrackIndex, EffectId, Box<dyn Effect + Send>, EffectSettings),
+	AddEffect(TrackIndex, EffectId, Box<dyn Effect>, EffectSettings),
 	RemoveEffect(EffectId),
 }
 

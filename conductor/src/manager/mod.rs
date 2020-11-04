@@ -250,7 +250,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	pub fn add_effect_to_track(
 		&mut self,
 		track_index: TrackIndex,
-		effect: Box<dyn Effect + Send>,
+		effect: Box<dyn Effect>,
 		settings: EffectSettings,
 	) -> ConductorResult<EffectId> {
 		let effect_id = EffectId::new(track_index);

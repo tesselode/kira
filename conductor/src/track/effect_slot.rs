@@ -3,12 +3,12 @@ use crate::{manager::backend::parameters::Parameters, stereo_sample::StereoSampl
 use super::{effect::Effect, EffectSettings};
 
 pub(crate) struct EffectSlot {
-	effect: Box<dyn Effect + Send>,
+	effect: Box<dyn Effect>,
 	enabled: bool,
 }
 
 impl EffectSlot {
-	pub fn new(effect: Box<dyn Effect + Send>, settings: EffectSettings) -> Self {
+	pub fn new(effect: Box<dyn Effect>, settings: EffectSettings) -> Self {
 		Self {
 			effect,
 			enabled: settings.enabled,

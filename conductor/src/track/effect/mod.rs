@@ -25,6 +25,6 @@ impl EffectId {
 	}
 }
 
-pub trait Effect {
+pub trait Effect: Send {
 	fn process(&mut self, dt: f64, input: StereoSample, parameters: &Parameters) -> StereoSample;
 }
