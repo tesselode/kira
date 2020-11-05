@@ -26,7 +26,7 @@ pub struct SequenceInstanceHandle {
 }
 
 impl SequenceInstanceHandle {
-	pub fn new() -> Self {
+	pub(crate) fn new() -> Self {
 		let index = NEXT_SEQUENCE_INSTANCE_HANDLE_INDEX.fetch_add(1, Ordering::Relaxed);
 		Self { index }
 	}
