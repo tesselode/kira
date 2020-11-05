@@ -12,7 +12,7 @@ static NEXT_SOUND_INDEX: AtomicUsize = AtomicUsize::new(0);
 /// A unique identifier for a `Sound`.
 ///
 /// You cannot create this manually - a `SoundId` is returned
-/// when you load a sound with a `Project`.
+/// when you load a sound with an `AudioManager`.
 #[derive(Debug, Copy, Clone)]
 pub struct SoundId {
 	index: usize,

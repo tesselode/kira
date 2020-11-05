@@ -13,10 +13,20 @@ use hound::WavReader;
 use lewton::{inside_ogg::OggStreamReader, samples::Samples};
 use std::{fs::File, path::Path};
 
+/// Settings for a sound.
 #[derive(Debug, Clone)]
 pub struct SoundSettings {
+	/// The track instances of this sound will play on by default.
 	pub default_track: TrackIndex,
+	/// Whether the sound should have a "cool off" period after playing
+	/// before it can be played again, and if so, the duration
+	/// of that cool off period.
+	///
+	/// This is useful to avoid situations where the same sound
+	/// is played multiple times at the exact same point in time,
+	/// resulting in the sound being louder than normal.
 	pub cooldown: Option<f64>,
+	/// Information about the sound.
 	pub metadata: SoundMetadata,
 }
 

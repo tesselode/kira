@@ -46,7 +46,7 @@ impl<'lua> FromLua<'lua> for LInstanceSettings {
 					settings.reverse = table.get("reverse")?;
 				}
 				if table.contains_key("position")? {
-					settings.position = table.get("position")?;
+					settings.start_position = table.get("position")?;
 				}
 				if table.contains_key("fadeInDuration")? {
 					settings.fade_in_duration = table.get("fadeInDuration")?;

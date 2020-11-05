@@ -1,5 +1,9 @@
 use crate::{manager::backend::parameters::Parameters, parameter::ParameterId};
 
+/// A number that something can be set to.
+///
+/// Can either be a fixed number or the current value
+/// of a parameter.
 #[derive(Debug, Copy, Clone)]
 pub enum Value {
 	Fixed(f64),

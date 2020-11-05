@@ -15,6 +15,8 @@ use conductor::{
 
 fn main() -> Result<(), Box<dyn Error>> {
 	let mut manager = AudioManager::<()>::new(AudioManagerSettings::default())?;
+	let pitch_parameter_id = manager.add_parameter(1.0)?;
+	let track_id = manager.add_sub_track(Default::default())?;
 	let sound_id = manager.load_sound(
 		std::env::current_dir().unwrap().join("assets/loop.ogg"),
 		SoundSettings {
@@ -24,7 +26,14 @@ fn main() -> Result<(), Box<dyn Error>> {
 			..Default::default()
 		},
 	)?;
-	manager.play_sound(sound_id, InstanceSettings::default().loop_region(..))?;
+	manager.set_parameter(pitch_parameter_id, 0.25, Some(Tween(2.0)))?;
+	manager.play_sound(
+		sound_id,
+		InstanceSettings::new()
+			.pitch(pitch_parameter_id)
+			.track(track_id)
+			.loop_region(..),
+	)?;
 	let mut input = String::new();
 	stdin().read_line(&mut input)?;
 	Ok(())

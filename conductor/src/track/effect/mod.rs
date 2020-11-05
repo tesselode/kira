@@ -8,6 +8,12 @@ use super::index::TrackIndex;
 
 static NEXT_EFFECT_INDEX: AtomicUsize = AtomicUsize::new(0);
 
+/**
+A unique identifier for an `Effect`.
+
+You cannot create this manually - an `EffectId` is created
+when you add an effect to a mixer track with an `AudioManager`.
+*/
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct EffectId {
 	index: usize,
@@ -20,7 +26,8 @@ impl EffectId {
 		Self { index, track_index }
 	}
 
-	pub(crate) fn track_index(&self) -> TrackIndex {
+	/// Gets the mixer track that this effect applies to.
+	pub fn track_index(&self) -> TrackIndex {
 		self.track_index
 	}
 }

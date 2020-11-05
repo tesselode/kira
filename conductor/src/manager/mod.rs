@@ -47,6 +47,7 @@ pub enum Event<CustomEvent: Send + 'static> {
 	when the metronome is created.
 	*/
 	MetronomeIntervalPassed(f64),
+	/// A user-defined event.
 	Custom(CustomEvent),
 }
 
@@ -59,17 +60,17 @@ pub struct AudioManagerSettings {
 	pub num_commands: usize,
 	/// The number of events the audio thread can send at a time.
 	pub num_events: usize,
-	/// The maximum number of sounds that can be loaded at once.
+	/// The maximum number of sounds that can be loaded at a time.
 	pub num_sounds: usize,
-	/// The maximum number of parameters that can exist at once.
+	/// The maximum number of parameters that can exist at a time.
 	pub num_parameters: usize,
-	/// The maximum number of instances of sounds that can be playing at once.
+	/// The maximum number of instances of sounds that can be playing at a time.
 	pub num_instances: usize,
 	/// The maximum number of sequences that can be running at a time.
 	pub num_sequences: usize,
 	/// The maximum number of mixer tracks that can be used at a time.
 	pub num_tracks: usize,
-	/// The maximum number of effects that can be running at a time on a track.
+	/// The maximum number of effects that can be running at a time on a mixer track.
 	pub num_effects_per_track: usize,
 	/// Settings for the metronome.
 	pub metronome_settings: MetronomeSettings,

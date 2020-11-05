@@ -12,7 +12,7 @@ use crate::{
 	sequence::SequenceId,
 	sound::{Sound, SoundId},
 	stereo_sample::StereoSample,
-	track::index::TrackIndex,
+	track::{id::SubTrackId, index::TrackIndex},
 	tween::Tween,
 	value::CachedValue,
 	value::Value,
@@ -44,14 +44,53 @@ impl InstanceId {
 	}
 }
 
+/// A track index for an instance to play on.
+#[derive(Debug, Copy, Clone)]
+pub enum InstanceTrackIndex {
+	/// The default track for the sound.
+	DefaultForSound,
+	/// A manually set track index.
+	Custom(TrackIndex),
+}
+
+impl InstanceTrackIndex {
+	fn or_default(&self, default: TrackIndex) -> TrackIndex {
+		match self {
+			InstanceTrackIndex::DefaultForSound => default,
+			InstanceTrackIndex::Custom(index) => *index,
+		}
+	}
+}
+
+impl Default for InstanceTrackIndex {
+	fn default() -> Self {
+		Self::DefaultForSound
+	}
+}
+
+impl From<TrackIndex> for InstanceTrackIndex {
+	fn from(index: TrackIndex) -> Self {
+		Self::Custom(index)
+	}
+}
+
+impl From<SubTrackId> for InstanceTrackIndex {
+	fn from(id: SubTrackId) -> Self {
+		Self::Custom(TrackIndex::Sub(id))
+	}
+}
+
+/// A start or end point of a loop (in seconds).
 #[derive(Debug, Copy, Clone)]
 pub enum LoopPoint {
+	/// The default start or end point.
 	Default,
+	/// A manually set start or end point.
 	Custom(f64),
 }
 
 impl LoopPoint {
-	fn unwrap_or(&self, default: f64) -> f64 {
+	fn or_default(&self, default: f64) -> f64 {
 		match self {
 			LoopPoint::Default => default,
 			LoopPoint::Custom(time) => *time,
@@ -65,6 +104,7 @@ impl Default for LoopPoint {
 	}
 }
 
+/// A portion of a sound to loop.
 #[derive(Debug, Copy, Clone, Default)]
 pub struct LoopRegion {
 	/// Where the loop starts. Defaults to the beginning of the sound.
@@ -77,8 +117,8 @@ pub struct LoopRegion {
 
 impl LoopRegion {
 	fn to_time_range(&self, sound_id: &SoundId) -> Range<f64> {
-		(self.start.unwrap_or(0.0))
-			..(self.end.unwrap_or(
+		(self.start.or_default(0.0))
+			..(self.end.or_default(
 				sound_id
 					.metadata()
 					.semantic_duration
@@ -133,22 +173,76 @@ pub struct InstanceSettings {
 	/// Whether the instance should be played in reverse.
 	pub reverse: bool,
 	/// The position to start playing the instance at (in seconds).
-	pub position: f64,
+	pub start_position: f64,
 	/// Whether to fade in the instance from silence, and if so,
 	/// how long the fade-in should last (in seconds).
 	pub fade_in_duration: Option<f64>,
-	/// Whether the instance should loop, and if so, settings
-	/// for how it should loop.
+	/// Whether the instance should loop, and if so, the region
+	/// to loop.
 	pub loop_region: Option<LoopRegion>,
-	/// Which track to play the instance on. Defaults to the
-	/// sound's default track.
-	pub track: Option<TrackIndex>,
+	/// Which track to play the instance on.
+	pub track: InstanceTrackIndex,
 }
 
 impl InstanceSettings {
+	/// Creates a new `InstanceSettings` with the default settings.
+	pub fn new() -> Self {
+		Self::default()
+	}
+
+	/// Sets the volume of the instance.
+	pub fn volume<V: Into<Value>>(self, volume: V) -> Self {
+		Self {
+			volume: volume.into(),
+			..self
+		}
+	}
+
+	/// Sets the pitch of the instance.
+	pub fn pitch<P: Into<Value>>(self, pitch: P) -> Self {
+		Self {
+			pitch: pitch.into(),
+			..self
+		}
+	}
+
+	/// Enables reverse playback for the instance.
+	pub fn reverse(self) -> Self {
+		Self {
+			reverse: true,
+			..self
+		}
+	}
+
+	/// Sets where in the sound playback will start (in seconds).
+	pub fn start_position(self, start_position: f64) -> Self {
+		Self {
+			start_position,
+			..self
+		}
+	}
+
+	/// Sets the amount of time the instance will take to fade in
+	/// from silence (in seconds).
+	pub fn fade_in_duration(self, fade_in_duration: f64) -> Self {
+		Self {
+			fade_in_duration: Some(fade_in_duration),
+			..self
+		}
+	}
+
+	/// Sets the portion of the sound that should be looped.
 	pub fn loop_region<L: Into<LoopRegion>>(self, region: L) -> Self {
 		Self {
 			loop_region: Some(region.into()),
+			..self
+		}
+	}
+
+	/// Sets the track the instance will play on.
+	pub fn track<T: Into<InstanceTrackIndex>>(self, track: T) -> Self {
+		Self {
+			track: track.into(),
 			..self
 		}
 	}
@@ -160,10 +254,10 @@ impl Default for InstanceSettings {
 			volume: Value::Fixed(1.0),
 			pitch: Value::Fixed(1.0),
 			reverse: false,
-			position: 0.0,
+			start_position: 0.0,
 			fade_in_duration: None,
 			loop_region: None,
-			track: None,
+			track: Default::default(),
 		}
 	}
 }
@@ -225,10 +319,10 @@ impl Instance {
 			fade_volume = Parameter::new(1.0);
 		}
 		let mut sub_instances: [Option<SubInstance>; MAX_SUB_INSTANCES] = Default::default();
-		sub_instances[0] = Some(SubInstance::new(settings.position));
+		sub_instances[0] = Some(SubInstance::new(settings.start_position));
 		Self {
 			sound_id,
-			track_index: settings.track.unwrap_or(sound_id.default_track_index()),
+			track_index: settings.track.or_default(sound_id.default_track_index()),
 			sequence_id,
 			volume: CachedValue::new(settings.volume, 1.0),
 			pitch: CachedValue::new(settings.pitch, 1.0),

@@ -135,6 +135,7 @@ enum SequenceState {
 	Finished,
 }
 
+/// A series of audio-related actions to take at specific times.
 #[derive(Debug, Clone)]
 pub struct Sequence<CustomEvent> {
 	tasks: Vec<SequenceTask<SequenceInstanceHandle, CustomEvent>>,
@@ -147,6 +148,7 @@ pub struct Sequence<CustomEvent> {
 }
 
 impl<CustomEvent: Copy> Sequence<CustomEvent> {
+	/// Creates a new sequence.
 	pub fn new() -> Self {
 		Self {
 			tasks: vec![],
@@ -159,18 +161,25 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 		}
 	}
 
+	/// Adds a task to wait for a certain length of time
+	/// before moving to the next task.
 	pub fn wait(&mut self, duration: Duration) {
 		self.tasks.push(SequenceTask::Wait(duration));
 	}
 
+	/// Adds a task to wait for a certain metronome interval
+	/// (in beats) to be passed before moving to the next task.
 	pub fn wait_for_interval(&mut self, interval: f64) {
 		self.tasks.push(SequenceTask::WaitForInterval(interval));
 	}
 
+	/// Marks the point where the sequence will loop back to
+	/// after it finishes the last task.
 	pub fn start_loop(&mut self) {
 		self.loop_point = Some(self.tasks.len())
 	}
 
+	/// Adds a task to play a sound.
 	pub fn play_sound(
 		&mut self,
 		sound_id: SoundId,
@@ -184,78 +193,99 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 		handle
 	}
 
+	/// Adds a task to set the volume of an instance started
+	/// earlier in this sequence.
 	pub fn set_instance_volume(&mut self, handle: SequenceInstanceHandle, volume: Value) {
 		self.tasks.push(SequenceTask::RunCommand(
 			SequenceOutputCommand::SetInstanceVolume(handle, volume),
 		));
 	}
 
+	/// Adds a task to set the pitch of an instance started
+	/// earlier in this sequence.
 	pub fn set_instance_pitch(&mut self, handle: SequenceInstanceHandle, pitch: Value) {
 		self.tasks.push(SequenceTask::RunCommand(
 			SequenceOutputCommand::SetInstancePitch(handle, pitch),
 		));
 	}
 
+	/// Adds a task to pause an instance started
+	/// earlier in this sequence.
 	pub fn pause_instance(&mut self, handle: SequenceInstanceHandle, fade_tween: Option<Tween>) {
 		self.tasks.push(SequenceTask::RunCommand(
 			SequenceOutputCommand::PauseInstance(handle, fade_tween),
 		));
 	}
 
+	/// Adds a task to resume an instance started
+	/// earlier in this sequence.
 	pub fn resume_instance(&mut self, handle: SequenceInstanceHandle, fade_tween: Option<Tween>) {
 		self.tasks.push(SequenceTask::RunCommand(
 			SequenceOutputCommand::ResumeInstance(handle, fade_tween),
 		));
 	}
 
+	/// Adds a task to stop an instance started
+	/// earlier in this sequence.
 	pub fn stop_instance(&mut self, handle: SequenceInstanceHandle, fade_tween: Option<Tween>) {
 		self.tasks.push(SequenceTask::RunCommand(
 			SequenceOutputCommand::StopInstance(handle, fade_tween),
 		));
 	}
 
+	/// Adds a task to pause all instances of a sound.
 	pub fn pause_instances_of_sound(&mut self, id: SoundId, fade_tween: Option<Tween>) {
 		self.tasks.push(SequenceTask::RunCommand(
 			SequenceOutputCommand::PauseInstancesOfSound(id, fade_tween),
 		));
 	}
 
+	/// Adds a task to resume all instances of a sound.
 	pub fn resume_instances_of_sound(&mut self, id: SoundId, fade_tween: Option<Tween>) {
 		self.tasks.push(SequenceTask::RunCommand(
 			SequenceOutputCommand::ResumeInstancesOfSound(id, fade_tween),
 		));
 	}
 
+	/// Adds a task to stop all instances of a sound.
 	pub fn stop_instances_of_sound(&mut self, id: SoundId, fade_tween: Option<Tween>) {
 		self.tasks.push(SequenceTask::RunCommand(
 			SequenceOutputCommand::StopInstancesOfSound(id, fade_tween),
 		));
 	}
 
+	/// Adds a task to set the tempo of the metronome.
 	pub fn set_metronome_tempo(&mut self, tempo: Tempo) {
 		self.tasks.push(SequenceTask::RunCommand(
 			SequenceOutputCommand::SetMetronomeTempo(tempo),
 		));
 	}
 
+	/// Adds a task to start the metronome.
 	pub fn start_metronome(&mut self) {
 		self.tasks.push(SequenceTask::RunCommand(
 			SequenceOutputCommand::StartMetronome,
 		));
 	}
 
+	/// Adds a task to pause the metronome.
 	pub fn pause_metronome(&mut self) {
 		self.tasks.push(SequenceTask::RunCommand(
 			SequenceOutputCommand::PauseMetronome,
 		));
 	}
 
+	/// Adds a task to stop the metronome.
 	pub fn stop_metronome(&mut self) {
 		self.tasks.push(SequenceTask::RunCommand(
 			SequenceOutputCommand::StopMetronome,
 		));
 	}
 
+	/// Adds a task to emit a custom event.
+	///
+	/// This event can be received on the main thread by calling
+	/// `AudioManager.getEvents()`.
 	pub fn emit_custom_event(&mut self, event: CustomEvent) {
 		self.tasks.push(SequenceTask::RunCommand(
 			SequenceOutputCommand::EmitCustomEvent(event),
