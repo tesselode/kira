@@ -171,17 +171,15 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 		self.loop_point = Some(self.tasks.len())
 	}
 
-	pub fn play_sound<S: Into<InstanceSettings>>(
+	pub fn play_sound(
 		&mut self,
 		sound_id: SoundId,
-		settings: S,
+		settings: InstanceSettings,
 	) -> SequenceInstanceHandle {
 		let handle = SequenceInstanceHandle::new();
 		self.tasks
 			.push(SequenceTask::RunCommand(SequenceOutputCommand::PlaySound(
-				handle,
-				sound_id,
-				settings.into(),
+				handle, sound_id, settings,
 			)));
 		handle
 	}

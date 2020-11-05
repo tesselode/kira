@@ -30,12 +30,6 @@ impl Default for SoundSettings {
 	}
 }
 
-impl From<()> for SoundSettings {
-	fn from(_: ()) -> Self {
-		Self::default()
-	}
-}
-
 #[derive(Debug)]
 pub(crate) struct Sound {
 	sample_rate: u32,
