@@ -1,4 +1,4 @@
-use conductor::track::{id::SubTrackId, index::TrackIndex, TrackSettings};
+use conductor::track::{SubTrackId, TrackIndex, TrackSettings};
 use mlua::prelude::*;
 
 use crate::error::ConductorLuaError;

@@ -1,26 +1,33 @@
 pub mod effect;
-pub mod effect_slot;
-pub mod id;
-pub mod index;
+pub(crate) mod effect_slot;
+mod id;
+
+pub use id::SubTrackId;
 
 use indexmap::IndexMap;
 
 use crate::{manager::backend::parameters::Parameters, stereo_sample::StereoSample};
 
 use self::{
-	effect::{Effect, EffectId},
+	effect::{Effect, EffectId, EffectSettings},
 	effect_slot::EffectSlot,
 };
 
-#[derive(Debug, Clone)]
-pub struct EffectSettings {
-	enabled: bool,
-}
-
-impl Default for EffectSettings {
-	fn default() -> Self {
-		Self { enabled: true }
-	}
+/// Represents a mixer track.
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub enum TrackIndex {
+	/// The main track.
+	///
+	/// All sub-tracks are sent to the main track as input,
+	/// and the output of the main track is what you hear.
+	Main,
+	/// A sub-track.
+	///
+	/// Sub-tracks are useful for adjusting the volumes of
+	/// and applying effects to certain kinds of sounds.
+	/// For example, in a game, you may have one sub-track
+	/// for sound effects and another for music.
+	Sub(SubTrackId),
 }
 
 #[derive(Debug, Clone)]

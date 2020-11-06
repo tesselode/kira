@@ -1,25 +1,22 @@
 pub(crate) mod backend;
 
 use crate::{
-	command::MixerCommand,
-	command::ParameterCommand,
-	command::{Command, InstanceCommand, MetronomeCommand, SequenceCommand, SoundCommand},
-	error::ConductorError,
-	error::ConductorResult,
+	command::{
+		Command, InstanceCommand, MetronomeCommand, MixerCommand, ParameterCommand,
+		SequenceCommand, SoundCommand,
+	},
+	error::{ConductorError, ConductorResult},
 	instance::{InstanceId, InstanceSettings},
 	metronome::MetronomeSettings,
 	parameter::ParameterId,
 	sequence::{Sequence, SequenceId},
 	sound::{Sound, SoundId, SoundSettings},
 	tempo::Tempo,
-	track::effect::Effect,
-	track::effect::EffectId,
-	track::effect_slot::EffectSlot,
-	track::id::SubTrackId,
-	track::index::TrackIndex,
-	track::EffectSettings,
-	track::Track,
-	track::TrackSettings,
+	track::{
+		effect::{Effect, EffectId, EffectSettings},
+		effect_slot::EffectSlot,
+		SubTrackId, Track, TrackIndex, TrackSettings,
+	},
 	tween::Tween,
 	value::Value,
 };

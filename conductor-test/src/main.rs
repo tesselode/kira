@@ -1,16 +1,10 @@
 use std::{error::Error, io::stdin};
 
 use conductor::{
-	instance::{InstanceSettings, LoopRegion},
+	instance::InstanceSettings,
 	manager::{AudioManager, AudioManagerSettings},
 	sound::{SoundMetadata, SoundSettings},
-	tempo::Tempo,
-	track::effect::svf::StateVariableFilter,
-	track::effect::svf::StateVariableFilterSettings,
-	track::TrackSettings,
-	track::{effect::svf::StateVariableFilterMode, index::TrackIndex, EffectSettings},
-	tween::Tween,
-	value::Value,
+	Tempo, Tween,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {

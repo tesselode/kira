@@ -1,6 +1,6 @@
 use crate::{manager::backend::parameters::Parameters, stereo_sample::StereoSample};
 
-use super::{effect::Effect, EffectSettings};
+use super::effect::{Effect, EffectSettings};
 
 pub(crate) struct EffectSlot {
 	effect: Box<dyn Effect>,

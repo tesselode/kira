@@ -12,7 +12,7 @@ use crate::{
 	sequence::SequenceId,
 	sound::{Sound, SoundId},
 	stereo_sample::StereoSample,
-	track::{id::SubTrackId, index::TrackIndex},
+	track::{SubTrackId, TrackIndex},
 	tween::Tween,
 	value::CachedValue,
 	value::Value,

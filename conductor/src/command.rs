@@ -6,7 +6,7 @@ use crate::{
 	tempo::Tempo,
 	track::effect::Effect,
 	track::effect::EffectId,
-	track::{id::SubTrackId, index::TrackIndex, EffectSettings, TrackSettings},
+	track::{effect::EffectSettings, SubTrackId, TrackIndex, TrackSettings},
 	tween::Tween,
 	value::Value,
 };

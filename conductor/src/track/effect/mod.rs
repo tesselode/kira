@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::{manager::backend::parameters::Parameters, stereo_sample::StereoSample};
 
-use super::index::TrackIndex;
+use super::TrackIndex;
 
 static NEXT_EFFECT_INDEX: AtomicUsize = AtomicUsize::new(0);
 
@@ -29,6 +29,17 @@ impl EffectId {
 	/// Gets the mixer track that this effect applies to.
 	pub fn track_index(&self) -> TrackIndex {
 		self.track_index
+	}
+}
+
+#[derive(Debug, Clone)]
+pub struct EffectSettings {
+	pub enabled: bool,
+}
+
+impl Default for EffectSettings {
+	fn default() -> Self {
+		Self { enabled: true }
 	}
 }
 

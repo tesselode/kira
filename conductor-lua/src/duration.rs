@@ -1,4 +1,4 @@
-use conductor::duration::Duration;
+use conductor::Duration;
 use mlua::prelude::*;
 
 use crate::error::ConductorLuaError;

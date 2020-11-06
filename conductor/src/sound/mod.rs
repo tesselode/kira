@@ -1,12 +1,11 @@
-pub mod id;
-pub mod metadata;
+mod id;
+mod metadata;
 
 pub use id::SoundId;
 pub use metadata::SoundMetadata;
 
 use crate::{
-	error::ConductorError, error::ConductorResult, stereo_sample::StereoSample,
-	track::index::TrackIndex,
+	error::ConductorError, error::ConductorResult, stereo_sample::StereoSample, track::TrackIndex,
 };
 use claxon::FlacReader;
 use hound::WavReader;

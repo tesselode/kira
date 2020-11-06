@@ -5,7 +5,7 @@ use crate::{
 	command::MixerCommand,
 	stereo_sample::StereoSample,
 	track::effect::Effect,
-	track::{effect_slot::EffectSlot, id::SubTrackId, index::TrackIndex, Track, TrackSettings},
+	track::{effect_slot::EffectSlot, SubTrackId, Track, TrackIndex, TrackSettings},
 };
 
 use super::parameters::Parameters;

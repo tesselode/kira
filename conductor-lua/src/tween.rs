@@ -1,4 +1,4 @@
-use conductor::tween::Tween;
+use conductor::Tween;
 use mlua::prelude::*;
 
 use crate::error::ConductorLuaError;

@@ -1,4 +1,4 @@
-use conductor::value::Value;
+use conductor::Value;
 use mlua::prelude::*;
 
 use crate::{error::ConductorLuaError, parameter::LParameterId};

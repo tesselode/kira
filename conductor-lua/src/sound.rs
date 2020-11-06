@@ -1,6 +1,6 @@
 use conductor::{
 	sound::{SoundId, SoundMetadata, SoundSettings},
-	track::index::TrackIndex,
+	track::TrackIndex,
 };
 use mlua::prelude::*;
 
