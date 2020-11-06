@@ -3,12 +3,12 @@ use mlua::prelude::*;
 
 use crate::{error::ConductorLuaError, value::LValue};
 
-pub struct LLoopSettings(pub LoopRegion);
+pub struct LLoopRegion(pub LoopRegion);
 
-impl<'lua> FromLua<'lua> for LLoopSettings {
+impl<'lua> FromLua<'lua> for LLoopRegion {
 	fn from_lua(lua_value: LuaValue<'lua>, _: &'lua Lua) -> LuaResult<Self> {
 		match lua_value {
-			LuaNil => Ok(LLoopSettings(LoopRegion::default())),
+			LuaNil => Ok(LLoopRegion(LoopRegion::default())),
 			LuaValue::Table(table) => {
 				let mut settings = LoopRegion::default();
 				if table.contains_key("startPoint")? {
@@ -17,7 +17,7 @@ impl<'lua> FromLua<'lua> for LLoopSettings {
 				if table.contains_key("endPoint")? {
 					settings.end = LoopPoint::Custom(table.get("endPoint")?);
 				}
-				Ok(LLoopSettings(settings))
+				Ok(LLoopRegion(settings))
 			}
 			value => Err(LuaError::external(ConductorLuaError::wrong_argument_type(
 				"loopSettings",
@@ -59,7 +59,7 @@ impl<'lua> FromLua<'lua> for LInstanceSettings {
 							}
 						}
 						lua_value => {
-							settings.loop_region = Some(LLoopSettings::from_lua(lua_value, lua)?.0);
+							settings.loop_region = Some(LLoopRegion::from_lua(lua_value, lua)?.0);
 						}
 					}
 				}
