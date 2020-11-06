@@ -1,4 +1,4 @@
-use conductor::instance::{InstanceId, InstanceSettings, LoopRegion};
+use conductor::instance::{InstanceId, InstanceSettings, LoopPoint, LoopRegion};
 use mlua::prelude::*;
 
 use crate::{error::ConductorLuaError, value::LValue};
@@ -12,10 +12,10 @@ impl<'lua> FromLua<'lua> for LLoopSettings {
 			LuaValue::Table(table) => {
 				let mut settings = LoopRegion::default();
 				if table.contains_key("startPoint")? {
-					settings.start = Some(table.get("startPoint")?);
+					settings.start = LoopPoint::Custom(table.get("startPoint")?);
 				}
 				if table.contains_key("endPoint")? {
-					settings.end = Some(table.get("endPoint")?);
+					settings.end = LoopPoint::Custom(table.get("endPoint")?);
 				}
 				Ok(LLoopSettings(settings))
 			}
