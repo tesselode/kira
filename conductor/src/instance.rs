@@ -1,9 +1,38 @@
 /*!
-Contains structs related to instances.
+Provides an interface to control "instances", or individual occurrences, of a sound.
 
-Each time you play a sound, it creates an "instance", or occurrence, of that sound.
-Each instance can be controlled independently. Multiple instances of the same sound
-can be playing at once.
+You can control the volume and pitch of individual instances as well as pausing, resuming,
+and stopping them.
+
+## Examples
+
+### Playing a sound at a lower pitch than normal
+
+```no_run
+# use std::error::Error;
+#
+# use conductor::{manager::AudioManager, Tween, instance::InstanceSettings};
+#
+# let mut audio_manager = AudioManager::<()>::new(Default::default())?;
+# let sound_id = audio_manager.load_sound("loop.ogg", Default::default())?;
+let instance_id = audio_manager.play_sound(sound_id, InstanceSettings::new().pitch(0.5))?;
+# Ok::<(), Box<dyn Error>>(())
+```
+
+### Fading out a sound over 2 seconds
+
+```no_run
+# use std::error::Error;
+#
+# use conductor::{manager::AudioManager, Tween};
+#
+# let mut audio_manager = AudioManager::<()>::new(Default::default())?;
+# let sound_id = audio_manager.load_sound("loop.ogg", Default::default())?;
+# let instance_id = audio_manager.play_sound(sound_id, Default::default())?;
+audio_manager.stop_instance(instance_id, Some(Tween(2.0)))?;
+# Ok::<(), Box<dyn Error>>(())
+```
+
 */
 
 use crate::{
