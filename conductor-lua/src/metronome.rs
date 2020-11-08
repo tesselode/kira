@@ -1,4 +1,4 @@
-use conductor::metronome::MetronomeSettings;
+use conductor::MetronomeSettings;
 use mlua::prelude::*;
 
 use crate::{error::ConductorLuaError, tempo::LTempo};

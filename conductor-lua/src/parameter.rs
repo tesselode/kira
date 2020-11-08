@@ -1,4 +1,4 @@
-use conductor::parameter::ParameterId;
+use conductor::ParameterId;
 use mlua::prelude::*;
 
 #[derive(Debug, Clone)]

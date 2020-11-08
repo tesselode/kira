@@ -1,10 +1,3 @@
-/*!
-Contains structs related to metronomes.
-
-A metronome emits a steady pulse that other things, like `Sequence`s,
-can be synced to.
-*/
-
 use crate::{command::MetronomeCommand, tempo::Tempo};
 use std::vec::Drain;
 
