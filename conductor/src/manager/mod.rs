@@ -206,66 +206,6 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		}
 	}
 
-	/// Creates a parameter with the specified starting value.
-	pub fn add_parameter(&mut self, value: f64) -> ConductorResult<ParameterId> {
-		let id = ParameterId::new();
-		self.send_command_to_backend(Command::Parameter(ParameterCommand::AddParameter(
-			id, value,
-		)))?;
-		Ok(id)
-	}
-
-	/// Removes a parameter.
-	pub fn remove_parameter(&mut self, id: ParameterId) -> ConductorResult<()> {
-		self.send_command_to_backend(Command::Parameter(ParameterCommand::RemoveParameter(id)))
-	}
-
-	/// Sets the value of a parameter with an optional tween to smoothly change the value.
-	pub fn set_parameter(
-		&mut self,
-		id: ParameterId,
-		value: f64,
-		tween: Option<Tween>,
-	) -> ConductorResult<()> {
-		self.send_command_to_backend(Command::Parameter(ParameterCommand::SetParameter(
-			id, value, tween,
-		)))
-	}
-
-	/// Creates a mixer sub-track.
-	pub fn add_sub_track(&mut self, settings: TrackSettings) -> ConductorResult<SubTrackId> {
-		let id = SubTrackId::new();
-		self.send_command_to_backend(Command::Mixer(MixerCommand::AddSubTrack(id, settings)))?;
-		Ok(id)
-	}
-
-	/// Removes a sub-track from the mixer.
-	pub fn remove_sub_track(&mut self, id: SubTrackId) -> ConductorResult<()> {
-		self.send_command_to_backend(Command::Mixer(MixerCommand::RemoveSubTrack(id)))
-	}
-
-	/// Adds an effect to a track.
-	pub fn add_effect_to_track<T: Into<TrackIndex> + Copy>(
-		&mut self,
-		track_index: T,
-		effect: Box<dyn Effect>,
-		settings: EffectSettings,
-	) -> ConductorResult<EffectId> {
-		let effect_id = EffectId::new(track_index.into());
-		self.send_command_to_backend(Command::Mixer(MixerCommand::AddEffect(
-			track_index.into(),
-			effect_id,
-			effect,
-			settings,
-		)))?;
-		Ok(effect_id)
-	}
-
-	/// Removes an effect from the mixer.
-	pub fn remove_effect(&mut self, effect_id: EffectId) -> ConductorResult<()> {
-		self.send_command_to_backend(Command::Mixer(MixerCommand::RemoveEffect(effect_id)))
-	}
-
 	/// Loads a sound from a file path.
 	///
 	/// Returns a handle to the sound. Keep this so you can play the sound later.
@@ -490,6 +430,66 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		self.send_command_to_backend(Command::Instance(InstanceCommand::StopInstancesOfSequence(
 			id, fade_tween,
 		)))
+	}
+
+	/// Creates a parameter with the specified starting value.
+	pub fn add_parameter(&mut self, value: f64) -> ConductorResult<ParameterId> {
+		let id = ParameterId::new();
+		self.send_command_to_backend(Command::Parameter(ParameterCommand::AddParameter(
+			id, value,
+		)))?;
+		Ok(id)
+	}
+
+	/// Removes a parameter.
+	pub fn remove_parameter(&mut self, id: ParameterId) -> ConductorResult<()> {
+		self.send_command_to_backend(Command::Parameter(ParameterCommand::RemoveParameter(id)))
+	}
+
+	/// Sets the value of a parameter with an optional tween to smoothly change the value.
+	pub fn set_parameter(
+		&mut self,
+		id: ParameterId,
+		value: f64,
+		tween: Option<Tween>,
+	) -> ConductorResult<()> {
+		self.send_command_to_backend(Command::Parameter(ParameterCommand::SetParameter(
+			id, value, tween,
+		)))
+	}
+
+	/// Creates a mixer sub-track.
+	pub fn add_sub_track(&mut self, settings: TrackSettings) -> ConductorResult<SubTrackId> {
+		let id = SubTrackId::new();
+		self.send_command_to_backend(Command::Mixer(MixerCommand::AddSubTrack(id, settings)))?;
+		Ok(id)
+	}
+
+	/// Removes a sub-track from the mixer.
+	pub fn remove_sub_track(&mut self, id: SubTrackId) -> ConductorResult<()> {
+		self.send_command_to_backend(Command::Mixer(MixerCommand::RemoveSubTrack(id)))
+	}
+
+	/// Adds an effect to a track.
+	pub fn add_effect_to_track<T: Into<TrackIndex> + Copy>(
+		&mut self,
+		track_index: T,
+		effect: Box<dyn Effect>,
+		settings: EffectSettings,
+	) -> ConductorResult<EffectId> {
+		let effect_id = EffectId::new(track_index.into());
+		self.send_command_to_backend(Command::Mixer(MixerCommand::AddEffect(
+			track_index.into(),
+			effect_id,
+			effect,
+			settings,
+		)))?;
+		Ok(effect_id)
+	}
+
+	/// Removes an effect from the mixer.
+	pub fn remove_effect(&mut self, effect_id: EffectId) -> ConductorResult<()> {
+		self.send_command_to_backend(Command::Mixer(MixerCommand::RemoveEffect(effect_id)))
 	}
 
 	/// Returns a list of all of the new events created by the audio thread
