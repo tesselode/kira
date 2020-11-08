@@ -5,9 +5,9 @@ use crate::tween::Tween;
 static NEXT_PARAMETER_INDEX: AtomicUsize = AtomicUsize::new(0);
 
 /**
-A unique identifier for an `Parameter`.
+A unique identifier for a `Parameter`.
 
-You cannot create this manually - an `ParameterId` is created
+You cannot create this manually - a `ParameterId` is created
 when you create a parameter with an `AudioManager`.
 */
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
