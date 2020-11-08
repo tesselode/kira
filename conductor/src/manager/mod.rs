@@ -206,6 +206,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		}
 	}
 
+	/// Creates a parameter with the specified starting value.
 	pub fn add_parameter(&mut self, value: f64) -> ConductorResult<ParameterId> {
 		let id = ParameterId::new();
 		self.send_command_to_backend(Command::Parameter(ParameterCommand::AddParameter(
@@ -214,10 +215,12 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		Ok(id)
 	}
 
+	/// Removes a parameter.
 	pub fn remove_parameter(&mut self, id: ParameterId) -> ConductorResult<()> {
 		self.send_command_to_backend(Command::Parameter(ParameterCommand::RemoveParameter(id)))
 	}
 
+	/// Sets the value of a parameter with an optional tween to smoothly change the value.
 	pub fn set_parameter(
 		&mut self,
 		id: ParameterId,
@@ -229,16 +232,19 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		)))
 	}
 
+	/// Creates a mixer sub-track.
 	pub fn add_sub_track(&mut self, settings: TrackSettings) -> ConductorResult<SubTrackId> {
 		let id = SubTrackId::new();
 		self.send_command_to_backend(Command::Mixer(MixerCommand::AddSubTrack(id, settings)))?;
 		Ok(id)
 	}
 
+	/// Removes a sub-track from the mixer.
 	pub fn remove_sub_track(&mut self, id: SubTrackId) -> ConductorResult<()> {
 		self.send_command_to_backend(Command::Mixer(MixerCommand::RemoveSubTrack(id)))
 	}
 
+	/// Adds an effect to a track.
 	pub fn add_effect_to_track<T: Into<TrackIndex> + Copy>(
 		&mut self,
 		track_index: T,
@@ -255,6 +261,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		Ok(effect_id)
 	}
 
+	/// Removes an effect from the mixer.
 	pub fn remove_effect(&mut self, effect_id: EffectId) -> ConductorResult<()> {
 		self.send_command_to_backend(Command::Mixer(MixerCommand::RemoveEffect(effect_id)))
 	}
@@ -293,6 +300,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		Ok(instance_id)
 	}
 
+	/// Sets the volume of an instance.
 	pub fn set_instance_volume(
 		&mut self,
 		id: InstanceId,
@@ -303,6 +311,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		)))
 	}
 
+	/// Sets the pitch of an instance.
 	pub fn set_instance_pitch(
 		&mut self,
 		id: InstanceId,
@@ -313,9 +322,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		)))
 	}
 
-	/// Pauses a currently playing instance of a sound.
-	///
-	/// You can optionally provide a fade-out duration (in seconds).
+	/// Pauses a currently playing instance of a sound with an optional fade-out tween.
 	pub fn pause_instance(
 		&mut self,
 		instance_id: InstanceId,
@@ -327,9 +334,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		)))
 	}
 
-	/// Resumes a currently paused instance of a sound.
-	///
-	/// You can optionally provide a fade-in duration (in seconds).
+	/// Resumes a currently paused instance of a sound with an optional fade-in tween.
 	pub fn resume_instance(
 		&mut self,
 		instance_id: InstanceId,
@@ -341,10 +346,9 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		)))
 	}
 
-	/// Stops a currently playing instance of a sound.
+	/// Stops a currently playing instance of a sound with an optional fade-out tween.
 	///
-	/// You can optionally provide a fade-out duration (in seconds). Once the
-	/// instance is stopped, it cannot be restarted.
+	/// Once the instance is stopped, it cannot be restarted.
 	pub fn stop_instance(
 		&mut self,
 		instance_id: InstanceId,
@@ -356,9 +360,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		)))
 	}
 
-	/// Pauses all currently playing instances of a sound.
-	///
-	/// You can optionally provide a fade-out duration (in seconds).
+	/// Pauses all currently playing instances of a sound with an optional fade-out tween.
 	pub fn pause_instances_of_sound(
 		&mut self,
 		sound_id: SoundId,
@@ -369,9 +371,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		)))
 	}
 
-	/// Resumes all currently playing instances of a sound.
-	///
-	/// You can optionally provide a fade-out duration (in seconds).
+	/// Resumes all currently playing instances of a sound with an optional fade-in tween.
 	pub fn resume_instances_of_sound(
 		&mut self,
 		sound_id: SoundId,
@@ -382,9 +382,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		)))
 	}
 
-	/// Stops all currently playing instances of a sound.
-	///
-	/// You can optionally provide a fade-out duration (in seconds).
+	/// Stops all currently playing instances of a sound with an optional fade-out tween.
 	pub fn stop_instances_of_sound(
 		&mut self,
 		sound_id: SoundId,
@@ -433,8 +431,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	/// Mutes a sequence.
 	///
 	/// When a sequence is muted, it will continue waiting for durations and intervals,
-	/// but it will not change anything that changes the audio, like starting new sounds
-	/// or settings the metronome tempo.
+	/// but it will not play sounds, emit events, or perform any other actions.
 	pub fn mute_sequence(&mut self, id: SequenceId) -> Result<(), ConductorError> {
 		self.send_command_to_backend(Command::Sequence(SequenceCommand::MuteSequence(id)))
 	}
