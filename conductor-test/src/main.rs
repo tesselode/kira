@@ -4,13 +4,24 @@ use conductor::{
 	instance::InstanceSettings,
 	manager::{AudioManager, AudioManagerSettings},
 	sound::{SoundMetadata, SoundSettings},
+	track::effect::svf::StateVariableFilter,
+	track::effect::svf::StateVariableFilterMode,
+	track::effect::svf::StateVariableFilterSettings,
 	Tempo, Tween,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
 	let mut manager = AudioManager::<()>::new(AudioManagerSettings::default())?;
-	let pitch_parameter_id = manager.add_parameter(1.0)?;
 	let track_id = manager.add_sub_track(Default::default())?;
+	let effect_id = manager.add_effect_to_track(
+		track_id,
+		Box::new(StateVariableFilter::new(StateVariableFilterSettings {
+			mode: StateVariableFilterMode::Notch,
+			cutoff: 1000.0.into(),
+			resonance: 0.5.into(),
+		})),
+		Default::default(),
+	)?;
 	let sound_id = manager.load_sound(
 		std::env::current_dir().unwrap().join("assets/loop.ogg"),
 		SoundSettings {
@@ -20,13 +31,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 			..Default::default()
 		},
 	)?;
-	manager.set_parameter(pitch_parameter_id, 0.25, Some(Tween(2.0)))?;
 	manager.play_sound(
 		sound_id,
-		InstanceSettings::new()
-			.pitch(pitch_parameter_id)
-			.track(track_id)
-			.loop_region(..),
+		InstanceSettings::new().track(track_id).loop_region(..),
 	)?;
 	let mut input = String::new();
 	stdin().read_line(&mut input)?;

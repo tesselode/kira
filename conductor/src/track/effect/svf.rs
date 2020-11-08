@@ -71,6 +71,11 @@ impl Effect for StateVariableFilter {
 		let v2 = self.ic2eq + (self.ic1eq * (a2 as f32)) + (v3 * (a3 as f32));
 		self.ic1eq = (v1 * 2.0) - self.ic1eq;
 		self.ic2eq = (v2 * 2.0) - self.ic2eq;
-		v2
+		match self.mode {
+			StateVariableFilterMode::LowPass => v2,
+			StateVariableFilterMode::BandPass => v1,
+			StateVariableFilterMode::HighPass => input - v1 * (k as f32) - v2,
+			StateVariableFilterMode::Notch => input - v1 * (k as f32),
+		}
 	}
 }

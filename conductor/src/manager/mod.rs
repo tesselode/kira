@@ -239,15 +239,15 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		self.send_command_to_backend(Command::Mixer(MixerCommand::RemoveSubTrack(id)))
 	}
 
-	pub fn add_effect_to_track(
+	pub fn add_effect_to_track<T: Into<TrackIndex> + Copy>(
 		&mut self,
-		track_index: TrackIndex,
+		track_index: T,
 		effect: Box<dyn Effect>,
 		settings: EffectSettings,
 	) -> ConductorResult<EffectId> {
-		let effect_id = EffectId::new(track_index);
+		let effect_id = EffectId::new(track_index.into());
 		self.send_command_to_backend(Command::Mixer(MixerCommand::AddEffect(
-			track_index,
+			track_index.into(),
 			effect_id,
 			effect,
 			settings,

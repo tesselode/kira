@@ -30,6 +30,12 @@ pub enum TrackIndex {
 	Sub(SubTrackId),
 }
 
+impl From<SubTrackId> for TrackIndex {
+	fn from(id: SubTrackId) -> Self {
+		Self::Sub(id)
+	}
+}
+
 #[derive(Debug, Clone)]
 pub struct TrackSettings {
 	pub volume: f64,
