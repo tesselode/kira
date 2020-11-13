@@ -5,7 +5,7 @@ use crate::{
 	instance::{InstanceId, InstanceSettings},
 	metronome::Metronome,
 	sound::SoundId,
-	ConductorError, ConductorResult, Duration, Tempo, Tween, Value,
+	ConductorError, ConductorResult, Duration, ParameterId, Tempo, Tween, Value,
 };
 
 static NEXT_SEQUENCE_INDEX: AtomicUsize = AtomicUsize::new(0);
@@ -40,6 +40,11 @@ pub(crate) enum SequenceOutputCommand<CustomEvent: Copy> {
 	PauseInstancesOfSequence(SequenceId, Option<Tween>),
 	ResumeInstancesOfSequence(SequenceId, Option<Tween>),
 	StopInstancesOfSequence(SequenceId, Option<Tween>),
+	SetMetronomeTempo(Tempo),
+	StartMetronome,
+	PauseMetronome,
+	StopMetronome,
+	SetParameter(ParameterId, f64, Option<Tween>),
 	EmitCustomEvent(CustomEvent),
 }
 
@@ -176,6 +181,41 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 	pub fn stop_instances_of_sequence(&mut self, id: SequenceId, fade_tween: Option<Tween>) {
 		self.steps
 			.push(SequenceOutputCommand::StopInstancesOfSequence(id, fade_tween).into());
+	}
+
+	/// Adds a step to set the tempo of the metronome.
+	pub fn set_metronome_tempo(&mut self, tempo: Tempo) {
+		self.steps
+			.push(SequenceOutputCommand::SetMetronomeTempo(tempo).into());
+	}
+
+	/// Adds a step to start the metronome.
+	pub fn start_metronome(&mut self) {
+		self.steps
+			.push(SequenceOutputCommand::StartMetronome.into());
+	}
+
+	/// Adds a step to pause the metronome.
+	pub fn pause_metronome(&mut self) {
+		self.steps
+			.push(SequenceOutputCommand::PauseMetronome.into());
+	}
+
+	/// Adds a step to stop the metronome.
+	pub fn stop_metronome(&mut self) {
+		self.steps.push(SequenceOutputCommand::StopMetronome.into());
+	}
+
+	/// Adds a step to set a parameter.
+	pub fn set_parameter(&mut self, id: ParameterId, target: f64, tween: Option<Tween>) {
+		self.steps
+			.push(SequenceOutputCommand::SetParameter(id, target, tween).into());
+	}
+
+	/// Adds a step to emit a custom event.
+	pub fn emit_custom_event(&mut self, event: CustomEvent) {
+		self.steps
+			.push(SequenceOutputCommand::EmitCustomEvent(event).into());
 	}
 
 	/// Makes sure nothing's wrong with the sequence that would make

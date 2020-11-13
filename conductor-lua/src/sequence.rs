@@ -1,15 +1,14 @@
-use conductor::sequence::{Sequence, SequenceId, SequenceInstanceHandle};
+use conductor::sequence::{Sequence, SequenceId};
 use mlua::prelude::*;
 
 use crate::{
-	duration::LDuration, event::CustomEvent, instance::LInstanceSettings, sound::LSoundId,
-	tween::LTween, value::LValue,
+	duration::LDuration,
+	event::CustomEvent,
+	instance::{LInstanceId, LInstanceSettings},
+	sound::LSoundId,
+	tween::LTween,
+	value::LValue,
 };
-
-#[derive(Debug, Clone)]
-pub struct LSequenceInstanceHandle(pub SequenceInstanceHandle);
-
-impl LuaUserData for LSequenceInstanceHandle {}
 
 #[derive(Debug, Clone)]
 pub struct LSequenceId(pub SequenceId);
@@ -37,83 +36,71 @@ impl LuaUserData for LSequence {
 		methods.add_method_mut(
 			"playSound",
 			|_: &Lua, this: &mut Self, (sound_id, settings): (LSoundId, LInstanceSettings)| {
-				Ok(LSequenceInstanceHandle(
-					this.0.play_sound(sound_id.0, settings.0),
-				))
+				Ok(LInstanceId(this.0.play_sound(sound_id.0, settings.0)))
 			},
 		);
 
 		methods.add_method_mut(
 			"setInstanceVolume",
-			|_: &Lua, this: &mut Self, (handle, volume): (LSequenceInstanceHandle, LValue)| {
-				Ok(this.0.set_instance_volume(handle.0, volume.0))
+			|_: &Lua, this: &mut Self, (id, volume): (LInstanceId, LValue)| {
+				Ok(this.0.set_instance_volume(id.0, volume.0))
 			},
 		);
 
 		methods.add_method_mut(
 			"setInstancePitch",
-			|_: &Lua, this: &mut Self, (handle, pitch): (LSequenceInstanceHandle, LValue)| {
-				Ok(this.0.set_instance_pitch(handle.0, pitch.0))
+			|_: &Lua, this: &mut Self, (id, pitch): (LInstanceId, LValue)| {
+				Ok(this.0.set_instance_pitch(id.0, pitch.0))
 			},
 		);
 
 		methods.add_method_mut(
 			"pauseInstance",
-			|_: &Lua,
-			 this: &mut Self,
-			 (handle, fade_tween): (LSequenceInstanceHandle, Option<LTween>)| {
-				Ok(this
-					.0
-					.pause_instance(handle.0, fade_tween.map(|tween| tween.0)))
+			|_: &Lua, this: &mut Self, (id, fade_tween): (LInstanceId, Option<LTween>)| {
+				Ok(this.0.pause_instance(id.0, fade_tween.map(|tween| tween.0)))
 			},
 		);
 
 		methods.add_method_mut(
 			"resumeInstance",
-			|_: &Lua,
-			 this: &mut Self,
-			 (handle, fade_tween): (LSequenceInstanceHandle, Option<LTween>)| {
+			|_: &Lua, this: &mut Self, (id, fade_tween): (LInstanceId, Option<LTween>)| {
 				Ok(this
 					.0
-					.resume_instance(handle.0, fade_tween.map(|tween| tween.0)))
+					.resume_instance(id.0, fade_tween.map(|tween| tween.0)))
 			},
 		);
 
 		methods.add_method_mut(
 			"stopInstance",
-			|_: &Lua,
-			 this: &mut Self,
-			 (handle, fade_tween): (LSequenceInstanceHandle, Option<LTween>)| {
-				Ok(this
-					.0
-					.stop_instance(handle.0, fade_tween.map(|tween| tween.0)))
+			|_: &Lua, this: &mut Self, (id, fade_tween): (LInstanceId, Option<LTween>)| {
+				Ok(this.0.stop_instance(id.0, fade_tween.map(|tween| tween.0)))
 			},
 		);
 
 		methods.add_method_mut(
 			"pauseInstancesOfSound",
-			|_: &Lua, this: &mut Self, (handle, fade_tween): (LSoundId, Option<LTween>)| {
+			|_: &Lua, this: &mut Self, (id, fade_tween): (LSoundId, Option<LTween>)| {
 				Ok(this
 					.0
-					.pause_instances_of_sound(handle.0, fade_tween.map(|tween| tween.0)))
+					.pause_instances_of_sound(id.0, fade_tween.map(|tween| tween.0)))
 			},
 		);
 
 		methods.add_method_mut(
 			"resumeInstancesOfSound",
-			|_: &Lua, this: &mut Self, (handle, fade_tween): (LSoundId, Option<LTween>)| {
+			|_: &Lua, this: &mut Self, (id, fade_tween): (LSoundId, Option<LTween>)| {
 				Ok(this
 					.0
-					.resume_instances_of_sound(handle.0, fade_tween.map(|tween| tween.0)))
+					.resume_instances_of_sound(id.0, fade_tween.map(|tween| tween.0)))
 			},
 		);
 
 		methods.add_method_mut(
 			"stopInstancesOfSound",
-			|_: &Lua, this: &mut Self, (handle, fade_tween): (LSoundId, Option<LTween>)| {
+			|_: &Lua, this: &mut Self, (id, fade_tween): (LSoundId, Option<LTween>)| {
 				Ok(this
 					.0
-					.stop_instances_of_sound(handle.0, fade_tween.map(|tween| tween.0)))
+					.stop_instances_of_sound(id.0, fade_tween.map(|tween| tween.0)))
 			},
 		);
 

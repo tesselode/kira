@@ -1,6 +1,7 @@
 use crate::{
 	command::InstanceCommand,
 	command::MetronomeCommand,
+	command::ParameterCommand,
 	command::{Command, SequenceCommand},
 	instance::InstanceId,
 	metronome::Metronome,
@@ -121,6 +122,21 @@ impl<CustomEvent: Copy + std::fmt::Debug> Sequences<CustomEvent> {
 					}
 					SequenceOutputCommand::StopInstancesOfSequence(id, fade_tween) => {
 						Command::Instance(InstanceCommand::StopInstancesOfSequence(id, fade_tween))
+					}
+					SequenceOutputCommand::SetMetronomeTempo(tempo) => {
+						Command::Metronome(MetronomeCommand::SetMetronomeTempo(tempo))
+					}
+					SequenceOutputCommand::StartMetronome => {
+						Command::Metronome(MetronomeCommand::StartMetronome)
+					}
+					SequenceOutputCommand::PauseMetronome => {
+						Command::Metronome(MetronomeCommand::PauseMetronome)
+					}
+					SequenceOutputCommand::StopMetronome => {
+						Command::Metronome(MetronomeCommand::StopMetronome)
+					}
+					SequenceOutputCommand::SetParameter(id, target, tween) => {
+						Command::Parameter(ParameterCommand::SetParameter(id, target, tween))
 					}
 					SequenceOutputCommand::EmitCustomEvent(event) => {
 						Command::EmitCustomEvent(event)
