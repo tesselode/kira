@@ -87,9 +87,41 @@ impl<CustomEvent: Copy + std::fmt::Debug> Sequences<CustomEvent> {
 							settings,
 						))
 					}
-					SequenceOutputCommand::Instance(command) => Command::Instance(command),
-					SequenceOutputCommand::Metronome(command) => Command::Metronome(command),
-					SequenceOutputCommand::Parameter(command) => Command::Parameter(command),
+					SequenceOutputCommand::SetInstanceVolume(id, volume) => {
+						Command::Instance(InstanceCommand::SetInstanceVolume(id, volume))
+					}
+					SequenceOutputCommand::SetInstancePitch(id, pitch) => {
+						Command::Instance(InstanceCommand::SetInstancePitch(id, pitch))
+					}
+					SequenceOutputCommand::PauseInstance(id, fade_tween) => {
+						Command::Instance(InstanceCommand::PauseInstance(id, fade_tween))
+					}
+					SequenceOutputCommand::ResumeInstance(id, fade_tween) => {
+						Command::Instance(InstanceCommand::ResumeInstance(id, fade_tween))
+					}
+					SequenceOutputCommand::StopInstance(id, fade_tween) => {
+						Command::Instance(InstanceCommand::StopInstance(id, fade_tween))
+					}
+					SequenceOutputCommand::PauseInstancesOfSound(id, fade_tween) => {
+						Command::Instance(InstanceCommand::PauseInstancesOfSound(id, fade_tween))
+					}
+					SequenceOutputCommand::ResumeInstancesOfSound(id, fade_tween) => {
+						Command::Instance(InstanceCommand::ResumeInstancesOfSound(id, fade_tween))
+					}
+					SequenceOutputCommand::StopInstancesOfSound(id, fade_tween) => {
+						Command::Instance(InstanceCommand::StopInstancesOfSound(id, fade_tween))
+					}
+					SequenceOutputCommand::PauseInstancesOfSequence(id, fade_tween) => {
+						Command::Instance(InstanceCommand::PauseInstancesOfSequence(id, fade_tween))
+					}
+					SequenceOutputCommand::ResumeInstancesOfSequence(id, fade_tween) => {
+						Command::Instance(InstanceCommand::ResumeInstancesOfSequence(
+							id, fade_tween,
+						))
+					}
+					SequenceOutputCommand::StopInstancesOfSequence(id, fade_tween) => {
+						Command::Instance(InstanceCommand::StopInstancesOfSequence(id, fade_tween))
+					}
 					SequenceOutputCommand::EmitCustomEvent(event) => {
 						Command::EmitCustomEvent(event)
 					}

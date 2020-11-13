@@ -17,7 +17,7 @@ pub(crate) enum SoundCommand {
 	UnloadSound(SoundId),
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub(crate) enum InstanceCommand {
 	PlaySound(InstanceId, SoundId, Option<SequenceId>, InstanceSettings),
 	SetInstanceVolume(InstanceId, Value),
@@ -33,45 +33,7 @@ pub(crate) enum InstanceCommand {
 	StopInstancesOfSequence(SequenceId, Option<Tween>),
 }
 
-impl InstanceCommand {
-	pub fn swap_instance_id(&mut self, old_id: InstanceId, new_id: InstanceId) {
-		match self {
-			InstanceCommand::PlaySound(id, _, _, _) => {
-				if *id == old_id {
-					*id = new_id;
-				}
-			}
-			InstanceCommand::SetInstanceVolume(id, _) => {
-				if *id == old_id {
-					*id = new_id;
-				}
-			}
-			InstanceCommand::SetInstancePitch(id, _) => {
-				if *id == old_id {
-					*id = new_id;
-				}
-			}
-			InstanceCommand::PauseInstance(id, _) => {
-				if *id == old_id {
-					*id = new_id;
-				}
-			}
-			InstanceCommand::ResumeInstance(id, _) => {
-				if *id == old_id {
-					*id = new_id;
-				}
-			}
-			InstanceCommand::StopInstance(id, _) => {
-				if *id == old_id {
-					*id = new_id;
-				}
-			}
-			_ => {}
-		}
-	}
-}
-
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub(crate) enum MetronomeCommand {
 	SetMetronomeTempo(Tempo),
 	StartMetronome,
@@ -96,7 +58,7 @@ pub(crate) enum MixerCommand {
 	RemoveEffect(EffectId),
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub(crate) enum ParameterCommand {
 	AddParameter(ParameterId, f64),
 	RemoveParameter(ParameterId),

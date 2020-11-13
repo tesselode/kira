@@ -5,7 +5,7 @@ use crate::{
 	instance::{InstanceId, InstanceSettings},
 	metronome::Metronome,
 	sound::SoundId,
-	ConductorError, ConductorResult, Duration, Tween, Value,
+	ConductorError, ConductorResult, Duration, Tempo, Tween, Value,
 };
 
 static NEXT_SEQUENCE_INDEX: AtomicUsize = AtomicUsize::new(0);
@@ -29,28 +29,18 @@ impl SequenceId {
 #[derive(Debug, Copy, Clone)]
 pub(crate) enum SequenceOutputCommand<CustomEvent: Copy> {
 	PlaySound(InstanceId, SoundId, InstanceSettings),
-	Instance(InstanceCommand),
-	Metronome(MetronomeCommand),
-	Parameter(ParameterCommand),
+	SetInstanceVolume(InstanceId, Value),
+	SetInstancePitch(InstanceId, Value),
+	PauseInstance(InstanceId, Option<Tween>),
+	ResumeInstance(InstanceId, Option<Tween>),
+	StopInstance(InstanceId, Option<Tween>),
+	PauseInstancesOfSound(SoundId, Option<Tween>),
+	ResumeInstancesOfSound(SoundId, Option<Tween>),
+	StopInstancesOfSound(SoundId, Option<Tween>),
+	PauseInstancesOfSequence(SequenceId, Option<Tween>),
+	ResumeInstancesOfSequence(SequenceId, Option<Tween>),
+	StopInstancesOfSequence(SequenceId, Option<Tween>),
 	EmitCustomEvent(CustomEvent),
-}
-
-impl<CustomEvent: Copy> From<InstanceCommand> for SequenceOutputCommand<CustomEvent> {
-	fn from(command: InstanceCommand) -> Self {
-		Self::Instance(command)
-	}
-}
-
-impl<CustomEvent: Copy> From<MetronomeCommand> for SequenceOutputCommand<CustomEvent> {
-	fn from(command: MetronomeCommand) -> Self {
-		Self::Metronome(command)
-	}
-}
-
-impl<CustomEvent: Copy> From<ParameterCommand> for SequenceOutputCommand<CustomEvent> {
-	fn from(command: ParameterCommand) -> Self {
-		Self::Parameter(command)
-	}
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -63,24 +53,6 @@ pub(crate) enum SequenceStep<CustomEvent: Copy> {
 impl<CustomEvent: Copy> From<SequenceOutputCommand<CustomEvent>> for SequenceStep<CustomEvent> {
 	fn from(command: SequenceOutputCommand<CustomEvent>) -> Self {
 		Self::RunCommand(command)
-	}
-}
-
-impl<CustomEvent: Copy> From<InstanceCommand> for SequenceStep<CustomEvent> {
-	fn from(command: InstanceCommand) -> Self {
-		Self::RunCommand(SequenceOutputCommand::Instance(command))
-	}
-}
-
-impl<CustomEvent: Copy> From<MetronomeCommand> for SequenceStep<CustomEvent> {
-	fn from(command: MetronomeCommand) -> Self {
-		Self::RunCommand(SequenceOutputCommand::Metronome(command))
-	}
-}
-
-impl<CustomEvent: Copy> From<ParameterCommand> for SequenceStep<CustomEvent> {
-	fn from(command: ParameterCommand) -> Self {
-		Self::RunCommand(SequenceOutputCommand::Parameter(command))
 	}
 }
 
@@ -143,31 +115,67 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 	/// Adds a step to set the volume of an instance.
 	pub fn set_instance_volume(&mut self, id: InstanceId, volume: Value) {
 		self.steps
-			.push(InstanceCommand::SetInstanceVolume(id, volume).into());
+			.push(SequenceOutputCommand::SetInstanceVolume(id, volume).into());
 	}
 
 	/// Adds a step to set the pitch of an instance.
 	pub fn set_instance_pitch(&mut self, id: InstanceId, pitch: Value) {
 		self.steps
-			.push(InstanceCommand::SetInstancePitch(id, pitch).into());
+			.push(SequenceOutputCommand::SetInstancePitch(id, pitch).into());
 	}
 
 	/// Adds a step to pause an instance.
 	pub fn pause_instance(&mut self, id: InstanceId, fade_tween: Option<Tween>) {
 		self.steps
-			.push(InstanceCommand::PauseInstance(id, fade_tween).into());
+			.push(SequenceOutputCommand::PauseInstance(id, fade_tween).into());
 	}
 
 	/// Adds a step to resume an instance.
 	pub fn resume_instance(&mut self, id: InstanceId, fade_tween: Option<Tween>) {
 		self.steps
-			.push(InstanceCommand::ResumeInstance(id, fade_tween).into());
+			.push(SequenceOutputCommand::ResumeInstance(id, fade_tween).into());
 	}
 
 	/// Adds a step to stop an instance.
 	pub fn stop_instance(&mut self, id: InstanceId, fade_tween: Option<Tween>) {
 		self.steps
-			.push(InstanceCommand::StopInstance(id, fade_tween).into());
+			.push(SequenceOutputCommand::StopInstance(id, fade_tween).into());
+	}
+
+	/// Adds a step to pause all instances of a sound.
+	pub fn pause_instances_of_sound(&mut self, id: SoundId, fade_tween: Option<Tween>) {
+		self.steps
+			.push(SequenceOutputCommand::PauseInstancesOfSound(id, fade_tween).into());
+	}
+
+	/// Adds a step to resume all instances of a sound.
+	pub fn resume_instances_of_sound(&mut self, id: SoundId, fade_tween: Option<Tween>) {
+		self.steps
+			.push(SequenceOutputCommand::ResumeInstancesOfSound(id, fade_tween).into());
+	}
+
+	/// Adds a step to stop all instances of a sound.
+	pub fn stop_instances_of_sound(&mut self, id: SoundId, fade_tween: Option<Tween>) {
+		self.steps
+			.push(SequenceOutputCommand::StopInstancesOfSound(id, fade_tween).into());
+	}
+
+	/// Adds a step to pause all instances played by a sequence.
+	pub fn pause_instances_of_sequence(&mut self, id: SequenceId, fade_tween: Option<Tween>) {
+		self.steps
+			.push(SequenceOutputCommand::PauseInstancesOfSequence(id, fade_tween).into());
+	}
+
+	/// Adds a step to resume all instances played by a sequence.
+	pub fn resume_instances_of_sequence(&mut self, id: SequenceId, fade_tween: Option<Tween>) {
+		self.steps
+			.push(SequenceOutputCommand::ResumeInstancesOfSequence(id, fade_tween).into());
+	}
+
+	/// Adds a step to stop all instances played by a sequence.
+	pub fn stop_instances_of_sequence(&mut self, id: SequenceId, fade_tween: Option<Tween>) {
+		self.steps
+			.push(SequenceOutputCommand::StopInstancesOfSequence(id, fade_tween).into());
 	}
 
 	/// Makes sure nothing's wrong with the sequence that would make
@@ -199,8 +207,30 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 						for step in &mut self.steps {
 							match step {
 								SequenceStep::RunCommand(command) => match command {
-									SequenceOutputCommand::Instance(command) => {
-										command.swap_instance_id(old_instance_id, new_instance_id);
+									SequenceOutputCommand::SetInstanceVolume(id, _) => {
+										if *id == old_instance_id {
+											*id = new_instance_id;
+										}
+									}
+									SequenceOutputCommand::SetInstancePitch(id, _) => {
+										if *id == old_instance_id {
+											*id = new_instance_id;
+										}
+									}
+									SequenceOutputCommand::PauseInstance(id, _) => {
+										if *id == old_instance_id {
+											*id = new_instance_id;
+										}
+									}
+									SequenceOutputCommand::ResumeInstance(id, _) => {
+										if *id == old_instance_id {
+											*id = new_instance_id;
+										}
+									}
+									SequenceOutputCommand::StopInstance(id, _) => {
+										if *id == old_instance_id {
+											*id = new_instance_id;
+										}
 									}
 									_ => {}
 								},
