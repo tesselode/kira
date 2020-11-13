@@ -193,7 +193,7 @@ impl From<Range<f64>> for LoopRegion {
 }
 
 /// Settings for an instance.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct InstanceSettings {
 	/// The volume of the instance.
 	pub volume: Value,

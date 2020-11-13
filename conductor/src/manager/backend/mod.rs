@@ -21,7 +21,7 @@ use instances::Instances;
 use ringbuf::{Consumer, Producer};
 use sequences::Sequences;
 
-pub(crate) struct Backend<CustomEvent: Send + 'static + std::fmt::Debug> {
+pub(crate) struct Backend<CustomEvent: Copy + Send + 'static + std::fmt::Debug> {
 	dt: f64,
 	sounds: IndexMap<SoundId, Sound>,
 	command_queue: Vec<Command<CustomEvent>>,

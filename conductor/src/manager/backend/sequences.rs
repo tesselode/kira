@@ -11,10 +11,10 @@ use indexmap::IndexMap;
 use ringbuf::Producer;
 use std::vec::Drain;
 
-pub(crate) struct Sequences<CustomEvent: std::fmt::Debug> {
+pub(crate) struct Sequences<CustomEvent: Copy + std::fmt::Debug> {
 	sequences: IndexMap<SequenceId, Sequence<CustomEvent>>,
 	sequences_to_remove: Vec<SequenceId>,
-	sequence_output_command_queue: Vec<SequenceOutputCommand<InstanceId, CustomEvent>>,
+	sequence_output_command_queue: Vec<SequenceOutputCommand<CustomEvent>>,
 	output_command_queue: Vec<Command<CustomEvent>>,
 }
 
@@ -87,48 +87,9 @@ impl<CustomEvent: Copy + std::fmt::Debug> Sequences<CustomEvent> {
 							settings,
 						))
 					}
-					SequenceOutputCommand::SetInstanceVolume(instance_id, volume) => {
-						Command::Instance(InstanceCommand::SetInstanceVolume(instance_id, volume))
-					}
-					SequenceOutputCommand::SetInstancePitch(instance_id, pitch) => {
-						Command::Instance(InstanceCommand::SetInstancePitch(instance_id, pitch))
-					}
-					SequenceOutputCommand::PauseInstance(instance_id, fade_tween) => {
-						Command::Instance(InstanceCommand::PauseInstance(instance_id, fade_tween))
-					}
-					SequenceOutputCommand::ResumeInstance(instance_id, fade_tween) => {
-						Command::Instance(InstanceCommand::ResumeInstance(instance_id, fade_tween))
-					}
-					SequenceOutputCommand::StopInstance(instance_id, fade_tween) => {
-						Command::Instance(InstanceCommand::StopInstance(instance_id, fade_tween))
-					}
-					SequenceOutputCommand::PauseInstancesOfSound(sound_id, fade_tween) => {
-						Command::Instance(InstanceCommand::PauseInstancesOfSound(
-							sound_id, fade_tween,
-						))
-					}
-					SequenceOutputCommand::ResumeInstancesOfSound(sound_id, fade_tween) => {
-						Command::Instance(InstanceCommand::ResumeInstancesOfSound(
-							sound_id, fade_tween,
-						))
-					}
-					SequenceOutputCommand::StopInstancesOfSound(sound_id, fade_tween) => {
-						Command::Instance(InstanceCommand::StopInstancesOfSound(
-							sound_id, fade_tween,
-						))
-					}
-					SequenceOutputCommand::SetMetronomeTempo(tempo) => {
-						Command::Metronome(MetronomeCommand::SetMetronomeTempo(tempo))
-					}
-					SequenceOutputCommand::StartMetronome => {
-						Command::Metronome(MetronomeCommand::StartMetronome)
-					}
-					SequenceOutputCommand::PauseMetronome => {
-						Command::Metronome(MetronomeCommand::PauseMetronome)
-					}
-					SequenceOutputCommand::StopMetronome => {
-						Command::Metronome(MetronomeCommand::StopMetronome)
-					}
+					SequenceOutputCommand::Instance(command) => Command::Instance(command),
+					SequenceOutputCommand::Metronome(command) => Command::Metronome(command),
+					SequenceOutputCommand::Parameter(command) => Command::Parameter(command),
 					SequenceOutputCommand::EmitCustomEvent(event) => {
 						Command::EmitCustomEvent(event)
 					}

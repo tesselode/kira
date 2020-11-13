@@ -95,7 +95,7 @@ Plays and manages audio.
 The `AudioManager` is responsible for all communication between the gameplay thread
 and the audio thread.
 */
-pub struct AudioManager<CustomEvent: Send + 'static = ()> {
+pub struct AudioManager<CustomEvent: Copy + Send + 'static = ()> {
 	quit_signal_producer: Producer<bool>,
 	command_producer: Producer<Command<CustomEvent>>,
 	event_consumer: Consumer<Event<CustomEvent>>,
@@ -512,7 +512,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	}
 }
 
-impl<CustomEvent: Send + 'static> Drop for AudioManager<CustomEvent> {
+impl<CustomEvent: Copy + Send + 'static> Drop for AudioManager<CustomEvent> {
 	fn drop(&mut self) {
 		self.quit_signal_producer.push(true).unwrap();
 	}

@@ -17,7 +17,7 @@ pub(crate) enum SoundCommand {
 	UnloadSound(SoundId),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) enum InstanceCommand {
 	PlaySound(InstanceId, SoundId, Option<SequenceId>, InstanceSettings),
 	SetInstanceVolume(InstanceId, Value),
@@ -33,7 +33,45 @@ pub(crate) enum InstanceCommand {
 	StopInstancesOfSequence(SequenceId, Option<Tween>),
 }
 
-#[derive(Debug, Clone)]
+impl InstanceCommand {
+	pub fn swap_instance_id(&mut self, old_id: InstanceId, new_id: InstanceId) {
+		match self {
+			InstanceCommand::PlaySound(id, _, _, _) => {
+				if *id == old_id {
+					*id = new_id;
+				}
+			}
+			InstanceCommand::SetInstanceVolume(id, _) => {
+				if *id == old_id {
+					*id = new_id;
+				}
+			}
+			InstanceCommand::SetInstancePitch(id, _) => {
+				if *id == old_id {
+					*id = new_id;
+				}
+			}
+			InstanceCommand::PauseInstance(id, _) => {
+				if *id == old_id {
+					*id = new_id;
+				}
+			}
+			InstanceCommand::ResumeInstance(id, _) => {
+				if *id == old_id {
+					*id = new_id;
+				}
+			}
+			InstanceCommand::StopInstance(id, _) => {
+				if *id == old_id {
+					*id = new_id;
+				}
+			}
+			_ => {}
+		}
+	}
+}
+
+#[derive(Debug, Clone, Copy)]
 pub(crate) enum MetronomeCommand {
 	SetMetronomeTempo(Tempo),
 	StartMetronome,
@@ -42,7 +80,7 @@ pub(crate) enum MetronomeCommand {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) enum SequenceCommand<CustomEvent> {
+pub(crate) enum SequenceCommand<CustomEvent: Copy> {
 	StartSequence(SequenceId, Sequence<CustomEvent>),
 	MuteSequence(SequenceId),
 	UnmuteSequence(SequenceId),
@@ -58,14 +96,14 @@ pub(crate) enum MixerCommand {
 	RemoveEffect(EffectId),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) enum ParameterCommand {
 	AddParameter(ParameterId, f64),
 	RemoveParameter(ParameterId),
 	SetParameter(ParameterId, f64, Option<Tween>),
 }
 
-pub(crate) enum Command<CustomEvent> {
+pub(crate) enum Command<CustomEvent: Copy> {
 	Sound(SoundCommand),
 	Instance(InstanceCommand),
 	Metronome(MetronomeCommand),
