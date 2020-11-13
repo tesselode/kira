@@ -2,7 +2,7 @@ use crate::{command::MetronomeCommand, tempo::Tempo};
 use std::vec::Drain;
 
 #[derive(Debug, Clone)]
-/// Settings for a metronome.
+/// Settings for the metronome.
 pub struct MetronomeSettings {
 	/// The tempo of the metronome (in beats per minute).
 	pub tempo: Tempo,
