@@ -1,70 +1,66 @@
-/*!
-
-Provides an interface to script timed audio events.
-
-## Creating and starting sequences
-
-To create a sequence, use `Sequence::new()` and then add
-the actions you want to take in order:
-
-```
-let sequence = Sequence::new();
-// play a sound
-let instance_id = sequence.play_sound(sound_id);
-// wait 2 seconds
-sequence.wait(Duration::Seconds(2.0));
-// stop the sound
-sequence.stop_instance(instance_id);
-```
-
-To start the sequence, use `AudioManager::start_sequence()`:
-
-```
-audio_manager.start_sequence(sequence)?;
-```
-
-## Timing events
-
-Sequences provide two ways of timing events:
-- waiting for specific amounts of time
-- waiting for a certain metronome interval
-
-This sequence will play a sound at the beginning of a measure
-(assuming a measure is 4 beats long):
-
-```
-sequence.wait_for_interval(4.0);
-sequence.play_sound(sound_id);
-```
-
-Note that the metronome has to be running for the interval to work.
-
-## Looping sequences
-
-You can create looping sequences by setting the loop start point. The
-following example will wait for the start of a measure and then
-play a sound every beat:
-
-```
-sequence.wait_for_interval(4.0);
-sequence.start_loop();
-sequence.play_sound(sound_id); // when the sequence finishes, it will loop back to this step
-sequence.wait(Duration::Beats(1.0));
-```
-
-## Custom events
-
-Sequences can emit custom events that you can receive on the main
-thread, which is useful for syncing gameplay events to music events:
-
-```
-sequence.wait_for_interval(4.0);
-sequence.start_loop();
-sequence.emit_custom_event(CustomEvent::Beat);
-sequence.wait(Duration::Beats(1.0));
-```
-
-!*/
+//! Provides an interface to script timed audio events.
+//!
+//! ## Creating and starting sequences
+//!
+//! To create a sequence, use `Sequence::new()` and then add
+//! the actions you want to take in order:
+//!
+//! ```
+//! let sequence = Sequence::new();
+//! // play a sound
+//! let instance_id = sequence.play_sound(sound_id);
+//! // wait 2 seconds
+//! sequence.wait(Duration::Seconds(2.0));
+//! // stop the sound
+//! sequence.stop_instance(instance_id);
+//! ```
+//!
+//! To start the sequence, use `AudioManager::start_sequence()`:
+//!
+//! ```
+//! audio_manager.start_sequence(sequence)?;
+//! ```
+//!
+//! ## Timing events
+//!
+//! Sequences provide two ways of timing events:
+//! - waiting for specific amounts of time
+//! - waiting for a certain metronome interval
+//!
+//! This sequence will play a sound at the beginning of a measure
+//! (assuming a measure is 4 beats long):
+//!
+//! ```
+//! sequence.wait_for_interval(4.0);
+//! sequence.play_sound(sound_id);
+//! ```
+//!
+//! Note that the metronome has to be running for the interval to work.
+//!
+//! ## Looping sequences
+//!
+//! You can create looping sequences by setting the loop start point. The
+//! following example will wait for the start of a measure and then
+//! play a sound every beat:
+//!
+//! ```
+//! sequence.wait_for_interval(4.0);
+//! sequence.start_loop();
+//! sequence.play_sound(sound_id); // when the sequence finishes, it will loop back to this step
+//! sequence.wait(Duration::Beats(1.0));
+//! ```
+//!
+//! ## Custom events
+//!
+//! Sequences can emit custom events that you can receive on the main
+//! thread, which is useful for syncing gameplay events to music events:
+//!
+//! ```
+//! sequence.wait_for_interval(4.0);
+//! sequence.start_loop();
+//! sequence.emit_custom_event(CustomEvent::Beat);
+//! sequence.wait(Duration::Beats(1.0));
+//! ```
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -72,7 +68,7 @@ use crate::{
 	instance::{InstanceId, InstanceSettings},
 	metronome::Metronome,
 	sound::SoundId,
-	KiraError, KiraResult, Duration, ParameterId, Tempo, Tween, Value,
+	Duration, KiraError, KiraResult, ParameterId, Tempo, Tween, Value,
 };
 
 static NEXT_SEQUENCE_INDEX: AtomicUsize = AtomicUsize::new(0);
