@@ -3,9 +3,9 @@
 # Conductor
 
 Conductor (working title) is an audio library designed to help
-create expressive audio for games. Besides the usual features,
-it allows you to script audio events to happen at certain times,
-like the tick of a metronome.
+create expressive audio for games. Besides the common features you'd
+expect from an audio library, it provides an interface for scripting
+audio events to happen at certain times, like the tick of a metronome.
 
 ## Usage
 

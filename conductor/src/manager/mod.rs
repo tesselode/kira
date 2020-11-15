@@ -1,3 +1,5 @@
+//! Provides a bridge between the main thread and the audio thread.
+
 pub(crate) mod backend;
 
 use crate::{

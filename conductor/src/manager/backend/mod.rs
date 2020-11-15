@@ -12,7 +12,6 @@ use crate::{
 	sequence::Sequence,
 	sound::{Sound, SoundId},
 	stereo_sample::StereoSample,
-	track::effect::Effect,
 	track::effect_slot::EffectSlot,
 	track::Track,
 };
