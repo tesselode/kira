@@ -1,0 +1,16 @@
+[package]
+name = "kira-lua"
+version = "0.1.0"
+authors = ["Andrew Minnich <aminnich3@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "kira"
+crate-type = ["cdylib"]
+
+[dependencies]
+kira = { path = "../kira" }
+mlua = { version = "0.4.2", features = ["luajit", "module"] }
+mlua_derive = "0.4"

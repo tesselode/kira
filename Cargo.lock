@@ -123,35 +123,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "conductor"
-version = "0.1.0"
-dependencies = [
- "claxon",
- "cpal",
- "hound",
- "indexmap",
- "lewton",
- "minimp3",
- "ringbuf",
-]
-
-[[package]]
-name = "conductor-lua"
-version = "0.1.0"
-dependencies = [
- "conductor",
- "mlua",
- "mlua_derive",
-]
-
-[[package]]
-name = "conductor-test"
-version = "0.1.0"
-dependencies = [
- "conductor",
-]
-
-[[package]]
 name = "core-foundation-sys"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -232,6 +203,35 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "52732a3d3ad72c58ad2dc70624f9c17b46ecd0943b9a4f1ee37c4c18c5d983e2"
 dependencies = [
  "wasm-bindgen",
+]
+
+[[package]]
+name = "kira"
+version = "0.1.0"
+dependencies = [
+ "claxon",
+ "cpal",
+ "hound",
+ "indexmap",
+ "lewton",
+ "minimp3",
+ "ringbuf",
+]
+
+[[package]]
+name = "kira-lua"
+version = "0.1.0"
+dependencies = [
+ "kira",
+ "mlua",
+ "mlua_derive",
+]
+
+[[package]]
+name = "kira-test"
+version = "0.1.0"
+dependencies = [
+ "kira",
 ]
 
 [[package]]

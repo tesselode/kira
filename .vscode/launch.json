@@ -5,7 +5,7 @@
             "name": "(Windows) Launch",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceRoot}/target/debug/conductor-test.exe",
+            "program": "${workspaceRoot}/target/debug/kira-test.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceRoot}",
@@ -16,7 +16,7 @@
             "name": "(OSX) Launch",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceRoot}/target/debug/conductor-test",
+            "program": "${workspaceRoot}/target/debug/kira-test",
             "args": [],
             "cwd": "${workspaceRoot}",
         }

@@ -1,8 +1,8 @@
 [workspace]
 members = [
-	"conductor",
-	"conductor-test",
-	"conductor-lua"
+	"kira",
+	"kira-test",
+	"kira-lua"
 ]
 
 [profile.dev]
