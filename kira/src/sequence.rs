@@ -17,7 +17,7 @@
 //! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
 //! let mut sequence = Sequence::new();
 //! // play a sound
-//! let instance_id = sequence.play_sound(sound_id, Default::default());
+//! let instance_id = sequence.play_sound(sound_id, InstanceSettings::default());
 //! // wait 2 seconds
 //! sequence.wait(Duration::Seconds(2.0));
 //! // stop the sound
@@ -64,7 +64,7 @@
 //! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
 //! # let mut sequence = Sequence::new();
 //! sequence.wait_for_interval(4.0);
-//! sequence.play_sound(sound_id, Default::default());
+//! sequence.play_sound(sound_id, InstanceSettings::default());
 //! # audio_manager.start_sequence(sequence)?;
 //! # Ok::<(), kira::KiraError>(())
 //! ```
@@ -91,7 +91,7 @@
 //! sequence.wait_for_interval(4.0);
 //! sequence.start_loop();
 //! // when the sequence finishes, it will loop back to this step
-//! sequence.play_sound(sound_id, Default::default());
+//! sequence.play_sound(sound_id, InstanceSettings::default());
 //! sequence.wait(Duration::Beats(1.0));
 //! # audio_manager.start_sequence(sequence)?;
 //! # Ok::<(), kira::KiraError>(())

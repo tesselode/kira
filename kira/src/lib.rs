@@ -10,9 +10,9 @@
 //! To use Kira, first create an `AudioManager`:
 //! ```no_run
 //! # use std::error::Error;
-//! # use kira::manager::AudioManager;
+//! # use kira::manager::{AudioManager, AudioManagerSettings};
 //! #
-//! let mut audio_manager = AudioManager::<()>::new(Default::default())?;
+//! let mut audio_manager = AudioManager::<()>::new(AudioManagerSettings::default())?;
 //! # Ok::<(), kira::KiraError>(())
 //! ```
 //!
@@ -22,11 +22,11 @@
 //!
 //! ```no_run
 //! # use std::error::Error;
-//! # use kira::{manager::AudioManager, sound::Sound};
+//! # use kira::{manager::{AudioManager, AudioManagerSettings}, sound::{Sound, SoundSettings}, instance::InstanceSettings};
 //! #
-//! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
-//! let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
-//! audio_manager.play_sound(sound_id, Default::default())?;
+//! # let mut audio_manager = AudioManager::<()>::new(AudioManagerSettings::default())?;
+//! let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", SoundSettings::default())?)?;
+//! audio_manager.play_sound(sound_id, InstanceSettings::default())?;
 //! # Ok::<(), kira::KiraError>(())
 //! ```
 //!
@@ -92,7 +92,7 @@
 //! let mut sequence = Sequence::new();
 //! sequence.start_loop();
 //! sequence.wait_for_interval(4.0);
-//! sequence.play_sound(kick_drum_sound_id, Default::default());
+//! sequence.play_sound(kick_drum_sound_id, InstanceSettings::default());
 //! sequence.emit_custom_event(CustomEvent::KickDrum);
 //! audio_manager.start_sequence(sequence)?;
 //! // start the metronome so the sequence will have a pulse to listen for

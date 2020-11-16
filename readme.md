@@ -13,9 +13,9 @@ Lua bindings for use with frameworks like LÖVE.
 ### Simple sound playback
 
 ```rust
-let mut audio_manager = AudioManager::<()>::new(Default::default())?;
-let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
-audio_manager.play_sound(sound_id, Default::default())?;
+let mut audio_manager = AudioManager::<()>::new(AudioManagerSettings::default())?;
+let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", SoundSettings::default())?)?;
+audio_manager.play_sound(sound_id, InstanceSettings::default())?;
 ```
 
 ### Looping a song with an intro
@@ -41,7 +41,7 @@ audio_manager.play_sound(sound_id, InstanceSettings::new().loop_region(loop_star
 let mut sequence = Sequence::new();
 sequence.start_loop();
 sequence.wait_for_interval(4.0);
-sequence.play_sound(kick_drum_sound_id, Default::default());
+sequence.play_sound(kick_drum_sound_id, InstanceSettings::default());
 sequence.emit_custom_event(CustomEvent::KickDrum);
 audio_manager.start_sequence(sequence)?;
 audio_manager.start_metronome()?;
