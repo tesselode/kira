@@ -5,20 +5,42 @@
 //! To create a sequence, use `Sequence::new()` and then add
 //! the actions you want to take in order:
 //!
-//! ```
-//! let sequence = Sequence::new();
+//! ```no_run
+//! # use kira::{
+//! # 	instance::InstanceSettings,
+//! # 	manager::{AudioManager, AudioManagerSettings},
+//! # 	sequence::Sequence,
+//! # 	sound::{SoundMetadata, SoundSettings},
+//! # 	Duration, Tempo,
+//! # };
+//! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
+//! # let sound_id = audio_manager.load_sound("loop.ogg", Default::default())?;
+//! let mut sequence = Sequence::new();
 //! // play a sound
-//! let instance_id = sequence.play_sound(sound_id);
+//! let instance_id = sequence.play_sound(sound_id, Default::default());
 //! // wait 2 seconds
 //! sequence.wait(Duration::Seconds(2.0));
 //! // stop the sound
-//! sequence.stop_instance(instance_id);
+//! sequence.stop_instance(instance_id, None);
+//! # audio_manager.start_sequence(sequence)?;
+//! # Ok::<(), kira::KiraError>(())
 //! ```
 //!
 //! To start the sequence, use `AudioManager::start_sequence()`:
 //!
-//! ```
+//! ```no_run
+//! # use kira::{
+//! # 	instance::InstanceSettings,
+//! # 	manager::{AudioManager, AudioManagerSettings},
+//! # 	sequence::Sequence,
+//! # 	sound::{SoundMetadata, SoundSettings},
+//! # 	Duration, Tempo,
+//! # };
+//! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
+//! # let sound_id = audio_manager.load_sound("loop.ogg", Default::default())?;
+//! # let mut sequence = Sequence::new();
 //! audio_manager.start_sequence(sequence)?;
+//! # Ok::<(), kira::KiraError>(())
 //! ```
 //!
 //! ## Timing events
@@ -30,9 +52,21 @@
 //! This sequence will play a sound at the beginning of a measure
 //! (assuming a measure is 4 beats long):
 //!
-//! ```
+//! ```no_run
+//! # use kira::{
+//! # 	instance::InstanceSettings,
+//! # 	manager::{AudioManager, AudioManagerSettings},
+//! # 	sequence::Sequence,
+//! # 	sound::{SoundMetadata, SoundSettings},
+//! # 	Duration, Tempo,
+//! # };
+//! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
+//! # let sound_id = audio_manager.load_sound("loop.ogg", Default::default())?;
+//! # let mut sequence = Sequence::new();
 //! sequence.wait_for_interval(4.0);
-//! sequence.play_sound(sound_id);
+//! sequence.play_sound(sound_id, Default::default());
+//! # audio_manager.start_sequence(sequence)?;
+//! # Ok::<(), kira::KiraError>(())
 //! ```
 //!
 //! Note that the metronome has to be running for the interval to work.
@@ -43,11 +77,24 @@
 //! following example will wait for the start of a measure and then
 //! play a sound every beat:
 //!
-//! ```
+//! ```no_run
+//! # use kira::{
+//! # 	instance::InstanceSettings,
+//! # 	manager::{AudioManager, AudioManagerSettings},
+//! # 	sequence::Sequence,
+//! # 	sound::{SoundMetadata, SoundSettings},
+//! # 	Duration, Tempo,
+//! # };
+//! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
+//! # let sound_id = audio_manager.load_sound("loop.ogg", Default::default())?;
+//! # let mut sequence = Sequence::new();
 //! sequence.wait_for_interval(4.0);
 //! sequence.start_loop();
-//! sequence.play_sound(sound_id); // when the sequence finishes, it will loop back to this step
+//! // when the sequence finishes, it will loop back to this step
+//! sequence.play_sound(sound_id, Default::default());
 //! sequence.wait(Duration::Beats(1.0));
+//! # audio_manager.start_sequence(sequence)?;
+//! # Ok::<(), kira::KiraError>(())
 //! ```
 //!
 //! ## Custom events
@@ -55,11 +102,45 @@
 //! Sequences can emit custom events that you can receive on the main
 //! thread, which is useful for syncing gameplay events to music events:
 //!
-//! ```
+//! ```no_run
+//! # use kira::{
+//! # 	instance::InstanceSettings,
+//! # 	manager::{AudioManager, AudioManagerSettings},
+//! # 	sequence::Sequence,
+//! # 	sound::{SoundMetadata, SoundSettings},
+//! # 	Duration, Tempo,
+//! # };
+//! # #[derive(Debug, Copy, Clone)]
+//! # enum CustomEvent {
+//! # 	Beat,
+//! # }
+//! # let mut audio_manager = AudioManager::<CustomEvent>::new(Default::default())?;
+//! # let sound_id = audio_manager.load_sound("loop.ogg", Default::default())?;
+//! # let mut sequence = Sequence::new();
 //! sequence.wait_for_interval(4.0);
 //! sequence.start_loop();
 //! sequence.emit_custom_event(CustomEvent::Beat);
 //! sequence.wait(Duration::Beats(1.0));
+//! # audio_manager.start_sequence(sequence)?;
+//! # Ok::<(), kira::KiraError>(())
+//! ```
+//!
+//! To retrieve the events, use `AudioManager::events()`:
+//!
+//! ```no_run
+//! # use kira::{
+//! # 	instance::InstanceSettings,
+//! # 	manager::{AudioManager, AudioManagerSettings},
+//! # 	sequence::Sequence,
+//! # 	sound::{SoundMetadata, SoundSettings},
+//! # 	Duration, Tempo,
+//! # };
+//! #
+//! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
+//! for event in audio_manager.events() {
+//! 	println!("{:?}", event);
+//! }
+//! # Ok::<(), kira::KiraError>(())
 //! ```
 
 use std::sync::atomic::{AtomicUsize, Ordering};
