@@ -10,15 +10,15 @@ use crate::{
 	error::{KiraError, KiraResult},
 	instance::{InstanceId, InstanceSettings},
 	metronome::MetronomeSettings,
-	parameter::ParameterId,
-	sequence::{Sequence, SequenceId},
-	sound::{Sound, SoundId, SoundSettings},
-	tempo::Tempo,
-	track::{
+	mixer::{
 		effect::{Effect, EffectId, EffectSettings},
 		effect_slot::EffectSlot,
 		SubTrackId, Track, TrackIndex, TrackSettings,
 	},
+	parameter::ParameterId,
+	sequence::{Sequence, SequenceId},
+	sound::{Sound, SoundId, SoundSettings},
+	tempo::Tempo,
 	tween::Tween,
 	value::Value,
 };
@@ -243,22 +243,14 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	}
 
 	/// Sets the volume of an instance.
-	pub fn set_instance_volume(
-		&mut self,
-		id: InstanceId,
-		volume: Value,
-	) -> Result<(), KiraError> {
+	pub fn set_instance_volume(&mut self, id: InstanceId, volume: Value) -> Result<(), KiraError> {
 		self.send_command_to_backend(Command::Instance(InstanceCommand::SetInstanceVolume(
 			id, volume,
 		)))
 	}
 
 	/// Sets the pitch of an instance.
-	pub fn set_instance_pitch(
-		&mut self,
-		id: InstanceId,
-		pitch: Value,
-	) -> Result<(), KiraError> {
+	pub fn set_instance_pitch(&mut self, id: InstanceId, pitch: Value) -> Result<(), KiraError> {
 		self.send_command_to_backend(Command::Instance(InstanceCommand::SetInstancePitch(
 			id, pitch,
 		)))

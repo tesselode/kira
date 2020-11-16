@@ -34,11 +34,11 @@
 
 use crate::{
 	manager::backend::parameters::Parameters,
+	mixer::{SubTrackId, TrackIndex},
 	parameter::Parameter,
 	sequence::SequenceId,
 	sound::{Sound, SoundId},
 	stereo_sample::StereoSample,
-	track::{SubTrackId, TrackIndex},
 	tween::Tween,
 	value::CachedValue,
 	value::Value,

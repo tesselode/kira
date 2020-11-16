@@ -1,17 +1,33 @@
-pub mod effect;
-pub(crate) mod effect_slot;
-mod id;
-
-pub use id::SubTrackId;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use indexmap::IndexMap;
 
 use crate::{manager::backend::parameters::Parameters, stereo_sample::StereoSample};
 
-use self::{
+use super::{
 	effect::{Effect, EffectId, EffectSettings},
 	effect_slot::EffectSlot,
 };
+
+static NEXT_SUB_TRACK_INDEX: AtomicUsize = AtomicUsize::new(0);
+
+/**
+A unique identifier for a sub-track.
+
+You cannot create this manually - a `SubTrackId` is created
+when you create a sub-track with an `AudioManager`.
+*/
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct SubTrackId {
+	index: usize,
+}
+
+impl SubTrackId {
+	pub(crate) fn new() -> Self {
+		let index = NEXT_SUB_TRACK_INDEX.fetch_add(1, Ordering::Relaxed);
+		Self { index }
+	}
+}
 
 /// Represents a mixer track.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -36,8 +52,10 @@ impl From<SubTrackId> for TrackIndex {
 	}
 }
 
+/// Settings for a mixer track.
 #[derive(Debug, Clone)]
 pub struct TrackSettings {
+	/// The volume of the track.
 	pub volume: f64,
 }
 

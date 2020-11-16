@@ -4,9 +4,7 @@ mod metadata;
 pub use id::SoundId;
 pub use metadata::SoundMetadata;
 
-use crate::{
-	error::KiraError, error::KiraResult, stereo_sample::StereoSample, track::TrackIndex,
-};
+use crate::{error::KiraError, error::KiraResult, mixer::TrackIndex, stereo_sample::StereoSample};
 use claxon::FlacReader;
 use hound::WavReader;
 use lewton::{inside_ogg::OggStreamReader, samples::Samples};

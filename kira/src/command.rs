@@ -1,12 +1,12 @@
 use crate::{
 	instance::{InstanceId, InstanceSettings},
+	mixer::effect::Effect,
+	mixer::effect::EffectId,
+	mixer::{effect::EffectSettings, SubTrackId, TrackIndex, TrackSettings},
 	parameter::ParameterId,
 	sequence::{Sequence, SequenceId},
 	sound::{Sound, SoundId},
 	tempo::Tempo,
-	track::effect::Effect,
-	track::effect::EffectId,
-	track::{effect::EffectSettings, SubTrackId, TrackIndex, TrackSettings},
 	tween::Tween,
 	value::Value,
 };

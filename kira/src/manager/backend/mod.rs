@@ -9,11 +9,11 @@ use super::{AudioManagerSettings, Event};
 use crate::{
 	command::{Command, SoundCommand},
 	metronome::Metronome,
+	mixer::effect_slot::EffectSlot,
+	mixer::Track,
 	sequence::Sequence,
 	sound::{Sound, SoundId},
 	stereo_sample::StereoSample,
-	track::effect_slot::EffectSlot,
-	track::Track,
 };
 use indexmap::IndexMap;
 use instances::Instances;

@@ -1,4 +1,4 @@
-use kira::track::{SubTrackId, TrackIndex, TrackSettings};
+use kira::mixer::{SubTrackId, TrackIndex, TrackSettings};
 use mlua::prelude::*;
 
 use crate::error::KiraLuaError;

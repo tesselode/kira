@@ -109,12 +109,12 @@ mod error;
 pub mod instance;
 pub mod manager;
 mod metronome;
+pub mod mixer;
 mod parameter;
 pub mod sequence;
 pub mod sound;
 mod stereo_sample;
 mod tempo;
-pub mod track;
 mod tween;
 mod value;
 

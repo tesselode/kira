@@ -1,6 +1,6 @@
 use kira::{
+	mixer::TrackIndex,
 	sound::{SoundId, SoundMetadata, SoundSettings},
-	track::TrackIndex,
 };
 use mlua::prelude::*;
 

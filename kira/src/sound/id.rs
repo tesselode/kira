@@ -3,7 +3,7 @@ use std::{
 	sync::atomic::{AtomicUsize, Ordering},
 };
 
-use crate::track::TrackIndex;
+use crate::mixer::TrackIndex;
 
 use super::SoundMetadata;
 

@@ -32,8 +32,10 @@ impl EffectId {
 	}
 }
 
+/// Settings for an effect.
 #[derive(Debug, Clone)]
 pub struct EffectSettings {
+	/// Whether the effect is initially enabled.
 	pub enabled: bool,
 }
 

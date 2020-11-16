@@ -3,9 +3,9 @@ use ringbuf::Producer;
 
 use crate::{
 	command::MixerCommand,
+	mixer::effect::Effect,
+	mixer::{effect_slot::EffectSlot, SubTrackId, Track, TrackIndex, TrackSettings},
 	stereo_sample::StereoSample,
-	track::effect::Effect,
-	track::{effect_slot::EffectSlot, SubTrackId, Track, TrackIndex, TrackSettings},
 };
 
 use super::parameters::Parameters;
