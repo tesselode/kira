@@ -1,9 +1,8 @@
 use crate::{
 	command::InstanceCommand,
 	instance::{Instance, InstanceId},
+	parameter::Tween,
 	sound::{Sound, SoundId},
-	stereo_sample::StereoSample,
-	tween::Tween,
 };
 use indexmap::IndexMap;
 

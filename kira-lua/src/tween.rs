@@ -1,4 +1,4 @@
-use kira::Tween;
+use kira::parameter::Tween;
 use mlua::prelude::*;
 
 use crate::error::KiraLuaError;

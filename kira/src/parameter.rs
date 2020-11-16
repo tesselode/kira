@@ -1,8 +1,12 @@
+//! Provides an interface for smoothly changing values over time.
+
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use crate::tween::Tween;
-
 static NEXT_PARAMETER_INDEX: AtomicUsize = AtomicUsize::new(0);
+
+/// Represents a movement of one value to another over time.
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct Tween(pub f64);
 
 /**
 A unique identifier for a `Parameter`.

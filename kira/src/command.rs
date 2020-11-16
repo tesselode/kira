@@ -3,11 +3,10 @@ use crate::{
 	mixer::effect::Effect,
 	mixer::effect::EffectId,
 	mixer::{effect::EffectSettings, SubTrackId, TrackIndex, TrackSettings},
-	parameter::ParameterId,
+	parameter::{ParameterId, Tween},
 	sequence::{Sequence, SequenceId},
 	sound::{Sound, SoundId},
 	tempo::Tempo,
-	tween::Tween,
 	value::Value,
 };
 

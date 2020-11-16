@@ -1,4 +1,4 @@
-use kira::ParameterId;
+use kira::parameter::ParameterId;
 use mlua::prelude::*;
 
 #[derive(Debug, Clone)]

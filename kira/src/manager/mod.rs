@@ -15,11 +15,10 @@ use crate::{
 		effect_slot::EffectSlot,
 		SubTrackId, Track, TrackIndex, TrackSettings,
 	},
-	parameter::ParameterId,
+	parameter::{ParameterId, Tween},
 	sequence::{Sequence, SequenceId},
 	sound::{Sound, SoundId, SoundSettings},
 	tempo::Tempo,
-	tween::Tween,
 	value::Value,
 };
 use backend::Backend;

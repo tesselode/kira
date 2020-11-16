@@ -148,8 +148,9 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use crate::{
 	instance::{InstanceId, InstanceSettings},
 	metronome::Metronome,
+	parameter::{ParameterId, Tween},
 	sound::SoundId,
-	Duration, KiraError, KiraResult, ParameterId, Tempo, Tween, Value,
+	Duration, KiraError, KiraResult, Tempo, Value,
 };
 
 static NEXT_SEQUENCE_INDEX: AtomicUsize = AtomicUsize::new(0);
