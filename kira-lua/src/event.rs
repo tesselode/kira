@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use kira::manager::Event;
+use kira::Event;
 use mlua::prelude::*;
 
 static NEXT_EVENT_INDEX: AtomicUsize = AtomicUsize::new(0);

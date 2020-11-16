@@ -103,6 +103,7 @@
 mod command;
 mod duration;
 mod error;
+mod event;
 pub mod instance;
 pub mod manager;
 mod metronome;
@@ -116,6 +117,7 @@ mod value;
 
 pub use duration::Duration;
 pub use error::{KiraError, KiraResult};
+pub use event::Event;
 pub use metronome::MetronomeSettings;
 pub use stereo_sample::StereoSample;
 pub use tempo::Tempo;

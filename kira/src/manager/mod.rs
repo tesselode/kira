@@ -20,6 +20,7 @@ use crate::{
 	sound::{Sound, SoundId, SoundSettings},
 	tempo::Tempo,
 	value::Value,
+	Event,
 };
 use backend::Backend;
 use cpal::{
@@ -30,24 +31,6 @@ use ringbuf::{Consumer, Producer, RingBuffer};
 use std::path::Path;
 
 const WRAPPER_THREAD_SLEEP_DURATION: f64 = 1.0 / 60.0;
-
-/// Events that can be sent by the audio thread.
-#[derive(Debug, Copy, Clone)]
-pub enum Event<CustomEvent: Send + 'static> {
-	/**
-	Sent when the metronome passes a certain interval (in beats).
-
-	For example, an event with an interval of `1.0` will be sent
-	every beat, and an event with an interval of `0.25` will be
-	sent every sixteenth note (one quarter of a beat).
-
-	The intervals that a metronome emits events for are defined
-	when the metronome is created.
-	*/
-	MetronomeIntervalPassed(f64),
-	/// A user-defined event.
-	Custom(CustomEvent),
-}
 
 /// Settings for an `AudioManager`.
 pub struct AudioManagerSettings {
