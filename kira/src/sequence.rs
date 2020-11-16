@@ -10,11 +10,11 @@
 //! # 	instance::InstanceSettings,
 //! # 	manager::{AudioManager, AudioManagerSettings},
 //! # 	sequence::Sequence,
-//! # 	sound::{SoundMetadata, SoundSettings},
+//! # 	sound::{Sound, SoundMetadata, SoundSettings},
 //! # 	Duration, Tempo,
 //! # };
 //! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
-//! # let sound_id = audio_manager.load_sound("loop.ogg", Default::default())?;
+//! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
 //! let mut sequence = Sequence::new();
 //! // play a sound
 //! let instance_id = sequence.play_sound(sound_id, Default::default());
@@ -33,11 +33,11 @@
 //! # 	instance::InstanceSettings,
 //! # 	manager::{AudioManager, AudioManagerSettings},
 //! # 	sequence::Sequence,
-//! # 	sound::{SoundMetadata, SoundSettings},
+//! # 	sound::{Sound, SoundMetadata, SoundSettings},
 //! # 	Duration, Tempo,
 //! # };
 //! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
-//! # let sound_id = audio_manager.load_sound("loop.ogg", Default::default())?;
+//! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
 //! # let mut sequence = Sequence::new();
 //! audio_manager.start_sequence(sequence)?;
 //! # Ok::<(), kira::KiraError>(())
@@ -57,11 +57,11 @@
 //! # 	instance::InstanceSettings,
 //! # 	manager::{AudioManager, AudioManagerSettings},
 //! # 	sequence::Sequence,
-//! # 	sound::{SoundMetadata, SoundSettings},
+//! # 	sound::{Sound, SoundMetadata, SoundSettings},
 //! # 	Duration, Tempo,
 //! # };
 //! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
-//! # let sound_id = audio_manager.load_sound("loop.ogg", Default::default())?;
+//! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
 //! # let mut sequence = Sequence::new();
 //! sequence.wait_for_interval(4.0);
 //! sequence.play_sound(sound_id, Default::default());
@@ -82,11 +82,11 @@
 //! # 	instance::InstanceSettings,
 //! # 	manager::{AudioManager, AudioManagerSettings},
 //! # 	sequence::Sequence,
-//! # 	sound::{SoundMetadata, SoundSettings},
+//! # 	sound::{Sound, SoundMetadata, SoundSettings},
 //! # 	Duration, Tempo,
 //! # };
 //! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
-//! # let sound_id = audio_manager.load_sound("loop.ogg", Default::default())?;
+//! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
 //! # let mut sequence = Sequence::new();
 //! sequence.wait_for_interval(4.0);
 //! sequence.start_loop();
@@ -107,7 +107,7 @@
 //! # 	instance::InstanceSettings,
 //! # 	manager::{AudioManager, AudioManagerSettings},
 //! # 	sequence::Sequence,
-//! # 	sound::{SoundMetadata, SoundSettings},
+//! # 	sound::{Sound, SoundMetadata, SoundSettings},
 //! # 	Duration, Tempo,
 //! # };
 //! # #[derive(Debug, Copy, Clone)]
@@ -115,7 +115,7 @@
 //! # 	Beat,
 //! # }
 //! # let mut audio_manager = AudioManager::<CustomEvent>::new(Default::default())?;
-//! # let sound_id = audio_manager.load_sound("loop.ogg", Default::default())?;
+//! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
 //! # let mut sequence = Sequence::new();
 //! sequence.wait_for_interval(4.0);
 //! sequence.start_loop();
@@ -132,7 +132,7 @@
 //! # 	instance::InstanceSettings,
 //! # 	manager::{AudioManager, AudioManagerSettings},
 //! # 	sequence::Sequence,
-//! # 	sound::{SoundMetadata, SoundSettings},
+//! # 	sound::{Sound, SoundMetadata, SoundSettings},
 //! # 	Duration, Tempo,
 //! # };
 //! #

@@ -1,45 +1,35 @@
-use std::{error::Error, io::stdin};
-
 use kira::{
 	instance::InstanceSettings,
-	manager::{AudioManager, AudioManagerSettings},
+	manager::AudioManager,
 	sequence::Sequence,
-	sound::{SoundMetadata, SoundSettings},
-	Duration, Tempo,
+	sound::{Sound, SoundMetadata, SoundSettings},
+	KiraError, Tempo,
 };
+use std::error::Error;
 
-fn main() -> Result<(), Box<dyn Error>> {
-	let mut manager = AudioManager::<()>::new(AudioManagerSettings::default())?;
-	let sound_id = manager.load_sound(
-		std::env::current_dir().unwrap().join("assets/loop.ogg"),
+#[derive(Debug, Copy, Clone)]
+enum CustomEvent {
+	KickDrum,
+}
+
+fn main() -> Result<(), KiraError> {
+	let mut audio_manager = AudioManager::<CustomEvent>::new(Default::default())?;
+	let kick_drum_sound_id = audio_manager.add_sound(Sound::from_file(
+		"loop.ogg",
 		SoundSettings {
 			metadata: SoundMetadata {
 				semantic_duration: Some(Tempo(128.0).beats_to_seconds(16.0)),
 			},
 			..Default::default()
 		},
-	)?;
+	)?)?;
 	let mut sequence = Sequence::new();
-	sequence.wait_for_interval(1.0);
 	sequence.start_loop();
-	let instance_id = sequence.play_sound(sound_id, Default::default());
-	sequence.wait(Duration::Beats(1.0));
-	sequence.stop_instance(instance_id, None);
-	sequence.wait(Duration::Beats(1.0));
-	let instance_id = sequence.play_sound(
-		sound_id,
-		InstanceSettings {
-			pitch: 2.0.into(),
-			..Default::default()
-		},
-	);
-	sequence.wait(Duration::Beats(1.0));
-	sequence.stop_instance(instance_id, None);
-	sequence.wait(Duration::Beats(1.0));
-	manager.start_sequence(sequence)?;
-	manager.set_metronome_tempo(128.0.into())?;
-	manager.start_metronome()?;
-	let mut input = String::new();
-	stdin().read_line(&mut input)?;
-	Ok(())
+	sequence.wait_for_interval(4.0);
+	sequence.play_sound(kick_drum_sound_id, Default::default());
+	sequence.emit_custom_event(CustomEvent::KickDrum);
+	audio_manager.start_sequence(sequence)?;
+	// start the metronome so the sequence will have a pulse to listen for
+	audio_manager.start_metronome()?;
+	Ok::<(), kira::KiraError>(())
 }

@@ -10,10 +10,10 @@
 //! ```no_run
 //! # use std::error::Error;
 //! #
-//! # use kira::{manager::AudioManager, Tween, instance::InstanceSettings};
+//! # use kira::{manager::AudioManager, instance::InstanceSettings, sound::Sound};
 //! #
 //! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
-//! # let sound_id = audio_manager.load_sound("loop.ogg", Default::default())?;
+//! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
 //! let instance_id = audio_manager.play_sound(sound_id, InstanceSettings::new().pitch(0.5))?;
 //! # Ok::<(), Box<dyn Error>>(())
 //! ```
@@ -23,10 +23,10 @@
 //! ```no_run
 //! # use std::error::Error;
 //! #
-//! # use kira::{manager::AudioManager, Tween};
+//! # use kira::{manager::AudioManager, sound::Sound, parameter::Tween};
 //! #
 //! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
-//! # let sound_id = audio_manager.load_sound("loop.ogg", Default::default())?;
+//! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
 //! # let instance_id = audio_manager.play_sound(sound_id, Default::default())?;
 //! audio_manager.stop_instance(instance_id, Some(Tween(2.0)))?;
 //! # Ok::<(), Box<dyn Error>>(())

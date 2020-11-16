@@ -1,5 +1,6 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
+/// Represents an audio sample with a left and right channel.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct StereoSample {
 	pub left: f32,
@@ -7,25 +8,22 @@ pub struct StereoSample {
 }
 
 impl StereoSample {
+	/// Creates a sample with the given left and right values.
 	pub fn new(left: f32, right: f32) -> Self {
 		Self { left, right }
 	}
 
+	/// Creates a sample with both the left and right channels set
+	/// to the same value.
 	pub fn from_mono(value: f32) -> Self {
 		Self::new(value, value)
 	}
 
+	/// Creates a sample from `i32`s with the given bit depth.
 	pub fn from_i32(left: i32, right: i32, bit_depth: u32) -> Self {
 		let max_int = (1 << bit_depth) / 2;
 		let scale = 1.0 / max_int as f32;
 		Self::new(left as f32 * scale, right as f32 * scale)
-	}
-
-	pub fn atan(self) -> Self {
-		Self {
-			left: self.left.atan(),
-			right: self.right.atan(),
-		}
 	}
 }
 

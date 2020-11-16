@@ -1,4 +1,7 @@
-use kira::manager::{AudioManager, AudioManagerSettings};
+use kira::{
+	manager::{AudioManager, AudioManagerSettings},
+	sound::Sound,
+};
 use mlua::prelude::*;
 
 use crate::{
@@ -114,18 +117,21 @@ impl LuaUserData for LAudioManager {
 
 		methods.add_method_mut(
 			"loadSound",
-			|_: &Lua, this: &mut Self, (path, settings): (LuaString, LSoundSettings)| match this
-				.0
-				.load_sound(path.to_str()?, settings.0)
-			{
-				Ok(id) => Ok(LSoundId(id)),
-				Err(error) => Err(LuaError::external(error)),
+			|_: &Lua, this: &mut Self, (path, settings): (LuaString, LSoundSettings)| {
+				let sound = match Sound::from_file(path.to_str()?, settings.0) {
+					Ok(sound) => sound,
+					Err(error) => return Err(LuaError::external(error)),
+				};
+				match this.0.add_sound(sound) {
+					Ok(id) => Ok(LSoundId(id)),
+					Err(error) => Err(LuaError::external(error)),
+				}
 			},
 		);
 
 		methods.add_method_mut(
 			"unloadSound",
-			|_: &Lua, this: &mut Self, id: LSoundId| match this.0.unload_sound(id.0) {
+			|_: &Lua, this: &mut Self, id: LSoundId| match this.0.remove_sound(id.0) {
 				Ok(_) => Ok(()),
 				Err(error) => Err(LuaError::external(error)),
 			},

@@ -207,21 +207,15 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		}
 	}
 
-	/// Loads a sound from a file path.
-	///
-	/// Returns a handle to the sound. Keep this so you can play the sound later.
-	pub fn load_sound<P>(&mut self, path: P, settings: SoundSettings) -> KiraResult<SoundId>
-	where
-		P: AsRef<Path>,
-	{
-		let sound = Sound::from_file(path, &settings)?;
-		let id = SoundId::new(sound.duration(), settings.default_track, settings.metadata);
+	/// Sends a sound to the audio thread and returns a handle to the sound.
+	pub fn add_sound(&mut self, sound: Sound) -> KiraResult<SoundId> {
+		let id = SoundId::new(sound.duration(), sound.default_track(), sound.metadata());
 		self.send_command_to_backend(Command::Sound(SoundCommand::LoadSound(id, sound)))?;
 		Ok(id)
 	}
 
-	/// Unloads a sound, deallocating its memory.
-	pub fn unload_sound(&mut self, id: SoundId) -> KiraResult<()> {
+	/// Removes a sound from the audio thread, allowing its memory to be freed.
+	pub fn remove_sound(&mut self, id: SoundId) -> KiraResult<()> {
 		self.send_command_to_backend(Command::Sound(SoundCommand::UnloadSound(id)))
 	}
 

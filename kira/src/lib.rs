@@ -22,10 +22,10 @@
 //!
 //! ```no_run
 //! # use std::error::Error;
-//! # use kira::manager::AudioManager;
+//! # use kira::{manager::AudioManager, sound::Sound};
 //! #
 //! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
-//! let sound_id = audio_manager.load_sound("loop.ogg", Default::default())?;
+//! let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
 //! audio_manager.play_sound(sound_id, Default::default())?;
 //! # Ok::<(), kira::KiraError>(())
 //! ```
@@ -38,23 +38,20 @@
 //! # use kira::{
 //! # 	instance::InstanceSettings,
 //! # 	manager::AudioManager,
-//! # 	sound::{SoundMetadata, SoundSettings},
+//! # 	sound::{Sound, SoundMetadata, SoundSettings},
 //! # 	Tempo,
 //! # };
 //! #
 //! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
-//! let sound_id = audio_manager.load_sound(
+//! let sound_id = audio_manager.add_sound(Sound::from_file(
 //! 	"loop.ogg",
 //! 	SoundSettings {
 //! 		metadata: SoundMetadata {
-//! 			// mark the sound as being 16 beats long. even if the sound has
-//! 			// a reverb tail at the end, it will loop after 16 beats (with
-//! 			// the reverb tail preserved)
 //! 			semantic_duration: Some(Tempo(128.0).beats_to_seconds(16.0)),
 //! 		},
 //! 		..Default::default()
 //! 	},
-//! )?;
+//! )?)?;
 //! // when the sound loops, start the loop 4 beats in
 //! let loop_start = Tempo(128.0).beats_to_seconds(4.0);
 //! audio_manager.play_sound(sound_id, InstanceSettings::new().loop_region(loop_start..))?;
@@ -73,7 +70,7 @@
 //! # 	instance::InstanceSettings,
 //! # 	manager::AudioManager,
 //! # 	sequence::Sequence,
-//! # 	sound::{SoundMetadata, SoundSettings},
+//! # 	sound::{Sound, SoundMetadata, SoundSettings},
 //! # 	Tempo,
 //! # };
 //! #
@@ -83,15 +80,15 @@
 //! # }
 //! #
 //! # let mut audio_manager = AudioManager::<CustomEvent>::new(Default::default())?;
-//! # let kick_drum_sound_id = audio_manager.load_sound(
-//! # 	"loop.ogg",
+//! # let kick_drum_sound_id = audio_manager.add_sound(Sound::from_file(
+//! # 	"kick.ogg",
 //! # 	SoundSettings {
 //! # 		metadata: SoundMetadata {
 //! # 			semantic_duration: Some(Tempo(128.0).beats_to_seconds(16.0)),
 //! # 		},
 //! # 		..Default::default()
 //! # 	},
-//! # )?;
+//! # )?)?;
 //! let mut sequence = Sequence::new();
 //! sequence.start_loop();
 //! sequence.wait_for_interval(4.0);
@@ -120,5 +117,6 @@ mod value;
 pub use duration::Duration;
 pub use error::{KiraError, KiraResult};
 pub use metronome::MetronomeSettings;
+pub use stereo_sample::StereoSample;
 pub use tempo::Tempo;
 pub use value::Value;

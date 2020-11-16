@@ -1,3 +1,5 @@
+//! Provides an interface to work with pieces of audio.
+
 mod id;
 mod metadata;
 
@@ -37,28 +39,35 @@ impl Default for SoundSettings {
 	}
 }
 
+/// A piece of audio that can be played by an `AudioManager`.
 #[derive(Debug)]
-pub(crate) struct Sound {
+pub struct Sound {
 	sample_rate: u32,
 	samples: Vec<StereoSample>,
 	duration: f64,
+	default_track: TrackIndex,
 	cooldown: Option<f64>,
+	metadata: SoundMetadata,
 	cooldown_timer: f64,
 }
 
 impl Sound {
-	pub fn new(sample_rate: u32, samples: Vec<StereoSample>, settings: &SoundSettings) -> Self {
+	/// Creates a new sound from raw sample data.
+	pub fn new(sample_rate: u32, samples: Vec<StereoSample>, settings: SoundSettings) -> Self {
 		let duration = samples.len() as f64 / sample_rate as f64;
 		Self {
 			sample_rate,
 			samples,
 			duration,
+			default_track: settings.default_track,
 			cooldown: settings.cooldown,
+			metadata: settings.metadata,
 			cooldown_timer: 0.0,
 		}
 	}
 
-	pub fn from_mp3_file<P>(path: P, settings: &SoundSettings) -> KiraResult<Self>
+	/// Decodes a sound from an mp3 file.
+	pub fn from_mp3_file<P>(path: P, settings: SoundSettings) -> KiraResult<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -111,7 +120,8 @@ impl Sound {
 		Ok(Self::new(sample_rate as u32, stereo_samples, settings))
 	}
 
-	pub fn from_ogg_file<P>(path: P, settings: &SoundSettings) -> KiraResult<Self>
+	/// Decodes a sound from an ogg file.
+	pub fn from_ogg_file<P>(path: P, settings: SoundSettings) -> KiraResult<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -141,7 +151,8 @@ impl Sound {
 		))
 	}
 
-	pub fn from_flac_file<P>(path: P, settings: &SoundSettings) -> KiraResult<Self>
+	/// Decodes a sound from a flac file.
+	pub fn from_flac_file<P>(path: P, settings: SoundSettings) -> KiraResult<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -174,7 +185,8 @@ impl Sound {
 		Ok(Self::new(streaminfo.sample_rate, stereo_samples, settings))
 	}
 
-	pub fn from_wav_file<P>(path: P, settings: &SoundSettings) -> KiraResult<Self>
+	/// Decodes a sound from a wav file.
+	pub fn from_wav_file<P>(path: P, settings: SoundSettings) -> KiraResult<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -226,7 +238,10 @@ impl Sound {
 		))
 	}
 
-	pub fn from_file<P>(path: P, settings: &SoundSettings) -> KiraResult<Self>
+	/// Decodes a sound from a file.
+	///
+	/// The audio format will be automatically determined from the file extension.
+	pub fn from_file<P>(path: P, settings: SoundSettings) -> KiraResult<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -244,10 +259,23 @@ impl Sound {
 		Err(KiraError::UnsupportedAudioFileFormat)
 	}
 
+	/// Gets the default track that the sound plays on.
+	pub fn default_track(&self) -> TrackIndex {
+		self.default_track
+	}
+
+	/// Gets the duration of the sound (in seconds).
 	pub fn duration(&self) -> f64 {
 		self.duration
 	}
 
+	/// Gets the metadata associated with the sound.
+	pub fn metadata(&self) -> SoundMetadata {
+		self.metadata
+	}
+
+	/// Gets the sample at an arbitrary time in seconds,
+	/// interpolating between samples if necessary.
 	pub fn get_sample_at_position(&self, position: f64) -> StereoSample {
 		let sample_position = self.sample_rate as f64 * position;
 		let x = (sample_position % 1.0) as f32;
