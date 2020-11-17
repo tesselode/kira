@@ -5,47 +5,49 @@ use crate::{manager::backend::parameters::Parameters, parameter::ParameterId};
 /// Can either be a fixed number or the current value
 /// of a parameter.
 #[derive(Debug, Copy, Clone)]
-pub enum Value {
-	Fixed(f64),
+pub enum Value<T: From<f64> + Copy> {
+	Fixed(T),
 	Parameter(ParameterId),
 }
 
-impl Value {
-	pub(crate) fn get(&self, parameters: &Parameters) -> Option<f64> {
+impl<T: From<f64> + Copy> Value<T> {
+	pub(crate) fn get(&self, parameters: &Parameters) -> Option<T> {
 		match self {
 			Value::Fixed(value) => Some(*value),
-			Value::Parameter(id) => parameters.get(*id).map(|parameter| parameter.value()),
+			Value::Parameter(id) => parameters
+				.get(*id)
+				.map(|parameter| T::from(parameter.value())),
 		}
 	}
 }
 
-impl From<f64> for Value {
-	fn from(value: f64) -> Self {
+impl<T: From<f64> + Copy> From<T> for Value<T> {
+	fn from(value: T) -> Self {
 		Self::Fixed(value)
 	}
 }
 
-impl From<ParameterId> for Value {
+impl<T: From<f64> + Copy> From<ParameterId> for Value<T> {
 	fn from(id: ParameterId) -> Self {
 		Self::Parameter(id)
 	}
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct CachedValue {
-	value: Value,
-	last_value: f64,
+pub(crate) struct CachedValue<T: From<f64> + Copy> {
+	value: Value<T>,
+	last_value: T,
 }
 
-impl CachedValue {
-	pub fn new(value: Value, default_value: f64) -> Self {
+impl<T: From<f64> + Copy> CachedValue<T> {
+	pub fn new(value: Value<T>, default_value: T) -> Self {
 		Self {
 			value,
 			last_value: default_value,
 		}
 	}
 
-	pub fn set(&mut self, value: Value) {
+	pub fn set(&mut self, value: Value<T>) {
 		self.value = value;
 	}
 
@@ -55,7 +57,7 @@ impl CachedValue {
 		}
 	}
 
-	pub fn value(&self) -> f64 {
+	pub fn value(&self) -> T {
 		self.last_value
 	}
 }

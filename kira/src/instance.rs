@@ -192,9 +192,9 @@ impl From<Range<f64>> for LoopRegion {
 #[derive(Debug, Clone, Copy)]
 pub struct InstanceSettings {
 	/// The volume of the instance.
-	pub volume: Value,
+	pub volume: Value<f64>,
 	/// The pitch of the instance, as a factor of the original pitch.
-	pub pitch: Value,
+	pub pitch: Value<f64>,
 	/// Whether the instance should be played in reverse.
 	pub reverse: bool,
 	/// The position to start playing the instance at (in seconds).
@@ -216,7 +216,7 @@ impl InstanceSettings {
 	}
 
 	/// Sets the volume of the instance.
-	pub fn volume<V: Into<Value>>(self, volume: V) -> Self {
+	pub fn volume<V: Into<Value<f64>>>(self, volume: V) -> Self {
 		Self {
 			volume: volume.into(),
 			..self
@@ -224,7 +224,7 @@ impl InstanceSettings {
 	}
 
 	/// Sets the pitch of the instance.
-	pub fn pitch<P: Into<Value>>(self, pitch: P) -> Self {
+	pub fn pitch<P: Into<Value<f64>>>(self, pitch: P) -> Self {
 		Self {
 			pitch: pitch.into(),
 			..self
@@ -317,8 +317,8 @@ pub(crate) struct Instance {
 	sound_id: SoundId,
 	track_index: TrackIndex,
 	sequence_id: Option<SequenceId>,
-	volume: CachedValue,
-	pitch: CachedValue,
+	volume: CachedValue<f64>,
+	pitch: CachedValue<f64>,
 	reverse: bool,
 	state: InstanceState,
 	sub_instances: [Option<SubInstance>; MAX_SUB_INSTANCES],
@@ -393,11 +393,11 @@ impl Instance {
 		self.state == InstanceState::Stopped
 	}
 
-	pub fn set_volume(&mut self, volume: Value) {
+	pub fn set_volume(&mut self, volume: Value<f64>) {
 		self.volume.set(volume);
 	}
 
-	pub fn set_pitch(&mut self, pitch: Value) {
+	pub fn set_pitch(&mut self, pitch: Value<f64>) {
 		self.pitch.set(pitch);
 	}
 

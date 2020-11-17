@@ -149,7 +149,7 @@ impl LuaUserData for LAudioManager {
 
 		methods.add_method_mut(
 			"setInstanceVolume",
-			|_: &Lua, this: &mut Self, (id, volume): (LInstanceId, LValue)| match this
+			|_: &Lua, this: &mut Self, (id, volume): (LInstanceId, LValue<f64>)| match this
 				.0
 				.set_instance_volume(id.0, volume.0)
 			{
@@ -160,7 +160,7 @@ impl LuaUserData for LAudioManager {
 
 		methods.add_method_mut(
 			"setInstancePitch",
-			|_: &Lua, this: &mut Self, (id, pitch): (LInstanceId, LValue)| match this
+			|_: &Lua, this: &mut Self, (id, pitch): (LInstanceId, LValue<f64>)| match this
 				.0
 				.set_instance_pitch(id.0, pitch.0)
 			{

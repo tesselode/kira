@@ -21,8 +21,8 @@ pub enum StateVariableFilterMode {
 #[derive(Debug, Clone)]
 pub struct StateVariableFilterSettings {
 	pub mode: StateVariableFilterMode,
-	pub cutoff: Value,
-	pub resonance: Value,
+	pub cutoff: Value<f64>,
+	pub resonance: Value<f64>,
 }
 
 impl Default for StateVariableFilterSettings {
@@ -38,8 +38,8 @@ impl Default for StateVariableFilterSettings {
 #[derive(Debug, Clone)]
 pub struct StateVariableFilter {
 	mode: StateVariableFilterMode,
-	cutoff: CachedValue,
-	resonance: CachedValue,
+	cutoff: CachedValue<f64>,
+	resonance: CachedValue<f64>,
 	ic1eq: StereoSample,
 	ic2eq: StereoSample,
 }

@@ -37,10 +37,10 @@ impl<'lua> FromLua<'lua> for LInstanceSettings {
 			LuaValue::Table(table) => {
 				let mut settings = InstanceSettings::default();
 				if table.contains_key("volume")? {
-					settings.volume = table.get::<_, LValue>("volume")?.0;
+					settings.volume = table.get::<_, LValue<f64>>("volume")?.0;
 				}
 				if table.contains_key("pitch")? {
-					settings.pitch = table.get::<_, LValue>("pitch")?.0;
+					settings.pitch = table.get::<_, LValue<f64>>("pitch")?.0;
 				}
 				if table.contains_key("reverse")? {
 					settings.reverse = table.get("reverse")?;

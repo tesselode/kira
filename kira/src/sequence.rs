@@ -174,8 +174,8 @@ impl SequenceId {
 #[derive(Debug, Copy, Clone)]
 pub(crate) enum SequenceOutputCommand<CustomEvent: Copy> {
 	PlaySound(InstanceId, SoundId, InstanceSettings),
-	SetInstanceVolume(InstanceId, Value),
-	SetInstancePitch(InstanceId, Value),
+	SetInstanceVolume(InstanceId, Value<f64>),
+	SetInstancePitch(InstanceId, Value<f64>),
 	PauseInstance(InstanceId, Option<Tween>),
 	ResumeInstance(InstanceId, Option<Tween>),
 	StopInstance(InstanceId, Option<Tween>),
@@ -267,13 +267,13 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 	}
 
 	/// Adds a step to set the volume of an instance.
-	pub fn set_instance_volume(&mut self, id: InstanceId, volume: Value) {
+	pub fn set_instance_volume(&mut self, id: InstanceId, volume: Value<f64>) {
 		self.steps
 			.push(SequenceOutputCommand::SetInstanceVolume(id, volume).into());
 	}
 
 	/// Adds a step to set the pitch of an instance.
-	pub fn set_instance_pitch(&mut self, id: InstanceId, pitch: Value) {
+	pub fn set_instance_pitch(&mut self, id: InstanceId, pitch: Value<f64>) {
 		self.steps
 			.push(SequenceOutputCommand::SetInstancePitch(id, pitch).into());
 	}
