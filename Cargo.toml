@@ -1,7 +1,6 @@
 [workspace]
 members = [
 	"kira",
-	"kira-test",
 	"kira-lua"
 ]
 
