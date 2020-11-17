@@ -1,11 +1,14 @@
-use crate::{command::MetronomeCommand, tempo::Tempo};
+use crate::{
+	command::MetronomeCommand, manager::backend::parameters::Parameters, tempo::Tempo,
+	value::CachedValue, Value,
+};
 use std::vec::Drain;
 
 #[derive(Debug, Clone)]
 /// Settings for the metronome.
 pub struct MetronomeSettings {
 	/// The tempo of the metronome (in beats per minute).
-	pub tempo: Tempo,
+	pub tempo: Value<Tempo>,
 	/// Which intervals (in beats) the metronome should emit events for.
 	///
 	/// For example, if this is set to `vec![0.25, 0.5, 1.0]`, then
@@ -17,7 +20,7 @@ pub struct MetronomeSettings {
 impl Default for MetronomeSettings {
 	fn default() -> Self {
 		Self {
-			tempo: Tempo(120.0),
+			tempo: Tempo(120.0).into(),
 			interval_events_to_emit: vec![],
 		}
 	}
@@ -25,7 +28,8 @@ impl Default for MetronomeSettings {
 
 #[derive(Debug, Clone)]
 pub(crate) struct Metronome {
-	pub settings: MetronomeSettings,
+	tempo: CachedValue<Tempo>,
+	interval_events_to_emit: Vec<f64>,
 	ticking: bool,
 	time: f64,
 	previous_time: f64,
@@ -36,7 +40,8 @@ impl Metronome {
 	pub fn new(settings: MetronomeSettings) -> Self {
 		let num_interval_events = settings.interval_events_to_emit.len();
 		Self {
-			settings,
+			tempo: CachedValue::new(settings.tempo, Tempo(120.0)),
+			interval_events_to_emit: settings.interval_events_to_emit,
 			ticking: false,
 			time: 0.0,
 			previous_time: 0.0,
@@ -46,7 +51,7 @@ impl Metronome {
 
 	pub fn effective_tempo(&self) -> Tempo {
 		if self.ticking {
-			self.settings.tempo
+			self.tempo.value()
 		} else {
 			Tempo(0.0)
 		}
@@ -68,18 +73,19 @@ impl Metronome {
 
 	pub fn run_command(&mut self, command: MetronomeCommand) {
 		match command {
-			MetronomeCommand::SetMetronomeTempo(tempo) => self.settings.tempo = tempo,
+			MetronomeCommand::SetMetronomeTempo(tempo) => self.tempo.set(tempo),
 			MetronomeCommand::StartMetronome => self.start(),
 			MetronomeCommand::PauseMetronome => self.pause(),
 			MetronomeCommand::StopMetronome => self.stop(),
 		}
 	}
 
-	pub fn update(&mut self, dt: f64) -> Drain<f64> {
+	pub fn update(&mut self, dt: f64, parameters: &Parameters) -> Drain<f64> {
+		self.tempo.update(parameters);
 		if self.ticking {
 			self.previous_time = self.time;
-			self.time += (self.settings.tempo.0 / 60.0) * dt;
-			for interval in &self.settings.interval_events_to_emit {
+			self.time += (self.tempo.value().0 / 60.0) * dt;
+			for interval in &self.interval_events_to_emit {
 				if self.interval_passed(*interval) {
 					self.interval_event_queue.push(*interval);
 				}

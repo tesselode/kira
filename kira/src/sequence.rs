@@ -188,7 +188,7 @@ pub(crate) enum SequenceOutputCommand<CustomEvent: Copy> {
 	PauseInstancesOfSequence(SequenceId, Option<Tween>),
 	ResumeInstancesOfSequence(SequenceId, Option<Tween>),
 	StopInstancesOfSequence(SequenceId, Option<Tween>),
-	SetMetronomeTempo(Tempo),
+	SetMetronomeTempo(Value<Tempo>),
 	StartMetronome,
 	PauseMetronome,
 	StopMetronome,
@@ -339,9 +339,9 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 	}
 
 	/// Adds a step to set the tempo of the metronome.
-	pub fn set_metronome_tempo(&mut self, tempo: Tempo) {
+	pub fn set_metronome_tempo<T: Into<Value<Tempo>>>(&mut self, tempo: T) {
 		self.steps
-			.push(SequenceOutputCommand::SetMetronomeTempo(tempo).into());
+			.push(SequenceOutputCommand::SetMetronomeTempo(tempo.into()).into());
 	}
 
 	/// Adds a step to start the metronome.

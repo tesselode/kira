@@ -34,7 +34,7 @@ pub(crate) enum InstanceCommand {
 
 #[derive(Debug, Clone)]
 pub(crate) enum MetronomeCommand {
-	SetMetronomeTempo(Tempo),
+	SetMetronomeTempo(Value<Tempo>),
 	StartMetronome,
 	PauseMetronome,
 	StopMetronome,

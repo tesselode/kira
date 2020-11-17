@@ -312,9 +312,12 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	}
 
 	/// Sets the tempo of the metronome.
-	pub fn set_metronome_tempo(&mut self, tempo: Tempo) -> Result<(), KiraError> {
+	pub fn set_metronome_tempo<T: Into<Value<Tempo>>>(
+		&mut self,
+		tempo: T,
+	) -> Result<(), KiraError> {
 		self.send_command_to_backend(Command::Metronome(MetronomeCommand::SetMetronomeTempo(
-			tempo,
+			tempo.into(),
 		)))
 	}
 

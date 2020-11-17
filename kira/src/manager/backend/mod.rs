@@ -121,7 +121,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> 
 	}
 
 	fn update_metronome(&mut self) {
-		for interval in self.metronome.update(self.dt) {
+		for interval in self.metronome.update(self.dt, &self.parameters) {
 			match self
 				.event_producer
 				.push(Event::MetronomeIntervalPassed(interval))
