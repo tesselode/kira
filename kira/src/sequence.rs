@@ -182,6 +182,9 @@ pub(crate) enum SequenceOutputCommand<CustomEvent: Copy> {
 	PauseInstancesOfSound(SoundId, Option<Tween>),
 	ResumeInstancesOfSound(SoundId, Option<Tween>),
 	StopInstancesOfSound(SoundId, Option<Tween>),
+	PauseSequence(SequenceId),
+	ResumeSequence(SequenceId),
+	StopSequence(SequenceId),
 	PauseInstancesOfSequence(SequenceId, Option<Tween>),
 	ResumeInstancesOfSequence(SequenceId, Option<Tween>),
 	StopInstancesOfSequence(SequenceId, Option<Tween>),
@@ -311,20 +314,26 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 			.push(SequenceOutputCommand::StopInstancesOfSound(id, fade_tween).into());
 	}
 
-	/// Adds a step to pause all instances played by a sequence.
-	pub fn pause_instances_of_sequence(&mut self, id: SequenceId, fade_tween: Option<Tween>) {
+	/// Adds a step to pause a sequence and all instances played by it.
+	pub fn pause_sequence_and_instances(&mut self, id: SequenceId, fade_tween: Option<Tween>) {
+		self.steps
+			.push(SequenceOutputCommand::PauseSequence(id).into());
 		self.steps
 			.push(SequenceOutputCommand::PauseInstancesOfSequence(id, fade_tween).into());
 	}
 
-	/// Adds a step to resume all instances played by a sequence.
-	pub fn resume_instances_of_sequence(&mut self, id: SequenceId, fade_tween: Option<Tween>) {
+	/// Adds a step to resume a sequence and all instances played by it.
+	pub fn resume_sequence_and_instances(&mut self, id: SequenceId, fade_tween: Option<Tween>) {
+		self.steps
+			.push(SequenceOutputCommand::ResumeSequence(id).into());
 		self.steps
 			.push(SequenceOutputCommand::ResumeInstancesOfSequence(id, fade_tween).into());
 	}
 
-	/// Adds a step to stop all instances played by a sequence.
-	pub fn stop_instances_of_sequence(&mut self, id: SequenceId, fade_tween: Option<Tween>) {
+	/// Adds a step to stop a sequence and all instances played by it.
+	pub fn stop_sequence_and_instances(&mut self, id: SequenceId, fade_tween: Option<Tween>) {
+		self.steps
+			.push(SequenceOutputCommand::StopSequence(id).into());
 		self.steps
 			.push(SequenceOutputCommand::StopInstancesOfSequence(id, fade_tween).into());
 	}

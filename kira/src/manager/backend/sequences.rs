@@ -112,6 +112,15 @@ impl<CustomEvent: Copy + std::fmt::Debug> Sequences<CustomEvent> {
 					SequenceOutputCommand::StopInstancesOfSound(id, fade_tween) => {
 						Command::Instance(InstanceCommand::StopInstancesOfSound(id, fade_tween))
 					}
+					SequenceOutputCommand::PauseSequence(id) => {
+						Command::Sequence(SequenceCommand::PauseSequence(id))
+					}
+					SequenceOutputCommand::ResumeSequence(id) => {
+						Command::Sequence(SequenceCommand::ResumeSequence(id))
+					}
+					SequenceOutputCommand::StopSequence(id) => {
+						Command::Sequence(SequenceCommand::StopSequence(id))
+					}
 					SequenceOutputCommand::PauseInstancesOfSequence(id, fade_tween) => {
 						Command::Instance(InstanceCommand::PauseInstancesOfSequence(id, fade_tween))
 					}
