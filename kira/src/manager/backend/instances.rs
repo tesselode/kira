@@ -1,12 +1,12 @@
 use crate::{
 	command::InstanceCommand,
 	instance::{Instance, InstanceId},
-	parameter::Tween,
+	parameter::{Parameters, Tween},
 	sound::{Sound, SoundId},
 };
 use indexmap::IndexMap;
 
-use super::{mixer::Mixer, parameters::Parameters};
+use super::mixer::Mixer;
 
 pub(crate) struct Instances {
 	instances: IndexMap<InstanceId, Instance>,

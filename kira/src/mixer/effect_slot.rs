@@ -1,4 +1,4 @@
-use crate::{manager::backend::parameters::Parameters, stereo_sample::StereoSample};
+use crate::{parameter::Parameters, stereo_sample::StereoSample};
 
 use super::effect::{Effect, EffectSettings};
 

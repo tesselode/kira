@@ -1,5 +1,9 @@
 //! Provides an interface for smoothly changing values over time.
 
+mod parameters;
+
+pub use parameters::Parameters;
+
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 static NEXT_PARAMETER_INDEX: AtomicUsize = AtomicUsize::new(0);
@@ -35,24 +39,24 @@ struct TweenState {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct Parameter {
+pub struct Parameter {
 	value: f64,
 	tween_state: Option<TweenState>,
 }
 
 impl Parameter {
-	pub fn new(value: f64) -> Self {
+	pub(crate) fn new(value: f64) -> Self {
 		Self {
 			value,
 			tween_state: None,
 		}
 	}
 
-	pub fn value(&self) -> f64 {
+	pub(crate) fn value(&self) -> f64 {
 		self.value
 	}
 
-	pub fn set(&mut self, target: f64, tween: Option<Tween>) {
+	pub(crate) fn set(&mut self, target: f64, tween: Option<Tween>) {
 		if let Some(tween) = tween {
 			self.tween_state = Some(TweenState {
 				tween,
@@ -65,7 +69,7 @@ impl Parameter {
 		}
 	}
 
-	pub fn update(&mut self, dt: f64) -> bool {
+	pub(crate) fn update(&mut self, dt: f64) -> bool {
 		if let Some(tween_state) = &mut self.tween_state {
 			let duration = tween_state.tween.0;
 			tween_state.progress += dt / duration;

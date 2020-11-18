@@ -1,9 +1,8 @@
 mod instances;
 mod mixer;
-pub mod parameters;
 mod sequences;
 
-use self::{mixer::Mixer, parameters::Parameters};
+use self::mixer::Mixer;
 
 use super::{AudioManagerSettings, Event};
 use crate::{
@@ -11,6 +10,7 @@ use crate::{
 	metronome::Metronome,
 	mixer::effect_slot::EffectSlot,
 	mixer::Track,
+	parameter::Parameters,
 	sequence::Sequence,
 	sound::{Sound, SoundId},
 	stereo_sample::StereoSample,

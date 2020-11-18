@@ -1,6 +1,5 @@
 use crate::{
-	command::MetronomeCommand, manager::backend::parameters::Parameters, tempo::Tempo,
-	value::CachedValue, Value,
+	command::MetronomeCommand, parameter::Parameters, tempo::Tempo, value::CachedValue, Value,
 };
 use std::vec::Drain;
 

@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use indexmap::IndexMap;
 
-use crate::{manager::backend::parameters::Parameters, stereo_sample::StereoSample};
+use crate::{parameter::Parameters, stereo_sample::StereoSample};
 
 use super::{
 	effect::{Effect, EffectId, EffectSettings},

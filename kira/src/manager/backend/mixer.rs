@@ -5,10 +5,9 @@ use crate::{
 	command::MixerCommand,
 	mixer::effect::Effect,
 	mixer::{effect_slot::EffectSlot, SubTrackId, Track, TrackIndex, TrackSettings},
+	parameter::Parameters,
 	stereo_sample::StereoSample,
 };
-
-use super::parameters::Parameters;
 
 pub(crate) struct Mixer {
 	main_track: Track,

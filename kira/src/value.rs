@@ -1,4 +1,4 @@
-use crate::{manager::backend::parameters::Parameters, parameter::ParameterId};
+use crate::parameter::{ParameterId, Parameters};
 
 /// A number that something can be set to.
 ///
@@ -34,7 +34,7 @@ impl<T: From<f64> + Copy> From<ParameterId> for Value<T> {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct CachedValue<T: From<f64> + Copy> {
+pub struct CachedValue<T: From<f64> + Copy> {
 	value: Value<T>,
 	last_value: T,
 }

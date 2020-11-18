@@ -113,7 +113,7 @@ pub mod sequence;
 pub mod sound;
 mod stereo_sample;
 mod tempo;
-mod value;
+pub mod value;
 
 pub use duration::Duration;
 pub use error::{KiraError, KiraResult};
