@@ -4,7 +4,7 @@ use cpal::{BuildStreamError, PlayStreamError, SupportedStreamConfigsError};
 use lewton::VorbisError;
 
 #[derive(Debug)]
-pub enum KiraError {
+pub enum AudioError {
 	NoDefaultOutputDevice,
 	SupportedStreamConfigsError(SupportedStreamConfigsError),
 	NoSupportedAudioConfig,
@@ -23,95 +23,91 @@ pub enum KiraError {
 	WavError(hound::Error),
 }
 
-impl Display for KiraError {
+impl Display for AudioError {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		match self {
-			KiraError::NoDefaultOutputDevice => {
+			AudioError::NoDefaultOutputDevice => {
 				f.write_str("Cannot find the default audio output device")
 			}
-			KiraError::SupportedStreamConfigsError(error) => {
-				f.write_str(&format!("{}", error))
-			}
-			KiraError::NoSupportedAudioConfig => {
-				f.write_str("No supported audio configurations")
-			}
-			KiraError::BuildStreamError(error) => f.write_str(&format!("{}", error)),
-			KiraError::PlayStreamError(error) => f.write_str(&format!("{}", error)),
-			KiraError::CommandQueueFull => {
+			AudioError::SupportedStreamConfigsError(error) => f.write_str(&format!("{}", error)),
+			AudioError::NoSupportedAudioConfig => f.write_str("No supported audio configurations"),
+			AudioError::BuildStreamError(error) => f.write_str(&format!("{}", error)),
+			AudioError::PlayStreamError(error) => f.write_str(&format!("{}", error)),
+			AudioError::CommandQueueFull => {
 				f.write_str("Cannot send a command to the audio thread because the queue is full")
 			}
-			KiraError::UnsupportedChannelConfiguration => {
+			AudioError::UnsupportedChannelConfiguration => {
 				f.write_str("Only mono and stereo audio is supported")
 			}
-			KiraError::UnsupportedAudioFileFormat => {
+			AudioError::UnsupportedAudioFileFormat => {
 				f.write_str("Only .mp3, .ogg, .flac, and .wav files are supported")
 			}
-			KiraError::InvalidSequenceLoopPoint => {
+			AudioError::InvalidSequenceLoopPoint => {
 				f.write_str("The loop point of a sequence cannot be at the very end")
 			}
-			KiraError::IoError(error) => f.write_str(&format!("{}", error)),
-			KiraError::Mp3Error(error) => f.write_str(&format!("{}", error)),
-			KiraError::VariableMp3SampleRate => {
+			AudioError::IoError(error) => f.write_str(&format!("{}", error)),
+			AudioError::Mp3Error(error) => f.write_str(&format!("{}", error)),
+			AudioError::VariableMp3SampleRate => {
 				f.write_str("mp3s with variable sample rates are not supported")
 			}
-			KiraError::UnknownMp3SampleRate => {
+			AudioError::UnknownMp3SampleRate => {
 				f.write_str("Could not get the sample rate of the mp3")
 			}
-			KiraError::OggError(error) => f.write_str(&format!("{}", error)),
-			KiraError::FlacError(error) => f.write_str(&format!("{}", error)),
-			KiraError::WavError(error) => f.write_str(&format!("{}", error)),
+			AudioError::OggError(error) => f.write_str(&format!("{}", error)),
+			AudioError::FlacError(error) => f.write_str(&format!("{}", error)),
+			AudioError::WavError(error) => f.write_str(&format!("{}", error)),
 		}
 	}
 }
 
-impl Error for KiraError {}
+impl Error for AudioError {}
 
-impl From<std::io::Error> for KiraError {
+impl From<std::io::Error> for AudioError {
 	fn from(error: std::io::Error) -> Self {
 		Self::IoError(error)
 	}
 }
 
-impl From<minimp3::Error> for KiraError {
+impl From<minimp3::Error> for AudioError {
 	fn from(error: minimp3::Error) -> Self {
 		Self::Mp3Error(error)
 	}
 }
 
-impl From<VorbisError> for KiraError {
+impl From<VorbisError> for AudioError {
 	fn from(error: VorbisError) -> Self {
 		Self::OggError(error)
 	}
 }
 
-impl From<claxon::Error> for KiraError {
+impl From<claxon::Error> for AudioError {
 	fn from(error: claxon::Error) -> Self {
 		Self::FlacError(error)
 	}
 }
 
-impl From<hound::Error> for KiraError {
+impl From<hound::Error> for AudioError {
 	fn from(error: hound::Error) -> Self {
 		Self::WavError(error)
 	}
 }
 
-impl From<SupportedStreamConfigsError> for KiraError {
+impl From<SupportedStreamConfigsError> for AudioError {
 	fn from(error: SupportedStreamConfigsError) -> Self {
 		Self::SupportedStreamConfigsError(error)
 	}
 }
 
-impl From<BuildStreamError> for KiraError {
+impl From<BuildStreamError> for AudioError {
 	fn from(error: BuildStreamError) -> Self {
 		Self::BuildStreamError(error)
 	}
 }
 
-impl From<PlayStreamError> for KiraError {
+impl From<PlayStreamError> for AudioError {
 	fn from(error: PlayStreamError) -> Self {
 		Self::PlayStreamError(error)
 	}
 }
 
-pub type KiraResult<T> = Result<T, KiraError>;
+pub type AudioResult<T> = Result<T, AudioError>;

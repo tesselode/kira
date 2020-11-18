@@ -23,7 +23,7 @@
 //! // stop the sound
 //! sequence.stop_instance(instance_id, None);
 //! # audio_manager.start_sequence(sequence)?;
-//! # Ok::<(), kira::KiraError>(())
+//! # Ok::<(), kira::AudioError>(())
 //! ```
 //!
 //! To start the sequence, use `AudioManager::start_sequence()`:
@@ -40,7 +40,7 @@
 //! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
 //! # let mut sequence = Sequence::new();
 //! audio_manager.start_sequence(sequence)?;
-//! # Ok::<(), kira::KiraError>(())
+//! # Ok::<(), kira::AudioError>(())
 //! ```
 //!
 //! ## Timing events
@@ -66,7 +66,7 @@
 //! sequence.wait_for_interval(4.0);
 //! sequence.play_sound(sound_id, InstanceSettings::default());
 //! # audio_manager.start_sequence(sequence)?;
-//! # Ok::<(), kira::KiraError>(())
+//! # Ok::<(), kira::AudioError>(())
 //! ```
 //!
 //! Note that the metronome has to be running for the interval to work.
@@ -94,7 +94,7 @@
 //! sequence.play_sound(sound_id, InstanceSettings::default());
 //! sequence.wait(Duration::Beats(1.0));
 //! # audio_manager.start_sequence(sequence)?;
-//! # Ok::<(), kira::KiraError>(())
+//! # Ok::<(), kira::AudioError>(())
 //! ```
 //!
 //! ## Custom events
@@ -122,7 +122,7 @@
 //! sequence.emit_custom_event(CustomEvent::Beat);
 //! sequence.wait(Duration::Beats(1.0));
 //! # audio_manager.start_sequence(sequence)?;
-//! # Ok::<(), kira::KiraError>(())
+//! # Ok::<(), kira::AudioError>(())
 //! ```
 //!
 //! To retrieve the events, use `AudioManager::events()`:
@@ -140,7 +140,7 @@
 //! for event in audio_manager.events() {
 //! 	println!("{:?}", event);
 //! }
-//! # Ok::<(), kira::KiraError>(())
+//! # Ok::<(), kira::AudioError>(())
 //! ```
 
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -150,7 +150,7 @@ use crate::{
 	metronome::Metronome,
 	parameter::{ParameterId, Tween},
 	sound::SoundId,
-	Duration, KiraError, KiraResult, Tempo, Value,
+	AudioError, AudioResult, Duration, Tempo, Value,
 };
 
 static NEXT_SEQUENCE_INDEX: AtomicUsize = AtomicUsize::new(0);
@@ -376,10 +376,10 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 	/// Makes sure nothing's wrong with the sequence that would make
 	/// it unplayable. Currently, this only checks that the loop
 	/// point isn't at the very end of the sequence.
-	pub(crate) fn validate(&self) -> KiraResult<()> {
+	pub(crate) fn validate(&self) -> AudioResult<()> {
 		if let Some(loop_point) = self.loop_point {
 			if loop_point >= self.steps.len() {
-				return Err(KiraError::InvalidSequenceLoopPoint);
+				return Err(AudioError::InvalidSequenceLoopPoint);
 			}
 		}
 		Ok(())

@@ -6,7 +6,9 @@ mod metadata;
 pub use id::SoundId;
 pub use metadata::SoundMetadata;
 
-use crate::{error::KiraError, error::KiraResult, mixer::TrackIndex, stereo_sample::StereoSample};
+use crate::{
+	error::AudioError, error::AudioResult, mixer::TrackIndex, stereo_sample::StereoSample,
+};
 use claxon::FlacReader;
 use hound::WavReader;
 use lewton::{inside_ogg::OggStreamReader, samples::Samples};
@@ -67,7 +69,7 @@ impl Sound {
 	}
 
 	/// Decodes a sound from an mp3 file.
-	pub fn from_mp3_file<P>(path: P, settings: SoundSettings) -> KiraResult<Self>
+	pub fn from_mp3_file<P>(path: P, settings: SoundSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -79,7 +81,7 @@ impl Sound {
 				Ok(frame) => {
 					if let Some(sample_rate) = sample_rate {
 						if sample_rate != frame.sample_rate {
-							return Err(KiraError::VariableMp3SampleRate);
+							return Err(AudioError::VariableMp3SampleRate);
 						}
 					} else {
 						sample_rate = Some(frame.sample_rate);
@@ -104,7 +106,7 @@ impl Sound {
 								))
 							}
 						}
-						_ => return Err(KiraError::UnsupportedChannelConfiguration),
+						_ => return Err(AudioError::UnsupportedChannelConfiguration),
 					}
 				}
 				Err(error) => match error {
@@ -115,13 +117,13 @@ impl Sound {
 		}
 		let sample_rate = match sample_rate {
 			Some(sample_rate) => sample_rate,
-			None => return Err(KiraError::UnknownMp3SampleRate),
+			None => return Err(AudioError::UnknownMp3SampleRate),
 		};
 		Ok(Self::new(sample_rate as u32, stereo_samples, settings))
 	}
 
 	/// Decodes a sound from an ogg file.
-	pub fn from_ogg_file<P>(path: P, settings: SoundSettings) -> KiraResult<Self>
+	pub fn from_ogg_file<P>(path: P, settings: SoundSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -141,7 +143,7 @@ impl Sound {
 						stereo_samples.push(StereoSample::new(packet[0][i], packet[1][i]));
 					}
 				}
-				_ => return Err(KiraError::UnsupportedChannelConfiguration),
+				_ => return Err(AudioError::UnsupportedChannelConfiguration),
 			}
 		}
 		Ok(Self::new(
@@ -152,7 +154,7 @@ impl Sound {
 	}
 
 	/// Decodes a sound from a flac file.
-	pub fn from_flac_file<P>(path: P, settings: SoundSettings) -> KiraResult<Self>
+	pub fn from_flac_file<P>(path: P, settings: SoundSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -180,13 +182,13 @@ impl Sound {
 					));
 				}
 			}
-			_ => return Err(KiraError::UnsupportedChannelConfiguration),
+			_ => return Err(AudioError::UnsupportedChannelConfiguration),
 		}
 		Ok(Self::new(streaminfo.sample_rate, stereo_samples, settings))
 	}
 
 	/// Decodes a sound from a wav file.
-	pub fn from_wav_file<P>(path: P, settings: SoundSettings) -> KiraResult<Self>
+	pub fn from_wav_file<P>(path: P, settings: SoundSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -229,7 +231,7 @@ impl Sound {
 					}
 				}
 			},
-			_ => return Err(KiraError::UnsupportedChannelConfiguration),
+			_ => return Err(AudioError::UnsupportedChannelConfiguration),
 		}
 		Ok(Self::new(
 			reader.spec().sample_rate,
@@ -241,7 +243,7 @@ impl Sound {
 	/// Decodes a sound from a file.
 	///
 	/// The audio format will be automatically determined from the file extension.
-	pub fn from_file<P>(path: P, settings: SoundSettings) -> KiraResult<Self>
+	pub fn from_file<P>(path: P, settings: SoundSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -256,7 +258,7 @@ impl Sound {
 				}
 			}
 		}
-		Err(KiraError::UnsupportedAudioFileFormat)
+		Err(AudioError::UnsupportedAudioFileFormat)
 	}
 
 	/// Gets the default track that the sound plays on.

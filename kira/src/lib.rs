@@ -13,7 +13,7 @@
 //! # use kira::manager::{AudioManager, AudioManagerSettings};
 //! #
 //! let mut audio_manager = AudioManager::<()>::new(AudioManagerSettings::default())?;
-//! # Ok::<(), kira::KiraError>(())
+//! # Ok::<(), kira::AudioError>(())
 //! ```
 //!
 //! All audio-related actions go through the `AudioManager`.
@@ -27,7 +27,7 @@
 //! # let mut audio_manager = AudioManager::<()>::new(AudioManagerSettings::default())?;
 //! let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", SoundSettings::default())?)?;
 //! audio_manager.play_sound(sound_id, InstanceSettings::default())?;
-//! # Ok::<(), kira::KiraError>(())
+//! # Ok::<(), kira::AudioError>(())
 //! ```
 //!
 //! ### Looping a piece of music
@@ -55,7 +55,7 @@
 //! // when the sound loops, start the loop 4 beats in
 //! let loop_start = Tempo(128.0).beats_to_seconds(4.0);
 //! audio_manager.play_sound(sound_id, InstanceSettings::new().loop_region(loop_start..))?;
-//! # Ok::<(), kira::KiraError>(())
+//! # Ok::<(), kira::AudioError>(())
 //! ```
 //!
 //! ### Scripting audio sequences
@@ -97,7 +97,7 @@
 //! audio_manager.start_sequence(sequence)?;
 //! // start the metronome so the sequence will have a pulse to listen for
 //! audio_manager.start_metronome()?;
-//! # Ok::<(), kira::KiraError>(())
+//! # Ok::<(), kira::AudioError>(())
 //! ```
 
 mod command;
@@ -116,7 +116,7 @@ mod tempo;
 mod value;
 
 pub use duration::Duration;
-pub use error::{KiraError, KiraResult};
+pub use error::{AudioError, AudioResult};
 pub use event::Event;
 pub use metronome::MetronomeSettings;
 pub use stereo_sample::StereoSample;
