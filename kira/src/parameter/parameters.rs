@@ -5,6 +5,10 @@ use crate::{
 	parameter::{Parameter, ParameterId},
 };
 
+/// A collection of all of the currently active parameters.
+///
+/// This is mainly used internally - you only need to use this
+/// if you're writing your own effects.
 #[derive(Debug, Clone)]
 pub struct Parameters {
 	parameters: IndexMap<ParameterId, Parameter>,

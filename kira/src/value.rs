@@ -33,6 +33,9 @@ impl<T: From<f64> + Copy> From<ParameterId> for Value<T> {
 	}
 }
 
+/// A wrapper around `Value`s that remembers the last valid raw value.
+///
+/// You'll only need to use this if you're writing your own effects.
 #[derive(Debug, Clone)]
 pub struct CachedValue<T: From<f64> + Copy> {
 	value: Value<T>,
@@ -40,6 +43,8 @@ pub struct CachedValue<T: From<f64> + Copy> {
 }
 
 impl<T: From<f64> + Copy> CachedValue<T> {
+	/// Creates a `CachedValue` with an initial value setting
+	/// and a default raw value to fall back on.
 	pub fn new(value: Value<T>, default_value: T) -> Self {
 		Self {
 			value,
@@ -47,16 +52,20 @@ impl<T: From<f64> + Copy> CachedValue<T> {
 		}
 	}
 
+	/// Sets the value.
 	pub fn set(&mut self, value: Value<T>) {
 		self.value = value;
 	}
 
+	/// If the value is set to a parameter, updates the raw value
+	/// from the parameter (if it exists).
 	pub fn update(&mut self, parameters: &Parameters) {
 		if let Some(value) = self.value.get(parameters) {
 			self.last_value = value;
 		}
 	}
 
+	/// Gets the last valid raw value.
 	pub fn value(&self) -> T {
 		self.last_value
 	}

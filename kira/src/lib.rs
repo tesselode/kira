@@ -113,7 +113,7 @@ pub mod sequence;
 pub mod sound;
 mod stereo_sample;
 mod tempo;
-pub mod value;
+mod value;
 
 pub use duration::Duration;
 pub use error::{KiraError, KiraResult};
@@ -121,4 +121,4 @@ pub use event::Event;
 pub use metronome::MetronomeSettings;
 pub use stereo_sample::StereoSample;
 pub use tempo::Tempo;
-pub use value::Value;
+pub use value::{CachedValue, Value};
