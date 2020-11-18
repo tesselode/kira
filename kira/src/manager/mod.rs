@@ -17,7 +17,7 @@ use crate::{
 	},
 	parameter::{ParameterId, Tween},
 	sequence::{Sequence, SequenceId},
-	sound::{Sound, SoundId, SoundSettings},
+	sound::{Sound, SoundId},
 	tempo::Tempo,
 	value::Value,
 	Event,
@@ -28,7 +28,6 @@ use cpal::{
 	Stream,
 };
 use ringbuf::{Consumer, Producer, RingBuffer};
-use std::path::Path;
 
 const WRAPPER_THREAD_SLEEP_DURATION: f64 = 1.0 / 60.0;
 

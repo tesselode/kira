@@ -3,7 +3,6 @@ use crate::{
 	command::MetronomeCommand,
 	command::ParameterCommand,
 	command::{Command, SequenceCommand},
-	instance::InstanceId,
 	metronome::Metronome,
 	sequence::SequenceOutputCommand,
 	sequence::{Sequence, SequenceId},
