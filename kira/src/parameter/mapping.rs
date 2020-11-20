@@ -1,5 +1,3 @@
-use std::ops::Range;
-
 #[derive(Debug, Copy, Clone)]
 pub struct Mapping {
 	pub input_range: (f64, f64),
