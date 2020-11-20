@@ -50,6 +50,11 @@ impl Instances {
 					instance.set_pitch(value);
 				}
 			}
+			InstanceCommand::SetInstancePanning(id, value) => {
+				if let Some(instance) = self.instances.get_mut(&id) {
+					instance.set_panning(value);
+				}
+			}
 			InstanceCommand::PauseInstance(id, fade_tween) => {
 				if let Some(instance) = self.instances.get_mut(&id) {
 					instance.pause(fade_tween);

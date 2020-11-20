@@ -93,6 +93,9 @@ impl<CustomEvent: Copy + std::fmt::Debug> Sequences<CustomEvent> {
 					SequenceOutputCommand::SetInstancePitch(id, pitch) => {
 						Command::Instance(InstanceCommand::SetInstancePitch(id, pitch))
 					}
+					SequenceOutputCommand::SetInstancePanning(id, panning) => {
+						Command::Instance(InstanceCommand::SetInstancePanning(id, panning))
+					}
 					SequenceOutputCommand::PauseInstance(id, fade_tween) => {
 						Command::Instance(InstanceCommand::PauseInstance(id, fade_tween))
 					}

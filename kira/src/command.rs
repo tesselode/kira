@@ -21,6 +21,7 @@ pub(crate) enum InstanceCommand {
 	PlaySound(InstanceId, SoundId, Option<SequenceId>, InstanceSettings),
 	SetInstanceVolume(InstanceId, Value<f64>),
 	SetInstancePitch(InstanceId, Value<f64>),
+	SetInstancePanning(InstanceId, Value<f64>),
 	PauseInstance(InstanceId, Option<Tween>),
 	ResumeInstance(InstanceId, Option<Tween>),
 	StopInstance(InstanceId, Option<Tween>),

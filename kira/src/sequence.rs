@@ -176,6 +176,7 @@ pub(crate) enum SequenceOutputCommand<CustomEvent: Copy> {
 	PlaySound(InstanceId, SoundId, InstanceSettings),
 	SetInstanceVolume(InstanceId, Value<f64>),
 	SetInstancePitch(InstanceId, Value<f64>),
+	SetInstancePanning(InstanceId, Value<f64>),
 	PauseInstance(InstanceId, Option<Tween>),
 	ResumeInstance(InstanceId, Option<Tween>),
 	StopInstance(InstanceId, Option<Tween>),
@@ -276,6 +277,12 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 	pub fn set_instance_pitch(&mut self, id: InstanceId, pitch: Value<f64>) {
 		self.steps
 			.push(SequenceOutputCommand::SetInstancePitch(id, pitch).into());
+	}
+
+	/// Adds a step to set the panning of an instance.
+	pub fn set_instance_panning(&mut self, id: InstanceId, panning: Value<f64>) {
+		self.steps
+			.push(SequenceOutputCommand::SetInstancePanning(id, panning).into());
 	}
 
 	/// Adds a step to pause an instance.

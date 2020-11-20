@@ -194,6 +194,8 @@ pub struct InstanceSettings {
 	pub volume: Value<f64>,
 	/// The pitch of the instance, as a factor of the original pitch.
 	pub pitch: Value<f64>,
+	/// The panning of the instance (0 = hard left, 1 = hard right).
+	pub panning: Value<f64>,
 	/// Whether the instance should be played in reverse.
 	pub reverse: bool,
 	/// The position to start playing the instance at (in seconds).
@@ -226,6 +228,14 @@ impl InstanceSettings {
 	pub fn pitch<P: Into<Value<f64>>>(self, pitch: P) -> Self {
 		Self {
 			pitch: pitch.into(),
+			..self
+		}
+	}
+
+	/// Sets the panning of the instance.
+	pub fn panning<P: Into<Value<f64>>>(self, panning: P) -> Self {
+		Self {
+			panning: panning.into(),
 			..self
 		}
 	}
@@ -277,6 +287,7 @@ impl Default for InstanceSettings {
 		Self {
 			volume: Value::Fixed(1.0),
 			pitch: Value::Fixed(1.0),
+			panning: Value::Fixed(0.5),
 			reverse: false,
 			start_position: 0.0,
 			fade_in_duration: None,
@@ -318,6 +329,7 @@ pub(crate) struct Instance {
 	sequence_id: Option<SequenceId>,
 	volume: CachedValue<f64>,
 	pitch: CachedValue<f64>,
+	panning: CachedValue<f64>,
 	reverse: bool,
 	state: InstanceState,
 	sub_instances: [Option<SubInstance>; MAX_SUB_INSTANCES],
@@ -350,6 +362,7 @@ impl Instance {
 			sequence_id,
 			volume: CachedValue::new(settings.volume, 1.0),
 			pitch: CachedValue::new(settings.pitch, 1.0),
+			panning: CachedValue::new(settings.panning, 0.5),
 			reverse: settings.reverse,
 			state,
 			sub_instances,
@@ -400,6 +413,10 @@ impl Instance {
 		self.pitch.set(pitch);
 	}
 
+	pub fn set_panning(&mut self, panning: Value<f64>) {
+		self.panning.set(panning);
+	}
+
 	pub fn pause(&mut self, fade_tween: Option<Tween>) {
 		if let Some(tween) = fade_tween {
 			self.state = InstanceState::Pausing;
@@ -431,6 +448,7 @@ impl Instance {
 		if self.playing() {
 			self.volume.update(parameters);
 			self.pitch.update(parameters);
+			self.panning.update(parameters);
 			// increment positions of existing sub-instances
 			for sub_instance in &mut self.sub_instances {
 				if let Some(sub_instance) = sub_instance {
@@ -497,6 +515,7 @@ impl Instance {
 				}
 			}
 		}
+		out = out.panned(self.panning.value() as f32);
 		out * (self.effective_volume() as f32)
 	}
 }

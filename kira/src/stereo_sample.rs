@@ -25,6 +25,14 @@ impl StereoSample {
 		let scale = 1.0 / max_int as f32;
 		Self::new(left as f32 * scale, right as f32 * scale)
 	}
+
+	/// Pans a stereo sample to the left or right.
+	///
+	/// An `x` of 0 represents a hard left panning, an `x` of 1
+	/// represents a hard right panning.
+	pub fn panned(self, x: f32) -> Self {
+		Self::new(self.left * (1.0 - x).sqrt(), self.right * x.sqrt())
+	}
 }
 
 impl Add for StereoSample {

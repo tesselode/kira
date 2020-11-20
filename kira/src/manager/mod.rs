@@ -285,6 +285,18 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		)))
 	}
 
+	/// Sets the panning of an instance (0 = hard left, 1 = hard right).
+	pub fn set_instance_panning<V: Into<Value<f64>>>(
+		&mut self,
+		id: InstanceId,
+		panning: V,
+	) -> Result<(), AudioError> {
+		self.send_command_to_backend(Command::Instance(InstanceCommand::SetInstancePanning(
+			id,
+			panning.into(),
+		)))
+	}
+
 	/// Pauses a currently playing instance of a sound with an optional fade-out tween.
 	pub fn pause_instance(
 		&mut self,
