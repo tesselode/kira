@@ -1,4 +1,4 @@
-use crate::parameter::{ParameterId, Parameters};
+use crate::parameter::{Mapping, ParameterId, Parameters};
 
 /// A number that something can be set to.
 ///
@@ -7,16 +7,16 @@ use crate::parameter::{ParameterId, Parameters};
 #[derive(Debug, Copy, Clone)]
 pub enum Value<T: From<f64> + Copy> {
 	Fixed(T),
-	Parameter(ParameterId),
+	Parameter(ParameterId, Mapping),
 }
 
 impl<T: From<f64> + Copy> Value<T> {
 	pub(crate) fn get(&self, parameters: &Parameters) -> Option<T> {
 		match self {
 			Value::Fixed(value) => Some(*value),
-			Value::Parameter(id) => parameters
+			Value::Parameter(id, mapping) => parameters
 				.get(*id)
-				.map(|parameter| T::from(parameter.value())),
+				.map(|parameter| T::from(mapping.map(parameter.value()))),
 		}
 	}
 }
@@ -29,7 +29,7 @@ impl<T: From<f64> + Copy> From<T> for Value<T> {
 
 impl<T: From<f64> + Copy> From<ParameterId> for Value<T> {
 	fn from(id: ParameterId) -> Self {
-		Self::Parameter(id)
+		Self::Parameter(id, Mapping::default())
 	}
 }
 
