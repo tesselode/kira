@@ -218,24 +218,26 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	}
 
 	/// Sets the volume of an instance.
-	pub fn set_instance_volume(
+	pub fn set_instance_volume<V: Into<Value<f64>>>(
 		&mut self,
 		id: InstanceId,
-		volume: Value<f64>,
+		volume: V,
 	) -> Result<(), AudioError> {
 		self.send_command_to_backend(Command::Instance(InstanceCommand::SetInstanceVolume(
-			id, volume,
+			id,
+			volume.into(),
 		)))
 	}
 
 	/// Sets the pitch of an instance.
-	pub fn set_instance_pitch(
+	pub fn set_instance_pitch<V: Into<Value<f64>>>(
 		&mut self,
 		id: InstanceId,
-		pitch: Value<f64>,
+		pitch: V,
 	) -> Result<(), AudioError> {
 		self.send_command_to_backend(Command::Instance(InstanceCommand::SetInstancePitch(
-			id, pitch,
+			id,
+			pitch.into(),
 		)))
 	}
 
