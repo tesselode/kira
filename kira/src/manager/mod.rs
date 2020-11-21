@@ -29,9 +29,12 @@ use cpal::{
 };
 use ringbuf::{Consumer, Producer, RingBuffer};
 
+use self::backend::BackendThreadChannels;
+
 const WRAPPER_THREAD_SLEEP_DURATION: f64 = 1.0 / 60.0;
 
 /// Settings for an `AudioManager`.
+#[derive(Debug, Clone)]
 pub struct AudioManagerSettings {
 	/// The number of commands that be sent to the audio thread at a time.
 	///
@@ -72,6 +75,16 @@ impl Default for AudioManagerSettings {
 	}
 }
 
+pub(crate) struct AudioManagerThreadChannels<CustomEvent: Copy + Send + 'static = ()> {
+	pub quit_signal_producer: Producer<bool>,
+	pub command_producer: Producer<Command<CustomEvent>>,
+	pub event_consumer: Consumer<Event<CustomEvent>>,
+	pub sounds_to_unload_consumer: Consumer<Sound>,
+	pub sequences_to_unload_consumer: Consumer<Sequence<CustomEvent>>,
+	pub tracks_to_unload_consumer: Consumer<Track>,
+	pub effect_slots_to_unload_consumer: Consumer<EffectSlot>,
+}
+
 /**
 Plays and manages audio.
 
@@ -79,22 +92,18 @@ The `AudioManager` is responsible for all communication between the gameplay thr
 and the audio thread.
 */
 pub struct AudioManager<CustomEvent: Copy + Send + 'static = ()> {
-	quit_signal_producer: Producer<bool>,
-	command_producer: Producer<Command<CustomEvent>>,
-	event_consumer: Consumer<Event<CustomEvent>>,
-	sounds_to_unload_consumer: Consumer<Sound>,
-	sequences_to_unload_consumer: Consumer<Sequence<CustomEvent>>,
-	tracks_to_unload_consumer: Consumer<Track>,
-	effect_slots_to_unload_consumer: Consumer<EffectSlot>,
+	thread_channels: AudioManagerThreadChannels<CustomEvent>,
 }
 
 impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEvent> {
-	/// Creates a new audio manager and starts an audio thread.
-	pub fn new(settings: AudioManagerSettings) -> AudioResult<Self> {
-		// set up various ringbuffers for communication between threads
-		let (quit_signal_producer, mut quit_signal_consumer) = RingBuffer::new(1).split();
-		let (mut setup_result_producer, mut setup_result_consumer) =
-			RingBuffer::<AudioResult<()>>::new(1).split();
+	fn create_thread_channels(
+		settings: &AudioManagerSettings,
+	) -> (
+		AudioManagerThreadChannels<CustomEvent>,
+		BackendThreadChannels<CustomEvent>,
+		Consumer<bool>,
+	) {
+		let (quit_signal_producer, quit_signal_consumer) = RingBuffer::new(1).split();
 		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
 		let (sounds_to_unload_producer, sounds_to_unload_consumer) =
 			RingBuffer::new(settings.num_sounds).split();
@@ -105,6 +114,36 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		let (effect_slots_to_unload_producer, effect_slots_to_unload_consumer) =
 			RingBuffer::new(settings.num_tracks * settings.num_effects_per_track).split();
 		let (event_producer, event_consumer) = RingBuffer::new(settings.num_events).split();
+		let audio_manager_thread_channels = AudioManagerThreadChannels {
+			quit_signal_producer,
+			command_producer,
+			event_consumer,
+			sounds_to_unload_consumer,
+			sequences_to_unload_consumer,
+			tracks_to_unload_consumer,
+			effect_slots_to_unload_consumer,
+		};
+		let backend_thread_channels = BackendThreadChannels {
+			command_consumer,
+			event_producer,
+			sounds_to_unload_producer,
+			sequences_to_unload_producer,
+			tracks_to_unload_producer,
+			effect_slots_to_unload_producer,
+		};
+		(
+			audio_manager_thread_channels,
+			backend_thread_channels,
+			quit_signal_consumer,
+		)
+	}
+
+	/// Creates a new audio manager and starts an audio thread.
+	pub fn new(settings: AudioManagerSettings) -> AudioResult<Self> {
+		let (audio_manager_thread_channels, backend_thread_channels, mut quit_signal_consumer) =
+			Self::create_thread_channels(&settings);
+		let (mut setup_result_producer, mut setup_result_consumer) =
+			RingBuffer::<AudioResult<()>>::new(1).split();
 		// set up a cpal stream on a new thread. we could do this on the main thread,
 		// but that causes issues with LÖVE.
 		std::thread::spawn(move || {
@@ -122,16 +161,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 				.config();
 				let sample_rate = config.sample_rate.0;
 				let channels = config.channels;
-				let mut backend = Backend::new(
-					sample_rate,
-					settings,
-					command_consumer,
-					event_producer,
-					sounds_to_unload_producer,
-					sequences_to_unload_producer,
-					tracks_to_unload_producer,
-					effect_slots_to_unload_producer,
-				);
+				let mut backend = Backend::new(sample_rate, settings, backend_thread_channels);
 				let stream = device.build_output_stream(
 					&config,
 					move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
@@ -172,18 +202,12 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 			}
 		}
 		Ok(Self {
-			quit_signal_producer,
-			command_producer,
-			event_consumer,
-			sounds_to_unload_consumer,
-			sequences_to_unload_consumer,
-			tracks_to_unload_consumer,
-			effect_slots_to_unload_consumer,
+			thread_channels: audio_manager_thread_channels,
 		})
 	}
 
 	fn send_command_to_backend(&mut self, command: Command<CustomEvent>) -> AudioResult<()> {
-		match self.command_producer.push(command) {
+		match self.thread_channels.command_producer.push(command) {
 			Ok(_) => Ok(()),
 			Err(_) => Err(AudioError::CommandQueueFull),
 		}
@@ -478,7 +502,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	/// (since the last time `events` was called).
 	pub fn events(&mut self) -> Vec<Event<CustomEvent>> {
 		let mut events = vec![];
-		while let Some(event) = self.event_consumer.pop() {
+		while let Some(event) = self.thread_channels.event_consumer.pop() {
 			events.push(event);
 		}
 		events
@@ -487,15 +511,18 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	/// Frees resources that are no longer in use, such as unloaded sounds
 	/// or finished sequences.
 	pub fn free_unused_resources(&mut self) {
-		while let Some(_) = self.sounds_to_unload_consumer.pop() {}
-		while let Some(_) = self.sequences_to_unload_consumer.pop() {}
-		while let Some(_) = self.tracks_to_unload_consumer.pop() {}
-		while let Some(_) = self.effect_slots_to_unload_consumer.pop() {}
+		while let Some(_) = self.thread_channels.sounds_to_unload_consumer.pop() {}
+		while let Some(_) = self.thread_channels.sequences_to_unload_consumer.pop() {}
+		while let Some(_) = self.thread_channels.tracks_to_unload_consumer.pop() {}
+		while let Some(_) = self.thread_channels.effect_slots_to_unload_consumer.pop() {}
 	}
 }
 
 impl<CustomEvent: Copy + Send + 'static> Drop for AudioManager<CustomEvent> {
 	fn drop(&mut self) {
-		self.quit_signal_producer.push(true).unwrap();
+		self.thread_channels
+			.quit_signal_producer
+			.push(true)
+			.unwrap();
 	}
 }
