@@ -138,6 +138,38 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		)
 	}
 
+	fn setup_stream(
+		settings: AudioManagerSettings,
+		backend_thread_channels: BackendThreadChannels<CustomEvent>,
+	) -> AudioResult<Stream> {
+		let host = cpal::default_host();
+		let device = host
+			.default_output_device()
+			.ok_or(AudioError::NoDefaultOutputDevice)?;
+		let config = device
+			.supported_output_configs()?
+			.next()
+			.ok_or(AudioError::NoSupportedAudioConfig)?
+			.with_max_sample_rate()
+			.config();
+		let sample_rate = config.sample_rate.0;
+		let channels = config.channels;
+		let mut backend = Backend::new(sample_rate, settings, backend_thread_channels);
+		let stream = device.build_output_stream(
+			&config,
+			move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
+				for frame in data.chunks_exact_mut(channels as usize) {
+					let out = backend.process();
+					frame[0] = out.left;
+					frame[1] = out.right;
+				}
+			},
+			move |_| {},
+		)?;
+		stream.play()?;
+		Ok(stream)
+	}
+
 	/// Creates a new audio manager and starts an audio thread.
 	pub fn new(settings: AudioManagerSettings) -> AudioResult<Self> {
 		let (audio_manager_thread_channels, backend_thread_channels, mut quit_signal_consumer) =
@@ -147,36 +179,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		// set up a cpal stream on a new thread. we could do this on the main thread,
 		// but that causes issues with LÖVE.
 		std::thread::spawn(move || {
-			let setup_result = || -> AudioResult<Stream> {
-				let host = cpal::default_host();
-				let device = match host.default_output_device() {
-					Some(device) => device,
-					None => return Err(AudioError::NoDefaultOutputDevice),
-				};
-				let config = match device.supported_output_configs()?.next() {
-					Some(config) => config,
-					None => return Err(AudioError::NoSupportedAudioConfig),
-				}
-				.with_max_sample_rate()
-				.config();
-				let sample_rate = config.sample_rate.0;
-				let channels = config.channels;
-				let mut backend = Backend::new(sample_rate, settings, backend_thread_channels);
-				let stream = device.build_output_stream(
-					&config,
-					move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
-						for frame in data.chunks_exact_mut(channels as usize) {
-							let out = backend.process();
-							frame[0] = out.left;
-							frame[1] = out.right;
-						}
-					},
-					move |_| {},
-				)?;
-				stream.play()?;
-				Ok(stream)
-			}();
-			match setup_result {
+			match Self::setup_stream(settings, backend_thread_channels) {
 				Ok(_stream) => {
 					setup_result_producer.push(Ok(())).unwrap();
 					// wait for a quit message before ending the thread and dropping
