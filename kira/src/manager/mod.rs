@@ -96,6 +96,45 @@ pub struct AudioManager<CustomEvent: Copy + Send + 'static = ()> {
 }
 
 impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEvent> {
+	/// Creates a new audio manager and starts an audio thread.
+	pub fn new(settings: AudioManagerSettings) -> AudioResult<Self> {
+		let (audio_manager_thread_channels, backend_thread_channels, mut quit_signal_consumer) =
+			Self::create_thread_channels(&settings);
+		let (mut setup_result_producer, mut setup_result_consumer) =
+			RingBuffer::<AudioResult<()>>::new(1).split();
+		// set up a cpal stream on a new thread. we could do this on the main thread,
+		// but that causes issues with LÖVE.
+		std::thread::spawn(move || {
+			match Self::setup_stream(settings, backend_thread_channels) {
+				Ok(_stream) => {
+					setup_result_producer.push(Ok(())).unwrap();
+					// wait for a quit message before ending the thread and dropping
+					// the stream
+					while let None = quit_signal_consumer.pop() {
+						std::thread::sleep(std::time::Duration::from_secs_f64(
+							WRAPPER_THREAD_SLEEP_DURATION,
+						));
+					}
+				}
+				Err(error) => {
+					setup_result_producer.push(Err(error)).unwrap();
+				}
+			}
+		});
+		// wait for the audio thread to report back a result
+		loop {
+			if let Some(result) = setup_result_consumer.pop() {
+				match result {
+					Ok(_) => break,
+					Err(error) => return Err(error),
+				}
+			}
+		}
+		Ok(Self {
+			thread_channels: audio_manager_thread_channels,
+		})
+	}
+
 	fn create_thread_channels(
 		settings: &AudioManagerSettings,
 	) -> (
@@ -168,45 +207,6 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		)?;
 		stream.play()?;
 		Ok(stream)
-	}
-
-	/// Creates a new audio manager and starts an audio thread.
-	pub fn new(settings: AudioManagerSettings) -> AudioResult<Self> {
-		let (audio_manager_thread_channels, backend_thread_channels, mut quit_signal_consumer) =
-			Self::create_thread_channels(&settings);
-		let (mut setup_result_producer, mut setup_result_consumer) =
-			RingBuffer::<AudioResult<()>>::new(1).split();
-		// set up a cpal stream on a new thread. we could do this on the main thread,
-		// but that causes issues with LÖVE.
-		std::thread::spawn(move || {
-			match Self::setup_stream(settings, backend_thread_channels) {
-				Ok(_stream) => {
-					setup_result_producer.push(Ok(())).unwrap();
-					// wait for a quit message before ending the thread and dropping
-					// the stream
-					while let None = quit_signal_consumer.pop() {
-						std::thread::sleep(std::time::Duration::from_secs_f64(
-							WRAPPER_THREAD_SLEEP_DURATION,
-						));
-					}
-				}
-				Err(error) => {
-					setup_result_producer.push(Err(error)).unwrap();
-				}
-			}
-		});
-		// wait for the audio thread to report back a result
-		loop {
-			if let Some(result) = setup_result_consumer.pop() {
-				match result {
-					Ok(_) => break,
-					Err(error) => return Err(error),
-				}
-			}
-		}
-		Ok(Self {
-			thread_channels: audio_manager_thread_channels,
-		})
 	}
 
 	fn send_command_to_backend(&mut self, command: Command<CustomEvent>) -> AudioResult<()> {
