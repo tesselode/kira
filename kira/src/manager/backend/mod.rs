@@ -29,7 +29,7 @@ pub(crate) struct BackendThreadChannels<CustomEvent: Copy + Send + 'static + std
 	pub effect_slots_to_unload_producer: Producer<EffectSlot>,
 }
 
-pub(crate) struct Backend<CustomEvent: Copy + Send + 'static + std::fmt::Debug> {
+pub struct Backend<CustomEvent: Copy + Send + 'static + std::fmt::Debug> {
 	dt: f64,
 	sounds: IndexMap<SoundId, Sound>,
 	command_queue: Vec<Command<CustomEvent>>,
@@ -42,7 +42,7 @@ pub(crate) struct Backend<CustomEvent: Copy + Send + 'static + std::fmt::Debug> 
 }
 
 impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> {
-	pub fn new(
+	pub(crate) fn new(
 		sample_rate: u32,
 		settings: AudioManagerSettings,
 		thread_channels: BackendThreadChannels<CustomEvent>,

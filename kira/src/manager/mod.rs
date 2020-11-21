@@ -1,6 +1,11 @@
 //! Provides a bridge between the main thread and the audio thread.
 
-pub(crate) mod backend;
+mod backend;
+
+#[cfg(not(feature = "benchmarking"))]
+use backend::Backend;
+#[cfg(feature = "benchmarking")]
+pub use backend::Backend;
 
 use crate::{
 	command::{
@@ -22,7 +27,6 @@ use crate::{
 	value::Value,
 	Event,
 };
-use backend::Backend;
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	Stream,
@@ -204,6 +208,19 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		Ok(Self {
 			thread_channels: audio_manager_thread_channels,
 		})
+	}
+
+	#[cfg(feature = "benchmarking")]
+	pub fn new_without_audio_thread(
+		settings: AudioManagerSettings,
+	) -> AudioResult<(Self, Backend<CustomEvent>)> {
+		let (audio_manager_thread_channels, backend_thread_channels, _) =
+			Self::create_thread_channels(&settings);
+		let audio_manager = Self {
+			thread_channels: audio_manager_thread_channels,
+		};
+		let backend = Backend::new(48000, settings, backend_thread_channels);
+		Ok((audio_manager, backend))
 	}
 
 	fn send_command_to_backend(&mut self, command: Command<CustomEvent>) -> AudioResult<()> {
