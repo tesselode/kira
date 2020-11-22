@@ -68,7 +68,7 @@ impl Parameter {
 				tween_state
 					.tween
 					.tween(tween_state.start, tween_state.end, tween_state.time);
-			if tween_state.time >= tween_state.tween.0 {
+			if tween_state.time >= tween_state.tween.duration {
 				self.tween_state = None;
 				return true;
 			}

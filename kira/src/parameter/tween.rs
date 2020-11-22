@@ -39,7 +39,11 @@ impl Default for EaseDirection {
 
 /// Represents a movement of one value to another over time.
 #[derive(Debug, Copy, Clone)]
-pub struct Tween(pub f64, pub Easing, pub EaseDirection);
+pub struct Tween {
+	pub duration: f64,
+	pub easing: Easing,
+	pub ease_direction: EaseDirection,
+}
 
 impl Tween {
 	/// Applies the tween's easing curve (with easing direction)
@@ -49,16 +53,16 @@ impl Tween {
 		/* the code for applying In/Out/InOut directions
 		to an easing function is based on rxi's flux:
 		https://github.com/rxi/flux/blob/master/flux.lua#L33 */
-		match self.2 {
-			EaseDirection::In => self.1.apply(t),
-			EaseDirection::Out => 1.0 - self.1.apply(1.0 - t),
+		match self.ease_direction {
+			EaseDirection::In => self.easing.apply(t),
+			EaseDirection::Out => 1.0 - self.easing.apply(1.0 - t),
 			EaseDirection::InOut => {
 				t *= 2.0;
 				if t < 1.0 {
-					0.5 * self.1.apply(t)
+					0.5 * self.easing.apply(t)
 				} else {
 					t = 2.0 - t;
-					0.5 * (1.0 - self.1.apply(t)) + 0.5
+					0.5 * (1.0 - self.easing.apply(t)) + 0.5
 				}
 			}
 		}
@@ -69,7 +73,7 @@ impl Tween {
 	pub fn tween(&self, from: f64, to: f64, time: f64) -> f64 {
 		// get the time in the animation relative to the duration
 		// of the animation (0 = beginning, 1 = end)
-		let mut t = time / self.0;
+		let mut t = time / self.duration;
 		// apply the easing curve
 		t = self.ease(t);
 		// use a simple lerp to get the resulting value
@@ -79,6 +83,10 @@ impl Tween {
 
 impl From<f64> for Tween {
 	fn from(duration: f64) -> Self {
-		Self(duration, Easing::default(), EaseDirection::default())
+		Self {
+			duration,
+			easing: Easing::default(),
+			ease_direction: EaseDirection::default(),
+		}
 	}
 }
