@@ -1,7 +1,10 @@
 use std::f32::consts::PI;
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use kira::{instance::InstanceSettings, manager::AudioManager, sound::Sound, StereoSample};
+use kira::{
+	instance::InstanceSettings, manager::AudioManager, sound::Sound, sound::SoundSettings,
+	StereoSample,
+};
 
 fn create_test_sound(num_samples: usize) -> Sound {
 	const SAMPLE_RATE: u32 = 48000;
@@ -11,7 +14,14 @@ fn create_test_sound(num_samples: usize) -> Sound {
 		sine_samples.push(StereoSample::from_mono((phase * 2.0 * PI).sin()));
 		phase += 440.0 / SAMPLE_RATE as f32;
 	}
-	Sound::new(SAMPLE_RATE, sine_samples, Default::default())
+	Sound::new(
+		SAMPLE_RATE,
+		sine_samples,
+		SoundSettings {
+			cooldown: None,
+			..Default::default()
+		},
+	)
 }
 
 fn instances_benchmark(c: &mut Criterion) {
@@ -24,6 +34,7 @@ fn instances_benchmark(c: &mut Criterion) {
 			.play_sound(sound_id, InstanceSettings::new().loop_region(..))
 			.unwrap();
 	}
+	backend.process();
 	c.bench_function("instances", |b| b.iter(|| backend.process()));
 }
 
