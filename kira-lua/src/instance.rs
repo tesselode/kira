@@ -1,7 +1,7 @@
 use kira::instance::{InstanceId, InstanceSettings, LoopPoint, LoopRegion};
 use mlua::prelude::*;
 
-use crate::{error::KiraLuaError, value::LValue};
+use crate::{error::KiraLuaError, tween::LTween, value::LValue};
 
 pub struct LLoopRegion(pub LoopRegion);
 
@@ -48,8 +48,8 @@ impl<'lua> FromLua<'lua> for LInstanceSettings {
 				if table.contains_key("position")? {
 					settings.start_position = table.get("position")?;
 				}
-				if table.contains_key("fadeInDuration")? {
-					settings.fade_in_duration = table.get("fadeInDuration")?;
+				if table.contains_key("fadeInTween")? {
+					settings.fade_in_tween = Some(table.get::<_, LTween>("fadeInTween")?.0);
 				}
 				if table.contains_key("loop")? {
 					match table.get::<_, LuaValue>("loop")? {

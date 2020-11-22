@@ -26,8 +26,8 @@ impl ParameterId {
 struct TweenState {
 	tween: Tween,
 	start: f64,
-	target: f64,
-	progress: f64,
+	end: f64,
+	time: f64,
 }
 
 #[derive(Debug, Clone)]
@@ -53,8 +53,8 @@ impl Parameter {
 			self.tween_state = Some(TweenState {
 				tween,
 				start: self.value,
-				target: target,
-				progress: 0.0,
+				end: target,
+				time: 0.0,
 			});
 		} else {
 			self.value = target;
@@ -63,12 +63,12 @@ impl Parameter {
 
 	pub(crate) fn update(&mut self, dt: f64) -> bool {
 		if let Some(tween_state) = &mut self.tween_state {
-			let duration = tween_state.tween.0;
-			tween_state.progress += dt / duration;
-			tween_state.progress = tween_state.progress.min(1.0);
+			tween_state.time += dt;
 			self.value =
-				tween_state.start + (tween_state.target - tween_state.start) * tween_state.progress;
-			if tween_state.progress >= 1.0 {
+				tween_state
+					.tween
+					.tween(tween_state.start, tween_state.end, tween_state.time);
+			if tween_state.time >= tween_state.tween.0 {
 				self.tween_state = None;
 				return true;
 			}

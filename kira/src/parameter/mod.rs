@@ -8,4 +8,4 @@ mod tween;
 pub use mapping::Mapping;
 pub use parameter::{Parameter, ParameterId};
 pub use parameters::Parameters;
-pub use tween::Tween;
+pub use tween::{EaseDirection, Easing, Tween};
