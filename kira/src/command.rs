@@ -74,3 +74,39 @@ pub(crate) enum Command<CustomEvent: Copy> {
 	Parameter(ParameterCommand),
 	EmitCustomEvent(CustomEvent),
 }
+
+impl<CustomEvent: Copy> From<SoundCommand> for Command<CustomEvent> {
+	fn from(command: SoundCommand) -> Self {
+		Self::Sound(command)
+	}
+}
+
+impl<CustomEvent: Copy> From<InstanceCommand> for Command<CustomEvent> {
+	fn from(command: InstanceCommand) -> Self {
+		Self::Instance(command)
+	}
+}
+
+impl<CustomEvent: Copy> From<MetronomeCommand> for Command<CustomEvent> {
+	fn from(command: MetronomeCommand) -> Self {
+		Self::Metronome(command)
+	}
+}
+
+impl<CustomEvent: Copy> From<SequenceCommand<CustomEvent>> for Command<CustomEvent> {
+	fn from(command: SequenceCommand<CustomEvent>) -> Self {
+		Self::Sequence(command)
+	}
+}
+
+impl<CustomEvent: Copy> From<MixerCommand> for Command<CustomEvent> {
+	fn from(command: MixerCommand) -> Self {
+		Self::Mixer(command)
+	}
+}
+
+impl<CustomEvent: Copy> From<ParameterCommand> for Command<CustomEvent> {
+	fn from(command: ParameterCommand) -> Self {
+		Self::Parameter(command)
+	}
+}

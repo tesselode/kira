@@ -226,8 +226,11 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		Ok((audio_manager, backend))
 	}
 
-	fn send_command_to_backend(&mut self, command: Command<CustomEvent>) -> AudioResult<()> {
-		match self.thread_channels.command_producer.push(command) {
+	fn send_command_to_backend<C: Into<Command<CustomEvent>>>(
+		&mut self,
+		command: C,
+	) -> AudioResult<()> {
+		match self.thread_channels.command_producer.push(command.into()) {
 			Ok(_) => Ok(()),
 			Err(_) => Err(AudioError::CommandQueueFull),
 		}
@@ -236,13 +239,13 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	/// Sends a sound to the audio thread and returns a handle to the sound.
 	pub fn add_sound(&mut self, sound: Sound) -> AudioResult<SoundId> {
 		let id = SoundId::new(sound.duration(), sound.default_track(), sound.metadata());
-		self.send_command_to_backend(Command::Sound(SoundCommand::LoadSound(id, sound)))?;
+		self.send_command_to_backend(SoundCommand::LoadSound(id, sound))?;
 		Ok(id)
 	}
 
 	/// Removes a sound from the audio thread, allowing its memory to be freed.
 	pub fn remove_sound(&mut self, id: SoundId) -> AudioResult<()> {
-		self.send_command_to_backend(Command::Sound(SoundCommand::UnloadSound(id)))
+		self.send_command_to_backend(SoundCommand::UnloadSound(id))
 	}
 
 	/// Plays a sound.
@@ -252,12 +255,12 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		settings: InstanceSettings,
 	) -> Result<InstanceId, AudioError> {
 		let instance_id = InstanceId::new();
-		self.send_command_to_backend(Command::Instance(InstanceCommand::PlaySound(
+		self.send_command_to_backend(InstanceCommand::PlaySound(
 			instance_id,
 			sound_id,
 			None,
 			settings,
-		)))?;
+		))?;
 		Ok(instance_id)
 	}
 
@@ -267,10 +270,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		id: InstanceId,
 		volume: V,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(Command::Instance(InstanceCommand::SetInstanceVolume(
-			id,
-			volume.into(),
-		)))
+		self.send_command_to_backend(InstanceCommand::SetInstanceVolume(id, volume.into()))
 	}
 
 	/// Sets the pitch of an instance.
@@ -279,10 +279,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		id: InstanceId,
 		pitch: V,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(Command::Instance(InstanceCommand::SetInstancePitch(
-			id,
-			pitch.into(),
-		)))
+		self.send_command_to_backend(InstanceCommand::SetInstancePitch(id, pitch.into()))
 	}
 
 	/// Sets the panning of an instance (0 = hard left, 1 = hard right).
@@ -291,10 +288,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		id: InstanceId,
 		panning: V,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(Command::Instance(InstanceCommand::SetInstancePanning(
-			id,
-			panning.into(),
-		)))
+		self.send_command_to_backend(InstanceCommand::SetInstancePanning(id, panning.into()))
 	}
 
 	/// Pauses a currently playing instance of a sound with an optional fade-out tween.
@@ -303,10 +297,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		instance_id: InstanceId,
 		fade_tween: Option<Tween>,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(Command::Instance(InstanceCommand::PauseInstance(
-			instance_id,
-			fade_tween,
-		)))
+		self.send_command_to_backend(InstanceCommand::PauseInstance(instance_id, fade_tween))
 	}
 
 	/// Resumes a currently paused instance of a sound with an optional fade-in tween.
@@ -315,10 +306,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		instance_id: InstanceId,
 		fade_tween: Option<Tween>,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(Command::Instance(InstanceCommand::ResumeInstance(
-			instance_id,
-			fade_tween,
-		)))
+		self.send_command_to_backend(InstanceCommand::ResumeInstance(instance_id, fade_tween))
 	}
 
 	/// Stops a currently playing instance of a sound with an optional fade-out tween.
@@ -329,10 +317,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		instance_id: InstanceId,
 		fade_tween: Option<Tween>,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(Command::Instance(InstanceCommand::StopInstance(
-			instance_id,
-			fade_tween,
-		)))
+		self.send_command_to_backend(InstanceCommand::StopInstance(instance_id, fade_tween))
 	}
 
 	/// Pauses all currently playing instances of a sound with an optional fade-out tween.
@@ -341,9 +326,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		sound_id: SoundId,
 		fade_tween: Option<Tween>,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(Command::Instance(InstanceCommand::PauseInstancesOfSound(
-			sound_id, fade_tween,
-		)))
+		self.send_command_to_backend(InstanceCommand::PauseInstancesOfSound(sound_id, fade_tween))
 	}
 
 	/// Resumes all currently playing instances of a sound with an optional fade-in tween.
@@ -352,9 +335,9 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		sound_id: SoundId,
 		fade_tween: Option<Tween>,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(Command::Instance(InstanceCommand::ResumeInstancesOfSound(
+		self.send_command_to_backend(InstanceCommand::ResumeInstancesOfSound(
 			sound_id, fade_tween,
-		)))
+		))
 	}
 
 	/// Stops all currently playing instances of a sound with an optional fade-out tween.
@@ -363,9 +346,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		sound_id: SoundId,
 		fade_tween: Option<Tween>,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(Command::Instance(InstanceCommand::StopInstancesOfSound(
-			sound_id, fade_tween,
-		)))
+		self.send_command_to_backend(InstanceCommand::StopInstancesOfSound(sound_id, fade_tween))
 	}
 
 	/// Sets the tempo of the metronome.
@@ -373,24 +354,22 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		&mut self,
 		tempo: T,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(Command::Metronome(MetronomeCommand::SetMetronomeTempo(
-			tempo.into(),
-		)))
+		self.send_command_to_backend(MetronomeCommand::SetMetronomeTempo(tempo.into()))
 	}
 
 	/// Starts or resumes the metronome.
 	pub fn start_metronome(&mut self) -> Result<(), AudioError> {
-		self.send_command_to_backend(Command::Metronome(MetronomeCommand::StartMetronome))
+		self.send_command_to_backend(MetronomeCommand::StartMetronome)
 	}
 
 	/// Pauses the metronome.
 	pub fn pause_metronome(&mut self) -> Result<(), AudioError> {
-		self.send_command_to_backend(Command::Metronome(MetronomeCommand::PauseMetronome))
+		self.send_command_to_backend(MetronomeCommand::PauseMetronome)
 	}
 
 	/// Stops and resets the metronome.
 	pub fn stop_metronome(&mut self) -> Result<(), AudioError> {
-		self.send_command_to_backend(Command::Metronome(MetronomeCommand::StopMetronome))
+		self.send_command_to_backend(MetronomeCommand::StopMetronome)
 	}
 
 	/// Starts a sequence.
@@ -400,9 +379,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	) -> Result<SequenceId, AudioError> {
 		sequence.validate()?;
 		let id = SequenceId::new();
-		self.send_command_to_backend(Command::Sequence(SequenceCommand::StartSequence(
-			id, sequence,
-		)))?;
+		self.send_command_to_backend(SequenceCommand::StartSequence(id, sequence))?;
 		Ok(id)
 	}
 
@@ -411,27 +388,27 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	/// When a sequence is muted, it will continue waiting for durations and intervals,
 	/// but it will not play sounds, emit events, or perform any other actions.
 	pub fn mute_sequence(&mut self, id: SequenceId) -> Result<(), AudioError> {
-		self.send_command_to_backend(Command::Sequence(SequenceCommand::MuteSequence(id)))
+		self.send_command_to_backend(SequenceCommand::MuteSequence(id))
 	}
 
 	/// Unmutes a sequence.
 	pub fn unmute_sequence(&mut self, id: SequenceId) -> Result<(), AudioError> {
-		self.send_command_to_backend(Command::Sequence(SequenceCommand::UnmuteSequence(id)))
+		self.send_command_to_backend(SequenceCommand::UnmuteSequence(id))
 	}
 
 	/// Pauses a sequence.
 	pub fn pause_sequence(&mut self, id: SequenceId) -> Result<(), AudioError> {
-		self.send_command_to_backend(Command::Sequence(SequenceCommand::PauseSequence(id)))
+		self.send_command_to_backend(SequenceCommand::PauseSequence(id))
 	}
 
 	/// Resumes a sequence.
 	pub fn resume_sequence(&mut self, id: SequenceId) -> Result<(), AudioError> {
-		self.send_command_to_backend(Command::Sequence(SequenceCommand::ResumeSequence(id)))
+		self.send_command_to_backend(SequenceCommand::ResumeSequence(id))
 	}
 
 	/// Stops a sequence.
 	pub fn stop_sequence(&mut self, id: SequenceId) -> Result<(), AudioError> {
-		self.send_command_to_backend(Command::Sequence(SequenceCommand::StopSequence(id)))
+		self.send_command_to_backend(SequenceCommand::StopSequence(id))
 	}
 
 	/// Pauses a sequence and any instances played by that sequence.
@@ -440,10 +417,8 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		id: SequenceId,
 		fade_tween: Option<Tween>,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(Command::Sequence(SequenceCommand::PauseSequence(id)))?;
-		self.send_command_to_backend(Command::Instance(
-			InstanceCommand::PauseInstancesOfSequence(id, fade_tween),
-		))
+		self.send_command_to_backend(SequenceCommand::PauseSequence(id))?;
+		self.send_command_to_backend(InstanceCommand::PauseInstancesOfSequence(id, fade_tween))
 	}
 
 	/// Resumes a sequence and any instances played by that sequence.
@@ -452,10 +427,8 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		id: SequenceId,
 		fade_tween: Option<Tween>,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(Command::Sequence(SequenceCommand::ResumeSequence(id)))?;
-		self.send_command_to_backend(Command::Instance(
-			InstanceCommand::ResumeInstancesOfSequence(id, fade_tween),
-		))
+		self.send_command_to_backend(SequenceCommand::ResumeSequence(id))?;
+		self.send_command_to_backend(InstanceCommand::ResumeInstancesOfSequence(id, fade_tween))
 	}
 
 	/// Stops a sequence and any instances played by that sequence.
@@ -464,24 +437,20 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		id: SequenceId,
 		fade_tween: Option<Tween>,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(Command::Sequence(SequenceCommand::StopSequence(id)))?;
-		self.send_command_to_backend(Command::Instance(InstanceCommand::StopInstancesOfSequence(
-			id, fade_tween,
-		)))
+		self.send_command_to_backend(SequenceCommand::StopSequence(id))?;
+		self.send_command_to_backend(InstanceCommand::StopInstancesOfSequence(id, fade_tween))
 	}
 
 	/// Creates a parameter with the specified starting value.
 	pub fn add_parameter(&mut self, value: f64) -> AudioResult<ParameterId> {
 		let id = ParameterId::new();
-		self.send_command_to_backend(Command::Parameter(ParameterCommand::AddParameter(
-			id, value,
-		)))?;
+		self.send_command_to_backend(ParameterCommand::AddParameter(id, value))?;
 		Ok(id)
 	}
 
 	/// Removes a parameter.
 	pub fn remove_parameter(&mut self, id: ParameterId) -> AudioResult<()> {
-		self.send_command_to_backend(Command::Parameter(ParameterCommand::RemoveParameter(id)))
+		self.send_command_to_backend(ParameterCommand::RemoveParameter(id))
 	}
 
 	/// Sets the value of a parameter with an optional tween to smoothly change the value.
@@ -491,21 +460,19 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		value: f64,
 		tween: Option<Tween>,
 	) -> AudioResult<()> {
-		self.send_command_to_backend(Command::Parameter(ParameterCommand::SetParameter(
-			id, value, tween,
-		)))
+		self.send_command_to_backend(ParameterCommand::SetParameter(id, value, tween))
 	}
 
 	/// Creates a mixer sub-track.
 	pub fn add_sub_track(&mut self, settings: TrackSettings) -> AudioResult<SubTrackId> {
 		let id = SubTrackId::new();
-		self.send_command_to_backend(Command::Mixer(MixerCommand::AddSubTrack(id, settings)))?;
+		self.send_command_to_backend(MixerCommand::AddSubTrack(id, settings))?;
 		Ok(id)
 	}
 
 	/// Removes a sub-track from the mixer.
 	pub fn remove_sub_track(&mut self, id: SubTrackId) -> AudioResult<()> {
-		self.send_command_to_backend(Command::Mixer(MixerCommand::RemoveSubTrack(id)))
+		self.send_command_to_backend(MixerCommand::RemoveSubTrack(id))
 	}
 
 	/// Adds an effect to a track.
@@ -516,18 +483,18 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		settings: EffectSettings,
 	) -> AudioResult<EffectId> {
 		let effect_id = EffectId::new(track_index.into());
-		self.send_command_to_backend(Command::Mixer(MixerCommand::AddEffect(
+		self.send_command_to_backend(MixerCommand::AddEffect(
 			track_index.into(),
 			effect_id,
 			effect,
 			settings,
-		)))?;
+		))?;
 		Ok(effect_id)
 	}
 
 	/// Removes an effect from the mixer.
 	pub fn remove_effect(&mut self, effect_id: EffectId) -> AudioResult<()> {
-		self.send_command_to_backend(Command::Mixer(MixerCommand::RemoveEffect(effect_id)))
+		self.send_command_to_backend(MixerCommand::RemoveEffect(effect_id))
 	}
 
 	/// Returns a list of all of the new events created by the audio thread
