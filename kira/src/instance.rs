@@ -201,8 +201,8 @@ pub struct InstanceSettings {
 	/// The position to start playing the instance at (in seconds).
 	pub start_position: f64,
 	/// Whether to fade in the instance from silence, and if so,
-	/// how long the fade-in should last (in seconds).
-	pub fade_in_duration: Option<f64>,
+	/// the tween to use.
+	pub fade_in_tween: Option<Tween>,
 	/// Whether the instance should loop, and if so, the region
 	/// to loop.
 	pub loop_region: Option<LoopRegion>,
@@ -256,11 +256,10 @@ impl InstanceSettings {
 		}
 	}
 
-	/// Sets the amount of time the instance will take to fade in
-	/// from silence (in seconds).
-	pub fn fade_in_duration(self, fade_in_duration: f64) -> Self {
+	/// Sets the tween the instance will use to fade in from silence.
+	pub fn fade_in_tween(self, fade_in_tween: Tween) -> Self {
 		Self {
-			fade_in_duration: Some(fade_in_duration),
+			fade_in_tween: Some(fade_in_tween),
 			..self
 		}
 	}
@@ -290,7 +289,7 @@ impl Default for InstanceSettings {
 			panning: Value::Fixed(0.5),
 			reverse: false,
 			start_position: 0.0,
-			fade_in_duration: None,
+			fade_in_tween: None,
 			loop_region: None,
 			track: Default::default(),
 		}
@@ -346,10 +345,10 @@ impl Instance {
 	) -> Self {
 		let state;
 		let mut fade_volume;
-		if let Some(duration) = settings.fade_in_duration {
+		if let Some(tween) = settings.fade_in_tween {
 			state = InstanceState::Resuming;
 			fade_volume = Parameter::new(0.0);
-			fade_volume.set(1.0, Some(Tween(duration)));
+			fade_volume.set(1.0, Some(tween));
 		} else {
 			state = InstanceState::Playing;
 			fade_volume = Parameter::new(1.0);
