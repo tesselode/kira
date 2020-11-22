@@ -2,31 +2,31 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssi
 
 /// Represents an audio sample with a left and right channel.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct StereoSample {
+pub struct Frame {
 	pub left: f32,
 	pub right: f32,
 }
 
-impl StereoSample {
-	/// Creates a sample with the given left and right values.
+impl Frame {
+	/// Creates a frame with the given left and right values.
 	pub fn new(left: f32, right: f32) -> Self {
 		Self { left, right }
 	}
 
-	/// Creates a sample with both the left and right channels set
+	/// Creates a frame with both the left and right channels set
 	/// to the same value.
 	pub fn from_mono(value: f32) -> Self {
 		Self::new(value, value)
 	}
 
-	/// Creates a sample from `i32`s with the given bit depth.
+	/// Creates a frame from `i32`s with the given bit depth.
 	pub fn from_i32(left: i32, right: i32, bit_depth: u32) -> Self {
 		let max_int = (1 << bit_depth) / 2;
 		let scale = 1.0 / max_int as f32;
 		Self::new(left as f32 * scale, right as f32 * scale)
 	}
 
-	/// Pans a stereo sample to the left or right.
+	/// Pans a frame to the left or right.
 	///
 	/// An `x` of 0 represents a hard left panning, an `x` of 1
 	/// represents a hard right panning.
@@ -35,7 +35,7 @@ impl StereoSample {
 	}
 }
 
-impl Add for StereoSample {
+impl Add for Frame {
 	type Output = Self;
 
 	fn add(self, rhs: Self) -> Self::Output {
@@ -43,14 +43,14 @@ impl Add for StereoSample {
 	}
 }
 
-impl AddAssign for StereoSample {
+impl AddAssign for Frame {
 	fn add_assign(&mut self, rhs: Self) {
 		self.left += rhs.left;
 		self.right += rhs.right;
 	}
 }
 
-impl Sub for StereoSample {
+impl Sub for Frame {
 	type Output = Self;
 
 	fn sub(self, rhs: Self) -> Self::Output {
@@ -58,14 +58,14 @@ impl Sub for StereoSample {
 	}
 }
 
-impl SubAssign for StereoSample {
+impl SubAssign for Frame {
 	fn sub_assign(&mut self, rhs: Self) {
 		self.left -= rhs.left;
 		self.right -= rhs.right;
 	}
 }
 
-impl Mul<f32> for StereoSample {
+impl Mul<f32> for Frame {
 	type Output = Self;
 
 	fn mul(self, rhs: f32) -> Self::Output {
@@ -73,14 +73,14 @@ impl Mul<f32> for StereoSample {
 	}
 }
 
-impl MulAssign<f32> for StereoSample {
+impl MulAssign<f32> for Frame {
 	fn mul_assign(&mut self, rhs: f32) {
 		self.left *= rhs;
 		self.right *= rhs;
 	}
 }
 
-impl Div<f32> for StereoSample {
+impl Div<f32> for Frame {
 	type Output = Self;
 
 	fn div(self, rhs: f32) -> Self::Output {
@@ -88,14 +88,14 @@ impl Div<f32> for StereoSample {
 	}
 }
 
-impl DivAssign<f32> for StereoSample {
+impl DivAssign<f32> for Frame {
 	fn div_assign(&mut self, rhs: f32) {
 		self.left /= rhs;
 		self.right /= rhs;
 	}
 }
 
-impl Neg for StereoSample {
+impl Neg for Frame {
 	type Output = Self;
 
 	fn neg(self) -> Self::Output {

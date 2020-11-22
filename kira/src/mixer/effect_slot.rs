@@ -1,4 +1,4 @@
-use crate::{parameter::Parameters, stereo_sample::StereoSample};
+use crate::{frame::Frame, parameter::Parameters};
 
 use super::effect::{Effect, EffectSettings};
 
@@ -15,12 +15,7 @@ impl EffectSlot {
 		}
 	}
 
-	pub(super) fn process(
-		&mut self,
-		dt: f64,
-		input: StereoSample,
-		parameters: &Parameters,
-	) -> StereoSample {
+	pub(super) fn process(&mut self, dt: f64, input: Frame, parameters: &Parameters) -> Frame {
 		if self.enabled {
 			self.effect.process(dt, input, parameters)
 		} else {

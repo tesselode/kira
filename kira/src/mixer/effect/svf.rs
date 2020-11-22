@@ -1,8 +1,8 @@
 use std::f64::consts::PI;
 
 use crate::{
+	frame::Frame,
 	parameter::Parameters,
-	stereo_sample::StereoSample,
 	value::{CachedValue, Value},
 };
 
@@ -40,8 +40,8 @@ pub struct StateVariableFilter {
 	mode: StateVariableFilterMode,
 	cutoff: CachedValue<f64>,
 	resonance: CachedValue<f64>,
-	ic1eq: StereoSample,
-	ic2eq: StereoSample,
+	ic1eq: Frame,
+	ic2eq: Frame,
 }
 
 impl StateVariableFilter {
@@ -50,14 +50,14 @@ impl StateVariableFilter {
 			mode: settings.mode,
 			cutoff: CachedValue::new(settings.cutoff, 10000.0),
 			resonance: CachedValue::new(settings.resonance, 0.0),
-			ic1eq: StereoSample::from_mono(0.0),
-			ic2eq: StereoSample::from_mono(0.0),
+			ic1eq: Frame::from_mono(0.0),
+			ic2eq: Frame::from_mono(0.0),
 		}
 	}
 }
 
 impl Effect for StateVariableFilter {
-	fn process(&mut self, dt: f64, input: StereoSample, parameters: &Parameters) -> StereoSample {
+	fn process(&mut self, dt: f64, input: Frame, parameters: &Parameters) -> Frame {
 		self.cutoff.update(parameters);
 		self.resonance.update(parameters);
 		let sample_rate = 1.0 / dt;

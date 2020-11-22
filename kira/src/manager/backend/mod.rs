@@ -7,13 +7,13 @@ use self::mixer::Mixer;
 use super::{AudioManagerSettings, Event};
 use crate::{
 	command::{Command, SoundCommand},
+	frame::Frame,
 	metronome::Metronome,
 	mixer::effect_slot::EffectSlot,
 	mixer::Track,
 	parameter::Parameters,
 	sequence::Sequence,
 	sound::{Sound, SoundId},
-	stereo_sample::StereoSample,
 };
 use indexmap::IndexMap;
 use instances::Instances;
@@ -141,7 +141,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> 
 		}
 	}
 
-	pub fn process(&mut self) -> StereoSample {
+	pub fn process(&mut self) -> Frame {
 		self.process_commands();
 		self.parameters.update(self.dt);
 		self.update_sounds();

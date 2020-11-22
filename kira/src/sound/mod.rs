@@ -6,9 +6,7 @@ mod metadata;
 pub use id::SoundId;
 pub use metadata::SoundMetadata;
 
-use crate::{
-	error::AudioError, error::AudioResult, mixer::TrackIndex, stereo_sample::StereoSample,
-};
+use crate::{error::AudioError, error::AudioResult, frame::Frame, mixer::TrackIndex};
 use claxon::FlacReader;
 use hound::WavReader;
 use lewton::{inside_ogg::OggStreamReader, samples::Samples};
@@ -45,7 +43,7 @@ impl Default for SoundSettings {
 #[derive(Debug)]
 pub struct Sound {
 	sample_rate: u32,
-	samples: Vec<StereoSample>,
+	samples: Vec<Frame>,
 	duration: f64,
 	default_track: TrackIndex,
 	cooldown: Option<f64>,
@@ -55,7 +53,7 @@ pub struct Sound {
 
 impl Sound {
 	/// Creates a new sound from raw sample data.
-	pub fn new(sample_rate: u32, samples: Vec<StereoSample>, settings: SoundSettings) -> Self {
+	pub fn new(sample_rate: u32, samples: Vec<Frame>, settings: SoundSettings) -> Self {
 		let duration = samples.len() as f64 / sample_rate as f64;
 		Self {
 			sample_rate,
@@ -89,7 +87,7 @@ impl Sound {
 					match frame.channels {
 						1 => {
 							for sample in frame.data {
-								stereo_samples.push(StereoSample::from_i32(
+								stereo_samples.push(Frame::from_i32(
 									sample.into(),
 									sample.into(),
 									16,
@@ -99,7 +97,7 @@ impl Sound {
 						2 => {
 							let mut iter = frame.data.iter();
 							while let (Some(left), Some(right)) = (iter.next(), iter.next()) {
-								stereo_samples.push(StereoSample::from_i32(
+								stereo_samples.push(Frame::from_i32(
 									(*left).into(),
 									(*right).into(),
 									16,
@@ -135,12 +133,12 @@ impl Sound {
 			match num_channels {
 				1 => {
 					for i in 0..num_samples {
-						stereo_samples.push(StereoSample::from_mono(packet[0][i]));
+						stereo_samples.push(Frame::from_mono(packet[0][i]));
 					}
 				}
 				2 => {
 					for i in 0..num_samples {
-						stereo_samples.push(StereoSample::new(packet[0][i], packet[1][i]));
+						stereo_samples.push(Frame::new(packet[0][i], packet[1][i]));
 					}
 				}
 				_ => return Err(AudioError::UnsupportedChannelConfiguration),
@@ -165,7 +163,7 @@ impl Sound {
 			1 => {
 				for sample in reader.samples() {
 					let sample = sample?;
-					stereo_samples.push(StereoSample::from_i32(
+					stereo_samples.push(Frame::from_i32(
 						sample,
 						sample,
 						streaminfo.bits_per_sample,
@@ -175,11 +173,7 @@ impl Sound {
 			2 => {
 				let mut iter = reader.samples();
 				while let (Some(left), Some(right)) = (iter.next(), iter.next()) {
-					stereo_samples.push(StereoSample::from_i32(
-						left?,
-						right?,
-						streaminfo.bits_per_sample,
-					));
+					stereo_samples.push(Frame::from_i32(left?, right?, streaminfo.bits_per_sample));
 				}
 			}
 			_ => return Err(AudioError::UnsupportedChannelConfiguration),
@@ -199,13 +193,13 @@ impl Sound {
 			1 => match spec.sample_format {
 				hound::SampleFormat::Float => {
 					for sample in reader.samples::<f32>() {
-						stereo_samples.push(StereoSample::from_mono(sample?))
+						stereo_samples.push(Frame::from_mono(sample?))
 					}
 				}
 				hound::SampleFormat::Int => {
 					for sample in reader.samples::<i32>() {
 						let sample = sample?;
-						stereo_samples.push(StereoSample::from_i32(
+						stereo_samples.push(Frame::from_i32(
 							sample,
 							sample,
 							spec.bits_per_sample.into(),
@@ -217,13 +211,13 @@ impl Sound {
 				hound::SampleFormat::Float => {
 					let mut iter = reader.samples::<f32>();
 					while let (Some(left), Some(right)) = (iter.next(), iter.next()) {
-						stereo_samples.push(StereoSample::new(left?, right?));
+						stereo_samples.push(Frame::new(left?, right?));
 					}
 				}
 				hound::SampleFormat::Int => {
 					let mut iter = reader.samples::<i32>();
 					while let (Some(left), Some(right)) = (iter.next(), iter.next()) {
-						stereo_samples.push(StereoSample::from_i32(
+						stereo_samples.push(Frame::from_i32(
 							left?,
 							right?,
 							spec.bits_per_sample.into(),
@@ -278,30 +272,30 @@ impl Sound {
 
 	/// Gets the sample at an arbitrary time in seconds,
 	/// interpolating between samples if necessary.
-	pub fn get_sample_at_position(&self, position: f64) -> StereoSample {
+	pub fn get_sample_at_position(&self, position: f64) -> Frame {
 		let sample_position = self.sample_rate as f64 * position;
 		let x = (sample_position % 1.0) as f32;
 		let current_sample_index = sample_position as usize;
 		let y0 = if current_sample_index == 0 {
-			StereoSample::from_mono(0.0)
+			Frame::from_mono(0.0)
 		} else {
 			*self
 				.samples
 				.get(current_sample_index - 1)
-				.unwrap_or(&StereoSample::from_mono(0.0))
+				.unwrap_or(&Frame::from_mono(0.0))
 		};
 		let y1 = *self
 			.samples
 			.get(current_sample_index)
-			.unwrap_or(&StereoSample::from_mono(0.0));
+			.unwrap_or(&Frame::from_mono(0.0));
 		let y2 = *self
 			.samples
 			.get(current_sample_index + 1)
-			.unwrap_or(&StereoSample::from_mono(0.0));
+			.unwrap_or(&Frame::from_mono(0.0));
 		let y3 = *self
 			.samples
 			.get(current_sample_index + 2)
-			.unwrap_or(&StereoSample::from_mono(0.0));
+			.unwrap_or(&Frame::from_mono(0.0));
 		let c0 = y1;
 		let c1 = (y2 - y0) * 0.5;
 		let c2 = y0 - y1 * 2.5 + y2 * 2.0 - y3 * 0.5;

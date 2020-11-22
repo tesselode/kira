@@ -2,7 +2,7 @@ pub mod svf;
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use crate::{parameter::Parameters, stereo_sample::StereoSample};
+use crate::{frame::Frame, parameter::Parameters};
 
 use super::TrackIndex;
 
@@ -46,5 +46,5 @@ impl Default for EffectSettings {
 }
 
 pub trait Effect: Send {
-	fn process(&mut self, dt: f64, input: StereoSample, parameters: &Parameters) -> StereoSample;
+	fn process(&mut self, dt: f64, input: Frame, parameters: &Parameters) -> Frame;
 }

@@ -3,9 +3,9 @@ use ringbuf::Producer;
 
 use crate::{
 	command::MixerCommand,
+	frame::Frame,
 	mixer::{effect_slot::EffectSlot, SubTrackId, Track, TrackIndex, TrackSettings},
 	parameter::Parameters,
-	stereo_sample::StereoSample,
 };
 
 pub(crate) struct Mixer {
@@ -63,7 +63,7 @@ impl Mixer {
 		}
 	}
 
-	pub fn add_input(&mut self, index: TrackIndex, input: StereoSample) {
+	pub fn add_input(&mut self, index: TrackIndex, input: Frame) {
 		let track = match index {
 			TrackIndex::Main => &mut self.main_track,
 			TrackIndex::Sub(id) => self.sub_tracks.get_mut(&id).unwrap_or(&mut self.main_track),
@@ -71,8 +71,8 @@ impl Mixer {
 		track.add_input(input);
 	}
 
-	pub fn process(&mut self, dt: f64, parameters: &Parameters) -> StereoSample {
-		let mut main_input = StereoSample::from_mono(0.0);
+	pub fn process(&mut self, dt: f64, parameters: &Parameters) -> Frame {
+		let mut main_input = Frame::from_mono(0.0);
 		for (_, sub_track) in &mut self.sub_tracks {
 			main_input += sub_track.process(dt, parameters);
 		}

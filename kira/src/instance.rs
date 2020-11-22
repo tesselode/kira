@@ -33,11 +33,11 @@
 //! ```
 
 use crate::{
+	frame::Frame,
 	mixer::{SubTrackId, TrackIndex},
 	parameter::{Parameter, Parameters, Tween},
 	sequence::SequenceId,
 	sound::{Sound, SoundId},
-	stereo_sample::StereoSample,
 	value::CachedValue,
 	value::Value,
 };
@@ -503,8 +503,8 @@ impl Instance {
 		}
 	}
 
-	pub fn get_sample(&self, sound: &Sound) -> StereoSample {
-		let mut out = StereoSample::from_mono(0.0);
+	pub fn get_sample(&self, sound: &Sound) -> Frame {
+		let mut out = Frame::from_mono(0.0);
 		for sub_instance in &self.sub_instances {
 			if let Some(sub_instance) = sub_instance {
 				if self.reverse {

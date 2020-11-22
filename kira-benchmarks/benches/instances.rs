@@ -6,7 +6,7 @@ use kira::{
 	manager::{AudioManager, AudioManagerSettings},
 	sound::Sound,
 	sound::SoundSettings,
-	StereoSample,
+	Frame,
 };
 
 fn create_test_sound(num_samples: usize) -> Sound {
@@ -14,7 +14,7 @@ fn create_test_sound(num_samples: usize) -> Sound {
 	let mut sine_samples = vec![];
 	let mut phase = 0.0;
 	for _ in 0..num_samples {
-		sine_samples.push(StereoSample::from_mono((phase * 2.0 * PI).sin()));
+		sine_samples.push(Frame::from_mono((phase * 2.0 * PI).sin()));
 		phase += 440.0 / SAMPLE_RATE as f32;
 	}
 	Sound::new(

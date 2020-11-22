@@ -1,6 +1,7 @@
 # v0.2
+- Rename `StereoSample` to `Frame`
 - Added support for panning instances:
-	- Added `StereoSample::panned`
+	- Added `Frame::panned`
 	- Added a `panning` field and method to `InstanceSettings`
 	- Added `AudioManager::set_instance_panning`
 	- Added `Sequence::set_instance_panning`

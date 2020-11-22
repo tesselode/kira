@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use indexmap::IndexMap;
 
-use crate::{parameter::Parameters, stereo_sample::StereoSample};
+use crate::{frame::Frame, parameter::Parameters};
 
 use super::{
 	effect::{Effect, EffectId, EffectSettings},
@@ -68,7 +68,7 @@ impl Default for TrackSettings {
 pub(crate) struct Track {
 	volume: f64,
 	effect_slots: IndexMap<EffectId, EffectSlot>,
-	input: StereoSample,
+	input: Frame,
 }
 
 impl Track {
@@ -76,7 +76,7 @@ impl Track {
 		Self {
 			volume: settings.volume,
 			effect_slots: IndexMap::new(),
-			input: StereoSample::from_mono(0.0),
+			input: Frame::from_mono(0.0),
 		}
 	}
 
@@ -89,13 +89,13 @@ impl Track {
 		self.effect_slots.remove(&id)
 	}
 
-	pub fn add_input(&mut self, input: StereoSample) {
+	pub fn add_input(&mut self, input: Frame) {
 		self.input += input;
 	}
 
-	pub fn process(&mut self, dt: f64, parameters: &Parameters) -> StereoSample {
+	pub fn process(&mut self, dt: f64, parameters: &Parameters) -> Frame {
 		let mut input = self.input;
-		self.input = StereoSample::from_mono(0.0);
+		self.input = Frame::from_mono(0.0);
 		for (_, effect_slot) in &mut self.effect_slots {
 			input = effect_slot.process(dt, input, parameters);
 		}
