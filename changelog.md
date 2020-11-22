@@ -8,6 +8,10 @@
 custom scaling and offsets. `Value::Parameter` now contains a `Mapping`
 as its second piece of data. `ParameterId`s can be converted into
 `Value::Parameter`s with the default 1:1 mapping.
+- Changed `Tween` to a C-style struct with named fields:
+	- `duration` - the duration of the tween
+	- `easing` - the easing function to use (linear, power, etc.)
+	- `ease_direction` - the easing direction (in, out, in-out)
 
 # v0.1
 First public release
