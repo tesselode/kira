@@ -33,7 +33,7 @@ impl<T: From<f64> + Copy> From<ParameterId> for Value<T> {
 	}
 }
 
-/// A wrapper around `Value`s that remembers the last valid raw value.
+/// A wrapper around [`Value`](crate::Value)s that remembers the last valid raw value.
 ///
 /// You'll only need to use this if you're writing your own effects.
 #[derive(Debug, Clone)]

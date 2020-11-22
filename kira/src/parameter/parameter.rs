@@ -5,10 +5,10 @@ use super::Tween;
 static NEXT_PARAMETER_INDEX: AtomicUsize = AtomicUsize::new(0);
 
 /**
-A unique identifier for a `Parameter`.
+A unique identifier for a parameter.
 
-You cannot create this manually - a `ParameterId` is created
-when you create a parameter with an `AudioManager`.
+You cannot create this manually - a parameter ID is created
+when you create a parameter with an [`AudioManager`](crate::manager::AudioManager).
 */
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct ParameterId {

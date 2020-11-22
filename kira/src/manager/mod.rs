@@ -37,7 +37,7 @@ use self::backend::BackendThreadChannels;
 
 const WRAPPER_THREAD_SLEEP_DURATION: f64 = 1.0 / 60.0;
 
-/// Settings for an `AudioManager`.
+/// Settings for an [`AudioManager`](crate::manager::AudioManager).
 #[derive(Debug, Clone)]
 pub struct AudioManagerSettings {
 	/// The number of commands that be sent to the audio thread at a time.
@@ -92,7 +92,7 @@ pub(crate) struct AudioManagerThreadChannels<CustomEvent: Copy + Send + 'static 
 /**
 Plays and manages audio.
 
-The `AudioManager` is responsible for all communication between the gameplay thread
+The audio manager is responsible for all communication between the gameplay thread
 and the audio thread.
 */
 pub struct AudioManager<CustomEvent: Copy + Send + 'static = ()> {

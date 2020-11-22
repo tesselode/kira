@@ -1,7 +1,8 @@
-//! Provides an interface to control "instances", or individual occurrences, of a sound.
+//! Provides an interface to control "instances", or individual occurrences,
+//! of a [`Sound`](crate::sound::Sound).
 //!
-//! You can control the volume and pitch of individual instances as well as pausing, resuming,
-//! and stopping them.
+//! You can control the volume and pitch of individual instances as well as
+//! pausing, resuming, and stopping them.
 //!
 //! ## Examples
 //!
@@ -51,10 +52,10 @@ const MAX_SUB_INSTANCES: usize = 10;
 static NEXT_INSTANCE_INDEX: AtomicUsize = AtomicUsize::new(0);
 
 /**
-A unique identifier for an `Instance`.
+A unique identifier for an instance.
 
-You cannot create this manually - an `InstanceId` is created
-when you play a sound with an `AudioManager`.
+You cannot create this manually - an instance ID is created
+when you play a sound with an [`AudioManager`](crate::manager::AudioManager).
 */
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct InstanceId {

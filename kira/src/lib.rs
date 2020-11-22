@@ -7,7 +7,7 @@
 //!
 //! ## Usage
 //!
-//! To use Kira, first create an `AudioManager`:
+//! To use Kira, first create an [`AudioManager`](manager::AudioManager):
 //! ```no_run
 //! # use std::error::Error;
 //! # use kira::manager::{AudioManager, AudioManagerSettings};
@@ -16,7 +16,7 @@
 //! # Ok::<(), kira::AudioError>(())
 //! ```
 //!
-//! All audio-related actions go through the `AudioManager`.
+//! All audio-related actions go through the [`AudioManager`](manager::AudioManager).
 //!
 //! ### Loading and playing a sound
 //!

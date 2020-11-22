@@ -9,10 +9,10 @@ use super::SoundMetadata;
 
 static NEXT_SOUND_INDEX: AtomicUsize = AtomicUsize::new(0);
 
-/// A unique identifier for a `Sound`.
+/// A unique identifier for a [`Sound`](crate::sound::Sound).
 ///
-/// You cannot create this manually - a `SoundId` is returned
-/// when you load a sound with an `AudioManager`.
+/// You cannot create this manually - a sound ID is returned
+/// when you load a sound with an [`AudioManager`](crate::manager::AudioManager).
 #[derive(Debug, Copy, Clone)]
 pub struct SoundId {
 	index: usize,

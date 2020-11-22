@@ -12,7 +12,7 @@ use hound::WavReader;
 use lewton::{inside_ogg::OggStreamReader, samples::Samples};
 use std::{fs::File, path::Path};
 
-/// Settings for a sound.
+/// Settings for a [`Sound`](crate::sound::Sound).
 #[derive(Debug, Clone)]
 pub struct SoundSettings {
 	/// The track instances of this sound will play on by default.
@@ -39,7 +39,7 @@ impl Default for SoundSettings {
 	}
 }
 
-/// A piece of audio that can be played by an `AudioManager`.
+/// A piece of audio that can be played by an [`AudioManager`](crate::manager::AudioManager).
 #[derive(Debug)]
 pub struct Sound {
 	sample_rate: u32,

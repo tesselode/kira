@@ -9,10 +9,10 @@ use super::TrackIndex;
 static NEXT_EFFECT_INDEX: AtomicUsize = AtomicUsize::new(0);
 
 /**
-A unique identifier for an `Effect`.
+A unique identifier for an effect.
 
-You cannot create this manually - an `EffectId` is created
-when you add an effect to a mixer track with an `AudioManager`.
+You cannot create this manually - an effect ID is created
+when you add an effect to a mixer track with an [`AudioManager`](crate::manager::AudioManager).
 */
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct EffectId {

@@ -155,10 +155,10 @@ use crate::{
 
 static NEXT_SEQUENCE_INDEX: AtomicUsize = AtomicUsize::new(0);
 
-/// A unique identifier for a `Sequence`.
+/// A unique identifier for a [`Sequence`](crate::sequence::Sequence).
 ///
-/// You cannot create this manually - a `SequenceId` is returned
-/// when you start a sequence with an `AudioManager`.
+/// You cannot create this manually - a sequence ID is returned
+/// when you start a sequence with an [`AudioManager`](crate::manager::AudioManager).
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct SequenceId {
 	index: usize,

@@ -1,7 +1,4 @@
-/// Useful info about a `Sound`.
-///
-/// This is set entirely by the user when loading a sound
-/// and can be accessed via `SoundId`s.
+/// Useful info about a [`Sound`](crate::sound::Sound).
 #[derive(Debug, Default, Copy, Clone)]
 pub struct SoundMetadata {
 	/// How long the sound is musically.
