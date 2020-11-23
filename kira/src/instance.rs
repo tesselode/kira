@@ -40,6 +40,7 @@ use crate::{
 	frame::Frame,
 	mixer::{SubTrackId, TrackIndex},
 	parameter::{Parameter, Parameters, Tween},
+	playable::Playable,
 	sequence::SequenceId,
 	sound::{Sound, SoundId},
 	value::CachedValue,
@@ -70,54 +71,39 @@ impl InstanceId {
 	}
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum Playable {
-	Sound(SoundId),
-	Arrangement(ArrangementId),
+/// A track index for an instance to play on.
+#[derive(Debug, Copy, Clone)]
+pub enum InstanceTrackIndex {
+	/// The default track for the sound.
+	DefaultForSound,
+	/// A manually set track index.
+	Custom(TrackIndex),
 }
 
-impl Playable {
-	fn duration(&self) -> f64 {
+impl InstanceTrackIndex {
+	fn or_default(&self, default: TrackIndex) -> TrackIndex {
 		match self {
-			Playable::Sound(id) => id.duration(),
-			Playable::Arrangement(id) => id.duration(),
-		}
-	}
-
-	fn get_frame_at_position(
-		&self,
-		position: f64,
-		sounds: &IndexMap<SoundId, Sound>,
-		arrangements: &IndexMap<ArrangementId, Arrangement>,
-	) -> Frame {
-		match self {
-			Playable::Sound(id) => {
-				if let Some(sound) = sounds.get(id) {
-					sound.get_frame_at_position(position)
-				} else {
-					Frame::from_mono(0.0)
-				}
-			}
-			Playable::Arrangement(id) => {
-				if let Some(arrangement) = arrangements.get(id) {
-					arrangement.get_frame_at_position(position, sounds)
-				} else {
-					Frame::from_mono(0.0)
-				}
-			}
+			InstanceTrackIndex::DefaultForSound => default,
+			InstanceTrackIndex::Custom(index) => *index,
 		}
 	}
 }
 
-impl From<SoundId> for Playable {
-	fn from(id: SoundId) -> Self {
-		Self::Sound(id)
+impl Default for InstanceTrackIndex {
+	fn default() -> Self {
+		Self::DefaultForSound
 	}
 }
 
-impl From<ArrangementId> for Playable {
-	fn from(id: ArrangementId) -> Self {
-		Self::Arrangement(id)
+impl From<TrackIndex> for InstanceTrackIndex {
+	fn from(index: TrackIndex) -> Self {
+		Self::Custom(index)
+	}
+}
+
+impl From<SubTrackId> for InstanceTrackIndex {
+	fn from(id: SubTrackId) -> Self {
+		Self::Custom(TrackIndex::Sub(id))
 	}
 }
 
@@ -224,7 +210,7 @@ pub struct InstanceSettings {
 	/// to loop.
 	pub loop_region: Option<LoopRegion>,
 	/// Which track to play the instance on.
-	pub track: TrackIndex,
+	pub track: InstanceTrackIndex,
 }
 
 impl InstanceSettings {
@@ -290,7 +276,7 @@ impl InstanceSettings {
 	}
 
 	/// Sets the track the instance will play on.
-	pub fn track<T: Into<TrackIndex>>(self, track: T) -> Self {
+	pub fn track<T: Into<InstanceTrackIndex>>(self, track: T) -> Self {
 		Self {
 			track: track.into(),
 			..self
@@ -370,7 +356,7 @@ impl Instance {
 		}
 		Self {
 			playable,
-			track_index: settings.track,
+			track_index: settings.track.or_default(playable.default_track_index()),
 			sequence_id,
 			volume: CachedValue::new(settings.volume, 1.0),
 			pitch: CachedValue::new(settings.pitch, 1.0),

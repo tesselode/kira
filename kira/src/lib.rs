@@ -111,6 +111,7 @@ pub mod manager;
 mod metronome;
 pub mod mixer;
 pub mod parameter;
+pub mod playable;
 pub mod sequence;
 pub mod sound;
 mod tempo;

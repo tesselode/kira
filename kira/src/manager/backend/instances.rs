@@ -1,8 +1,9 @@
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
 	command::InstanceCommand,
-	instance::{Instance, InstanceId, Playable},
+	instance::{Instance, InstanceId},
 	parameter::{Parameters, Tween},
+	playable::Playable,
 	sound::{Sound, SoundId},
 };
 use indexmap::IndexMap;

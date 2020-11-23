@@ -36,7 +36,7 @@ impl LuaUserData for LSequence {
 		methods.add_method_mut(
 			"playSound",
 			|_: &Lua, this: &mut Self, (sound_id, settings): (LSoundId, LInstanceSettings)| {
-				Ok(LInstanceId(this.0.play_sound(sound_id.0, settings.0)))
+				Ok(LInstanceId(this.0.play(sound_id.0, settings.0)))
 			},
 		);
 

@@ -9,11 +9,11 @@ use crate::{
 	arrangement::{Arrangement, ArrangementId},
 	command::{Command, ResourceCommand},
 	frame::Frame,
-	instance::Playable,
 	metronome::Metronome,
 	mixer::effect_slot::EffectSlot,
 	mixer::Track,
 	parameter::Parameters,
+	playable::Playable,
 	sequence::Sequence,
 	sound::{Sound, SoundId},
 };

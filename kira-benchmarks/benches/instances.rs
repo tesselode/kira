@@ -4,8 +4,8 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use kira::{
 	instance::InstanceSettings,
 	manager::{AudioManager, AudioManagerSettings},
+	playable::PlayableSettings,
 	sound::Sound,
-	sound::SoundSettings,
 	Frame,
 };
 
@@ -20,7 +20,7 @@ fn create_test_sound(num_samples: usize) -> Sound {
 	Sound::new(
 		SAMPLE_RATE,
 		sine_samples,
-		SoundSettings {
+		PlayableSettings {
 			cooldown: None,
 			..Default::default()
 		},

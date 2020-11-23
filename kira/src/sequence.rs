@@ -146,10 +146,10 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::{
-	instance::Playable,
 	instance::{InstanceId, InstanceSettings},
 	metronome::Metronome,
 	parameter::{ParameterId, Tween},
+	playable::Playable,
 	sound::SoundId,
 	AudioError, AudioResult, Duration, Tempo, Value,
 };
@@ -261,10 +261,14 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 	}
 
 	/// Adds a step to play a sound.
-	pub fn play_sound(&mut self, playable: Playable, settings: InstanceSettings) -> InstanceId {
+	pub fn play<P: Into<Playable>>(
+		&mut self,
+		playable: P,
+		settings: InstanceSettings,
+	) -> InstanceId {
 		let id = InstanceId::new();
 		self.steps
-			.push(SequenceOutputCommand::PlaySound(id, playable, settings).into());
+			.push(SequenceOutputCommand::PlaySound(id, playable.into(), settings).into());
 		id
 	}
 

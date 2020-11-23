@@ -1,43 +1,17 @@
 //! Provides an interface to work with pieces of audio.
 
 mod id;
-mod metadata;
 
 pub use id::SoundId;
-pub use metadata::SoundMetadata;
 
-use crate::{error::AudioError, error::AudioResult, frame::Frame, mixer::TrackIndex};
+use crate::{
+	error::AudioError, error::AudioResult, frame::Frame, mixer::TrackIndex, playable::Metadata,
+	playable::PlayableSettings,
+};
 use claxon::FlacReader;
 use hound::WavReader;
 use lewton::{inside_ogg::OggStreamReader, samples::Samples};
 use std::{fs::File, path::Path};
-
-/// Settings for a [`Sound`](crate::sound::Sound).
-#[derive(Debug, Clone)]
-pub struct SoundSettings {
-	/// The track instances of this sound will play on by default.
-	pub default_track: TrackIndex,
-	/// Whether the sound should have a "cool off" period after playing
-	/// before it can be played again, and if so, the duration
-	/// of that cool off period.
-	///
-	/// This is useful to avoid situations where the same sound
-	/// is played multiple times at the exact same point in time,
-	/// resulting in the sound being louder than normal.
-	pub cooldown: Option<f64>,
-	/// Information about the sound.
-	pub metadata: SoundMetadata,
-}
-
-impl Default for SoundSettings {
-	fn default() -> Self {
-		Self {
-			default_track: TrackIndex::Main,
-			cooldown: Some(0.0001),
-			metadata: SoundMetadata::default(),
-		}
-	}
-}
 
 /// A piece of audio that can be played by an [`AudioManager`](crate::manager::AudioManager).
 #[derive(Debug)]
@@ -45,29 +19,25 @@ pub struct Sound {
 	sample_rate: u32,
 	samples: Vec<Frame>,
 	duration: f64,
-	default_track: TrackIndex,
-	cooldown: Option<f64>,
-	metadata: SoundMetadata,
+	settings: PlayableSettings,
 	cooldown_timer: f64,
 }
 
 impl Sound {
 	/// Creates a new sound from raw sample data.
-	pub fn new(sample_rate: u32, samples: Vec<Frame>, settings: SoundSettings) -> Self {
+	pub fn new(sample_rate: u32, samples: Vec<Frame>, settings: PlayableSettings) -> Self {
 		let duration = samples.len() as f64 / sample_rate as f64;
 		Self {
 			sample_rate,
 			samples,
 			duration,
-			default_track: settings.default_track,
-			cooldown: settings.cooldown,
-			metadata: settings.metadata,
+			settings,
 			cooldown_timer: 0.0,
 		}
 	}
 
 	/// Decodes a sound from an mp3 file.
-	pub fn from_mp3_file<P>(path: P, settings: SoundSettings) -> AudioResult<Self>
+	pub fn from_mp3_file<P>(path: P, settings: PlayableSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -121,7 +91,7 @@ impl Sound {
 	}
 
 	/// Decodes a sound from an ogg file.
-	pub fn from_ogg_file<P>(path: P, settings: SoundSettings) -> AudioResult<Self>
+	pub fn from_ogg_file<P>(path: P, settings: PlayableSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -152,7 +122,7 @@ impl Sound {
 	}
 
 	/// Decodes a sound from a flac file.
-	pub fn from_flac_file<P>(path: P, settings: SoundSettings) -> AudioResult<Self>
+	pub fn from_flac_file<P>(path: P, settings: PlayableSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -182,7 +152,7 @@ impl Sound {
 	}
 
 	/// Decodes a sound from a wav file.
-	pub fn from_wav_file<P>(path: P, settings: SoundSettings) -> AudioResult<Self>
+	pub fn from_wav_file<P>(path: P, settings: PlayableSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -237,7 +207,7 @@ impl Sound {
 	/// Decodes a sound from a file.
 	///
 	/// The audio format will be automatically determined from the file extension.
-	pub fn from_file<P>(path: P, settings: SoundSettings) -> AudioResult<Self>
+	pub fn from_file<P>(path: P, settings: PlayableSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -257,7 +227,7 @@ impl Sound {
 
 	/// Gets the default track that the sound plays on.
 	pub fn default_track(&self) -> TrackIndex {
-		self.default_track
+		self.settings.default_track
 	}
 
 	/// Gets the duration of the sound (in seconds).
@@ -266,8 +236,8 @@ impl Sound {
 	}
 
 	/// Gets the metadata associated with the sound.
-	pub fn metadata(&self) -> SoundMetadata {
-		self.metadata
+	pub fn metadata(&self) -> Metadata {
+		self.settings.metadata
 	}
 
 	/// Gets the sample at an arbitrary time in seconds,
@@ -304,7 +274,7 @@ impl Sound {
 	}
 
 	pub(crate) fn start_cooldown(&mut self) {
-		if let Some(cooldown) = self.cooldown {
+		if let Some(cooldown) = self.settings.cooldown {
 			self.cooldown_timer = cooldown;
 		}
 	}

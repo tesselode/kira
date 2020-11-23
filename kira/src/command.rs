@@ -1,11 +1,11 @@
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
-	instance::Playable,
 	instance::{InstanceId, InstanceSettings},
 	mixer::effect::Effect,
 	mixer::effect::EffectId,
 	mixer::{effect::EffectSettings, SubTrackId, TrackIndex, TrackSettings},
 	parameter::{ParameterId, Tween},
+	playable::Playable,
 	sequence::{Sequence, SequenceId},
 	sound::{Sound, SoundId},
 	tempo::Tempo,
