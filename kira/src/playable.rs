@@ -7,22 +7,6 @@ use crate::{
 	Frame,
 };
 
-/// Useful info about a [`Playable`](Playable) item.
-#[derive(Debug, Default, Copy, Clone)]
-pub struct Metadata {
-	/// How long the sound is musically.
-	///
-	/// For example, a recording of a 2-bar drum fill
-	/// in an echoey cathedral may have 5 seconds of actual
-	/// drumming and then 10 seconds of reverberations from
-	/// the building. So even though the audio is 15 seconds
-	/// long, you might say the music only lasts for 5 seconds.
-	///
-	/// If set, the semantic duration of the sound will be
-	/// used as the default end point when looping the sound.
-	pub semantic_duration: Option<f64>,
-}
-
 /// Settings for a [`Playable`](Playable) item.
 #[derive(Debug, Clone)]
 pub struct PlayableSettings {
@@ -36,8 +20,17 @@ pub struct PlayableSettings {
 	/// is played multiple times at the exact same point in time,
 	/// resulting in the item being louder than normal.
 	pub cooldown: Option<f64>,
-	/// Information about the item.
-	pub metadata: Metadata,
+	/// How long the item is musically.
+	///
+	/// For example, a recording of a 2-bar drum fill
+	/// in an echoey cathedral may have 5 seconds of actual
+	/// drumming and then 10 seconds of reverberations from
+	/// the building. So even though the audio is 15 seconds
+	/// long, you might say the music only lasts for 5 seconds.
+	///
+	/// If set, the semantic duration of the item will be
+	/// used as the default end point when looping the item.
+	pub semantic_duration: Option<f64>,
 }
 
 impl Default for PlayableSettings {
@@ -45,7 +38,7 @@ impl Default for PlayableSettings {
 		Self {
 			default_track: TrackIndex::Main,
 			cooldown: Some(0.0001),
-			metadata: Metadata::default(),
+			semantic_duration: None,
 		}
 	}
 }
@@ -64,10 +57,17 @@ impl Playable {
 		}
 	}
 
-	pub fn default_track_index(&self) -> TrackIndex {
+	pub fn default_track(&self) -> TrackIndex {
 		match self {
-			Playable::Sound(id) => id.default_track_index(),
-			Playable::Arrangement(id) => id.default_track_index(),
+			Playable::Sound(id) => id.default_track(),
+			Playable::Arrangement(id) => id.default_track(),
+		}
+	}
+
+	pub fn semantic_duration(&self) -> Option<f64> {
+		match self {
+			Playable::Sound(id) => id.semantic_duration(),
+			Playable::Arrangement(id) => id.semantic_duration(),
 		}
 	}
 

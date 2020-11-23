@@ -11,7 +11,7 @@ use indexmap::IndexMap;
 
 use crate::{
 	mixer::TrackIndex,
-	playable::{Metadata, PlayableSettings},
+	playable::PlayableSettings,
 	sound::{Sound, SoundId},
 	Frame,
 };
@@ -28,18 +28,18 @@ when you create a arrangement with an [`AudioManager`](crate::manager::AudioMana
 pub struct ArrangementId {
 	index: usize,
 	duration: f64,
-	default_track_index: TrackIndex,
-	metadata: Metadata,
+	default_track: TrackIndex,
+	semantic_duration: Option<f64>,
 }
 
 impl ArrangementId {
-	pub(crate) fn new(duration: f64, default_track_index: TrackIndex, metadata: Metadata) -> Self {
+	pub(crate) fn new(arrangement: &Arrangement) -> Self {
 		let index = NEXT_ARRANGEMENT_INDEX.fetch_add(1, Ordering::Relaxed);
 		Self {
 			index,
-			duration,
-			default_track_index,
-			metadata,
+			duration: arrangement.duration(),
+			default_track: arrangement.default_track(),
+			semantic_duration: arrangement.semantic_duration(),
 		}
 	}
 
@@ -47,12 +47,12 @@ impl ArrangementId {
 		self.duration
 	}
 
-	pub fn default_track_index(&self) -> TrackIndex {
-		self.default_track_index
+	pub fn default_track(&self) -> TrackIndex {
+		self.default_track
 	}
 
-	pub fn metadata(&self) -> &Metadata {
-		&self.metadata
+	pub fn semantic_duration(&self) -> Option<f64> {
+		self.semantic_duration
 	}
 }
 
@@ -103,6 +103,10 @@ impl Arrangement {
 		self.settings.default_track
 	}
 
+	pub fn semantic_duration(&self) -> Option<f64> {
+		self.settings.semantic_duration
+	}
+
 	pub(crate) fn get_frame_at_position(
 		&self,
 		position: f64,
@@ -113,11 +117,6 @@ impl Arrangement {
 			frame += clip.get_frame_at_position(position, sounds);
 		}
 		frame
-	}
-
-	/// Gets the metadata associated with the sound.
-	pub fn metadata(&self) -> Metadata {
-		self.settings.metadata
 	}
 
 	pub(crate) fn start_cooldown(&mut self) {

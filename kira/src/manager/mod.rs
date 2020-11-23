@@ -248,7 +248,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 
 	/// Sends a sound to the audio thread and returns a handle to the sound.
 	pub fn add_sound(&mut self, sound: Sound) -> AudioResult<SoundId> {
-		let id = SoundId::new(sound.duration(), sound.default_track(), sound.metadata());
+		let id = SoundId::new(&sound);
 		self.send_command_to_backend(ResourceCommand::AddSound(id, sound))?;
 		Ok(id)
 	}
@@ -260,11 +260,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 
 	/// Sends a arrangement to the audio thread and returns a handle to the arrangement.
 	pub fn add_arrangement(&mut self, arrangement: Arrangement) -> AudioResult<ArrangementId> {
-		let id = ArrangementId::new(
-			arrangement.duration(),
-			arrangement.default_track(),
-			arrangement.metadata(),
-		);
+		let id = ArrangementId::new(&arrangement);
 		self.send_command_to_backend(ResourceCommand::AddArrangement(id, arrangement))?;
 		Ok(id)
 	}

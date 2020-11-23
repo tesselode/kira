@@ -5,7 +5,7 @@ mod id;
 pub use id::SoundId;
 
 use crate::{
-	error::AudioError, error::AudioResult, frame::Frame, mixer::TrackIndex, playable::Metadata,
+	error::AudioError, error::AudioResult, frame::Frame, mixer::TrackIndex,
 	playable::PlayableSettings,
 };
 use claxon::FlacReader;
@@ -236,8 +236,8 @@ impl Sound {
 	}
 
 	/// Gets the metadata associated with the sound.
-	pub fn metadata(&self) -> Metadata {
-		self.settings.metadata
+	pub fn semantic_duration(&self) -> Option<f64> {
+		self.settings.semantic_duration
 	}
 
 	/// Gets the sample at an arbitrary time in seconds,

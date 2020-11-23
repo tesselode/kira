@@ -145,12 +145,9 @@ pub struct LoopRegion {
 impl LoopRegion {
 	fn to_time_range(&self, sound_id: &SoundId) -> Range<f64> {
 		(self.start.or_default(0.0))
-			..(self.end.or_default(
-				sound_id
-					.metadata()
-					.semantic_duration
-					.unwrap_or(sound_id.duration()),
-			))
+			..(self
+				.end
+				.or_default(sound_id.semantic_duration().unwrap_or(sound_id.duration())))
 	}
 }
 
@@ -356,7 +353,7 @@ impl Instance {
 		}
 		Self {
 			playable,
-			track_index: settings.track.or_default(playable.default_track_index()),
+			track_index: settings.track.or_default(playable.default_track()),
 			sequence_id,
 			volume: CachedValue::new(settings.volume, 1.0),
 			pitch: CachedValue::new(settings.pitch, 1.0),

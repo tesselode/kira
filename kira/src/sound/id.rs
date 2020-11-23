@@ -3,7 +3,9 @@ use std::{
 	sync::atomic::{AtomicUsize, Ordering},
 };
 
-use crate::{mixer::TrackIndex, playable::Metadata};
+use crate::mixer::TrackIndex;
+
+use super::Sound;
 
 static NEXT_SOUND_INDEX: AtomicUsize = AtomicUsize::new(0);
 
@@ -15,8 +17,8 @@ static NEXT_SOUND_INDEX: AtomicUsize = AtomicUsize::new(0);
 pub struct SoundId {
 	index: usize,
 	duration: f64,
-	default_track_index: TrackIndex,
-	metadata: Metadata,
+	default_track: TrackIndex,
+	semantic_duration: Option<f64>,
 }
 
 impl SoundId {
@@ -24,12 +26,12 @@ impl SoundId {
 		self.duration
 	}
 
-	pub fn default_track_index(&self) -> TrackIndex {
-		self.default_track_index
+	pub fn default_track(&self) -> TrackIndex {
+		self.default_track
 	}
 
-	pub fn metadata(&self) -> &Metadata {
-		&self.metadata
+	pub fn semantic_duration(&self) -> Option<f64> {
+		self.semantic_duration
 	}
 }
 
@@ -48,13 +50,13 @@ impl Hash for SoundId {
 }
 
 impl SoundId {
-	pub(crate) fn new(duration: f64, default_track_index: TrackIndex, metadata: Metadata) -> Self {
+	pub(crate) fn new(sound: &Sound) -> Self {
 		let index = NEXT_SOUND_INDEX.fetch_add(1, Ordering::Relaxed);
 		Self {
 			index,
-			duration,
-			default_track_index,
-			metadata,
+			duration: sound.duration(),
+			default_track: sound.default_track(),
+			semantic_duration: sound.semantic_duration(),
 		}
 	}
 }
