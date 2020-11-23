@@ -33,7 +33,10 @@
 //! # Ok::<(), Box<dyn Error>>(())
 //! ```
 
+use indexmap::IndexMap;
+
 use crate::{
+	arrangement::{Arrangement, ArrangementId},
 	frame::Frame,
 	mixer::{SubTrackId, TrackIndex},
 	parameter::{Parameter, Parameters, Tween},
@@ -46,8 +49,6 @@ use std::{
 	ops::{Range, RangeFrom, RangeFull, RangeTo},
 	sync::atomic::{AtomicUsize, Ordering},
 };
-
-const MAX_SUB_INSTANCES: usize = 10;
 
 static NEXT_INSTANCE_INDEX: AtomicUsize = AtomicUsize::new(0);
 
@@ -69,39 +70,54 @@ impl InstanceId {
 	}
 }
 
-/// A track index for an instance to play on.
-#[derive(Debug, Copy, Clone)]
-pub enum InstanceTrackIndex {
-	/// The default track for the sound.
-	DefaultForSound,
-	/// A manually set track index.
-	Custom(TrackIndex),
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum Playable {
+	Sound(SoundId),
+	Arrangement(ArrangementId),
 }
 
-impl InstanceTrackIndex {
-	fn or_default(&self, default: TrackIndex) -> TrackIndex {
+impl Playable {
+	fn duration(&self) -> f64 {
 		match self {
-			InstanceTrackIndex::DefaultForSound => default,
-			InstanceTrackIndex::Custom(index) => *index,
+			Playable::Sound(id) => id.duration(),
+			Playable::Arrangement(id) => id.duration(),
+		}
+	}
+
+	fn get_frame_at_position(
+		&self,
+		position: f64,
+		sounds: &IndexMap<SoundId, Sound>,
+		arrangements: &IndexMap<ArrangementId, Arrangement>,
+	) -> Frame {
+		match self {
+			Playable::Sound(id) => {
+				if let Some(sound) = sounds.get(id) {
+					sound.get_frame_at_position(position)
+				} else {
+					Frame::from_mono(0.0)
+				}
+			}
+			Playable::Arrangement(id) => {
+				if let Some(arrangement) = arrangements.get(id) {
+					arrangement.get_frame_at_position(position, sounds)
+				} else {
+					Frame::from_mono(0.0)
+				}
+			}
 		}
 	}
 }
 
-impl Default for InstanceTrackIndex {
-	fn default() -> Self {
-		Self::DefaultForSound
+impl From<SoundId> for Playable {
+	fn from(id: SoundId) -> Self {
+		Self::Sound(id)
 	}
 }
 
-impl From<TrackIndex> for InstanceTrackIndex {
-	fn from(index: TrackIndex) -> Self {
-		Self::Custom(index)
-	}
-}
-
-impl From<SubTrackId> for InstanceTrackIndex {
-	fn from(id: SubTrackId) -> Self {
-		Self::Custom(TrackIndex::Sub(id))
+impl From<ArrangementId> for Playable {
+	fn from(id: ArrangementId) -> Self {
+		Self::Arrangement(id)
 	}
 }
 
@@ -208,7 +224,7 @@ pub struct InstanceSettings {
 	/// to loop.
 	pub loop_region: Option<LoopRegion>,
 	/// Which track to play the instance on.
-	pub track: InstanceTrackIndex,
+	pub track: TrackIndex,
 }
 
 impl InstanceSettings {
@@ -274,7 +290,7 @@ impl InstanceSettings {
 	}
 
 	/// Sets the track the instance will play on.
-	pub fn track<T: Into<InstanceTrackIndex>>(self, track: T) -> Self {
+	pub fn track<T: Into<TrackIndex>>(self, track: T) -> Self {
 		Self {
 			track: track.into(),
 			..self
@@ -324,7 +340,7 @@ pub(crate) enum InstanceState {
 
 #[derive(Debug, Clone)]
 pub(crate) struct Instance {
-	sound_id: SoundId,
+	playable: Playable,
 	track_index: TrackIndex,
 	sequence_id: Option<SequenceId>,
 	volume: CachedValue<f64>,
@@ -332,15 +348,13 @@ pub(crate) struct Instance {
 	panning: CachedValue<f64>,
 	reverse: bool,
 	state: InstanceState,
-	sub_instances: [Option<SubInstance>; MAX_SUB_INSTANCES],
-	next_sub_instance_index: usize,
+	position: f64,
 	fade_volume: Parameter,
-	loop_region: Option<Range<f64>>,
 }
 
 impl Instance {
 	pub fn new(
-		sound_id: SoundId,
+		playable: Playable,
 		sequence_id: Option<SequenceId>,
 		settings: InstanceSettings,
 	) -> Self {
@@ -354,28 +368,22 @@ impl Instance {
 			state = InstanceState::Playing;
 			fade_volume = Parameter::new(1.0);
 		}
-		let mut sub_instances: [Option<SubInstance>; MAX_SUB_INSTANCES] = Default::default();
-		sub_instances[0] = Some(SubInstance::new(settings.start_position));
 		Self {
-			sound_id,
-			track_index: settings.track.or_default(sound_id.default_track_index()),
+			playable,
+			track_index: settings.track,
 			sequence_id,
 			volume: CachedValue::new(settings.volume, 1.0),
 			pitch: CachedValue::new(settings.pitch, 1.0),
 			panning: CachedValue::new(settings.panning, 0.5),
 			reverse: settings.reverse,
 			state,
-			sub_instances,
-			next_sub_instance_index: 1 % MAX_SUB_INSTANCES,
+			position: 0.0,
 			fade_volume,
-			loop_region: settings
-				.loop_region
-				.map(|region| region.to_time_range(&sound_id)),
 		}
 	}
 
-	pub fn sound_id(&self) -> SoundId {
-		self.sound_id
+	pub fn playable(&self) -> Playable {
+		self.playable
 	}
 
 	pub fn track_index(&self) -> TrackIndex {
@@ -449,41 +457,8 @@ impl Instance {
 			self.volume.update(parameters);
 			self.pitch.update(parameters);
 			self.panning.update(parameters);
-			// increment positions of existing sub-instances
-			for sub_instance in &mut self.sub_instances {
-				if let Some(sub_instance) = sub_instance {
-					sub_instance.previous_position = sub_instance.position;
-					sub_instance.position += self.pitch.value() * dt;
-				}
-			}
-			// start new sub-instances if previous sub-instances reach the loop point
-			if let Some(loop_region) = &self.loop_region {
-				for i in 0..self.sub_instances.len() {
-					let passed_loop_point = match &self.sub_instances[i] {
-						Some(sub_instance) => {
-							sub_instance.position >= loop_region.end
-								&& sub_instance.previous_position < loop_region.end
-						}
-						None => false,
-					};
-					if passed_loop_point {
-						self.sub_instances[self.next_sub_instance_index] =
-							Some(SubInstance::new(loop_region.start));
-						self.next_sub_instance_index += 1;
-						self.next_sub_instance_index %= MAX_SUB_INSTANCES;
-					}
-				}
-			}
-			// remove finished sub-instances
-			for sub_instance in &mut self.sub_instances {
-				if let Some(instance) = sub_instance {
-					if instance.position >= self.sound_id.duration() || instance.position < 0.0 {
-						*sub_instance = None;
-					}
-				}
-			}
-			// if all sub-instances are finished, stop the instance
-			if self.sub_instances.iter().all(|position| position.is_none()) {
+			self.position += self.pitch.value() * dt;
+			if self.position > self.playable.duration() {
 				self.state = InstanceState::Stopped;
 			}
 		}
@@ -504,17 +479,19 @@ impl Instance {
 		}
 	}
 
-	pub fn get_sample(&self, sound: &Sound) -> Frame {
-		let mut out = Frame::from_mono(0.0);
-		for sub_instance in &self.sub_instances {
-			if let Some(sub_instance) = sub_instance {
-				if self.reverse {
-					out += sound.get_frame_at_position(sound.duration() - sub_instance.position);
-				} else {
-					out += sound.get_frame_at_position(sub_instance.position);
-				}
-			}
-		}
+	pub fn get_sample(
+		&self,
+		sounds: &IndexMap<SoundId, Sound>,
+		arrangements: &IndexMap<ArrangementId, Arrangement>,
+	) -> Frame {
+		let position = if self.reverse {
+			self.playable.duration() - self.position
+		} else {
+			self.position
+		};
+		let mut out = self
+			.playable
+			.get_frame_at_position(position, sounds, arrangements);
 		out = out.panned(self.panning.value() as f32);
 		out * (self.effective_volume() as f32)
 	}

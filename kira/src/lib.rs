@@ -100,7 +100,7 @@
 //! # Ok::<(), kira::AudioError>(())
 //! ```
 
-mod arrangement;
+pub mod arrangement;
 mod command;
 mod duration;
 mod error;

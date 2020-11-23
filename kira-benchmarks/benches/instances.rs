@@ -42,7 +42,7 @@ fn instances_benchmark(c: &mut Criterion) {
 	// start a bunch of instances
 	for _ in 0..NUM_INSTANCES {
 		audio_manager
-			.play_sound(sound_id, InstanceSettings::new().loop_region(..))
+			.play(sound_id, InstanceSettings::new().loop_region(..))
 			.unwrap();
 	}
 	backend.process();

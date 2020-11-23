@@ -79,10 +79,10 @@ impl<CustomEvent: Copy + std::fmt::Debug> Sequences<CustomEvent> {
 			// by the backend
 			for command in self.sequence_output_command_queue.drain(..) {
 				self.output_command_queue.push(match command {
-					SequenceOutputCommand::PlaySound(instance_id, sound_id, settings) => {
-						Command::Instance(InstanceCommand::PlaySound(
+					SequenceOutputCommand::PlaySound(instance_id, playable, settings) => {
+						Command::Instance(InstanceCommand::Play(
 							instance_id,
-							sound_id,
+							playable,
 							Some(*id),
 							settings,
 						))
@@ -105,14 +105,14 @@ impl<CustomEvent: Copy + std::fmt::Debug> Sequences<CustomEvent> {
 					SequenceOutputCommand::StopInstance(id, fade_tween) => {
 						Command::Instance(InstanceCommand::StopInstance(id, fade_tween))
 					}
-					SequenceOutputCommand::PauseInstancesOfSound(id, fade_tween) => {
-						Command::Instance(InstanceCommand::PauseInstancesOfSound(id, fade_tween))
+					SequenceOutputCommand::PauseInstancesOf(id, fade_tween) => {
+						Command::Instance(InstanceCommand::PauseInstancesOf(id, fade_tween))
 					}
-					SequenceOutputCommand::ResumeInstancesOfSound(id, fade_tween) => {
-						Command::Instance(InstanceCommand::ResumeInstancesOfSound(id, fade_tween))
+					SequenceOutputCommand::ResumeInstancesOf(id, fade_tween) => {
+						Command::Instance(InstanceCommand::ResumeInstancesOf(id, fade_tween))
 					}
-					SequenceOutputCommand::StopInstancesOfSound(id, fade_tween) => {
-						Command::Instance(InstanceCommand::StopInstancesOfSound(id, fade_tween))
+					SequenceOutputCommand::StopInstancesOf(id, fade_tween) => {
+						Command::Instance(InstanceCommand::StopInstancesOf(id, fade_tween))
 					}
 					SequenceOutputCommand::PauseSequence(id) => {
 						Command::Sequence(SequenceCommand::PauseSequence(id))

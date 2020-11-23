@@ -14,6 +14,7 @@ use crate::{
 		ResourceCommand, SequenceCommand,
 	},
 	error::{AudioError, AudioResult},
+	instance::Playable,
 	instance::{InstanceId, InstanceSettings},
 	metronome::MetronomeSettings,
 	mixer::{
@@ -259,7 +260,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 
 	/// Sends a arrangement to the audio thread and returns a handle to the arrangement.
 	pub fn add_arrangement(&mut self, arrangement: Arrangement) -> AudioResult<ArrangementId> {
-		let id = ArrangementId::new();
+		let id = ArrangementId::new(arrangement.duration());
 		self.send_command_to_backend(ResourceCommand::AddArrangement(id, arrangement))?;
 		Ok(id)
 	}
@@ -269,16 +270,16 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		self.send_command_to_backend(ResourceCommand::RemoveArrangement(id))
 	}
 
-	/// Plays a sound.
-	pub fn play_sound(
+	/// Plays a sound or arrangement.
+	pub fn play<P: Into<Playable>>(
 		&mut self,
-		sound_id: SoundId,
+		playable: P,
 		settings: InstanceSettings,
 	) -> Result<InstanceId, AudioError> {
 		let instance_id = InstanceId::new();
-		self.send_command_to_backend(InstanceCommand::PlaySound(
+		self.send_command_to_backend(InstanceCommand::Play(
 			instance_id,
-			sound_id,
+			playable.into(),
 			None,
 			settings,
 		))?;
@@ -341,33 +342,31 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		self.send_command_to_backend(InstanceCommand::StopInstance(instance_id, fade_tween))
 	}
 
-	/// Pauses all currently playing instances of a sound with an optional fade-out tween.
-	pub fn pause_instances_of_sound(
+	/// Pauses all currently playing instances of a sound or arrangement with an optional fade-out tween.
+	pub fn pause_instances_of(
 		&mut self,
-		sound_id: SoundId,
+		playable: Playable,
 		fade_tween: Option<Tween>,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::PauseInstancesOfSound(sound_id, fade_tween))
+		self.send_command_to_backend(InstanceCommand::PauseInstancesOf(playable, fade_tween))
 	}
 
-	/// Resumes all currently playing instances of a sound with an optional fade-in tween.
-	pub fn resume_instances_of_sound(
+	/// Resumes all currently playing instances of a sound or arrangement with an optional fade-in tween.
+	pub fn resume_instances_of(
 		&mut self,
-		sound_id: SoundId,
+		playable: Playable,
 		fade_tween: Option<Tween>,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::ResumeInstancesOfSound(
-			sound_id, fade_tween,
-		))
+		self.send_command_to_backend(InstanceCommand::ResumeInstancesOf(playable, fade_tween))
 	}
 
-	/// Stops all currently playing instances of a sound with an optional fade-out tween.
-	pub fn stop_instances_of_sound(
+	/// Stops all currently playing instances of a sound or arrangement with an optional fade-out tween.
+	pub fn stop_instances_of(
 		&mut self,
-		sound_id: SoundId,
+		playable: Playable,
 		fade_tween: Option<Tween>,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::StopInstancesOfSound(sound_id, fade_tween))
+		self.send_command_to_backend(InstanceCommand::StopInstancesOf(playable, fade_tween))
 	}
 
 	/// Sets the tempo of the metronome.
@@ -532,6 +531,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	/// or finished sequences.
 	pub fn free_unused_resources(&mut self) {
 		while let Some(_) = self.thread_channels.sounds_to_unload_consumer.pop() {}
+		while let Some(_) = self.thread_channels.arrangements_to_unload_consumer.pop() {}
 		while let Some(_) = self.thread_channels.sequences_to_unload_consumer.pop() {}
 		while let Some(_) = self.thread_channels.tracks_to_unload_consumer.pop() {}
 		while let Some(_) = self.thread_channels.effect_slots_to_unload_consumer.pop() {}

@@ -1,8 +1,12 @@
 mod clip;
 
-use std::sync::atomic::{AtomicUsize, Ordering};
-
 pub use clip::SoundClip;
+
+use std::{
+	hash::Hash,
+	sync::atomic::{AtomicUsize, Ordering},
+};
+
 use indexmap::IndexMap;
 
 use crate::{
@@ -18,15 +22,34 @@ A unique identifier for an [arrangement](Arrangement).
 You cannot create this manually - an arrangement ID is created
 when you create a arrangement with an [`AudioManager`](crate::manager::AudioManager).
 */
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone)]
 pub struct ArrangementId {
 	index: usize,
+	duration: f64,
 }
 
 impl ArrangementId {
-	pub(crate) fn new() -> Self {
+	pub(crate) fn new(duration: f64) -> Self {
 		let index = NEXT_ARRANGEMENT_INDEX.fetch_add(1, Ordering::Relaxed);
-		Self { index }
+		Self { index, duration }
+	}
+
+	pub fn duration(&self) -> f64 {
+		self.duration
+	}
+}
+
+impl PartialEq for ArrangementId {
+	fn eq(&self, other: &Self) -> bool {
+		self.index == other.index
+	}
+}
+
+impl Eq for ArrangementId {}
+
+impl Hash for ArrangementId {
+	fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+		self.index.hash(state);
 	}
 }
 

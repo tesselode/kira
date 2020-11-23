@@ -46,6 +46,12 @@ pub enum TrackIndex {
 	Sub(SubTrackId),
 }
 
+impl Default for TrackIndex {
+	fn default() -> Self {
+		Self::Main
+	}
+}
+
 impl From<SubTrackId> for TrackIndex {
 	fn from(id: SubTrackId) -> Self {
 		Self::Sub(id)

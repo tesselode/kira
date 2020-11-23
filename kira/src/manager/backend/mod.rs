@@ -9,6 +9,7 @@ use crate::{
 	arrangement::{Arrangement, ArrangementId},
 	command::{Command, ResourceCommand},
 	frame::Frame,
+	instance::Playable,
 	metronome::Metronome,
 	mixer::effect_slot::EffectSlot,
 	mixer::Track,
@@ -75,7 +76,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> 
 						self.sounds.insert(id, sound);
 					}
 					ResourceCommand::RemoveSound(id) => {
-						self.instances.stop_instances_of_sound(id, None);
+						self.instances.stop_instances_of(Playable::Sound(id), None);
 						if let Some(sound) = self.sounds.remove(&id) {
 							match self.thread_channels.sounds_to_unload_producer.push(sound) {
 								_ => {}
@@ -86,6 +87,8 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> 
 						self.arrangements.insert(id, arrangement);
 					}
 					ResourceCommand::RemoveArrangement(id) => {
+						self.instances
+							.stop_instances_of(Playable::Arrangement(id), None);
 						if let Some(arrangement) = self.arrangements.remove(&id) {
 							match self
 								.thread_channels
@@ -165,8 +168,13 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> 
 		self.update_sounds();
 		self.update_metronome();
 		self.update_sequences();
-		self.instances
-			.process(self.dt, &self.sounds, &mut self.mixer, &self.parameters);
+		self.instances.process(
+			self.dt,
+			&self.sounds,
+			&self.arrangements,
+			&mut self.mixer,
+			&self.parameters,
+		);
 		self.mixer.process(self.dt, &self.parameters)
 	}
 }

@@ -1,5 +1,6 @@
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
+	instance::Playable,
 	instance::{InstanceId, InstanceSettings},
 	mixer::effect::Effect,
 	mixer::effect::EffectId,
@@ -21,16 +22,16 @@ pub(crate) enum ResourceCommand {
 
 #[derive(Debug, Clone)]
 pub(crate) enum InstanceCommand {
-	PlaySound(InstanceId, SoundId, Option<SequenceId>, InstanceSettings),
+	Play(InstanceId, Playable, Option<SequenceId>, InstanceSettings),
 	SetInstanceVolume(InstanceId, Value<f64>),
 	SetInstancePitch(InstanceId, Value<f64>),
 	SetInstancePanning(InstanceId, Value<f64>),
 	PauseInstance(InstanceId, Option<Tween>),
 	ResumeInstance(InstanceId, Option<Tween>),
 	StopInstance(InstanceId, Option<Tween>),
-	PauseInstancesOfSound(SoundId, Option<Tween>),
-	ResumeInstancesOfSound(SoundId, Option<Tween>),
-	StopInstancesOfSound(SoundId, Option<Tween>),
+	PauseInstancesOf(Playable, Option<Tween>),
+	ResumeInstancesOf(Playable, Option<Tween>),
+	StopInstancesOf(Playable, Option<Tween>),
 	PauseInstancesOfSequence(SequenceId, Option<Tween>),
 	ResumeInstancesOfSequence(SequenceId, Option<Tween>),
 	StopInstancesOfSequence(SequenceId, Option<Tween>),

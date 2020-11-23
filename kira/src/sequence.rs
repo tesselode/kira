@@ -146,6 +146,7 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::{
+	instance::Playable,
 	instance::{InstanceId, InstanceSettings},
 	metronome::Metronome,
 	parameter::{ParameterId, Tween},
@@ -173,16 +174,16 @@ impl SequenceId {
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) enum SequenceOutputCommand<CustomEvent: Copy> {
-	PlaySound(InstanceId, SoundId, InstanceSettings),
+	PlaySound(InstanceId, Playable, InstanceSettings),
 	SetInstanceVolume(InstanceId, Value<f64>),
 	SetInstancePitch(InstanceId, Value<f64>),
 	SetInstancePanning(InstanceId, Value<f64>),
 	PauseInstance(InstanceId, Option<Tween>),
 	ResumeInstance(InstanceId, Option<Tween>),
 	StopInstance(InstanceId, Option<Tween>),
-	PauseInstancesOfSound(SoundId, Option<Tween>),
-	ResumeInstancesOfSound(SoundId, Option<Tween>),
-	StopInstancesOfSound(SoundId, Option<Tween>),
+	PauseInstancesOf(Playable, Option<Tween>),
+	ResumeInstancesOf(Playable, Option<Tween>),
+	StopInstancesOf(Playable, Option<Tween>),
 	PauseSequence(SequenceId),
 	ResumeSequence(SequenceId),
 	StopSequence(SequenceId),
@@ -260,10 +261,10 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 	}
 
 	/// Adds a step to play a sound.
-	pub fn play_sound(&mut self, sound_id: SoundId, settings: InstanceSettings) -> InstanceId {
+	pub fn play_sound(&mut self, playable: Playable, settings: InstanceSettings) -> InstanceId {
 		let id = InstanceId::new();
 		self.steps
-			.push(SequenceOutputCommand::PlaySound(id, sound_id, settings).into());
+			.push(SequenceOutputCommand::PlaySound(id, playable, settings).into());
 		id
 	}
 
@@ -304,21 +305,21 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 	}
 
 	/// Adds a step to pause all instances of a sound.
-	pub fn pause_instances_of_sound(&mut self, id: SoundId, fade_tween: Option<Tween>) {
+	pub fn pause_instances_of(&mut self, playable: Playable, fade_tween: Option<Tween>) {
 		self.steps
-			.push(SequenceOutputCommand::PauseInstancesOfSound(id, fade_tween).into());
+			.push(SequenceOutputCommand::PauseInstancesOf(playable, fade_tween).into());
 	}
 
 	/// Adds a step to resume all instances of a sound.
-	pub fn resume_instances_of_sound(&mut self, id: SoundId, fade_tween: Option<Tween>) {
+	pub fn resume_instances_of(&mut self, playable: Playable, fade_tween: Option<Tween>) {
 		self.steps
-			.push(SequenceOutputCommand::ResumeInstancesOfSound(id, fade_tween).into());
+			.push(SequenceOutputCommand::ResumeInstancesOf(playable, fade_tween).into());
 	}
 
 	/// Adds a step to stop all instances of a sound.
-	pub fn stop_instances_of_sound(&mut self, id: SoundId, fade_tween: Option<Tween>) {
+	pub fn stop_instances_of(&mut self, playable: Playable, fade_tween: Option<Tween>) {
 		self.steps
-			.push(SequenceOutputCommand::StopInstancesOfSound(id, fade_tween).into());
+			.push(SequenceOutputCommand::StopInstancesOf(playable, fade_tween).into());
 	}
 
 	/// Adds a step to pause a sequence and all instances played by it.

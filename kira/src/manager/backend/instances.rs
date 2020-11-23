@@ -1,6 +1,7 @@
 use crate::{
+	arrangement::{Arrangement, ArrangementId},
 	command::InstanceCommand,
-	instance::{Instance, InstanceId},
+	instance::{Instance, InstanceId, Playable},
 	parameter::{Parameters, Tween},
 	sound::{Sound, SoundId},
 };
@@ -21,9 +22,9 @@ impl Instances {
 		}
 	}
 
-	pub fn stop_instances_of_sound(&mut self, id: SoundId, fade_tween: Option<Tween>) {
+	pub fn stop_instances_of(&mut self, playable: Playable, fade_tween: Option<Tween>) {
 		for (_, instance) in &mut self.instances {
-			if instance.sound_id() == id {
+			if instance.playable() == playable {
 				instance.stop(fade_tween);
 			}
 		}
@@ -31,14 +32,9 @@ impl Instances {
 
 	pub fn run_command(&mut self, command: InstanceCommand, sounds: &mut IndexMap<SoundId, Sound>) {
 		match command {
-			InstanceCommand::PlaySound(instance_id, sound_id, sequence_id, settings) => {
-				if let Some(sound) = sounds.get_mut(&sound_id) {
-					if !sound.cooling_down() {
-						self.instances
-							.insert(instance_id, Instance::new(sound_id, sequence_id, settings));
-						sound.start_cooldown();
-					}
-				}
+			InstanceCommand::Play(instance_id, playable, sequence_id, settings) => {
+				self.instances
+					.insert(instance_id, Instance::new(playable, sequence_id, settings));
 			}
 			InstanceCommand::SetInstanceVolume(id, value) => {
 				if let Some(instance) = self.instances.get_mut(&id) {
@@ -70,22 +66,22 @@ impl Instances {
 					instance.stop(fade_tween);
 				}
 			}
-			InstanceCommand::PauseInstancesOfSound(id, fade_tween) => {
+			InstanceCommand::PauseInstancesOf(playable, fade_tween) => {
 				for (_, instance) in &mut self.instances {
-					if instance.sound_id() == id {
+					if instance.playable() == playable {
 						instance.pause(fade_tween);
 					}
 				}
 			}
-			InstanceCommand::ResumeInstancesOfSound(id, fade_tween) => {
+			InstanceCommand::ResumeInstancesOf(playable, fade_tween) => {
 				for (_, instance) in &mut self.instances {
-					if instance.sound_id() == id {
+					if instance.playable() == playable {
 						instance.resume(fade_tween);
 					}
 				}
 			}
-			InstanceCommand::StopInstancesOfSound(id, fade_tween) => {
-				self.stop_instances_of_sound(id, fade_tween);
+			InstanceCommand::StopInstancesOf(playable, fade_tween) => {
+				self.stop_instances_of(playable, fade_tween);
 			}
 			InstanceCommand::PauseInstancesOfSequence(id, fade_tween) => {
 				for (_, instance) in &mut self.instances {
@@ -115,14 +111,16 @@ impl Instances {
 		&mut self,
 		dt: f64,
 		sounds: &IndexMap<SoundId, Sound>,
+		arrangements: &IndexMap<ArrangementId, Arrangement>,
 		mixer: &mut Mixer,
 		parameters: &Parameters,
 	) {
 		for (instance_id, instance) in &mut self.instances {
 			if instance.playing() {
-				if let Some(sound) = sounds.get(&instance.sound_id()) {
-					mixer.add_input(instance.track_index(), instance.get_sample(sound));
-				}
+				mixer.add_input(
+					instance.track_index(),
+					instance.get_sample(sounds, arrangements),
+				);
 			}
 			if instance.finished() {
 				self.instances_to_remove.push(*instance_id);
