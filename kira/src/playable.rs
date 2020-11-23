@@ -31,6 +31,10 @@ pub struct PlayableSettings {
 	/// If set, the semantic duration of the item will be
 	/// used as the default end point when looping the item.
 	pub semantic_duration: Option<f64>,
+	/// Whether the item should be looped by default, and if so,
+	/// the point an instance should jump back to when it reaches
+	/// the end.
+	pub default_loop_start: Option<f64>,
 }
 
 impl Default for PlayableSettings {
@@ -39,6 +43,7 @@ impl Default for PlayableSettings {
 			default_track: TrackIndex::Main,
 			cooldown: Some(0.0001),
 			semantic_duration: None,
+			default_loop_start: None,
 		}
 	}
 }
@@ -68,6 +73,13 @@ impl Playable {
 		match self {
 			Playable::Sound(id) => id.semantic_duration(),
 			Playable::Arrangement(id) => id.semantic_duration(),
+		}
+	}
+
+	pub fn default_loop_start(&self) -> Option<f64> {
+		match self {
+			Playable::Sound(id) => id.default_loop_start(),
+			Playable::Arrangement(id) => id.default_loop_start(),
 		}
 	}
 

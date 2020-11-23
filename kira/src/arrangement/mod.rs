@@ -30,6 +30,7 @@ pub struct ArrangementId {
 	duration: f64,
 	default_track: TrackIndex,
 	semantic_duration: Option<f64>,
+	default_loop_start: Option<f64>,
 }
 
 impl ArrangementId {
@@ -40,6 +41,7 @@ impl ArrangementId {
 			duration: arrangement.duration(),
 			default_track: arrangement.default_track(),
 			semantic_duration: arrangement.semantic_duration(),
+			default_loop_start: arrangement.default_loop_start(),
 		}
 	}
 
@@ -53,6 +55,10 @@ impl ArrangementId {
 
 	pub fn semantic_duration(&self) -> Option<f64> {
 		self.semantic_duration
+	}
+
+	pub fn default_loop_start(&self) -> Option<f64> {
+		self.default_loop_start
 	}
 }
 
@@ -105,6 +111,10 @@ impl Arrangement {
 
 	pub fn semantic_duration(&self) -> Option<f64> {
 		self.settings.semantic_duration
+	}
+
+	pub fn default_loop_start(&self) -> Option<f64> {
+		self.settings.default_loop_start
 	}
 
 	pub(crate) fn get_frame_at_position(

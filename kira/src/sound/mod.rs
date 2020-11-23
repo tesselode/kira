@@ -240,6 +240,10 @@ impl Sound {
 		self.settings.semantic_duration
 	}
 
+	pub fn default_loop_start(&self) -> Option<f64> {
+		self.settings.default_loop_start
+	}
+
 	/// Gets the sample at an arbitrary time in seconds,
 	/// interpolating between samples if necessary.
 	pub fn get_frame_at_position(&self, position: f64) -> Frame {
