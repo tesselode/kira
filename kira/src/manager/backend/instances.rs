@@ -31,12 +31,37 @@ impl Instances {
 		}
 	}
 
-	pub fn run_command(&mut self, command: InstanceCommand, sounds: &mut IndexMap<SoundId, Sound>) {
+	pub fn run_command(
+		&mut self,
+		command: InstanceCommand,
+		sounds: &mut IndexMap<SoundId, Sound>,
+		arrangements: &mut IndexMap<ArrangementId, Arrangement>,
+	) {
 		match command {
-			InstanceCommand::Play(instance_id, playable, sequence_id, settings) => {
-				self.instances
-					.insert(instance_id, Instance::new(playable, sequence_id, settings));
-			}
+			InstanceCommand::Play(instance_id, playable, sequence_id, settings) => match playable {
+				Playable::Sound(id) => {
+					if let Some(sound) = sounds.get_mut(&id) {
+						if !sound.cooling_down() {
+							self.instances.insert(
+								instance_id,
+								Instance::new(playable, sequence_id, settings),
+							);
+							sound.start_cooldown();
+						}
+					}
+				}
+				Playable::Arrangement(id) => {
+					if let Some(arrangement) = arrangements.get_mut(&id) {
+						if !arrangement.cooling_down() {
+							self.instances.insert(
+								instance_id,
+								Instance::new(playable, sequence_id, settings),
+							);
+							arrangement.start_cooldown();
+						}
+					}
+				}
+			},
 			InstanceCommand::SetInstanceVolume(id, value) => {
 				if let Some(instance) = self.instances.get_mut(&id) {
 					instance.set_volume(value);

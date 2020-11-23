@@ -104,7 +104,8 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> 
 					self.metronome.run_command(command);
 				}
 				Command::Instance(command) => {
-					self.instances.run_command(command, &mut self.sounds);
+					self.instances
+						.run_command(command, &mut self.sounds, &mut self.arrangements);
 				}
 				Command::Sequence(command) => {
 					self.sequences.run_command(command);
