@@ -1,4 +1,5 @@
 use crate::{
+	arrangement::{Arrangement, ArrangementId},
 	instance::{InstanceId, InstanceSettings},
 	mixer::effect::Effect,
 	mixer::effect::EffectId,
@@ -11,9 +12,11 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub(crate) enum SoundCommand {
-	LoadSound(SoundId, Sound),
-	UnloadSound(SoundId),
+pub(crate) enum ResourceCommand {
+	AddSound(SoundId, Sound),
+	RemoveSound(SoundId),
+	AddArrangement(ArrangementId, Arrangement),
+	RemoveArrangement(ArrangementId),
 }
 
 #[derive(Debug, Clone)]
@@ -66,7 +69,7 @@ pub(crate) enum ParameterCommand {
 }
 
 pub(crate) enum Command<CustomEvent: Copy> {
-	Sound(SoundCommand),
+	Resource(ResourceCommand),
 	Instance(InstanceCommand),
 	Metronome(MetronomeCommand),
 	Sequence(SequenceCommand<CustomEvent>),
@@ -75,9 +78,9 @@ pub(crate) enum Command<CustomEvent: Copy> {
 	EmitCustomEvent(CustomEvent),
 }
 
-impl<CustomEvent: Copy> From<SoundCommand> for Command<CustomEvent> {
-	fn from(command: SoundCommand) -> Self {
-		Self::Sound(command)
+impl<CustomEvent: Copy> From<ResourceCommand> for Command<CustomEvent> {
+	fn from(command: ResourceCommand) -> Self {
+		Self::Resource(command)
 	}
 }
 

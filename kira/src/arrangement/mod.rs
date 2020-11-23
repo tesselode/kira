@@ -1,5 +1,7 @@
 mod clip;
 
+use std::sync::atomic::{AtomicUsize, Ordering};
+
 pub use clip::SoundClip;
 use indexmap::IndexMap;
 
@@ -7,6 +9,26 @@ use crate::{
 	sound::{Sound, SoundId},
 	Frame,
 };
+
+static NEXT_ARRANGEMENT_INDEX: AtomicUsize = AtomicUsize::new(0);
+
+/**
+A unique identifier for an [arrangement](Arrangement).
+
+You cannot create this manually - an arrangement ID is created
+when you create a arrangement with an [`AudioManager`](crate::manager::AudioManager).
+*/
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct ArrangementId {
+	index: usize,
+}
+
+impl ArrangementId {
+	pub(crate) fn new() -> Self {
+		let index = NEXT_ARRANGEMENT_INDEX.fetch_add(1, Ordering::Relaxed);
+		Self { index }
+	}
+}
 
 #[derive(Debug, Clone)]
 pub struct Arrangement {

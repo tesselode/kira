@@ -8,9 +8,10 @@ use backend::Backend;
 pub use backend::Backend;
 
 use crate::{
+	arrangement::{Arrangement, ArrangementId},
 	command::{
 		Command, InstanceCommand, MetronomeCommand, MixerCommand, ParameterCommand,
-		SequenceCommand, SoundCommand,
+		ResourceCommand, SequenceCommand,
 	},
 	error::{AudioError, AudioResult},
 	instance::{InstanceId, InstanceSettings},
@@ -49,6 +50,8 @@ pub struct AudioManagerSettings {
 	pub num_events: usize,
 	/// The maximum number of sounds that can be loaded at a time.
 	pub num_sounds: usize,
+	/// The maximum number of arrangements that can be loaded at a time.
+	pub num_arrangements: usize,
 	/// The maximum number of parameters that can exist at a time.
 	pub num_parameters: usize,
 	/// The maximum number of instances of sounds that can be playing at a time.
@@ -69,6 +72,7 @@ impl Default for AudioManagerSettings {
 			num_commands: 100,
 			num_events: 100,
 			num_sounds: 100,
+			num_arrangements: 100,
 			num_parameters: 100,
 			num_instances: 100,
 			num_sequences: 25,
@@ -84,6 +88,7 @@ pub(crate) struct AudioManagerThreadChannels<CustomEvent: Copy + Send + 'static 
 	pub command_producer: Producer<Command<CustomEvent>>,
 	pub event_consumer: Consumer<Event<CustomEvent>>,
 	pub sounds_to_unload_consumer: Consumer<Sound>,
+	pub arrangements_to_unload_consumer: Consumer<Arrangement>,
 	pub sequences_to_unload_consumer: Consumer<Sequence<CustomEvent>>,
 	pub tracks_to_unload_consumer: Consumer<Track>,
 	pub effect_slots_to_unload_consumer: Consumer<EffectSlot>,
@@ -150,6 +155,8 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
 		let (sounds_to_unload_producer, sounds_to_unload_consumer) =
 			RingBuffer::new(settings.num_sounds).split();
+		let (arrangements_to_unload_producer, arrangements_to_unload_consumer) =
+			RingBuffer::new(settings.num_arrangements).split();
 		let (sequences_to_unload_producer, sequences_to_unload_consumer) =
 			RingBuffer::new(settings.num_sequences).split();
 		let (tracks_to_unload_producer, tracks_to_unload_consumer) =
@@ -162,6 +169,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 			command_producer,
 			event_consumer,
 			sounds_to_unload_consumer,
+			arrangements_to_unload_consumer,
 			sequences_to_unload_consumer,
 			tracks_to_unload_consumer,
 			effect_slots_to_unload_consumer,
@@ -170,6 +178,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 			command_consumer,
 			event_producer,
 			sounds_to_unload_producer,
+			arrangements_to_unload_producer,
 			sequences_to_unload_producer,
 			tracks_to_unload_producer,
 			effect_slots_to_unload_producer,
@@ -239,13 +248,25 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	/// Sends a sound to the audio thread and returns a handle to the sound.
 	pub fn add_sound(&mut self, sound: Sound) -> AudioResult<SoundId> {
 		let id = SoundId::new(sound.duration(), sound.default_track(), sound.metadata());
-		self.send_command_to_backend(SoundCommand::LoadSound(id, sound))?;
+		self.send_command_to_backend(ResourceCommand::AddSound(id, sound))?;
 		Ok(id)
 	}
 
 	/// Removes a sound from the audio thread, allowing its memory to be freed.
 	pub fn remove_sound(&mut self, id: SoundId) -> AudioResult<()> {
-		self.send_command_to_backend(SoundCommand::UnloadSound(id))
+		self.send_command_to_backend(ResourceCommand::RemoveSound(id))
+	}
+
+	/// Sends a arrangement to the audio thread and returns a handle to the arrangement.
+	pub fn add_arrangement(&mut self, arrangement: Arrangement) -> AudioResult<ArrangementId> {
+		let id = ArrangementId::new();
+		self.send_command_to_backend(ResourceCommand::AddArrangement(id, arrangement))?;
+		Ok(id)
+	}
+
+	/// Removes a arrangement from the audio thread, allowing its memory to be freed.
+	pub fn remove_arrangement(&mut self, id: ArrangementId) -> AudioResult<()> {
+		self.send_command_to_backend(ResourceCommand::RemoveArrangement(id))
 	}
 
 	/// Plays a sound.

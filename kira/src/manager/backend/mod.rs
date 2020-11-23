@@ -6,7 +6,8 @@ use self::mixer::Mixer;
 
 use super::{AudioManagerSettings, Event};
 use crate::{
-	command::{Command, SoundCommand},
+	arrangement::{Arrangement, ArrangementId},
+	command::{Command, ResourceCommand},
 	frame::Frame,
 	metronome::Metronome,
 	mixer::effect_slot::EffectSlot,
@@ -24,6 +25,7 @@ pub(crate) struct BackendThreadChannels<CustomEvent: Copy + Send + 'static + std
 	pub command_consumer: Consumer<Command<CustomEvent>>,
 	pub event_producer: Producer<Event<CustomEvent>>,
 	pub sounds_to_unload_producer: Producer<Sound>,
+	pub arrangements_to_unload_producer: Producer<Arrangement>,
 	pub sequences_to_unload_producer: Producer<Sequence<CustomEvent>>,
 	pub tracks_to_unload_producer: Producer<Track>,
 	pub effect_slots_to_unload_producer: Producer<EffectSlot>,
@@ -32,6 +34,7 @@ pub(crate) struct BackendThreadChannels<CustomEvent: Copy + Send + 'static + std
 pub struct Backend<CustomEvent: Copy + Send + 'static + std::fmt::Debug> {
 	dt: f64,
 	sounds: IndexMap<SoundId, Sound>,
+	arrangements: IndexMap<ArrangementId, Arrangement>,
 	command_queue: Vec<Command<CustomEvent>>,
 	thread_channels: BackendThreadChannels<CustomEvent>,
 	metronome: Metronome,
@@ -50,6 +53,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> 
 		Self {
 			dt: 1.0 / sample_rate as f64,
 			sounds: IndexMap::with_capacity(settings.num_sounds),
+			arrangements: IndexMap::with_capacity(settings.num_arrangements),
 			command_queue: Vec::with_capacity(settings.num_commands),
 			thread_channels,
 			parameters: Parameters::new(settings.num_parameters),
@@ -66,14 +70,28 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> 
 		}
 		for command in self.command_queue.drain(..) {
 			match command {
-				Command::Sound(command) => match command {
-					SoundCommand::LoadSound(id, sound) => {
+				Command::Resource(command) => match command {
+					ResourceCommand::AddSound(id, sound) => {
 						self.sounds.insert(id, sound);
 					}
-					SoundCommand::UnloadSound(id) => {
+					ResourceCommand::RemoveSound(id) => {
 						self.instances.stop_instances_of_sound(id, None);
 						if let Some(sound) = self.sounds.remove(&id) {
 							match self.thread_channels.sounds_to_unload_producer.push(sound) {
+								_ => {}
+							}
+						}
+					}
+					ResourceCommand::AddArrangement(id, arrangement) => {
+						self.arrangements.insert(id, arrangement);
+					}
+					ResourceCommand::RemoveArrangement(id) => {
+						if let Some(arrangement) = self.arrangements.remove(&id) {
+							match self
+								.thread_channels
+								.arrangements_to_unload_producer
+								.push(arrangement)
+							{
 								_ => {}
 							}
 						}
