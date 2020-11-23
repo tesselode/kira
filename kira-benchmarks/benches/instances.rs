@@ -22,6 +22,7 @@ fn create_test_sound(num_samples: usize) -> Sound {
 		sine_samples,
 		PlayableSettings {
 			cooldown: None,
+			default_loop_start: Some(0.0),
 			..Default::default()
 		},
 	)
@@ -41,9 +42,7 @@ fn instances_benchmark(c: &mut Criterion) {
 	backend.process();
 	// start a bunch of instances
 	for _ in 0..NUM_INSTANCES {
-		audio_manager
-			.play(sound_id, InstanceSettings::new().loop_region(..))
-			.unwrap();
+		audio_manager.play(sound_id, Default::default()).unwrap();
 	}
 	backend.process();
 	// benchmark updating the instances

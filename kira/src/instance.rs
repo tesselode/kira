@@ -107,82 +107,41 @@ impl From<SubTrackId> for InstanceTrackIndex {
 	}
 }
 
-/// A start or end point of a loop (in seconds).
+/// A loop start point for an instance.
 #[derive(Debug, Copy, Clone)]
-pub enum LoopPoint {
-	/// The default start or end point.
+pub enum InstanceLoopStart {
 	Default,
-	/// A manually set start or end point.
+	None,
 	Custom(f64),
 }
 
-impl LoopPoint {
-	fn or_default(&self, default: f64) -> f64 {
+impl InstanceLoopStart {
+	fn into_option(&self, playable: Playable) -> Option<f64> {
 		match self {
-			LoopPoint::Default => default,
-			LoopPoint::Custom(time) => *time,
+			Self::Default => playable.default_loop_start(),
+			Self::None => None,
+			Self::Custom(position) => Some(*position),
 		}
 	}
 }
 
-impl Default for LoopPoint {
+impl Default for InstanceLoopStart {
 	fn default() -> Self {
 		Self::Default
 	}
 }
 
-/// A portion of a sound to loop.
-#[derive(Debug, Copy, Clone, Default)]
-pub struct LoopRegion {
-	/// Where the loop starts. Defaults to the beginning of the sound.
-	pub start: LoopPoint,
-	/// Where the loop ends. Defaults to the semantic duration
-	/// of the sound if it's defined, or the very end of the sound
-	/// otherwise.
-	pub end: LoopPoint,
-}
-
-impl LoopRegion {
-	fn to_time_range(&self, sound_id: &SoundId) -> Range<f64> {
-		(self.start.or_default(0.0))
-			..(self
-				.end
-				.or_default(sound_id.semantic_duration().unwrap_or(sound_id.duration())))
+impl From<f64> for InstanceLoopStart {
+	fn from(position: f64) -> Self {
+		Self::Custom(position)
 	}
 }
 
-impl From<RangeFull> for LoopRegion {
-	fn from(_: RangeFull) -> Self {
-		Self {
-			start: LoopPoint::Default,
-			end: LoopPoint::Default,
-		}
-	}
-}
-
-impl From<RangeFrom<f64>> for LoopRegion {
-	fn from(range: RangeFrom<f64>) -> Self {
-		Self {
-			start: LoopPoint::Custom(range.start),
-			end: LoopPoint::Default,
-		}
-	}
-}
-
-impl From<RangeTo<f64>> for LoopRegion {
-	fn from(range: RangeTo<f64>) -> Self {
-		Self {
-			start: LoopPoint::Default,
-			end: LoopPoint::Custom(range.end),
-		}
-	}
-}
-
-impl From<Range<f64>> for LoopRegion {
-	fn from(range: Range<f64>) -> Self {
-		Self {
-			start: LoopPoint::Custom(range.start),
-			end: LoopPoint::Custom(range.end),
+impl From<Option<f64>> for InstanceLoopStart {
+	fn from(option: Option<f64>) -> Self {
+		match option {
+			Some(position) => Self::Custom(position),
+			None => Self::None,
 		}
 	}
 }
@@ -203,9 +162,9 @@ pub struct InstanceSettings {
 	/// Whether to fade in the instance from silence, and if so,
 	/// the tween to use.
 	pub fade_in_tween: Option<Tween>,
-	/// Whether the instance should loop, and if so, the region
-	/// to loop.
-	pub loop_region: Option<LoopRegion>,
+	/// Whether the instance should loop, and if so, the position
+	/// it should jump back to when it reaches the end.
+	pub loop_start: InstanceLoopStart,
 	/// Which track to play the instance on.
 	pub track: InstanceTrackIndex,
 }
@@ -265,9 +224,9 @@ impl InstanceSettings {
 	}
 
 	/// Sets the portion of the sound that should be looped.
-	pub fn loop_region<L: Into<LoopRegion>>(self, region: L) -> Self {
+	pub fn loop_start<S: Into<InstanceLoopStart>>(self, start: S) -> Self {
 		Self {
-			loop_region: Some(region.into()),
+			loop_start: start.into(),
 			..self
 		}
 	}
@@ -290,23 +249,8 @@ impl Default for InstanceSettings {
 			reverse: false,
 			start_position: 0.0,
 			fade_in_tween: None,
-			loop_region: None,
-			track: Default::default(),
-		}
-	}
-}
-
-#[derive(Debug, Clone)]
-struct SubInstance {
-	position: f64,
-	previous_position: f64,
-}
-
-impl SubInstance {
-	fn new(position: f64) -> Self {
-		Self {
-			position,
-			previous_position: position,
+			loop_start: InstanceLoopStart::default(),
+			track: InstanceTrackIndex::default(),
 		}
 	}
 }
@@ -329,6 +273,7 @@ pub(crate) struct Instance {
 	volume: CachedValue<f64>,
 	pitch: CachedValue<f64>,
 	panning: CachedValue<f64>,
+	loop_start: Option<f64>,
 	reverse: bool,
 	state: InstanceState,
 	position: f64,
@@ -359,6 +304,7 @@ impl Instance {
 			pitch: CachedValue::new(settings.pitch, 1.0),
 			panning: CachedValue::new(settings.panning, 0.5),
 			reverse: settings.reverse,
+			loop_start: settings.loop_start.into_option(playable),
 			state,
 			position: 0.0,
 			fade_volume,
@@ -442,7 +388,11 @@ impl Instance {
 			self.panning.update(parameters);
 			self.position += self.pitch.value() * dt;
 			if self.position > self.playable.duration() {
-				self.state = InstanceState::Stopped;
+				if let Some(loop_start) = self.loop_start {
+					self.position -= self.playable.duration() - loop_start;
+				} else {
+					self.state = InstanceState::Stopped;
+				}
 			}
 		}
 		let finished_fading = self.fade_volume.update(dt);
