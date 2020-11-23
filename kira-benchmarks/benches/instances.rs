@@ -2,7 +2,6 @@ use std::f32::consts::PI;
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use kira::{
-	instance::InstanceSettings,
 	manager::{AudioManager, AudioManagerSettings},
 	playable::PlayableSettings,
 	sound::Sound,

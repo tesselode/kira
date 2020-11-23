@@ -150,7 +150,6 @@ use crate::{
 	metronome::Metronome,
 	parameter::{ParameterId, Tween},
 	playable::Playable,
-	sound::SoundId,
 	AudioError, AudioResult, Duration, Tempo, Value,
 };
 

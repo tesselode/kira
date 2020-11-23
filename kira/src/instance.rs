@@ -46,10 +46,7 @@ use crate::{
 	value::CachedValue,
 	value::Value,
 };
-use std::{
-	ops::{Range, RangeFrom, RangeFull, RangeTo},
-	sync::atomic::{AtomicUsize, Ordering},
-};
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 static NEXT_INSTANCE_INDEX: AtomicUsize = AtomicUsize::new(0);
 
