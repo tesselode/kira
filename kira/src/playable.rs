@@ -37,6 +37,45 @@ pub struct PlayableSettings {
 	pub default_loop_start: Option<f64>,
 }
 
+impl PlayableSettings {
+	/// Creates a new `PlayableSettings` with the default settings.
+	pub fn new() -> Self {
+		Self::default()
+	}
+
+	/// Sets the track instances of this item will play on by default.
+	pub fn default_track<T: Into<TrackIndex>>(self, track: T) -> Self {
+		Self {
+			default_track: track.into(),
+			..self
+		}
+	}
+
+	/// Sets the cooldown time of the item.
+	pub fn cooldown(self, cooldown: f64) -> Self {
+		Self {
+			cooldown: Some(cooldown),
+			..self
+		}
+	}
+
+	/// Sets the semantic duration of the item.
+	pub fn semantic_duration(self, semantic_duration: f64) -> Self {
+		Self {
+			semantic_duration: Some(semantic_duration),
+			..self
+		}
+	}
+
+	/// Sets the default loop start point of the item.
+	pub fn default_loop_start(self, default_loop_start: f64) -> Self {
+		Self {
+			default_loop_start: Some(default_loop_start),
+			..self
+		}
+	}
+}
+
 impl Default for PlayableSettings {
 	fn default() -> Self {
 		Self {
