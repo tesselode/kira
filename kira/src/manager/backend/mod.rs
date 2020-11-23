@@ -140,6 +140,12 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> 
 		}
 	}
 
+	fn update_arrangements(&mut self) {
+		for (_, arrangement) in &mut self.arrangements {
+			arrangement.update_cooldown(self.dt);
+		}
+	}
+
 	fn update_metronome(&mut self) {
 		for interval in self.metronome.update(self.dt, &self.parameters) {
 			match self
@@ -167,6 +173,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> 
 		self.process_commands();
 		self.parameters.update(self.dt);
 		self.update_sounds();
+		self.update_arrangements();
 		self.update_metronome();
 		self.update_sequences();
 		self.instances.process(
