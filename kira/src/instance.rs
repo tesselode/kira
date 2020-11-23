@@ -509,9 +509,9 @@ impl Instance {
 		for sub_instance in &self.sub_instances {
 			if let Some(sub_instance) = sub_instance {
 				if self.reverse {
-					out += sound.get_sample_at_position(sound.duration() - sub_instance.position);
+					out += sound.get_frame_at_position(sound.duration() - sub_instance.position);
 				} else {
-					out += sound.get_sample_at_position(sub_instance.position);
+					out += sound.get_frame_at_position(sub_instance.position);
 				}
 			}
 		}

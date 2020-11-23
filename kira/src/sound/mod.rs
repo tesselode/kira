@@ -272,7 +272,7 @@ impl Sound {
 
 	/// Gets the sample at an arbitrary time in seconds,
 	/// interpolating between samples if necessary.
-	pub fn get_sample_at_position(&self, position: f64) -> Frame {
+	pub fn get_frame_at_position(&self, position: f64) -> Frame {
 		let sample_position = self.sample_rate as f64 * position;
 		let x = (sample_position % 1.0) as f32;
 		let current_sample_index = sample_position as usize;
