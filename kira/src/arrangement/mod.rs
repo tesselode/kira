@@ -117,7 +117,7 @@ impl Arrangement {
 	}
 
 	pub fn add_clip(mut self, clip: SoundClip) -> Self {
-		self.duration = self.duration.max(clip.clip_time_range.end);
+		self.duration = self.duration.max(clip.clip_time_range.1);
 		self.clips.push(clip);
 		self
 	}
