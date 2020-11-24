@@ -29,12 +29,9 @@ impl SoundClip {
 		self.clip_time_range.end - self.clip_time_range.start
 	}
 
-	pub fn set_speed(mut self, speed: f64) -> Self {
-		self.clip_time_range.end = lerp(
-			self.clip_time_range.start,
-			self.clip_time_range.end,
-			1.0 / speed,
-		);
+	pub fn stretch(mut self, factor: f64) -> Self {
+		self.clip_time_range.end =
+			lerp(self.clip_time_range.start, self.clip_time_range.end, factor);
 		self
 	}
 
