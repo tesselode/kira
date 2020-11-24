@@ -8,7 +8,7 @@ use crate::{
 };
 
 /// Settings for a [`Playable`](Playable) item.
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct PlayableSettings {
 	/// The track instances of this item will play on by default.
 	pub default_track: TrackIndex,

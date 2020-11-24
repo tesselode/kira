@@ -1,6 +1,9 @@
 pub mod svf;
 
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::{
+	fmt::Debug,
+	sync::atomic::{AtomicUsize, Ordering},
+};
 
 use crate::{frame::Frame, parameter::Parameters};
 
@@ -45,6 +48,6 @@ impl Default for EffectSettings {
 	}
 }
 
-pub trait Effect: Send {
+pub trait Effect: Send + Debug {
 	fn process(&mut self, dt: f64, input: Frame, parameters: &Parameters) -> Frame;
 }

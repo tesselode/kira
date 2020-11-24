@@ -69,7 +69,7 @@ impl InstanceId {
 }
 
 /// A track index for an instance to play on.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum InstanceTrackIndex {
 	/// The default track for the sound.
 	DefaultForSound,
@@ -144,7 +144,7 @@ impl From<Option<f64>> for InstanceLoopStart {
 }
 
 /// Settings for an instance.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Copy, Clone)]
 pub struct InstanceSettings {
 	/// The volume of the instance.
 	pub volume: Value<f64>,
@@ -262,7 +262,7 @@ pub(crate) enum InstanceState {
 	Stopping,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub(crate) struct Instance {
 	playable: Playable,
 	track_index: TrackIndex,

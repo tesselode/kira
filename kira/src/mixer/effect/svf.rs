@@ -18,7 +18,7 @@ pub enum StateVariableFilterMode {
 	Notch,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct StateVariableFilterSettings {
 	pub mode: StateVariableFilterMode,
 	pub cutoff: Value<f64>,
@@ -35,7 +35,7 @@ impl Default for StateVariableFilterSettings {
 	}
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct StateVariableFilter {
 	mode: StateVariableFilterMode,
 	cutoff: CachedValue<f64>,

@@ -59,7 +59,7 @@ impl From<SubTrackId> for TrackIndex {
 }
 
 /// Settings for a mixer track.
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct TrackSettings {
 	/// The volume of the track.
 	pub volume: f64,
@@ -71,6 +71,7 @@ impl Default for TrackSettings {
 	}
 }
 
+#[derive(Debug)]
 pub(crate) struct Track {
 	volume: f64,
 	effect_slots: IndexMap<EffectId, EffectSlot>,

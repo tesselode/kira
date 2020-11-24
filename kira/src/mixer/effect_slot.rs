@@ -2,6 +2,7 @@ use crate::{frame::Frame, parameter::Parameters};
 
 use super::effect::{Effect, EffectSettings};
 
+#[derive(Debug)]
 pub(crate) struct EffectSlot {
 	effect: Box<dyn Effect>,
 	enabled: bool,

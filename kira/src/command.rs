@@ -12,7 +12,7 @@ use crate::{
 	value::Value,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) enum ResourceCommand {
 	AddSound(SoundId, Sound),
 	RemoveSound(SoundId),
@@ -20,7 +20,7 @@ pub(crate) enum ResourceCommand {
 	RemoveArrangement(ArrangementId),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub(crate) enum InstanceCommand {
 	Play(InstanceId, Playable, Option<SequenceId>, InstanceSettings),
 	SetInstanceVolume(InstanceId, Value<f64>),
@@ -37,7 +37,7 @@ pub(crate) enum InstanceCommand {
 	StopInstancesOfSequence(SequenceId, Option<Tween>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub(crate) enum MetronomeCommand {
 	SetMetronomeTempo(Value<Tempo>),
 	StartMetronome,
@@ -55,6 +55,7 @@ pub(crate) enum SequenceCommand<CustomEvent: Copy> {
 	StopSequence(SequenceId),
 }
 
+#[derive(Debug)]
 pub(crate) enum MixerCommand {
 	AddSubTrack(SubTrackId, TrackSettings),
 	RemoveSubTrack(SubTrackId),
@@ -62,13 +63,14 @@ pub(crate) enum MixerCommand {
 	RemoveEffect(EffectId),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub(crate) enum ParameterCommand {
 	AddParameter(ParameterId, f64),
 	RemoveParameter(ParameterId),
 	SetParameter(ParameterId, f64, Option<Tween>),
 }
 
+#[derive(Debug)]
 pub(crate) enum Command<CustomEvent: Copy> {
 	Resource(ResourceCommand),
 	Instance(InstanceCommand),

@@ -22,7 +22,7 @@ impl ParameterId {
 	}
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 struct TweenState {
 	tween: Tween,
 	start: f64,
@@ -30,7 +30,7 @@ struct TweenState {
 	time: f64,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Parameter {
 	value: f64,
 	tween_state: Option<TweenState>,

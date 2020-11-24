@@ -14,7 +14,7 @@ use lewton::{inside_ogg::OggStreamReader, samples::Samples};
 use std::{fs::File, path::Path};
 
 /// A piece of audio that can be played by an [`AudioManager`](crate::manager::AudioManager).
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Sound {
 	sample_rate: u32,
 	samples: Vec<Frame>,
