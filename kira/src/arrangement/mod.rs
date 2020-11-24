@@ -101,6 +101,21 @@ impl Arrangement {
 			.add_clip(SoundClip::new(sound_id, duration).trim(duration))
 	}
 
+	pub fn new_loop_with_intro(intro_sound_id: SoundId, loop_sound_id: SoundId) -> Self {
+		let intro_duration = intro_sound_id
+			.semantic_duration()
+			.unwrap_or(intro_sound_id.duration());
+		let loop_duration = loop_sound_id
+			.semantic_duration()
+			.unwrap_or(loop_sound_id.duration());
+		Self::new(PlayableSettings::new().default_loop_start(intro_duration + loop_duration))
+			.add_clip(SoundClip::new(intro_sound_id, 0.0))
+			.add_clip(SoundClip::new(loop_sound_id, intro_duration))
+			.add_clip(
+				SoundClip::new(loop_sound_id, intro_duration + loop_duration).trim(loop_duration),
+			)
+	}
+
 	pub fn add_clip(mut self, clip: SoundClip) -> Self {
 		self.duration = self.duration.max(clip.clip_time_range.end);
 		self.clips.push(clip);
