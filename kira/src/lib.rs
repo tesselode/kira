@@ -115,6 +115,7 @@ pub mod playable;
 pub mod sequence;
 pub mod sound;
 mod tempo;
+mod util;
 mod value;
 
 pub use duration::Duration;

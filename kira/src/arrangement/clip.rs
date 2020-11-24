@@ -4,6 +4,8 @@ use indexmap::IndexMap;
 
 use crate::{
 	sound::{Sound, SoundId},
+	util::inverse_lerp,
+	util::lerp,
 	Frame,
 };
 
@@ -23,18 +25,49 @@ impl SoundClip {
 		}
 	}
 
+	pub fn duration(&self) -> f64 {
+		self.clip_time_range.end - self.clip_time_range.start
+	}
+
+	pub fn set_speed(mut self, speed: f64) -> Self {
+		self.clip_time_range.end = lerp(
+			self.clip_time_range.start,
+			self.clip_time_range.end,
+			1.0 / speed,
+		);
+		self
+	}
+
+	pub fn trim(mut self, duration: f64) -> Self {
+		let new_duration_factor = duration / self.duration();
+		self.clip_time_range.end = self.clip_time_range.start + duration;
+		self.sound_time_range.end = lerp(
+			self.sound_time_range.start,
+			self.sound_time_range.end,
+			new_duration_factor,
+		);
+		self
+	}
+
 	pub(crate) fn get_frame_at_position(
 		&self,
 		position: f64,
 		sounds: &IndexMap<SoundId, Sound>,
 	) -> Frame {
 		if let Some(sound) = sounds.get(&self.sound_id) {
-			let relative_time = (position - self.clip_time_range.start)
-				/ (self.clip_time_range.end - self.clip_time_range.start);
+			let relative_time = inverse_lerp(
+				self.clip_time_range.start,
+				self.clip_time_range.end,
+				position,
+			);
 			if relative_time < 0.0 || relative_time > 1.0 {
 				Frame::from_mono(0.0)
 			} else {
-				sound.get_frame_at_position(sound.duration() * relative_time)
+				sound.get_frame_at_position(lerp(
+					self.sound_time_range.start,
+					self.sound_time_range.end,
+					relative_time,
+				))
 			}
 		} else {
 			Frame::from_mono(0.0)
