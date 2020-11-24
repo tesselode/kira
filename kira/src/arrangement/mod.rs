@@ -39,9 +39,9 @@ impl ArrangementId {
 		Self {
 			index,
 			duration: arrangement.duration(),
-			default_track: arrangement.default_track(),
-			semantic_duration: arrangement.semantic_duration(),
-			default_loop_start: arrangement.default_loop_start(),
+			default_track: arrangement.settings.default_track,
+			semantic_duration: arrangement.settings.semantic_duration,
+			default_loop_start: arrangement.settings.default_loop_start,
 		}
 	}
 
@@ -80,7 +80,7 @@ impl Hash for ArrangementId {
 pub struct Arrangement {
 	clips: Vec<SoundClip>,
 	duration: f64,
-	settings: PlayableSettings,
+	pub settings: PlayableSettings,
 	cooldown_timer: f64,
 }
 
@@ -94,6 +94,13 @@ impl Arrangement {
 		}
 	}
 
+	pub fn new_loop(sound_id: SoundId) -> Self {
+		let duration = sound_id.semantic_duration().unwrap_or(sound_id.duration());
+		Self::new(PlayableSettings::new().default_loop_start(duration))
+			.add_clip(SoundClip::new(sound_id, 0.0))
+			.add_clip(SoundClip::new(sound_id, duration).trim(duration))
+	}
+
 	pub fn add_clip(mut self, clip: SoundClip) -> Self {
 		self.duration = self.duration.max(clip.clip_time_range.end);
 		self.clips.push(clip);
@@ -102,19 +109,6 @@ impl Arrangement {
 
 	pub fn duration(&self) -> f64 {
 		self.duration
-	}
-
-	/// Gets the default track that the sound plays on.
-	pub fn default_track(&self) -> TrackIndex {
-		self.settings.default_track
-	}
-
-	pub fn semantic_duration(&self) -> Option<f64> {
-		self.settings.semantic_duration
-	}
-
-	pub fn default_loop_start(&self) -> Option<f64> {
-		self.settings.default_loop_start
 	}
 
 	pub(crate) fn get_frame_at_position(
