@@ -1,4 +1,27 @@
 # v0.2
+
+## Arrangements
+This release adds `Arrangement`s, which allow you to stitch together
+multiple sounds into a larger sound that you can play instances of.
+
+The main use case for this is setting up seamless loops, including
+looping songs with intros. The previous release could create seamless
+loops, but only if the sound didn't have an intro.
+
+Functions that dealt with instances of sounds now deal with instances
+of sounds *or* arrangements. `InstanceSettings` has become
+`PlayableSettings` to correspond to the new `Playable` enum.
+
+Arrangements also help reduce some complexity from the code for
+instances and make some more unusual behaviors, like playing
+instances backwards or rewinding instances (not implemented yet,
+but planned), easier to reason about.
+
+I'm sure there's other good uses for arrangements, too! But I think
+the most common use case will be songs with intros.
+
+## Other changes
+- Remove `SoundMetadata` and move `semantic_duration` into `PlayableSettings`
 - Rename `StereoSample` to `Frame`
 - Added support for panning instances:
 	- Added `Frame::panned`
