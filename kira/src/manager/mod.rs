@@ -496,17 +496,17 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	}
 
 	/// Adds an effect to a track.
-	pub fn add_effect_to_track<T: Into<TrackIndex> + Copy>(
+	pub fn add_effect_to_track<T: Into<TrackIndex> + Copy, E: Effect + 'static>(
 		&mut self,
 		track_index: T,
-		effect: Box<dyn Effect>,
+		effect: E,
 		settings: EffectSettings,
 	) -> AudioResult<EffectId> {
 		let effect_id = EffectId::new(track_index.into());
 		self.send_command_to_backend(MixerCommand::AddEffect(
 			track_index.into(),
 			effect_id,
-			effect,
+			Box::new(effect),
 			settings,
 		))?;
 		Ok(effect_id)
