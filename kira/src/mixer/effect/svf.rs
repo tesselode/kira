@@ -25,6 +25,30 @@ pub struct StateVariableFilterSettings {
 	pub resonance: Value<f64>,
 }
 
+impl StateVariableFilterSettings {
+	pub fn new() -> Self {
+		Self::default()
+	}
+
+	pub fn mode(self, mode: StateVariableFilterMode) -> Self {
+		Self { mode, ..self }
+	}
+
+	pub fn cutoff<V: Into<Value<f64>>>(self, cutoff: V) -> Self {
+		Self {
+			cutoff: cutoff.into(),
+			..self
+		}
+	}
+
+	pub fn resonance<V: Into<Value<f64>>>(self, resonance: V) -> Self {
+		Self {
+			resonance: resonance.into(),
+			..self
+		}
+	}
+}
+
 impl Default for StateVariableFilterSettings {
 	fn default() -> Self {
 		Self {
