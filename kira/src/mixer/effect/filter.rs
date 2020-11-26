@@ -11,7 +11,7 @@ use super::Effect;
 // https://github.com/wrl/baseplug/blob/trunk/examples/svf/svf_simper.rs
 
 #[derive(Debug, Copy, Clone)]
-pub enum StateVariableFilterMode {
+pub enum FilterMode {
 	LowPass,
 	BandPass,
 	HighPass,
@@ -19,18 +19,18 @@ pub enum StateVariableFilterMode {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct StateVariableFilterSettings {
-	pub mode: StateVariableFilterMode,
+pub struct FilterSettings {
+	pub mode: FilterMode,
 	pub cutoff: Value<f64>,
 	pub resonance: Value<f64>,
 }
 
-impl StateVariableFilterSettings {
+impl FilterSettings {
 	pub fn new() -> Self {
 		Self::default()
 	}
 
-	pub fn mode(self, mode: StateVariableFilterMode) -> Self {
+	pub fn mode(self, mode: FilterMode) -> Self {
 		Self { mode, ..self }
 	}
 
@@ -49,10 +49,10 @@ impl StateVariableFilterSettings {
 	}
 }
 
-impl Default for StateVariableFilterSettings {
+impl Default for FilterSettings {
 	fn default() -> Self {
 		Self {
-			mode: StateVariableFilterMode::LowPass,
+			mode: FilterMode::LowPass,
 			cutoff: 1.0.into(),
 			resonance: 0.0.into(),
 		}
@@ -60,16 +60,16 @@ impl Default for StateVariableFilterSettings {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct StateVariableFilter {
-	mode: StateVariableFilterMode,
+pub struct Filter {
+	mode: FilterMode,
 	cutoff: CachedValue<f64>,
 	resonance: CachedValue<f64>,
 	ic1eq: Frame,
 	ic2eq: Frame,
 }
 
-impl StateVariableFilter {
-	pub fn new(settings: StateVariableFilterSettings) -> Self {
+impl Filter {
+	pub fn new(settings: FilterSettings) -> Self {
 		Self {
 			mode: settings.mode,
 			cutoff: CachedValue::new(settings.cutoff, 10000.0),
@@ -80,7 +80,7 @@ impl StateVariableFilter {
 	}
 }
 
-impl Effect for StateVariableFilter {
+impl Effect for Filter {
 	fn process(&mut self, dt: f64, input: Frame, parameters: &Parameters) -> Frame {
 		self.cutoff.update(parameters);
 		self.resonance.update(parameters);
@@ -96,10 +96,10 @@ impl Effect for StateVariableFilter {
 		self.ic1eq = (v1 * 2.0) - self.ic1eq;
 		self.ic2eq = (v2 * 2.0) - self.ic2eq;
 		match self.mode {
-			StateVariableFilterMode::LowPass => v2,
-			StateVariableFilterMode::BandPass => v1,
-			StateVariableFilterMode::HighPass => input - v1 * (k as f32) - v2,
-			StateVariableFilterMode::Notch => input - v1 * (k as f32),
+			FilterMode::LowPass => v2,
+			FilterMode::BandPass => v1,
+			FilterMode::HighPass => input - v1 * (k as f32) - v2,
+			FilterMode::Notch => input - v1 * (k as f32),
 		}
 	}
 }

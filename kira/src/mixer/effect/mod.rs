@@ -1,4 +1,4 @@
-pub mod svf;
+pub mod filter;
 
 use std::{
 	fmt::Debug,
