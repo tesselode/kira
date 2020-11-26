@@ -1,3 +1,6 @@
+//! Provides an interface for "stitching together" individual sounds
+//! into larger pieces.
+
 mod clip;
 
 pub use clip::SoundClip;
@@ -19,10 +22,11 @@ use crate::{
 static NEXT_ARRANGEMENT_INDEX: AtomicUsize = AtomicUsize::new(0);
 
 /**
-A unique identifier for an [arrangement](Arrangement).
+A unique identifier for an [`Arrangement`](Arrangement).
 
 You cannot create this manually - an arrangement ID is created
-when you create a arrangement with an [`AudioManager`](crate::manager::AudioManager).
+when you [add an arrangement](crate::manager::AudioManager::add_arrangement)
+to an [`AudioManager`](crate::manager::AudioManager).
 */
 #[derive(Debug, Copy, Clone)]
 pub struct ArrangementId {
@@ -45,18 +49,25 @@ impl ArrangementId {
 		}
 	}
 
+	/// Gets the duration of the arrangement.
 	pub fn duration(&self) -> f64 {
 		self.duration
 	}
 
+	/// Gets the default track that instances of this arrangement
+	/// will play on.
 	pub fn default_track(&self) -> TrackIndex {
 		self.default_track
 	}
 
+	/// Gets the [semantic duration](crate::playable::PlayableSettings#structfield.semantic_duration)
+	/// of the arrangement.
 	pub fn semantic_duration(&self) -> Option<f64> {
 		self.semantic_duration
 	}
 
+	/// Gets the default loop start point for instances of this
+	/// arrangement.
 	pub fn default_loop_start(&self) -> Option<f64> {
 		self.default_loop_start
 	}
@@ -76,15 +87,18 @@ impl Hash for ArrangementId {
 	}
 }
 
+/// An arrangement of sound clips to play at specific times.
 #[derive(Debug, Clone)]
 pub struct Arrangement {
 	clips: Vec<SoundClip>,
 	duration: f64,
+	/// Settings for the arrangement.
 	pub settings: PlayableSettings,
 	cooldown_timer: f64,
 }
 
 impl Arrangement {
+	/// Creates a new, empty arrangement.
 	pub fn new(settings: PlayableSettings) -> Self {
 		Self {
 			clips: vec![],
@@ -94,6 +108,11 @@ impl Arrangement {
 		}
 	}
 
+	/// Creates a new arrangement that seamlessly loops a sound.
+	///
+	/// If the sound has a semantic duration, it will be used to
+	/// set the point where the sound loops. Any audio after the loop
+	/// point will be preserved when the loop starts.
 	pub fn new_loop(sound_id: SoundId) -> Self {
 		let duration = sound_id.semantic_duration().unwrap_or(sound_id.duration());
 		Self::new(PlayableSettings::new().default_loop_start(duration))
@@ -101,6 +120,13 @@ impl Arrangement {
 			.add_clip(SoundClip::new(sound_id, duration).trim(duration))
 	}
 
+	/// Creates a new arrangement that plays an intro sound, then
+	/// seamlessly loops another sound.
+	///
+	/// If the intro has a semantic duration, it will be used to determine
+	/// when the loop sound starts. If the loop sound has a semantic duration,
+	/// it will be used to set the point where the sound repeats. Any audio
+	/// after the loop point will be preserved when the sound repeats.
 	pub fn new_loop_with_intro(intro_sound_id: SoundId, loop_sound_id: SoundId) -> Self {
 		let intro_duration = intro_sound_id
 			.semantic_duration()
@@ -116,16 +142,21 @@ impl Arrangement {
 			)
 	}
 
+	/// Adds a sound clip to the arrangement.
 	pub fn add_clip(mut self, clip: SoundClip) -> Self {
 		self.duration = self.duration.max(clip.clip_time_range.1);
 		self.clips.push(clip);
 		self
 	}
 
+	/// Gets the duration of the arrangement.
+	///
+	/// The duration is always the end of the last playing sound clip.
 	pub fn duration(&self) -> f64 {
 		self.duration
 	}
 
+	/// Gets the frame at the given position of the arrangement.
 	pub(crate) fn get_frame_at_position(
 		&self,
 		position: f64,
@@ -138,18 +169,24 @@ impl Arrangement {
 		frame
 	}
 
+	/// Starts the cooldown timer for the arrangement.
 	pub(crate) fn start_cooldown(&mut self) {
 		if let Some(cooldown) = self.settings.cooldown {
 			self.cooldown_timer = cooldown;
 		}
 	}
 
+	/// Updates the cooldown timer for the arrangement.
 	pub(crate) fn update_cooldown(&mut self, dt: f64) {
 		if self.cooldown_timer > 0.0 {
 			self.cooldown_timer -= dt;
 		}
 	}
 
+	/// Gets whether the arrangement is currently "cooling down".
+	///
+	/// If it is, a new instance of the arrangement should not
+	/// be started until the timer is up.
 	pub(crate) fn cooling_down(&self) -> bool {
 		self.cooldown_timer > 0.0
 	}

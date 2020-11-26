@@ -12,7 +12,7 @@ static NEXT_SOUND_INDEX: AtomicUsize = AtomicUsize::new(0);
 /// A unique identifier for a [`Sound`](crate::sound::Sound).
 ///
 /// You cannot create this manually - a sound ID is returned
-/// when you load a sound with an [`AudioManager`](crate::manager::AudioManager).
+/// when you add a sound to an [`AudioManager`](crate::manager::AudioManager).
 #[derive(Debug, Copy, Clone)]
 pub struct SoundId {
 	index: usize,
@@ -23,18 +23,25 @@ pub struct SoundId {
 }
 
 impl SoundId {
+	/// Gets the duration of the sound.
 	pub fn duration(&self) -> f64 {
 		self.duration
 	}
 
+	/// Gets the default track that instances of this sound
+	/// will play on.
 	pub fn default_track(&self) -> TrackIndex {
 		self.default_track
 	}
 
+	/// Gets the [semantic duration](crate::playable::PlayableSettings#structfield.semantic_duration)
+	/// of the sound.
 	pub fn semantic_duration(&self) -> Option<f64> {
 		self.semantic_duration
 	}
 
+	/// Gets the default loop start point for instances of this
+	/// sound.
 	pub fn default_loop_start(&self) -> Option<f64> {
 		self.default_loop_start
 	}

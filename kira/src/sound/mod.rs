@@ -240,12 +240,14 @@ impl Sound {
 		self.settings.semantic_duration
 	}
 
+	/// Gets the default loop start point for instances
+	/// of this sound.
 	pub fn default_loop_start(&self) -> Option<f64> {
 		self.settings.default_loop_start
 	}
 
-	/// Gets the sample at an arbitrary time in seconds,
-	/// interpolating between samples if necessary.
+	/// Gets the frame of this sound at an arbitrary time
+	/// in seconds, interpolating between samples if necessary.
 	pub fn get_frame_at_position(&self, position: f64) -> Frame {
 		let sample_position = self.sample_rate as f64 * position;
 		let x = (sample_position % 1.0) as f32;
@@ -277,18 +279,24 @@ impl Sound {
 		((c3 * x + c2) * x + c1) * x + c0
 	}
 
+	/// Starts the cooldown timer for the sound.
 	pub(crate) fn start_cooldown(&mut self) {
 		if let Some(cooldown) = self.settings.cooldown {
 			self.cooldown_timer = cooldown;
 		}
 	}
 
+	/// Updates the cooldown timer for the sound.
 	pub(crate) fn update_cooldown(&mut self, dt: f64) {
 		if self.cooldown_timer > 0.0 {
 			self.cooldown_timer -= dt;
 		}
 	}
 
+	/// Gets whether the sound is currently "cooling down".
+	///
+	/// If it is, a new instance of the sound should not
+	/// be started until the timer is up.
 	pub(crate) fn cooling_down(&self) -> bool {
 		self.cooldown_timer > 0.0
 	}

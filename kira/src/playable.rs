@@ -1,3 +1,5 @@
+//! Provides a wrapper around sounds and arrangements.
+
 use indexmap::IndexMap;
 
 use crate::{
@@ -87,13 +89,17 @@ impl Default for PlayableSettings {
 	}
 }
 
+/// Represents something you can play multiple instances of.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Playable {
+	/// A sound.
 	Sound(SoundId),
+	/// An arrangement.
 	Arrangement(ArrangementId),
 }
 
 impl Playable {
+	/// Gets the duration of the item.
 	pub fn duration(&self) -> f64 {
 		match self {
 			Playable::Sound(id) => id.duration(),
@@ -101,6 +107,7 @@ impl Playable {
 		}
 	}
 
+	/// Gets the default track instances of this item will play on.
 	pub fn default_track(&self) -> TrackIndex {
 		match self {
 			Playable::Sound(id) => id.default_track(),
@@ -108,6 +115,8 @@ impl Playable {
 		}
 	}
 
+	/// Gets the [semantic duration](crate::playable::PlayableSettings#structfield.semantic_duration)
+	/// of the item.
 	pub fn semantic_duration(&self) -> Option<f64> {
 		match self {
 			Playable::Sound(id) => id.semantic_duration(),
@@ -115,6 +124,8 @@ impl Playable {
 		}
 	}
 
+	/// Gets the default loop start point for instances of this
+	/// item.
 	pub fn default_loop_start(&self) -> Option<f64> {
 		match self {
 			Playable::Sound(id) => id.default_loop_start(),
@@ -122,6 +133,7 @@ impl Playable {
 		}
 	}
 
+	/// Gets the frame this item will output at a certain time.
 	pub(crate) fn get_frame_at_position(
 		&self,
 		position: f64,

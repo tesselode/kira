@@ -3,23 +3,43 @@ use std::{error::Error, fmt::Display};
 use cpal::{BuildStreamError, PlayStreamError, SupportedStreamConfigsError};
 use lewton::VorbisError;
 
+/// Something that can go wrong.
 #[derive(Debug)]
 pub enum AudioError {
+	/// A default audio output device could not be found.
 	NoDefaultOutputDevice,
+	/// An error occurred while getting the list of supported
+	/// audio output configurations.
 	SupportedStreamConfigsError(SupportedStreamConfigsError),
+	/// No supported output configuration could be found.
 	NoSupportedAudioConfig,
+	/// An error occurred while setting up the audio thread.
 	BuildStreamError(BuildStreamError),
+	/// An error occurred while starting the audio thread.
 	PlayStreamError(PlayStreamError),
+	/// The queue that sends signals from the main thread
+	/// to the audio thread is full.
 	CommandQueueFull,
+	/// Tried to load audio that isn't mono or stereo.
 	UnsupportedChannelConfiguration,
+	/// Tried to load audio in an unsupported file format.
 	UnsupportedAudioFileFormat,
+	/// Tried to add a sequence whose loop point is after
+	/// all the other steps.
 	InvalidSequenceLoopPoint,
+	/// An error occurred when interacting with the filesystem.
 	IoError(std::io::Error),
+	/// An error occurred when loading an mp3 file.
 	Mp3Error(minimp3::Error),
+	/// An mp3 file has multiple sample rates (not supported).
 	VariableMp3SampleRate,
+	/// The sample rate of an mp3 file could not be determined.
 	UnknownMp3SampleRate,
+	/// An error occurred when loading an ogg file.
 	OggError(VorbisError),
+	/// An error occurred when loading a flac file.
 	FlacError(claxon::Error),
+	/// An error occurred when loading a wav file.
 	WavError(hound::Error),
 }
 
@@ -110,4 +130,7 @@ impl From<PlayStreamError> for AudioError {
 	}
 }
 
+/// A wrapper around the standard [`Result`](Result)
+/// type that always has an [`AudioError`](AudioError)
+/// as its error type.
 pub type AudioResult<T> = Result<T, AudioError>;
