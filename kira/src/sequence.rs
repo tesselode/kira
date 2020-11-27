@@ -259,7 +259,7 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 		self.loop_point = Some(self.steps.len())
 	}
 
-	/// Adds a step to play a sound.
+	/// Adds a step to play a sound or arrangement.
 	pub fn play<P: Into<Playable>>(
 		&mut self,
 		playable: P,
@@ -307,22 +307,40 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 			.push(SequenceOutputCommand::StopInstance(id, fade_tween).into());
 	}
 
-	/// Adds a step to pause all instances of a sound.
+	/// Adds a step to pause all instances of a sound or arrangement.
 	pub fn pause_instances_of(&mut self, playable: Playable, fade_tween: Option<Tween>) {
 		self.steps
 			.push(SequenceOutputCommand::PauseInstancesOf(playable, fade_tween).into());
 	}
 
-	/// Adds a step to resume all instances of a sound.
+	/// Adds a step to resume all instances of a sound or arrangement.
 	pub fn resume_instances_of(&mut self, playable: Playable, fade_tween: Option<Tween>) {
 		self.steps
 			.push(SequenceOutputCommand::ResumeInstancesOf(playable, fade_tween).into());
 	}
 
-	/// Adds a step to stop all instances of a sound.
+	/// Adds a step to stop all instances of a sound or arrangement.
 	pub fn stop_instances_of(&mut self, playable: Playable, fade_tween: Option<Tween>) {
 		self.steps
 			.push(SequenceOutputCommand::StopInstancesOf(playable, fade_tween).into());
+	}
+
+	/// Adds a step to pause a sequence.
+	pub fn pause_sequence(&mut self, id: SequenceId) {
+		self.steps
+			.push(SequenceOutputCommand::PauseSequence(id).into());
+	}
+
+	/// Adds a step to resume a sequence.
+	pub fn resume_sequence(&mut self, id: SequenceId) {
+		self.steps
+			.push(SequenceOutputCommand::ResumeSequence(id).into());
+	}
+
+	/// Adds a step to stop a sequence.
+	pub fn stop_sequence(&mut self, id: SequenceId) {
+		self.steps
+			.push(SequenceOutputCommand::StopSequence(id).into());
 	}
 
 	/// Adds a step to pause a sequence and all instances played by it.
