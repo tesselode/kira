@@ -517,14 +517,9 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		self.send_command_to_backend(MixerCommand::RemoveEffect(effect_id))
 	}
 
-	/// Returns a list of all of the new events created by the audio thread
-	/// (since the last time `events` was called).
-	pub fn events(&mut self) -> Vec<Event<CustomEvent>> {
-		let mut events = vec![];
-		while let Some(event) = self.thread_channels.event_consumer.pop() {
-			events.push(event);
-		}
-		events
+	/// Pops an event that was sent by the audio thread.
+	pub fn pop_event(&mut self) -> Option<Event<CustomEvent>> {
+		self.thread_channels.event_consumer.pop()
 	}
 
 	/// Frees resources that are no longer in use, such as unloaded sounds
