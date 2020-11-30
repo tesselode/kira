@@ -38,6 +38,7 @@ as its second piece of data. `ParameterId`s can be converted into
 	- `ease_direction` - the easing direction (in, out, in-out)
 - Added chainable methods to more settings structs
 - Replaced `AudioManager::events` with `AudioManager::pop_event`
+- Add `Sequence:pause/stop/resume_sequence`
 
 # v0.1
 First public release
