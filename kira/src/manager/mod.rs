@@ -31,7 +31,7 @@ use crate::{
 };
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
-	Stream,
+	Device, SampleRate, Stream, StreamConfig,
 };
 use ringbuf::{Consumer, Producer, RingBuffer};
 
@@ -65,6 +65,8 @@ pub struct AudioManagerSettings {
 	pub num_effects_per_track: usize,
 	/// Settings for the metronome.
 	pub metronome_settings: MetronomeSettings,
+	/// Maximum sample rate to run at. Default is 48kHz.
+	pub max_sample_rate: SampleRate,
 }
 
 impl Default for AudioManagerSettings {
@@ -80,6 +82,7 @@ impl Default for AudioManagerSettings {
 			num_tracks: 100,
 			num_effects_per_track: 10,
 			metronome_settings: MetronomeSettings::default(),
+			max_sample_rate: SampleRate(48000),
 		}
 	}
 }
@@ -199,12 +202,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		let device = host
 			.default_output_device()
 			.ok_or(AudioError::NoDefaultOutputDevice)?;
-		let config = device
-			.supported_output_configs()?
-			.next()
-			.ok_or(AudioError::NoSupportedAudioConfig)?
-			.with_max_sample_rate()
-			.config();
+		let config = Self::pick_output_config(&device, &settings)?;
 		let sample_rate = config.sample_rate.0;
 		let channels = config.channels;
 		let mut backend = Backend::new(sample_rate, settings, backend_thread_channels);
@@ -221,6 +219,30 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		)?;
 		stream.play()?;
 		Ok(stream)
+	}
+
+	pub fn pick_output_config(
+		device: &Device,
+		settings: &AudioManagerSettings,
+	) -> AudioResult<StreamConfig> {
+		// Takes the config with the least channels and the highest max sample rate
+		let best_range = device
+			.supported_output_configs()?
+			.filter(|x| x.channels() >= 2)
+			.filter(|x| x.min_sample_rate() <= settings.max_sample_rate)
+			.max_by(|a, b| {
+				// Cap sample rate to the maximum allowed
+				let max_a = a.max_sample_rate().min(settings.max_sample_rate);
+				let max_b = b.max_sample_rate().min(settings.max_sample_rate);
+				max_a
+					.cmp(&max_b) // max sample rate (primarily)
+					.then(b.channels().cmp(&a.channels())) // min channels
+			})
+			.ok_or(AudioError::NoSupportedAudioConfig)?;
+
+		let sample_rate = settings.max_sample_rate.min(best_range.max_sample_rate());
+
+		Ok(best_range.with_sample_rate(sample_rate).config())
 	}
 
 	#[cfg(feature = "benchmarking")]

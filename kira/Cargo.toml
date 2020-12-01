@@ -17,7 +17,7 @@ benchmarking = []
 
 [dependencies]
 claxon = "0.4.3"
-cpal = "0.12.1"
+cpal = "0.13.1"
 indexmap = "1.6.0"
 hound = "3.4.0"
 lewton = "0.10.1"
