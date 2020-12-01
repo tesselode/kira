@@ -229,6 +229,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		let best_range = device
 			.supported_output_configs()?
 			.filter(|x| x.channels() >= 2)
+			.filter(|x| x.sample_format() == cpal::SampleFormat::F32)
 			.filter(|x| x.min_sample_rate() <= settings.max_sample_rate)
 			.max_by(|a, b| {
 				// Cap sample rate to the maximum allowed
