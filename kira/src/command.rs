@@ -1,5 +1,6 @@
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
+	audio_stream::AudioStream,
 	instance::{InstanceId, InstanceSettings},
 	mixer::effect::Effect,
 	mixer::effect::EffectId,
@@ -61,6 +62,8 @@ pub(crate) enum MixerCommand {
 	RemoveSubTrack(SubTrackId),
 	AddEffect(TrackIndex, EffectId, Box<dyn Effect>, EffectSettings),
 	RemoveEffect(EffectId),
+	SetBackgroundStream(TrackIndex, Box<dyn AudioStream>),
+	RemoveBackgroundStream(TrackIndex),
 }
 
 #[derive(Debug, Copy, Clone)]

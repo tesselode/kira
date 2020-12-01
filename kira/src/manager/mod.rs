@@ -9,6 +9,7 @@ pub use backend::Backend;
 
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
+	audio_stream::AudioStream,
 	command::{
 		Command, InstanceCommand, MetronomeCommand, MixerCommand, ParameterCommand,
 		ResourceCommand, SequenceCommand,
@@ -31,7 +32,7 @@ use crate::{
 };
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
-	Stream,
+	SampleRate, Stream,
 };
 use ringbuf::{Consumer, Producer, RingBuffer};
 
@@ -135,7 +136,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		loop {
 			if let Some(result) = setup_result_consumer.pop() {
 				match result {
-					Ok(_) => break,
+					Ok(()) => break,
 					Err(error) => return Err(error),
 				}
 			}
@@ -226,12 +227,13 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	pub fn new_without_audio_thread(
 		settings: AudioManagerSettings,
 	) -> AudioResult<(Self, Backend<CustomEvent>)> {
+		const SAMPLE_RATE: u32 = 48000;
 		let (audio_manager_thread_channels, backend_thread_channels, _) =
 			Self::create_thread_channels(&settings);
 		let audio_manager = Self {
 			thread_channels: audio_manager_thread_channels,
 		};
-		let backend = Backend::new(48000, settings, backend_thread_channels);
+		let backend = Backend::new(SAMPLE_RATE, settings, backend_thread_channels);
 		Ok((audio_manager, backend))
 	}
 
@@ -519,6 +521,31 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	/// Pops an event that was sent by the audio thread.
 	pub fn pop_event(&mut self) -> Option<Event<CustomEvent>> {
 		self.thread_channels.event_consumer.pop()
+	}
+
+	/// Adds a background stream to a specific track.
+	/// The background stream is an [AudioStream](AudioStream)
+	/// that is played in the background of the specified track.
+	pub fn set_background_stream<S: AudioStream, T: Into<TrackIndex>>(
+		&mut self,
+		track: T,
+		stream: S,
+	) -> AudioResult<()> {
+		self.set_background_stream_boxed(track, Box::new(stream))
+	}
+
+	/// Same as [AudioManager::set_background_stream] but taking an already boxed stream.
+	pub fn set_background_stream_boxed<T: Into<TrackIndex>>(
+		&mut self,
+		track: T,
+		stream: Box<dyn AudioStream>,
+	) -> AudioResult<()> {
+		self.send_command_to_backend(MixerCommand::SetBackgroundStream(track.into(), stream))
+	}
+
+	/// Removes the background stream of a provided track.
+	pub fn remove_background_stream<T: Into<TrackIndex>>(&mut self, track: T) -> AudioResult<()> {
+		self.send_command_to_backend(MixerCommand::RemoveBackgroundStream(track.into()))
 	}
 
 	/// Frees resources that are no longer in use, such as unloaded sounds

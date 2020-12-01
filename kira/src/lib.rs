@@ -101,6 +101,7 @@
 //! ```
 
 pub mod arrangement;
+pub mod audio_stream;
 mod command;
 mod duration;
 mod error;
