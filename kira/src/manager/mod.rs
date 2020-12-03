@@ -137,8 +137,12 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 					move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
 						for frame in data.chunks_exact_mut(channels as usize) {
 							let out = backend.process();
-							frame[0] = out.left;
-							frame[1] = out.right;
+							if channels == 1 {
+								frame[0] = (out.left + out.right) / 2.0;
+							} else {
+								frame[0] = out.left;
+								frame[1] = out.right;
+							}
 						}
 					},
 					move |_| {},
