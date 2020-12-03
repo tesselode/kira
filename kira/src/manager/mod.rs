@@ -25,7 +25,7 @@ use crate::{
 use backend::Backend;
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
-	Stream,
+	SampleRate, Stream,
 };
 use ringbuf::{Consumer, Producer, RingBuffer};
 
@@ -114,12 +114,13 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 					Some(device) => device,
 					None => return Err(AudioError::NoDefaultOutputDevice),
 				};
-				let config = match device.supported_output_configs()?.next() {
-					Some(config) => config,
-					None => return Err(AudioError::NoSupportedAudioConfig),
-				}
-				.with_max_sample_rate()
-				.config();
+				// TODO: create a conversion from DefaultStreamConfigError
+				// to a more appropriate AudioError. saving this for 0.2.0
+				// because it would be a breaking change.
+				let config = device
+					.default_output_config()
+					.map_err(|_| AudioError::NoSupportedAudioConfig)?
+					.config();
 				let sample_rate = config.sample_rate.0;
 				let channels = config.channels;
 				let mut backend = Backend::new(
