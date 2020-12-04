@@ -115,9 +115,11 @@ impl Arrangement {
 	/// point will be preserved when the loop starts.
 	pub fn new_loop(sound_id: SoundId) -> Self {
 		let duration = sound_id.semantic_duration().unwrap_or(sound_id.duration());
-		Self::new(PlayableSettings::new().default_loop_start(duration))
+		let mut arrangement = Self::new(PlayableSettings::new().default_loop_start(duration));
+		arrangement
 			.add_clip(SoundClip::new(sound_id, 0.0))
-			.add_clip(SoundClip::new(sound_id, duration).trim(duration))
+			.add_clip(SoundClip::new(sound_id, duration).trim(duration));
+		arrangement
 	}
 
 	/// Creates a new arrangement that plays an intro sound, then
@@ -134,16 +136,19 @@ impl Arrangement {
 		let loop_duration = loop_sound_id
 			.semantic_duration()
 			.unwrap_or(loop_sound_id.duration());
-		Self::new(PlayableSettings::new().default_loop_start(intro_duration + loop_duration))
+		let mut arrangement =
+			Self::new(PlayableSettings::new().default_loop_start(intro_duration + loop_duration));
+		arrangement
 			.add_clip(SoundClip::new(intro_sound_id, 0.0))
 			.add_clip(SoundClip::new(loop_sound_id, intro_duration))
 			.add_clip(
 				SoundClip::new(loop_sound_id, intro_duration + loop_duration).trim(loop_duration),
-			)
+			);
+		arrangement
 	}
 
 	/// Adds a sound clip to the arrangement.
-	pub fn add_clip(mut self, clip: SoundClip) -> Self {
+	pub fn add_clip(&mut self, clip: SoundClip) -> &mut Self {
 		self.duration = self.duration.max(clip.clip_time_range.1);
 		self.clips.push(clip);
 		self
