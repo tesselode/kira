@@ -40,5 +40,15 @@ as its second piece of data. `ParameterId`s can be converted into
 - Replaced `AudioManager::events` with `AudioManager::pop_event`
 - Add `Sequence:pause/stop/resume_sequence`
 
-# v0.1
+# v0.1.2 - December 4th, 2020
+Changes:
+- Update cpal to 0.13.1
+- Fix a crash when using a mono output config
+- Use the system's default output config instead of the config with the highest sample rate in the first valid range
+
+# v0.1.1 - November 18th, 2020
+Changes:
+- Fix readme path in Cargo.toml
+
+# v0.1 - November 18th, 2020
 First public release
