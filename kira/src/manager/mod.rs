@@ -31,7 +31,7 @@ use crate::{
 };
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
-	SampleRate, Stream,
+	Stream,
 };
 use ringbuf::{Consumer, Producer, RingBuffer};
 
