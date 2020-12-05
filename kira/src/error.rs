@@ -1,6 +1,6 @@
 use std::{error::Error, fmt::Display};
 
-use cpal::{BuildStreamError, PlayStreamError, SupportedStreamConfigsError};
+use cpal::{BuildStreamError, DefaultStreamConfigError, PlayStreamError};
 use lewton::VorbisError;
 
 /// Something that can go wrong.
@@ -10,7 +10,7 @@ pub enum AudioError {
 	NoDefaultOutputDevice,
 	/// An error occurred while getting the list of supported
 	/// audio output configurations.
-	SupportedStreamConfigsError(SupportedStreamConfigsError),
+	DefaultStreamConfigError(DefaultStreamConfigError),
 	/// No supported output configuration could be found.
 	NoSupportedAudioConfig,
 	/// An error occurred while setting up the audio thread.
@@ -49,7 +49,7 @@ impl Display for AudioError {
 			AudioError::NoDefaultOutputDevice => {
 				f.write_str("Cannot find the default audio output device")
 			}
-			AudioError::SupportedStreamConfigsError(error) => f.write_str(&format!("{}", error)),
+			AudioError::DefaultStreamConfigError(error) => f.write_str(&format!("{}", error)),
 			AudioError::NoSupportedAudioConfig => f.write_str("No supported audio configurations"),
 			AudioError::BuildStreamError(error) => f.write_str(&format!("{}", error)),
 			AudioError::PlayStreamError(error) => f.write_str(&format!("{}", error)),
@@ -112,9 +112,9 @@ impl From<hound::Error> for AudioError {
 	}
 }
 
-impl From<SupportedStreamConfigsError> for AudioError {
-	fn from(error: SupportedStreamConfigsError) -> Self {
-		Self::SupportedStreamConfigsError(error)
+impl From<DefaultStreamConfigError> for AudioError {
+	fn from(error: DefaultStreamConfigError) -> Self {
+		Self::DefaultStreamConfigError(error)
 	}
 }
 

@@ -199,13 +199,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		let device = host
 			.default_output_device()
 			.ok_or(AudioError::NoDefaultOutputDevice)?;
-		// TODO: create a conversion from DefaultStreamConfigError
-		// to a more appropriate AudioError. saving this for 0.2.0
-		// because it would be a breaking change.
-		let config = device
-			.default_output_config()
-			.map_err(|_| AudioError::NoSupportedAudioConfig)?
-			.config();
+		let config = device.default_output_config()?.config();
 		let sample_rate = config.sample_rate.0;
 		let channels = config.channels;
 		let mut backend = Backend::new(sample_rate, settings, backend_thread_channels);

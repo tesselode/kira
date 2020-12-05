@@ -39,6 +39,7 @@ as its second piece of data. `ParameterId`s can be converted into
 - Added chainable methods to more settings structs
 - Replaced `AudioManager::events` with `AudioManager::pop_event`
 - Add `Sequence:pause/stop/resume_sequence`
+- Replace `AudioError::SupportedStreamConfigsError` with `AudioError::DefaultStreamConfigError`
 
 # v0.1.2 - December 4th, 2020
 Changes:
