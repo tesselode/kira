@@ -18,19 +18,18 @@ let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", PlayableSett
 audio_manager.play(sound_id, InstanceSettings::default())?;
 ```
 
-### Looping a song with an intro
+### Looping a song while preserving trailing sounds
 
 ```rust
 let sound_id = audio_manager.add_sound(Sound::from_file(
-	"loop.ogg",
+	std::env::current_dir()?.join("assets/loop.wav"),
 	PlayableSettings {
-		semantic_duration: Some(Tempo(128.0).beats_to_seconds(16.0)),
+		semantic_duration: Some(Tempo(140.0).beats_to_seconds(16.0)),
 		..Default::default()
 	},
 )?)?;
-// when the sound loops, start the loop 4 beats in
-let loop_start = Tempo(128.0).beats_to_seconds(4.0);
-audio_manager.play(sound_id, InstanceSettings::new().loop_start(loop_start))?;
+let arrangement_id = audio_manager.add_arrangement(Arrangement::new_loop(sound_id))?;
+audio_manager.play(arrangement_id, Default::default())?;
 ```
 
 ### Timing sounds with a metronome
