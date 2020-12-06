@@ -10,14 +10,14 @@
 //! # 	instance::InstanceSettings,
 //! # 	manager::{AudioManager, AudioManagerSettings},
 //! # 	sequence::Sequence,
-//! # 	sound::{Sound, SoundMetadata, SoundSettings},
+//! # 	sound::Sound,
 //! # 	Duration, Tempo,
 //! # };
 //! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
 //! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
 //! let mut sequence = Sequence::new();
 //! // play a sound
-//! let instance_id = sequence.play_sound(sound_id, InstanceSettings::default());
+//! let instance_id = sequence.play(sound_id, InstanceSettings::default());
 //! // wait 2 seconds
 //! sequence.wait(Duration::Seconds(2.0));
 //! // stop the sound
@@ -33,7 +33,7 @@
 //! # 	instance::InstanceSettings,
 //! # 	manager::{AudioManager, AudioManagerSettings},
 //! # 	sequence::Sequence,
-//! # 	sound::{Sound, SoundMetadata, SoundSettings},
+//! # 	sound::Sound,
 //! # 	Duration, Tempo,
 //! # };
 //! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
@@ -57,14 +57,14 @@
 //! # 	instance::InstanceSettings,
 //! # 	manager::{AudioManager, AudioManagerSettings},
 //! # 	sequence::Sequence,
-//! # 	sound::{Sound, SoundMetadata, SoundSettings},
+//! # 	sound::Sound,
 //! # 	Duration, Tempo,
 //! # };
 //! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
 //! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
 //! # let mut sequence = Sequence::new();
 //! sequence.wait_for_interval(4.0);
-//! sequence.play_sound(sound_id, InstanceSettings::default());
+//! sequence.play(sound_id, InstanceSettings::default());
 //! # audio_manager.start_sequence(sequence)?;
 //! # Ok::<(), kira::AudioError>(())
 //! ```
@@ -82,7 +82,7 @@
 //! # 	instance::InstanceSettings,
 //! # 	manager::{AudioManager, AudioManagerSettings},
 //! # 	sequence::Sequence,
-//! # 	sound::{Sound, SoundMetadata, SoundSettings},
+//! # 	sound::Sound,
 //! # 	Duration, Tempo,
 //! # };
 //! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
@@ -91,7 +91,7 @@
 //! sequence.wait_for_interval(4.0);
 //! sequence.start_loop();
 //! // when the sequence finishes, it will loop back to this step
-//! sequence.play_sound(sound_id, InstanceSettings::default());
+//! sequence.play(sound_id, InstanceSettings::default());
 //! sequence.wait(Duration::Beats(1.0));
 //! # audio_manager.start_sequence(sequence)?;
 //! # Ok::<(), kira::AudioError>(())
@@ -107,7 +107,7 @@
 //! # 	instance::InstanceSettings,
 //! # 	manager::{AudioManager, AudioManagerSettings},
 //! # 	sequence::Sequence,
-//! # 	sound::{Sound, SoundMetadata, SoundSettings},
+//! # 	sound::Sound,
 //! # 	Duration, Tempo,
 //! # };
 //! # #[derive(Debug, Copy, Clone)]
@@ -125,19 +125,19 @@
 //! # Ok::<(), kira::AudioError>(())
 //! ```
 //!
-//! To retrieve the events, use `AudioManager::events()`:
+//! To retrieve the events, use `AudioManager::pop_event()`:
 //!
 //! ```no_run
 //! # use kira::{
 //! # 	instance::InstanceSettings,
 //! # 	manager::{AudioManager, AudioManagerSettings},
 //! # 	sequence::Sequence,
-//! # 	sound::{Sound, SoundMetadata, SoundSettings},
+//! # 	sound::Sound,
 //! # 	Duration, Tempo,
 //! # };
 //! #
 //! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
-//! for event in audio_manager.events() {
+//! while let Some(event) = audio_manager.pop_event() {
 //! 	println!("{:?}", event);
 //! }
 //! # Ok::<(), kira::AudioError>(())

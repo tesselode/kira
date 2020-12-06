@@ -22,11 +22,16 @@
 //!
 //! ```no_run
 //! # use std::error::Error;
-//! # use kira::{manager::{AudioManager, AudioManagerSettings}, sound::{Sound, SoundSettings}, instance::InstanceSettings};
+//! # use kira::{
+//! # 	manager::{AudioManager, AudioManagerSettings},
+//! # 	sound::Sound,
+//! # 	playable::PlayableSettings,
+//! # 	instance::InstanceSettings,
+//! # };
 //! #
 //! # let mut audio_manager = AudioManager::<()>::new(AudioManagerSettings::default())?;
-//! let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", SoundSettings::default())?)?;
-//! audio_manager.play_sound(sound_id, InstanceSettings::default())?;
+//! let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", PlayableSettings::default())?)?;
+//! audio_manager.play(sound_id, InstanceSettings::default())?;
 //! # Ok::<(), kira::AudioError>(())
 //! ```
 //!
@@ -38,23 +43,22 @@
 //! # use kira::{
 //! # 	instance::InstanceSettings,
 //! # 	manager::AudioManager,
-//! # 	sound::{Sound, SoundMetadata, SoundSettings},
+//! # 	sound::Sound,
+//! # 	playable::PlayableSettings,
 //! # 	Tempo,
 //! # };
 //! #
 //! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
 //! let sound_id = audio_manager.add_sound(Sound::from_file(
 //! 	"loop.ogg",
-//! 	SoundSettings {
-//! 		metadata: SoundMetadata {
-//! 			semantic_duration: Some(Tempo(128.0).beats_to_seconds(16.0)),
-//! 		},
+//! 	PlayableSettings {
+//!			semantic_duration: Some(Tempo(128.0).beats_to_seconds(16.0)),
 //! 		..Default::default()
 //! 	},
 //! )?)?;
 //! // when the sound loops, start the loop 4 beats in
 //! let loop_start = Tempo(128.0).beats_to_seconds(4.0);
-//! audio_manager.play_sound(sound_id, InstanceSettings::new().loop_region(loop_start..))?;
+//! audio_manager.play(sound_id, InstanceSettings::new().loop_start(loop_start))?;
 //! # Ok::<(), kira::AudioError>(())
 //! ```
 //!
@@ -70,7 +74,8 @@
 //! # 	instance::InstanceSettings,
 //! # 	manager::AudioManager,
 //! # 	sequence::Sequence,
-//! # 	sound::{Sound, SoundMetadata, SoundSettings},
+//! # 	sound::Sound,
+//! # 	playable::PlayableSettings,
 //! # 	Tempo,
 //! # };
 //! #
@@ -82,17 +87,15 @@
 //! # let mut audio_manager = AudioManager::<CustomEvent>::new(Default::default())?;
 //! # let kick_drum_sound_id = audio_manager.add_sound(Sound::from_file(
 //! # 	"kick.ogg",
-//! # 	SoundSettings {
-//! # 		metadata: SoundMetadata {
-//! # 			semantic_duration: Some(Tempo(128.0).beats_to_seconds(16.0)),
-//! # 		},
+//! # 	PlayableSettings {
+//! # 		semantic_duration: Some(Tempo(128.0).beats_to_seconds(16.0)),
 //! # 		..Default::default()
 //! # 	},
 //! # )?)?;
 //! let mut sequence = Sequence::new();
 //! sequence.start_loop();
 //! sequence.wait_for_interval(4.0);
-//! sequence.play_sound(kick_drum_sound_id, InstanceSettings::default());
+//! sequence.play(kick_drum_sound_id, InstanceSettings::default());
 //! sequence.emit_custom_event(CustomEvent::KickDrum);
 //! audio_manager.start_sequence(sequence)?;
 //! // start the metronome so the sequence will have a pulse to listen for

@@ -14,8 +14,8 @@ Lua bindings for use with frameworks like LÖVE.
 
 ```rust
 let mut audio_manager = AudioManager::<()>::new(AudioManagerSettings::default())?;
-let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", SoundSettings::default())?)?;
-audio_manager.play_sound(sound_id, InstanceSettings::default())?;
+let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", PlayableSettings::default())?)?;
+audio_manager.play(sound_id, InstanceSettings::default())?;
 ```
 
 ### Looping a song with an intro
@@ -23,16 +23,14 @@ audio_manager.play_sound(sound_id, InstanceSettings::default())?;
 ```rust
 let sound_id = audio_manager.add_sound(Sound::from_file(
 	"loop.ogg",
-	SoundSettings {
-		metadata: SoundMetadata {
-			semantic_duration: Some(Tempo(128.0).beats_to_seconds(16.0)),
-		},
+	PlayableSettings {
+		semantic_duration: Some(Tempo(128.0).beats_to_seconds(16.0)),
 		..Default::default()
 	},
 )?)?;
 // when the sound loops, start the loop 4 beats in
 let loop_start = Tempo(128.0).beats_to_seconds(4.0);
-audio_manager.play_sound(sound_id, InstanceSettings::new().loop_region(loop_start..))?;
+audio_manager.play(sound_id, InstanceSettings::new().loop_start(loop_start))?;
 ```
 
 ### Timing sounds with a metronome
@@ -41,7 +39,7 @@ audio_manager.play_sound(sound_id, InstanceSettings::new().loop_region(loop_star
 let mut sequence = Sequence::new();
 sequence.start_loop();
 sequence.wait_for_interval(4.0);
-sequence.play_sound(kick_drum_sound_id, InstanceSettings::default());
+sequence.play(kick_drum_sound_id, InstanceSettings::default());
 sequence.emit_custom_event(CustomEvent::KickDrum);
 audio_manager.start_sequence(sequence)?;
 audio_manager.start_metronome()?;

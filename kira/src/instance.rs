@@ -15,7 +15,7 @@
 //! #
 //! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
 //! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
-//! let instance_id = audio_manager.play_sound(sound_id, InstanceSettings::new().pitch(0.5))?;
+//! let instance_id = audio_manager.play(sound_id, InstanceSettings::new().pitch(0.5))?;
 //! # Ok::<(), Box<dyn Error>>(())
 //! ```
 //!
@@ -28,8 +28,8 @@
 //! #
 //! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
 //! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
-//! # let instance_id = audio_manager.play_sound(sound_id, Default::default())?;
-//! audio_manager.stop_instance(instance_id, Some(Tween(2.0)))?;
+//! # let instance_id = audio_manager.play(sound_id, Default::default())?;
+//! audio_manager.stop_instance(instance_id, Some(2.0.into()))?;
 //! # Ok::<(), Box<dyn Error>>(())
 //! ```
 
