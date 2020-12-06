@@ -1,5 +1,125 @@
-//! Provides an interface for "stitching together" individual sounds
-//! into larger pieces.
+//! Provides an interface for combining individual sounds into larger pieces.
+//!
+//! `Arrangement`s are containers of `SoundClip`s, which are portions of
+//! a sound that can be positioned in time, stretched, trimmed, and
+//! reversed. You can play instances of an arrangement just like you would
+//! play instances of a sound.
+//!
+//! `Arrangement`s are a lot like arrangement views in DAWs, like the
+//! playlist view in FL Studio. In fact, the playlist view in FL Studio
+//! will be used to illustrate the contents of `Arrangement`s in the
+//! following examples.
+//!
+//! This image represents an arrangement that plays the same sound
+//! four times: once normally, once trimmed, once stretched out,
+//! and once reversed.
+//!
+//! ![arrangements 1](https://i.imgur.com/1p4W1Ld.png)
+//!
+//! ## Motivating example: seamless loops
+//!
+//! Oftentimes, game composers need to write pieces that loop forever.
+//! These pieces may also have an intro section that plays once
+//! before the main part of the song loops forever. `Instance`s allow
+//! you to set a loop start point so when the playback position reaches
+//! the end, it jumps back to an arbitrary point in the sound.
+//!
+//! The problem is this doesn't account for parts of the sound that
+//! bleed into the next section. For example, at the end of an orchestral
+//! piece, there may be a cymbal swell that transitions the song back
+//! to the beginning of the loop. To preserve the musical timing of the
+//! piece, the playback position needs to jump back to the start point
+//! as soon as the last measure of music ends, which would cut off
+//! the cymbal, creating a jarring sound. If the song has an intro section
+//! with trailing sound, then that sound will cut in when the song
+//! loops, which is also jarring.
+//!
+//! There's a couple possible solutions:
+//! - Use a [`Sequence`](crate::sequence) to play separate
+//!   intro and loop sounds at the right time. This works, but you
+//!   can't reverse or change the pitch of a sequence, which you may
+//!   want in some circumstances.
+//! - You can edit your intro and loop audio in a specific way to create a
+//!   larger piece that will seamlessly loop. This is tedious, and you have
+//!   to store a larger audio as part of the game's assets.
+//!
+//! Arrangements let you use the latter solution without having to store
+//! a larger audio file, and as you'll see, they can do the work of setting
+//! up seamless loops for you.
+//!
+//! ### Setting up a simple loop
+//!
+//! Let's say we have a short drum loop with a cymbal swell at the end
+//! that will seamless lead back to the beginning of the loop.
+//!
+//! ![arrangements 2](https://i.imgur.com/TOpa9Zq.png)
+//!
+//! We can set up a seamless loop by placing the same sound in an arrangement
+//! twice, once with the cymbal swell preserved and once with it cut off.
+//! The red region at the top shows the portion of the arrangement
+//! that will be looped.
+//!
+//! ![arrangements 3](https://i.imgur.com/Xoti30y.png)
+//!
+//! When the playback position jumps back to the loop point, the trailing sound
+//! from the first sound clip will seamlessly connect to the trailing
+//! sound that was cut off from the second clip.
+//!
+//! You can set up this arrangement manually:
+//!
+//! ```no_run
+//! # use kira::{
+//! # 	arrangement::Arrangement, arrangement::SoundClip, manager::AudioManager,
+//! # 	playable::PlayableSettings, sound::Sound, Tempo,
+//! # };
+//! #
+//! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
+//! # let sound_id = audio_manager.add_sound(Sound::from_file(
+//! # 	std::env::current_dir()?.join("assets/loop.wav"),
+//! # 	Default::default(),
+//! # )?)?;
+//! #
+//! let tempo = Tempo(140.0);
+//! let mut arrangement =
+//! 	Arrangement::new(PlayableSettings::new().default_loop_start(tempo.beats_to_seconds(16.0)));
+//! arrangement
+//! 	.add_clip(SoundClip::new(sound_id, 0.0))
+//! 	.add_clip(
+//! 		SoundClip::new(sound_id, tempo.beats_to_seconds(16.0))
+//! 			.trim(tempo.beats_to_seconds(16.0)),
+//! 	);
+//! # Ok::<(), kira::AudioError>(())
+//! ```
+//!
+//! Or you can just use [`Arrangement::new_loop`], which will do the work for you:
+//!
+//! ```no_run
+//! # use kira::{
+//! # 	arrangement::Arrangement, arrangement::SoundClip, manager::AudioManager,
+//! # 	playable::PlayableSettings, sound::Sound, Tempo,
+//! # };
+//! #
+//! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
+//! let tempo = Tempo(140.0);
+//! let sound_id = audio_manager.add_sound(Sound::from_file(
+//! 	std::env::current_dir()?.join("assets/loop.wav"),
+//! 	PlayableSettings {
+//! 		semantic_duration: Some(tempo.beats_to_seconds(16.0)),
+//! 		..Default::default()
+//! 	},
+//! )?)?;
+//! let arrangement = Arrangement::new_loop(sound_id);
+//! # Ok::<(), kira::AudioError>(())
+//! ```
+//!
+//! ### Loops with intros
+//!
+//! Loops with intros can be set up in a similar way:
+//!
+//! ![arrangements 4](https://i.imgur.com/EM7P7Ry.png)
+//!
+//! For brevity, we'll just say you can use [`Arrangement::new_loop_with_intro`]
+//! to create these.
 
 mod clip;
 
