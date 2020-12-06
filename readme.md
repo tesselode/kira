@@ -29,7 +29,7 @@ let sound_id = audio_manager.add_sound(Sound::from_file(
 	},
 )?)?;
 let arrangement_id = audio_manager.add_arrangement(Arrangement::new_loop(sound_id))?;
-audio_manager.play(arrangement_id, Default::default())?;
+audio_manager.play(arrangement_id, InstanceSettings::default())?;
 ```
 
 ### Timing sounds with a metronome

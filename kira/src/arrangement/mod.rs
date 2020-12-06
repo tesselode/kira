@@ -69,14 +69,14 @@
 //!
 //! ```no_run
 //! # use kira::{
-//! # 	arrangement::Arrangement, arrangement::SoundClip, manager::AudioManager,
+//! # 	arrangement::Arrangement, arrangement::SoundClip, manager::{AudioManager, AudioManagerSettings},
 //! # 	playable::PlayableSettings, sound::Sound, Tempo,
 //! # };
 //! #
-//! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
+//! # let mut audio_manager = AudioManager::<()>::new(AudioManagerSettings::default())?;
 //! # let sound_id = audio_manager.add_sound(Sound::from_file(
 //! # 	std::env::current_dir()?.join("assets/loop.wav"),
-//! # 	Default::default(),
+//! # 	PlayableSettings::default(),
 //! # )?)?;
 //! #
 //! let tempo = Tempo(140.0);
@@ -95,11 +95,11 @@
 //!
 //! ```no_run
 //! # use kira::{
-//! # 	arrangement::Arrangement, arrangement::SoundClip, manager::AudioManager,
+//! # 	arrangement::Arrangement, arrangement::SoundClip, manager::{AudioManager, AudioManagerSettings},
 //! # 	playable::PlayableSettings, sound::Sound, Tempo,
 //! # };
 //! #
-//! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
+//! # let mut audio_manager = AudioManager::<()>::new(AudioManagerSettings::default())?;
 //! let tempo = Tempo(140.0);
 //! let sound_id = audio_manager.add_sound(Sound::from_file(
 //! 	std::env::current_dir()?.join("assets/loop.wav"),
