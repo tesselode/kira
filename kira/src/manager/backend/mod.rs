@@ -14,7 +14,7 @@ use crate::{
 	mixer::Track,
 	parameter::Parameters,
 	playable::Playable,
-	sequence::Sequence,
+	sequence::SequenceInstance,
 	sound::{Sound, SoundId},
 };
 use indexmap::IndexMap;
@@ -27,7 +27,7 @@ pub(crate) struct BackendThreadChannels<CustomEvent: Copy + Send + 'static + std
 	pub event_producer: Producer<Event<CustomEvent>>,
 	pub sounds_to_unload_producer: Producer<Sound>,
 	pub arrangements_to_unload_producer: Producer<Arrangement>,
-	pub sequences_to_unload_producer: Producer<Sequence<CustomEvent>>,
+	pub sequence_instances_to_unload_producer: Producer<SequenceInstance<CustomEvent>>,
 	pub tracks_to_unload_producer: Producer<Track>,
 	pub effect_slots_to_unload_producer: Producer<EffectSlot>,
 }
@@ -163,7 +163,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> 
 		for command in self.sequences.update(
 			self.dt,
 			&self.metronome,
-			&mut self.thread_channels.sequences_to_unload_producer,
+			&mut self.thread_channels.sequence_instances_to_unload_producer,
 		) {
 			self.command_queue.push(command.into());
 		}

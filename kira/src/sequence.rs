@@ -210,22 +210,10 @@ impl<CustomEvent: Copy> From<SequenceOutputCommand<CustomEvent>> for SequenceSte
 	}
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-enum SequenceState {
-	Playing,
-	Paused,
-	Finished,
-}
-
-/// A series of audio-related actions to take at specific times.
 #[derive(Debug, Clone)]
 pub struct Sequence<CustomEvent: Copy> {
 	steps: Vec<SequenceStep<CustomEvent>>,
 	loop_point: Option<usize>,
-	state: SequenceState,
-	position: usize,
-	wait_timer: Option<f64>,
-	muted: bool,
 }
 
 impl<CustomEvent: Copy> Sequence<CustomEvent> {
@@ -234,10 +222,6 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 		Self {
 			steps: vec![],
 			loop_point: None,
-			state: SequenceState::Playing,
-			position: 0,
-			wait_timer: None,
-			muted: false,
 		}
 	}
 
@@ -468,20 +452,48 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 			}
 		}
 	}
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+enum SequenceInstanceState {
+	Playing,
+	Paused,
+	Finished,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct SequenceInstance<CustomEvent: Copy> {
+	sequence: Sequence<CustomEvent>,
+	state: SequenceInstanceState,
+	position: usize,
+	wait_timer: Option<f64>,
+	muted: bool,
+}
+
+impl<CustomEvent: Copy> SequenceInstance<CustomEvent> {
+	pub fn new(sequence: Sequence<CustomEvent>) -> Self {
+		Self {
+			sequence,
+			state: SequenceInstanceState::Playing,
+			position: 0,
+			wait_timer: None,
+			muted: false,
+		}
+	}
 
 	fn start_step(&mut self, index: usize) {
-		if let Some(step) = self.steps.get(index) {
+		if let Some(step) = self.sequence.steps.get(index) {
 			self.position = index;
 			if let SequenceStep::Wait(_) = step {
 				self.wait_timer = Some(1.0);
 			} else {
 				self.wait_timer = None;
 			}
-		} else if let Some(loop_point) = self.loop_point {
-			self.update_instance_ids();
+		} else if let Some(loop_point) = self.sequence.loop_point {
+			self.sequence.update_instance_ids();
 			self.start_step(loop_point);
 		} else {
-			self.state = SequenceState::Finished;
+			self.state = SequenceInstanceState::Finished;
 		}
 	}
 
@@ -498,15 +510,15 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 	}
 
 	pub(crate) fn pause(&mut self) {
-		self.state = SequenceState::Paused;
+		self.state = SequenceInstanceState::Paused;
 	}
 
 	pub(crate) fn resume(&mut self) {
-		self.state = SequenceState::Playing;
+		self.state = SequenceInstanceState::Playing;
 	}
 
 	pub(crate) fn stop(&mut self) {
-		self.state = SequenceState::Finished;
+		self.state = SequenceInstanceState::Finished;
 	}
 
 	pub(crate) fn update(
@@ -517,11 +529,11 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 	) {
 		loop {
 			match self.state {
-				SequenceState::Paused | SequenceState::Finished => {
+				SequenceInstanceState::Paused | SequenceInstanceState::Finished => {
 					break;
 				}
 				_ => {
-					if let Some(step) = self.steps.get(self.position) {
+					if let Some(step) = self.sequence.steps.get(self.position) {
 						match step {
 							SequenceStep::Wait(duration) => {
 								if let Some(time) = self.wait_timer.as_mut() {
@@ -553,7 +565,7 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 	}
 
 	pub(crate) fn finished(&self) -> bool {
-		if let SequenceState::Finished = self.state {
+		if let SequenceInstanceState::Finished = self.state {
 			true
 		} else {
 			false

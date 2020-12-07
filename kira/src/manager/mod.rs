@@ -23,6 +23,7 @@ use crate::{
 	},
 	parameter::{ParameterId, Tween},
 	playable::Playable,
+	sequence::SequenceInstance,
 	sequence::{Sequence, SequenceId},
 	sound::{Sound, SoundId},
 	tempo::Tempo,
@@ -90,7 +91,7 @@ pub(crate) struct AudioManagerThreadChannels<CustomEvent: Copy + Send + 'static 
 	pub event_consumer: Consumer<Event<CustomEvent>>,
 	pub sounds_to_unload_consumer: Consumer<Sound>,
 	pub arrangements_to_unload_consumer: Consumer<Arrangement>,
-	pub sequences_to_unload_consumer: Consumer<Sequence<CustomEvent>>,
+	pub sequence_instances_to_unload_consumer: Consumer<SequenceInstance<CustomEvent>>,
 	pub tracks_to_unload_consumer: Consumer<Track>,
 	pub effect_slots_to_unload_consumer: Consumer<EffectSlot>,
 }
@@ -158,7 +159,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 			RingBuffer::new(settings.num_sounds).split();
 		let (arrangements_to_unload_producer, arrangements_to_unload_consumer) =
 			RingBuffer::new(settings.num_arrangements).split();
-		let (sequences_to_unload_producer, sequences_to_unload_consumer) =
+		let (sequence_instances_to_unload_producer, sequence_instances_to_unload_consumer) =
 			RingBuffer::new(settings.num_sequences).split();
 		let (tracks_to_unload_producer, tracks_to_unload_consumer) =
 			RingBuffer::new(settings.num_tracks).split();
@@ -171,7 +172,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 			event_consumer,
 			sounds_to_unload_consumer,
 			arrangements_to_unload_consumer,
-			sequences_to_unload_consumer,
+			sequence_instances_to_unload_consumer,
 			tracks_to_unload_consumer,
 			effect_slots_to_unload_consumer,
 		};
@@ -180,7 +181,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 			event_producer,
 			sounds_to_unload_producer,
 			arrangements_to_unload_producer,
-			sequences_to_unload_producer,
+			sequence_instances_to_unload_producer,
 			tracks_to_unload_producer,
 			effect_slots_to_unload_producer,
 		};
@@ -526,7 +527,11 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	pub fn free_unused_resources(&mut self) {
 		while let Some(_) = self.thread_channels.sounds_to_unload_consumer.pop() {}
 		while let Some(_) = self.thread_channels.arrangements_to_unload_consumer.pop() {}
-		while let Some(_) = self.thread_channels.sequences_to_unload_consumer.pop() {}
+		while let Some(_) = self
+			.thread_channels
+			.sequence_instances_to_unload_consumer
+			.pop()
+		{}
 		while let Some(_) = self.thread_channels.tracks_to_unload_consumer.pop() {}
 		while let Some(_) = self.thread_channels.effect_slots_to_unload_consumer.pop() {}
 	}
