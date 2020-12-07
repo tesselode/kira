@@ -1,14 +1,19 @@
+/// A curve that can be applied to a [`Tween`].
+///
+/// Given a position in a tween `t` from 0-1, each easing
+/// function transforms `t` differently.
 #[derive(Debug, Copy, Clone)]
 pub enum Easing {
+	/// Applies no transformation.
 	Linear,
+	/// Raises `t` to an integer power.
 	PowI(i32),
+	/// Raises `t` to a float power.
 	PowF(f64),
 }
 
 impl Easing {
-	/// Applies the easing curve to a relative position in an
-	/// animation (where 0 is the beginning of the animation and
-	/// 1 is the end).
+	/// Applies the easing curve to the given `t`.
 	pub fn apply(&self, t: f64) -> f64 {
 		match self {
 			Easing::Linear => t,
@@ -24,6 +29,7 @@ impl Default for Easing {
 	}
 }
 
+/// A direction for an easing curve.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum EaseDirection {
 	In,
@@ -37,7 +43,7 @@ impl Default for EaseDirection {
 	}
 }
 
-/// Represents a movement of one value to another over time.
+/// A movement of one value to another over time.
 #[derive(Debug, Copy, Clone)]
 pub struct Tween {
 	pub duration: f64,

@@ -1,12 +1,11 @@
 use crate::parameter::{Mapping, ParameterId, Parameters};
 
-/// A number that something can be set to.
-///
-/// Can either be a fixed number or the current value
-/// of a parameter.
+/// A value that something can be set to.
 #[derive(Debug, Copy, Clone)]
 pub enum Value<T: From<f64> + Copy> {
+	/// A fixed value.
 	Fixed(T),
+	/// The current value of a parameter.
 	Parameter(ParameterId, Mapping),
 }
 

@@ -1,8 +1,15 @@
+/// A transformation from one range of values to another.
 #[derive(Debug, Copy, Clone)]
 pub struct Mapping {
+	/// The input range of the mapping.
 	pub input_range: (f64, f64),
+	/// The corresponding output range of the mapping.
 	pub output_range: (f64, f64),
+	/// Whether values should be prevented from being
+	/// less than the bottom of the output range.
 	pub clamp_bottom: bool,
+	/// Whether values should be prevented from being
+	/// greater than the top of the output range.
 	pub clamp_top: bool,
 }
 
@@ -18,6 +25,7 @@ impl Default for Mapping {
 }
 
 impl Mapping {
+	/// Transforms an input value to an output value.
 	pub fn map(&self, input: f64) -> f64 {
 		let relative_input =
 			(input - self.input_range.0) / (self.input_range.1 - self.input_range.0);
