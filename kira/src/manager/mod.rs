@@ -103,6 +103,9 @@ and the audio thread.
 */
 pub struct AudioManager<CustomEvent: Copy + Send + 'static = ()> {
 	thread_channels: AudioManagerThreadChannels<CustomEvent>,
+	// holds the stream if it has been created on the main thread
+	// so it can live for as long as the audio manager
+	_stream: Option<Stream>,
 }
 
 impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEvent> {
@@ -110,38 +113,46 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	pub fn new(settings: AudioManagerSettings) -> AudioResult<Self> {
 		let (audio_manager_thread_channels, backend_thread_channels, mut quit_signal_consumer) =
 			Self::create_thread_channels(&settings);
-		let (mut setup_result_producer, mut setup_result_consumer) =
-			RingBuffer::<AudioResult<()>>::new(1).split();
-		// set up a cpal stream on a new thread. we could do this on the main thread,
-		// but that causes issues with LÖVE.
-		std::thread::spawn(move || {
-			match Self::setup_stream(settings, backend_thread_channels) {
-				Ok(_stream) => {
-					setup_result_producer.push(Ok(())).unwrap();
-					// wait for a quit message before ending the thread and dropping
-					// the stream
-					while let None = quit_signal_consumer.pop() {
-						std::thread::sleep(std::time::Duration::from_secs_f64(
-							WRAPPER_THREAD_SLEEP_DURATION,
-						));
+
+		let stream = {
+			let (mut setup_result_producer, mut setup_result_consumer) =
+				RingBuffer::<AudioResult<()>>::new(1).split();
+			// set up a cpal stream on a new thread. we could do this on the main thread,
+			// but that causes issues with LÖVE.
+			std::thread::spawn(move || {
+				match Self::setup_stream(settings, backend_thread_channels) {
+					Ok(_stream) => {
+						setup_result_producer.push(Ok(())).unwrap();
+						// wait for a quit message before ending the thread and dropping
+						// the stream
+						while let None = quit_signal_consumer.pop() {
+							std::thread::sleep(std::time::Duration::from_secs_f64(
+								WRAPPER_THREAD_SLEEP_DURATION,
+							));
+						}
+					}
+					Err(error) => {
+						setup_result_producer.push(Err(error)).unwrap();
 					}
 				}
-				Err(error) => {
-					setup_result_producer.push(Err(error)).unwrap();
+			});
+			// wait for the audio thread to report back a result
+			loop {
+				if let Some(result) = setup_result_consumer.pop() {
+					match result {
+						Ok(_) => break,
+						Err(error) => return Err(error),
+					}
 				}
 			}
-		});
-		// wait for the audio thread to report back a result
-		loop {
-			if let Some(result) = setup_result_consumer.pop() {
-				match result {
-					Ok(_) => break,
-					Err(error) => return Err(error),
-				}
-			}
-		}
+
+			None
+		};
+
+
 		Ok(Self {
 			thread_channels: audio_manager_thread_channels,
+			_stream: stream,
 		})
 	}
 
@@ -230,6 +241,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 			Self::create_thread_channels(&settings);
 		let audio_manager = Self {
 			thread_channels: audio_manager_thread_channels,
+			_stream: None,
 		};
 		let backend = Backend::new(48000, settings, backend_thread_channels);
 		Ok((audio_manager, backend))
