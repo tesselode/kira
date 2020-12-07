@@ -5,8 +5,7 @@ for games. It aims to fill the holes in many game engines' built-in
 audio APIs with features like custom loop points and audio event
 scripting.
 
-The repo contains the main library, written in Rust, as well as
-Lua bindings for use with frameworks like LÖVE.
+You can find a demo of some of Kira's features [here](https://github.com/tesselode/kira-demo/).
 
 ## Examples
 
