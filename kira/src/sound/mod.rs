@@ -4,13 +4,12 @@ mod id;
 
 pub use id::SoundId;
 
-use crate::{
-	error::AudioError, error::AudioResult, frame::Frame, mixer::TrackIndex,
-	playable::PlayableSettings,
-};
-use claxon::FlacReader;
-use hound::WavReader;
-use lewton::{inside_ogg::OggStreamReader, samples::Samples};
+use crate::{frame::Frame, mixer::TrackIndex, playable::PlayableSettings};
+
+#[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
+use crate::{error::AudioError, error::AudioResult};
+
+#[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
 use std::{fs::File, path::Path};
 
 /// A piece of audio that can be played by an [`AudioManager`](crate::manager::AudioManager).
@@ -25,7 +24,7 @@ pub struct Sound {
 
 impl Sound {
 	/// Creates a new sound from raw sample data.
-	pub fn new(sample_rate: u32, samples: Vec<Frame>, settings: PlayableSettings) -> Self {
+	pub fn from_samples(sample_rate: u32, samples: Vec<Frame>, settings: PlayableSettings) -> Self {
 		let duration = samples.len() as f64 / sample_rate as f64;
 		Self {
 			sample_rate,
@@ -37,6 +36,7 @@ impl Sound {
 	}
 
 	/// Decodes a sound from an mp3 file.
+	#[cfg(feature = "mp3")]
 	pub fn from_mp3_file<P>(path: P, settings: PlayableSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
@@ -87,14 +87,20 @@ impl Sound {
 			Some(sample_rate) => sample_rate,
 			None => return Err(AudioError::UnknownMp3SampleRate),
 		};
-		Ok(Self::new(sample_rate as u32, stereo_samples, settings))
+		Ok(Self::from_samples(
+			sample_rate as u32,
+			stereo_samples,
+			settings,
+		))
 	}
 
 	/// Decodes a sound from an ogg file.
+	#[cfg(feature = "ogg")]
 	pub fn from_ogg_file<P>(path: P, settings: PlayableSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
 	{
+		use lewton::{inside_ogg::OggStreamReader, samples::Samples};
 		let mut reader = OggStreamReader::new(File::open(path)?)?;
 		let mut stereo_samples = vec![];
 		while let Some(packet) = reader.read_dec_packet_generic::<Vec<Vec<f32>>>()? {
@@ -114,7 +120,7 @@ impl Sound {
 				_ => return Err(AudioError::UnsupportedChannelConfiguration),
 			}
 		}
-		Ok(Self::new(
+		Ok(Self::from_samples(
 			reader.ident_hdr.audio_sample_rate,
 			stereo_samples,
 			settings,
@@ -122,11 +128,12 @@ impl Sound {
 	}
 
 	/// Decodes a sound from a flac file.
+	#[cfg(feature = "flac")]
 	pub fn from_flac_file<P>(path: P, settings: PlayableSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
 	{
-		let mut reader = FlacReader::open(path)?;
+		let mut reader = claxon::FlacReader::open(path)?;
 		let streaminfo = reader.streaminfo();
 		let mut stereo_samples = vec![];
 		match reader.streaminfo().channels {
@@ -148,15 +155,20 @@ impl Sound {
 			}
 			_ => return Err(AudioError::UnsupportedChannelConfiguration),
 		}
-		Ok(Self::new(streaminfo.sample_rate, stereo_samples, settings))
+		Ok(Self::from_samples(
+			streaminfo.sample_rate,
+			stereo_samples,
+			settings,
+		))
 	}
 
 	/// Decodes a sound from a wav file.
+	#[cfg(feature = "wav")]
 	pub fn from_wav_file<P>(path: P, settings: PlayableSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
 	{
-		let mut reader = WavReader::open(path)?;
+		let mut reader = hound::WavReader::open(path)?;
 		let spec = reader.spec();
 		let mut stereo_samples = vec![];
 		match reader.spec().channels {
@@ -197,7 +209,7 @@ impl Sound {
 			},
 			_ => return Err(AudioError::UnsupportedChannelConfiguration),
 		}
-		Ok(Self::new(
+		Ok(Self::from_samples(
 			reader.spec().sample_rate,
 			stereo_samples,
 			settings,
@@ -207,6 +219,7 @@ impl Sound {
 	/// Decodes a sound from a file.
 	///
 	/// The audio format will be automatically determined from the file extension.
+	#[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
 	pub fn from_file<P>(path: P, settings: PlayableSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
@@ -214,9 +227,13 @@ impl Sound {
 		if let Some(extension) = path.as_ref().extension() {
 			if let Some(extension_str) = extension.to_str() {
 				match extension_str {
+					#[cfg(feature = "mp3")]
 					"mp3" => return Self::from_mp3_file(path, settings),
+					#[cfg(feature = "ogg")]
 					"ogg" => return Self::from_ogg_file(path, settings),
+					#[cfg(feature = "flac")]
 					"flac" => return Self::from_flac_file(path, settings),
+					#[cfg(feature = "wav")]
 					"wav" => return Self::from_wav_file(path, settings),
 					_ => {}
 				}

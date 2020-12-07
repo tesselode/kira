@@ -1,7 +1,6 @@
 use std::{error::Error, fmt::Display};
 
 use cpal::{BuildStreamError, DefaultStreamConfigError, PlayStreamError};
-use lewton::VorbisError;
 
 /// Something that can go wrong.
 #[derive(Debug)]
@@ -30,16 +29,22 @@ pub enum AudioError {
 	/// An error occurred when interacting with the filesystem.
 	IoError(std::io::Error),
 	/// An error occurred when loading an mp3 file.
+	#[cfg(feature = "mp3")]
 	Mp3Error(minimp3::Error),
 	/// An mp3 file has multiple sample rates (not supported).
+	#[cfg(feature = "mp3")]
 	VariableMp3SampleRate,
 	/// The sample rate of an mp3 file could not be determined.
+	#[cfg(feature = "mp3")]
 	UnknownMp3SampleRate,
 	/// An error occurred when loading an ogg file.
-	OggError(VorbisError),
+	#[cfg(feature = "ogg")]
+	OggError(lewton::VorbisError),
 	/// An error occurred when loading a flac file.
+	#[cfg(feature = "flac")]
 	FlacError(claxon::Error),
 	/// An error occurred when loading a wav file.
+	#[cfg(feature = "wav")]
 	WavError(hound::Error),
 }
 
@@ -66,15 +71,21 @@ impl Display for AudioError {
 				f.write_str("The loop point of a sequence cannot be at the very end")
 			}
 			AudioError::IoError(error) => f.write_str(&format!("{}", error)),
+			#[cfg(feature = "mp3")]
 			AudioError::Mp3Error(error) => f.write_str(&format!("{}", error)),
+			#[cfg(feature = "mp3")]
 			AudioError::VariableMp3SampleRate => {
 				f.write_str("mp3s with variable sample rates are not supported")
 			}
+			#[cfg(feature = "mp3")]
 			AudioError::UnknownMp3SampleRate => {
 				f.write_str("Could not get the sample rate of the mp3")
 			}
+			#[cfg(feature = "ogg")]
 			AudioError::OggError(error) => f.write_str(&format!("{}", error)),
+			#[cfg(feature = "flac")]
 			AudioError::FlacError(error) => f.write_str(&format!("{}", error)),
+			#[cfg(feature = "wav")]
 			AudioError::WavError(error) => f.write_str(&format!("{}", error)),
 		}
 	}
@@ -88,24 +99,28 @@ impl From<std::io::Error> for AudioError {
 	}
 }
 
+#[cfg(feature = "mp3")]
 impl From<minimp3::Error> for AudioError {
 	fn from(error: minimp3::Error) -> Self {
 		Self::Mp3Error(error)
 	}
 }
 
-impl From<VorbisError> for AudioError {
-	fn from(error: VorbisError) -> Self {
+#[cfg(feature = "ogg")]
+impl From<lewton::VorbisError> for AudioError {
+	fn from(error: lewton::VorbisError) -> Self {
 		Self::OggError(error)
 	}
 }
 
+#[cfg(feature = "flac")]
 impl From<claxon::Error> for AudioError {
 	fn from(error: claxon::Error) -> Self {
 		Self::FlacError(error)
 	}
 }
 
+#[cfg(feature = "wav")]
 impl From<hound::Error> for AudioError {
 	fn from(error: hound::Error) -> Self {
 		Self::WavError(error)
