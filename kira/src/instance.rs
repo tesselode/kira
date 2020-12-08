@@ -41,7 +41,7 @@ use crate::{
 	mixer::{SubTrackId, TrackIndex},
 	parameter::{Parameter, Parameters, Tween},
 	playable::Playable,
-	sequence::SequenceId,
+	sequence::SequenceInstanceId,
 	sound::{Sound, SoundId},
 	value::CachedValue,
 	value::Value,
@@ -266,7 +266,7 @@ pub(crate) enum InstanceState {
 pub(crate) struct Instance {
 	playable: Playable,
 	track_index: TrackIndex,
-	sequence_id: Option<SequenceId>,
+	sequence_id: Option<SequenceInstanceId>,
 	volume: CachedValue<f64>,
 	pitch: CachedValue<f64>,
 	panning: CachedValue<f64>,
@@ -280,7 +280,7 @@ pub(crate) struct Instance {
 impl Instance {
 	pub fn new(
 		playable: Playable,
-		sequence_id: Option<SequenceId>,
+		sequence_id: Option<SequenceInstanceId>,
 		settings: InstanceSettings,
 	) -> Self {
 		let state;
@@ -316,7 +316,7 @@ impl Instance {
 		self.track_index
 	}
 
-	pub fn sequence_id(&self) -> Option<SequenceId> {
+	pub fn sequence_id(&self) -> Option<SequenceInstanceId> {
 		self.sequence_id
 	}
 

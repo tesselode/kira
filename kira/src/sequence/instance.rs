@@ -1,8 +1,28 @@
+use std::sync::atomic::{AtomicUsize, Ordering};
+
 use ringbuf::Producer;
 
 use crate::metronome::Metronome;
 
 use super::{RawSequence, SequenceOutputCommand, SequenceStep};
+
+static NEXT_SEQUENCE_INSTANCE_INDEX: AtomicUsize = AtomicUsize::new(0);
+
+/// A unique identifier for a [`Sequence`](crate::sequence::Sequence).
+///
+/// You cannot create this manually - a sequence ID is returned
+/// when you start a sequence with an [`AudioManager`](crate::manager::AudioManager).
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct SequenceInstanceId {
+	index: usize,
+}
+
+impl SequenceInstanceId {
+	pub(crate) fn new() -> Self {
+		let index = NEXT_SEQUENCE_INSTANCE_INDEX.fetch_add(1, Ordering::Relaxed);
+		Self { index }
+	}
+}
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 enum SequenceInstanceState {

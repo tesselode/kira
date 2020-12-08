@@ -26,7 +26,7 @@ use crate::{
 	parameter::{ParameterId, Tween},
 	playable::Playable,
 	sequence::SequenceInstance,
-	sequence::{EventReceiver, Sequence, SequenceId, SequenceInstanceSettings},
+	sequence::{EventReceiver, Sequence, SequenceInstanceId, SequenceInstanceSettings},
 	sound::{Sound, SoundId},
 	tempo::Tempo,
 	value::Value,
@@ -396,9 +396,9 @@ impl AudioManager {
 		&mut self,
 		sequence: Sequence<CustomEvent>,
 		settings: SequenceInstanceSettings,
-	) -> Result<(SequenceId, EventReceiver<CustomEvent>), AudioError> {
+	) -> Result<(SequenceInstanceId, EventReceiver<CustomEvent>), AudioError> {
 		sequence.validate()?;
-		let id = SequenceId::new();
+		let id = SequenceInstanceId::new();
 		let (instance, receiver) = sequence.create_instance(settings);
 		self.send_command_to_backend(SequenceCommand::StartSequence(id, instance))?;
 		Ok((id, receiver))
@@ -408,34 +408,34 @@ impl AudioManager {
 	///
 	/// When a sequence is muted, it will continue waiting for durations and intervals,
 	/// but it will not play sounds, emit events, or perform any other actions.
-	pub fn mute_sequence(&mut self, id: SequenceId) -> Result<(), AudioError> {
+	pub fn mute_sequence(&mut self, id: SequenceInstanceId) -> Result<(), AudioError> {
 		self.send_command_to_backend(SequenceCommand::MuteSequence(id))
 	}
 
 	/// Unmutes a sequence.
-	pub fn unmute_sequence(&mut self, id: SequenceId) -> Result<(), AudioError> {
+	pub fn unmute_sequence(&mut self, id: SequenceInstanceId) -> Result<(), AudioError> {
 		self.send_command_to_backend(SequenceCommand::UnmuteSequence(id))
 	}
 
 	/// Pauses a sequence.
-	pub fn pause_sequence(&mut self, id: SequenceId) -> Result<(), AudioError> {
+	pub fn pause_sequence(&mut self, id: SequenceInstanceId) -> Result<(), AudioError> {
 		self.send_command_to_backend(SequenceCommand::PauseSequence(id))
 	}
 
 	/// Resumes a sequence.
-	pub fn resume_sequence(&mut self, id: SequenceId) -> Result<(), AudioError> {
+	pub fn resume_sequence(&mut self, id: SequenceInstanceId) -> Result<(), AudioError> {
 		self.send_command_to_backend(SequenceCommand::ResumeSequence(id))
 	}
 
 	/// Stops a sequence.
-	pub fn stop_sequence(&mut self, id: SequenceId) -> Result<(), AudioError> {
+	pub fn stop_sequence(&mut self, id: SequenceInstanceId) -> Result<(), AudioError> {
 		self.send_command_to_backend(SequenceCommand::StopSequence(id))
 	}
 
 	/// Pauses a sequence and any instances played by that sequence.
 	pub fn pause_sequence_and_instances(
 		&mut self,
-		id: SequenceId,
+		id: SequenceInstanceId,
 		fade_tween: Option<Tween>,
 	) -> Result<(), AudioError> {
 		self.send_command_to_backend(SequenceCommand::PauseSequence(id))?;
@@ -445,7 +445,7 @@ impl AudioManager {
 	/// Resumes a sequence and any instances played by that sequence.
 	pub fn resume_sequence_and_instances(
 		&mut self,
-		id: SequenceId,
+		id: SequenceInstanceId,
 		fade_tween: Option<Tween>,
 	) -> Result<(), AudioError> {
 		self.send_command_to_backend(SequenceCommand::ResumeSequence(id))?;
@@ -455,7 +455,7 @@ impl AudioManager {
 	/// Stops a sequence and any instances played by that sequence.
 	pub fn stop_sequence_and_instances(
 		&mut self,
-		id: SequenceId,
+		id: SequenceInstanceId,
 		fade_tween: Option<Tween>,
 	) -> Result<(), AudioError> {
 		self.send_command_to_backend(SequenceCommand::StopSequence(id))?;

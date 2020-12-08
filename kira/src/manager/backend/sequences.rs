@@ -1,15 +1,15 @@
 use crate::{
 	command::{Command, InstanceCommand, MetronomeCommand, ParameterCommand, SequenceCommand},
 	metronome::Metronome,
-	sequence::{SequenceId, SequenceInstance, SequenceOutputCommand},
+	sequence::{SequenceInstance, SequenceInstanceId, SequenceOutputCommand},
 };
 use indexmap::IndexMap;
 use ringbuf::Producer;
 use std::vec::Drain;
 
 pub(crate) struct Sequences {
-	sequences: IndexMap<SequenceId, SequenceInstance>,
-	sequences_to_remove: Vec<SequenceId>,
+	sequences: IndexMap<SequenceInstanceId, SequenceInstance>,
+	sequences_to_remove: Vec<SequenceInstanceId>,
 	sequence_output_command_queue: Vec<SequenceOutputCommand>,
 	output_command_queue: Vec<Command>,
 }
@@ -24,7 +24,7 @@ impl Sequences {
 		}
 	}
 
-	fn start_sequence(&mut self, id: SequenceId, mut instance: SequenceInstance) {
+	fn start_sequence(&mut self, id: SequenceInstanceId, mut instance: SequenceInstance) {
 		instance.start();
 		self.sequences.insert(id, instance);
 	}

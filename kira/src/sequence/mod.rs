@@ -148,14 +148,12 @@ mod instance;
 
 pub use event_receiver::EventReceiver;
 pub(crate) use instance::SequenceInstance;
+pub use instance::SequenceInstanceId;
 
 use indexmap::IndexSet;
 use ringbuf::RingBuffer;
 
-use std::{
-	hash::Hash,
-	sync::atomic::{AtomicUsize, Ordering},
-};
+use std::hash::Hash;
 
 use crate::{
 	instance::{InstanceId, InstanceSettings},
@@ -163,24 +161,6 @@ use crate::{
 	playable::Playable,
 	AudioError, AudioResult, Duration, Tempo, Value,
 };
-
-static NEXT_SEQUENCE_INDEX: AtomicUsize = AtomicUsize::new(0);
-
-/// A unique identifier for a [`Sequence`](crate::sequence::Sequence).
-///
-/// You cannot create this manually - a sequence ID is returned
-/// when you start a sequence with an [`AudioManager`](crate::manager::AudioManager).
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub struct SequenceId {
-	index: usize,
-}
-
-impl SequenceId {
-	pub(crate) fn new() -> Self {
-		let index = NEXT_SEQUENCE_INDEX.fetch_add(1, Ordering::Relaxed);
-		Self { index }
-	}
-}
 
 #[derive(Debug, Copy, Clone)]
 pub struct SequenceInstanceSettings {
@@ -207,12 +187,12 @@ pub(crate) enum SequenceOutputCommand {
 	PauseInstancesOf(Playable, Option<Tween>),
 	ResumeInstancesOf(Playable, Option<Tween>),
 	StopInstancesOf(Playable, Option<Tween>),
-	PauseSequence(SequenceId),
-	ResumeSequence(SequenceId),
-	StopSequence(SequenceId),
-	PauseInstancesOfSequence(SequenceId, Option<Tween>),
-	ResumeInstancesOfSequence(SequenceId, Option<Tween>),
-	StopInstancesOfSequence(SequenceId, Option<Tween>),
+	PauseSequence(SequenceInstanceId),
+	ResumeSequence(SequenceInstanceId),
+	StopSequence(SequenceInstanceId),
+	PauseInstancesOfSequence(SequenceInstanceId, Option<Tween>),
+	ResumeInstancesOfSequence(SequenceInstanceId, Option<Tween>),
+	StopInstancesOfSequence(SequenceInstanceId, Option<Tween>),
 	SetMetronomeTempo(Value<Tempo>),
 	StartMetronome,
 	PauseMetronome,
@@ -341,25 +321,29 @@ impl<CustomEvent: Copy + Eq + Hash> Sequence<CustomEvent> {
 	}
 
 	/// Adds a step to pause a sequence.
-	pub fn pause_sequence(&mut self, id: SequenceId) {
+	pub fn pause_sequence(&mut self, id: SequenceInstanceId) {
 		self.steps
 			.push(SequenceOutputCommand::PauseSequence(id).into());
 	}
 
 	/// Adds a step to resume a sequence.
-	pub fn resume_sequence(&mut self, id: SequenceId) {
+	pub fn resume_sequence(&mut self, id: SequenceInstanceId) {
 		self.steps
 			.push(SequenceOutputCommand::ResumeSequence(id).into());
 	}
 
 	/// Adds a step to stop a sequence.
-	pub fn stop_sequence(&mut self, id: SequenceId) {
+	pub fn stop_sequence(&mut self, id: SequenceInstanceId) {
 		self.steps
 			.push(SequenceOutputCommand::StopSequence(id).into());
 	}
 
 	/// Adds a step to pause a sequence and all instances played by it.
-	pub fn pause_sequence_and_instances(&mut self, id: SequenceId, fade_tween: Option<Tween>) {
+	pub fn pause_sequence_and_instances(
+		&mut self,
+		id: SequenceInstanceId,
+		fade_tween: Option<Tween>,
+	) {
 		self.steps
 			.push(SequenceOutputCommand::PauseSequence(id).into());
 		self.steps
@@ -367,7 +351,11 @@ impl<CustomEvent: Copy + Eq + Hash> Sequence<CustomEvent> {
 	}
 
 	/// Adds a step to resume a sequence and all instances played by it.
-	pub fn resume_sequence_and_instances(&mut self, id: SequenceId, fade_tween: Option<Tween>) {
+	pub fn resume_sequence_and_instances(
+		&mut self,
+		id: SequenceInstanceId,
+		fade_tween: Option<Tween>,
+	) {
 		self.steps
 			.push(SequenceOutputCommand::ResumeSequence(id).into());
 		self.steps
@@ -375,7 +363,11 @@ impl<CustomEvent: Copy + Eq + Hash> Sequence<CustomEvent> {
 	}
 
 	/// Adds a step to stop a sequence and all instances played by it.
-	pub fn stop_sequence_and_instances(&mut self, id: SequenceId, fade_tween: Option<Tween>) {
+	pub fn stop_sequence_and_instances(
+		&mut self,
+		id: SequenceInstanceId,
+		fade_tween: Option<Tween>,
+	) {
 		self.steps
 			.push(SequenceOutputCommand::StopSequence(id).into());
 		self.steps

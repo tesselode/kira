@@ -7,7 +7,7 @@ use crate::{
 	},
 	parameter::{ParameterId, Tween},
 	playable::Playable,
-	sequence::{SequenceId, SequenceInstance},
+	sequence::{SequenceInstance, SequenceInstanceId},
 	sound::{Sound, SoundId},
 	tempo::Tempo,
 	value::Value,
@@ -23,7 +23,12 @@ pub(crate) enum ResourceCommand {
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) enum InstanceCommand {
-	Play(InstanceId, Playable, Option<SequenceId>, InstanceSettings),
+	Play(
+		InstanceId,
+		Playable,
+		Option<SequenceInstanceId>,
+		InstanceSettings,
+	),
 	SetInstanceVolume(InstanceId, Value<f64>),
 	SetInstancePitch(InstanceId, Value<f64>),
 	SetInstancePanning(InstanceId, Value<f64>),
@@ -33,9 +38,9 @@ pub(crate) enum InstanceCommand {
 	PauseInstancesOf(Playable, Option<Tween>),
 	ResumeInstancesOf(Playable, Option<Tween>),
 	StopInstancesOf(Playable, Option<Tween>),
-	PauseInstancesOfSequence(SequenceId, Option<Tween>),
-	ResumeInstancesOfSequence(SequenceId, Option<Tween>),
-	StopInstancesOfSequence(SequenceId, Option<Tween>),
+	PauseInstancesOfSequence(SequenceInstanceId, Option<Tween>),
+	ResumeInstancesOfSequence(SequenceInstanceId, Option<Tween>),
+	StopInstancesOfSequence(SequenceInstanceId, Option<Tween>),
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -47,12 +52,12 @@ pub(crate) enum MetronomeCommand {
 }
 
 pub(crate) enum SequenceCommand {
-	StartSequence(SequenceId, SequenceInstance),
-	MuteSequence(SequenceId),
-	UnmuteSequence(SequenceId),
-	PauseSequence(SequenceId),
-	ResumeSequence(SequenceId),
-	StopSequence(SequenceId),
+	StartSequence(SequenceInstanceId, SequenceInstance),
+	MuteSequence(SequenceInstanceId),
+	UnmuteSequence(SequenceInstanceId),
+	PauseSequence(SequenceInstanceId),
+	ResumeSequence(SequenceInstanceId),
+	StopSequence(SequenceInstanceId),
 }
 
 #[derive(Debug)]
