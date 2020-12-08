@@ -26,7 +26,7 @@ use crate::{
 	parameter::{ParameterId, Tween},
 	playable::Playable,
 	sequence::SequenceInstance,
-	sequence::{EventReceiver, Sequence, SequenceId},
+	sequence::{EventReceiver, Sequence, SequenceId, SequenceInstanceSettings},
 	sound::{Sound, SoundId},
 	tempo::Tempo,
 	value::Value,
@@ -395,10 +395,11 @@ impl AudioManager {
 	pub fn start_sequence<CustomEvent: Copy + Eq + Hash>(
 		&mut self,
 		sequence: Sequence<CustomEvent>,
+		settings: SequenceInstanceSettings,
 	) -> Result<(SequenceId, EventReceiver<CustomEvent>), AudioError> {
 		sequence.validate()?;
 		let id = SequenceId::new();
-		let (instance, receiver) = sequence.create_instance();
+		let (instance, receiver) = sequence.create_instance(settings);
 		self.send_command_to_backend(SequenceCommand::StartSequence(id, instance))?;
 		Ok((id, receiver))
 	}

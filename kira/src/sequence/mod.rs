@@ -183,6 +183,19 @@ impl SequenceId {
 }
 
 #[derive(Debug, Copy, Clone)]
+pub struct SequenceInstanceSettings {
+	pub event_queue_capacity: usize,
+}
+
+impl Default for SequenceInstanceSettings {
+	fn default() -> Self {
+		Self {
+			event_queue_capacity: 10,
+		}
+	}
+}
+
+#[derive(Debug, Copy, Clone)]
 pub(crate) enum SequenceOutputCommand {
 	PlaySound(InstanceId, Playable, InstanceSettings),
 	SetInstanceVolume(InstanceId, Value<f64>),
@@ -504,10 +517,13 @@ impl<CustomEvent: Copy + Eq + Hash> Sequence<CustomEvent> {
 		)
 	}
 
-	pub(crate) fn create_instance(&self) -> (SequenceInstance, EventReceiver<CustomEvent>) {
+	pub(crate) fn create_instance(
+		&self,
+		settings: SequenceInstanceSettings,
+	) -> (SequenceInstance, EventReceiver<CustomEvent>) {
 		let (raw_sequence, events) = self.into_raw_sequence();
-		// TODO: make the ringbuffer capacity configurable
-		let (event_producer, event_consumer) = RingBuffer::new(100).split();
+		let (event_producer, event_consumer) =
+			RingBuffer::new(settings.event_queue_capacity).split();
 		let instance = SequenceInstance::new(raw_sequence, event_producer);
 		let event_receiver = EventReceiver::new(event_consumer, events);
 		(instance, event_receiver)
