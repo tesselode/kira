@@ -10,16 +10,16 @@ use crate::{
 };
 use indexmap::IndexMap;
 use ringbuf::Producer;
-use std::vec::Drain;
+use std::{hash::Hash, vec::Drain};
 
-pub(crate) struct Sequences<CustomEvent: Copy + std::fmt::Debug> {
+pub(crate) struct Sequences<CustomEvent: Copy + std::fmt::Debug + Eq + Hash> {
 	sequences: IndexMap<SequenceId, SequenceInstance<CustomEvent>>,
 	sequences_to_remove: Vec<SequenceId>,
 	sequence_output_command_queue: Vec<SequenceOutputCommand>,
 	output_command_queue: Vec<Command<CustomEvent>>,
 }
 
-impl<CustomEvent: Copy + std::fmt::Debug> Sequences<CustomEvent> {
+impl<CustomEvent: Copy + std::fmt::Debug + Eq + Hash> Sequences<CustomEvent> {
 	pub fn new(sequence_capacity: usize, command_capacity: usize) -> Self {
 		Self {
 			sequences: IndexMap::with_capacity(sequence_capacity),

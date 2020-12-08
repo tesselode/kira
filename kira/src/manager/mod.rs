@@ -2,6 +2,8 @@
 
 mod backend;
 
+use std::hash::Hash;
+
 #[cfg(not(feature = "benchmarking"))]
 use backend::Backend;
 #[cfg(feature = "benchmarking")]
@@ -85,7 +87,7 @@ impl Default for AudioManagerSettings {
 	}
 }
 
-pub(crate) struct AudioManagerThreadChannels<CustomEvent: Copy + Send + 'static = ()> {
+pub(crate) struct AudioManagerThreadChannels<CustomEvent: Copy + Send + 'static + Eq + Hash = ()> {
 	pub quit_signal_producer: Producer<bool>,
 	pub command_producer: Producer<Command<CustomEvent>>,
 	pub event_consumer: Consumer<Event<CustomEvent>>,
@@ -102,11 +104,11 @@ Plays and manages audio.
 The audio manager is responsible for all communication between the gameplay thread
 and the audio thread.
 */
-pub struct AudioManager<CustomEvent: Copy + Send + 'static = ()> {
+pub struct AudioManager<CustomEvent: Copy + Send + 'static + Eq + Hash = ()> {
 	thread_channels: AudioManagerThreadChannels<CustomEvent>,
 }
 
-impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEvent> {
+impl<CustomEvent: Copy + Send + 'static + Eq + Hash + std::fmt::Debug> AudioManager<CustomEvent> {
 	/// Creates a new audio manager and starts an audio thread.
 	pub fn new(settings: AudioManagerSettings) -> AudioResult<Self> {
 		let (audio_manager_thread_channels, backend_thread_channels, mut quit_signal_consumer) =
@@ -537,7 +539,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	}
 }
 
-impl<CustomEvent: Copy + Send + 'static> Drop for AudioManager<CustomEvent> {
+impl<CustomEvent: Copy + Send + 'static + Eq + Hash> Drop for AudioManager<CustomEvent> {
 	fn drop(&mut self) {
 		self.thread_channels
 			.quit_signal_producer

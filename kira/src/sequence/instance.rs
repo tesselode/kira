@@ -1,3 +1,5 @@
+use std::hash::Hash;
+
 use crate::metronome::Metronome;
 
 use super::{Sequence, SequenceOutputCommand, SequenceStep};
@@ -10,7 +12,7 @@ enum SequenceInstanceState {
 }
 
 #[derive(Debug, Clone)]
-pub struct SequenceInstance<CustomEvent: Copy> {
+pub struct SequenceInstance<CustomEvent: Copy + Eq + Hash> {
 	sequence: Sequence<CustomEvent>,
 	state: SequenceInstanceState,
 	position: usize,
@@ -18,7 +20,7 @@ pub struct SequenceInstance<CustomEvent: Copy> {
 	muted: bool,
 }
 
-impl<CustomEvent: Copy> SequenceInstance<CustomEvent> {
+impl<CustomEvent: Copy + Eq + Hash> SequenceInstance<CustomEvent> {
 	pub fn new(sequence: Sequence<CustomEvent>) -> Self {
 		Self {
 			sequence,

@@ -145,9 +145,13 @@
 
 mod instance;
 
+use indexmap::IndexSet;
 pub(crate) use instance::SequenceInstance;
 
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::{
+	hash::Hash,
+	sync::atomic::{AtomicUsize, Ordering},
+};
 
 use crate::{
 	instance::{InstanceId, InstanceSettings},
@@ -200,26 +204,26 @@ pub(crate) enum SequenceOutputCommand {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub(crate) enum SequenceStep<CustomEvent: Copy> {
+pub(crate) enum SequenceStep<CustomEvent: Copy + Eq + Hash> {
 	Wait(Duration),
 	WaitForInterval(f64),
 	RunCommand(SequenceOutputCommand),
 	EmitCustomEvent(CustomEvent),
 }
 
-impl<CustomEvent: Copy> From<SequenceOutputCommand> for SequenceStep<CustomEvent> {
+impl<CustomEvent: Copy + Eq + Hash> From<SequenceOutputCommand> for SequenceStep<CustomEvent> {
 	fn from(command: SequenceOutputCommand) -> Self {
 		Self::RunCommand(command)
 	}
 }
 
 #[derive(Debug, Clone)]
-pub struct Sequence<CustomEvent: Copy> {
+pub struct Sequence<CustomEvent: Copy + Eq + Hash> {
 	steps: Vec<SequenceStep<CustomEvent>>,
 	loop_point: Option<usize>,
 }
 
-impl<CustomEvent: Copy> Sequence<CustomEvent> {
+impl<CustomEvent: Copy + Eq + Hash> Sequence<CustomEvent> {
 	/// Creates a new sequence.
 	pub fn new() -> Self {
 		Self {
@@ -453,5 +457,15 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 				_ => {}
 			}
 		}
+	}
+
+	pub fn all_events(&self) -> IndexSet<CustomEvent> {
+		let mut events = IndexSet::new();
+		for step in &self.steps {
+			if let SequenceStep::EmitCustomEvent(event) = step {
+				events.insert(*event);
+			}
+		}
+		events
 	}
 }
