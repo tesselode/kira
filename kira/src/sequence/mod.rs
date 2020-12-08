@@ -232,6 +232,13 @@ impl<CustomEvent: Copy + Eq + Hash> Sequence<CustomEvent> {
 		}
 	}
 
+	fn with_steps_and_loop_point(
+		steps: Vec<SequenceStep<CustomEvent>>,
+		loop_point: Option<usize>,
+	) -> Self {
+		Self { steps, loop_point }
+	}
+
 	/// Adds a step to wait for a certain length of time
 	/// before moving to the next step.
 	pub fn wait(&mut self, duration: Duration) {
@@ -459,7 +466,8 @@ impl<CustomEvent: Copy + Eq + Hash> Sequence<CustomEvent> {
 		}
 	}
 
-	pub fn all_events(&self) -> IndexSet<CustomEvent> {
+	/// Gets a set of all of the events this sequence can emit.
+	fn all_events(&self) -> IndexSet<CustomEvent> {
 		let mut events = IndexSet::new();
 		for step in &self.steps {
 			if let SequenceStep::EmitCustomEvent(event) = step {
@@ -467,5 +475,28 @@ impl<CustomEvent: Copy + Eq + Hash> Sequence<CustomEvent> {
 			}
 		}
 		events
+	}
+
+	/// Converts this sequence into a sequence where the custom events
+	/// are indices corresponding to an event. Returns both the sequence
+	/// and a mapping of indices to events.
+	pub fn into_raw_sequence(&self) -> (Sequence<usize>, IndexSet<CustomEvent>) {
+		let events = self.all_events();
+		let raw_steps = self
+			.steps
+			.iter()
+			.map(|step| match step {
+				SequenceStep::Wait(duration) => SequenceStep::Wait(*duration),
+				SequenceStep::WaitForInterval(interval) => SequenceStep::WaitForInterval(*interval),
+				SequenceStep::RunCommand(command) => SequenceStep::RunCommand(*command),
+				SequenceStep::EmitCustomEvent(event) => {
+					SequenceStep::EmitCustomEvent(events.get_index_of(event).unwrap())
+				}
+			})
+			.collect();
+		(
+			Sequence::with_steps_and_loop_point(raw_steps, self.loop_point),
+			events,
+		)
 	}
 }
