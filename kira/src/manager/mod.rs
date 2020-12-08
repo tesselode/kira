@@ -87,10 +87,10 @@ impl Default for AudioManagerSettings {
 	}
 }
 
-pub(crate) struct AudioManagerThreadChannels<CustomEvent: Copy + Send + 'static + Eq + Hash = ()> {
+pub(crate) struct AudioManagerThreadChannels {
 	pub quit_signal_producer: Producer<bool>,
-	pub command_producer: Producer<Command<CustomEvent>>,
-	pub event_consumer: Consumer<Event<CustomEvent>>,
+	pub command_producer: Producer<Command>,
+	pub event_consumer: Consumer<Event>,
 	pub sounds_to_unload_consumer: Consumer<Sound>,
 	pub arrangements_to_unload_consumer: Consumer<Arrangement>,
 	pub sequence_instances_to_unload_consumer: Consumer<SequenceInstance>,
@@ -104,11 +104,11 @@ Plays and manages audio.
 The audio manager is responsible for all communication between the gameplay thread
 and the audio thread.
 */
-pub struct AudioManager<CustomEvent: Copy + Send + 'static + Eq + Hash = ()> {
-	thread_channels: AudioManagerThreadChannels<CustomEvent>,
+pub struct AudioManager {
+	thread_channels: AudioManagerThreadChannels,
 }
 
-impl<CustomEvent: Copy + Send + 'static + Eq + Hash + std::fmt::Debug> AudioManager<CustomEvent> {
+impl AudioManager {
 	/// Creates a new audio manager and starts an audio thread.
 	pub fn new(settings: AudioManagerSettings) -> AudioResult<Self> {
 		let (audio_manager_thread_channels, backend_thread_channels, mut quit_signal_consumer) =
@@ -151,8 +151,8 @@ impl<CustomEvent: Copy + Send + 'static + Eq + Hash + std::fmt::Debug> AudioMana
 	fn create_thread_channels(
 		settings: &AudioManagerSettings,
 	) -> (
-		AudioManagerThreadChannels<CustomEvent>,
-		BackendThreadChannels<CustomEvent>,
+		AudioManagerThreadChannels,
+		BackendThreadChannels,
 		Consumer<bool>,
 	) {
 		let (quit_signal_producer, quit_signal_consumer) = RingBuffer::new(1).split();
@@ -196,7 +196,7 @@ impl<CustomEvent: Copy + Send + 'static + Eq + Hash + std::fmt::Debug> AudioMana
 
 	fn setup_stream(
 		settings: AudioManagerSettings,
-		backend_thread_channels: BackendThreadChannels<CustomEvent>,
+		backend_thread_channels: BackendThreadChannels,
 	) -> AudioResult<Stream> {
 		let host = cpal::default_host();
 		let device = host
@@ -228,7 +228,7 @@ impl<CustomEvent: Copy + Send + 'static + Eq + Hash + std::fmt::Debug> AudioMana
 	#[cfg(feature = "benchmarking")]
 	pub fn new_without_audio_thread(
 		settings: AudioManagerSettings,
-	) -> AudioResult<(Self, Backend<CustomEvent>)> {
+	) -> AudioResult<(Self, Backend)> {
 		let (audio_manager_thread_channels, backend_thread_channels, _) =
 			Self::create_thread_channels(&settings);
 		let audio_manager = Self {
@@ -238,10 +238,7 @@ impl<CustomEvent: Copy + Send + 'static + Eq + Hash + std::fmt::Debug> AudioMana
 		Ok((audio_manager, backend))
 	}
 
-	fn send_command_to_backend<C: Into<Command<CustomEvent>>>(
-		&mut self,
-		command: C,
-	) -> AudioResult<()> {
+	fn send_command_to_backend<C: Into<Command>>(&mut self, command: C) -> AudioResult<()> {
 		match self.thread_channels.command_producer.push(command.into()) {
 			Ok(_) => Ok(()),
 			Err(_) => Err(AudioError::CommandQueueFull),
@@ -395,7 +392,7 @@ impl<CustomEvent: Copy + Send + 'static + Eq + Hash + std::fmt::Debug> AudioMana
 	}
 
 	/// Starts a sequence.
-	pub fn start_sequence(
+	pub fn start_sequence<CustomEvent: Copy + Eq + Hash>(
 		&mut self,
 		sequence: Sequence<CustomEvent>,
 	) -> Result<(SequenceId, EventReceiver<CustomEvent>), AudioError> {
@@ -521,7 +518,7 @@ impl<CustomEvent: Copy + Send + 'static + Eq + Hash + std::fmt::Debug> AudioMana
 	}
 
 	/// Pops an event that was sent by the audio thread.
-	pub fn pop_event(&mut self) -> Option<Event<CustomEvent>> {
+	pub fn pop_event(&mut self) -> Option<Event> {
 		self.thread_channels.event_consumer.pop()
 	}
 
@@ -540,7 +537,7 @@ impl<CustomEvent: Copy + Send + 'static + Eq + Hash + std::fmt::Debug> AudioMana
 	}
 }
 
-impl<CustomEvent: Copy + Send + 'static + Eq + Hash> Drop for AudioManager<CustomEvent> {
+impl Drop for AudioManager {
 	fn drop(&mut self) {
 		self.thread_channels
 			.quit_signal_producer

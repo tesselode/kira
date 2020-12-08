@@ -1,14 +1,13 @@
-use std::hash::Hash;
-
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
 	instance::{InstanceId, InstanceSettings},
-	mixer::effect::Effect,
-	mixer::effect::EffectId,
-	mixer::{effect::EffectSettings, SubTrackId, TrackIndex, TrackSettings},
+	mixer::{
+		effect::{Effect, EffectId, EffectSettings},
+		SubTrackId, TrackIndex, TrackSettings,
+	},
 	parameter::{ParameterId, Tween},
 	playable::Playable,
-	sequence::{Sequence, SequenceId, SequenceInstance},
+	sequence::{SequenceId, SequenceInstance},
 	sound::{Sound, SoundId},
 	tempo::Tempo,
 	value::Value,
@@ -71,47 +70,46 @@ pub(crate) enum ParameterCommand {
 	SetParameter(ParameterId, f64, Option<Tween>),
 }
 
-pub(crate) enum Command<CustomEvent: Copy + Eq + Hash> {
+pub(crate) enum Command {
 	Resource(ResourceCommand),
 	Instance(InstanceCommand),
 	Metronome(MetronomeCommand),
 	Sequence(SequenceCommand),
 	Mixer(MixerCommand),
 	Parameter(ParameterCommand),
-	EmitCustomEvent(CustomEvent),
 }
 
-impl<CustomEvent: Copy + Eq + Hash> From<ResourceCommand> for Command<CustomEvent> {
+impl From<ResourceCommand> for Command {
 	fn from(command: ResourceCommand) -> Self {
 		Self::Resource(command)
 	}
 }
 
-impl<CustomEvent: Copy + Eq + Hash> From<InstanceCommand> for Command<CustomEvent> {
+impl From<InstanceCommand> for Command {
 	fn from(command: InstanceCommand) -> Self {
 		Self::Instance(command)
 	}
 }
 
-impl<CustomEvent: Copy + Eq + Hash> From<MetronomeCommand> for Command<CustomEvent> {
+impl From<MetronomeCommand> for Command {
 	fn from(command: MetronomeCommand) -> Self {
 		Self::Metronome(command)
 	}
 }
 
-impl<CustomEvent: Copy + Eq + Hash> From<SequenceCommand> for Command<CustomEvent> {
+impl From<SequenceCommand> for Command {
 	fn from(command: SequenceCommand) -> Self {
 		Self::Sequence(command)
 	}
 }
 
-impl<CustomEvent: Copy + Eq + Hash> From<MixerCommand> for Command<CustomEvent> {
+impl From<MixerCommand> for Command {
 	fn from(command: MixerCommand) -> Self {
 		Self::Mixer(command)
 	}
 }
 
-impl<CustomEvent: Copy + Eq + Hash> From<ParameterCommand> for Command<CustomEvent> {
+impl From<ParameterCommand> for Command {
 	fn from(command: ParameterCommand) -> Self {
 		Self::Parameter(command)
 	}

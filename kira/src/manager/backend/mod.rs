@@ -2,8 +2,6 @@ mod instances;
 mod mixer;
 mod sequences;
 
-use std::hash::Hash;
-
 use self::mixer::Mixer;
 
 use super::{AudioManagerSettings, Event};
@@ -24,11 +22,9 @@ use instances::Instances;
 use ringbuf::{Consumer, Producer};
 use sequences::Sequences;
 
-pub(crate) struct BackendThreadChannels<
-	CustomEvent: Copy + Send + 'static + std::fmt::Debug + Eq + Hash,
-> {
-	pub command_consumer: Consumer<Command<CustomEvent>>,
-	pub event_producer: Producer<Event<CustomEvent>>,
+pub(crate) struct BackendThreadChannels {
+	pub command_consumer: Consumer<Command>,
+	pub event_producer: Producer<Event>,
 	pub sounds_to_unload_producer: Producer<Sound>,
 	pub arrangements_to_unload_producer: Producer<Arrangement>,
 	pub sequence_instances_to_unload_producer: Producer<SequenceInstance>,
@@ -36,24 +32,24 @@ pub(crate) struct BackendThreadChannels<
 	pub effect_slots_to_unload_producer: Producer<EffectSlot>,
 }
 
-pub struct Backend<CustomEvent: Copy + Send + 'static + std::fmt::Debug + Eq + Hash> {
+pub struct Backend {
 	dt: f64,
 	sounds: IndexMap<SoundId, Sound>,
 	arrangements: IndexMap<ArrangementId, Arrangement>,
-	command_queue: Vec<Command<CustomEvent>>,
-	thread_channels: BackendThreadChannels<CustomEvent>,
+	command_queue: Vec<Command>,
+	thread_channels: BackendThreadChannels,
 	metronome: Metronome,
 	parameters: Parameters,
 	instances: Instances,
-	sequences: Sequences<CustomEvent>,
+	sequences: Sequences,
 	mixer: Mixer,
 }
 
-impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug + Eq + Hash> Backend<CustomEvent> {
+impl Backend {
 	pub(crate) fn new(
 		sample_rate: u32,
 		settings: AudioManagerSettings,
-		thread_channels: BackendThreadChannels<CustomEvent>,
+		thread_channels: BackendThreadChannels,
 	) -> Self {
 		Self {
 			dt: 1.0 / sample_rate as f64,
@@ -123,16 +119,6 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug + Eq + Hash> Backend<C
 				}
 				Command::Parameter(command) => {
 					self.parameters.run_command(command);
-				}
-				Command::EmitCustomEvent(event) => {
-					match self
-						.thread_channels
-						.event_producer
-						.push(Event::Custom(event))
-					{
-						Ok(_) => {}
-						Err(_) => {}
-					}
 				}
 			}
 		}

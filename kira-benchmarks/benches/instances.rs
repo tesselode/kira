@@ -30,7 +30,7 @@ fn create_test_sound(num_samples: usize) -> Sound {
 fn instances_benchmark(c: &mut Criterion) {
 	const NUM_INSTANCES: usize = 100_000;
 	let (mut audio_manager, mut backend) =
-		AudioManager::<()>::new_without_audio_thread(AudioManagerSettings {
+		AudioManager::new_without_audio_thread(AudioManagerSettings {
 			num_instances: NUM_INSTANCES,
 			num_commands: NUM_INSTANCES,
 			..Default::default()

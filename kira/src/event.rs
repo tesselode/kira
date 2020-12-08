@@ -1,6 +1,6 @@
 /// An audio-related event that can be observed on the main thread.
 #[derive(Debug, Copy, Clone)]
-pub enum Event<CustomEvent: Send + 'static> {
+pub enum Event {
 	/**
 	Sent when the metronome passes a certain interval (in beats).
 
@@ -12,6 +12,4 @@ pub enum Event<CustomEvent: Send + 'static> {
 	when the metronome is created.
 	*/
 	MetronomeIntervalPassed(f64),
-	/// A user-defined event.
-	Custom(CustomEvent),
 }

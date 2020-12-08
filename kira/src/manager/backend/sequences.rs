@@ -1,25 +1,20 @@
 use crate::{
-	command::InstanceCommand,
-	command::MetronomeCommand,
-	command::ParameterCommand,
-	command::{Command, SequenceCommand},
+	command::{Command, InstanceCommand, MetronomeCommand, ParameterCommand, SequenceCommand},
 	metronome::Metronome,
-	sequence::SequenceInstance,
-	sequence::SequenceOutputCommand,
-	sequence::{Sequence, SequenceId},
+	sequence::{SequenceId, SequenceInstance, SequenceOutputCommand},
 };
 use indexmap::IndexMap;
 use ringbuf::Producer;
-use std::{hash::Hash, vec::Drain};
+use std::vec::Drain;
 
-pub(crate) struct Sequences<CustomEvent: Copy + std::fmt::Debug + Eq + Hash> {
+pub(crate) struct Sequences {
 	sequences: IndexMap<SequenceId, SequenceInstance>,
 	sequences_to_remove: Vec<SequenceId>,
 	sequence_output_command_queue: Vec<SequenceOutputCommand>,
-	output_command_queue: Vec<Command<CustomEvent>>,
+	output_command_queue: Vec<Command>,
 }
 
-impl<CustomEvent: Copy + std::fmt::Debug + Eq + Hash> Sequences<CustomEvent> {
+impl Sequences {
 	pub fn new(sequence_capacity: usize, command_capacity: usize) -> Self {
 		Self {
 			sequences: IndexMap::with_capacity(sequence_capacity),
@@ -72,7 +67,7 @@ impl<CustomEvent: Copy + std::fmt::Debug + Eq + Hash> Sequences<CustomEvent> {
 		dt: f64,
 		metronome: &Metronome,
 		sequences_to_unload_producer: &mut Producer<SequenceInstance>,
-	) -> Drain<Command<CustomEvent>> {
+	) -> Drain<Command> {
 		// update sequences and process their commands
 		for (id, sequence) in &mut self.sequences {
 			sequence.update(dt, metronome, &mut self.sequence_output_command_queue);
