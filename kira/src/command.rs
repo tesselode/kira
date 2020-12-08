@@ -8,7 +8,7 @@ use crate::{
 	mixer::{effect::EffectSettings, SubTrackId, TrackIndex, TrackSettings},
 	parameter::{ParameterId, Tween},
 	playable::Playable,
-	sequence::{Sequence, SequenceId},
+	sequence::{Sequence, SequenceId, SequenceInstance},
 	sound::{Sound, SoundId},
 	tempo::Tempo,
 	value::Value,
@@ -47,9 +47,8 @@ pub(crate) enum MetronomeCommand {
 	StopMetronome,
 }
 
-#[derive(Debug, Clone)]
-pub(crate) enum SequenceCommand<CustomEvent: Copy + Eq + Hash> {
-	StartSequence(SequenceId, Sequence<CustomEvent>),
+pub(crate) enum SequenceCommand {
+	StartSequence(SequenceId, SequenceInstance),
 	MuteSequence(SequenceId),
 	UnmuteSequence(SequenceId),
 	PauseSequence(SequenceId),
@@ -72,12 +71,11 @@ pub(crate) enum ParameterCommand {
 	SetParameter(ParameterId, f64, Option<Tween>),
 }
 
-#[derive(Debug)]
 pub(crate) enum Command<CustomEvent: Copy + Eq + Hash> {
 	Resource(ResourceCommand),
 	Instance(InstanceCommand),
 	Metronome(MetronomeCommand),
-	Sequence(SequenceCommand<CustomEvent>),
+	Sequence(SequenceCommand),
 	Mixer(MixerCommand),
 	Parameter(ParameterCommand),
 	EmitCustomEvent(CustomEvent),
@@ -101,8 +99,8 @@ impl<CustomEvent: Copy + Eq + Hash> From<MetronomeCommand> for Command<CustomEve
 	}
 }
 
-impl<CustomEvent: Copy + Eq + Hash> From<SequenceCommand<CustomEvent>> for Command<CustomEvent> {
-	fn from(command: SequenceCommand<CustomEvent>) -> Self {
+impl<CustomEvent: Copy + Eq + Hash> From<SequenceCommand> for Command<CustomEvent> {
+	fn from(command: SequenceCommand) -> Self {
 		Self::Sequence(command)
 	}
 }

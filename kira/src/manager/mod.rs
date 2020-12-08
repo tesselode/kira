@@ -26,7 +26,7 @@ use crate::{
 	parameter::{ParameterId, Tween},
 	playable::Playable,
 	sequence::SequenceInstance,
-	sequence::{Sequence, SequenceId},
+	sequence::{EventReceiver, Sequence, SequenceId},
 	sound::{Sound, SoundId},
 	tempo::Tempo,
 	value::Value,
@@ -93,7 +93,7 @@ pub(crate) struct AudioManagerThreadChannels<CustomEvent: Copy + Send + 'static 
 	pub event_consumer: Consumer<Event<CustomEvent>>,
 	pub sounds_to_unload_consumer: Consumer<Sound>,
 	pub arrangements_to_unload_consumer: Consumer<Arrangement>,
-	pub sequence_instances_to_unload_consumer: Consumer<SequenceInstance<CustomEvent>>,
+	pub sequence_instances_to_unload_consumer: Consumer<SequenceInstance>,
 	pub tracks_to_unload_consumer: Consumer<Track>,
 	pub effect_slots_to_unload_consumer: Consumer<EffectSlot>,
 }
@@ -398,11 +398,12 @@ impl<CustomEvent: Copy + Send + 'static + Eq + Hash + std::fmt::Debug> AudioMana
 	pub fn start_sequence(
 		&mut self,
 		sequence: Sequence<CustomEvent>,
-	) -> Result<SequenceId, AudioError> {
+	) -> Result<(SequenceId, EventReceiver<CustomEvent>), AudioError> {
 		sequence.validate()?;
 		let id = SequenceId::new();
-		self.send_command_to_backend(SequenceCommand::StartSequence(id, sequence))?;
-		Ok(id)
+		let (instance, receiver) = sequence.create_instance();
+		self.send_command_to_backend(SequenceCommand::StartSequence(id, instance))?;
+		Ok((id, receiver))
 	}
 
 	/// Mutes a sequence.

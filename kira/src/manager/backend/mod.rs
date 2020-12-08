@@ -31,7 +31,7 @@ pub(crate) struct BackendThreadChannels<
 	pub event_producer: Producer<Event<CustomEvent>>,
 	pub sounds_to_unload_producer: Producer<Sound>,
 	pub arrangements_to_unload_producer: Producer<Arrangement>,
-	pub sequence_instances_to_unload_producer: Producer<SequenceInstance<CustomEvent>>,
+	pub sequence_instances_to_unload_producer: Producer<SequenceInstance>,
 	pub tracks_to_unload_producer: Producer<Track>,
 	pub effect_slots_to_unload_producer: Producer<EffectSlot>,
 }

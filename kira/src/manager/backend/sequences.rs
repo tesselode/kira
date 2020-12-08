@@ -13,7 +13,7 @@ use ringbuf::Producer;
 use std::{hash::Hash, vec::Drain};
 
 pub(crate) struct Sequences<CustomEvent: Copy + std::fmt::Debug + Eq + Hash> {
-	sequences: IndexMap<SequenceId, SequenceInstance<CustomEvent>>,
+	sequences: IndexMap<SequenceId, SequenceInstance>,
 	sequences_to_remove: Vec<SequenceId>,
 	sequence_output_command_queue: Vec<SequenceOutputCommand>,
 	output_command_queue: Vec<Command<CustomEvent>>,
@@ -29,16 +29,15 @@ impl<CustomEvent: Copy + std::fmt::Debug + Eq + Hash> Sequences<CustomEvent> {
 		}
 	}
 
-	fn start_sequence(&mut self, id: SequenceId, sequence: Sequence<CustomEvent>) {
-		let mut instance = SequenceInstance::new(sequence);
+	fn start_sequence(&mut self, id: SequenceId, mut instance: SequenceInstance) {
 		instance.start();
 		self.sequences.insert(id, instance);
 	}
 
-	pub fn run_command(&mut self, command: SequenceCommand<CustomEvent>) {
+	pub fn run_command(&mut self, command: SequenceCommand) {
 		match command {
-			SequenceCommand::StartSequence(id, sequence) => {
-				self.start_sequence(id, sequence);
+			SequenceCommand::StartSequence(id, instance) => {
+				self.start_sequence(id, instance);
 			}
 			SequenceCommand::MuteSequence(id) => {
 				if let Some(sequence) = self.sequences.get_mut(&id) {
@@ -72,7 +71,7 @@ impl<CustomEvent: Copy + std::fmt::Debug + Eq + Hash> Sequences<CustomEvent> {
 		&mut self,
 		dt: f64,
 		metronome: &Metronome,
-		sequences_to_unload_producer: &mut Producer<SequenceInstance<CustomEvent>>,
+		sequences_to_unload_producer: &mut Producer<SequenceInstance>,
 	) -> Drain<Command<CustomEvent>> {
 		// update sequences and process their commands
 		for (id, sequence) in &mut self.sequences {

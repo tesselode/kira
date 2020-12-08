@@ -143,10 +143,14 @@
 //! # Ok::<(), kira::AudioError>(())
 //! ```
 
+mod event_receiver;
 mod instance;
 
-use indexmap::IndexSet;
+pub use event_receiver::EventReceiver;
 pub(crate) use instance::SequenceInstance;
+
+use indexmap::IndexSet;
+use ringbuf::RingBuffer;
 
 use std::{
 	hash::Hash,
@@ -480,7 +484,7 @@ impl<CustomEvent: Copy + Eq + Hash> Sequence<CustomEvent> {
 	/// Converts this sequence into a sequence where the custom events
 	/// are indices corresponding to an event. Returns both the sequence
 	/// and a mapping of indices to events.
-	pub fn into_raw_sequence(&self) -> (Sequence<usize>, IndexSet<CustomEvent>) {
+	fn into_raw_sequence(&self) -> (RawSequence, IndexSet<CustomEvent>) {
 		let events = self.all_events();
 		let raw_steps = self
 			.steps
@@ -499,4 +503,15 @@ impl<CustomEvent: Copy + Eq + Hash> Sequence<CustomEvent> {
 			events,
 		)
 	}
+
+	pub(crate) fn create_instance(&self) -> (SequenceInstance, EventReceiver<CustomEvent>) {
+		let (raw_sequence, events) = self.into_raw_sequence();
+		// TODO: make the ringbuffer capacity configurable
+		let (event_producer, event_consumer) = RingBuffer::new(100).split();
+		let instance = SequenceInstance::new(raw_sequence, event_producer);
+		let event_receiver = EventReceiver::new(event_consumer, events);
+		(instance, event_receiver)
+	}
 }
+
+pub(crate) type RawSequence = Sequence<usize>;

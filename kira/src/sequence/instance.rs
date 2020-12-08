@@ -1,8 +1,8 @@
-use std::hash::Hash;
+use ringbuf::Producer;
 
 use crate::metronome::Metronome;
 
-use super::{Sequence, SequenceOutputCommand, SequenceStep};
+use super::{RawSequence, SequenceOutputCommand, SequenceStep};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 enum SequenceInstanceState {
@@ -11,23 +11,24 @@ enum SequenceInstanceState {
 	Finished,
 }
 
-#[derive(Debug, Clone)]
-pub struct SequenceInstance<CustomEvent: Copy + Eq + Hash> {
-	sequence: Sequence<CustomEvent>,
+pub struct SequenceInstance {
+	sequence: RawSequence,
 	state: SequenceInstanceState,
 	position: usize,
 	wait_timer: Option<f64>,
 	muted: bool,
+	event_producer: Producer<usize>,
 }
 
-impl<CustomEvent: Copy + Eq + Hash> SequenceInstance<CustomEvent> {
-	pub fn new(sequence: Sequence<CustomEvent>) -> Self {
+impl SequenceInstance {
+	pub fn new(sequence: RawSequence, event_producer: Producer<usize>) -> Self {
 		Self {
 			sequence,
 			state: SequenceInstanceState::Playing,
 			position: 0,
 			wait_timer: None,
 			muted: false,
+			event_producer,
 		}
 	}
 
@@ -108,7 +109,13 @@ impl<CustomEvent: Copy + Eq + Hash> SequenceInstance<CustomEvent> {
 								self.start_step(self.position + 1);
 							}
 							SequenceStep::EmitCustomEvent(event) => {
-								todo!();
+								if !self.muted {
+									match self.event_producer.push(*event) {
+										Ok(_) => {}
+										Err(_) => {}
+									}
+								}
+								self.start_step(self.position + 1);
 							}
 						}
 					}
