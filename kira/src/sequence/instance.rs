@@ -73,7 +73,7 @@ impl<CustomEvent: Copy> SequenceInstance<CustomEvent> {
 		&mut self,
 		dt: f64,
 		metronome: &Metronome,
-		output_command_queue: &mut Vec<SequenceOutputCommand<CustomEvent>>,
+		output_command_queue: &mut Vec<SequenceOutputCommand>,
 	) {
 		loop {
 			match self.state {
@@ -104,6 +104,9 @@ impl<CustomEvent: Copy> SequenceInstance<CustomEvent> {
 									output_command_queue.push(*command);
 								}
 								self.start_step(self.position + 1);
+							}
+							SequenceStep::EmitCustomEvent(event) => {
+								todo!();
 							}
 						}
 					}

@@ -175,7 +175,7 @@ impl SequenceId {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub(crate) enum SequenceOutputCommand<CustomEvent: Copy> {
+pub(crate) enum SequenceOutputCommand {
 	PlaySound(InstanceId, Playable, InstanceSettings),
 	SetInstanceVolume(InstanceId, Value<f64>),
 	SetInstancePitch(InstanceId, Value<f64>),
@@ -197,18 +197,18 @@ pub(crate) enum SequenceOutputCommand<CustomEvent: Copy> {
 	PauseMetronome,
 	StopMetronome,
 	SetParameter(ParameterId, f64, Option<Tween>),
-	EmitCustomEvent(CustomEvent),
 }
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) enum SequenceStep<CustomEvent: Copy> {
 	Wait(Duration),
 	WaitForInterval(f64),
-	RunCommand(SequenceOutputCommand<CustomEvent>),
+	RunCommand(SequenceOutputCommand),
+	EmitCustomEvent(CustomEvent),
 }
 
-impl<CustomEvent: Copy> From<SequenceOutputCommand<CustomEvent>> for SequenceStep<CustomEvent> {
-	fn from(command: SequenceOutputCommand<CustomEvent>) -> Self {
+impl<CustomEvent: Copy> From<SequenceOutputCommand> for SequenceStep<CustomEvent> {
+	fn from(command: SequenceOutputCommand) -> Self {
 		Self::RunCommand(command)
 	}
 }
@@ -385,8 +385,7 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 
 	/// Adds a step to emit a custom event.
 	pub fn emit_custom_event(&mut self, event: CustomEvent) {
-		self.steps
-			.push(SequenceOutputCommand::EmitCustomEvent(event).into());
+		self.steps.push(SequenceStep::EmitCustomEvent(event));
 	}
 
 	/// Makes sure nothing's wrong with the sequence that would make

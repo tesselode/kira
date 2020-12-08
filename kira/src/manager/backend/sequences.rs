@@ -15,7 +15,7 @@ use std::vec::Drain;
 pub(crate) struct Sequences<CustomEvent: Copy + std::fmt::Debug> {
 	sequences: IndexMap<SequenceId, SequenceInstance<CustomEvent>>,
 	sequences_to_remove: Vec<SequenceId>,
-	sequence_output_command_queue: Vec<SequenceOutputCommand<CustomEvent>>,
+	sequence_output_command_queue: Vec<SequenceOutputCommand>,
 	output_command_queue: Vec<Command<CustomEvent>>,
 }
 
@@ -150,9 +150,6 @@ impl<CustomEvent: Copy + std::fmt::Debug> Sequences<CustomEvent> {
 					}
 					SequenceOutputCommand::SetParameter(id, target, tween) => {
 						Command::Parameter(ParameterCommand::SetParameter(id, target, tween))
-					}
-					SequenceOutputCommand::EmitCustomEvent(event) => {
-						Command::EmitCustomEvent(event)
 					}
 				});
 			}
