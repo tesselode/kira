@@ -200,27 +200,27 @@ pub(crate) enum SequenceOutputCommand {
 	SetParameter(ParameterId, f64, Option<Tween>),
 }
 
-#[derive(Debug, Copy, Clone)]
-pub(crate) enum SequenceStep<CustomEvent: Copy + Eq + Hash> {
+#[derive(Debug, Clone)]
+pub(crate) enum SequenceStep<CustomEvent: Clone + Eq + Hash> {
 	Wait(Duration),
 	WaitForInterval(f64),
 	RunCommand(SequenceOutputCommand),
 	EmitCustomEvent(CustomEvent),
 }
 
-impl<CustomEvent: Copy + Eq + Hash> From<SequenceOutputCommand> for SequenceStep<CustomEvent> {
+impl<CustomEvent: Clone + Eq + Hash> From<SequenceOutputCommand> for SequenceStep<CustomEvent> {
 	fn from(command: SequenceOutputCommand) -> Self {
 		Self::RunCommand(command)
 	}
 }
 
 #[derive(Debug, Clone)]
-pub struct Sequence<CustomEvent: Copy + Eq + Hash> {
+pub struct Sequence<CustomEvent: Clone + Eq + Hash> {
 	steps: Vec<SequenceStep<CustomEvent>>,
 	loop_point: Option<usize>,
 }
 
-impl<CustomEvent: Copy + Eq + Hash> Sequence<CustomEvent> {
+impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	/// Creates a new sequence.
 	pub fn new() -> Self {
 		Self {
@@ -420,6 +420,56 @@ impl<CustomEvent: Copy + Eq + Hash> Sequence<CustomEvent> {
 		Ok(())
 	}
 
+	/// Gets a set of all of the events this sequence can emit.
+	fn all_events(&self) -> IndexSet<CustomEvent> {
+		let mut events = IndexSet::new();
+		for step in &self.steps {
+			if let SequenceStep::EmitCustomEvent(event) = step {
+				events.insert(event.clone());
+			}
+		}
+		events
+	}
+
+	/// Converts this sequence into a sequence where the custom events
+	/// are indices corresponding to an event. Returns both the sequence
+	/// and a mapping of indices to events.
+	fn into_raw_sequence(&self) -> (RawSequence, IndexSet<CustomEvent>) {
+		let events = self.all_events();
+		let raw_steps = self
+			.steps
+			.iter()
+			.map(|step| match step {
+				SequenceStep::Wait(duration) => SequenceStep::Wait(*duration),
+				SequenceStep::WaitForInterval(interval) => SequenceStep::WaitForInterval(*interval),
+				SequenceStep::RunCommand(command) => SequenceStep::RunCommand(*command),
+				SequenceStep::EmitCustomEvent(event) => {
+					SequenceStep::EmitCustomEvent(events.get_index_of(event).unwrap())
+				}
+			})
+			.collect();
+		(
+			Sequence::with_steps_and_loop_point(raw_steps, self.loop_point),
+			events,
+		)
+	}
+
+	pub(crate) fn create_instance(
+		&self,
+		settings: SequenceInstanceSettings,
+	) -> (SequenceInstance, EventReceiver<CustomEvent>) {
+		let (raw_sequence, events) = self.into_raw_sequence();
+		let (event_producer, event_consumer) =
+			RingBuffer::new(settings.event_queue_capacity).split();
+		let instance = SequenceInstance::new(raw_sequence, event_producer);
+		let event_receiver = EventReceiver::new(event_consumer, events);
+		(instance, event_receiver)
+	}
+}
+
+pub(crate) type RawSequence = Sequence<usize>;
+
+impl RawSequence {
 	/// Assigns new instance IDs to each PlaySound command and updates
 	/// other sequence commands to use the new instance ID. This allows
 	/// the sequence to play sounds with fresh instance IDs on each loop
@@ -474,52 +524,4 @@ impl<CustomEvent: Copy + Eq + Hash> Sequence<CustomEvent> {
 			}
 		}
 	}
-
-	/// Gets a set of all of the events this sequence can emit.
-	fn all_events(&self) -> IndexSet<CustomEvent> {
-		let mut events = IndexSet::new();
-		for step in &self.steps {
-			if let SequenceStep::EmitCustomEvent(event) = step {
-				events.insert(*event);
-			}
-		}
-		events
-	}
-
-	/// Converts this sequence into a sequence where the custom events
-	/// are indices corresponding to an event. Returns both the sequence
-	/// and a mapping of indices to events.
-	fn into_raw_sequence(&self) -> (RawSequence, IndexSet<CustomEvent>) {
-		let events = self.all_events();
-		let raw_steps = self
-			.steps
-			.iter()
-			.map(|step| match step {
-				SequenceStep::Wait(duration) => SequenceStep::Wait(*duration),
-				SequenceStep::WaitForInterval(interval) => SequenceStep::WaitForInterval(*interval),
-				SequenceStep::RunCommand(command) => SequenceStep::RunCommand(*command),
-				SequenceStep::EmitCustomEvent(event) => {
-					SequenceStep::EmitCustomEvent(events.get_index_of(event).unwrap())
-				}
-			})
-			.collect();
-		(
-			Sequence::with_steps_and_loop_point(raw_steps, self.loop_point),
-			events,
-		)
-	}
-
-	pub(crate) fn create_instance(
-		&self,
-		settings: SequenceInstanceSettings,
-	) -> (SequenceInstance, EventReceiver<CustomEvent>) {
-		let (raw_sequence, events) = self.into_raw_sequence();
-		let (event_producer, event_consumer) =
-			RingBuffer::new(settings.event_queue_capacity).split();
-		let instance = SequenceInstance::new(raw_sequence, event_producer);
-		let event_receiver = EventReceiver::new(event_consumer, events);
-		(instance, event_receiver)
-	}
 }
-
-pub(crate) type RawSequence = Sequence<usize>;
