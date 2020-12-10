@@ -215,7 +215,7 @@ impl<CustomEvent: Clone + Eq + Hash> From<SequenceOutputCommand> for SequenceSte
 }
 
 #[derive(Debug, Clone)]
-pub struct Sequence<CustomEvent: Clone + Eq + Hash> {
+pub struct Sequence<CustomEvent: Clone + Eq + Hash = ()> {
 	steps: Vec<SequenceStep<CustomEvent>>,
 	loop_point: Option<usize>,
 }
