@@ -10,10 +10,14 @@ use crate::{frame::Frame, mixer::TrackIndex, playable::PlayableSettings};
 use crate::{error::AudioError, error::AudioResult};
 
 #[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
-use std::{fs::File, path::Path};
+use std::{
+	fmt::{Debug, Formatter},
+	fs::File,
+	path::Path,
+};
 
 /// A piece of audio that can be played by an [`AudioManager`](crate::manager::AudioManager).
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Sound {
 	sample_rate: u32,
 	samples: Vec<Frame>,
@@ -316,5 +320,16 @@ impl Sound {
 	/// be started until the timer is up.
 	pub(crate) fn cooling_down(&self) -> bool {
 		self.cooldown_timer > 0.0
+	}
+}
+
+impl Debug for Sound {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct(&format!("Sound ({} samples)", self.samples.len()))
+			.field("sample_rate", &self.sample_rate)
+			.field("duration", &self.duration)
+			.field("settings", &self.settings)
+			.field("cooldown_timer", &self.cooldown_timer)
+			.finish()
 	}
 }
