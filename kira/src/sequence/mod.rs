@@ -205,6 +205,7 @@ pub(crate) enum SequenceStep<CustomEvent: Clone + Eq + Hash> {
 	Wait(Duration),
 	WaitForInterval(f64),
 	RunCommand(SequenceOutputCommand),
+	PlayRandom(InstanceId, Vec<Playable>, InstanceSettings),
 	EmitCustomEvent(CustomEvent),
 }
 
@@ -263,6 +264,19 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 		let id = InstanceId::new();
 		self.steps
 			.push(SequenceOutputCommand::PlaySound(id, playable.into(), settings).into());
+		id
+	}
+
+	/// Adds a step to play a random sound or arrangement from a
+	/// list of choices.
+	pub fn play_random(
+		&mut self,
+		choices: Vec<Playable>,
+		settings: InstanceSettings,
+	) -> InstanceId {
+		let id = InstanceId::new();
+		self.steps
+			.push(SequenceStep::PlayRandom(id, choices, settings).into());
 		id
 	}
 
@@ -443,6 +457,9 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 				SequenceStep::Wait(duration) => SequenceStep::Wait(*duration),
 				SequenceStep::WaitForInterval(interval) => SequenceStep::WaitForInterval(*interval),
 				SequenceStep::RunCommand(command) => SequenceStep::RunCommand(*command),
+				SequenceStep::PlayRandom(id, choices, settings) => {
+					SequenceStep::PlayRandom(*id, choices.clone(), *settings)
+				}
 				SequenceStep::EmitCustomEvent(event) => {
 					SequenceStep::EmitCustomEvent(events.get_index_of(event).unwrap())
 				}
@@ -470,6 +487,57 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 pub(crate) type RawSequence = Sequence<usize>;
 
 impl RawSequence {
+	fn convert_ids(steps: &mut Vec<SequenceStep<usize>>, old_id: InstanceId, new_id: InstanceId) {
+		for step in steps {
+			match step {
+				SequenceStep::RunCommand(command) => match command {
+					SequenceOutputCommand::PlaySound(id, _, _) => {
+						if *id == old_id {
+							*id = new_id;
+						}
+					}
+					SequenceOutputCommand::SetInstanceVolume(id, _) => {
+						if *id == old_id {
+							*id = new_id;
+						}
+					}
+					SequenceOutputCommand::SetInstancePitch(id, _) => {
+						if *id == old_id {
+							*id = new_id;
+						}
+					}
+					SequenceOutputCommand::SetInstancePanning(id, _) => {
+						if *id == old_id {
+							*id = new_id;
+						}
+					}
+					SequenceOutputCommand::PauseInstance(id, _) => {
+						if *id == old_id {
+							*id = new_id;
+						}
+					}
+					SequenceOutputCommand::ResumeInstance(id, _) => {
+						if *id == old_id {
+							*id = new_id;
+						}
+					}
+					SequenceOutputCommand::StopInstance(id, _) => {
+						if *id == old_id {
+							*id = new_id;
+						}
+					}
+					_ => {}
+				},
+				SequenceStep::PlayRandom(id, _, _) => {
+					if *id == old_id {
+						*id = new_id;
+					}
+				}
+				_ => {}
+			}
+		}
+	}
+
 	/// Assigns new instance IDs to each PlaySound command and updates
 	/// other sequence commands to use the new instance ID. This allows
 	/// the sequence to play sounds with fresh instance IDs on each loop
@@ -477,49 +545,18 @@ impl RawSequence {
 	/// etc.
 	fn update_instance_ids(&mut self) {
 		for i in 0..self.steps.len() {
-			match self.steps[i] {
+			match &self.steps[i] {
 				SequenceStep::RunCommand(command) => match command {
-					SequenceOutputCommand::PlaySound(old_instance_id, sound_id, settings) => {
-						let new_instance_id = InstanceId::new();
-						self.steps[i] =
-							SequenceOutputCommand::PlaySound(new_instance_id, sound_id, settings)
-								.into();
-						for step in &mut self.steps {
-							match step {
-								SequenceStep::RunCommand(command) => match command {
-									SequenceOutputCommand::SetInstanceVolume(id, _) => {
-										if *id == old_instance_id {
-											*id = new_instance_id;
-										}
-									}
-									SequenceOutputCommand::SetInstancePitch(id, _) => {
-										if *id == old_instance_id {
-											*id = new_instance_id;
-										}
-									}
-									SequenceOutputCommand::PauseInstance(id, _) => {
-										if *id == old_instance_id {
-											*id = new_instance_id;
-										}
-									}
-									SequenceOutputCommand::ResumeInstance(id, _) => {
-										if *id == old_instance_id {
-											*id = new_instance_id;
-										}
-									}
-									SequenceOutputCommand::StopInstance(id, _) => {
-										if *id == old_instance_id {
-											*id = new_instance_id;
-										}
-									}
-									_ => {}
-								},
-								_ => {}
-							}
-						}
+					SequenceOutputCommand::PlaySound(id, _, _) => {
+						let old_id = *id;
+						Self::convert_ids(&mut self.steps, old_id, InstanceId::new());
 					}
 					_ => {}
 				},
+				SequenceStep::PlayRandom(id, _, _) => {
+					let old_id = *id;
+					Self::convert_ids(&mut self.steps, old_id, InstanceId::new());
+				}
 				_ => {}
 			}
 		}

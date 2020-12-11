@@ -1,5 +1,6 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+use nanorand::{WyRand, RNG};
 use ringbuf::Producer;
 
 use crate::metronome::Metronome;
@@ -34,6 +35,7 @@ enum SequenceInstanceState {
 pub struct SequenceInstance {
 	sequence: RawSequence,
 	state: SequenceInstanceState,
+	rng: WyRand,
 	position: usize,
 	wait_timer: Option<f64>,
 	muted: bool,
@@ -45,6 +47,7 @@ impl SequenceInstance {
 		Self {
 			sequence,
 			state: SequenceInstanceState::Playing,
+			rng: WyRand::new(),
 			position: 0,
 			wait_timer: None,
 			muted: false,
@@ -125,6 +128,17 @@ impl SequenceInstance {
 							SequenceStep::RunCommand(command) => {
 								if !self.muted {
 									output_command_queue.push(*command);
+								}
+								self.start_step(self.position + 1);
+							}
+							SequenceStep::PlayRandom(id, choices, settings) => {
+								let choice_index = self.rng.generate_range(0, choices.len());
+								if !self.muted {
+									output_command_queue.push(SequenceOutputCommand::PlaySound(
+										*id,
+										choices[choice_index],
+										*settings,
+									));
 								}
 								self.start_step(self.position + 1);
 							}
