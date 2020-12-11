@@ -1,12 +1,13 @@
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
 	instance::{InstanceId, InstanceSettings},
-	mixer::effect::Effect,
-	mixer::effect::EffectId,
-	mixer::{effect::EffectSettings, SubTrackId, TrackIndex, TrackSettings},
+	mixer::{
+		effect::{Effect, EffectId, EffectSettings},
+		SubTrackId, TrackIndex, TrackSettings,
+	},
 	parameter::{ParameterId, Tween},
 	playable::Playable,
-	sequence::{Sequence, SequenceId},
+	sequence::{SequenceInstance, SequenceInstanceId},
 	sound::{Sound, SoundId},
 	tempo::Tempo,
 	value::Value,
@@ -22,7 +23,12 @@ pub(crate) enum ResourceCommand {
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) enum InstanceCommand {
-	Play(InstanceId, Playable, Option<SequenceId>, InstanceSettings),
+	Play(
+		InstanceId,
+		Playable,
+		Option<SequenceInstanceId>,
+		InstanceSettings,
+	),
 	SetInstanceVolume(InstanceId, Value<f64>),
 	SetInstancePitch(InstanceId, Value<f64>),
 	SetInstancePanning(InstanceId, Value<f64>),
@@ -32,9 +38,9 @@ pub(crate) enum InstanceCommand {
 	PauseInstancesOf(Playable, Option<Tween>),
 	ResumeInstancesOf(Playable, Option<Tween>),
 	StopInstancesOf(Playable, Option<Tween>),
-	PauseInstancesOfSequence(SequenceId, Option<Tween>),
-	ResumeInstancesOfSequence(SequenceId, Option<Tween>),
-	StopInstancesOfSequence(SequenceId, Option<Tween>),
+	PauseInstancesOfSequence(SequenceInstanceId, Option<Tween>),
+	ResumeInstancesOfSequence(SequenceInstanceId, Option<Tween>),
+	StopInstancesOfSequence(SequenceInstanceId, Option<Tween>),
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -45,14 +51,13 @@ pub(crate) enum MetronomeCommand {
 	StopMetronome,
 }
 
-#[derive(Debug, Clone)]
-pub(crate) enum SequenceCommand<CustomEvent: Copy> {
-	StartSequence(SequenceId, Sequence<CustomEvent>),
-	MuteSequence(SequenceId),
-	UnmuteSequence(SequenceId),
-	PauseSequence(SequenceId),
-	ResumeSequence(SequenceId),
-	StopSequence(SequenceId),
+pub(crate) enum SequenceCommand {
+	StartSequence(SequenceInstanceId, SequenceInstance),
+	MuteSequence(SequenceInstanceId),
+	UnmuteSequence(SequenceInstanceId),
+	PauseSequence(SequenceInstanceId),
+	ResumeSequence(SequenceInstanceId),
+	StopSequence(SequenceInstanceId),
 }
 
 #[derive(Debug)]
@@ -70,48 +75,46 @@ pub(crate) enum ParameterCommand {
 	SetParameter(ParameterId, f64, Option<Tween>),
 }
 
-#[derive(Debug)]
-pub(crate) enum Command<CustomEvent: Copy> {
+pub(crate) enum Command {
 	Resource(ResourceCommand),
 	Instance(InstanceCommand),
 	Metronome(MetronomeCommand),
-	Sequence(SequenceCommand<CustomEvent>),
+	Sequence(SequenceCommand),
 	Mixer(MixerCommand),
 	Parameter(ParameterCommand),
-	EmitCustomEvent(CustomEvent),
 }
 
-impl<CustomEvent: Copy> From<ResourceCommand> for Command<CustomEvent> {
+impl From<ResourceCommand> for Command {
 	fn from(command: ResourceCommand) -> Self {
 		Self::Resource(command)
 	}
 }
 
-impl<CustomEvent: Copy> From<InstanceCommand> for Command<CustomEvent> {
+impl From<InstanceCommand> for Command {
 	fn from(command: InstanceCommand) -> Self {
 		Self::Instance(command)
 	}
 }
 
-impl<CustomEvent: Copy> From<MetronomeCommand> for Command<CustomEvent> {
+impl From<MetronomeCommand> for Command {
 	fn from(command: MetronomeCommand) -> Self {
 		Self::Metronome(command)
 	}
 }
 
-impl<CustomEvent: Copy> From<SequenceCommand<CustomEvent>> for Command<CustomEvent> {
-	fn from(command: SequenceCommand<CustomEvent>) -> Self {
+impl From<SequenceCommand> for Command {
+	fn from(command: SequenceCommand) -> Self {
 		Self::Sequence(command)
 	}
 }
 
-impl<CustomEvent: Copy> From<MixerCommand> for Command<CustomEvent> {
+impl From<MixerCommand> for Command {
 	fn from(command: MixerCommand) -> Self {
 		Self::Mixer(command)
 	}
 }
 
-impl<CustomEvent: Copy> From<ParameterCommand> for Command<CustomEvent> {
+impl From<ParameterCommand> for Command {
 	fn from(command: ParameterCommand) -> Self {
 		Self::Parameter(command)
 	}

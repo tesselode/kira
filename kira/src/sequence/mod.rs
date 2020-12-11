@@ -143,36 +143,40 @@
 //! # Ok::<(), kira::AudioError>(())
 //! ```
 
-use std::sync::atomic::{AtomicUsize, Ordering};
+mod event_receiver;
+mod instance;
+
+pub use event_receiver::EventReceiver;
+pub(crate) use instance::SequenceInstance;
+pub use instance::SequenceInstanceId;
+
+use indexmap::IndexSet;
+use ringbuf::RingBuffer;
+
+use std::hash::Hash;
 
 use crate::{
 	instance::{InstanceId, InstanceSettings},
-	metronome::Metronome,
 	parameter::{ParameterId, Tween},
 	playable::Playable,
 	AudioError, AudioResult, Duration, Tempo, Value,
 };
 
-static NEXT_SEQUENCE_INDEX: AtomicUsize = AtomicUsize::new(0);
-
-/// A unique identifier for a [`Sequence`](crate::sequence::Sequence).
-///
-/// You cannot create this manually - a sequence ID is returned
-/// when you start a sequence with an [`AudioManager`](crate::manager::AudioManager).
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub struct SequenceId {
-	index: usize,
+#[derive(Debug, Copy, Clone)]
+pub struct SequenceInstanceSettings {
+	pub event_queue_capacity: usize,
 }
 
-impl SequenceId {
-	pub(crate) fn new() -> Self {
-		let index = NEXT_SEQUENCE_INDEX.fetch_add(1, Ordering::Relaxed);
-		Self { index }
+impl Default for SequenceInstanceSettings {
+	fn default() -> Self {
+		Self {
+			event_queue_capacity: 10,
+		}
 	}
 }
 
 #[derive(Debug, Copy, Clone)]
-pub(crate) enum SequenceOutputCommand<CustomEvent: Copy> {
+pub(crate) enum SequenceOutputCommand {
 	PlaySound(InstanceId, Playable, InstanceSettings),
 	SetInstanceVolume(InstanceId, Value<f64>),
 	SetInstancePitch(InstanceId, Value<f64>),
@@ -183,62 +187,54 @@ pub(crate) enum SequenceOutputCommand<CustomEvent: Copy> {
 	PauseInstancesOf(Playable, Option<Tween>),
 	ResumeInstancesOf(Playable, Option<Tween>),
 	StopInstancesOf(Playable, Option<Tween>),
-	PauseSequence(SequenceId),
-	ResumeSequence(SequenceId),
-	StopSequence(SequenceId),
-	PauseInstancesOfSequence(SequenceId, Option<Tween>),
-	ResumeInstancesOfSequence(SequenceId, Option<Tween>),
-	StopInstancesOfSequence(SequenceId, Option<Tween>),
+	PauseSequence(SequenceInstanceId),
+	ResumeSequence(SequenceInstanceId),
+	StopSequence(SequenceInstanceId),
+	PauseInstancesOfSequence(SequenceInstanceId, Option<Tween>),
+	ResumeInstancesOfSequence(SequenceInstanceId, Option<Tween>),
+	StopInstancesOfSequence(SequenceInstanceId, Option<Tween>),
 	SetMetronomeTempo(Value<Tempo>),
 	StartMetronome,
 	PauseMetronome,
 	StopMetronome,
 	SetParameter(ParameterId, f64, Option<Tween>),
+}
+
+#[derive(Debug, Clone)]
+pub(crate) enum SequenceStep<CustomEvent: Clone + Eq + Hash> {
+	Wait(Duration),
+	WaitForInterval(f64),
+	RunCommand(SequenceOutputCommand),
+	PlayRandom(InstanceId, Vec<Playable>, InstanceSettings),
 	EmitCustomEvent(CustomEvent),
 }
 
-#[derive(Debug, Copy, Clone)]
-pub(crate) enum SequenceStep<CustomEvent: Copy> {
-	Wait(Duration),
-	WaitForInterval(f64),
-	RunCommand(SequenceOutputCommand<CustomEvent>),
-}
-
-impl<CustomEvent: Copy> From<SequenceOutputCommand<CustomEvent>> for SequenceStep<CustomEvent> {
-	fn from(command: SequenceOutputCommand<CustomEvent>) -> Self {
+impl<CustomEvent: Clone + Eq + Hash> From<SequenceOutputCommand> for SequenceStep<CustomEvent> {
+	fn from(command: SequenceOutputCommand) -> Self {
 		Self::RunCommand(command)
 	}
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-enum SequenceState {
-	Playing,
-	Paused,
-	Finished,
-}
-
-/// A series of audio-related actions to take at specific times.
 #[derive(Debug, Clone)]
-pub struct Sequence<CustomEvent: Copy> {
+pub struct Sequence<CustomEvent: Clone + Eq + Hash = ()> {
 	steps: Vec<SequenceStep<CustomEvent>>,
 	loop_point: Option<usize>,
-	state: SequenceState,
-	position: usize,
-	wait_timer: Option<f64>,
-	muted: bool,
 }
 
-impl<CustomEvent: Copy> Sequence<CustomEvent> {
+impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	/// Creates a new sequence.
 	pub fn new() -> Self {
 		Self {
 			steps: vec![],
 			loop_point: None,
-			state: SequenceState::Playing,
-			position: 0,
-			wait_timer: None,
-			muted: false,
 		}
+	}
+
+	fn with_steps_and_loop_point(
+		steps: Vec<SequenceStep<CustomEvent>>,
+		loop_point: Option<usize>,
+	) -> Self {
+		Self { steps, loop_point }
 	}
 
 	/// Adds a step to wait for a certain length of time
@@ -268,6 +264,19 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 		let id = InstanceId::new();
 		self.steps
 			.push(SequenceOutputCommand::PlaySound(id, playable.into(), settings).into());
+		id
+	}
+
+	/// Adds a step to play a random sound or arrangement from a
+	/// list of choices.
+	pub fn play_random(
+		&mut self,
+		choices: Vec<Playable>,
+		settings: InstanceSettings,
+	) -> InstanceId {
+		let id = InstanceId::new();
+		self.steps
+			.push(SequenceStep::PlayRandom(id, choices, settings).into());
 		id
 	}
 
@@ -326,25 +335,29 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 	}
 
 	/// Adds a step to pause a sequence.
-	pub fn pause_sequence(&mut self, id: SequenceId) {
+	pub fn pause_sequence(&mut self, id: SequenceInstanceId) {
 		self.steps
 			.push(SequenceOutputCommand::PauseSequence(id).into());
 	}
 
 	/// Adds a step to resume a sequence.
-	pub fn resume_sequence(&mut self, id: SequenceId) {
+	pub fn resume_sequence(&mut self, id: SequenceInstanceId) {
 		self.steps
 			.push(SequenceOutputCommand::ResumeSequence(id).into());
 	}
 
 	/// Adds a step to stop a sequence.
-	pub fn stop_sequence(&mut self, id: SequenceId) {
+	pub fn stop_sequence(&mut self, id: SequenceInstanceId) {
 		self.steps
 			.push(SequenceOutputCommand::StopSequence(id).into());
 	}
 
 	/// Adds a step to pause a sequence and all instances played by it.
-	pub fn pause_sequence_and_instances(&mut self, id: SequenceId, fade_tween: Option<Tween>) {
+	pub fn pause_sequence_and_instances(
+		&mut self,
+		id: SequenceInstanceId,
+		fade_tween: Option<Tween>,
+	) {
 		self.steps
 			.push(SequenceOutputCommand::PauseSequence(id).into());
 		self.steps
@@ -352,7 +365,11 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 	}
 
 	/// Adds a step to resume a sequence and all instances played by it.
-	pub fn resume_sequence_and_instances(&mut self, id: SequenceId, fade_tween: Option<Tween>) {
+	pub fn resume_sequence_and_instances(
+		&mut self,
+		id: SequenceInstanceId,
+		fade_tween: Option<Tween>,
+	) {
 		self.steps
 			.push(SequenceOutputCommand::ResumeSequence(id).into());
 		self.steps
@@ -360,7 +377,11 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 	}
 
 	/// Adds a step to stop a sequence and all instances played by it.
-	pub fn stop_sequence_and_instances(&mut self, id: SequenceId, fade_tween: Option<Tween>) {
+	pub fn stop_sequence_and_instances(
+		&mut self,
+		id: SequenceInstanceId,
+		fade_tween: Option<Tween>,
+	) {
 		self.steps
 			.push(SequenceOutputCommand::StopSequence(id).into());
 		self.steps
@@ -398,8 +419,7 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 
 	/// Adds a step to emit a custom event.
 	pub fn emit_custom_event(&mut self, event: CustomEvent) {
-		self.steps
-			.push(SequenceOutputCommand::EmitCustomEvent(event).into());
+		self.steps.push(SequenceStep::EmitCustomEvent(event));
 	}
 
 	/// Makes sure nothing's wrong with the sequence that would make
@@ -414,6 +434,110 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 		Ok(())
 	}
 
+	/// Gets a set of all of the events this sequence can emit.
+	fn all_events(&self) -> IndexSet<CustomEvent> {
+		let mut events = IndexSet::new();
+		for step in &self.steps {
+			if let SequenceStep::EmitCustomEvent(event) = step {
+				events.insert(event.clone());
+			}
+		}
+		events
+	}
+
+	/// Converts this sequence into a sequence where the custom events
+	/// are indices corresponding to an event. Returns both the sequence
+	/// and a mapping of indices to events.
+	fn into_raw_sequence(&self) -> (RawSequence, IndexSet<CustomEvent>) {
+		let events = self.all_events();
+		let raw_steps = self
+			.steps
+			.iter()
+			.map(|step| match step {
+				SequenceStep::Wait(duration) => SequenceStep::Wait(*duration),
+				SequenceStep::WaitForInterval(interval) => SequenceStep::WaitForInterval(*interval),
+				SequenceStep::RunCommand(command) => SequenceStep::RunCommand(*command),
+				SequenceStep::PlayRandom(id, choices, settings) => {
+					SequenceStep::PlayRandom(*id, choices.clone(), *settings)
+				}
+				SequenceStep::EmitCustomEvent(event) => {
+					SequenceStep::EmitCustomEvent(events.get_index_of(event).unwrap())
+				}
+			})
+			.collect();
+		(
+			Sequence::with_steps_and_loop_point(raw_steps, self.loop_point),
+			events,
+		)
+	}
+
+	pub(crate) fn create_instance(
+		&self,
+		settings: SequenceInstanceSettings,
+	) -> (SequenceInstance, EventReceiver<CustomEvent>) {
+		let (raw_sequence, events) = self.into_raw_sequence();
+		let (event_producer, event_consumer) =
+			RingBuffer::new(settings.event_queue_capacity).split();
+		let instance = SequenceInstance::new(raw_sequence, event_producer);
+		let event_receiver = EventReceiver::new(event_consumer, events);
+		(instance, event_receiver)
+	}
+}
+
+pub(crate) type RawSequence = Sequence<usize>;
+
+impl RawSequence {
+	fn convert_ids(steps: &mut Vec<SequenceStep<usize>>, old_id: InstanceId, new_id: InstanceId) {
+		for step in steps {
+			match step {
+				SequenceStep::RunCommand(command) => match command {
+					SequenceOutputCommand::PlaySound(id, _, _) => {
+						if *id == old_id {
+							*id = new_id;
+						}
+					}
+					SequenceOutputCommand::SetInstanceVolume(id, _) => {
+						if *id == old_id {
+							*id = new_id;
+						}
+					}
+					SequenceOutputCommand::SetInstancePitch(id, _) => {
+						if *id == old_id {
+							*id = new_id;
+						}
+					}
+					SequenceOutputCommand::SetInstancePanning(id, _) => {
+						if *id == old_id {
+							*id = new_id;
+						}
+					}
+					SequenceOutputCommand::PauseInstance(id, _) => {
+						if *id == old_id {
+							*id = new_id;
+						}
+					}
+					SequenceOutputCommand::ResumeInstance(id, _) => {
+						if *id == old_id {
+							*id = new_id;
+						}
+					}
+					SequenceOutputCommand::StopInstance(id, _) => {
+						if *id == old_id {
+							*id = new_id;
+						}
+					}
+					_ => {}
+				},
+				SequenceStep::PlayRandom(id, _, _) => {
+					if *id == old_id {
+						*id = new_id;
+					}
+				}
+				_ => {}
+			}
+		}
+	}
+
 	/// Assigns new instance IDs to each PlaySound command and updates
 	/// other sequence commands to use the new instance ID. This allows
 	/// the sequence to play sounds with fresh instance IDs on each loop
@@ -421,142 +545,20 @@ impl<CustomEvent: Copy> Sequence<CustomEvent> {
 	/// etc.
 	fn update_instance_ids(&mut self) {
 		for i in 0..self.steps.len() {
-			match self.steps[i] {
+			match &self.steps[i] {
 				SequenceStep::RunCommand(command) => match command {
-					SequenceOutputCommand::PlaySound(old_instance_id, sound_id, settings) => {
-						let new_instance_id = InstanceId::new();
-						self.steps[i] =
-							SequenceOutputCommand::PlaySound(new_instance_id, sound_id, settings)
-								.into();
-						for step in &mut self.steps {
-							match step {
-								SequenceStep::RunCommand(command) => match command {
-									SequenceOutputCommand::SetInstanceVolume(id, _) => {
-										if *id == old_instance_id {
-											*id = new_instance_id;
-										}
-									}
-									SequenceOutputCommand::SetInstancePitch(id, _) => {
-										if *id == old_instance_id {
-											*id = new_instance_id;
-										}
-									}
-									SequenceOutputCommand::PauseInstance(id, _) => {
-										if *id == old_instance_id {
-											*id = new_instance_id;
-										}
-									}
-									SequenceOutputCommand::ResumeInstance(id, _) => {
-										if *id == old_instance_id {
-											*id = new_instance_id;
-										}
-									}
-									SequenceOutputCommand::StopInstance(id, _) => {
-										if *id == old_instance_id {
-											*id = new_instance_id;
-										}
-									}
-									_ => {}
-								},
-								_ => {}
-							}
-						}
+					SequenceOutputCommand::PlaySound(id, _, _) => {
+						let old_id = *id;
+						Self::convert_ids(&mut self.steps, old_id, InstanceId::new());
 					}
 					_ => {}
 				},
+				SequenceStep::PlayRandom(id, _, _) => {
+					let old_id = *id;
+					Self::convert_ids(&mut self.steps, old_id, InstanceId::new());
+				}
 				_ => {}
 			}
-		}
-	}
-
-	fn start_step(&mut self, index: usize) {
-		if let Some(step) = self.steps.get(index) {
-			self.position = index;
-			if let SequenceStep::Wait(_) = step {
-				self.wait_timer = Some(1.0);
-			} else {
-				self.wait_timer = None;
-			}
-		} else if let Some(loop_point) = self.loop_point {
-			self.update_instance_ids();
-			self.start_step(loop_point);
-		} else {
-			self.state = SequenceState::Finished;
-		}
-	}
-
-	pub(crate) fn start(&mut self) {
-		self.start_step(0);
-	}
-
-	pub(crate) fn mute(&mut self) {
-		self.muted = true;
-	}
-
-	pub(crate) fn unmute(&mut self) {
-		self.muted = false;
-	}
-
-	pub(crate) fn pause(&mut self) {
-		self.state = SequenceState::Paused;
-	}
-
-	pub(crate) fn resume(&mut self) {
-		self.state = SequenceState::Playing;
-	}
-
-	pub(crate) fn stop(&mut self) {
-		self.state = SequenceState::Finished;
-	}
-
-	pub(crate) fn update(
-		&mut self,
-		dt: f64,
-		metronome: &Metronome,
-		output_command_queue: &mut Vec<SequenceOutputCommand<CustomEvent>>,
-	) {
-		loop {
-			match self.state {
-				SequenceState::Paused | SequenceState::Finished => {
-					break;
-				}
-				_ => {
-					if let Some(step) = self.steps.get(self.position) {
-						match step {
-							SequenceStep::Wait(duration) => {
-								if let Some(time) = self.wait_timer.as_mut() {
-									let duration = duration.in_seconds(metronome.effective_tempo());
-									*time -= dt / duration;
-									if *time <= 0.0 {
-										self.start_step(self.position + 1);
-									}
-									break;
-								}
-							}
-							SequenceStep::WaitForInterval(interval) => {
-								if metronome.interval_passed(*interval) {
-									self.start_step(self.position + 1);
-								}
-								break;
-							}
-							SequenceStep::RunCommand(command) => {
-								if !self.muted {
-									output_command_queue.push(*command);
-								}
-								self.start_step(self.position + 1);
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	pub(crate) fn finished(&self) -> bool {
-		if let SequenceState::Finished = self.state {
-			true
-		} else {
-			false
 		}
 	}
 }

@@ -1,24 +1,20 @@
 use crate::{
-	command::InstanceCommand,
-	command::MetronomeCommand,
-	command::ParameterCommand,
-	command::{Command, SequenceCommand},
+	command::{Command, InstanceCommand, MetronomeCommand, ParameterCommand, SequenceCommand},
 	metronome::Metronome,
-	sequence::SequenceOutputCommand,
-	sequence::{Sequence, SequenceId},
+	sequence::{SequenceInstance, SequenceInstanceId, SequenceOutputCommand},
 };
 use indexmap::IndexMap;
 use ringbuf::Producer;
 use std::vec::Drain;
 
-pub(crate) struct Sequences<CustomEvent: Copy + std::fmt::Debug> {
-	sequences: IndexMap<SequenceId, Sequence<CustomEvent>>,
-	sequences_to_remove: Vec<SequenceId>,
-	sequence_output_command_queue: Vec<SequenceOutputCommand<CustomEvent>>,
-	output_command_queue: Vec<Command<CustomEvent>>,
+pub(crate) struct Sequences {
+	sequences: IndexMap<SequenceInstanceId, SequenceInstance>,
+	sequences_to_remove: Vec<SequenceInstanceId>,
+	sequence_output_command_queue: Vec<SequenceOutputCommand>,
+	output_command_queue: Vec<Command>,
 }
 
-impl<CustomEvent: Copy + std::fmt::Debug> Sequences<CustomEvent> {
+impl Sequences {
 	pub fn new(sequence_capacity: usize, command_capacity: usize) -> Self {
 		Self {
 			sequences: IndexMap::with_capacity(sequence_capacity),
@@ -28,15 +24,15 @@ impl<CustomEvent: Copy + std::fmt::Debug> Sequences<CustomEvent> {
 		}
 	}
 
-	fn start_sequence(&mut self, id: SequenceId, mut sequence: Sequence<CustomEvent>) {
-		sequence.start();
-		self.sequences.insert(id, sequence);
+	fn start_sequence(&mut self, id: SequenceInstanceId, mut instance: SequenceInstance) {
+		instance.start();
+		self.sequences.insert(id, instance);
 	}
 
-	pub fn run_command(&mut self, command: SequenceCommand<CustomEvent>) {
+	pub fn run_command(&mut self, command: SequenceCommand) {
 		match command {
-			SequenceCommand::StartSequence(id, sequence) => {
-				self.start_sequence(id, sequence);
+			SequenceCommand::StartSequence(id, instance) => {
+				self.start_sequence(id, instance);
 			}
 			SequenceCommand::MuteSequence(id) => {
 				if let Some(sequence) = self.sequences.get_mut(&id) {
@@ -70,8 +66,8 @@ impl<CustomEvent: Copy + std::fmt::Debug> Sequences<CustomEvent> {
 		&mut self,
 		dt: f64,
 		metronome: &Metronome,
-		sequences_to_unload_producer: &mut Producer<Sequence<CustomEvent>>,
-	) -> Drain<Command<CustomEvent>> {
+		sequences_to_unload_producer: &mut Producer<SequenceInstance>,
+	) -> Drain<Command> {
 		// update sequences and process their commands
 		for (id, sequence) in &mut self.sequences {
 			sequence.update(dt, metronome, &mut self.sequence_output_command_queue);
@@ -148,9 +144,6 @@ impl<CustomEvent: Copy + std::fmt::Debug> Sequences<CustomEvent> {
 					}
 					SequenceOutputCommand::SetParameter(id, target, tween) => {
 						Command::Parameter(ParameterCommand::SetParameter(id, target, tween))
-					}
-					SequenceOutputCommand::EmitCustomEvent(event) => {
-						Command::EmitCustomEvent(event)
 					}
 				});
 			}
