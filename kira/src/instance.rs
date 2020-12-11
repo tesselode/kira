@@ -252,6 +252,7 @@ impl Default for InstanceSettings {
 	}
 }
 
+// TODO: remove unnecessary states
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub(crate) enum InstanceState {
 	Playing,

@@ -1,4 +1,11 @@
-# v0.2
+# v0.3.0
+
+- Decentralized sequences <!-- TODO: elaborate -->
+- Added `Sequence::play_random`
+- Renamed `Sound::new` to `Sound::from_samples`
+- Audio file format decoding is now gated behind feature flags
+
+# v0.2.0 - December 6th, 2020
 
 ## Arrangements
 This release adds `Arrangement`s, which allow you to stitch together
@@ -51,5 +58,5 @@ Changes:
 Changes:
 - Fix readme path in Cargo.toml
 
-# v0.1 - November 18th, 2020
+# v0.1.0 - November 18th, 2020
 First public release
