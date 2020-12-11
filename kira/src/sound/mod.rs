@@ -20,7 +20,7 @@ use std::{
 #[derive(Clone)]
 pub struct Sound {
 	sample_rate: u32,
-	samples: Vec<Frame>,
+	frames: Vec<Frame>,
 	duration: f64,
 	settings: PlayableSettings,
 	cooldown_timer: f64,
@@ -32,7 +32,7 @@ impl Sound {
 		let duration = samples.len() as f64 / sample_rate as f64;
 		Self {
 			sample_rate,
-			samples,
+			frames: samples,
 			duration,
 			settings,
 			cooldown_timer: 0.0,
@@ -277,20 +277,20 @@ impl Sound {
 			Frame::from_mono(0.0)
 		} else {
 			*self
-				.samples
+				.frames
 				.get(current_sample_index - 1)
 				.unwrap_or(&Frame::from_mono(0.0))
 		};
 		let y1 = *self
-			.samples
+			.frames
 			.get(current_sample_index)
 			.unwrap_or(&Frame::from_mono(0.0));
 		let y2 = *self
-			.samples
+			.frames
 			.get(current_sample_index + 1)
 			.unwrap_or(&Frame::from_mono(0.0));
 		let y3 = *self
-			.samples
+			.frames
 			.get(current_sample_index + 2)
 			.unwrap_or(&Frame::from_mono(0.0));
 		let c0 = y1;
@@ -325,7 +325,7 @@ impl Sound {
 
 impl Debug for Sound {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		f.debug_struct(&format!("Sound ({} samples)", self.samples.len()))
+		f.debug_struct(&format!("Sound ({} frames)", self.frames.len()))
 			.field("sample_rate", &self.sample_rate)
 			.field("duration", &self.duration)
 			.field("settings", &self.settings)
