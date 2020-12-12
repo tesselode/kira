@@ -11,7 +11,7 @@ impl<CustomEvent> EventReceiver<CustomEvent> {
 		Self { consumer, events }
 	}
 
-	pub fn pop_event(&mut self) -> Option<&CustomEvent> {
+	pub fn pop(&mut self) -> Option<&CustomEvent> {
 		self.consumer
 			.pop()
 			.map(move |index| self.events.get_index(index).unwrap())

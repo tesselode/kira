@@ -421,7 +421,7 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	}
 
 	/// Adds a step to emit a custom event.
-	pub fn emit_custom_event(&mut self, event: CustomEvent) {
+	pub fn emit(&mut self, event: CustomEvent) {
 		self.steps.push(SequenceStep::EmitCustomEvent(event));
 	}
 
