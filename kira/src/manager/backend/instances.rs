@@ -2,7 +2,7 @@ use crate::{
 	arrangement::{Arrangement, ArrangementId},
 	command::InstanceCommand,
 	instance::{Instance, InstanceId, StopInstanceSettings},
-	parameter::{Parameters, Tween},
+	parameter::Parameters,
 	playable::Playable,
 	sound::{Sound, SoundId},
 };
