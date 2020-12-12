@@ -406,7 +406,7 @@ impl AudioManager {
 	}
 
 	/// Starts a sequence.
-	pub fn start_sequence<CustomEvent: Copy + Eq + Hash>(
+	pub fn start_sequence<CustomEvent: Clone + Eq + Hash>(
 		&mut self,
 		sequence: Sequence<CustomEvent>,
 		settings: SequenceInstanceSettings,
