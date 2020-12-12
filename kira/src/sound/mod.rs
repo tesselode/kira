@@ -28,11 +28,11 @@ pub struct Sound {
 
 impl Sound {
 	/// Creates a new sound from raw sample data.
-	pub fn from_samples(sample_rate: u32, samples: Vec<Frame>, settings: PlayableSettings) -> Self {
-		let duration = samples.len() as f64 / sample_rate as f64;
+	pub fn from_frames(sample_rate: u32, frames: Vec<Frame>, settings: PlayableSettings) -> Self {
+		let duration = frames.len() as f64 / sample_rate as f64;
 		Self {
 			sample_rate,
-			frames: samples,
+			frames,
 			duration,
 			settings,
 			cooldown_timer: 0.0,
@@ -91,7 +91,7 @@ impl Sound {
 			Some(sample_rate) => sample_rate,
 			None => return Err(AudioError::UnknownMp3SampleRate),
 		};
-		Ok(Self::from_samples(
+		Ok(Self::from_frames(
 			sample_rate as u32,
 			stereo_samples,
 			settings,
@@ -124,7 +124,7 @@ impl Sound {
 				_ => return Err(AudioError::UnsupportedChannelConfiguration),
 			}
 		}
-		Ok(Self::from_samples(
+		Ok(Self::from_frames(
 			reader.ident_hdr.audio_sample_rate,
 			stereo_samples,
 			settings,
@@ -159,7 +159,7 @@ impl Sound {
 			}
 			_ => return Err(AudioError::UnsupportedChannelConfiguration),
 		}
-		Ok(Self::from_samples(
+		Ok(Self::from_frames(
 			streaminfo.sample_rate,
 			stereo_samples,
 			settings,
@@ -213,7 +213,7 @@ impl Sound {
 			},
 			_ => return Err(AudioError::UnsupportedChannelConfiguration),
 		}
-		Ok(Self::from_samples(
+		Ok(Self::from_frames(
 			reader.spec().sample_rate,
 			stereo_samples,
 			settings,
