@@ -92,23 +92,23 @@ impl Sequences {
 					SequenceOutputCommand::SetInstancePanning(id, panning) => {
 						Command::Instance(InstanceCommand::SetInstancePanning(id, panning))
 					}
-					SequenceOutputCommand::PauseInstance(id, fade_tween) => {
-						Command::Instance(InstanceCommand::PauseInstance(id, fade_tween))
+					SequenceOutputCommand::PauseInstance(id, settings) => {
+						Command::Instance(InstanceCommand::PauseInstance(id, settings))
 					}
-					SequenceOutputCommand::ResumeInstance(id, fade_tween) => {
-						Command::Instance(InstanceCommand::ResumeInstance(id, fade_tween))
+					SequenceOutputCommand::ResumeInstance(id, settings) => {
+						Command::Instance(InstanceCommand::ResumeInstance(id, settings))
 					}
-					SequenceOutputCommand::StopInstance(id, fade_tween) => {
-						Command::Instance(InstanceCommand::StopInstance(id, fade_tween))
+					SequenceOutputCommand::StopInstance(id, settings) => {
+						Command::Instance(InstanceCommand::StopInstance(id, settings))
 					}
-					SequenceOutputCommand::PauseInstancesOf(id, fade_tween) => {
-						Command::Instance(InstanceCommand::PauseInstancesOf(id, fade_tween))
+					SequenceOutputCommand::PauseInstancesOf(id, settings) => {
+						Command::Instance(InstanceCommand::PauseInstancesOf(id, settings))
 					}
-					SequenceOutputCommand::ResumeInstancesOf(id, fade_tween) => {
-						Command::Instance(InstanceCommand::ResumeInstancesOf(id, fade_tween))
+					SequenceOutputCommand::ResumeInstancesOf(id, settings) => {
+						Command::Instance(InstanceCommand::ResumeInstancesOf(id, settings))
 					}
-					SequenceOutputCommand::StopInstancesOf(id, fade_tween) => {
-						Command::Instance(InstanceCommand::StopInstancesOf(id, fade_tween))
+					SequenceOutputCommand::StopInstancesOf(id, settings) => {
+						Command::Instance(InstanceCommand::StopInstancesOf(id, settings))
 					}
 					SequenceOutputCommand::PauseSequence(id) => {
 						Command::Sequence(SequenceCommand::PauseSequence(id))
@@ -119,16 +119,14 @@ impl Sequences {
 					SequenceOutputCommand::StopSequence(id) => {
 						Command::Sequence(SequenceCommand::StopSequence(id))
 					}
-					SequenceOutputCommand::PauseInstancesOfSequence(id, fade_tween) => {
-						Command::Instance(InstanceCommand::PauseInstancesOfSequence(id, fade_tween))
+					SequenceOutputCommand::PauseInstancesOfSequence(id, settings) => {
+						Command::Instance(InstanceCommand::PauseInstancesOfSequence(id, settings))
 					}
-					SequenceOutputCommand::ResumeInstancesOfSequence(id, fade_tween) => {
-						Command::Instance(InstanceCommand::ResumeInstancesOfSequence(
-							id, fade_tween,
-						))
+					SequenceOutputCommand::ResumeInstancesOfSequence(id, settings) => {
+						Command::Instance(InstanceCommand::ResumeInstancesOfSequence(id, settings))
 					}
-					SequenceOutputCommand::StopInstancesOfSequence(id, fade_tween) => {
-						Command::Instance(InstanceCommand::StopInstancesOfSequence(id, fade_tween))
+					SequenceOutputCommand::StopInstancesOfSequence(id, settings) => {
+						Command::Instance(InstanceCommand::StopInstancesOfSequence(id, settings))
 					}
 					SequenceOutputCommand::SetMetronomeTempo(tempo) => {
 						Command::Metronome(MetronomeCommand::SetMetronomeTempo(tempo))

@@ -16,7 +16,10 @@ use crate::{
 		ResourceCommand, SequenceCommand,
 	},
 	error::{AudioError, AudioResult},
-	instance::{InstanceId, InstanceSettings},
+	instance::{
+		InstanceId, InstanceSettings, PauseInstanceSettings, ResumeInstanceSettings,
+		StopInstanceSettings,
+	},
 	metronome::MetronomeSettings,
 	mixer::{
 		effect::{Effect, EffectId, EffectSettings},
@@ -151,7 +154,6 @@ impl AudioManager {
 
 			None
 		};
-
 
 		Ok(Self {
 			thread_channels: audio_manager_thread_channels,
@@ -328,18 +330,18 @@ impl AudioManager {
 	pub fn pause_instance(
 		&mut self,
 		instance_id: InstanceId,
-		fade_tween: Option<Tween>,
+		settings: PauseInstanceSettings,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::PauseInstance(instance_id, fade_tween))
+		self.send_command_to_backend(InstanceCommand::PauseInstance(instance_id, settings))
 	}
 
 	/// Resumes a currently paused instance of a sound with an optional fade-in tween.
 	pub fn resume_instance(
 		&mut self,
 		instance_id: InstanceId,
-		fade_tween: Option<Tween>,
+		settings: ResumeInstanceSettings,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::ResumeInstance(instance_id, fade_tween))
+		self.send_command_to_backend(InstanceCommand::ResumeInstance(instance_id, settings))
 	}
 
 	/// Stops a currently playing instance of a sound with an optional fade-out tween.
@@ -348,36 +350,36 @@ impl AudioManager {
 	pub fn stop_instance(
 		&mut self,
 		instance_id: InstanceId,
-		fade_tween: Option<Tween>,
+		settings: StopInstanceSettings,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::StopInstance(instance_id, fade_tween))
+		self.send_command_to_backend(InstanceCommand::StopInstance(instance_id, settings))
 	}
 
 	/// Pauses all currently playing instances of a sound or arrangement with an optional fade-out tween.
 	pub fn pause_instances_of(
 		&mut self,
 		playable: Playable,
-		fade_tween: Option<Tween>,
+		settings: PauseInstanceSettings,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::PauseInstancesOf(playable, fade_tween))
+		self.send_command_to_backend(InstanceCommand::PauseInstancesOf(playable, settings))
 	}
 
 	/// Resumes all currently playing instances of a sound or arrangement with an optional fade-in tween.
 	pub fn resume_instances_of(
 		&mut self,
 		playable: Playable,
-		fade_tween: Option<Tween>,
+		settings: ResumeInstanceSettings,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::ResumeInstancesOf(playable, fade_tween))
+		self.send_command_to_backend(InstanceCommand::ResumeInstancesOf(playable, settings))
 	}
 
 	/// Stops all currently playing instances of a sound or arrangement with an optional fade-out tween.
 	pub fn stop_instances_of(
 		&mut self,
 		playable: Playable,
-		fade_tween: Option<Tween>,
+		settings: StopInstanceSettings,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::StopInstancesOf(playable, fade_tween))
+		self.send_command_to_backend(InstanceCommand::StopInstancesOf(playable, settings))
 	}
 
 	/// Sets the tempo of the metronome.
@@ -448,30 +450,30 @@ impl AudioManager {
 	pub fn pause_sequence_and_instances(
 		&mut self,
 		id: SequenceInstanceId,
-		fade_tween: Option<Tween>,
+		settings: PauseInstanceSettings,
 	) -> Result<(), AudioError> {
 		self.send_command_to_backend(SequenceCommand::PauseSequence(id))?;
-		self.send_command_to_backend(InstanceCommand::PauseInstancesOfSequence(id, fade_tween))
+		self.send_command_to_backend(InstanceCommand::PauseInstancesOfSequence(id, settings))
 	}
 
 	/// Resumes a sequence and any instances played by that sequence.
 	pub fn resume_sequence_and_instances(
 		&mut self,
 		id: SequenceInstanceId,
-		fade_tween: Option<Tween>,
+		settings: ResumeInstanceSettings,
 	) -> Result<(), AudioError> {
 		self.send_command_to_backend(SequenceCommand::ResumeSequence(id))?;
-		self.send_command_to_backend(InstanceCommand::ResumeInstancesOfSequence(id, fade_tween))
+		self.send_command_to_backend(InstanceCommand::ResumeInstancesOfSequence(id, settings))
 	}
 
 	/// Stops a sequence and any instances played by that sequence.
 	pub fn stop_sequence_and_instances(
 		&mut self,
 		id: SequenceInstanceId,
-		fade_tween: Option<Tween>,
+		settings: StopInstanceSettings,
 	) -> Result<(), AudioError> {
 		self.send_command_to_backend(SequenceCommand::StopSequence(id))?;
-		self.send_command_to_backend(InstanceCommand::StopInstancesOfSequence(id, fade_tween))
+		self.send_command_to_backend(InstanceCommand::StopInstancesOfSequence(id, settings))
 	}
 
 	/// Creates a parameter with the specified starting value.

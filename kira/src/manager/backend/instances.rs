@@ -1,7 +1,7 @@
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
 	command::InstanceCommand,
-	instance::{Instance, InstanceId},
+	instance::{Instance, InstanceId, StopInstanceSettings},
 	parameter::{Parameters, Tween},
 	playable::Playable,
 	sound::{Sound, SoundId},
@@ -23,10 +23,10 @@ impl Instances {
 		}
 	}
 
-	pub fn stop_instances_of(&mut self, playable: Playable, fade_tween: Option<Tween>) {
+	pub fn stop_instances_of(&mut self, playable: Playable, settings: StopInstanceSettings) {
 		for (_, instance) in &mut self.instances {
 			if instance.playable() == playable {
-				instance.stop(fade_tween);
+				instance.stop(settings);
 			}
 		}
 	}
@@ -77,56 +77,56 @@ impl Instances {
 					instance.set_panning(value);
 				}
 			}
-			InstanceCommand::PauseInstance(id, fade_tween) => {
+			InstanceCommand::PauseInstance(id, settings) => {
 				if let Some(instance) = self.instances.get_mut(&id) {
-					instance.pause(fade_tween);
+					instance.pause(settings);
 				}
 			}
-			InstanceCommand::ResumeInstance(id, fade_tween) => {
+			InstanceCommand::ResumeInstance(id, settings) => {
 				if let Some(instance) = self.instances.get_mut(&id) {
-					instance.resume(fade_tween);
+					instance.resume(settings);
 				}
 			}
-			InstanceCommand::StopInstance(id, fade_tween) => {
+			InstanceCommand::StopInstance(id, settings) => {
 				if let Some(instance) = self.instances.get_mut(&id) {
-					instance.stop(fade_tween);
+					instance.stop(settings);
 				}
 			}
-			InstanceCommand::PauseInstancesOf(playable, fade_tween) => {
+			InstanceCommand::PauseInstancesOf(playable, settings) => {
 				for (_, instance) in &mut self.instances {
 					if instance.playable() == playable {
-						instance.pause(fade_tween);
+						instance.pause(settings);
 					}
 				}
 			}
-			InstanceCommand::ResumeInstancesOf(playable, fade_tween) => {
+			InstanceCommand::ResumeInstancesOf(playable, settings) => {
 				for (_, instance) in &mut self.instances {
 					if instance.playable() == playable {
-						instance.resume(fade_tween);
+						instance.resume(settings);
 					}
 				}
 			}
-			InstanceCommand::StopInstancesOf(playable, fade_tween) => {
-				self.stop_instances_of(playable, fade_tween);
+			InstanceCommand::StopInstancesOf(playable, settings) => {
+				self.stop_instances_of(playable, settings);
 			}
-			InstanceCommand::PauseInstancesOfSequence(id, fade_tween) => {
+			InstanceCommand::PauseInstancesOfSequence(id, settings) => {
 				for (_, instance) in &mut self.instances {
 					if instance.sequence_id() == Some(id) {
-						instance.pause(fade_tween);
+						instance.pause(settings);
 					}
 				}
 			}
-			InstanceCommand::ResumeInstancesOfSequence(id, fade_tween) => {
+			InstanceCommand::ResumeInstancesOfSequence(id, settings) => {
 				for (_, instance) in &mut self.instances {
 					if instance.sequence_id() == Some(id) {
-						instance.resume(fade_tween);
+						instance.resume(settings);
 					}
 				}
 			}
-			InstanceCommand::StopInstancesOfSequence(id, fade_tween) => {
+			InstanceCommand::StopInstancesOfSequence(id, settings) => {
 				for (_, instance) in &mut self.instances {
 					if instance.sequence_id() == Some(id) {
-						instance.stop(fade_tween);
+						instance.stop(settings);
 					}
 				}
 			}

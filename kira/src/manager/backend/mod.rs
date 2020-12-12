@@ -76,7 +76,8 @@ impl Backend {
 						self.sounds.insert(id, sound);
 					}
 					ResourceCommand::RemoveSound(id) => {
-						self.instances.stop_instances_of(Playable::Sound(id), None);
+						self.instances
+							.stop_instances_of(Playable::Sound(id), Default::default());
 						if let Some(sound) = self.sounds.remove(&id) {
 							match self.thread_channels.sounds_to_unload_producer.push(sound) {
 								_ => {}
@@ -88,7 +89,7 @@ impl Backend {
 					}
 					ResourceCommand::RemoveArrangement(id) => {
 						self.instances
-							.stop_instances_of(Playable::Arrangement(id), None);
+							.stop_instances_of(Playable::Arrangement(id), Default::default());
 						if let Some(arrangement) = self.arrangements.remove(&id) {
 							match self
 								.thread_channels

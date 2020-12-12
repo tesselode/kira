@@ -156,7 +156,10 @@ use ringbuf::RingBuffer;
 use std::hash::Hash;
 
 use crate::{
-	instance::{InstanceId, InstanceSettings},
+	instance::{
+		InstanceId, InstanceSettings, PauseInstanceSettings, ResumeInstanceSettings,
+		StopInstanceSettings,
+	},
 	parameter::{ParameterId, Tween},
 	playable::Playable,
 	AudioError, AudioResult, Duration, Tempo, Value,
@@ -181,18 +184,18 @@ pub(crate) enum SequenceOutputCommand {
 	SetInstanceVolume(InstanceId, Value<f64>),
 	SetInstancePitch(InstanceId, Value<f64>),
 	SetInstancePanning(InstanceId, Value<f64>),
-	PauseInstance(InstanceId, Option<Tween>),
-	ResumeInstance(InstanceId, Option<Tween>),
-	StopInstance(InstanceId, Option<Tween>),
-	PauseInstancesOf(Playable, Option<Tween>),
-	ResumeInstancesOf(Playable, Option<Tween>),
-	StopInstancesOf(Playable, Option<Tween>),
+	PauseInstance(InstanceId, PauseInstanceSettings),
+	ResumeInstance(InstanceId, ResumeInstanceSettings),
+	StopInstance(InstanceId, StopInstanceSettings),
+	PauseInstancesOf(Playable, PauseInstanceSettings),
+	ResumeInstancesOf(Playable, ResumeInstanceSettings),
+	StopInstancesOf(Playable, StopInstanceSettings),
 	PauseSequence(SequenceInstanceId),
 	ResumeSequence(SequenceInstanceId),
 	StopSequence(SequenceInstanceId),
-	PauseInstancesOfSequence(SequenceInstanceId, Option<Tween>),
-	ResumeInstancesOfSequence(SequenceInstanceId, Option<Tween>),
-	StopInstancesOfSequence(SequenceInstanceId, Option<Tween>),
+	PauseInstancesOfSequence(SequenceInstanceId, PauseInstanceSettings),
+	ResumeInstancesOfSequence(SequenceInstanceId, ResumeInstanceSettings),
+	StopInstancesOfSequence(SequenceInstanceId, StopInstanceSettings),
 	SetMetronomeTempo(Value<Tempo>),
 	StartMetronome,
 	PauseMetronome,
@@ -299,39 +302,39 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	}
 
 	/// Adds a step to pause an instance.
-	pub fn pause_instance(&mut self, id: InstanceId, fade_tween: Option<Tween>) {
+	pub fn pause_instance(&mut self, id: InstanceId, settings: PauseInstanceSettings) {
 		self.steps
-			.push(SequenceOutputCommand::PauseInstance(id, fade_tween).into());
+			.push(SequenceOutputCommand::PauseInstance(id, settings).into());
 	}
 
 	/// Adds a step to resume an instance.
-	pub fn resume_instance(&mut self, id: InstanceId, fade_tween: Option<Tween>) {
+	pub fn resume_instance(&mut self, id: InstanceId, settings: ResumeInstanceSettings) {
 		self.steps
-			.push(SequenceOutputCommand::ResumeInstance(id, fade_tween).into());
+			.push(SequenceOutputCommand::ResumeInstance(id, settings).into());
 	}
 
 	/// Adds a step to stop an instance.
-	pub fn stop_instance(&mut self, id: InstanceId, fade_tween: Option<Tween>) {
+	pub fn stop_instance(&mut self, id: InstanceId, settings: StopInstanceSettings) {
 		self.steps
-			.push(SequenceOutputCommand::StopInstance(id, fade_tween).into());
+			.push(SequenceOutputCommand::StopInstance(id, settings).into());
 	}
 
 	/// Adds a step to pause all instances of a sound or arrangement.
-	pub fn pause_instances_of(&mut self, playable: Playable, fade_tween: Option<Tween>) {
+	pub fn pause_instances_of(&mut self, playable: Playable, settings: PauseInstanceSettings) {
 		self.steps
-			.push(SequenceOutputCommand::PauseInstancesOf(playable, fade_tween).into());
+			.push(SequenceOutputCommand::PauseInstancesOf(playable, settings).into());
 	}
 
 	/// Adds a step to resume all instances of a sound or arrangement.
-	pub fn resume_instances_of(&mut self, playable: Playable, fade_tween: Option<Tween>) {
+	pub fn resume_instances_of(&mut self, playable: Playable, settings: ResumeInstanceSettings) {
 		self.steps
-			.push(SequenceOutputCommand::ResumeInstancesOf(playable, fade_tween).into());
+			.push(SequenceOutputCommand::ResumeInstancesOf(playable, settings).into());
 	}
 
 	/// Adds a step to stop all instances of a sound or arrangement.
-	pub fn stop_instances_of(&mut self, playable: Playable, fade_tween: Option<Tween>) {
+	pub fn stop_instances_of(&mut self, playable: Playable, settings: StopInstanceSettings) {
 		self.steps
-			.push(SequenceOutputCommand::StopInstancesOf(playable, fade_tween).into());
+			.push(SequenceOutputCommand::StopInstancesOf(playable, settings).into());
 	}
 
 	/// Adds a step to pause a sequence.
@@ -356,36 +359,36 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	pub fn pause_sequence_and_instances(
 		&mut self,
 		id: SequenceInstanceId,
-		fade_tween: Option<Tween>,
+		settings: PauseInstanceSettings,
 	) {
 		self.steps
 			.push(SequenceOutputCommand::PauseSequence(id).into());
 		self.steps
-			.push(SequenceOutputCommand::PauseInstancesOfSequence(id, fade_tween).into());
+			.push(SequenceOutputCommand::PauseInstancesOfSequence(id, settings).into());
 	}
 
 	/// Adds a step to resume a sequence and all instances played by it.
 	pub fn resume_sequence_and_instances(
 		&mut self,
 		id: SequenceInstanceId,
-		fade_tween: Option<Tween>,
+		settings: ResumeInstanceSettings,
 	) {
 		self.steps
 			.push(SequenceOutputCommand::ResumeSequence(id).into());
 		self.steps
-			.push(SequenceOutputCommand::ResumeInstancesOfSequence(id, fade_tween).into());
+			.push(SequenceOutputCommand::ResumeInstancesOfSequence(id, settings).into());
 	}
 
 	/// Adds a step to stop a sequence and all instances played by it.
 	pub fn stop_sequence_and_instances(
 		&mut self,
 		id: SequenceInstanceId,
-		fade_tween: Option<Tween>,
+		settings: StopInstanceSettings,
 	) {
 		self.steps
 			.push(SequenceOutputCommand::StopSequence(id).into());
 		self.steps
-			.push(SequenceOutputCommand::StopInstancesOfSequence(id, fade_tween).into());
+			.push(SequenceOutputCommand::StopInstancesOfSequence(id, settings).into());
 	}
 
 	/// Adds a step to set the tempo of the metronome.

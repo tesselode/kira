@@ -1,6 +1,9 @@
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
-	instance::{InstanceId, InstanceSettings},
+	instance::{
+		InstanceId, InstanceSettings, PauseInstanceSettings, ResumeInstanceSettings,
+		StopInstanceSettings,
+	},
 	mixer::{
 		effect::{Effect, EffectId, EffectSettings},
 		SubTrackId, TrackIndex, TrackSettings,
@@ -32,15 +35,15 @@ pub(crate) enum InstanceCommand {
 	SetInstanceVolume(InstanceId, Value<f64>),
 	SetInstancePitch(InstanceId, Value<f64>),
 	SetInstancePanning(InstanceId, Value<f64>),
-	PauseInstance(InstanceId, Option<Tween>),
-	ResumeInstance(InstanceId, Option<Tween>),
-	StopInstance(InstanceId, Option<Tween>),
-	PauseInstancesOf(Playable, Option<Tween>),
-	ResumeInstancesOf(Playable, Option<Tween>),
-	StopInstancesOf(Playable, Option<Tween>),
-	PauseInstancesOfSequence(SequenceInstanceId, Option<Tween>),
-	ResumeInstancesOfSequence(SequenceInstanceId, Option<Tween>),
-	StopInstancesOfSequence(SequenceInstanceId, Option<Tween>),
+	PauseInstance(InstanceId, PauseInstanceSettings),
+	ResumeInstance(InstanceId, ResumeInstanceSettings),
+	StopInstance(InstanceId, StopInstanceSettings),
+	PauseInstancesOf(Playable, PauseInstanceSettings),
+	ResumeInstancesOf(Playable, ResumeInstanceSettings),
+	StopInstancesOf(Playable, StopInstanceSettings),
+	PauseInstancesOfSequence(SequenceInstanceId, PauseInstanceSettings),
+	ResumeInstancesOfSequence(SequenceInstanceId, ResumeInstanceSettings),
+	StopInstancesOfSequence(SequenceInstanceId, StopInstanceSettings),
 }
 
 #[derive(Debug, Copy, Clone)]

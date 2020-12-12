@@ -39,7 +39,7 @@ use crate::{
 	arrangement::{Arrangement, ArrangementId},
 	frame::Frame,
 	mixer::{SubTrackId, TrackIndex},
-	parameter::{Parameter, Parameters, Tween},
+	parameter::{EaseDirection, Easing, Parameter, Parameters, Tween},
 	playable::Playable,
 	sequence::SequenceInstanceId,
 	sound::{Sound, SoundId},
@@ -252,6 +252,96 @@ impl Default for InstanceSettings {
 	}
 }
 
+#[derive(Debug, Copy, Clone)]
+pub struct PauseInstanceSettings {
+	fade_tween: Option<Tween>,
+}
+
+impl PauseInstanceSettings {
+	pub fn new() -> Self {
+		Self::default()
+	}
+
+	pub fn fade_tween<T: Into<Option<Tween>>>(self, tween: T) -> Self {
+		Self {
+			fade_tween: tween.into(),
+			..self
+		}
+	}
+}
+
+impl Default for PauseInstanceSettings {
+	fn default() -> Self {
+		Self {
+			fade_tween: Some(Tween {
+				duration: 0.001,
+				easing: Easing::Linear,
+				ease_direction: EaseDirection::In,
+			}),
+		}
+	}
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct ResumeInstanceSettings {
+	fade_tween: Option<Tween>,
+}
+
+impl ResumeInstanceSettings {
+	pub fn new() -> Self {
+		Self::default()
+	}
+
+	pub fn fade_tween<T: Into<Option<Tween>>>(self, tween: T) -> Self {
+		Self {
+			fade_tween: tween.into(),
+			..self
+		}
+	}
+}
+
+impl Default for ResumeInstanceSettings {
+	fn default() -> Self {
+		Self {
+			fade_tween: Some(Tween {
+				duration: 0.001,
+				easing: Easing::Linear,
+				ease_direction: EaseDirection::In,
+			}),
+		}
+	}
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct StopInstanceSettings {
+	fade_tween: Option<Tween>,
+}
+
+impl StopInstanceSettings {
+	pub fn new() -> Self {
+		Self::default()
+	}
+
+	pub fn fade_tween<T: Into<Option<Tween>>>(self, tween: T) -> Self {
+		Self {
+			fade_tween: tween.into(),
+			..self
+		}
+	}
+}
+
+impl Default for StopInstanceSettings {
+	fn default() -> Self {
+		Self {
+			fade_tween: Some(Tween {
+				duration: 0.001,
+				easing: Easing::Linear,
+				ease_direction: EaseDirection::In,
+			}),
+		}
+	}
+}
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub(crate) enum InstanceState {
 	Playing,
@@ -346,8 +436,8 @@ impl Instance {
 		self.panning.set(panning);
 	}
 
-	pub fn pause(&mut self, fade_tween: Option<Tween>) {
-		if let Some(tween) = fade_tween {
+	pub fn pause(&mut self, settings: PauseInstanceSettings) {
+		if let Some(tween) = settings.fade_tween {
 			self.state = InstanceState::Pausing;
 			self.fade_volume.set(0.0, Some(tween));
 		} else {
@@ -355,15 +445,15 @@ impl Instance {
 		}
 	}
 
-	pub fn resume(&mut self, fade_tween: Option<Tween>) {
+	pub fn resume(&mut self, settings: ResumeInstanceSettings) {
 		self.state = InstanceState::Playing;
-		if let Some(tween) = fade_tween {
+		if let Some(tween) = settings.fade_tween {
 			self.fade_volume.set(1.0, Some(tween));
 		}
 	}
 
-	pub fn stop(&mut self, fade_tween: Option<Tween>) {
-		if let Some(tween) = fade_tween {
+	pub fn stop(&mut self, settings: StopInstanceSettings) {
+		if let Some(tween) = settings.fade_tween {
 			self.state = InstanceState::Stopping;
 			self.fade_volume.set(0.0, Some(tween));
 		} else {
