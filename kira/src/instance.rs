@@ -252,13 +252,11 @@ impl Default for InstanceSettings {
 	}
 }
 
-// TODO: remove unnecessary states
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub(crate) enum InstanceState {
 	Playing,
 	Paused,
 	Stopped,
-	Resuming,
 	Pausing,
 	Stopping,
 }
@@ -284,14 +282,11 @@ impl Instance {
 		sequence_id: Option<SequenceInstanceId>,
 		settings: InstanceSettings,
 	) -> Self {
-		let state;
 		let mut fade_volume;
 		if let Some(tween) = settings.fade_in_tween {
-			state = InstanceState::Resuming;
 			fade_volume = Parameter::new(0.0);
 			fade_volume.set(1.0, Some(tween));
 		} else {
-			state = InstanceState::Playing;
 			fade_volume = Parameter::new(1.0);
 		}
 		Self {
@@ -303,7 +298,7 @@ impl Instance {
 			panning: CachedValue::new(settings.panning, 0.5),
 			reverse: settings.reverse,
 			loop_start: settings.loop_start.into_option(playable),
-			state,
+			state: InstanceState::Playing,
 			position: 0.0,
 			fade_volume,
 		}
@@ -330,7 +325,6 @@ impl Instance {
 			InstanceState::Playing => true,
 			InstanceState::Paused => false,
 			InstanceState::Stopped => false,
-			InstanceState::Resuming => true,
 			InstanceState::Pausing => true,
 			InstanceState::Stopping => true,
 		}
@@ -362,11 +356,9 @@ impl Instance {
 	}
 
 	pub fn resume(&mut self, fade_tween: Option<Tween>) {
+		self.state = InstanceState::Playing;
 		if let Some(tween) = fade_tween {
-			self.state = InstanceState::Resuming;
 			self.fade_volume.set(1.0, Some(tween));
-		} else {
-			self.state = InstanceState::Playing;
 		}
 	}
 
@@ -396,9 +388,6 @@ impl Instance {
 		let finished_fading = self.fade_volume.update(dt);
 		if finished_fading {
 			match self.state {
-				InstanceState::Resuming => {
-					self.state = InstanceState::Playing;
-				}
 				InstanceState::Pausing => {
 					self.state = InstanceState::Paused;
 				}
