@@ -72,12 +72,12 @@ impl InstanceId {
 	}
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub(crate) enum InstanceState {
 	Playing,
-	Paused,
+	Paused(f64),
 	Stopped,
-	Pausing,
+	Pausing(f64),
 	Stopping,
 }
 
@@ -143,9 +143,9 @@ impl Instance {
 	pub fn playing(&self) -> bool {
 		match self.state {
 			InstanceState::Playing => true,
-			InstanceState::Paused => false,
+			InstanceState::Paused(_) => false,
 			InstanceState::Stopped => false,
-			InstanceState::Pausing => true,
+			InstanceState::Pausing(_) => true,
 			InstanceState::Stopping => true,
 		}
 	}
@@ -166,29 +166,40 @@ impl Instance {
 		self.panning.set(panning);
 	}
 
+	// TODO: add a seek function to the API
+	pub fn seek(&mut self, position: f64) {
+		self.position = position;
+	}
+
 	pub fn pause(&mut self, settings: PauseInstanceSettings) {
-		if let Some(tween) = settings.fade_tween {
-			self.state = InstanceState::Pausing;
-			self.fade_volume.set(0.0, Some(tween));
+		self.state = if settings.fade_tween.is_some() {
+			InstanceState::Pausing(self.position)
 		} else {
-			self.state = InstanceState::Paused;
-		}
+			InstanceState::Paused(self.position)
+		};
+		self.fade_volume.set(0.0, settings.fade_tween);
 	}
 
 	pub fn resume(&mut self, settings: ResumeInstanceSettings) {
-		self.state = InstanceState::Playing;
-		if let Some(tween) = settings.fade_tween {
-			self.fade_volume.set(1.0, Some(tween));
+		match self.state {
+			InstanceState::Paused(position) | InstanceState::Pausing(position) => {
+				self.state = InstanceState::Playing;
+				if settings.rewind_to_pause_position {
+					self.seek(position);
+				}
+				self.fade_volume.set(1.0, settings.fade_tween);
+			}
+			_ => {}
 		}
 	}
 
 	pub fn stop(&mut self, settings: StopInstanceSettings) {
-		if let Some(tween) = settings.fade_tween {
-			self.state = InstanceState::Stopping;
-			self.fade_volume.set(0.0, Some(tween));
+		self.state = if settings.fade_tween.is_some() {
+			InstanceState::Stopping
 		} else {
-			self.state = InstanceState::Stopped;
-		}
+			InstanceState::Stopped
+		};
+		self.fade_volume.set(0.0, settings.fade_tween);
 	}
 
 	pub fn update(&mut self, dt: f64, parameters: &Parameters) {
@@ -208,8 +219,8 @@ impl Instance {
 		let finished_fading = self.fade_volume.update(dt);
 		if finished_fading {
 			match self.state {
-				InstanceState::Pausing => {
-					self.state = InstanceState::Paused;
+				InstanceState::Pausing(position) => {
+					self.state = InstanceState::Paused(position);
 				}
 				InstanceState::Stopping => {
 					self.state = InstanceState::Stopped;

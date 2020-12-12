@@ -222,6 +222,7 @@ impl Default for PauseInstanceSettings {
 #[derive(Debug, Copy, Clone)]
 pub struct ResumeInstanceSettings {
 	pub fade_tween: Option<Tween>,
+	pub rewind_to_pause_position: bool,
 }
 
 impl ResumeInstanceSettings {
@@ -235,6 +236,13 @@ impl ResumeInstanceSettings {
 			..self
 		}
 	}
+
+	pub fn rewind_to_pause_position(self) -> Self {
+		Self {
+			rewind_to_pause_position: true,
+			..self
+		}
+	}
 }
 
 impl Default for ResumeInstanceSettings {
@@ -245,6 +253,7 @@ impl Default for ResumeInstanceSettings {
 				easing: Easing::Linear,
 				ease_direction: EaseDirection::In,
 			}),
+			rewind_to_pause_position: false,
 		}
 	}
 }
