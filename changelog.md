@@ -4,6 +4,13 @@
 - Added `Sequence::play_random`
 - Renamed `Sound::new` to `Sound::from_samples`
 - Audio file format decoding is now gated behind feature flags
+- Changed functions for pausing, resuming, and stopping instances
+to take settings structs (`PauseInstanceSettings`,
+`ResumeInstanceSettings`, and `StopInstanceSettings`)
+- When resuming an instance, you can now choose to have it seek
+backward to the time when it was paused. This is useful if you
+need to keep audio synced up with something in-game, but you
+still want a smooth fade out when pausing the game.
 
 # v0.2.0 - December 6th, 2020
 
