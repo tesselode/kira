@@ -119,7 +119,7 @@ impl Instance {
 			reverse: settings.reverse,
 			loop_start: settings.loop_start.into_option(playable),
 			state: InstanceState::Playing,
-			position: 0.0,
+			position: settings.start_position,
 			fade_volume,
 		}
 	}
