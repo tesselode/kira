@@ -2,7 +2,7 @@
 
 mod backend;
 
-use std::hash::Hash;
+use std::{hash::Hash, path::Path};
 
 #[cfg(not(feature = "benchmarking"))]
 use backend::Backend;
@@ -27,7 +27,7 @@ use crate::{
 		SubTrackId, Track, TrackIndex, TrackSettings,
 	},
 	parameter::{ParameterId, Tween},
-	playable::Playable,
+	playable::{Playable, PlayableSettings},
 	sequence::SequenceInstance,
 	sequence::{EventReceiver, Sequence, SequenceInstanceId, SequenceInstanceSettings},
 	sound::{Sound, SoundId},
@@ -264,6 +264,19 @@ impl AudioManager {
 		let id = SoundId::new(&sound);
 		self.send_command_to_backend(ResourceCommand::AddSound(id, sound))?;
 		Ok(id)
+	}
+
+	/// Loads a sound from a file and returns a handle to the sound.
+	///
+	/// This is a shortcut for constructing the sound manually and adding it
+	/// using [`AudioManager::add_sound`].
+	pub fn load_sound<P: AsRef<Path>>(
+		&mut self,
+		path: P,
+		settings: PlayableSettings,
+	) -> AudioResult<SoundId> {
+		let sound = Sound::from_file(path, settings)?;
+		self.add_sound(sound)
 	}
 
 	/// Removes a sound from the audio thread, allowing its memory to be freed.
