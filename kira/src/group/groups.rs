@@ -19,10 +19,6 @@ impl Groups {
 		self.groups.get(&id)
 	}
 
-	pub fn get_mut(&mut self, id: GroupId) -> Option<&mut Group> {
-		self.groups.get_mut(&id)
-	}
-
 	pub fn run_command(&mut self, command: GroupCommand) -> Option<Group> {
 		match command {
 			GroupCommand::AddGroup(id, group) => {
@@ -30,16 +26,6 @@ impl Groups {
 			}
 			GroupCommand::RemoveGroup(id) => {
 				return self.groups.remove(&id);
-			}
-			GroupCommand::AddToGroup(id_a, id_b) => {
-				if let Some(group) = self.groups.get_mut(&id_a) {
-					group.add_to_group(id_b);
-				}
-			}
-			GroupCommand::RemoveFromGroup(id_a, id_b) => {
-				if let Some(group) = self.groups.get_mut(&id_a) {
-					group.remove_from_group(id_b);
-				}
 			}
 		}
 		None

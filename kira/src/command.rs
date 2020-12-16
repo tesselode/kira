@@ -89,8 +89,6 @@ pub(crate) enum ParameterCommand {
 pub(crate) enum GroupCommand {
 	AddGroup(GroupId, Group),
 	RemoveGroup(GroupId),
-	AddToGroup(GroupId, GroupId),
-	RemoveFromGroup(GroupId, GroupId),
 }
 
 pub(crate) enum Command {

@@ -16,7 +16,7 @@ use crate::{
 		ResourceCommand, SequenceCommand,
 	},
 	error::{AudioError, AudioResult},
-	group::{Group, GroupId, Groupable},
+	group::{Group, GroupId},
 	instance::{
 		InstanceId, InstanceSettings, PauseInstanceSettings, ResumeInstanceSettings,
 		StopInstanceSettings,
@@ -566,40 +566,6 @@ impl AudioManager {
 	/// Removes a group.
 	pub fn remove_group(&mut self, id: GroupId) -> AudioResult<()> {
 		self.send_command_to_backend(GroupCommand::RemoveGroup(id))
-	}
-
-	/// Adds an item to a group.
-	pub fn add_to_group<T: Into<Groupable>>(
-		&mut self,
-		groupable: T,
-		parent_id: GroupId,
-	) -> AudioResult<()> {
-		let groupable: Groupable = groupable.into();
-		match groupable {
-			Groupable::Group(id) => {
-				self.send_command_to_backend(GroupCommand::AddToGroup(id, parent_id))
-			}
-			Groupable::Playable(playable) => {
-				unimplemented!()
-			}
-		}
-	}
-
-	/// Removes an item from a group.
-	pub fn remove_from_group<T: Into<Groupable>>(
-		&mut self,
-		groupable: T,
-		parent_id: GroupId,
-	) -> AudioResult<()> {
-		let groupable: Groupable = groupable.into();
-		match groupable {
-			Groupable::Group(id) => {
-				self.send_command_to_backend(GroupCommand::RemoveFromGroup(id, parent_id))
-			}
-			Groupable::Playable(playable) => {
-				unimplemented!()
-			}
-		}
 	}
 
 	/// Pauses all instances of sounds, arrangements, and sequences in a group.
