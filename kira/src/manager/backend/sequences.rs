@@ -1,5 +1,6 @@
 use crate::{
 	command::{Command, InstanceCommand, MetronomeCommand, ParameterCommand, SequenceCommand},
+	group::groups::Groups,
 	metronome::Metronome,
 	sequence::{SequenceInstance, SequenceInstanceId, SequenceOutputCommand},
 };
@@ -29,7 +30,7 @@ impl Sequences {
 		self.sequences.insert(id, instance);
 	}
 
-	pub fn run_command(&mut self, command: SequenceCommand) {
+	pub fn run_command(&mut self, command: SequenceCommand, groups: &Groups) {
 		match command {
 			SequenceCommand::StartSequence(id, instance) => {
 				self.start_sequence(id, instance);
@@ -57,6 +58,27 @@ impl Sequences {
 			SequenceCommand::StopSequence(id) => {
 				if let Some(sequence) = self.sequences.get_mut(&id) {
 					sequence.stop();
+				}
+			}
+			SequenceCommand::PauseGroup(id) => {
+				for (_, instance) in &mut self.sequences {
+					if instance.is_in_group(id, groups) {
+						instance.pause();
+					}
+				}
+			}
+			SequenceCommand::ResumeGroup(id) => {
+				for (_, instance) in &mut self.sequences {
+					if instance.is_in_group(id, groups) {
+						instance.resume();
+					}
+				}
+			}
+			SequenceCommand::StopGroup(id) => {
+				for (_, instance) in &mut self.sequences {
+					if instance.is_in_group(id, groups) {
+						instance.stop();
+					}
 				}
 			}
 		}

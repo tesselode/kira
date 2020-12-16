@@ -65,6 +65,9 @@ pub(crate) enum SequenceCommand {
 	PauseSequence(SequenceInstanceId),
 	ResumeSequence(SequenceInstanceId),
 	StopSequence(SequenceInstanceId),
+	PauseGroup(GroupId),
+	ResumeGroup(GroupId),
+	StopGroup(GroupId),
 }
 
 #[derive(Debug)]

@@ -117,7 +117,7 @@ impl Backend {
 					);
 				}
 				Command::Sequence(command) => {
-					self.sequences.run_command(command);
+					self.sequences.run_command(command, &self.groups);
 				}
 				Command::Mixer(command) => {
 					self.mixer.run_command(

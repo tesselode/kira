@@ -3,7 +3,10 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use nanorand::{tls_rng, RNG};
 use ringbuf::Producer;
 
-use crate::metronome::Metronome;
+use crate::{
+	group::{groups::Groups, GroupId},
+	metronome::Metronome,
+};
 
 use super::{RawSequence, SequenceOutputCommand, SequenceStep};
 
@@ -162,5 +165,9 @@ impl SequenceInstance {
 		} else {
 			false
 		}
+	}
+
+	pub(crate) fn is_in_group(&self, parent_id: GroupId, groups: &Groups) -> bool {
+		self.sequence.is_in_group(parent_id, groups)
 	}
 }

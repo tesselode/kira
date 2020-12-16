@@ -153,15 +153,17 @@ pub use instance::SequenceInstanceId;
 use indexmap::IndexSet;
 use ringbuf::RingBuffer;
 
-use std::hash::Hash;
+use std::{hash::Hash, vec};
 
 use crate::{
+	group::{groups::Groups, GroupId},
 	instance::{
 		InstanceId, InstanceSettings, PauseInstanceSettings, ResumeInstanceSettings,
 		StopInstanceSettings,
 	},
 	parameter::{ParameterId, Tween},
 	playable::Playable,
+	util::index_set_from_vec,
 	AudioError, AudioResult, Duration, Tempo, Value,
 };
 
@@ -219,25 +221,57 @@ impl<CustomEvent: Clone + Eq + Hash> From<SequenceOutputCommand> for SequenceSte
 }
 
 #[derive(Debug, Clone)]
+pub struct SequenceSettings {
+	/// The groups this sequence will belong to.
+	groups: Vec<GroupId>,
+}
+
+impl SequenceSettings {
+	pub fn new() -> Self {
+		Self::default()
+	}
+
+	pub fn groups<T: Into<Vec<GroupId>>>(self, groups: T) -> Self {
+		Self {
+			groups: groups.into(),
+			..self
+		}
+	}
+}
+
+impl Default for SequenceSettings {
+	fn default() -> Self {
+		Self { groups: vec![] }
+	}
+}
+
+#[derive(Debug, Clone)]
 pub struct Sequence<CustomEvent: Clone + Eq + Hash = ()> {
 	steps: Vec<SequenceStep<CustomEvent>>,
 	loop_point: Option<usize>,
+	groups: IndexSet<GroupId>,
 }
 
 impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	/// Creates a new sequence.
-	pub fn new() -> Self {
+	pub fn new(settings: SequenceSettings) -> Self {
 		Self {
 			steps: vec![],
 			loop_point: None,
+			groups: index_set_from_vec(settings.groups),
 		}
 	}
 
-	fn with_steps_and_loop_point(
+	fn with_components(
 		steps: Vec<SequenceStep<CustomEvent>>,
 		loop_point: Option<usize>,
+		groups: IndexSet<GroupId>,
 	) -> Self {
-		Self { steps, loop_point }
+		Self {
+			steps,
+			loop_point,
+			groups,
+		}
 	}
 
 	/// Adds a step to wait for a certain length of time
@@ -469,7 +503,7 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 			})
 			.collect();
 		(
-			Sequence::with_steps_and_loop_point(raw_steps, self.loop_point),
+			Sequence::with_components(raw_steps, self.loop_point, self.groups.clone()),
 			events,
 		)
 	}
@@ -484,6 +518,27 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 		let instance = SequenceInstance::new(raw_sequence, event_producer);
 		let event_receiver = EventReceiver::new(event_consumer, events);
 		(instance, event_receiver)
+	}
+
+	/// Returns if this sequence is in the group with the given ID.
+	pub(crate) fn is_in_group(&self, parent_id: GroupId, groups: &Groups) -> bool {
+		if groups.get(parent_id).is_none() {
+			return false;
+		}
+		// check if this sequence is a direct descendant of the requested group
+		if self.groups.contains(&parent_id) {
+			return true;
+		}
+		// otherwise, recursively check if any of the direct parents of this
+		// sequence is in the requested group
+		for id in &self.groups {
+			if let Some(group) = groups.get(*id) {
+				if group.is_in_group(parent_id, groups) {
+					return true;
+				}
+			}
+		}
+		false
 	}
 }
 

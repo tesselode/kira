@@ -604,7 +604,9 @@ impl AudioManager {
 
 	/// Pauses all instances of sounds, arrangements, and sequences in a group.
 	pub fn pause_group(&mut self, id: GroupId, settings: PauseInstanceSettings) -> AudioResult<()> {
-		self.send_command_to_backend(InstanceCommand::PauseGroup(id, settings))
+		self.send_command_to_backend(InstanceCommand::PauseGroup(id, settings))?;
+		self.send_command_to_backend(SequenceCommand::PauseGroup(id))?;
+		Ok(())
 	}
 
 	/// Resumes all instances of sounds, arrangements, and sequences in a group.
@@ -613,12 +615,16 @@ impl AudioManager {
 		id: GroupId,
 		settings: ResumeInstanceSettings,
 	) -> AudioResult<()> {
-		self.send_command_to_backend(InstanceCommand::ResumeGroup(id, settings))
+		self.send_command_to_backend(InstanceCommand::ResumeGroup(id, settings))?;
+		self.send_command_to_backend(SequenceCommand::ResumeGroup(id))?;
+		Ok(())
 	}
 
 	/// Stops all instances of sounds, arrangements, and sequences in a group.
 	pub fn stop_group(&mut self, id: GroupId, settings: StopInstanceSettings) -> AudioResult<()> {
-		self.send_command_to_backend(InstanceCommand::StopGroup(id, settings))
+		self.send_command_to_backend(InstanceCommand::StopGroup(id, settings))?;
+		self.send_command_to_backend(SequenceCommand::StopGroup(id))?;
+		Ok(())
 	}
 
 	/// Pops an event that was sent by the audio thread.
