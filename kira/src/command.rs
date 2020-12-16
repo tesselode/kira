@@ -59,12 +59,12 @@ pub(crate) enum MetronomeCommand {
 }
 
 pub(crate) enum SequenceCommand {
-	StartSequence(SequenceInstanceId, SequenceInstance),
-	MuteSequence(SequenceInstanceId),
-	UnmuteSequence(SequenceInstanceId),
-	PauseSequence(SequenceInstanceId),
-	ResumeSequence(SequenceInstanceId),
-	StopSequence(SequenceInstanceId),
+	StartSequenceInstance(SequenceInstanceId, SequenceInstance),
+	MuteSequenceInstance(SequenceInstanceId),
+	UnmuteSequenceInstance(SequenceInstanceId),
+	PauseSequenceInstance(SequenceInstanceId),
+	ResumeSequenceInstance(SequenceInstanceId),
+	StopSequenceInstance(SequenceInstanceId),
 	PauseGroup(GroupId),
 	ResumeGroup(GroupId),
 	StopGroup(GroupId),

@@ -9,8 +9,8 @@ use ringbuf::Producer;
 use std::vec::Drain;
 
 pub(crate) struct Sequences {
-	sequences: IndexMap<SequenceInstanceId, SequenceInstance>,
-	sequences_to_remove: Vec<SequenceInstanceId>,
+	sequence_instances: IndexMap<SequenceInstanceId, SequenceInstance>,
+	sequence_instances_to_remove: Vec<SequenceInstanceId>,
 	sequence_output_command_queue: Vec<SequenceOutputCommand>,
 	output_command_queue: Vec<Command>,
 }
@@ -18,64 +18,64 @@ pub(crate) struct Sequences {
 impl Sequences {
 	pub fn new(sequence_capacity: usize, command_capacity: usize) -> Self {
 		Self {
-			sequences: IndexMap::with_capacity(sequence_capacity),
-			sequences_to_remove: Vec::with_capacity(sequence_capacity),
+			sequence_instances: IndexMap::with_capacity(sequence_capacity),
+			sequence_instances_to_remove: Vec::with_capacity(sequence_capacity),
 			sequence_output_command_queue: Vec::with_capacity(command_capacity),
 			output_command_queue: Vec::with_capacity(command_capacity),
 		}
 	}
 
-	fn start_sequence(&mut self, id: SequenceInstanceId, mut instance: SequenceInstance) {
+	fn start_sequence_instance(&mut self, id: SequenceInstanceId, mut instance: SequenceInstance) {
 		instance.start();
-		self.sequences.insert(id, instance);
+		self.sequence_instances.insert(id, instance);
 	}
 
 	pub fn run_command(&mut self, command: SequenceCommand, groups: &Groups) {
 		match command {
-			SequenceCommand::StartSequence(id, instance) => {
-				self.start_sequence(id, instance);
+			SequenceCommand::StartSequenceInstance(id, instance) => {
+				self.start_sequence_instance(id, instance);
 			}
-			SequenceCommand::MuteSequence(id) => {
-				if let Some(sequence) = self.sequences.get_mut(&id) {
-					sequence.mute();
+			SequenceCommand::MuteSequenceInstance(id) => {
+				if let Some(instance) = self.sequence_instances.get_mut(&id) {
+					instance.mute();
 				}
 			}
-			SequenceCommand::UnmuteSequence(id) => {
-				if let Some(sequence) = self.sequences.get_mut(&id) {
-					sequence.unmute();
+			SequenceCommand::UnmuteSequenceInstance(id) => {
+				if let Some(instance) = self.sequence_instances.get_mut(&id) {
+					instance.unmute();
 				}
 			}
-			SequenceCommand::PauseSequence(id) => {
-				if let Some(sequence) = self.sequences.get_mut(&id) {
-					sequence.pause();
+			SequenceCommand::PauseSequenceInstance(id) => {
+				if let Some(instance) = self.sequence_instances.get_mut(&id) {
+					instance.pause();
 				}
 			}
-			SequenceCommand::ResumeSequence(id) => {
-				if let Some(sequence) = self.sequences.get_mut(&id) {
-					sequence.resume();
+			SequenceCommand::ResumeSequenceInstance(id) => {
+				if let Some(instance) = self.sequence_instances.get_mut(&id) {
+					instance.resume();
 				}
 			}
-			SequenceCommand::StopSequence(id) => {
-				if let Some(sequence) = self.sequences.get_mut(&id) {
-					sequence.stop();
+			SequenceCommand::StopSequenceInstance(id) => {
+				if let Some(instance) = self.sequence_instances.get_mut(&id) {
+					instance.stop();
 				}
 			}
 			SequenceCommand::PauseGroup(id) => {
-				for (_, instance) in &mut self.sequences {
+				for (_, instance) in &mut self.sequence_instances {
 					if instance.is_in_group(id, groups) {
 						instance.pause();
 					}
 				}
 			}
 			SequenceCommand::ResumeGroup(id) => {
-				for (_, instance) in &mut self.sequences {
+				for (_, instance) in &mut self.sequence_instances {
 					if instance.is_in_group(id, groups) {
 						instance.resume();
 					}
 				}
 			}
 			SequenceCommand::StopGroup(id) => {
-				for (_, instance) in &mut self.sequences {
+				for (_, instance) in &mut self.sequence_instances {
 					if instance.is_in_group(id, groups) {
 						instance.stop();
 					}
@@ -91,8 +91,8 @@ impl Sequences {
 		sequences_to_unload_producer: &mut Producer<SequenceInstance>,
 	) -> Drain<Command> {
 		// update sequences and process their commands
-		for (id, sequence) in &mut self.sequences {
-			sequence.update(dt, metronome, &mut self.sequence_output_command_queue);
+		for (id, sequence_instance) in &mut self.sequence_instances {
+			sequence_instance.update(dt, metronome, &mut self.sequence_output_command_queue);
 			// convert sequence commands to commands that can be consumed
 			// by the backend
 			for command in self.sequence_output_command_queue.drain(..) {
@@ -133,13 +133,13 @@ impl Sequences {
 						Command::Instance(InstanceCommand::StopInstancesOf(id, settings))
 					}
 					SequenceOutputCommand::PauseSequence(id) => {
-						Command::Sequence(SequenceCommand::PauseSequence(id))
+						Command::Sequence(SequenceCommand::PauseSequenceInstance(id))
 					}
 					SequenceOutputCommand::ResumeSequence(id) => {
-						Command::Sequence(SequenceCommand::ResumeSequence(id))
+						Command::Sequence(SequenceCommand::ResumeSequenceInstance(id))
 					}
 					SequenceOutputCommand::StopSequence(id) => {
-						Command::Sequence(SequenceCommand::StopSequence(id))
+						Command::Sequence(SequenceCommand::StopSequenceInstance(id))
 					}
 					SequenceOutputCommand::PauseInstancesOfSequence(id, settings) => {
 						Command::Instance(InstanceCommand::PauseInstancesOfSequence(id, settings))
@@ -167,17 +167,17 @@ impl Sequences {
 					}
 				});
 			}
-			if sequence.finished() {
-				self.sequences_to_remove.push(*id);
+			if sequence_instance.finished() {
+				self.sequence_instances_to_remove.push(*id);
 			}
 		}
 		// remove finished sequences
-		for id in self.sequences_to_remove.drain(..) {
-			let sequence = self.sequences.remove(&id).unwrap();
-			match sequences_to_unload_producer.push(sequence) {
+		for id in self.sequence_instances_to_remove.drain(..) {
+			let instance = self.sequence_instances.remove(&id).unwrap();
+			match sequences_to_unload_producer.push(instance) {
 				Ok(_) => {}
-				Err(sequence) => {
-					self.sequences.insert(id, sequence);
+				Err(instance) => {
+					self.sequence_instances.insert(id, instance);
 				}
 			}
 		}
