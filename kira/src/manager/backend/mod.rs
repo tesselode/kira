@@ -9,6 +9,7 @@ use crate::{
 	arrangement::{Arrangement, ArrangementId},
 	command::{Command, ResourceCommand},
 	frame::Frame,
+	group::{groups::Groups, Group},
 	metronome::Metronome,
 	mixer::effect_slot::EffectSlot,
 	mixer::Track,
@@ -30,6 +31,7 @@ pub(crate) struct BackendThreadChannels {
 	pub sequence_instances_to_unload_producer: Producer<SequenceInstance>,
 	pub tracks_to_unload_producer: Producer<Track>,
 	pub effect_slots_to_unload_producer: Producer<EffectSlot>,
+	pub groups_to_unload_producer: Producer<Group>,
 }
 
 pub struct Backend {
@@ -43,6 +45,7 @@ pub struct Backend {
 	instances: Instances,
 	sequences: Sequences,
 	mixer: Mixer,
+	groups: Groups,
 }
 
 impl Backend {
@@ -62,6 +65,7 @@ impl Backend {
 			instances: Instances::new(settings.num_instances),
 			sequences: Sequences::new(settings.num_sequences, settings.num_commands),
 			mixer: Mixer::new(),
+			groups: Groups::new(settings.num_groups),
 		}
 	}
 
@@ -120,6 +124,14 @@ impl Backend {
 				}
 				Command::Parameter(command) => {
 					self.parameters.run_command(command);
+				}
+				Command::Group(command) => {
+					if let Some(group) = self.groups.run_command(command) {
+						match self.thread_channels.groups_to_unload_producer.push(group) {
+							Ok(_) => {}
+							Err(_) => {}
+						}
+					}
 				}
 			}
 		}

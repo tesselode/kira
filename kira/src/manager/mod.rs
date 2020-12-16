@@ -16,6 +16,7 @@ use crate::{
 		ResourceCommand, SequenceCommand,
 	},
 	error::{AudioError, AudioResult},
+	group::Group,
 	instance::{
 		InstanceId, InstanceSettings, PauseInstanceSettings, ResumeInstanceSettings,
 		StopInstanceSettings,
@@ -69,6 +70,8 @@ pub struct AudioManagerSettings {
 	pub num_tracks: usize,
 	/// The maximum number of effects that can be running at a time on a mixer track.
 	pub num_effects_per_track: usize,
+	/// The maximum number of groups that can be used at a time.
+	pub num_groups: usize,
 	/// Settings for the metronome.
 	pub metronome_settings: MetronomeSettings,
 }
@@ -85,6 +88,7 @@ impl Default for AudioManagerSettings {
 			num_sequences: 25,
 			num_tracks: 100,
 			num_effects_per_track: 10,
+			num_groups: 100,
 			metronome_settings: MetronomeSettings::default(),
 		}
 	}
@@ -99,6 +103,7 @@ pub(crate) struct AudioManagerThreadChannels {
 	pub sequence_instances_to_unload_consumer: Consumer<SequenceInstance>,
 	pub tracks_to_unload_consumer: Consumer<Track>,
 	pub effect_slots_to_unload_consumer: Consumer<EffectSlot>,
+	pub groups_to_unload_consumer: Consumer<Group>,
 }
 
 /**
@@ -180,6 +185,8 @@ impl AudioManager {
 			RingBuffer::new(settings.num_tracks).split();
 		let (effect_slots_to_unload_producer, effect_slots_to_unload_consumer) =
 			RingBuffer::new(settings.num_tracks * settings.num_effects_per_track).split();
+		let (groups_to_unload_producer, groups_to_unload_consumer) =
+			RingBuffer::new(settings.num_groups).split();
 		let (event_producer, event_consumer) = RingBuffer::new(settings.num_events).split();
 		let audio_manager_thread_channels = AudioManagerThreadChannels {
 			quit_signal_producer,
@@ -190,6 +197,7 @@ impl AudioManager {
 			sequence_instances_to_unload_consumer,
 			tracks_to_unload_consumer,
 			effect_slots_to_unload_consumer,
+			groups_to_unload_consumer,
 		};
 		let backend_thread_channels = BackendThreadChannels {
 			command_consumer,
@@ -199,6 +207,7 @@ impl AudioManager {
 			sequence_instances_to_unload_producer,
 			tracks_to_unload_producer,
 			effect_slots_to_unload_producer,
+			groups_to_unload_producer,
 		};
 		(
 			audio_manager_thread_channels,
@@ -562,6 +571,7 @@ impl AudioManager {
 		{}
 		while let Some(_) = self.thread_channels.tracks_to_unload_consumer.pop() {}
 		while let Some(_) = self.thread_channels.effect_slots_to_unload_consumer.pop() {}
+		while let Some(_) = self.thread_channels.groups_to_unload_consumer.pop() {}
 	}
 }
 

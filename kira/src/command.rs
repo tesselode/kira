@@ -1,5 +1,6 @@
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
+	group::{Group, GroupId},
 	instance::{
 		InstanceId, InstanceSettings, PauseInstanceSettings, ResumeInstanceSettings,
 		StopInstanceSettings,
@@ -78,6 +79,14 @@ pub(crate) enum ParameterCommand {
 	SetParameter(ParameterId, f64, Option<Tween>),
 }
 
+#[derive(Debug, Clone)]
+pub(crate) enum GroupCommand {
+	AddGroup(GroupId, Group),
+	RemoveGroup(GroupId),
+	AddToGroup(GroupId, GroupId),
+	RemoveFromGroup(GroupId, GroupId),
+}
+
 pub(crate) enum Command {
 	Resource(ResourceCommand),
 	Instance(InstanceCommand),
@@ -85,6 +94,7 @@ pub(crate) enum Command {
 	Sequence(SequenceCommand),
 	Mixer(MixerCommand),
 	Parameter(ParameterCommand),
+	Group(GroupCommand),
 }
 
 impl From<ResourceCommand> for Command {

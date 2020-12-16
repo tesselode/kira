@@ -107,6 +107,7 @@ mod duration;
 mod error;
 mod event;
 mod frame;
+pub mod group;
 pub mod instance;
 pub mod manager;
 mod metronome;
