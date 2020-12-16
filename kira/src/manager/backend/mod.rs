@@ -109,8 +109,12 @@ impl Backend {
 					self.metronome.run_command(command);
 				}
 				Command::Instance(command) => {
-					self.instances
-						.run_command(command, &mut self.sounds, &mut self.arrangements);
+					self.instances.run_command(
+						command,
+						&mut self.sounds,
+						&mut self.arrangements,
+						&self.groups,
+					);
 				}
 				Command::Sequence(command) => {
 					self.sequences.run_command(command);

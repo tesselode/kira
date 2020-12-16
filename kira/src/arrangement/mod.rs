@@ -130,12 +130,14 @@ use std::{
 	sync::atomic::{AtomicUsize, Ordering},
 };
 
-use indexmap::IndexMap;
+use indexmap::{IndexMap, IndexSet};
 
 use crate::{
+	group::{groups::Groups, GroupId},
 	mixer::TrackIndex,
 	playable::PlayableSettings,
 	sound::{Sound, SoundId},
+	util::index_set_from_vec,
 	Frame,
 };
 
@@ -163,9 +165,9 @@ impl ArrangementId {
 		Self {
 			index,
 			duration: arrangement.duration(),
-			default_track: arrangement.settings.default_track,
-			semantic_duration: arrangement.settings.semantic_duration,
-			default_loop_start: arrangement.settings.default_loop_start,
+			default_track: arrangement.default_track,
+			semantic_duration: arrangement.semantic_duration,
+			default_loop_start: arrangement.default_loop_start,
 		}
 	}
 
@@ -212,8 +214,11 @@ impl Hash for ArrangementId {
 pub struct Arrangement {
 	clips: Vec<SoundClip>,
 	duration: f64,
-	/// Settings for the arrangement.
-	pub settings: PlayableSettings,
+	default_track: TrackIndex,
+	cooldown: Option<f64>,
+	semantic_duration: Option<f64>,
+	default_loop_start: Option<f64>,
+	groups: IndexSet<GroupId>,
 	cooldown_timer: f64,
 }
 
@@ -223,7 +228,11 @@ impl Arrangement {
 		Self {
 			clips: vec![],
 			duration: 0.0,
-			settings,
+			default_track: settings.default_track,
+			cooldown: settings.cooldown,
+			semantic_duration: settings.semantic_duration,
+			default_loop_start: settings.default_loop_start,
+			groups: index_set_from_vec(settings.groups),
 			cooldown_timer: 0.0,
 		}
 	}
@@ -296,7 +305,7 @@ impl Arrangement {
 
 	/// Starts the cooldown timer for the arrangement.
 	pub(crate) fn start_cooldown(&mut self) {
-		if let Some(cooldown) = self.settings.cooldown {
+		if let Some(cooldown) = self.cooldown {
 			self.cooldown_timer = cooldown;
 		}
 	}
@@ -314,5 +323,26 @@ impl Arrangement {
 	/// be started until the timer is up.
 	pub(crate) fn cooling_down(&self) -> bool {
 		self.cooldown_timer > 0.0
+	}
+
+	/// Returns if this arrangement is in the group with the given ID.
+	pub(crate) fn is_in_group(&self, parent_id: GroupId, groups: &Groups) -> bool {
+		if groups.get(parent_id).is_none() {
+			return false;
+		}
+		// check if this arrangement is a direct descendant of the requested group
+		if self.groups.contains(&parent_id) {
+			return true;
+		}
+		// otherwise, recursively check if any of the direct parents of this
+		// arrangement is in the requested group
+		for id in &self.groups {
+			if let Some(group) = groups.get(*id) {
+				if group.is_in_group(parent_id, groups) {
+					return true;
+				}
+			}
+		}
+		false
 	}
 }

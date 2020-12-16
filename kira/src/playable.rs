@@ -1,16 +1,19 @@
 //! Provides a wrapper around sounds and arrangements.
 
+use std::vec;
+
 use indexmap::IndexMap;
 
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
+	group::{groups::Groups, GroupId},
 	mixer::TrackIndex,
 	sound::{Sound, SoundId},
 	Frame,
 };
 
 /// Settings for a [`Playable`](Playable) item.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct PlayableSettings {
 	/// The track instances of this item will play on by default.
 	pub default_track: TrackIndex,
@@ -37,6 +40,8 @@ pub struct PlayableSettings {
 	/// the point an instance should jump back to when it reaches
 	/// the end.
 	pub default_loop_start: Option<f64>,
+	/// The groups this item belongs to.
+	pub groups: Vec<GroupId>,
 }
 
 impl PlayableSettings {
@@ -76,6 +81,14 @@ impl PlayableSettings {
 			..self
 		}
 	}
+
+	/// Sets the group this item belongs to.
+	pub fn groups<T: Into<Vec<GroupId>>>(self, groups: T) -> Self {
+		Self {
+			groups: groups.into(),
+			..self
+		}
+	}
 }
 
 impl Default for PlayableSettings {
@@ -85,6 +98,7 @@ impl Default for PlayableSettings {
 			cooldown: Some(0.0001),
 			semantic_duration: None,
 			default_loop_start: None,
+			groups: vec![],
 		}
 	}
 }
@@ -156,6 +170,28 @@ impl Playable {
 				}
 			}
 		}
+	}
+
+	pub(crate) fn is_in_group(
+		&self,
+		parent_id: GroupId,
+		sounds: &IndexMap<SoundId, Sound>,
+		arrangements: &IndexMap<ArrangementId, Arrangement>,
+		groups: &Groups,
+	) -> bool {
+		match self {
+			Playable::Sound(id) => {
+				if let Some(sound) = sounds.get(id) {
+					return sound.is_in_group(parent_id, groups);
+				}
+			}
+			Playable::Arrangement(id) => {
+				if let Some(arrangement) = arrangements.get(id) {
+					return arrangement.is_in_group(parent_id, groups);
+				}
+			}
+		}
+		false
 	}
 }
 

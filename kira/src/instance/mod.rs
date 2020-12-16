@@ -42,6 +42,7 @@ use indexmap::IndexMap;
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
 	frame::Frame,
+	group::{groups::Groups, GroupId},
 	mixer::TrackIndex,
 	parameter::{Parameter, Parameters},
 	playable::Playable,
@@ -152,6 +153,17 @@ impl Instance {
 
 	pub fn finished(&self) -> bool {
 		self.state == InstanceState::Stopped
+	}
+
+	pub fn is_in_group(
+		&self,
+		parent_id: GroupId,
+		sounds: &IndexMap<SoundId, Sound>,
+		arrangements: &IndexMap<ArrangementId, Arrangement>,
+		groups: &Groups,
+	) -> bool {
+		self.playable
+			.is_in_group(parent_id, sounds, arrangements, groups)
 	}
 
 	pub fn set_volume(&mut self, volume: Value<f64>) {

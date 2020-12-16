@@ -45,6 +45,9 @@ pub(crate) enum InstanceCommand {
 	PauseInstancesOfSequence(SequenceInstanceId, PauseInstanceSettings),
 	ResumeInstancesOfSequence(SequenceInstanceId, ResumeInstanceSettings),
 	StopInstancesOfSequence(SequenceInstanceId, StopInstanceSettings),
+	PauseGroup(GroupId, PauseInstanceSettings),
+	ResumeGroup(GroupId, ResumeInstanceSettings),
+	StopGroup(GroupId, StopInstanceSettings),
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -130,5 +133,11 @@ impl From<MixerCommand> for Command {
 impl From<ParameterCommand> for Command {
 	fn from(command: ParameterCommand) -> Self {
 		Self::Parameter(command)
+	}
+}
+
+impl From<GroupCommand> for Command {
+	fn from(command: GroupCommand) -> Self {
+		Self::Group(command)
 	}
 }

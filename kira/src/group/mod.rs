@@ -6,7 +6,8 @@ use groups::Groups;
 use indexmap::IndexSet;
 
 use crate::{
-	instance::InstanceId, playable::Playable, sequence::SequenceInstanceId, sound::SoundId,
+	arrangement::ArrangementId, instance::InstanceId, playable::Playable,
+	sequence::SequenceInstanceId, sound::SoundId,
 };
 
 static NEXT_GROUP_INDEX: AtomicUsize = AtomicUsize::new(0);
@@ -69,6 +70,28 @@ impl Group {
 pub enum Groupable {
 	Group(GroupId),
 	Playable(Playable),
-	Instance(InstanceId),
-	SequenceInstance(SequenceInstanceId),
+}
+
+impl From<GroupId> for Groupable {
+	fn from(id: GroupId) -> Self {
+		Self::Group(id)
+	}
+}
+
+impl From<Playable> for Groupable {
+	fn from(playable: Playable) -> Self {
+		Self::Playable(playable)
+	}
+}
+
+impl From<SoundId> for Groupable {
+	fn from(id: SoundId) -> Self {
+		Self::Playable(Playable::Sound(id))
+	}
+}
+
+impl From<ArrangementId> for Groupable {
+	fn from(id: ArrangementId) -> Self {
+		Self::Playable(Playable::Arrangement(id))
+	}
 }

@@ -1,6 +1,6 @@
 use indexmap::IndexMap;
 
-use crate::{command::GroupCommand, manager::AudioManagerSettings};
+use crate::command::GroupCommand;
 
 use super::{Group, GroupId};
 

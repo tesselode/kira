@@ -3,8 +3,15 @@
 mod id;
 
 pub use id::SoundId;
+use indexmap::IndexSet;
 
-use crate::{frame::Frame, mixer::TrackIndex, playable::PlayableSettings};
+use crate::{
+	frame::Frame,
+	group::{groups::Groups, GroupId},
+	mixer::TrackIndex,
+	playable::PlayableSettings,
+	util::index_set_from_vec,
+};
 
 #[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
 use crate::{error::AudioError, error::AudioResult};
@@ -22,7 +29,11 @@ pub struct Sound {
 	sample_rate: u32,
 	frames: Vec<Frame>,
 	duration: f64,
-	settings: PlayableSettings,
+	default_track: TrackIndex,
+	cooldown: Option<f64>,
+	semantic_duration: Option<f64>,
+	default_loop_start: Option<f64>,
+	groups: IndexSet<GroupId>,
 	cooldown_timer: f64,
 }
 
@@ -34,7 +45,11 @@ impl Sound {
 			sample_rate,
 			frames,
 			duration,
-			settings,
+			default_track: settings.default_track,
+			cooldown: settings.cooldown,
+			semantic_duration: settings.semantic_duration,
+			default_loop_start: settings.default_loop_start,
+			groups: index_set_from_vec(settings.groups),
 			cooldown_timer: 0.0,
 		}
 	}
@@ -248,7 +263,7 @@ impl Sound {
 
 	/// Gets the default track that the sound plays on.
 	pub fn default_track(&self) -> TrackIndex {
-		self.settings.default_track
+		self.default_track
 	}
 
 	/// Gets the duration of the sound (in seconds).
@@ -258,13 +273,13 @@ impl Sound {
 
 	/// Gets the metadata associated with the sound.
 	pub fn semantic_duration(&self) -> Option<f64> {
-		self.settings.semantic_duration
+		self.semantic_duration
 	}
 
 	/// Gets the default loop start point for instances
 	/// of this sound.
 	pub fn default_loop_start(&self) -> Option<f64> {
-		self.settings.default_loop_start
+		self.default_loop_start
 	}
 
 	/// Gets the frame of this sound at an arbitrary time
@@ -302,7 +317,7 @@ impl Sound {
 
 	/// Starts the cooldown timer for the sound.
 	pub(crate) fn start_cooldown(&mut self) {
-		if let Some(cooldown) = self.settings.cooldown {
+		if let Some(cooldown) = self.cooldown {
 			self.cooldown_timer = cooldown;
 		}
 	}
@@ -321,6 +336,27 @@ impl Sound {
 	pub(crate) fn cooling_down(&self) -> bool {
 		self.cooldown_timer > 0.0
 	}
+
+	/// Returns if this sound is in the group with the given ID.
+	pub(crate) fn is_in_group(&self, parent_id: GroupId, groups: &Groups) -> bool {
+		if groups.get(parent_id).is_none() {
+			return false;
+		}
+		// check if this sound is a direct descendant of the requested group
+		if self.groups.contains(&parent_id) {
+			return true;
+		}
+		// otherwise, recursively check if any of the direct parents of this
+		// sound is in the requested group
+		for id in &self.groups {
+			if let Some(group) = groups.get(*id) {
+				if group.is_in_group(parent_id, groups) {
+					return true;
+				}
+			}
+		}
+		false
+	}
 }
 
 impl Debug for Sound {
@@ -328,7 +364,11 @@ impl Debug for Sound {
 		f.debug_struct(&format!("Sound ({} frames)", self.frames.len()))
 			.field("sample_rate", &self.sample_rate)
 			.field("duration", &self.duration)
-			.field("settings", &self.settings)
+			.field("default_track", &self.default_track)
+			.field("cooldown", &self.cooldown)
+			.field("semantic_duration", &self.semantic_duration)
+			.field("default_loop_start", &self.default_loop_start)
+			.field("groups", &self.groups)
 			.field("cooldown_timer", &self.cooldown_timer)
 			.finish()
 	}

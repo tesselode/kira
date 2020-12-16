@@ -1,6 +1,7 @@
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
 	command::InstanceCommand,
+	group::groups::Groups,
 	instance::{Instance, InstanceId, StopInstanceSettings},
 	parameter::Parameters,
 	playable::Playable,
@@ -36,6 +37,7 @@ impl Instances {
 		command: InstanceCommand,
 		sounds: &mut IndexMap<SoundId, Sound>,
 		arrangements: &mut IndexMap<ArrangementId, Arrangement>,
+		groups: &Groups,
 	) {
 		match command {
 			InstanceCommand::Play(instance_id, playable, sequence_id, settings) => match playable {
@@ -108,6 +110,27 @@ impl Instances {
 			}
 			InstanceCommand::StopInstancesOf(playable, settings) => {
 				self.stop_instances_of(playable, settings);
+			}
+			InstanceCommand::PauseGroup(id, settings) => {
+				for (_, instance) in &mut self.instances {
+					if instance.is_in_group(id, sounds, arrangements, groups) {
+						instance.pause(settings);
+					}
+				}
+			}
+			InstanceCommand::ResumeGroup(id, settings) => {
+				for (_, instance) in &mut self.instances {
+					if instance.is_in_group(id, sounds, arrangements, groups) {
+						instance.resume(settings);
+					}
+				}
+			}
+			InstanceCommand::StopGroup(id, settings) => {
+				for (_, instance) in &mut self.instances {
+					if instance.is_in_group(id, sounds, arrangements, groups) {
+						instance.stop(settings);
+					}
+				}
 			}
 			InstanceCommand::PauseInstancesOfSequence(id, settings) => {
 				for (_, instance) in &mut self.instances {

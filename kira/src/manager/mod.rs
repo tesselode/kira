@@ -12,11 +12,11 @@ pub use backend::Backend;
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
 	command::{
-		Command, InstanceCommand, MetronomeCommand, MixerCommand, ParameterCommand,
+		Command, GroupCommand, InstanceCommand, MetronomeCommand, MixerCommand, ParameterCommand,
 		ResourceCommand, SequenceCommand,
 	},
 	error::{AudioError, AudioResult},
-	group::Group,
+	group::{Group, GroupId, Groupable},
 	instance::{
 		InstanceId, InstanceSettings, PauseInstanceSettings, ResumeInstanceSettings,
 		StopInstanceSettings,
@@ -33,6 +33,7 @@ use crate::{
 	sequence::{EventReceiver, Sequence, SequenceInstanceId, SequenceInstanceSettings},
 	sound::{Sound, SoundId},
 	tempo::Tempo,
+	util::index_set_from_vec,
 	value::Value,
 	Event,
 };
@@ -552,6 +553,72 @@ impl AudioManager {
 	/// Removes an effect from the mixer.
 	pub fn remove_effect(&mut self, effect_id: EffectId) -> AudioResult<()> {
 		self.send_command_to_backend(MixerCommand::RemoveEffect(effect_id))
+	}
+
+	/// Adds a group.
+	pub fn add_group<T: Into<Vec<GroupId>>>(&mut self, parent_groups: T) -> AudioResult<GroupId> {
+		let id = GroupId::new();
+		let group = Group::new(index_set_from_vec(parent_groups.into()));
+		self.send_command_to_backend(GroupCommand::AddGroup(id, group))?;
+		Ok(id)
+	}
+
+	/// Removes a group.
+	pub fn remove_group(&mut self, id: GroupId) -> AudioResult<()> {
+		self.send_command_to_backend(GroupCommand::RemoveGroup(id))
+	}
+
+	/// Adds an item to a group.
+	pub fn add_to_group<T: Into<Groupable>>(
+		&mut self,
+		groupable: T,
+		parent_id: GroupId,
+	) -> AudioResult<()> {
+		let groupable: Groupable = groupable.into();
+		match groupable {
+			Groupable::Group(id) => {
+				self.send_command_to_backend(GroupCommand::AddToGroup(id, parent_id))
+			}
+			Groupable::Playable(playable) => {
+				unimplemented!()
+			}
+		}
+	}
+
+	/// Removes an item from a group.
+	pub fn remove_from_group<T: Into<Groupable>>(
+		&mut self,
+		groupable: T,
+		parent_id: GroupId,
+	) -> AudioResult<()> {
+		let groupable: Groupable = groupable.into();
+		match groupable {
+			Groupable::Group(id) => {
+				self.send_command_to_backend(GroupCommand::RemoveFromGroup(id, parent_id))
+			}
+			Groupable::Playable(playable) => {
+				unimplemented!()
+			}
+		}
+	}
+
+	/// Pauses all instances of sounds, arrangements, and sequences in a group.
+	pub fn pause_group(&mut self, id: GroupId, settings: PauseInstanceSettings) -> AudioResult<()> {
+		self.send_command_to_backend(InstanceCommand::PauseGroup(id, settings))
+	}
+
+	/// Resumes all instances of sounds, arrangements, and sequences in a group.
+	pub fn resume_group(
+		&mut self,
+		id: GroupId,
+		settings: ResumeInstanceSettings,
+	) -> AudioResult<()> {
+		self.send_command_to_backend(InstanceCommand::ResumeGroup(id, settings))
+	}
+
+	/// Stops all instances of sounds, arrangements, and sequences in a group.
+	pub fn stop_group(&mut self, id: GroupId, settings: StopInstanceSettings) -> AudioResult<()> {
+		self.send_command_to_backend(InstanceCommand::StopGroup(id, settings))
 	}
 
 	/// Pops an event that was sent by the audio thread.
