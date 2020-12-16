@@ -82,6 +82,7 @@ pub(crate) enum InstanceState {
 	Stopping,
 }
 
+// TODO: make sure looping behavior when playing instances with negative pitches is sensible
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct Instance {
 	playable: Playable,
