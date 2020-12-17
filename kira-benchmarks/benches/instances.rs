@@ -16,7 +16,7 @@ fn create_test_sound(num_samples: usize) -> Sound {
 		sine_samples.push(Frame::from_mono((phase * 2.0 * PI).sin()));
 		phase += 440.0 / SAMPLE_RATE as f32;
 	}
-	Sound::from_samples(
+	Sound::from_frames(
 		SAMPLE_RATE,
 		sine_samples,
 		PlayableSettings {
