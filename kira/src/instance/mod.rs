@@ -82,7 +82,29 @@ pub(crate) enum InstanceState {
 	Stopping,
 }
 
-// TODO: make sure looping behavior when playing instances with negative pitches is sensible
+/*
+TODO: make sure all the looping behavior is good
+
+Scenarios worth considering:
+- Forward playback
+	- Seeking forward past the end of the sound - playback
+	position should wrap around like normal
+	- Seeking backward past the loop start point - playback
+	should continue moving forward
+- Forward playback with negative pitch (effectively reverse playback)
+	- Crossed loop start point - should wrap around to end
+	- Seeking forward past the end of the sound - ???
+	- Seeking backward past the loop start - should wrap around to end
+
+Setting the reverse flag is not actually equivalent to starting
+from the end of the sound and playing with negative pitch,
+but it probably should be to simplify behavior. Currently, setting
+the reverse flag causes the instance to read the sound/arrangement
+backwards, which means the loop points will be different relative
+to the content of the sound. I don't think this is a behavior
+you would ever actually want, although I could be wrong.
+*/
+
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct Instance {
 	playable: Playable,
