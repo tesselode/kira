@@ -12,6 +12,8 @@ backward to the time when it was paused. This is useful if you
 need to keep audio synced up with something in-game, but you
 still want a smooth fade out when pausing the game.
 - Renamed `Sequence::emit_custom_event` to `Sequence::emit`
+- Added `AudioManager::seek_instance` and `AudioManager::seek_instance_to`
+for changing the playback positions of running instances
 
 # v0.2.0 - December 6th, 2020
 

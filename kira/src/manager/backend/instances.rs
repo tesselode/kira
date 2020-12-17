@@ -79,6 +79,16 @@ impl Instances {
 					instance.set_panning(value);
 				}
 			}
+			InstanceCommand::SeekInstance(id, offset) => {
+				if let Some(instance) = self.instances.get_mut(&id) {
+					instance.seek(offset);
+				}
+			}
+			InstanceCommand::SeekInstanceTo(id, position) => {
+				if let Some(instance) = self.instances.get_mut(&id) {
+					instance.seek_to(position);
+				}
+			}
 			InstanceCommand::PauseInstance(id, settings) => {
 				if let Some(instance) = self.instances.get_mut(&id) {
 					instance.pause(settings);

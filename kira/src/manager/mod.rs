@@ -349,6 +349,16 @@ impl AudioManager {
 		self.send_command_to_backend(InstanceCommand::SetInstancePanning(id, panning.into()))
 	}
 
+	/// Moves the playback position of an instance backward or forward.
+	pub fn seek_instance(&mut self, id: InstanceId, offset: f64) -> Result<(), AudioError> {
+		self.send_command_to_backend(InstanceCommand::SeekInstance(id, offset))
+	}
+
+	/// Sets the playback position of an instance.
+	pub fn seek_instance_to(&mut self, id: InstanceId, position: f64) -> Result<(), AudioError> {
+		self.send_command_to_backend(InstanceCommand::SeekInstanceTo(id, position))
+	}
+
 	/// Pauses a currently playing instance of a sound with an optional fade-out tween.
 	pub fn pause_instance(
 		&mut self,

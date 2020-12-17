@@ -179,8 +179,11 @@ impl Instance {
 		self.panning.set(panning);
 	}
 
-	// TODO: add a seek function to the API
-	pub fn seek(&mut self, position: f64) {
+	pub fn seek(&mut self, offset: f64) {
+		self.position += offset;
+	}
+
+	pub fn seek_to(&mut self, position: f64) {
 		self.position = position;
 	}
 
@@ -198,7 +201,7 @@ impl Instance {
 			InstanceState::Paused(position) | InstanceState::Pausing(position) => {
 				self.state = InstanceState::Playing;
 				if settings.rewind_to_pause_position {
-					self.seek(position);
+					self.seek_to(position);
 				}
 				self.fade_volume.set(1.0, settings.fade_tween);
 			}

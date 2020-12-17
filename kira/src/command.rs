@@ -36,6 +36,8 @@ pub(crate) enum InstanceCommand {
 	SetInstanceVolume(InstanceId, Value<f64>),
 	SetInstancePitch(InstanceId, Value<f64>),
 	SetInstancePanning(InstanceId, Value<f64>),
+	SeekInstance(InstanceId, f64),
+	SeekInstanceTo(InstanceId, f64),
 	PauseInstance(InstanceId, PauseInstanceSettings),
 	ResumeInstance(InstanceId, ResumeInstanceSettings),
 	StopInstance(InstanceId, StopInstanceSettings),
