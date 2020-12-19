@@ -1,21 +1,12 @@
-use std::{
-	hash::Hash,
-	ops::{Add, Div, Mul, Sub},
-};
+use std::hash::Hash;
 
 use indexmap::IndexSet;
 
-pub fn lerp<T>(a: T, b: T, amount: T) -> T
-where
-	T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Copy,
-{
+pub fn lerp(a: f64, b: f64, amount: f64) -> f64 {
 	a + (b - a) * amount
 }
 
-pub fn inverse_lerp<T>(start: T, end: T, point: T) -> T
-where
-	T: Sub<Output = T> + Div<Output = T> + Copy,
-{
+pub fn inverse_lerp(start: f64, end: f64, point: f64) -> f64 {
 	(point - start) / (end - start)
 }
 

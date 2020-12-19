@@ -15,3 +15,9 @@ impl From<f64> for Tempo {
 		Self(bpm)
 	}
 }
+
+impl Into<f64> for Tempo {
+	fn into(self) -> f64 {
+		self.0
+	}
+}
