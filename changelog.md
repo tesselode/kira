@@ -2,6 +2,7 @@
 
 - Decentralized sequences <!-- TODO: elaborate -->
 - Added `Sequence::play_random`
+- Added `Value::Random`
 - Renamed `Sound::new` to `Sound::from_frames`
 - Audio file format decoding is now gated behind feature flags
 - Changed functions for pausing, resuming, and stopping instances
@@ -14,6 +15,7 @@ still want a smooth fade out when pausing the game.
 - Renamed `Sequence::emit_custom_event` to `Sequence::emit`
 - Added `AudioManager::seek_instance` and `AudioManager::seek_instance_to`
 for changing the playback positions of running instances
+- Refined the behavior of looping backwards instances
 
 # v0.2.0 - December 6th, 2020
 
