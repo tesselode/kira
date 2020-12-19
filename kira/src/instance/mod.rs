@@ -32,6 +32,30 @@
 //! audio_manager.stop_instance(instance_id, Some(2.0.into()))?;
 //! # Ok::<(), Box<dyn Error>>(())
 //! ```
+//!
+//! ## Reverse playback and loop points
+//!
+//! There are two ways to enable reverse playback:
+//! - Enabling the reverse setting
+//! - Setting the pitch of the instance to a negative number
+//!
+//! Enabling the reverse setting also adjusts the instance's
+//! starting position to be relative to the end of the sound,
+//! while setting the pitch to a negative number doesn't. In
+//! 99% of cases, if you want an instance to play backwards,
+//! you should use the reverse flag.
+//!
+//! You can get some interesting effects by tweening a pitch
+//! from a positive to a negative number and vice versa, so
+//! there's still some value to using negative pitches.
+//!
+//! If you have the reverse playback enabled *and* the pitch
+//! is negative, you will end up with forward playback.
+//!
+//! If the instance has a loop start point and it's playing
+//! backward, when the playback position is earlier than the
+//! loop start point, it will wrap around to the end
+//! of the instance.
 
 mod settings;
 
@@ -82,29 +106,6 @@ pub(crate) enum InstanceState {
 	Stopping,
 }
 
-/*
-TODO: make sure all the looping behavior is good
-
-Scenarios worth considering:
-- Forward playback
-	- Seeking forward past the end of the sound - playback
-	position should wrap around like normal
-	- Seeking backward past the loop start point - playback
-	should continue moving forward
-- Forward playback with negative pitch (effectively reverse playback)
-	- Crossed loop start point - should wrap around to end
-	- Seeking forward past the end of the sound - ???
-	- Seeking backward past the loop start - should wrap around to end
-
-Setting the reverse flag is not actually equivalent to starting
-from the end of the sound and playing with negative pitch,
-but it probably should be to simplify behavior. Currently, setting
-the reverse flag causes the instance to read the sound/arrangement
-backwards, which means the loop points will be different relative
-to the content of the sound. I don't think this is a behavior
-you would ever actually want, although I could be wrong.
-*/
-
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct Instance {
 	playable: Playable,
@@ -124,7 +125,7 @@ impl Instance {
 	pub fn new(
 		playable: Playable,
 		sequence_id: Option<SequenceInstanceId>,
-		settings: InstanceSettings,
+		mut settings: InstanceSettings,
 	) -> Self {
 		let mut fade_volume;
 		if let Some(tween) = settings.fade_in_tween {
@@ -132,6 +133,9 @@ impl Instance {
 			fade_volume.set(1.0, Some(tween));
 		} else {
 			fade_volume = Parameter::new(1.0);
+		}
+		if settings.reverse {
+			settings.start_position = playable.duration() - settings.start_position;
 		}
 		Self {
 			playable,
@@ -245,11 +249,25 @@ impl Instance {
 			self.volume.update(parameters);
 			self.pitch.update(parameters);
 			self.panning.update(parameters);
-			self.position += self.pitch.value() * dt;
-			if self.position > self.playable.duration() {
+			let mut pitch = self.pitch.value();
+			if self.reverse {
+				pitch *= -1.0;
+			}
+			self.position += pitch * dt;
+			if pitch < 0.0 {
 				if let Some(loop_start) = self.loop_start {
-					self.position -= self.playable.duration() - loop_start;
-				} else {
+					while self.position < loop_start {
+						self.position += self.playable.duration() - loop_start;
+					}
+				} else if self.position < 0.0 {
+					self.state = InstanceState::Stopped;
+				}
+			} else {
+				if let Some(loop_start) = self.loop_start {
+					while self.position > self.playable.duration() {
+						self.position -= self.playable.duration() - loop_start;
+					}
+				} else if self.position > self.playable.duration() {
 					self.state = InstanceState::Stopped;
 				}
 			}
@@ -273,14 +291,9 @@ impl Instance {
 		sounds: &IndexMap<SoundId, Sound>,
 		arrangements: &IndexMap<ArrangementId, Arrangement>,
 	) -> Frame {
-		let position = if self.reverse {
-			self.playable.duration() - self.position
-		} else {
-			self.position
-		};
 		let mut out = self
 			.playable
-			.get_frame_at_position(position, sounds, arrangements);
+			.get_frame_at_position(self.position, sounds, arrangements);
 		out = out.panned(self.panning.value() as f32);
 		out * (self.effective_volume() as f32)
 	}
