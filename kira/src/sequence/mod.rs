@@ -223,7 +223,7 @@ impl<CustomEvent: Clone + Eq + Hash> From<SequenceOutputCommand> for SequenceSte
 #[derive(Debug, Clone)]
 pub struct SequenceSettings {
 	/// The groups this sequence will belong to.
-	groups: Vec<GroupId>,
+	pub groups: Vec<GroupId>,
 }
 
 impl SequenceSettings {
