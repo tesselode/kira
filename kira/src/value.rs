@@ -68,6 +68,9 @@ impl<T: From<f64> + Into<f64> + Copy> CachedValue<T> {
 	pub fn set(&mut self, value: Value<T>) {
 		self.value = value;
 		match value {
+			Value::Fixed(value) => {
+				self.last_value = value;
+			}
 			Value::Random(lower, upper) => {
 				self.last_value = Self::pick_random(lower, upper);
 			}
