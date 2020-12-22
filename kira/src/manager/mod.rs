@@ -366,6 +366,21 @@ impl AudioManager {
 		self.send_command_to_backend(ResourceCommand::RemoveArrangement(id))
 	}
 
+	/// Frees resources that are no longer in use, such as unloaded sounds
+	/// or finished sequences.
+	pub fn free_unused_resources(&mut self) {
+		while let Some(_) = self.thread_channels.sounds_to_unload_consumer.pop() {}
+		while let Some(_) = self.thread_channels.arrangements_to_unload_consumer.pop() {}
+		while let Some(_) = self
+			.thread_channels
+			.sequence_instances_to_unload_consumer
+			.pop()
+		{}
+		while let Some(_) = self.thread_channels.tracks_to_unload_consumer.pop() {}
+		while let Some(_) = self.thread_channels.effect_slots_to_unload_consumer.pop() {}
+		while let Some(_) = self.thread_channels.groups_to_unload_consumer.pop() {}
+	}
+
 	/// Plays a sound or arrangement.
 	pub fn play<P: Into<Playable>>(
 		&mut self,
@@ -666,21 +681,6 @@ impl AudioManager {
 	/// Pops an event that was sent by the audio thread.
 	pub fn pop_event(&mut self) -> Option<Event> {
 		self.thread_channels.event_consumer.pop()
-	}
-
-	/// Frees resources that are no longer in use, such as unloaded sounds
-	/// or finished sequences.
-	pub fn free_unused_resources(&mut self) {
-		while let Some(_) = self.thread_channels.sounds_to_unload_consumer.pop() {}
-		while let Some(_) = self.thread_channels.arrangements_to_unload_consumer.pop() {}
-		while let Some(_) = self
-			.thread_channels
-			.sequence_instances_to_unload_consumer
-			.pop()
-		{}
-		while let Some(_) = self.thread_channels.tracks_to_unload_consumer.pop() {}
-		while let Some(_) = self.thread_channels.effect_slots_to_unload_consumer.pop() {}
-		while let Some(_) = self.thread_channels.groups_to_unload_consumer.pop() {}
 	}
 }
 
