@@ -112,6 +112,66 @@ Plays and manages audio.
 
 The audio manager is responsible for all communication between the gameplay thread
 and the audio thread.
+
+## Table of contents
+
+### Constructors
+  - [`new`](AudioManager::new)
+  - [`new_without_audio_thread`](AudioManager::new_without_audio_thread)
+
+### Resource management
+  - [`add_sound`](AudioManager::add_sound)
+  - [`load_sound`](AudioManager::load_sound)
+  - [`remove_sound`](AudioManager::remove_sound)
+  - [`add_arrangement`](AudioManager::add_arrangement)
+  - [`remove_arrangement`](AudioManager::remove_arrangement)
+  - [`free_unused_resources`](AudioManager::free_unused_resources)
+
+### Instances
+  - [`play`](AudioManager::play)
+  - [`set_instance_volume`](AudioManager::set_instance_volume)
+  - [`set_instance_pitch`](AudioManager::set_instance_pitch)
+  - [`set_instance_panning`](AudioManager::set_instance_panning)
+  - [`seek_instance`](AudioManager::seek_instance)
+  - [`seek_instance_to`](AudioManager::seek_instance_to)
+  - [`pause_instance`](AudioManager::pause_instance)
+  - [`resume_instance`](AudioManager::resume_instance)
+  - [`stop_instance`](AudioManager::stop_instance)
+  - [`pause_instances_of`](AudioManager::pause_instances_of)
+  - [`resume_instances_of`](AudioManager::resume_instances_of)
+  - [`stop_instances_of`](AudioManager::stop_instances_of)
+
+### Sequences
+- [`start_sequence`](AudioManager::start_sequence)
+- [`mute_sequence`](AudioManager::mute_sequence)
+- [`unmute_sequence`](AudioManager::unmute_sequence)
+- [`pause_sequence`](AudioManager::pause_sequence)
+- [`resume_sequence`](AudioManager::resume_sequence)
+- [`stop_sequence`](AudioManager::stop_sequence)
+- [`pause_sequence_and_instances`](AudioManager::pause_sequence_and_instances)
+- [`resume_sequence_and_instances`](AudioManager::resume_sequence_and_instances)
+- [`stop_sequence_and_instances`](AudioManager::stop_sequence_and_instances)
+
+### Parameters
+- [`add_parameter`](AudioManager::add_parameter)
+- [`remove_parameter`](AudioManager::remove_parameter)
+- [`set_parameter`](AudioManager::set_parameter)
+
+### Mixer
+- [`add_sub_track`](AudioManager::add_sub_track)
+- [`remove_sub_track`](AudioManager::remove_sub_track)
+- [`add_effect_to_track`](AudioManager::add_effect_to_track)
+- [`remove_effect`](AudioManager::remove_effect)
+
+### Groups
+- [`add_group`](AudioManager::add_group)
+- [`remove_group`](AudioManager::remove_group)
+- [`pause_group`](AudioManager::pause_group)
+- [`resume_group`](AudioManager::resume_group)
+- [`stop_group`](AudioManager::stop_group)
+
+### Events
+- [`pop_event`](AudioManager::pop_event)
 */
 pub struct AudioManager {
 	thread_channels: AudioManagerThreadChannels,
