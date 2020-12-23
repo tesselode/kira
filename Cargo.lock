@@ -687,7 +687,7 @@ dependencies = [
 
 [[package]]
 name = "kira"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "claxon",
  "cpal",
@@ -695,6 +695,7 @@ dependencies = [
  "indexmap",
  "lewton",
  "minimp3",
+ "nanorand",
  "ringbuf",
 ]
 
@@ -704,15 +705,6 @@ version = "0.1.0"
 dependencies = [
  "criterion",
  "kira",
-]
-
-[[package]]
-name = "kira-lua"
-version = "0.1.0"
-dependencies = [
- "kira",
- "mlua",
- "mlua_derive",
 ]
 
 [[package]]
@@ -844,28 +836,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "mlua"
-version = "0.4.2"
+name = "nanorand"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f778acf55b288d9e0b81e7189988766499f4ec7f774b0965e30140295221e01d"
-dependencies = [
- "bstr",
- "cc",
- "lazy_static",
- "num-traits",
- "pkg-config",
-]
-
-[[package]]
-name = "mlua_derive"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a63d88d7ed834c4c6a803c4f50eef61e981012df21f15d707b363f73a777f5e"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
+checksum = "3173d7bb904c5a3a2f9167eb936916a39e97124846b8316223323aed9a34d1e7"
 
 [[package]]
 name = "ndk"

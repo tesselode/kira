@@ -64,24 +64,6 @@ impl Mixer {
 					}
 				}
 			}
-			MixerCommand::SetBackgroundStream(index, stream) => {
-				let track = match index {
-					TrackIndex::Main => Some(&mut self.main_track),
-					TrackIndex::Sub(id) => self.sub_tracks.get_mut(&id),
-				};
-				if let Some(track) = track {
-					track.set_background_stream(Some(stream));
-				}
-			}
-			MixerCommand::RemoveBackgroundStream(index) => {
-				let track = match index {
-					TrackIndex::Main => Some(&mut self.main_track),
-					TrackIndex::Sub(id) => self.sub_tracks.get_mut(&id),
-				};
-				if let Some(track) = track {
-					track.set_background_stream(None);
-				}
-			}
 		}
 	}
 

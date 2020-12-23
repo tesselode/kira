@@ -1,12 +1,14 @@
 mod instances;
 mod mixer;
 mod sequences;
+mod streams;
 
 use self::mixer::Mixer;
 
 use super::{AudioManagerSettings, Event};
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
+	audio_stream::AudioStream,
 	command::{Command, ResourceCommand},
 	frame::Frame,
 	group::{groups::Groups, Group},
@@ -22,6 +24,7 @@ use indexmap::IndexMap;
 use instances::Instances;
 use ringbuf::{Consumer, Producer};
 use sequences::Sequences;
+use streams::Streams;
 
 pub(crate) struct BackendThreadChannels {
 	pub command_consumer: Consumer<Command>,
@@ -32,6 +35,7 @@ pub(crate) struct BackendThreadChannels {
 	pub tracks_to_unload_producer: Producer<Track>,
 	pub effect_slots_to_unload_producer: Producer<EffectSlot>,
 	pub groups_to_unload_producer: Producer<Group>,
+	pub streams_to_unload_producer: Producer<Box<dyn AudioStream>>,
 }
 
 pub struct Backend {
@@ -46,6 +50,7 @@ pub struct Backend {
 	sequences: Sequences,
 	mixer: Mixer,
 	groups: Groups,
+	streams: Streams,
 }
 
 impl Backend {
@@ -66,6 +71,7 @@ impl Backend {
 			sequences: Sequences::new(settings.num_sequences, settings.num_commands),
 			mixer: Mixer::new(),
 			groups: Groups::new(settings.num_groups),
+			streams: Streams::new(settings.num_streams),
 		}
 	}
 
@@ -137,6 +143,10 @@ impl Backend {
 						}
 					}
 				}
+				Command::Stream(command) => {
+					self.streams
+						.run_command(command, &mut self.thread_channels.streams_to_unload_producer);
+				}
 			}
 		}
 	}
@@ -183,6 +193,7 @@ impl Backend {
 		self.update_arrangements();
 		self.update_metronome();
 		self.update_sequences();
+		self.streams.process(self.dt, &mut self.mixer);
 		self.instances.process(
 			self.dt,
 			&self.sounds,

@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use indexmap::IndexMap;
 
-use crate::{frame::Frame, parameter::Parameters, audio_stream::AudioStream};
+use crate::{frame::Frame, parameter::Parameters};
 
 use super::{
 	effect::{Effect, EffectId, EffectSettings},
@@ -75,7 +75,6 @@ impl Default for TrackSettings {
 pub(crate) struct Track {
 	volume: f64,
 	effect_slots: IndexMap<EffectId, EffectSlot>,
-	background_stream: Option<Box<dyn AudioStream>>,
 	input: Frame,
 }
 
@@ -84,7 +83,6 @@ impl Track {
 		Self {
 			volume: settings.volume,
 			effect_slots: IndexMap::new(),
-			background_stream: None,
 			input: Frame::from_mono(0.0),
 		}
 	}
@@ -98,10 +96,6 @@ impl Track {
 		self.effect_slots.remove(&id)
 	}
 
-	pub fn set_background_stream(&mut self, stream: Option<Box<dyn AudioStream>>) -> Option<Box<dyn AudioStream>> {
-		std::mem::replace(&mut self.background_stream, stream)
-	}
-
 	pub fn add_input(&mut self, input: Frame) {
 		self.input += input;
 	}
@@ -109,9 +103,6 @@ impl Track {
 	pub fn process(&mut self, dt: f64, parameters: &Parameters) -> Frame {
 		let mut input = self.input;
 		self.input = Frame::from_mono(0.0);
-		if let Some(ref mut stream) = self.background_stream {
-			input += stream.next(dt);
-		}
 		for (_, effect_slot) in &mut self.effect_slots {
 			input = effect_slot.process(dt, input, parameters);
 		}
