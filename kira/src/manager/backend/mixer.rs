@@ -29,6 +29,10 @@ impl Mixer {
 	) {
 		match command {
 			MixerCommand::AddSubTrack(id, settings) => {
+				// TODO: create the mixer track on the main thread
+				// and send it to the audio thread to avoid allocating
+				// memory for the effect_slots IndexMap on the audio
+				// thread
 				self.sub_tracks.insert(id, Track::new(settings));
 			}
 			MixerCommand::AddEffect(index, id, effect, settings) => {
