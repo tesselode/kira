@@ -1,4 +1,23 @@
-# v0.2
+# v0.3.0
+
+- Decentralized sequences <!-- TODO: elaborate -->
+- Added `Sequence::play_random`
+- Added `Value::Random`
+- Renamed `Sound::new` to `Sound::from_frames`
+- Audio file format decoding is now gated behind feature flags
+- Changed functions for pausing, resuming, and stopping instances
+to take settings structs (`PauseInstanceSettings`,
+`ResumeInstanceSettings`, and `StopInstanceSettings`)
+- When resuming an instance, you can now choose to have it seek
+backward to the time when it was paused. This is useful if you
+need to keep audio synced up with something in-game, but you
+still want a smooth fade out when pausing the game.
+- Renamed `Sequence::emit_custom_event` to `Sequence::emit`
+- Added `AudioManager::seek_instance` and `AudioManager::seek_instance_to`
+for changing the playback positions of running instances
+- Refined the behavior of looping backwards instances
+
+# v0.2.0 - December 6th, 2020
 
 ## Arrangements
 This release adds `Arrangement`s, which allow you to stitch together
@@ -51,5 +70,5 @@ Changes:
 Changes:
 - Fix readme path in Cargo.toml
 
-# v0.1 - November 18th, 2020
+# v0.1.0 - November 18th, 2020
 First public release

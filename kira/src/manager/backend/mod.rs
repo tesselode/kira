@@ -9,12 +9,13 @@ use crate::{
 	arrangement::{Arrangement, ArrangementId},
 	command::{Command, ResourceCommand},
 	frame::Frame,
+	group::{groups::Groups, Group},
 	metronome::Metronome,
 	mixer::effect_slot::EffectSlot,
 	mixer::Track,
 	parameter::Parameters,
 	playable::Playable,
-	sequence::Sequence,
+	sequence::SequenceInstance,
 	sound::{Sound, SoundId},
 };
 use indexmap::IndexMap;
@@ -22,34 +23,36 @@ use instances::Instances;
 use ringbuf::{Consumer, Producer};
 use sequences::Sequences;
 
-pub(crate) struct BackendThreadChannels<CustomEvent: Copy + Send + 'static + std::fmt::Debug> {
-	pub command_consumer: Consumer<Command<CustomEvent>>,
-	pub event_producer: Producer<Event<CustomEvent>>,
+pub(crate) struct BackendThreadChannels {
+	pub command_consumer: Consumer<Command>,
+	pub event_producer: Producer<Event>,
 	pub sounds_to_unload_producer: Producer<Sound>,
 	pub arrangements_to_unload_producer: Producer<Arrangement>,
-	pub sequences_to_unload_producer: Producer<Sequence<CustomEvent>>,
+	pub sequence_instances_to_unload_producer: Producer<SequenceInstance>,
 	pub tracks_to_unload_producer: Producer<Track>,
 	pub effect_slots_to_unload_producer: Producer<EffectSlot>,
+	pub groups_to_unload_producer: Producer<Group>,
 }
 
-pub struct Backend<CustomEvent: Copy + Send + 'static + std::fmt::Debug> {
+pub struct Backend {
 	dt: f64,
 	sounds: IndexMap<SoundId, Sound>,
 	arrangements: IndexMap<ArrangementId, Arrangement>,
-	command_queue: Vec<Command<CustomEvent>>,
-	thread_channels: BackendThreadChannels<CustomEvent>,
+	command_queue: Vec<Command>,
+	thread_channels: BackendThreadChannels,
 	metronome: Metronome,
 	parameters: Parameters,
 	instances: Instances,
-	sequences: Sequences<CustomEvent>,
+	sequences: Sequences,
 	mixer: Mixer,
+	groups: Groups,
 }
 
-impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> {
+impl Backend {
 	pub(crate) fn new(
 		sample_rate: u32,
 		settings: AudioManagerSettings,
-		thread_channels: BackendThreadChannels<CustomEvent>,
+		thread_channels: BackendThreadChannels,
 	) -> Self {
 		Self {
 			dt: 1.0 / sample_rate as f64,
@@ -62,6 +65,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> 
 			instances: Instances::new(settings.num_instances),
 			sequences: Sequences::new(settings.num_sequences, settings.num_commands),
 			mixer: Mixer::new(),
+			groups: Groups::new(settings.num_groups),
 		}
 	}
 
@@ -76,7 +80,8 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> 
 						self.sounds.insert(id, sound);
 					}
 					ResourceCommand::RemoveSound(id) => {
-						self.instances.stop_instances_of(Playable::Sound(id), None);
+						self.instances
+							.stop_instances_of(Playable::Sound(id), Default::default());
 						if let Some(sound) = self.sounds.remove(&id) {
 							match self.thread_channels.sounds_to_unload_producer.push(sound) {
 								_ => {}
@@ -88,7 +93,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> 
 					}
 					ResourceCommand::RemoveArrangement(id) => {
 						self.instances
-							.stop_instances_of(Playable::Arrangement(id), None);
+							.stop_instances_of(Playable::Arrangement(id), Default::default());
 						if let Some(arrangement) = self.arrangements.remove(&id) {
 							match self
 								.thread_channels
@@ -104,11 +109,15 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> 
 					self.metronome.run_command(command);
 				}
 				Command::Instance(command) => {
-					self.instances
-						.run_command(command, &mut self.sounds, &mut self.arrangements);
+					self.instances.run_command(
+						command,
+						&mut self.sounds,
+						&mut self.arrangements,
+						&self.groups,
+					);
 				}
 				Command::Sequence(command) => {
-					self.sequences.run_command(command);
+					self.sequences.run_command(command, &self.groups);
 				}
 				Command::Mixer(command) => {
 					self.mixer.run_command(
@@ -120,14 +129,12 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> 
 				Command::Parameter(command) => {
 					self.parameters.run_command(command);
 				}
-				Command::EmitCustomEvent(event) => {
-					match self
-						.thread_channels
-						.event_producer
-						.push(Event::Custom(event))
-					{
-						Ok(_) => {}
-						Err(_) => {}
+				Command::Group(command) => {
+					if let Some(group) = self.groups.run_command(command) {
+						match self.thread_channels.groups_to_unload_producer.push(group) {
+							Ok(_) => {}
+							Err(_) => {}
+						}
 					}
 				}
 			}
@@ -163,7 +170,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> Backend<CustomEvent> 
 		for command in self.sequences.update(
 			self.dt,
 			&self.metronome,
-			&mut self.thread_channels.sequences_to_unload_producer,
+			&mut self.thread_channels.sequence_instances_to_unload_producer,
 		) {
 			self.command_queue.push(command.into());
 		}

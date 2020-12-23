@@ -3,40 +3,59 @@
 mod id;
 
 pub use id::SoundId;
+use indexmap::IndexSet;
 
 use crate::{
-	error::AudioError, error::AudioResult, frame::Frame, mixer::TrackIndex,
+	frame::Frame,
+	group::{groups::Groups, GroupId},
+	mixer::TrackIndex,
 	playable::PlayableSettings,
+	util::index_set_from_vec,
 };
-use claxon::FlacReader;
-use hound::WavReader;
-use lewton::{inside_ogg::OggStreamReader, samples::Samples};
-use std::{fs::File, path::Path};
+
+#[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
+use crate::{error::AudioError, error::AudioResult};
+
+#[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
+use std::{
+	fmt::{Debug, Formatter},
+	fs::File,
+	path::Path,
+};
 
 /// A piece of audio that can be played by an [`AudioManager`](crate::manager::AudioManager).
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Sound {
 	sample_rate: u32,
-	samples: Vec<Frame>,
+	frames: Vec<Frame>,
 	duration: f64,
-	settings: PlayableSettings,
+	default_track: TrackIndex,
+	cooldown: Option<f64>,
+	semantic_duration: Option<f64>,
+	default_loop_start: Option<f64>,
+	groups: IndexSet<GroupId>,
 	cooldown_timer: f64,
 }
 
 impl Sound {
 	/// Creates a new sound from raw sample data.
-	pub fn new(sample_rate: u32, samples: Vec<Frame>, settings: PlayableSettings) -> Self {
-		let duration = samples.len() as f64 / sample_rate as f64;
+	pub fn from_frames(sample_rate: u32, frames: Vec<Frame>, settings: PlayableSettings) -> Self {
+		let duration = frames.len() as f64 / sample_rate as f64;
 		Self {
 			sample_rate,
-			samples,
+			frames,
 			duration,
-			settings,
+			default_track: settings.default_track,
+			cooldown: settings.cooldown,
+			semantic_duration: settings.semantic_duration,
+			default_loop_start: settings.default_loop_start,
+			groups: index_set_from_vec(settings.groups),
 			cooldown_timer: 0.0,
 		}
 	}
 
 	/// Decodes a sound from an mp3 file.
+	#[cfg(feature = "mp3")]
 	pub fn from_mp3_file<P>(path: P, settings: PlayableSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
@@ -87,14 +106,20 @@ impl Sound {
 			Some(sample_rate) => sample_rate,
 			None => return Err(AudioError::UnknownMp3SampleRate),
 		};
-		Ok(Self::new(sample_rate as u32, stereo_samples, settings))
+		Ok(Self::from_frames(
+			sample_rate as u32,
+			stereo_samples,
+			settings,
+		))
 	}
 
 	/// Decodes a sound from an ogg file.
+	#[cfg(feature = "ogg")]
 	pub fn from_ogg_file<P>(path: P, settings: PlayableSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
 	{
+		use lewton::{inside_ogg::OggStreamReader, samples::Samples};
 		let mut reader = OggStreamReader::new(File::open(path)?)?;
 		let mut stereo_samples = vec![];
 		while let Some(packet) = reader.read_dec_packet_generic::<Vec<Vec<f32>>>()? {
@@ -114,7 +139,7 @@ impl Sound {
 				_ => return Err(AudioError::UnsupportedChannelConfiguration),
 			}
 		}
-		Ok(Self::new(
+		Ok(Self::from_frames(
 			reader.ident_hdr.audio_sample_rate,
 			stereo_samples,
 			settings,
@@ -122,11 +147,12 @@ impl Sound {
 	}
 
 	/// Decodes a sound from a flac file.
+	#[cfg(feature = "flac")]
 	pub fn from_flac_file<P>(path: P, settings: PlayableSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
 	{
-		let mut reader = FlacReader::open(path)?;
+		let mut reader = claxon::FlacReader::open(path)?;
 		let streaminfo = reader.streaminfo();
 		let mut stereo_samples = vec![];
 		match reader.streaminfo().channels {
@@ -148,15 +174,20 @@ impl Sound {
 			}
 			_ => return Err(AudioError::UnsupportedChannelConfiguration),
 		}
-		Ok(Self::new(streaminfo.sample_rate, stereo_samples, settings))
+		Ok(Self::from_frames(
+			streaminfo.sample_rate,
+			stereo_samples,
+			settings,
+		))
 	}
 
 	/// Decodes a sound from a wav file.
+	#[cfg(feature = "wav")]
 	pub fn from_wav_file<P>(path: P, settings: PlayableSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
 	{
-		let mut reader = WavReader::open(path)?;
+		let mut reader = hound::WavReader::open(path)?;
 		let spec = reader.spec();
 		let mut stereo_samples = vec![];
 		match reader.spec().channels {
@@ -197,7 +228,7 @@ impl Sound {
 			},
 			_ => return Err(AudioError::UnsupportedChannelConfiguration),
 		}
-		Ok(Self::new(
+		Ok(Self::from_frames(
 			reader.spec().sample_rate,
 			stereo_samples,
 			settings,
@@ -207,6 +238,7 @@ impl Sound {
 	/// Decodes a sound from a file.
 	///
 	/// The audio format will be automatically determined from the file extension.
+	#[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
 	pub fn from_file<P>(path: P, settings: PlayableSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
@@ -214,9 +246,13 @@ impl Sound {
 		if let Some(extension) = path.as_ref().extension() {
 			if let Some(extension_str) = extension.to_str() {
 				match extension_str {
+					#[cfg(feature = "mp3")]
 					"mp3" => return Self::from_mp3_file(path, settings),
+					#[cfg(feature = "ogg")]
 					"ogg" => return Self::from_ogg_file(path, settings),
+					#[cfg(feature = "flac")]
 					"flac" => return Self::from_flac_file(path, settings),
+					#[cfg(feature = "wav")]
 					"wav" => return Self::from_wav_file(path, settings),
 					_ => {}
 				}
@@ -227,7 +263,7 @@ impl Sound {
 
 	/// Gets the default track that the sound plays on.
 	pub fn default_track(&self) -> TrackIndex {
-		self.settings.default_track
+		self.default_track
 	}
 
 	/// Gets the duration of the sound (in seconds).
@@ -237,13 +273,13 @@ impl Sound {
 
 	/// Gets the metadata associated with the sound.
 	pub fn semantic_duration(&self) -> Option<f64> {
-		self.settings.semantic_duration
+		self.semantic_duration
 	}
 
 	/// Gets the default loop start point for instances
 	/// of this sound.
 	pub fn default_loop_start(&self) -> Option<f64> {
-		self.settings.default_loop_start
+		self.default_loop_start
 	}
 
 	/// Gets the frame of this sound at an arbitrary time
@@ -256,20 +292,20 @@ impl Sound {
 			Frame::from_mono(0.0)
 		} else {
 			*self
-				.samples
+				.frames
 				.get(current_sample_index - 1)
 				.unwrap_or(&Frame::from_mono(0.0))
 		};
 		let y1 = *self
-			.samples
+			.frames
 			.get(current_sample_index)
 			.unwrap_or(&Frame::from_mono(0.0));
 		let y2 = *self
-			.samples
+			.frames
 			.get(current_sample_index + 1)
 			.unwrap_or(&Frame::from_mono(0.0));
 		let y3 = *self
-			.samples
+			.frames
 			.get(current_sample_index + 2)
 			.unwrap_or(&Frame::from_mono(0.0));
 		let c0 = y1;
@@ -281,7 +317,7 @@ impl Sound {
 
 	/// Starts the cooldown timer for the sound.
 	pub(crate) fn start_cooldown(&mut self) {
-		if let Some(cooldown) = self.settings.cooldown {
+		if let Some(cooldown) = self.cooldown {
 			self.cooldown_timer = cooldown;
 		}
 	}
@@ -299,5 +335,41 @@ impl Sound {
 	/// be started until the timer is up.
 	pub(crate) fn cooling_down(&self) -> bool {
 		self.cooldown_timer > 0.0
+	}
+
+	/// Returns if this sound is in the group with the given ID.
+	pub(crate) fn is_in_group(&self, parent_id: GroupId, groups: &Groups) -> bool {
+		if groups.get(parent_id).is_none() {
+			return false;
+		}
+		// check if this sound is a direct descendant of the requested group
+		if self.groups.contains(&parent_id) {
+			return true;
+		}
+		// otherwise, recursively check if any of the direct parents of this
+		// sound is in the requested group
+		for id in &self.groups {
+			if let Some(group) = groups.get(*id) {
+				if group.is_in_group(parent_id, groups) {
+					return true;
+				}
+			}
+		}
+		false
+	}
+}
+
+impl Debug for Sound {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct(&format!("Sound ({} frames)", self.frames.len()))
+			.field("sample_rate", &self.sample_rate)
+			.field("duration", &self.duration)
+			.field("default_track", &self.default_track)
+			.field("cooldown", &self.cooldown)
+			.field("semantic_duration", &self.semantic_duration)
+			.field("default_loop_start", &self.default_loop_start)
+			.field("groups", &self.groups)
+			.field("cooldown_timer", &self.cooldown_timer)
+			.finish()
 	}
 }

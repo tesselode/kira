@@ -16,7 +16,7 @@ fn create_test_sound(num_samples: usize) -> Sound {
 		sine_samples.push(Frame::from_mono((phase * 2.0 * PI).sin()));
 		phase += 440.0 / SAMPLE_RATE as f32;
 	}
-	Sound::new(
+	Sound::from_frames(
 		SAMPLE_RATE,
 		sine_samples,
 		PlayableSettings {
@@ -30,7 +30,7 @@ fn create_test_sound(num_samples: usize) -> Sound {
 fn instances_benchmark(c: &mut Criterion) {
 	const NUM_INSTANCES: usize = 100_000;
 	let (mut audio_manager, mut backend) =
-		AudioManager::<()>::new_without_audio_thread(AudioManagerSettings {
+		AudioManager::new_without_audio_thread(AudioManagerSettings {
 			num_instances: NUM_INSTANCES,
 			num_commands: NUM_INSTANCES,
 			..Default::default()

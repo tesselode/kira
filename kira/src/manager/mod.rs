@@ -2,6 +2,8 @@
 
 mod backend;
 
+use std::{hash::Hash, path::Path};
+
 #[cfg(not(feature = "benchmarking"))]
 use backend::Backend;
 #[cfg(feature = "benchmarking")]
@@ -11,11 +13,15 @@ use crate::{
 	arrangement::{Arrangement, ArrangementId},
 	audio_stream::AudioStream,
 	command::{
-		Command, InstanceCommand, MetronomeCommand, MixerCommand, ParameterCommand,
+		Command, GroupCommand, InstanceCommand, MetronomeCommand, MixerCommand, ParameterCommand,
 		ResourceCommand, SequenceCommand,
 	},
 	error::{AudioError, AudioResult},
-	instance::{InstanceId, InstanceSettings},
+	group::{Group, GroupId},
+	instance::{
+		InstanceId, InstanceSettings, PauseInstanceSettings, ResumeInstanceSettings,
+		StopInstanceSettings,
+	},
 	metronome::MetronomeSettings,
 	mixer::{
 		effect::{Effect, EffectId, EffectSettings},
@@ -23,10 +29,12 @@ use crate::{
 		SubTrackId, Track, TrackIndex, TrackSettings,
 	},
 	parameter::{ParameterId, Tween},
-	playable::Playable,
-	sequence::{Sequence, SequenceId},
+	playable::{Playable, PlayableSettings},
+	sequence::SequenceInstance,
+	sequence::{EventReceiver, Sequence, SequenceInstanceId, SequenceInstanceSettings},
 	sound::{Sound, SoundId},
 	tempo::Tempo,
+	util::index_set_from_vec,
 	value::Value,
 	Event,
 };
@@ -64,6 +72,8 @@ pub struct AudioManagerSettings {
 	pub num_tracks: usize,
 	/// The maximum number of effects that can be running at a time on a mixer track.
 	pub num_effects_per_track: usize,
+	/// The maximum number of groups that can be used at a time.
+	pub num_groups: usize,
 	/// Settings for the metronome.
 	pub metronome_settings: MetronomeSettings,
 }
@@ -80,20 +90,22 @@ impl Default for AudioManagerSettings {
 			num_sequences: 25,
 			num_tracks: 100,
 			num_effects_per_track: 10,
+			num_groups: 100,
 			metronome_settings: MetronomeSettings::default(),
 		}
 	}
 }
 
-pub(crate) struct AudioManagerThreadChannels<CustomEvent: Copy + Send + 'static = ()> {
+pub(crate) struct AudioManagerThreadChannels {
 	pub quit_signal_producer: Producer<bool>,
-	pub command_producer: Producer<Command<CustomEvent>>,
-	pub event_consumer: Consumer<Event<CustomEvent>>,
+	pub command_producer: Producer<Command>,
+	pub event_consumer: Consumer<Event>,
 	pub sounds_to_unload_consumer: Consumer<Sound>,
 	pub arrangements_to_unload_consumer: Consumer<Arrangement>,
-	pub sequences_to_unload_consumer: Consumer<Sequence<CustomEvent>>,
+	pub sequence_instances_to_unload_consumer: Consumer<SequenceInstance>,
 	pub tracks_to_unload_consumer: Consumer<Track>,
 	pub effect_slots_to_unload_consumer: Consumer<EffectSlot>,
+	pub groups_to_unload_consumer: Consumer<Group>,
 }
 
 /**
@@ -101,56 +113,126 @@ Plays and manages audio.
 
 The audio manager is responsible for all communication between the gameplay thread
 and the audio thread.
+
+## Table of contents
+
+### Constructors
+  - [`new`](AudioManager::new)
+  - [`new_without_audio_thread`](AudioManager::new_without_audio_thread)
+
+### Resource management
+  - [`add_sound`](AudioManager::add_sound)
+  - [`load_sound`](AudioManager::load_sound)
+  - [`remove_sound`](AudioManager::remove_sound)
+  - [`add_arrangement`](AudioManager::add_arrangement)
+  - [`remove_arrangement`](AudioManager::remove_arrangement)
+  - [`free_unused_resources`](AudioManager::free_unused_resources)
+
+### Instances
+  - [`play`](AudioManager::play)
+  - [`set_instance_volume`](AudioManager::set_instance_volume)
+  - [`set_instance_pitch`](AudioManager::set_instance_pitch)
+  - [`set_instance_panning`](AudioManager::set_instance_panning)
+  - [`seek_instance`](AudioManager::seek_instance)
+  - [`seek_instance_to`](AudioManager::seek_instance_to)
+  - [`pause_instance`](AudioManager::pause_instance)
+  - [`resume_instance`](AudioManager::resume_instance)
+  - [`stop_instance`](AudioManager::stop_instance)
+  - [`pause_instances_of`](AudioManager::pause_instances_of)
+  - [`resume_instances_of`](AudioManager::resume_instances_of)
+  - [`stop_instances_of`](AudioManager::stop_instances_of)
+
+### Sequences
+- [`start_sequence`](AudioManager::start_sequence)
+- [`mute_sequence`](AudioManager::mute_sequence)
+- [`unmute_sequence`](AudioManager::unmute_sequence)
+- [`pause_sequence`](AudioManager::pause_sequence)
+- [`resume_sequence`](AudioManager::resume_sequence)
+- [`stop_sequence`](AudioManager::stop_sequence)
+- [`pause_sequence_and_instances`](AudioManager::pause_sequence_and_instances)
+- [`resume_sequence_and_instances`](AudioManager::resume_sequence_and_instances)
+- [`stop_sequence_and_instances`](AudioManager::stop_sequence_and_instances)
+
+### Parameters
+- [`add_parameter`](AudioManager::add_parameter)
+- [`remove_parameter`](AudioManager::remove_parameter)
+- [`set_parameter`](AudioManager::set_parameter)
+
+### Mixer
+- [`add_sub_track`](AudioManager::add_sub_track)
+- [`remove_sub_track`](AudioManager::remove_sub_track)
+- [`add_effect_to_track`](AudioManager::add_effect_to_track)
+- [`remove_effect`](AudioManager::remove_effect)
+
+### Groups
+- [`add_group`](AudioManager::add_group)
+- [`remove_group`](AudioManager::remove_group)
+- [`pause_group`](AudioManager::pause_group)
+- [`resume_group`](AudioManager::resume_group)
+- [`stop_group`](AudioManager::stop_group)
+
+### Events
+- [`pop_event`](AudioManager::pop_event)
 */
-pub struct AudioManager<CustomEvent: Copy + Send + 'static = ()> {
-	thread_channels: AudioManagerThreadChannels<CustomEvent>,
+pub struct AudioManager {
+	thread_channels: AudioManagerThreadChannels,
+	// holds the stream if it has been created on the main thread
+	// so it can live for as long as the audio manager
+	_stream: Option<Stream>,
 }
 
-impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEvent> {
+impl AudioManager {
 	/// Creates a new audio manager and starts an audio thread.
 	pub fn new(settings: AudioManagerSettings) -> AudioResult<Self> {
 		let (audio_manager_thread_channels, backend_thread_channels, mut quit_signal_consumer) =
 			Self::create_thread_channels(&settings);
-		let (mut setup_result_producer, mut setup_result_consumer) =
-			RingBuffer::<AudioResult<()>>::new(1).split();
-		// set up a cpal stream on a new thread. we could do this on the main thread,
-		// but that causes issues with LÖVE.
-		std::thread::spawn(move || {
-			match Self::setup_stream(settings, backend_thread_channels) {
-				Ok(_stream) => {
-					setup_result_producer.push(Ok(())).unwrap();
-					// wait for a quit message before ending the thread and dropping
-					// the stream
-					while let None = quit_signal_consumer.pop() {
-						std::thread::sleep(std::time::Duration::from_secs_f64(
-							WRAPPER_THREAD_SLEEP_DURATION,
-						));
+
+		let stream = {
+			let (mut setup_result_producer, mut setup_result_consumer) =
+				RingBuffer::<AudioResult<()>>::new(1).split();
+			// set up a cpal stream on a new thread. we could do this on the main thread,
+			// but that causes issues with LÖVE.
+			std::thread::spawn(move || {
+				match Self::setup_stream(settings, backend_thread_channels) {
+					Ok(_stream) => {
+						setup_result_producer.push(Ok(())).unwrap();
+						// wait for a quit message before ending the thread and dropping
+						// the stream
+						while let None = quit_signal_consumer.pop() {
+							std::thread::sleep(std::time::Duration::from_secs_f64(
+								WRAPPER_THREAD_SLEEP_DURATION,
+							));
+						}
+					}
+					Err(error) => {
+						setup_result_producer.push(Err(error)).unwrap();
 					}
 				}
-				Err(error) => {
-					setup_result_producer.push(Err(error)).unwrap();
+			});
+			// wait for the audio thread to report back a result
+			loop {
+				if let Some(result) = setup_result_consumer.pop() {
+					match result {
+						Ok(_) => break,
+						Err(error) => return Err(error),
+					}
 				}
 			}
-		});
-		// wait for the audio thread to report back a result
-		loop {
-			if let Some(result) = setup_result_consumer.pop() {
-				match result {
-					Ok(()) => break,
-					Err(error) => return Err(error),
-				}
-			}
-		}
+
+			None
+		};
+
 		Ok(Self {
 			thread_channels: audio_manager_thread_channels,
+			_stream: stream,
 		})
 	}
 
 	fn create_thread_channels(
 		settings: &AudioManagerSettings,
 	) -> (
-		AudioManagerThreadChannels<CustomEvent>,
-		BackendThreadChannels<CustomEvent>,
+		AudioManagerThreadChannels,
+		BackendThreadChannels,
 		Consumer<bool>,
 	) {
 		let (quit_signal_producer, quit_signal_consumer) = RingBuffer::new(1).split();
@@ -159,12 +241,14 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 			RingBuffer::new(settings.num_sounds).split();
 		let (arrangements_to_unload_producer, arrangements_to_unload_consumer) =
 			RingBuffer::new(settings.num_arrangements).split();
-		let (sequences_to_unload_producer, sequences_to_unload_consumer) =
+		let (sequence_instances_to_unload_producer, sequence_instances_to_unload_consumer) =
 			RingBuffer::new(settings.num_sequences).split();
 		let (tracks_to_unload_producer, tracks_to_unload_consumer) =
 			RingBuffer::new(settings.num_tracks).split();
 		let (effect_slots_to_unload_producer, effect_slots_to_unload_consumer) =
 			RingBuffer::new(settings.num_tracks * settings.num_effects_per_track).split();
+		let (groups_to_unload_producer, groups_to_unload_consumer) =
+			RingBuffer::new(settings.num_groups).split();
 		let (event_producer, event_consumer) = RingBuffer::new(settings.num_events).split();
 		let audio_manager_thread_channels = AudioManagerThreadChannels {
 			quit_signal_producer,
@@ -172,18 +256,20 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 			event_consumer,
 			sounds_to_unload_consumer,
 			arrangements_to_unload_consumer,
-			sequences_to_unload_consumer,
+			sequence_instances_to_unload_consumer,
 			tracks_to_unload_consumer,
 			effect_slots_to_unload_consumer,
+			groups_to_unload_consumer,
 		};
 		let backend_thread_channels = BackendThreadChannels {
 			command_consumer,
 			event_producer,
 			sounds_to_unload_producer,
 			arrangements_to_unload_producer,
-			sequences_to_unload_producer,
+			sequence_instances_to_unload_producer,
 			tracks_to_unload_producer,
 			effect_slots_to_unload_producer,
+			groups_to_unload_producer,
 		};
 		(
 			audio_manager_thread_channels,
@@ -194,7 +280,7 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 
 	fn setup_stream(
 		settings: AudioManagerSettings,
-		backend_thread_channels: BackendThreadChannels<CustomEvent>,
+		backend_thread_channels: BackendThreadChannels,
 	) -> AudioResult<Stream> {
 		let host = cpal::default_host();
 		let device = host
@@ -232,15 +318,13 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 			Self::create_thread_channels(&settings);
 		let audio_manager = Self {
 			thread_channels: audio_manager_thread_channels,
+			_stream: None,
 		};
 		let backend = Backend::new(SAMPLE_RATE, settings, backend_thread_channels);
 		Ok((audio_manager, backend))
 	}
 
-	fn send_command_to_backend<C: Into<Command<CustomEvent>>>(
-		&mut self,
-		command: C,
-	) -> AudioResult<()> {
+	fn send_command_to_backend<C: Into<Command>>(&mut self, command: C) -> AudioResult<()> {
 		match self.thread_channels.command_producer.push(command.into()) {
 			Ok(_) => Ok(()),
 			Err(_) => Err(AudioError::CommandQueueFull),
@@ -252,6 +336,19 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		let id = SoundId::new(&sound);
 		self.send_command_to_backend(ResourceCommand::AddSound(id, sound))?;
 		Ok(id)
+	}
+
+	/// Loads a sound from a file and returns a handle to the sound.
+	///
+	/// This is a shortcut for constructing the sound manually and adding it
+	/// using [`AudioManager::add_sound`].
+	pub fn load_sound<P: AsRef<Path>>(
+		&mut self,
+		path: P,
+		settings: PlayableSettings,
+	) -> AudioResult<SoundId> {
+		let sound = Sound::from_file(path, settings)?;
+		self.add_sound(sound)
 	}
 
 	/// Removes a sound from the audio thread, allowing its memory to be freed.
@@ -269,6 +366,21 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	/// Removes a arrangement from the audio thread, allowing its memory to be freed.
 	pub fn remove_arrangement(&mut self, id: ArrangementId) -> AudioResult<()> {
 		self.send_command_to_backend(ResourceCommand::RemoveArrangement(id))
+	}
+
+	/// Frees resources that are no longer in use, such as unloaded sounds
+	/// or finished sequences.
+	pub fn free_unused_resources(&mut self) {
+		while let Some(_) = self.thread_channels.sounds_to_unload_consumer.pop() {}
+		while let Some(_) = self.thread_channels.arrangements_to_unload_consumer.pop() {}
+		while let Some(_) = self
+			.thread_channels
+			.sequence_instances_to_unload_consumer
+			.pop()
+		{}
+		while let Some(_) = self.thread_channels.tracks_to_unload_consumer.pop() {}
+		while let Some(_) = self.thread_channels.effect_slots_to_unload_consumer.pop() {}
+		while let Some(_) = self.thread_channels.groups_to_unload_consumer.pop() {}
 	}
 
 	/// Plays a sound or arrangement.
@@ -314,22 +426,32 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		self.send_command_to_backend(InstanceCommand::SetInstancePanning(id, panning.into()))
 	}
 
+	/// Moves the playback position of an instance backward or forward.
+	pub fn seek_instance(&mut self, id: InstanceId, offset: f64) -> Result<(), AudioError> {
+		self.send_command_to_backend(InstanceCommand::SeekInstance(id, offset))
+	}
+
+	/// Sets the playback position of an instance.
+	pub fn seek_instance_to(&mut self, id: InstanceId, position: f64) -> Result<(), AudioError> {
+		self.send_command_to_backend(InstanceCommand::SeekInstanceTo(id, position))
+	}
+
 	/// Pauses a currently playing instance of a sound with an optional fade-out tween.
 	pub fn pause_instance(
 		&mut self,
 		instance_id: InstanceId,
-		fade_tween: Option<Tween>,
+		settings: PauseInstanceSettings,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::PauseInstance(instance_id, fade_tween))
+		self.send_command_to_backend(InstanceCommand::PauseInstance(instance_id, settings))
 	}
 
 	/// Resumes a currently paused instance of a sound with an optional fade-in tween.
 	pub fn resume_instance(
 		&mut self,
 		instance_id: InstanceId,
-		fade_tween: Option<Tween>,
+		settings: ResumeInstanceSettings,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::ResumeInstance(instance_id, fade_tween))
+		self.send_command_to_backend(InstanceCommand::ResumeInstance(instance_id, settings))
 	}
 
 	/// Stops a currently playing instance of a sound with an optional fade-out tween.
@@ -338,36 +460,36 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	pub fn stop_instance(
 		&mut self,
 		instance_id: InstanceId,
-		fade_tween: Option<Tween>,
+		settings: StopInstanceSettings,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::StopInstance(instance_id, fade_tween))
+		self.send_command_to_backend(InstanceCommand::StopInstance(instance_id, settings))
 	}
 
 	/// Pauses all currently playing instances of a sound or arrangement with an optional fade-out tween.
 	pub fn pause_instances_of(
 		&mut self,
 		playable: Playable,
-		fade_tween: Option<Tween>,
+		settings: PauseInstanceSettings,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::PauseInstancesOf(playable, fade_tween))
+		self.send_command_to_backend(InstanceCommand::PauseInstancesOf(playable, settings))
 	}
 
 	/// Resumes all currently playing instances of a sound or arrangement with an optional fade-in tween.
 	pub fn resume_instances_of(
 		&mut self,
 		playable: Playable,
-		fade_tween: Option<Tween>,
+		settings: ResumeInstanceSettings,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::ResumeInstancesOf(playable, fade_tween))
+		self.send_command_to_backend(InstanceCommand::ResumeInstancesOf(playable, settings))
 	}
 
 	/// Stops all currently playing instances of a sound or arrangement with an optional fade-out tween.
 	pub fn stop_instances_of(
 		&mut self,
 		playable: Playable,
-		fade_tween: Option<Tween>,
+		settings: StopInstanceSettings,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::StopInstancesOf(playable, fade_tween))
+		self.send_command_to_backend(InstanceCommand::StopInstancesOf(playable, settings))
 	}
 
 	/// Sets the tempo of the metronome.
@@ -394,72 +516,74 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 	}
 
 	/// Starts a sequence.
-	pub fn start_sequence(
+	pub fn start_sequence<CustomEvent: Clone + Eq + Hash>(
 		&mut self,
 		sequence: Sequence<CustomEvent>,
-	) -> Result<SequenceId, AudioError> {
+		settings: SequenceInstanceSettings,
+	) -> Result<(SequenceInstanceId, EventReceiver<CustomEvent>), AudioError> {
 		sequence.validate()?;
-		let id = SequenceId::new();
-		self.send_command_to_backend(SequenceCommand::StartSequence(id, sequence))?;
-		Ok(id)
+		let id = SequenceInstanceId::new();
+		let (instance, receiver) = sequence.create_instance(settings);
+		self.send_command_to_backend(SequenceCommand::StartSequenceInstance(id, instance))?;
+		Ok((id, receiver))
 	}
 
 	/// Mutes a sequence.
 	///
 	/// When a sequence is muted, it will continue waiting for durations and intervals,
 	/// but it will not play sounds, emit events, or perform any other actions.
-	pub fn mute_sequence(&mut self, id: SequenceId) -> Result<(), AudioError> {
-		self.send_command_to_backend(SequenceCommand::MuteSequence(id))
+	pub fn mute_sequence(&mut self, id: SequenceInstanceId) -> Result<(), AudioError> {
+		self.send_command_to_backend(SequenceCommand::MuteSequenceInstance(id))
 	}
 
 	/// Unmutes a sequence.
-	pub fn unmute_sequence(&mut self, id: SequenceId) -> Result<(), AudioError> {
-		self.send_command_to_backend(SequenceCommand::UnmuteSequence(id))
+	pub fn unmute_sequence(&mut self, id: SequenceInstanceId) -> Result<(), AudioError> {
+		self.send_command_to_backend(SequenceCommand::UnmuteSequenceInstance(id))
 	}
 
 	/// Pauses a sequence.
-	pub fn pause_sequence(&mut self, id: SequenceId) -> Result<(), AudioError> {
-		self.send_command_to_backend(SequenceCommand::PauseSequence(id))
+	pub fn pause_sequence(&mut self, id: SequenceInstanceId) -> Result<(), AudioError> {
+		self.send_command_to_backend(SequenceCommand::PauseSequenceInstance(id))
 	}
 
 	/// Resumes a sequence.
-	pub fn resume_sequence(&mut self, id: SequenceId) -> Result<(), AudioError> {
-		self.send_command_to_backend(SequenceCommand::ResumeSequence(id))
+	pub fn resume_sequence(&mut self, id: SequenceInstanceId) -> Result<(), AudioError> {
+		self.send_command_to_backend(SequenceCommand::ResumeSequenceInstance(id))
 	}
 
 	/// Stops a sequence.
-	pub fn stop_sequence(&mut self, id: SequenceId) -> Result<(), AudioError> {
-		self.send_command_to_backend(SequenceCommand::StopSequence(id))
+	pub fn stop_sequence(&mut self, id: SequenceInstanceId) -> Result<(), AudioError> {
+		self.send_command_to_backend(SequenceCommand::StopSequenceInstance(id))
 	}
 
 	/// Pauses a sequence and any instances played by that sequence.
 	pub fn pause_sequence_and_instances(
 		&mut self,
-		id: SequenceId,
-		fade_tween: Option<Tween>,
+		id: SequenceInstanceId,
+		settings: PauseInstanceSettings,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(SequenceCommand::PauseSequence(id))?;
-		self.send_command_to_backend(InstanceCommand::PauseInstancesOfSequence(id, fade_tween))
+		self.send_command_to_backend(SequenceCommand::PauseSequenceInstance(id))?;
+		self.send_command_to_backend(InstanceCommand::PauseInstancesOfSequence(id, settings))
 	}
 
 	/// Resumes a sequence and any instances played by that sequence.
 	pub fn resume_sequence_and_instances(
 		&mut self,
-		id: SequenceId,
-		fade_tween: Option<Tween>,
+		id: SequenceInstanceId,
+		settings: ResumeInstanceSettings,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(SequenceCommand::ResumeSequence(id))?;
-		self.send_command_to_backend(InstanceCommand::ResumeInstancesOfSequence(id, fade_tween))
+		self.send_command_to_backend(SequenceCommand::ResumeSequenceInstance(id))?;
+		self.send_command_to_backend(InstanceCommand::ResumeInstancesOfSequence(id, settings))
 	}
 
 	/// Stops a sequence and any instances played by that sequence.
 	pub fn stop_sequence_and_instances(
 		&mut self,
-		id: SequenceId,
-		fade_tween: Option<Tween>,
+		id: SequenceInstanceId,
+		settings: StopInstanceSettings,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(SequenceCommand::StopSequence(id))?;
-		self.send_command_to_backend(InstanceCommand::StopInstancesOfSequence(id, fade_tween))
+		self.send_command_to_backend(SequenceCommand::StopSequenceInstance(id))?;
+		self.send_command_to_backend(InstanceCommand::StopInstancesOfSequence(id, settings))
 	}
 
 	/// Creates a parameter with the specified starting value.
@@ -518,9 +642,12 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		self.send_command_to_backend(MixerCommand::RemoveEffect(effect_id))
 	}
 
-	/// Pops an event that was sent by the audio thread.
-	pub fn pop_event(&mut self) -> Option<Event<CustomEvent>> {
-		self.thread_channels.event_consumer.pop()
+	/// Adds a group.
+	pub fn add_group<T: Into<Vec<GroupId>>>(&mut self, parent_groups: T) -> AudioResult<GroupId> {
+		let id = GroupId::new();
+		let group = Group::new(index_set_from_vec(parent_groups.into()));
+		self.send_command_to_backend(GroupCommand::AddGroup(id, group))?;
+		Ok(id)
 	}
 
 	/// Adds a background stream to a specific track.
@@ -556,10 +683,43 @@ impl<CustomEvent: Copy + Send + 'static + std::fmt::Debug> AudioManager<CustomEv
 		while let Some(_) = self.thread_channels.sequences_to_unload_consumer.pop() {}
 		while let Some(_) = self.thread_channels.tracks_to_unload_consumer.pop() {}
 		while let Some(_) = self.thread_channels.effect_slots_to_unload_consumer.pop() {}
+	/// Removes a group.
+	pub fn remove_group(&mut self, id: GroupId) -> AudioResult<()> {
+		self.send_command_to_backend(GroupCommand::RemoveGroup(id))
+	}
+
+	/// Pauses all instances of sounds, arrangements, and sequences in a group.
+	pub fn pause_group(&mut self, id: GroupId, settings: PauseInstanceSettings) -> AudioResult<()> {
+		self.send_command_to_backend(InstanceCommand::PauseGroup(id, settings))?;
+		self.send_command_to_backend(SequenceCommand::PauseGroup(id))?;
+		Ok(())
+	}
+
+	/// Resumes all instances of sounds, arrangements, and sequences in a group.
+	pub fn resume_group(
+		&mut self,
+		id: GroupId,
+		settings: ResumeInstanceSettings,
+	) -> AudioResult<()> {
+		self.send_command_to_backend(InstanceCommand::ResumeGroup(id, settings))?;
+		self.send_command_to_backend(SequenceCommand::ResumeGroup(id))?;
+		Ok(())
+	}
+
+	/// Stops all instances of sounds, arrangements, and sequences in a group.
+	pub fn stop_group(&mut self, id: GroupId, settings: StopInstanceSettings) -> AudioResult<()> {
+		self.send_command_to_backend(InstanceCommand::StopGroup(id, settings))?;
+		self.send_command_to_backend(SequenceCommand::StopGroup(id))?;
+		Ok(())
+	}
+
+	/// Pops an event that was sent by the audio thread.
+	pub fn pop_event(&mut self) -> Option<Event> {
+		self.thread_channels.event_consumer.pop()
 	}
 }
 
-impl<CustomEvent: Copy + Send + 'static> Drop for AudioManager<CustomEvent> {
+impl Drop for AudioManager {
 	fn drop(&mut self) {
 		self.thread_channels
 			.quit_signal_producer
