@@ -651,7 +651,7 @@ impl AudioManager {
 		self.send_command_to_backend(MixerCommand::RemoveEffect(effect_id))
 	}
 
-	/// Starts an audio stream on the specified channel.
+	/// Starts an audio stream on the specified track.
 	pub fn add_stream<T: Into<TrackIndex>, S: AudioStream>(
 		&mut self,
 		track_id: T,
