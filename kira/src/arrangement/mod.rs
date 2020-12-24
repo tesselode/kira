@@ -95,7 +95,7 @@
 //!
 //! ```no_run
 //! # use kira::{
-//! # 	arrangement::Arrangement, arrangement::SoundClip, manager::{AudioManager, AudioManagerSettings},
+//! # 	arrangement::{Arrangement, LoopArrangementSettings}, arrangement::SoundClip, manager::{AudioManager, AudioManagerSettings},
 //! # 	playable::PlayableSettings, sound::Sound, Tempo,
 //! # };
 //! #
@@ -108,7 +108,7 @@
 //! 		..Default::default()
 //! 	},
 //! )?)?;
-//! let arrangement = Arrangement::new_loop(sound_id);
+//! let arrangement = Arrangement::new_loop(sound_id, LoopArrangementSettings::default());
 //! # Ok::<(), kira::AudioError>(())
 //! ```
 //!
@@ -122,13 +122,12 @@
 //! to create these.
 
 mod clip;
+mod id;
+mod settings;
 
 pub use clip::SoundClip;
-
-use std::{
-	hash::Hash,
-	sync::atomic::{AtomicUsize, Ordering},
-};
+pub use id::ArrangementId;
+pub use settings::LoopArrangementSettings;
 
 use indexmap::{IndexMap, IndexSet};
 
@@ -140,74 +139,6 @@ use crate::{
 	util::index_set_from_vec,
 	Frame,
 };
-
-static NEXT_ARRANGEMENT_INDEX: AtomicUsize = AtomicUsize::new(0);
-
-/**
-A unique identifier for an [`Arrangement`](Arrangement).
-
-You cannot create this manually - an arrangement ID is created
-when you [add an arrangement](crate::manager::AudioManager::add_arrangement)
-to an [`AudioManager`](crate::manager::AudioManager).
-*/
-#[derive(Debug, Copy, Clone)]
-pub struct ArrangementId {
-	index: usize,
-	duration: f64,
-	default_track: TrackIndex,
-	semantic_duration: Option<f64>,
-	default_loop_start: Option<f64>,
-}
-
-impl ArrangementId {
-	pub(crate) fn new(arrangement: &Arrangement) -> Self {
-		let index = NEXT_ARRANGEMENT_INDEX.fetch_add(1, Ordering::Relaxed);
-		Self {
-			index,
-			duration: arrangement.duration(),
-			default_track: arrangement.default_track,
-			semantic_duration: arrangement.semantic_duration,
-			default_loop_start: arrangement.default_loop_start,
-		}
-	}
-
-	/// Gets the duration of the arrangement.
-	pub fn duration(&self) -> f64 {
-		self.duration
-	}
-
-	/// Gets the default track that instances of this arrangement
-	/// will play on.
-	pub fn default_track(&self) -> TrackIndex {
-		self.default_track
-	}
-
-	/// Gets the [semantic duration](crate::playable::PlayableSettings#structfield.semantic_duration)
-	/// of the arrangement.
-	pub fn semantic_duration(&self) -> Option<f64> {
-		self.semantic_duration
-	}
-
-	/// Gets the default loop start point for instances of this
-	/// arrangement.
-	pub fn default_loop_start(&self) -> Option<f64> {
-		self.default_loop_start
-	}
-}
-
-impl PartialEq for ArrangementId {
-	fn eq(&self, other: &Self) -> bool {
-		self.index == other.index
-	}
-}
-
-impl Eq for ArrangementId {}
-
-impl Hash for ArrangementId {
-	fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-		self.index.hash(state);
-	}
-}
 
 /// An arrangement of sound clips to play at specific times.
 #[derive(Debug, Clone)]
@@ -242,9 +173,15 @@ impl Arrangement {
 	/// If the sound has a semantic duration, it will be used to
 	/// set the point where the sound loops. Any audio after the loop
 	/// point will be preserved when the loop starts.
-	pub fn new_loop(sound_id: SoundId) -> Self {
+	pub fn new_loop(sound_id: SoundId, settings: LoopArrangementSettings) -> Self {
 		let duration = sound_id.semantic_duration().unwrap_or(sound_id.duration());
-		let mut arrangement = Self::new(PlayableSettings::new().default_loop_start(duration));
+		let mut arrangement = Self::new(PlayableSettings {
+			default_track: settings.default_track,
+			cooldown: settings.cooldown,
+			semantic_duration: settings.semantic_duration,
+			default_loop_start: Some(duration),
+			groups: settings.groups,
+		});
 		arrangement
 			.add_clip(SoundClip::new(sound_id, 0.0))
 			.add_clip(SoundClip::new(sound_id, duration).trim(duration));
@@ -258,15 +195,24 @@ impl Arrangement {
 	/// when the loop sound starts. If the loop sound has a semantic duration,
 	/// it will be used to set the point where the sound repeats. Any audio
 	/// after the loop point will be preserved when the sound repeats.
-	pub fn new_loop_with_intro(intro_sound_id: SoundId, loop_sound_id: SoundId) -> Self {
+	pub fn new_loop_with_intro(
+		intro_sound_id: SoundId,
+		loop_sound_id: SoundId,
+		settings: LoopArrangementSettings,
+	) -> Self {
 		let intro_duration = intro_sound_id
 			.semantic_duration()
 			.unwrap_or(intro_sound_id.duration());
 		let loop_duration = loop_sound_id
 			.semantic_duration()
 			.unwrap_or(loop_sound_id.duration());
-		let mut arrangement =
-			Self::new(PlayableSettings::new().default_loop_start(intro_duration + loop_duration));
+		let mut arrangement = Self::new(PlayableSettings {
+			default_track: settings.default_track,
+			cooldown: settings.cooldown,
+			semantic_duration: settings.semantic_duration,
+			default_loop_start: Some(intro_duration + loop_duration),
+			groups: settings.groups,
+		});
 		arrangement
 			.add_clip(SoundClip::new(intro_sound_id, 0.0))
 			.add_clip(SoundClip::new(loop_sound_id, intro_duration))

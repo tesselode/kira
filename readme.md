@@ -27,7 +27,7 @@ let sound_id = audio_manager.load_sound(
 		..Default::default()
 	},
 )?;
-let arrangement_id = audio_manager.add_arrangement(Arrangement::new_loop(sound_id))?;
+let arrangement_id = audio_manager.add_arrangement(Arrangement::new_loop(sound_id, LoopingArrangementSettings::default()))?;
 audio_manager.play(arrangement_id, InstanceSettings::default())?;
 ```
 

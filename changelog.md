@@ -17,6 +17,8 @@ still want a smooth fade out when pausing the game.
 for changing the playback positions of running instances
 - Refined the behavior of looping backwards instances
 - Added `Tween::linear`
+- Make `Arrangement::settings` private and add settings parameters
+to `Arrangement::new_loop` and `Arrangement::new_loop_with_intro`
 
 # v0.2.0 - December 6th, 2020
 

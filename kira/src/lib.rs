@@ -42,7 +42,7 @@
 //! # use std::error::Error;
 //! #
 //! # use kira::{
-//! # 	arrangement::Arrangement, manager::{AudioManager, AudioManagerSettings},
+//! # 	arrangement::{Arrangement, LoopArrangementSettings}, manager::{AudioManager, AudioManagerSettings},
 //! # 	playable::PlayableSettings, sound::Sound, instance::InstanceSettings,
 //! # 	Tempo,
 //! # };
@@ -55,7 +55,8 @@
 //! 		..Default::default()
 //! 	},
 //! )?;
-//! let arrangement_id = audio_manager.add_arrangement(Arrangement::new_loop(sound_id))?;
+//! let arrangement = Arrangement::new_loop(sound_id, LoopArrangementSettings::default());
+//! let arrangement_id = audio_manager.add_arrangement(arrangement)?;
 //! audio_manager.play(arrangement_id, InstanceSettings::default())?;
 //! # Ok::<(), kira::AudioError>(())
 //! ```
