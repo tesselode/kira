@@ -1,6 +1,7 @@
 use indexmap::IndexSet;
 use ringbuf::Consumer;
 
+/// Receives events from an instance of a [`Sequence`](crate::sequence::Sequence).
 pub struct EventReceiver<CustomEvent> {
 	consumer: Consumer<usize>,
 	events: IndexSet<CustomEvent>,
@@ -11,6 +12,8 @@ impl<CustomEvent> EventReceiver<CustomEvent> {
 		Self { consumer, events }
 	}
 
+	/// Gets the first event that was emitted since the last
+	/// call to `pop`.
 	pub fn pop(&mut self) -> Option<&CustomEvent> {
 		self.consumer
 			.pop()

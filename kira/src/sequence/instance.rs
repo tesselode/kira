@@ -12,9 +12,9 @@ use super::{RawSequence, SequenceOutputCommand, SequenceStep};
 
 static NEXT_SEQUENCE_INSTANCE_INDEX: AtomicUsize = AtomicUsize::new(0);
 
-/// A unique identifier for a [`Sequence`](crate::sequence::Sequence).
+/// A unique identifier for an instance of a [`Sequence`](crate::sequence::Sequence).
 ///
-/// You cannot create this manually - a sequence ID is returned
+/// You cannot create this manually - a sequence instance ID is returned
 /// when you start a sequence with an [`AudioManager`](crate::manager::AudioManager).
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct SequenceInstanceId {

@@ -31,7 +31,7 @@
 //! # };
 //! #
 //! # let mut audio_manager = AudioManager::new(AudioManagerSettings::default())?;
-//! let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", PlayableSettings::default())?)?;
+//! let sound_id = audio_manager.load_sound("loop.ogg", PlayableSettings::default())?;
 //! audio_manager.play(sound_id, InstanceSettings::default())?;
 //! # Ok::<(), kira::AudioError>(())
 //! ```
@@ -48,13 +48,13 @@
 //! # };
 //! #
 //! # let mut audio_manager = AudioManager::new(Default::default())?;
-//! let sound_id = audio_manager.add_sound(Sound::from_file(
+//! let sound_id = audio_manager.load_sound(
 //! 	std::env::current_dir()?.join("assets/loop.wav"),
 //! 	PlayableSettings {
 //! 		semantic_duration: Some(Tempo(140.0).beats_to_seconds(16.0)),
 //! 		..Default::default()
 //! 	},
-//! )?)?;
+//! )?;
 //! let arrangement_id = audio_manager.add_arrangement(Arrangement::new_loop(sound_id))?;
 //! audio_manager.play(arrangement_id, InstanceSettings::default())?;
 //! # Ok::<(), kira::AudioError>(())

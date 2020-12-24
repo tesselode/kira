@@ -178,8 +178,10 @@ use crate::{
 	AudioError, AudioResult, Duration, Tempo, Value,
 };
 
+/// Settings for an instance of a [`Sequence`].
 #[derive(Debug, Copy, Clone)]
 pub struct SequenceInstanceSettings {
+	/// How many events can be queued at a time.
 	pub event_queue_capacity: usize,
 }
 
@@ -231,6 +233,7 @@ impl<CustomEvent: Clone + Eq + Hash> From<SequenceOutputCommand> for SequenceSte
 	}
 }
 
+/// Settings for a [`Sequence`].
 #[derive(Debug, Clone)]
 pub struct SequenceSettings {
 	/// The groups this sequence will belong to.
@@ -238,10 +241,12 @@ pub struct SequenceSettings {
 }
 
 impl SequenceSettings {
+	/// Creates a new `SequenceSettings` with the default settings.
 	pub fn new() -> Self {
 		Self::default()
 	}
 
+	/// Sets the groups this sequence will belong to.
 	pub fn groups<T: Into<Vec<GroupId>>>(self, groups: T) -> Self {
 		Self {
 			groups: groups.into(),
@@ -256,6 +261,7 @@ impl Default for SequenceSettings {
 	}
 }
 
+/// A series of steps to execute at certain times.
 #[derive(Debug, Clone)]
 pub struct Sequence<CustomEvent: Clone + Eq + Hash = ()> {
 	steps: Vec<SequenceStep<CustomEvent>>,
