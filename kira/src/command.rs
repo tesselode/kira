@@ -1,4 +1,5 @@
 use crate::{
+	audio_stream::{AudioStream, AudioStreamId},
 	arrangement::{Arrangement, ArrangementId},
 	group::{Group, GroupId},
 	instance::{
@@ -93,6 +94,12 @@ pub(crate) enum GroupCommand {
 	RemoveGroup(GroupId),
 }
 
+#[derive(Debug)]
+pub(crate) enum StreamCommand {
+	AddStream(AudioStreamId, TrackIndex, Box<dyn AudioStream>),
+	RemoveStream(AudioStreamId),
+}
+
 pub(crate) enum Command {
 	Resource(ResourceCommand),
 	Instance(InstanceCommand),
@@ -101,6 +108,7 @@ pub(crate) enum Command {
 	Mixer(MixerCommand),
 	Parameter(ParameterCommand),
 	Group(GroupCommand),
+	Stream(StreamCommand),
 }
 
 impl From<ResourceCommand> for Command {
@@ -142,5 +150,11 @@ impl From<ParameterCommand> for Command {
 impl From<GroupCommand> for Command {
 	fn from(command: GroupCommand) -> Self {
 		Self::Group(command)
+	}
+}
+
+impl From<StreamCommand> for Command {
+	fn from(command: StreamCommand) -> Self {
+		Self::Stream(command)
 	}
 }

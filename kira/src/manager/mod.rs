@@ -11,9 +11,10 @@ pub use backend::Backend;
 
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
+	audio_stream::{AudioStream, AudioStreamId},
 	command::{
 		Command, GroupCommand, InstanceCommand, MetronomeCommand, MixerCommand, ParameterCommand,
-		ResourceCommand, SequenceCommand,
+		ResourceCommand, SequenceCommand, StreamCommand,
 	},
 	error::{AudioError, AudioResult},
 	group::{Group, GroupId},
@@ -73,6 +74,8 @@ pub struct AudioManagerSettings {
 	pub num_effects_per_track: usize,
 	/// The maximum number of groups that can be used at a time.
 	pub num_groups: usize,
+	/// The maximum number of audio strams that can be used at a time.
+	pub num_streams: usize,
 	/// Settings for the metronome.
 	pub metronome_settings: MetronomeSettings,
 }
@@ -90,6 +93,7 @@ impl Default for AudioManagerSettings {
 			num_tracks: 100,
 			num_effects_per_track: 10,
 			num_groups: 100,
+			num_streams: 100,
 			metronome_settings: MetronomeSettings::default(),
 		}
 	}
@@ -105,6 +109,7 @@ pub(crate) struct AudioManagerThreadChannels {
 	pub tracks_to_unload_consumer: Consumer<Track>,
 	pub effect_slots_to_unload_consumer: Consumer<EffectSlot>,
 	pub groups_to_unload_consumer: Consumer<Group>,
+	pub streams_to_unload_consumer: Consumer<Box<dyn AudioStream>>,
 }
 
 /**
@@ -249,6 +254,8 @@ impl AudioManager {
 		let (groups_to_unload_producer, groups_to_unload_consumer) =
 			RingBuffer::new(settings.num_groups).split();
 		let (event_producer, event_consumer) = RingBuffer::new(settings.num_events).split();
+		let (streams_to_unload_producer, streams_to_unload_consumer) =
+			RingBuffer::new(settings.num_streams).split();
 		let audio_manager_thread_channels = AudioManagerThreadChannels {
 			quit_signal_producer,
 			command_producer,
@@ -259,6 +266,7 @@ impl AudioManager {
 			tracks_to_unload_consumer,
 			effect_slots_to_unload_consumer,
 			groups_to_unload_consumer,
+			streams_to_unload_consumer,
 		};
 		let backend_thread_channels = BackendThreadChannels {
 			command_consumer,
@@ -269,6 +277,7 @@ impl AudioManager {
 			tracks_to_unload_producer,
 			effect_slots_to_unload_producer,
 			groups_to_unload_producer,
+			streams_to_unload_producer,
 		};
 		(
 			audio_manager_thread_channels,
@@ -312,13 +321,14 @@ impl AudioManager {
 	pub fn new_without_audio_thread(
 		settings: AudioManagerSettings,
 	) -> AudioResult<(Self, Backend)> {
+		const SAMPLE_RATE: u32 = 48000;
 		let (audio_manager_thread_channels, backend_thread_channels, _) =
 			Self::create_thread_channels(&settings);
 		let audio_manager = Self {
 			thread_channels: audio_manager_thread_channels,
 			_stream: None,
 		};
-		let backend = Backend::new(48000, settings, backend_thread_channels);
+		let backend = Backend::new(SAMPLE_RATE, settings, backend_thread_channels);
 		Ok((audio_manager, backend))
 	}
 
@@ -379,6 +389,7 @@ impl AudioManager {
 		while let Some(_) = self.thread_channels.tracks_to_unload_consumer.pop() {}
 		while let Some(_) = self.thread_channels.effect_slots_to_unload_consumer.pop() {}
 		while let Some(_) = self.thread_channels.groups_to_unload_consumer.pop() {}
+		while let Some(_) = self.thread_channels.streams_to_unload_consumer.pop() {}
 	}
 
 	/// Plays a sound or arrangement.
@@ -638,6 +649,26 @@ impl AudioManager {
 	/// Removes an effect from the mixer.
 	pub fn remove_effect(&mut self, effect_id: EffectId) -> AudioResult<()> {
 		self.send_command_to_backend(MixerCommand::RemoveEffect(effect_id))
+	}
+
+	/// Starts an audio stream on the specified track.
+	pub fn add_stream<T: Into<TrackIndex>, S: AudioStream>(
+		&mut self,
+		track_id: T,
+		stream: S,
+	) -> AudioResult<AudioStreamId> {
+		let stream_id = AudioStreamId::new();
+		self.send_command_to_backend(StreamCommand::AddStream(
+			stream_id,
+			track_id.into(),
+			Box::new(stream),
+		))
+		.map(|()| stream_id)
+	}
+
+	/// Stops and drops the specified audio stream.
+	pub fn remove_stream(&mut self, stream_id: AudioStreamId) -> AudioResult<()> {
+		self.send_command_to_backend(StreamCommand::RemoveStream(stream_id))
 	}
 
 	/// Adds a group.
