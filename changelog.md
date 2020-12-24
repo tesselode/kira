@@ -16,6 +16,7 @@ still want a smooth fade out when pausing the game.
 - Added `AudioManager::seek_instance` and `AudioManager::seek_instance_to`
 for changing the playback positions of running instances
 - Refined the behavior of looping backwards instances
+- Added `Tween::linear`
 
 # v0.2.0 - December 6th, 2020
 

@@ -52,6 +52,15 @@ pub struct Tween {
 }
 
 impl Tween {
+	/// Creates a linear tween with the specified duration.
+	pub fn linear(duration: f64) -> Self {
+		Self {
+			duration,
+			easing: Default::default(),
+			ease_direction: Default::default(),
+		}
+	}
+
 	/// Applies the tween's easing curve (with easing direction)
 	/// to a relative position in an animation (where 0 is the
 	/// beginning of the animation and 1 is the end).
