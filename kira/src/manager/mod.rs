@@ -609,7 +609,7 @@ impl AudioManager {
 	/// Creates a mixer sub-track.
 	pub fn add_sub_track(&mut self, settings: TrackSettings) -> AudioResult<SubTrackId> {
 		let id = SubTrackId::new();
-		self.send_command_to_backend(MixerCommand::AddSubTrack(id, settings))?;
+		self.send_command_to_backend(MixerCommand::AddSubTrack(id, Track::new(settings)))?;
 		Ok(id)
 	}
 

@@ -28,12 +28,8 @@ impl Mixer {
 		effect_slots_to_unload_producer: &mut Producer<EffectSlot>,
 	) {
 		match command {
-			MixerCommand::AddSubTrack(id, settings) => {
-				// TODO: create the mixer track on the main thread
-				// and send it to the audio thread to avoid allocating
-				// memory for the effect_slots IndexMap on the audio
-				// thread
-				self.sub_tracks.insert(id, Track::new(settings));
+			MixerCommand::AddSubTrack(id, track) => {
+				self.sub_tracks.insert(id, track);
 			}
 			MixerCommand::AddEffect(index, id, effect, settings) => {
 				let track = match index {

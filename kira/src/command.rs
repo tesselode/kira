@@ -7,7 +7,7 @@ use crate::{
 	},
 	mixer::{
 		effect::{Effect, EffectId, EffectSettings},
-		SubTrackId, TrackIndex, TrackSettings,
+		SubTrackId, Track, TrackIndex, TrackSettings,
 	},
 	parameter::{ParameterId, Tween},
 	playable::Playable,
@@ -74,7 +74,7 @@ pub(crate) enum SequenceCommand {
 
 #[derive(Debug)]
 pub(crate) enum MixerCommand {
-	AddSubTrack(SubTrackId, TrackSettings),
+	AddSubTrack(SubTrackId, Track),
 	RemoveSubTrack(SubTrackId),
 	AddEffect(TrackIndex, EffectId, Box<dyn Effect>, EffectSettings),
 	RemoveEffect(EffectId),
