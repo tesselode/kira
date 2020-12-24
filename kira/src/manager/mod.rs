@@ -657,18 +657,13 @@ impl AudioManager {
 		track_id: T,
 		stream: S,
 	) -> AudioResult<AudioStreamId> {
-		self.add_stream_boxed(track_id, Box::new(stream))
-	}
-
-	/// Identical to [add_stream](add_stream), but useful if the stream is already boxed.
-	pub fn add_stream_boxed<T: Into<TrackIndex>>(
-		&mut self,
-		track_id: T,
-		stream: Box<dyn AudioStream>,
-	) -> AudioResult<AudioStreamId> {
 		let stream_id = AudioStreamId::new();
-		self.send_command_to_backend(StreamCommand::AddStream(stream_id, track_id.into(), stream))
-			.map(|()| stream_id)
+		self.send_command_to_backend(StreamCommand::AddStream(
+			stream_id,
+			track_id.into(),
+			Box::new(stream),
+		))
+		.map(|()| stream_id)
 	}
 
 	/// Stops and drops the specified audio stream.
