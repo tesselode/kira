@@ -654,13 +654,13 @@ impl AudioManager {
 	/// Starts an audio stream on the specified track.
 	pub fn add_stream<T: Into<TrackIndex>, S: AudioStream>(
 		&mut self,
-		track_id: T,
+		track_index: T,
 		stream: S,
 	) -> AudioResult<AudioStreamId> {
 		let stream_id = AudioStreamId::new();
 		self.send_command_to_backend(StreamCommand::AddStream(
 			stream_id,
-			track_id.into(),
+			track_index.into(),
 			Box::new(stream),
 		))
 		.map(|()| stream_id)
