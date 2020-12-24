@@ -1,4 +1,4 @@
-pub mod groups;
+pub(crate) mod groups;
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 
