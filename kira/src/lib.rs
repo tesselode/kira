@@ -77,10 +77,10 @@
 //! # 	Tempo,
 //! # };
 //! #
-//! # #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-//! # enum CustomEvent {
-//! # 	KickDrum,
-//! # }
+//! #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+//! enum CustomEvent {
+//! 	KickDrum,
+//! }
 //! #
 //! # let mut audio_manager = AudioManager::new(Default::default())?;
 //! # let kick_drum_sound_id = audio_manager.add_sound(Sound::from_file(
