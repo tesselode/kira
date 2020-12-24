@@ -13,7 +13,7 @@
 //! # use std::error::Error;
 //! # use kira::manager::{AudioManager, AudioManagerSettings};
 //! #
-//! let mut audio_manager = AudioManager::<()>::new(AudioManagerSettings::default())?;
+//! let mut audio_manager = AudioManager::new(AudioManagerSettings::default())?;
 //! # Ok::<(), kira::AudioError>(())
 //! ```
 //!
@@ -30,7 +30,7 @@
 //! # 	instance::InstanceSettings,
 //! # };
 //! #
-//! # let mut audio_manager = AudioManager::<()>::new(AudioManagerSettings::default())?;
+//! # let mut audio_manager = AudioManager::new(AudioManagerSettings::default())?;
 //! let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", PlayableSettings::default())?)?;
 //! audio_manager.play(sound_id, InstanceSettings::default())?;
 //! # Ok::<(), kira::AudioError>(())
@@ -47,7 +47,7 @@
 //! # 	Tempo,
 //! # };
 //! #
-//! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
+//! # let mut audio_manager = AudioManager::new(Default::default())?;
 //! let sound_id = audio_manager.add_sound(Sound::from_file(
 //! 	std::env::current_dir()?.join("assets/loop.wav"),
 //! 	PlayableSettings {
@@ -71,18 +71,18 @@
 //! # use kira::{
 //! # 	instance::InstanceSettings,
 //! # 	manager::AudioManager,
-//! # 	sequence::Sequence,
+//! # 	sequence::{Sequence, SequenceSettings, SequenceInstanceSettings},
 //! # 	sound::Sound,
 //! # 	playable::PlayableSettings,
 //! # 	Tempo,
 //! # };
 //! #
-//! # #[derive(Debug, Copy, Clone)]
+//! # #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 //! # enum CustomEvent {
 //! # 	KickDrum,
 //! # }
 //! #
-//! # let mut audio_manager = AudioManager::<CustomEvent>::new(Default::default())?;
+//! # let mut audio_manager = AudioManager::new(Default::default())?;
 //! # let kick_drum_sound_id = audio_manager.add_sound(Sound::from_file(
 //! # 	"kick.ogg",
 //! # 	PlayableSettings {
@@ -90,14 +90,18 @@
 //! # 		..Default::default()
 //! # 	},
 //! # )?)?;
-//! let mut sequence = Sequence::new();
+//! let mut sequence = Sequence::<CustomEvent>::new(SequenceSettings::default());
 //! sequence.start_loop();
 //! sequence.wait_for_interval(4.0);
 //! sequence.play(kick_drum_sound_id, InstanceSettings::default());
-//! sequence.emit_custom_event(CustomEvent::KickDrum);
-//! audio_manager.start_sequence(sequence)?;
+//! sequence.emit(CustomEvent::KickDrum);
+//! let (id, mut event_receiver) = audio_manager.start_sequence(sequence, SequenceInstanceSettings::default())?;
 //! // start the metronome so the sequence will have a pulse to listen for
 //! audio_manager.start_metronome()?;
+//! // pop events
+//! while let Some(event) = event_receiver.pop() {
+//! 	println!("{:?}", event);
+//! }
 //! # Ok::<(), kira::AudioError>(())
 //! ```
 

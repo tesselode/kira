@@ -73,7 +73,7 @@
 //! # 	playable::PlayableSettings, sound::Sound, Tempo,
 //! # };
 //! #
-//! # let mut audio_manager = AudioManager::<()>::new(AudioManagerSettings::default())?;
+//! # let mut audio_manager = AudioManager::new(AudioManagerSettings::default())?;
 //! # let sound_id = audio_manager.add_sound(Sound::from_file(
 //! # 	std::env::current_dir()?.join("assets/loop.wav"),
 //! # 	PlayableSettings::default(),
@@ -99,7 +99,7 @@
 //! # 	playable::PlayableSettings, sound::Sound, Tempo,
 //! # };
 //! #
-//! # let mut audio_manager = AudioManager::<()>::new(AudioManagerSettings::default())?;
+//! # let mut audio_manager = AudioManager::new(AudioManagerSettings::default())?;
 //! let tempo = Tempo(140.0);
 //! let sound_id = audio_manager.add_sound(Sound::from_file(
 //! 	std::env::current_dir()?.join("assets/loop.wav"),

@@ -12,7 +12,7 @@ You can find a demo of some of Kira's features [here](https://github.com/tesselo
 ### Simple sound playback
 
 ```rust
-let mut audio_manager = AudioManager::<()>::new(AudioManagerSettings::default())?;
+let mut audio_manager = AudioManager::new(AudioManagerSettings::default())?;
 let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", PlayableSettings::default())?)?;
 audio_manager.play(sound_id, InstanceSettings::default())?;
 ```

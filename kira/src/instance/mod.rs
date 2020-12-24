@@ -1,5 +1,5 @@
 //! Provides an interface to control "instances", or individual occurrences,
-//! of a [`Sound`](crate::sound::Sound).
+//! of [`Sound`](crate::sound::Sound)s and [`Arrangement`](crate::arrangement::Arrangement)s.
 //!
 //! You can control the volume and pitch of individual instances as well as
 //! pausing, resuming, and stopping them.
@@ -13,7 +13,7 @@
 //! #
 //! # use kira::{manager::AudioManager, instance::InstanceSettings, sound::Sound};
 //! #
-//! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
+//! # let mut audio_manager = AudioManager::new(Default::default())?;
 //! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
 //! let instance_id = audio_manager.play(sound_id, InstanceSettings::new().pitch(0.5))?;
 //! # Ok::<(), Box<dyn Error>>(())
@@ -24,12 +24,12 @@
 //! ```no_run
 //! # use std::error::Error;
 //! #
-//! # use kira::{manager::AudioManager, sound::Sound, parameter::Tween};
+//! # use kira::{manager::AudioManager, sound::Sound, parameter::Tween, instance::StopInstanceSettings};
 //! #
-//! # let mut audio_manager = AudioManager::<()>::new(Default::default())?;
+//! # let mut audio_manager = AudioManager::new(Default::default())?;
 //! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
 //! # let instance_id = audio_manager.play(sound_id, Default::default())?;
-//! audio_manager.stop_instance(instance_id, Some(2.0.into()))?;
+//! audio_manager.stop_instance(instance_id, StopInstanceSettings::new().fade_tween(Some(2.0.into())))?;
 //! # Ok::<(), Box<dyn Error>>(())
 //! ```
 //!
