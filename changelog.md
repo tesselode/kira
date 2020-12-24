@@ -1,6 +1,25 @@
 # v0.3.0
 
-- Decentralized sequences <!-- TODO: elaborate -->
+## Per-sequence custom event types
+Previously, custom events emitted by sequences were retrieved
+by calling `AudioManager::pop_event`, which meant that the
+audio manager had a generic type parameter for custom events,
+and every sequence had to emit custom events of the same type.
+
+Now, each sequence has its own custom event type, and you receive
+those events from an `EventReceiver` that the audio manager
+returns when you call `AudioManager::add_sequence`. This gives
+you more flexibility in how you organize your custom events
+as well as moving some functionality out of the `AudioManager`
+struct, which already has a lot of methods.
+
+## Audio streams
+Audio streams provide a way of sending arbitrary audio data
+to the mixer. Sometimes, you need to play audio that you
+generate in real time, like voice chats. This feature
+lets you do that.
+
+## Other changes
 - Added `Sequence::play_random`
 - Added `Value::Random`
 - Renamed `Sound::new` to `Sound::from_frames`
