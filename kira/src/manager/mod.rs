@@ -672,7 +672,7 @@ impl AudioManager {
 	}
 
 	/// Stops and drops the specified audio stream.
-	pub fn stop_stream(&mut self, stream_id: AudioStreamId) -> AudioResult<()> {
+	pub fn remove_stream(&mut self, stream_id: AudioStreamId) -> AudioResult<()> {
 		self.send_command_to_backend(StreamCommand::RemoveStream(stream_id))
 	}
 
