@@ -1,6 +1,6 @@
 use crate::{
-	audio_stream::{AudioStream, AudioStreamId},
 	arrangement::{Arrangement, ArrangementId},
+	audio_stream::{AudioStream, AudioStreamId},
 	group::{Group, GroupId},
 	instance::{
 		InstanceId, InstanceSettings, PauseInstanceSettings, ResumeInstanceSettings,
@@ -8,7 +8,7 @@ use crate::{
 	},
 	mixer::{
 		effect::{Effect, EffectId, EffectSettings},
-		SubTrackId, Track, TrackIndex, TrackSettings,
+		SubTrackId, Track, TrackIndex,
 	},
 	parameter::{ParameterId, Tween},
 	playable::Playable,
