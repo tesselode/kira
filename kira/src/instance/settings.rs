@@ -44,8 +44,11 @@ impl From<SubTrackId> for InstanceTrackIndex {
 /// A loop start point for an instance.
 #[derive(Debug, Copy, Clone)]
 pub enum InstanceLoopStart {
+	/// The default loop start point for the sound or arrangement.
 	Default,
+	/// No loop start point - the instance will not loop.
 	None,
+	/// A custom loop start point in seconds.
 	Custom(f64),
 }
 
@@ -189,16 +192,21 @@ impl Default for InstanceSettings {
 	}
 }
 
+/// Settings for pausing an instance.
 #[derive(Debug, Copy, Clone)]
 pub struct PauseInstanceSettings {
+	/// Whether to fade the instance to silence, and if so,
+	/// the tween to use.
 	pub fade_tween: Option<Tween>,
 }
 
 impl PauseInstanceSettings {
+	/// Creates a new `PauseInstanceSettings` with the default settings.
 	pub fn new() -> Self {
 		Self::default()
 	}
 
+	/// Sets the fade-out tween to use.
 	pub fn fade_tween<T: Into<Option<Tween>>>(self, tween: T) -> Self {
 		Self {
 			fade_tween: tween.into(),
@@ -219,17 +227,24 @@ impl Default for PauseInstanceSettings {
 	}
 }
 
+/// Settings for resuming an instance.
 #[derive(Debug, Copy, Clone)]
 pub struct ResumeInstanceSettings {
+	/// Whether to fade in the instance from silence, and if so,
+	/// the tween to use.
 	pub fade_tween: Option<Tween>,
+	/// Whether to seek the instance backwards to the playback
+	/// position it was at when it was paused.
 	pub rewind_to_pause_position: bool,
 }
 
 impl ResumeInstanceSettings {
+	/// Creates a new `ResumeInstanceSettings` with the default settings.
 	pub fn new() -> Self {
 		Self::default()
 	}
 
+	/// Sets the fade-in tween to use.
 	pub fn fade_tween<T: Into<Option<Tween>>>(self, tween: T) -> Self {
 		Self {
 			fade_tween: tween.into(),
@@ -237,6 +252,8 @@ impl ResumeInstanceSettings {
 		}
 	}
 
+	/// Sets whether to seek the instance backwards to the playback
+	/// position it was at when it was paused.
 	pub fn rewind_to_pause_position(self) -> Self {
 		Self {
 			rewind_to_pause_position: true,
@@ -258,16 +275,21 @@ impl Default for ResumeInstanceSettings {
 	}
 }
 
+/// Settings for stopping an instance.
 #[derive(Debug, Copy, Clone)]
 pub struct StopInstanceSettings {
+	/// Whether to fade the instance to silence, and if so,
+	/// the tween to use.
 	pub fade_tween: Option<Tween>,
 }
 
 impl StopInstanceSettings {
+	/// Creates a new `StopInstanceSettings` with the default settings.
 	pub fn new() -> Self {
 		Self::default()
 	}
 
+	/// Sets the fade-out tween to use.
 	pub fn fade_tween<T: Into<Option<Tween>>>(self, tween: T) -> Self {
 		Self {
 			fade_tween: tween.into(),

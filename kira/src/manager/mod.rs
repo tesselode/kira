@@ -258,6 +258,11 @@ impl AudioManager {
 	}
 
 	#[cfg(feature = "benchmarking")]
+	/// Creates an [`AudioManager`] and [`Backend`] without sending
+	/// the backend to another thread.
+	///
+	/// This is useful for updating the backend manually for
+	/// benchmarking.
 	pub fn new_without_audio_thread(
 		settings: AudioManagerSettings,
 	) -> AudioResult<(Self, Backend)> {
