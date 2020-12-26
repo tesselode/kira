@@ -2,7 +2,7 @@
 
 mod backend;
 
-use std::{hash::Hash, path::Path};
+use std::{cell::RefCell, hash::Hash, path::Path, rc::Rc};
 
 #[cfg(not(feature = "benchmarking"))]
 use backend::Backend;
@@ -101,7 +101,7 @@ impl Default for AudioManagerSettings {
 
 pub(crate) struct AudioManagerThreadChannels {
 	pub quit_signal_producer: Producer<bool>,
-	pub command_producer: Producer<Command>,
+	pub command_producer: Rc<RefCell<Producer<Command>>>,
 	pub event_consumer: Consumer<Event>,
 	pub sounds_to_unload_consumer: Consumer<Sound>,
 	pub arrangements_to_unload_consumer: Consumer<Arrangement>,
@@ -198,7 +198,7 @@ impl AudioManager {
 			RingBuffer::new(settings.num_streams).split();
 		let audio_manager_thread_channels = AudioManagerThreadChannels {
 			quit_signal_producer,
-			command_producer,
+			command_producer: Rc::new(RefCell::new(command_producer)),
 			event_consumer,
 			sounds_to_unload_consumer,
 			arrangements_to_unload_consumer,
@@ -278,10 +278,12 @@ impl AudioManager {
 	}
 
 	fn send_command_to_backend<C: Into<Command>>(&mut self, command: C) -> AudioResult<()> {
-		match self.thread_channels.command_producer.push(command.into()) {
-			Ok(_) => Ok(()),
-			Err(_) => Err(AudioError::CommandQueueFull),
-		}
+		self.thread_channels
+			.command_producer
+			.try_borrow_mut()
+			.map_err(|_| AudioError::CommandQueueBorrowed)?
+			.push(command.into())
+			.map_err(|_| AudioError::CommandQueueFull)
 	}
 
 	/// Sends a sound to the audio thread and returns a handle to the sound.
