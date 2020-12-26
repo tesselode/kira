@@ -1,4 +1,4 @@
-# v0.3.0
+# v0.3.0 - December 26th, 2020
 
 ## Per-sequence custom event types
 Previously, custom events emitted by sequences were retrieved
