@@ -8,6 +8,7 @@ use crate::{
 		Instance, InstanceHandle, InstanceId, InstanceSettings, PauseInstanceSettings,
 		ResumeInstanceSettings, StopInstanceSettings,
 	},
+	mixer::TrackIndex,
 	AudioError, AudioResult,
 };
 
@@ -29,6 +30,22 @@ impl SoundHandle {
 
 	pub fn id(&self) -> SoundId {
 		self.id
+	}
+
+	pub fn duration(&self) -> f64 {
+		self.id.duration()
+	}
+
+	pub fn default_track(&self) -> TrackIndex {
+		self.id.default_track()
+	}
+
+	pub fn semantic_duration(&self) -> Option<f64> {
+		self.id.semantic_duration()
+	}
+
+	pub fn default_loop_start(&self) -> Option<f64> {
+		self.id.default_loop_start()
 	}
 
 	fn send_command_to_backend(&mut self, command: Command) -> AudioResult<()> {
