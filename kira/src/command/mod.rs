@@ -1,3 +1,5 @@
+pub(crate) mod producer;
+
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
 	audio_stream::{AudioStream, AudioStreamId},

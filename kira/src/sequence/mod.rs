@@ -162,12 +162,12 @@ pub(crate) use instance::SequenceInstance;
 pub use instance::{SequenceInstanceId, SequenceInstanceState};
 
 use indexmap::IndexSet;
-use ringbuf::{Producer, RingBuffer};
+use ringbuf::RingBuffer;
 
-use std::{cell::RefCell, hash::Hash, rc::Rc, vec};
+use std::{hash::Hash, vec};
 
 use crate::{
-	command::Command,
+	command::producer::CommandProducer,
 	group::{groups::Groups, GroupId},
 	instance::{
 		InstanceId, InstanceSettings, PauseInstanceSettings, ResumeInstanceSettings,
@@ -530,7 +530,7 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 		&self,
 		settings: SequenceInstanceSettings,
 		id: SequenceInstanceId,
-		command_producer: Rc<RefCell<Producer<Command>>>,
+		command_producer: CommandProducer,
 	) -> (SequenceInstance, SequenceInstanceHandle<CustomEvent>) {
 		let (raw_sequence, events) = self.into_raw_sequence();
 		let (event_producer, event_consumer) =

@@ -2,7 +2,7 @@
 
 mod backend;
 
-use std::{cell::RefCell, hash::Hash, path::Path, rc::Rc};
+use std::{hash::Hash, path::Path};
 
 #[cfg(not(feature = "benchmarking"))]
 use backend::Backend;
@@ -13,8 +13,8 @@ use crate::{
 	arrangement::{Arrangement, ArrangementHandle, ArrangementId},
 	audio_stream::{AudioStream, AudioStreamId},
 	command::{
-		Command, GroupCommand, InstanceCommand, MetronomeCommand, MixerCommand, ParameterCommand,
-		ResourceCommand, SequenceCommand, StreamCommand,
+		producer::CommandProducer, GroupCommand, InstanceCommand, MetronomeCommand, MixerCommand,
+		ParameterCommand, ResourceCommand, SequenceCommand, StreamCommand,
 	},
 	error::{AudioError, AudioResult},
 	group::{Group, GroupId},
@@ -98,7 +98,7 @@ impl Default for AudioManagerSettings {
 
 pub(crate) struct AudioManagerThreadChannels {
 	pub quit_signal_producer: Producer<bool>,
-	pub command_producer: Rc<RefCell<Producer<Command>>>,
+	pub command_producer: CommandProducer,
 	pub event_consumer: Consumer<Event>,
 	pub sounds_to_unload_consumer: Consumer<Sound>,
 	pub arrangements_to_unload_consumer: Consumer<Arrangement>,
@@ -195,7 +195,7 @@ impl AudioManager {
 			RingBuffer::new(settings.num_streams).split();
 		let audio_manager_thread_channels = AudioManagerThreadChannels {
 			quit_signal_producer,
-			command_producer: Rc::new(RefCell::new(command_producer)),
+			command_producer: CommandProducer::new(command_producer),
 			event_consumer,
 			sounds_to_unload_consumer,
 			arrangements_to_unload_consumer,
@@ -274,19 +274,12 @@ impl AudioManager {
 		Ok((audio_manager, backend))
 	}
 
-	fn send_command_to_backend<C: Into<Command>>(&mut self, command: C) -> AudioResult<()> {
-		self.thread_channels
-			.command_producer
-			.try_borrow_mut()
-			.map_err(|_| AudioError::CommandQueueBorrowed)?
-			.push(command.into())
-			.map_err(|_| AudioError::CommandQueueFull)
-	}
-
 	/// Sends a sound to the audio thread and returns a handle to the sound.
 	pub fn add_sound(&mut self, sound: Sound) -> AudioResult<SoundHandle> {
 		let id = SoundId::new(&sound);
-		self.send_command_to_backend(ResourceCommand::AddSound(id, sound))?;
+		self.thread_channels
+			.command_producer
+			.push(ResourceCommand::AddSound(id, sound).into())?;
 		Ok(SoundHandle::new(
 			id,
 			self.thread_channels.command_producer.clone(),
@@ -309,7 +302,9 @@ impl AudioManager {
 	/// Sends a arrangement to the audio thread and returns a handle to the arrangement.
 	pub fn add_arrangement(&mut self, arrangement: Arrangement) -> AudioResult<ArrangementHandle> {
 		let id = ArrangementId::new(&arrangement);
-		self.send_command_to_backend(ResourceCommand::AddArrangement(id, arrangement))?;
+		self.thread_channels
+			.command_producer
+			.push(ResourceCommand::AddArrangement(id, arrangement).into())?;
 		Ok(ArrangementHandle::new(
 			id,
 			self.thread_channels.command_producer.clone(),
@@ -337,22 +332,30 @@ impl AudioManager {
 		&mut self,
 		tempo: T,
 	) -> Result<(), AudioError> {
-		self.send_command_to_backend(MetronomeCommand::SetMetronomeTempo(tempo.into()))
+		self.thread_channels
+			.command_producer
+			.push(MetronomeCommand::SetMetronomeTempo(tempo.into()).into())
 	}
 
 	/// Starts or resumes the metronome.
 	pub fn start_metronome(&mut self) -> Result<(), AudioError> {
-		self.send_command_to_backend(MetronomeCommand::StartMetronome)
+		self.thread_channels
+			.command_producer
+			.push(MetronomeCommand::StartMetronome.into())
 	}
 
 	/// Pauses the metronome.
 	pub fn pause_metronome(&mut self) -> Result<(), AudioError> {
-		self.send_command_to_backend(MetronomeCommand::PauseMetronome)
+		self.thread_channels
+			.command_producer
+			.push(MetronomeCommand::PauseMetronome.into())
 	}
 
 	/// Stops and resets the metronome.
 	pub fn stop_metronome(&mut self) -> Result<(), AudioError> {
-		self.send_command_to_backend(MetronomeCommand::StopMetronome)
+		self.thread_channels
+			.command_producer
+			.push(MetronomeCommand::StopMetronome.into())
 	}
 
 	/// Starts a sequence.
@@ -365,20 +368,26 @@ impl AudioManager {
 		let id = SequenceInstanceId::new();
 		let (instance, handle) =
 			sequence.create_instance(settings, id, self.thread_channels.command_producer.clone());
-		self.send_command_to_backend(SequenceCommand::StartSequenceInstance(id, instance))?;
+		self.thread_channels
+			.command_producer
+			.push(SequenceCommand::StartSequenceInstance(id, instance).into())?;
 		Ok(handle)
 	}
 
 	/// Creates a parameter with the specified starting value.
 	pub fn add_parameter(&mut self, value: f64) -> AudioResult<ParameterId> {
 		let id = ParameterId::new();
-		self.send_command_to_backend(ParameterCommand::AddParameter(id, value))?;
+		self.thread_channels
+			.command_producer
+			.push(ParameterCommand::AddParameter(id, value).into())?;
 		Ok(id)
 	}
 
 	/// Removes a parameter.
 	pub fn remove_parameter(&mut self, id: ParameterId) -> AudioResult<()> {
-		self.send_command_to_backend(ParameterCommand::RemoveParameter(id))
+		self.thread_channels
+			.command_producer
+			.push(ParameterCommand::RemoveParameter(id).into())
 	}
 
 	/// Sets the value of a parameter with an optional tween to smoothly change the value.
@@ -388,19 +397,25 @@ impl AudioManager {
 		value: f64,
 		tween: Option<Tween>,
 	) -> AudioResult<()> {
-		self.send_command_to_backend(ParameterCommand::SetParameter(id, value, tween))
+		self.thread_channels
+			.command_producer
+			.push(ParameterCommand::SetParameter(id, value, tween).into())
 	}
 
 	/// Creates a mixer sub-track.
 	pub fn add_sub_track(&mut self, settings: TrackSettings) -> AudioResult<SubTrackId> {
 		let id = SubTrackId::new();
-		self.send_command_to_backend(MixerCommand::AddSubTrack(id, Track::new(settings)))?;
+		self.thread_channels
+			.command_producer
+			.push(MixerCommand::AddSubTrack(id, Track::new(settings)).into())?;
 		Ok(id)
 	}
 
 	/// Removes a sub-track from the mixer.
 	pub fn remove_sub_track(&mut self, id: SubTrackId) -> AudioResult<()> {
-		self.send_command_to_backend(MixerCommand::RemoveSubTrack(id))
+		self.thread_channels
+			.command_producer
+			.push(MixerCommand::RemoveSubTrack(id).into())
 	}
 
 	/// Adds an effect to a track.
@@ -411,18 +426,18 @@ impl AudioManager {
 		settings: EffectSettings,
 	) -> AudioResult<EffectId> {
 		let effect_id = EffectId::new(track_index.into());
-		self.send_command_to_backend(MixerCommand::AddEffect(
-			track_index.into(),
-			effect_id,
-			Box::new(effect),
-			settings,
-		))?;
+		self.thread_channels.command_producer.push(
+			MixerCommand::AddEffect(track_index.into(), effect_id, Box::new(effect), settings)
+				.into(),
+		)?;
 		Ok(effect_id)
 	}
 
 	/// Removes an effect from the mixer.
 	pub fn remove_effect(&mut self, effect_id: EffectId) -> AudioResult<()> {
-		self.send_command_to_backend(MixerCommand::RemoveEffect(effect_id))
+		self.thread_channels
+			.command_producer
+			.push(MixerCommand::RemoveEffect(effect_id).into())
 	}
 
 	/// Starts an audio stream on the specified track.
@@ -432,36 +447,44 @@ impl AudioManager {
 		stream: S,
 	) -> AudioResult<AudioStreamId> {
 		let stream_id = AudioStreamId::new();
-		self.send_command_to_backend(StreamCommand::AddStream(
-			stream_id,
-			track_index.into(),
-			Box::new(stream),
-		))
-		.map(|()| stream_id)
+		self.thread_channels
+			.command_producer
+			.push(StreamCommand::AddStream(stream_id, track_index.into(), Box::new(stream)).into())
+			.map(|()| stream_id)
 	}
 
 	/// Stops and drops the specified audio stream.
 	pub fn remove_stream(&mut self, stream_id: AudioStreamId) -> AudioResult<()> {
-		self.send_command_to_backend(StreamCommand::RemoveStream(stream_id))
+		self.thread_channels
+			.command_producer
+			.push(StreamCommand::RemoveStream(stream_id).into())
 	}
 
 	/// Adds a group.
 	pub fn add_group<T: Into<Vec<GroupId>>>(&mut self, parent_groups: T) -> AudioResult<GroupId> {
 		let id = GroupId::new();
 		let group = Group::new(index_set_from_vec(parent_groups.into()));
-		self.send_command_to_backend(GroupCommand::AddGroup(id, group))?;
+		self.thread_channels
+			.command_producer
+			.push(GroupCommand::AddGroup(id, group).into())?;
 		Ok(id)
 	}
 
 	/// Removes a group.
 	pub fn remove_group(&mut self, id: GroupId) -> AudioResult<()> {
-		self.send_command_to_backend(GroupCommand::RemoveGroup(id))
+		self.thread_channels
+			.command_producer
+			.push(GroupCommand::RemoveGroup(id).into())
 	}
 
 	/// Pauses all instances of sounds, arrangements, and sequences in a group.
 	pub fn pause_group(&mut self, id: GroupId, settings: PauseInstanceSettings) -> AudioResult<()> {
-		self.send_command_to_backend(InstanceCommand::PauseGroup(id, settings))?;
-		self.send_command_to_backend(SequenceCommand::PauseGroup(id))?;
+		self.thread_channels
+			.command_producer
+			.push(InstanceCommand::PauseGroup(id, settings).into())?;
+		self.thread_channels
+			.command_producer
+			.push(SequenceCommand::PauseGroup(id).into())?;
 		Ok(())
 	}
 
@@ -471,15 +494,23 @@ impl AudioManager {
 		id: GroupId,
 		settings: ResumeInstanceSettings,
 	) -> AudioResult<()> {
-		self.send_command_to_backend(InstanceCommand::ResumeGroup(id, settings))?;
-		self.send_command_to_backend(SequenceCommand::ResumeGroup(id))?;
+		self.thread_channels
+			.command_producer
+			.push(InstanceCommand::ResumeGroup(id, settings).into())?;
+		self.thread_channels
+			.command_producer
+			.push(SequenceCommand::ResumeGroup(id).into())?;
 		Ok(())
 	}
 
 	/// Stops all instances of sounds, arrangements, and sequences in a group.
 	pub fn stop_group(&mut self, id: GroupId, settings: StopInstanceSettings) -> AudioResult<()> {
-		self.send_command_to_backend(InstanceCommand::StopGroup(id, settings))?;
-		self.send_command_to_backend(SequenceCommand::StopGroup(id))?;
+		self.thread_channels
+			.command_producer
+			.push(InstanceCommand::StopGroup(id, settings).into())?;
+		self.thread_channels
+			.command_producer
+			.push(SequenceCommand::StopGroup(id).into())?;
 		Ok(())
 	}
 

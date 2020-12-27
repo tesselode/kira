@@ -2,10 +2,10 @@ use std::{cell::RefCell, rc::Rc, sync::Arc};
 
 use atomic::{Atomic, Ordering};
 use indexmap::IndexSet;
-use ringbuf::{Consumer, Producer};
+use ringbuf::Consumer;
 
 use crate::{
-	command::{Command, InstanceCommand, SequenceCommand},
+	command::{producer::CommandProducer, InstanceCommand, SequenceCommand},
 	instance::{PauseInstanceSettings, ResumeInstanceSettings, StopInstanceSettings},
 	AudioError, AudioResult,
 };
@@ -15,7 +15,7 @@ use super::{SequenceInstanceId, SequenceInstanceState};
 pub struct SequenceInstanceHandle<CustomEvent> {
 	id: SequenceInstanceId,
 	state: Arc<Atomic<SequenceInstanceState>>,
-	command_producer: Rc<RefCell<Producer<Command>>>,
+	command_producer: CommandProducer,
 	raw_event_consumer: Rc<RefCell<Consumer<usize>>>,
 	events: IndexSet<CustomEvent>,
 }
@@ -24,7 +24,7 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 	pub(crate) fn new(
 		id: SequenceInstanceId,
 		state: Arc<Atomic<SequenceInstanceState>>,
-		command_producer: Rc<RefCell<Producer<Command>>>,
+		command_producer: CommandProducer,
 		raw_event_consumer: Consumer<usize>,
 		events: IndexSet<CustomEvent>,
 	) -> Self {
@@ -45,42 +45,39 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 		self.state.load(Ordering::Relaxed)
 	}
 
-	fn send_command_to_backend(&mut self, command: Command) -> AudioResult<()> {
-		self.command_producer
-			.try_borrow_mut()
-			.map_err(|_| AudioError::CommandQueueBorrowed)?
-			.push(command)
-			.map_err(|_| AudioError::CommandQueueFull)
-	}
-
 	pub fn mute(&mut self) -> AudioResult<()> {
-		self.send_command_to_backend(SequenceCommand::MuteSequenceInstance(self.id).into())
+		self.command_producer
+			.push(SequenceCommand::MuteSequenceInstance(self.id).into())
 	}
 
 	pub fn unmute(&mut self) -> AudioResult<()> {
-		self.send_command_to_backend(SequenceCommand::UnmuteSequenceInstance(self.id).into())
+		self.command_producer
+			.push(SequenceCommand::UnmuteSequenceInstance(self.id).into())
 	}
 
 	pub fn pause(&mut self) -> AudioResult<()> {
-		self.send_command_to_backend(SequenceCommand::PauseSequenceInstance(self.id).into())
+		self.command_producer
+			.push(SequenceCommand::PauseSequenceInstance(self.id).into())
 	}
 
 	pub fn resume(&mut self) -> AudioResult<()> {
-		self.send_command_to_backend(SequenceCommand::ResumeSequenceInstance(self.id).into())
+		self.command_producer
+			.push(SequenceCommand::ResumeSequenceInstance(self.id).into())
 	}
 
 	pub fn stop(&mut self) -> AudioResult<()> {
-		self.send_command_to_backend(SequenceCommand::StopSequenceInstance(self.id).into())
+		self.command_producer
+			.push(SequenceCommand::StopSequenceInstance(self.id).into())
 	}
 
 	pub fn pause_sequence_and_instances(
 		&mut self,
 		settings: PauseInstanceSettings,
 	) -> AudioResult<()> {
-		self.send_command_to_backend(SequenceCommand::PauseSequenceInstance(self.id).into())?;
-		self.send_command_to_backend(
-			InstanceCommand::PauseInstancesOfSequence(self.id, settings).into(),
-		)?;
+		self.command_producer
+			.push(SequenceCommand::PauseSequenceInstance(self.id).into())?;
+		self.command_producer
+			.push(InstanceCommand::PauseInstancesOfSequence(self.id, settings).into())?;
 		Ok(())
 	}
 
@@ -88,10 +85,10 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 		&mut self,
 		settings: ResumeInstanceSettings,
 	) -> AudioResult<()> {
-		self.send_command_to_backend(SequenceCommand::ResumeSequenceInstance(self.id).into())?;
-		self.send_command_to_backend(
-			InstanceCommand::ResumeInstancesOfSequence(self.id, settings).into(),
-		)?;
+		self.command_producer
+			.push(SequenceCommand::ResumeSequenceInstance(self.id).into())?;
+		self.command_producer
+			.push(InstanceCommand::ResumeInstancesOfSequence(self.id, settings).into())?;
 		Ok(())
 	}
 
@@ -99,10 +96,10 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 		&mut self,
 		settings: StopInstanceSettings,
 	) -> AudioResult<()> {
-		self.send_command_to_backend(SequenceCommand::StopSequenceInstance(self.id).into())?;
-		self.send_command_to_backend(
-			InstanceCommand::StopInstancesOfSequence(self.id, settings).into(),
-		)?;
+		self.command_producer
+			.push(SequenceCommand::StopSequenceInstance(self.id).into())?;
+		self.command_producer
+			.push(InstanceCommand::StopInstancesOfSequence(self.id, settings).into())?;
 		Ok(())
 	}
 
