@@ -1,8 +1,11 @@
 //! Provides an interface to work with pieces of audio.
 
+mod handle;
 mod id;
 
+pub use handle::SoundHandle;
 pub use id::SoundId;
+
 use indexmap::IndexSet;
 
 use crate::{

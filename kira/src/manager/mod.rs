@@ -10,7 +10,7 @@ use backend::Backend;
 pub use backend::Backend;
 
 use crate::{
-	arrangement::{Arrangement, ArrangementId},
+	arrangement::{Arrangement, ArrangementHandle, ArrangementId},
 	audio_stream::{AudioStream, AudioStreamId},
 	command::{
 		Command, GroupCommand, InstanceCommand, MetronomeCommand, MixerCommand, ParameterCommand,
@@ -32,7 +32,7 @@ use crate::{
 	playable::{Playable, PlayableSettings},
 	sequence::SequenceInstance,
 	sequence::{EventReceiver, Sequence, SequenceInstanceId, SequenceInstanceSettings},
-	sound::{Sound, SoundId},
+	sound::{Sound, SoundHandle, SoundId},
 	tempo::Tempo,
 	util::index_set_from_vec,
 	value::Value,
@@ -287,10 +287,13 @@ impl AudioManager {
 	}
 
 	/// Sends a sound to the audio thread and returns a handle to the sound.
-	pub fn add_sound(&mut self, sound: Sound) -> AudioResult<SoundId> {
+	pub fn add_sound(&mut self, sound: Sound) -> AudioResult<SoundHandle> {
 		let id = SoundId::new(&sound);
 		self.send_command_to_backend(ResourceCommand::AddSound(id, sound))?;
-		Ok(id)
+		Ok(SoundHandle::new(
+			id,
+			self.thread_channels.command_producer.clone(),
+		))
 	}
 
 	/// Loads a sound from a file and returns a handle to the sound.
@@ -301,26 +304,19 @@ impl AudioManager {
 		&mut self,
 		path: P,
 		settings: PlayableSettings,
-	) -> AudioResult<SoundId> {
+	) -> AudioResult<SoundHandle> {
 		let sound = Sound::from_file(path, settings)?;
 		self.add_sound(sound)
 	}
 
-	/// Removes a sound from the audio thread, allowing its memory to be freed.
-	pub fn remove_sound(&mut self, id: SoundId) -> AudioResult<()> {
-		self.send_command_to_backend(ResourceCommand::RemoveSound(id))
-	}
-
 	/// Sends a arrangement to the audio thread and returns a handle to the arrangement.
-	pub fn add_arrangement(&mut self, arrangement: Arrangement) -> AudioResult<ArrangementId> {
+	pub fn add_arrangement(&mut self, arrangement: Arrangement) -> AudioResult<ArrangementHandle> {
 		let id = ArrangementId::new(&arrangement);
 		self.send_command_to_backend(ResourceCommand::AddArrangement(id, arrangement))?;
-		Ok(id)
-	}
-
-	/// Removes a arrangement from the audio thread, allowing its memory to be freed.
-	pub fn remove_arrangement(&mut self, id: ArrangementId) -> AudioResult<()> {
-		self.send_command_to_backend(ResourceCommand::RemoveArrangement(id))
+		Ok(ArrangementHandle::new(
+			id,
+			self.thread_channels.command_producer.clone(),
+		))
 	}
 
 	/// Frees resources that are no longer in use, such as unloaded sounds
@@ -337,22 +333,6 @@ impl AudioManager {
 		while let Some(_) = self.thread_channels.effect_slots_to_unload_consumer.pop() {}
 		while let Some(_) = self.thread_channels.groups_to_unload_consumer.pop() {}
 		while let Some(_) = self.thread_channels.streams_to_unload_consumer.pop() {}
-	}
-
-	/// Plays a sound or arrangement.
-	pub fn play<P: Into<Playable>>(
-		&mut self,
-		playable: P,
-		settings: InstanceSettings,
-	) -> Result<InstanceId, AudioError> {
-		let instance_id = InstanceId::new();
-		self.send_command_to_backend(InstanceCommand::Play(
-			instance_id,
-			playable.into(),
-			None,
-			settings,
-		))?;
-		Ok(instance_id)
 	}
 
 	/// Sets the volume of an instance.
@@ -419,33 +399,6 @@ impl AudioManager {
 		settings: StopInstanceSettings,
 	) -> Result<(), AudioError> {
 		self.send_command_to_backend(InstanceCommand::StopInstance(instance_id, settings))
-	}
-
-	/// Pauses all currently playing instances of a sound or arrangement with an optional fade-out tween.
-	pub fn pause_instances_of(
-		&mut self,
-		playable: Playable,
-		settings: PauseInstanceSettings,
-	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::PauseInstancesOf(playable, settings))
-	}
-
-	/// Resumes all currently playing instances of a sound or arrangement with an optional fade-in tween.
-	pub fn resume_instances_of(
-		&mut self,
-		playable: Playable,
-		settings: ResumeInstanceSettings,
-	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::ResumeInstancesOf(playable, settings))
-	}
-
-	/// Stops all currently playing instances of a sound or arrangement with an optional fade-out tween.
-	pub fn stop_instances_of(
-		&mut self,
-		playable: Playable,
-		settings: StopInstanceSettings,
-	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::StopInstancesOf(playable, settings))
 	}
 
 	/// Sets the tempo of the metronome.

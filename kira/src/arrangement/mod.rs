@@ -122,10 +122,12 @@
 //! to create these.
 
 mod clip;
+mod handle;
 mod id;
 mod settings;
 
 pub use clip::SoundClip;
+pub use handle::ArrangementHandle;
 pub use id::ArrangementId;
 pub use settings::LoopArrangementSettings;
 
