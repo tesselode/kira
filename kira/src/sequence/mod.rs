@@ -159,7 +159,7 @@ mod instance;
 
 pub use handle::SequenceInstanceHandle;
 pub(crate) use instance::SequenceInstance;
-pub use instance::SequenceInstanceId;
+pub use instance::{SequenceInstanceId, SequenceInstanceState};
 
 use indexmap::IndexSet;
 use ringbuf::{Producer, RingBuffer};
@@ -536,9 +536,14 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 		let (event_producer, event_consumer) =
 			RingBuffer::new(settings.event_queue_capacity).split();
 		let instance = SequenceInstance::new(raw_sequence, event_producer);
-		let event_receiver =
-			SequenceInstanceHandle::new(id, command_producer, event_consumer, events);
-		(instance, event_receiver)
+		let handle = SequenceInstanceHandle::new(
+			id,
+			instance.public_state(),
+			command_producer,
+			event_consumer,
+			events,
+		);
+		(instance, handle)
 	}
 
 	/// Returns if this sequence is in the group with the given ID.

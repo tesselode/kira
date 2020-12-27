@@ -1,5 +1,9 @@
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{
+	atomic::{AtomicUsize, Ordering},
+	Arc,
+};
 
+use atomic::Atomic;
 use nanorand::{tls_rng, RNG};
 use ringbuf::Producer;
 
@@ -29,7 +33,7 @@ impl SequenceInstanceId {
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-enum SequenceInstanceState {
+pub enum SequenceInstanceState {
 	Playing,
 	Paused,
 	Finished,
@@ -38,6 +42,7 @@ enum SequenceInstanceState {
 pub struct SequenceInstance {
 	sequence: RawSequence,
 	state: SequenceInstanceState,
+	public_state: Arc<Atomic<SequenceInstanceState>>,
 	position: usize,
 	wait_timer: Option<f64>,
 	muted: bool,
@@ -49,11 +54,21 @@ impl SequenceInstance {
 		Self {
 			sequence,
 			state: SequenceInstanceState::Playing,
+			public_state: Arc::new(Atomic::new(SequenceInstanceState::Playing)),
 			position: 0,
 			wait_timer: None,
 			muted: false,
 			event_producer,
 		}
+	}
+
+	pub fn public_state(&self) -> Arc<Atomic<SequenceInstanceState>> {
+		self.public_state.clone()
+	}
+
+	fn set_state(&mut self, state: SequenceInstanceState) {
+		self.state = state;
+		self.public_state.store(state, Ordering::Relaxed);
 	}
 
 	fn start_step(&mut self, index: usize) {
@@ -68,7 +83,7 @@ impl SequenceInstance {
 			self.sequence.update_instance_ids();
 			self.start_step(loop_point);
 		} else {
-			self.state = SequenceInstanceState::Finished;
+			self.set_state(SequenceInstanceState::Finished);
 		}
 	}
 
@@ -85,15 +100,15 @@ impl SequenceInstance {
 	}
 
 	pub(crate) fn pause(&mut self) {
-		self.state = SequenceInstanceState::Paused;
+		self.set_state(SequenceInstanceState::Paused);
 	}
 
 	pub(crate) fn resume(&mut self) {
-		self.state = SequenceInstanceState::Playing;
+		self.set_state(SequenceInstanceState::Playing);
 	}
 
 	pub(crate) fn stop(&mut self) {
-		self.state = SequenceInstanceState::Finished;
+		self.set_state(SequenceInstanceState::Finished);
 	}
 
 	pub(crate) fn update(

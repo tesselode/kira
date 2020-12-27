@@ -1,5 +1,6 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc, sync::Arc};
 
+use atomic::{Atomic, Ordering};
 use indexmap::IndexSet;
 use ringbuf::{Consumer, Producer};
 
@@ -9,10 +10,11 @@ use crate::{
 	AudioError, AudioResult,
 };
 
-use super::SequenceInstanceId;
+use super::{SequenceInstanceId, SequenceInstanceState};
 
 pub struct SequenceInstanceHandle<CustomEvent> {
 	id: SequenceInstanceId,
+	state: Arc<Atomic<SequenceInstanceState>>,
 	command_producer: Rc<RefCell<Producer<Command>>>,
 	raw_event_consumer: Rc<RefCell<Consumer<usize>>>,
 	events: IndexSet<CustomEvent>,
@@ -21,12 +23,14 @@ pub struct SequenceInstanceHandle<CustomEvent> {
 impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 	pub(crate) fn new(
 		id: SequenceInstanceId,
+		state: Arc<Atomic<SequenceInstanceState>>,
 		command_producer: Rc<RefCell<Producer<Command>>>,
 		raw_event_consumer: Consumer<usize>,
 		events: IndexSet<CustomEvent>,
 	) -> Self {
 		Self {
 			id,
+			state,
 			command_producer,
 			raw_event_consumer: Rc::new(RefCell::new(raw_event_consumer)),
 			events,
@@ -35,6 +39,10 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 
 	pub fn id(&self) -> SequenceInstanceId {
 		self.id
+	}
+
+	pub fn state(&self) -> SequenceInstanceState {
+		self.state.load(Ordering::Relaxed)
 	}
 
 	fn send_command_to_backend(&mut self, command: Command) -> AudioResult<()> {
