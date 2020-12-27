@@ -37,11 +37,11 @@ fn instances_benchmark(c: &mut Criterion) {
 		})
 		.unwrap();
 	// add a test sound
-	let sound_id = audio_manager.add_sound(create_test_sound(48000)).unwrap();
+	let mut sound_handle = audio_manager.add_sound(create_test_sound(48000)).unwrap();
 	backend.process();
 	// start a bunch of instances
 	for _ in 0..NUM_INSTANCES {
-		audio_manager.play(sound_id, Default::default()).unwrap();
+		sound_handle.play(Default::default()).unwrap();
 	}
 	backend.process();
 	// benchmark updating the instances
