@@ -1,5 +1,6 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc, sync::Arc};
 
+use atomic::{Atomic, Ordering};
 use ringbuf::Producer;
 
 use crate::{
@@ -7,17 +8,25 @@ use crate::{
 	AudioError, AudioResult, Value,
 };
 
-use super::{InstanceId, PauseInstanceSettings, ResumeInstanceSettings, StopInstanceSettings};
+use super::{
+	InstanceId, InstanceState, PauseInstanceSettings, ResumeInstanceSettings, StopInstanceSettings,
+};
 
 pub struct InstanceHandle {
 	id: InstanceId,
+	state: Arc<Atomic<InstanceState>>,
 	command_producer: Rc<RefCell<Producer<Command>>>,
 }
 
 impl InstanceHandle {
-	pub(crate) fn new(id: InstanceId, command_producer: Rc<RefCell<Producer<Command>>>) -> Self {
+	pub(crate) fn new(
+		id: InstanceId,
+		state: Arc<Atomic<InstanceState>>,
+		command_producer: Rc<RefCell<Producer<Command>>>,
+	) -> Self {
 		Self {
 			id,
+			state,
 			command_producer,
 		}
 	}
@@ -28,6 +37,10 @@ impl InstanceHandle {
 			.map_err(|_| AudioError::CommandQueueBorrowed)?
 			.push(command)
 			.map_err(|_| AudioError::CommandQueueFull)
+	}
+
+	pub fn state(&self) -> InstanceState {
+		self.state.load(Ordering::Relaxed)
 	}
 
 	pub fn set_volume(&mut self, volume: impl Into<Value<f64>>) -> AudioResult<()> {

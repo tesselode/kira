@@ -18,7 +18,7 @@ use crate::{
 	},
 	error::{AudioError, AudioResult},
 	group::{Group, GroupId},
-	instance::{InstanceId, PauseInstanceSettings, ResumeInstanceSettings, StopInstanceSettings},
+	instance::{PauseInstanceSettings, ResumeInstanceSettings, StopInstanceSettings},
 	metronome::MetronomeSettings,
 	mixer::{
 		effect::{Effect, EffectId, EffectSettings},

@@ -21,6 +21,7 @@ wav = ["hound"]
 default = ["mp3", "ogg", "flac", "wav"]
 
 [dependencies]
+atomic = "0.5.0"
 claxon = { version = "0.4.3", optional = true }
 cpal = "0.13.1"
 indexmap = "1.6.0"

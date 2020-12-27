@@ -1,6 +1,7 @@
 use crate::{
 	command::{Command, InstanceCommand, MetronomeCommand, ParameterCommand, SequenceCommand},
 	group::groups::Groups,
+	instance::Instance,
 	metronome::Metronome,
 	sequence::{SequenceInstance, SequenceInstanceId, SequenceOutputCommand},
 };
@@ -100,9 +101,7 @@ impl Sequences {
 					SequenceOutputCommand::PlaySound(instance_id, playable, settings) => {
 						Command::Instance(InstanceCommand::Play(
 							instance_id,
-							playable,
-							Some(*id),
-							settings,
+							Instance::new(playable, Some(*id), settings),
 						))
 					}
 					SequenceOutputCommand::SetInstanceVolume(id, volume) => {
