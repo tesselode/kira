@@ -25,7 +25,7 @@ use crate::{
 		effect_slot::EffectSlot,
 		SubTrackId, Track, TrackIndex, TrackSettings,
 	},
-	parameter::{ParameterId, Tween},
+	parameter::{ParameterHandle, ParameterId, Tween},
 	playable::PlayableSettings,
 	sequence::SequenceInstance,
 	sequence::{Sequence, SequenceInstanceHandle, SequenceInstanceId, SequenceInstanceSettings},
@@ -375,31 +375,15 @@ impl AudioManager {
 	}
 
 	/// Creates a parameter with the specified starting value.
-	pub fn add_parameter(&mut self, value: f64) -> AudioResult<ParameterId> {
+	pub fn add_parameter(&mut self, value: f64) -> AudioResult<ParameterHandle> {
 		let id = ParameterId::new();
 		self.thread_channels
 			.command_producer
 			.push(ParameterCommand::AddParameter(id, value).into())?;
-		Ok(id)
-	}
-
-	/// Removes a parameter.
-	pub fn remove_parameter(&mut self, id: ParameterId) -> AudioResult<()> {
-		self.thread_channels
-			.command_producer
-			.push(ParameterCommand::RemoveParameter(id).into())
-	}
-
-	/// Sets the value of a parameter with an optional tween to smoothly change the value.
-	pub fn set_parameter(
-		&mut self,
-		id: ParameterId,
-		value: f64,
-		tween: Option<Tween>,
-	) -> AudioResult<()> {
-		self.thread_channels
-			.command_producer
-			.push(ParameterCommand::SetParameter(id, value, tween).into())
+		Ok(ParameterHandle::new(
+			id,
+			self.thread_channels.command_producer.clone(),
+		))
 	}
 
 	/// Creates a mixer sub-track.
