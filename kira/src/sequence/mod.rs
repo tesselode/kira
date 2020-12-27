@@ -154,19 +154,20 @@
 //! # Ok::<(), kira::AudioError>(())
 //! ```
 
-mod event_receiver;
+mod handle;
 mod instance;
 
-pub use event_receiver::EventReceiver;
+pub use handle::SequenceInstanceHandle;
 pub(crate) use instance::SequenceInstance;
 pub use instance::SequenceInstanceId;
 
 use indexmap::IndexSet;
-use ringbuf::RingBuffer;
+use ringbuf::{Producer, RingBuffer};
 
-use std::{hash::Hash, vec};
+use std::{cell::RefCell, hash::Hash, rc::Rc, vec};
 
 use crate::{
+	command::Command,
 	group::{groups::Groups, GroupId},
 	instance::{
 		InstanceId, InstanceSettings, PauseInstanceSettings, ResumeInstanceSettings,
@@ -528,12 +529,15 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	pub(crate) fn create_instance(
 		&self,
 		settings: SequenceInstanceSettings,
-	) -> (SequenceInstance, EventReceiver<CustomEvent>) {
+		id: SequenceInstanceId,
+		command_producer: Rc<RefCell<Producer<Command>>>,
+	) -> (SequenceInstance, SequenceInstanceHandle<CustomEvent>) {
 		let (raw_sequence, events) = self.into_raw_sequence();
 		let (event_producer, event_consumer) =
 			RingBuffer::new(settings.event_queue_capacity).split();
 		let instance = SequenceInstance::new(raw_sequence, event_producer);
-		let event_receiver = EventReceiver::new(event_consumer, events);
+		let event_receiver =
+			SequenceInstanceHandle::new(id, command_producer, event_consumer, events);
 		(instance, event_receiver)
 	}
 

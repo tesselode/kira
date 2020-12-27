@@ -28,7 +28,7 @@ use crate::{
 	parameter::{ParameterId, Tween},
 	playable::PlayableSettings,
 	sequence::SequenceInstance,
-	sequence::{EventReceiver, Sequence, SequenceInstanceId, SequenceInstanceSettings},
+	sequence::{Sequence, SequenceInstanceHandle, SequenceInstanceId, SequenceInstanceSettings},
 	sound::{Sound, SoundHandle, SoundId},
 	tempo::Tempo,
 	util::index_set_from_vec,
@@ -360,70 +360,13 @@ impl AudioManager {
 		&mut self,
 		sequence: Sequence<CustomEvent>,
 		settings: SequenceInstanceSettings,
-	) -> Result<(SequenceInstanceId, EventReceiver<CustomEvent>), AudioError> {
+	) -> Result<SequenceInstanceHandle<CustomEvent>, AudioError> {
 		sequence.validate()?;
 		let id = SequenceInstanceId::new();
-		let (instance, receiver) = sequence.create_instance(settings);
+		let (instance, handle) =
+			sequence.create_instance(settings, id, self.thread_channels.command_producer.clone());
 		self.send_command_to_backend(SequenceCommand::StartSequenceInstance(id, instance))?;
-		Ok((id, receiver))
-	}
-
-	/// Mutes a sequence.
-	///
-	/// When a sequence is muted, it will continue waiting for durations and intervals,
-	/// but it will not play sounds, emit events, or perform any other actions.
-	pub fn mute_sequence(&mut self, id: SequenceInstanceId) -> Result<(), AudioError> {
-		self.send_command_to_backend(SequenceCommand::MuteSequenceInstance(id))
-	}
-
-	/// Unmutes a sequence.
-	pub fn unmute_sequence(&mut self, id: SequenceInstanceId) -> Result<(), AudioError> {
-		self.send_command_to_backend(SequenceCommand::UnmuteSequenceInstance(id))
-	}
-
-	/// Pauses a sequence.
-	pub fn pause_sequence(&mut self, id: SequenceInstanceId) -> Result<(), AudioError> {
-		self.send_command_to_backend(SequenceCommand::PauseSequenceInstance(id))
-	}
-
-	/// Resumes a sequence.
-	pub fn resume_sequence(&mut self, id: SequenceInstanceId) -> Result<(), AudioError> {
-		self.send_command_to_backend(SequenceCommand::ResumeSequenceInstance(id))
-	}
-
-	/// Stops a sequence.
-	pub fn stop_sequence(&mut self, id: SequenceInstanceId) -> Result<(), AudioError> {
-		self.send_command_to_backend(SequenceCommand::StopSequenceInstance(id))
-	}
-
-	/// Pauses a sequence and any instances played by that sequence.
-	pub fn pause_sequence_and_instances(
-		&mut self,
-		id: SequenceInstanceId,
-		settings: PauseInstanceSettings,
-	) -> Result<(), AudioError> {
-		self.send_command_to_backend(SequenceCommand::PauseSequenceInstance(id))?;
-		self.send_command_to_backend(InstanceCommand::PauseInstancesOfSequence(id, settings))
-	}
-
-	/// Resumes a sequence and any instances played by that sequence.
-	pub fn resume_sequence_and_instances(
-		&mut self,
-		id: SequenceInstanceId,
-		settings: ResumeInstanceSettings,
-	) -> Result<(), AudioError> {
-		self.send_command_to_backend(SequenceCommand::ResumeSequenceInstance(id))?;
-		self.send_command_to_backend(InstanceCommand::ResumeInstancesOfSequence(id, settings))
-	}
-
-	/// Stops a sequence and any instances played by that sequence.
-	pub fn stop_sequence_and_instances(
-		&mut self,
-		id: SequenceInstanceId,
-		settings: StopInstanceSettings,
-	) -> Result<(), AudioError> {
-		self.send_command_to_backend(SequenceCommand::StopSequenceInstance(id))?;
-		self.send_command_to_backend(InstanceCommand::StopInstancesOfSequence(id, settings))
+		Ok(handle)
 	}
 
 	/// Creates a parameter with the specified starting value.

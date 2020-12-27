@@ -22,6 +22,9 @@ pub enum AudioError {
 	/// The queue that sends signals from the main thread
 	/// to the audio thread is already being borrowed.
 	CommandQueueBorrowed,
+	/// A channel that sends events from the audio thread
+	/// to the main thread is already being borrowed.
+	EventReceiverBorrowed,
 	/// Tried to load audio that isn't mono or stereo.
 	UnsupportedChannelConfiguration,
 	/// Tried to load audio in an unsupported file format.
@@ -66,6 +69,9 @@ impl Display for AudioError {
 			}
 			AudioError::CommandQueueBorrowed => {
 				f.write_str("Cannot send a command to the audio thread because the queue is currently mutably borrowed")
+			}
+			AudioError::EventReceiverBorrowed => {
+				f.write_str("Cannot pop an event from a receiver because the receiver is currently mutably borrowed")
 			}
 			AudioError::UnsupportedChannelConfiguration => {
 				f.write_str("Only mono and stereo audio is supported")
