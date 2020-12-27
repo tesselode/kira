@@ -175,7 +175,8 @@ impl Arrangement {
 	/// If the sound has a semantic duration, it will be used to
 	/// set the point where the sound loops. Any audio after the loop
 	/// point will be preserved when the loop starts.
-	pub fn new_loop(sound_id: SoundId, settings: LoopArrangementSettings) -> Self {
+	pub fn new_loop(sound_id: impl Into<SoundId>, settings: LoopArrangementSettings) -> Self {
+		let sound_id: SoundId = sound_id.into();
 		let duration = sound_id.semantic_duration().unwrap_or(sound_id.duration());
 		let mut arrangement = Self::new(PlayableSettings {
 			default_track: settings.default_track,
@@ -198,10 +199,12 @@ impl Arrangement {
 	/// it will be used to set the point where the sound repeats. Any audio
 	/// after the loop point will be preserved when the sound repeats.
 	pub fn new_loop_with_intro(
-		intro_sound_id: SoundId,
-		loop_sound_id: SoundId,
+		intro_sound_id: impl Into<SoundId>,
+		loop_sound_id: impl Into<SoundId>,
 		settings: LoopArrangementSettings,
 	) -> Self {
+		let loop_sound_id: SoundId = loop_sound_id.into();
+		let intro_sound_id: SoundId = intro_sound_id.into();
 		let intro_duration = intro_sound_id
 			.semantic_duration()
 			.unwrap_or(intro_sound_id.duration());

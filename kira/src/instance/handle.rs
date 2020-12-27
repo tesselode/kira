@@ -30,6 +30,10 @@ impl InstanceHandle {
 		}
 	}
 
+	pub fn id(&self) -> InstanceId {
+		self.id
+	}
+
 	pub fn state(&self) -> InstanceState {
 		self.state.load(Ordering::Relaxed)
 	}

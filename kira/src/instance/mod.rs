@@ -103,6 +103,12 @@ impl InstanceId {
 	}
 }
 
+impl From<&InstanceHandle> for InstanceId {
+	fn from(handle: &InstanceHandle) -> Self {
+		handle.id()
+	}
+}
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum InstanceState {
 	Playing,

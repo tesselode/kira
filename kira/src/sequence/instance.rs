@@ -12,7 +12,7 @@ use crate::{
 	metronome::Metronome,
 };
 
-use super::{RawSequence, SequenceOutputCommand, SequenceStep};
+use super::{RawSequence, SequenceInstanceHandle, SequenceOutputCommand, SequenceStep};
 
 static NEXT_SEQUENCE_INSTANCE_INDEX: AtomicUsize = AtomicUsize::new(0);
 
@@ -29,6 +29,12 @@ impl SequenceInstanceId {
 	pub(crate) fn new() -> Self {
 		let index = NEXT_SEQUENCE_INSTANCE_INDEX.fetch_add(1, Ordering::Relaxed);
 		Self { index }
+	}
+}
+
+impl<CustomEvent> From<&SequenceInstanceHandle<CustomEvent>> for SequenceInstanceId {
+	fn from(handle: &SequenceInstanceHandle<CustomEvent>) -> Self {
+		handle.id()
 	}
 }
 
