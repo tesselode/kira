@@ -57,8 +57,10 @@
 //! loop start point, it will wrap around to the end
 //! of the instance.
 
+mod handle;
 mod settings;
 
+pub use handle::InstanceHandle;
 pub use settings::*;
 
 use indexmap::IndexMap;

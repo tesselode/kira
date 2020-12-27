@@ -18,10 +18,7 @@ use crate::{
 	},
 	error::{AudioError, AudioResult},
 	group::{Group, GroupId},
-	instance::{
-		InstanceId, InstanceSettings, PauseInstanceSettings, ResumeInstanceSettings,
-		StopInstanceSettings,
-	},
+	instance::{InstanceId, PauseInstanceSettings, ResumeInstanceSettings, StopInstanceSettings},
 	metronome::MetronomeSettings,
 	mixer::{
 		effect::{Effect, EffectId, EffectSettings},
@@ -29,7 +26,7 @@ use crate::{
 		SubTrackId, Track, TrackIndex, TrackSettings,
 	},
 	parameter::{ParameterId, Tween},
-	playable::{Playable, PlayableSettings},
+	playable::PlayableSettings,
 	sequence::SequenceInstance,
 	sequence::{EventReceiver, Sequence, SequenceInstanceId, SequenceInstanceSettings},
 	sound::{Sound, SoundHandle, SoundId},
@@ -333,72 +330,6 @@ impl AudioManager {
 		while let Some(_) = self.thread_channels.effect_slots_to_unload_consumer.pop() {}
 		while let Some(_) = self.thread_channels.groups_to_unload_consumer.pop() {}
 		while let Some(_) = self.thread_channels.streams_to_unload_consumer.pop() {}
-	}
-
-	/// Sets the volume of an instance.
-	pub fn set_instance_volume<V: Into<Value<f64>>>(
-		&mut self,
-		id: InstanceId,
-		volume: V,
-	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::SetInstanceVolume(id, volume.into()))
-	}
-
-	/// Sets the pitch of an instance.
-	pub fn set_instance_pitch<V: Into<Value<f64>>>(
-		&mut self,
-		id: InstanceId,
-		pitch: V,
-	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::SetInstancePitch(id, pitch.into()))
-	}
-
-	/// Sets the panning of an instance (0 = hard left, 1 = hard right).
-	pub fn set_instance_panning<V: Into<Value<f64>>>(
-		&mut self,
-		id: InstanceId,
-		panning: V,
-	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::SetInstancePanning(id, panning.into()))
-	}
-
-	/// Moves the playback position of an instance backward or forward.
-	pub fn seek_instance(&mut self, id: InstanceId, offset: f64) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::SeekInstance(id, offset))
-	}
-
-	/// Sets the playback position of an instance.
-	pub fn seek_instance_to(&mut self, id: InstanceId, position: f64) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::SeekInstanceTo(id, position))
-	}
-
-	/// Pauses a currently playing instance of a sound with an optional fade-out tween.
-	pub fn pause_instance(
-		&mut self,
-		instance_id: InstanceId,
-		settings: PauseInstanceSettings,
-	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::PauseInstance(instance_id, settings))
-	}
-
-	/// Resumes a currently paused instance of a sound with an optional fade-in tween.
-	pub fn resume_instance(
-		&mut self,
-		instance_id: InstanceId,
-		settings: ResumeInstanceSettings,
-	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::ResumeInstance(instance_id, settings))
-	}
-
-	/// Stops a currently playing instance of a sound with an optional fade-out tween.
-	///
-	/// Once the instance is stopped, it cannot be restarted.
-	pub fn stop_instance(
-		&mut self,
-		instance_id: InstanceId,
-		settings: StopInstanceSettings,
-	) -> Result<(), AudioError> {
-		self.send_command_to_backend(InstanceCommand::StopInstance(instance_id, settings))
 	}
 
 	/// Sets the tempo of the metronome.

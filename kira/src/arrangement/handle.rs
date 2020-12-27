@@ -5,8 +5,8 @@ use ringbuf::Producer;
 use crate::{
 	command::{Command, InstanceCommand, ResourceCommand},
 	instance::{
-		InstanceId, InstanceSettings, PauseInstanceSettings, ResumeInstanceSettings,
-		StopInstanceSettings,
+		InstanceHandle, InstanceId, InstanceSettings, PauseInstanceSettings,
+		ResumeInstanceSettings, StopInstanceSettings,
 	},
 	AudioError, AudioResult,
 };
@@ -39,12 +39,12 @@ impl ArrangementHandle {
 			.map_err(|_| AudioError::CommandQueueFull)
 	}
 
-	pub fn play(&mut self, settings: InstanceSettings) -> AudioResult<InstanceId> {
+	pub fn play(&mut self, settings: InstanceSettings) -> AudioResult<InstanceHandle> {
 		let instance_id = InstanceId::new();
 		self.send_command_to_backend(
 			InstanceCommand::Play(instance_id, self.id.into(), None, settings).into(),
 		)
-		.map(|()| instance_id)
+		.map(|()| InstanceHandle::new(instance_id, self.command_producer.clone()))
 	}
 
 	pub fn pause(&mut self, settings: PauseInstanceSettings) -> AudioResult<()> {
