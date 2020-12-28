@@ -2,7 +2,7 @@
 
 mod backend;
 
-use std::{hash::Hash, path::Path};
+use std::hash::Hash;
 
 #[cfg(not(feature = "benchmarking"))]
 use backend::Backend;
@@ -29,7 +29,7 @@ use crate::{
 		SubTrackId, Track, TrackIndex, TrackSettings,
 	},
 	parameter::{ParameterId, Tween},
-	playable::{Playable, PlayableSettings},
+	playable::Playable,
 	sequence::SequenceInstance,
 	sequence::{EventReceiver, Sequence, SequenceInstanceId, SequenceInstanceSettings},
 	sound::{Sound, SoundId},
@@ -295,10 +295,11 @@ impl AudioManager {
 	///
 	/// This is a shortcut for constructing the sound manually and adding it
 	/// using [`AudioManager::add_sound`].
-	pub fn load_sound<P: AsRef<Path>>(
+	#[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
+	pub fn load_sound<P: AsRef<std::path::Path>>(
 		&mut self,
 		path: P,
-		settings: PlayableSettings,
+		settings: crate::playable::PlayableSettings,
 	) -> AudioResult<SoundId> {
 		let sound = Sound::from_file(path, settings)?;
 		self.add_sound(sound)
