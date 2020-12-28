@@ -1,3 +1,11 @@
+# Unreleased
+
+## `wasm32` support
+
+Kira now runs on any platform supporting `wasm32` and having a
+`cpal` backend. This means one can now run an instance of Kira
+in a web browser.
+
 # v0.3.0
 
 ## Per-sequence custom event types
