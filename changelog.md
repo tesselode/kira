@@ -19,6 +19,12 @@ to the mixer. Sometimes, you need to play audio that you
 generate in real time, like voice chats. This feature
 lets you do that.
 
+## Groups
+Sounds, arrangements, and sequences can now be grouped so that
+they can all be paused, resumed, or stopped at once. This is
+useful for controlling broad categories of sounds, like gameplay
+sounds or music.
+
 ## Other changes
 - Added `Sequence::play_random`
 - Added `Value::Random`
