@@ -5,7 +5,7 @@ use std::{
 
 use crate::mixer::TrackIndex;
 
-use super::Arrangement;
+use super::{Arrangement, ArrangementHandle};
 
 static NEXT_ARRANGEMENT_INDEX: AtomicUsize = AtomicUsize::new(0);
 
@@ -72,5 +72,11 @@ impl Eq for ArrangementId {}
 impl Hash for ArrangementId {
 	fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
 		self.index.hash(state);
+	}
+}
+
+impl From<&ArrangementHandle> for ArrangementId {
+	fn from(handle: &ArrangementHandle) -> Self {
+		handle.id()
 	}
 }

@@ -25,7 +25,8 @@ impl SoundClip {
 	/// Creates a new sound clip that starts at the specified time
 	/// and contains the whole sound without any cropping or
 	/// speed up/slow down.
-	pub fn new(sound_id: SoundId, clip_start_time: f64) -> Self {
+	pub fn new(sound_id: impl Into<SoundId>, clip_start_time: f64) -> Self {
+		let sound_id: SoundId = sound_id.into();
 		Self {
 			sound_id,
 			clip_time_range: (clip_start_time, clip_start_time + sound_id.duration()),
