@@ -24,7 +24,7 @@ use crate::{
 	mixer::{
 		effect::{Effect, EffectId, EffectSettings},
 		effect_slot::EffectSlot,
-		SubTrackId, Track, TrackIndex, TrackSettings,
+		SubTrackId, Track, TrackHandle, TrackIndex, TrackSettings,
 	},
 	parameter::{ParameterHandle, ParameterId},
 	playable::PlayableSettings,
@@ -397,61 +397,22 @@ impl AudioManager {
 	}
 
 	/// Creates a mixer sub-track.
-	pub fn add_sub_track(&mut self, settings: TrackSettings) -> AudioResult<SubTrackId> {
+	pub fn add_sub_track(&mut self, settings: TrackSettings) -> AudioResult<TrackHandle> {
 		let id = SubTrackId::new();
 		self.thread_channels
 			.command_sender
 			.push(MixerCommand::AddSubTrack(id, Track::new(settings)).into())?;
-		Ok(id)
+		Ok(TrackHandle::new(
+			id.into(),
+			self.thread_channels.command_sender.clone(),
+		))
 	}
 
 	/// Removes a sub-track from the mixer.
 	pub fn remove_sub_track(&mut self, id: SubTrackId) -> AudioResult<()> {
 		self.thread_channels
 			.command_sender
-			.push(MixerCommand::RemoveSubTrack(id).into())
-	}
-
-	/// Adds an effect to a track.
-	pub fn add_effect_to_track<T: Into<TrackIndex> + Copy, E: Effect + 'static>(
-		&mut self,
-		track_index: T,
-		effect: E,
-		settings: EffectSettings,
-	) -> AudioResult<EffectId> {
-		let effect_id = EffectId::new(track_index.into());
-		self.thread_channels.command_sender.push(
-			MixerCommand::AddEffect(track_index.into(), effect_id, Box::new(effect), settings)
-				.into(),
-		)?;
-		Ok(effect_id)
-	}
-
-	/// Removes an effect from the mixer.
-	pub fn remove_effect(&mut self, effect_id: EffectId) -> AudioResult<()> {
-		self.thread_channels
-			.command_sender
-			.push(MixerCommand::RemoveEffect(effect_id).into())
-	}
-
-	/// Starts an audio stream on the specified track.
-	pub fn add_stream<T: Into<TrackIndex>, S: AudioStream>(
-		&mut self,
-		track_index: T,
-		stream: S,
-	) -> AudioResult<AudioStreamId> {
-		let stream_id = AudioStreamId::new();
-		self.thread_channels
-			.command_sender
-			.push(StreamCommand::AddStream(stream_id, track_index.into(), Box::new(stream)).into())
-			.map(|()| stream_id)
-	}
-
-	/// Stops and drops the specified audio stream.
-	pub fn remove_stream(&mut self, stream_id: AudioStreamId) -> AudioResult<()> {
-		self.thread_channels
-			.command_sender
-			.push(StreamCommand::RemoveStream(stream_id).into())
+			.push(MixerCommand::RemoveSubTrack(id.into()).into())
 	}
 
 	/// Adds a group.

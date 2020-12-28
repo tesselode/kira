@@ -5,4 +5,4 @@ pub(crate) mod effect_slot;
 mod track;
 
 pub(crate) use track::Track;
-pub use track::{SubTrackId, TrackIndex, TrackSettings};
+pub use track::{SubTrackId, TrackHandle, TrackIndex, TrackSettings};
