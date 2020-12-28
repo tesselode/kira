@@ -7,7 +7,7 @@ use crate::{
 use super::mixer::Mixer;
 
 use indexmap::IndexMap;
-use ringbuf::Producer;
+use ringbuf::Sender;
 
 pub(crate) struct Streams {
 	streams: IndexMap<AudioStreamId, (TrackIndex, Box<dyn AudioStream>)>,
@@ -23,7 +23,7 @@ impl Streams {
 	pub fn run_command(
 		&mut self,
 		command: StreamCommand,
-		unloader: &mut Producer<Box<dyn AudioStream>>,
+		unloader: &mut Sender<Box<dyn AudioStream>>,
 	) {
 		match command {
 			StreamCommand::AddStream(stream_id, track_id, stream) => {

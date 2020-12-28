@@ -13,7 +13,7 @@ use crate::{
 	arrangement::{Arrangement, ArrangementHandle, ArrangementId},
 	audio_stream::{AudioStream, AudioStreamId},
 	command::{
-		producer::CommandProducer, GroupCommand, InstanceCommand, MetronomeCommand, MixerCommand,
+		sender::CommandSender, GroupCommand, InstanceCommand, MetronomeCommand, MixerCommand,
 		ParameterCommand, ResourceCommand, SequenceCommand, StreamCommand,
 	},
 	error::{AudioError, AudioResult},
@@ -39,7 +39,7 @@ use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	Stream,
 };
-use ringbuf::{Consumer, Producer, RingBuffer};
+use ringbuf::{Receiver, RingBuffer, Sender};
 
 use self::backend::BackendThreadChannels;
 
@@ -97,16 +97,16 @@ impl Default for AudioManagerSettings {
 }
 
 pub(crate) struct AudioManagerThreadChannels {
-	pub quit_signal_producer: Producer<bool>,
-	pub command_producer: CommandProducer,
-	pub event_consumer: Consumer<Event>,
-	pub sounds_to_unload_consumer: Consumer<Sound>,
-	pub arrangements_to_unload_consumer: Consumer<Arrangement>,
-	pub sequence_instances_to_unload_consumer: Consumer<SequenceInstance>,
-	pub tracks_to_unload_consumer: Consumer<Track>,
-	pub effect_slots_to_unload_consumer: Consumer<EffectSlot>,
-	pub groups_to_unload_consumer: Consumer<Group>,
-	pub streams_to_unload_consumer: Consumer<Box<dyn AudioStream>>,
+	pub quit_signal_sender: Sender<bool>,
+	pub command_sender: CommandSender,
+	pub event_receiver: Receiver<Event>,
+	pub sounds_to_unload_receiver: Receiver<Sound>,
+	pub arrangements_to_unload_receiver: Receiver<Arrangement>,
+	pub sequence_instances_to_unload_receiver: Receiver<SequenceInstance>,
+	pub tracks_to_unload_receiver: Receiver<Track>,
+	pub effect_slots_to_unload_receiver: Receiver<EffectSlot>,
+	pub groups_to_unload_receiver: Receiver<Group>,
+	pub streams_to_unload_receiver: Receiver<Box<dyn AudioStream>>,
 }
 
 /**
@@ -125,34 +125,34 @@ pub struct AudioManager {
 impl AudioManager {
 	/// Creates a new audio manager and starts an audio thread.
 	pub fn new(settings: AudioManagerSettings) -> AudioResult<Self> {
-		let (audio_manager_thread_channels, backend_thread_channels, mut quit_signal_consumer) =
+		let (audio_manager_thread_channels, backend_thread_channels, mut quit_signal_receiver) =
 			Self::create_thread_channels(&settings);
 
 		let stream = {
-			let (mut setup_result_producer, mut setup_result_consumer) =
+			let (mut setup_result_sender, mut setup_result_receiver) =
 				RingBuffer::<AudioResult<()>>::new(1).split();
 			// set up a cpal stream on a new thread. we could do this on the main thread,
 			// but that causes issues with LÖVE.
 			std::thread::spawn(move || {
 				match Self::setup_stream(settings, backend_thread_channels) {
 					Ok(_stream) => {
-						setup_result_producer.push(Ok(())).unwrap();
+						setup_result_sender.push(Ok(())).unwrap();
 						// wait for a quit message before ending the thread and dropping
 						// the stream
-						while let None = quit_signal_consumer.pop() {
+						while let None = quit_signal_receiver.pop() {
 							std::thread::sleep(std::time::Duration::from_secs_f64(
 								WRAPPER_THREAD_SLEEP_DURATION,
 							));
 						}
 					}
 					Err(error) => {
-						setup_result_producer.push(Err(error)).unwrap();
+						setup_result_sender.push(Err(error)).unwrap();
 					}
 				}
 			});
 			// wait for the audio thread to report back a result
 			loop {
-				if let Some(result) = setup_result_consumer.pop() {
+				if let Some(result) = setup_result_receiver.pop() {
 					match result {
 						Ok(_) => break,
 						Err(error) => return Err(error),
@@ -174,52 +174,52 @@ impl AudioManager {
 	) -> (
 		AudioManagerThreadChannels,
 		BackendThreadChannels,
-		Consumer<bool>,
+		Receiver<bool>,
 	) {
-		let (quit_signal_producer, quit_signal_consumer) = RingBuffer::new(1).split();
-		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
-		let (sounds_to_unload_producer, sounds_to_unload_consumer) =
+		let (quit_signal_sender, quit_signal_receiver) = RingBuffer::new(1).split();
+		let (command_sender, command_receiver) = RingBuffer::new(settings.num_commands).split();
+		let (sounds_to_unload_sender, sounds_to_unload_receiver) =
 			RingBuffer::new(settings.num_sounds).split();
-		let (arrangements_to_unload_producer, arrangements_to_unload_consumer) =
+		let (arrangements_to_unload_sender, arrangements_to_unload_receiver) =
 			RingBuffer::new(settings.num_arrangements).split();
-		let (sequence_instances_to_unload_producer, sequence_instances_to_unload_consumer) =
+		let (sequence_instances_to_unload_sender, sequence_instances_to_unload_receiver) =
 			RingBuffer::new(settings.num_sequences).split();
-		let (tracks_to_unload_producer, tracks_to_unload_consumer) =
+		let (tracks_to_unload_sender, tracks_to_unload_receiver) =
 			RingBuffer::new(settings.num_tracks).split();
-		let (effect_slots_to_unload_producer, effect_slots_to_unload_consumer) =
+		let (effect_slots_to_unload_sender, effect_slots_to_unload_receiver) =
 			RingBuffer::new(settings.num_tracks * settings.num_effects_per_track).split();
-		let (groups_to_unload_producer, groups_to_unload_consumer) =
+		let (groups_to_unload_sender, groups_to_unload_receiver) =
 			RingBuffer::new(settings.num_groups).split();
-		let (event_producer, event_consumer) = RingBuffer::new(settings.num_events).split();
-		let (streams_to_unload_producer, streams_to_unload_consumer) =
+		let (event_sender, event_receiver) = RingBuffer::new(settings.num_events).split();
+		let (streams_to_unload_sender, streams_to_unload_receiver) =
 			RingBuffer::new(settings.num_streams).split();
 		let audio_manager_thread_channels = AudioManagerThreadChannels {
-			quit_signal_producer,
-			command_producer: CommandProducer::new(command_producer),
-			event_consumer,
-			sounds_to_unload_consumer,
-			arrangements_to_unload_consumer,
-			sequence_instances_to_unload_consumer,
-			tracks_to_unload_consumer,
-			effect_slots_to_unload_consumer,
-			groups_to_unload_consumer,
-			streams_to_unload_consumer,
+			quit_signal_sender,
+			command_sender: CommandSender::new(command_sender),
+			event_receiver,
+			sounds_to_unload_receiver,
+			arrangements_to_unload_receiver,
+			sequence_instances_to_unload_receiver,
+			tracks_to_unload_receiver,
+			effect_slots_to_unload_receiver,
+			groups_to_unload_receiver,
+			streams_to_unload_receiver,
 		};
 		let backend_thread_channels = BackendThreadChannels {
-			command_consumer,
-			event_producer,
-			sounds_to_unload_producer,
-			arrangements_to_unload_producer,
-			sequence_instances_to_unload_producer,
-			tracks_to_unload_producer,
-			effect_slots_to_unload_producer,
-			groups_to_unload_producer,
-			streams_to_unload_producer,
+			command_receiver,
+			event_sender,
+			sounds_to_unload_sender,
+			arrangements_to_unload_sender,
+			sequence_instances_to_unload_sender,
+			tracks_to_unload_sender,
+			effect_slots_to_unload_sender,
+			groups_to_unload_sender,
+			streams_to_unload_sender,
 		};
 		(
 			audio_manager_thread_channels,
 			backend_thread_channels,
-			quit_signal_consumer,
+			quit_signal_receiver,
 		)
 	}
 
@@ -278,11 +278,11 @@ impl AudioManager {
 	pub fn add_sound(&mut self, sound: Sound) -> AudioResult<SoundHandle> {
 		let id = SoundId::new(&sound);
 		self.thread_channels
-			.command_producer
+			.command_sender
 			.push(ResourceCommand::AddSound(id, sound).into())?;
 		Ok(SoundHandle::new(
 			id,
-			self.thread_channels.command_producer.clone(),
+			self.thread_channels.command_sender.clone(),
 		))
 	}
 
@@ -303,28 +303,28 @@ impl AudioManager {
 	pub fn add_arrangement(&mut self, arrangement: Arrangement) -> AudioResult<ArrangementHandle> {
 		let id = ArrangementId::new(&arrangement);
 		self.thread_channels
-			.command_producer
+			.command_sender
 			.push(ResourceCommand::AddArrangement(id, arrangement).into())?;
 		Ok(ArrangementHandle::new(
 			id,
-			self.thread_channels.command_producer.clone(),
+			self.thread_channels.command_sender.clone(),
 		))
 	}
 
 	/// Frees resources that are no longer in use, such as unloaded sounds
 	/// or finished sequences.
 	pub fn free_unused_resources(&mut self) {
-		while let Some(_) = self.thread_channels.sounds_to_unload_consumer.pop() {}
-		while let Some(_) = self.thread_channels.arrangements_to_unload_consumer.pop() {}
+		while let Some(_) = self.thread_channels.sounds_to_unload_receiver.pop() {}
+		while let Some(_) = self.thread_channels.arrangements_to_unload_receiver.pop() {}
 		while let Some(_) = self
 			.thread_channels
-			.sequence_instances_to_unload_consumer
+			.sequence_instances_to_unload_receiver
 			.pop()
 		{}
-		while let Some(_) = self.thread_channels.tracks_to_unload_consumer.pop() {}
-		while let Some(_) = self.thread_channels.effect_slots_to_unload_consumer.pop() {}
-		while let Some(_) = self.thread_channels.groups_to_unload_consumer.pop() {}
-		while let Some(_) = self.thread_channels.streams_to_unload_consumer.pop() {}
+		while let Some(_) = self.thread_channels.tracks_to_unload_receiver.pop() {}
+		while let Some(_) = self.thread_channels.effect_slots_to_unload_receiver.pop() {}
+		while let Some(_) = self.thread_channels.groups_to_unload_receiver.pop() {}
+		while let Some(_) = self.thread_channels.streams_to_unload_receiver.pop() {}
 	}
 
 	/// Sets the tempo of the metronome.
@@ -333,28 +333,28 @@ impl AudioManager {
 		tempo: T,
 	) -> Result<(), AudioError> {
 		self.thread_channels
-			.command_producer
+			.command_sender
 			.push(MetronomeCommand::SetMetronomeTempo(tempo.into()).into())
 	}
 
 	/// Starts or resumes the metronome.
 	pub fn start_metronome(&mut self) -> Result<(), AudioError> {
 		self.thread_channels
-			.command_producer
+			.command_sender
 			.push(MetronomeCommand::StartMetronome.into())
 	}
 
 	/// Pauses the metronome.
 	pub fn pause_metronome(&mut self) -> Result<(), AudioError> {
 		self.thread_channels
-			.command_producer
+			.command_sender
 			.push(MetronomeCommand::PauseMetronome.into())
 	}
 
 	/// Stops and resets the metronome.
 	pub fn stop_metronome(&mut self) -> Result<(), AudioError> {
 		self.thread_channels
-			.command_producer
+			.command_sender
 			.push(MetronomeCommand::StopMetronome.into())
 	}
 
@@ -367,9 +367,9 @@ impl AudioManager {
 		sequence.validate()?;
 		let id = SequenceInstanceId::new();
 		let (instance, handle) =
-			sequence.create_instance(settings, id, self.thread_channels.command_producer.clone());
+			sequence.create_instance(settings, id, self.thread_channels.command_sender.clone());
 		self.thread_channels
-			.command_producer
+			.command_sender
 			.push(SequenceCommand::StartSequenceInstance(id, instance).into())?;
 		Ok(handle)
 	}
@@ -378,11 +378,11 @@ impl AudioManager {
 	pub fn add_parameter(&mut self, value: f64) -> AudioResult<ParameterHandle> {
 		let id = ParameterId::new();
 		self.thread_channels
-			.command_producer
+			.command_sender
 			.push(ParameterCommand::AddParameter(id, value).into())?;
 		Ok(ParameterHandle::new(
 			id,
-			self.thread_channels.command_producer.clone(),
+			self.thread_channels.command_sender.clone(),
 		))
 	}
 
@@ -390,7 +390,7 @@ impl AudioManager {
 	pub fn add_sub_track(&mut self, settings: TrackSettings) -> AudioResult<SubTrackId> {
 		let id = SubTrackId::new();
 		self.thread_channels
-			.command_producer
+			.command_sender
 			.push(MixerCommand::AddSubTrack(id, Track::new(settings)).into())?;
 		Ok(id)
 	}
@@ -398,7 +398,7 @@ impl AudioManager {
 	/// Removes a sub-track from the mixer.
 	pub fn remove_sub_track(&mut self, id: SubTrackId) -> AudioResult<()> {
 		self.thread_channels
-			.command_producer
+			.command_sender
 			.push(MixerCommand::RemoveSubTrack(id).into())
 	}
 
@@ -410,7 +410,7 @@ impl AudioManager {
 		settings: EffectSettings,
 	) -> AudioResult<EffectId> {
 		let effect_id = EffectId::new(track_index.into());
-		self.thread_channels.command_producer.push(
+		self.thread_channels.command_sender.push(
 			MixerCommand::AddEffect(track_index.into(), effect_id, Box::new(effect), settings)
 				.into(),
 		)?;
@@ -420,7 +420,7 @@ impl AudioManager {
 	/// Removes an effect from the mixer.
 	pub fn remove_effect(&mut self, effect_id: EffectId) -> AudioResult<()> {
 		self.thread_channels
-			.command_producer
+			.command_sender
 			.push(MixerCommand::RemoveEffect(effect_id).into())
 	}
 
@@ -432,7 +432,7 @@ impl AudioManager {
 	) -> AudioResult<AudioStreamId> {
 		let stream_id = AudioStreamId::new();
 		self.thread_channels
-			.command_producer
+			.command_sender
 			.push(StreamCommand::AddStream(stream_id, track_index.into(), Box::new(stream)).into())
 			.map(|()| stream_id)
 	}
@@ -440,7 +440,7 @@ impl AudioManager {
 	/// Stops and drops the specified audio stream.
 	pub fn remove_stream(&mut self, stream_id: AudioStreamId) -> AudioResult<()> {
 		self.thread_channels
-			.command_producer
+			.command_sender
 			.push(StreamCommand::RemoveStream(stream_id).into())
 	}
 
@@ -449,7 +449,7 @@ impl AudioManager {
 		let id = GroupId::new();
 		let group = Group::new(index_set_from_vec(parent_groups.into()));
 		self.thread_channels
-			.command_producer
+			.command_sender
 			.push(GroupCommand::AddGroup(id, group).into())?;
 		Ok(id)
 	}
@@ -457,17 +457,17 @@ impl AudioManager {
 	/// Removes a group.
 	pub fn remove_group(&mut self, id: GroupId) -> AudioResult<()> {
 		self.thread_channels
-			.command_producer
+			.command_sender
 			.push(GroupCommand::RemoveGroup(id).into())
 	}
 
 	/// Pauses all instances of sounds, arrangements, and sequences in a group.
 	pub fn pause_group(&mut self, id: GroupId, settings: PauseInstanceSettings) -> AudioResult<()> {
 		self.thread_channels
-			.command_producer
+			.command_sender
 			.push(InstanceCommand::PauseGroup(id, settings).into())?;
 		self.thread_channels
-			.command_producer
+			.command_sender
 			.push(SequenceCommand::PauseGroup(id).into())?;
 		Ok(())
 	}
@@ -479,10 +479,10 @@ impl AudioManager {
 		settings: ResumeInstanceSettings,
 	) -> AudioResult<()> {
 		self.thread_channels
-			.command_producer
+			.command_sender
 			.push(InstanceCommand::ResumeGroup(id, settings).into())?;
 		self.thread_channels
-			.command_producer
+			.command_sender
 			.push(SequenceCommand::ResumeGroup(id).into())?;
 		Ok(())
 	}
@@ -490,25 +490,22 @@ impl AudioManager {
 	/// Stops all instances of sounds, arrangements, and sequences in a group.
 	pub fn stop_group(&mut self, id: GroupId, settings: StopInstanceSettings) -> AudioResult<()> {
 		self.thread_channels
-			.command_producer
+			.command_sender
 			.push(InstanceCommand::StopGroup(id, settings).into())?;
 		self.thread_channels
-			.command_producer
+			.command_sender
 			.push(SequenceCommand::StopGroup(id).into())?;
 		Ok(())
 	}
 
 	/// Pops an event that was sent by the audio thread.
 	pub fn pop_event(&mut self) -> Option<Event> {
-		self.thread_channels.event_consumer.pop()
+		self.thread_channels.event_receiver.pop()
 	}
 }
 
 impl Drop for AudioManager {
 	fn drop(&mut self) {
-		self.thread_channels
-			.quit_signal_producer
-			.push(true)
-			.unwrap();
+		self.thread_channels.quit_signal_sender.push(true).unwrap();
 	}
 }

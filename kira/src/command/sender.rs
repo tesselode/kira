@@ -1,23 +1,23 @@
 use std::{cell::RefCell, rc::Rc};
 
-use ringbuf::Producer;
+use ringbuf::Sender;
 
 use crate::{command::Command, AudioError, AudioResult};
 
 #[derive(Clone)]
-pub(crate) struct CommandProducer {
-	producer: Rc<RefCell<Producer<Command>>>,
+pub(crate) struct CommandSender {
+	sender: Rc<RefCell<Sender<Command>>>,
 }
 
-impl CommandProducer {
-	pub fn new(producer: Producer<Command>) -> Self {
+impl CommandSender {
+	pub fn new(sender: Sender<Command>) -> Self {
 		Self {
-			producer: Rc::new(RefCell::new(producer)),
+			sender: Rc::new(RefCell::new(sender)),
 		}
 	}
 
 	pub fn push(&mut self, command: Command) -> AudioResult<()> {
-		self.producer
+		self.sender
 			.try_borrow_mut()
 			.map_err(|_| AudioError::CommandQueueBorrowed)?
 			.push(command)

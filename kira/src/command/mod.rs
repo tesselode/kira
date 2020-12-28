@@ -1,4 +1,4 @@
-pub(crate) mod producer;
+pub(crate) mod sender;
 
 use crate::{
 	arrangement::{Arrangement, ArrangementId},

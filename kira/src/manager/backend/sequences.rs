@@ -6,7 +6,7 @@ use crate::{
 	sequence::{SequenceInstance, SequenceInstanceId, SequenceOutputCommand},
 };
 use indexmap::IndexMap;
-use ringbuf::Producer;
+use ringbuf::Sender;
 use std::vec::Drain;
 
 pub(crate) struct Sequences {
@@ -89,7 +89,7 @@ impl Sequences {
 		&mut self,
 		dt: f64,
 		metronome: &Metronome,
-		sequences_to_unload_producer: &mut Producer<SequenceInstance>,
+		sequences_to_unload_sender: &mut Sender<SequenceInstance>,
 	) -> Drain<Command> {
 		// update sequences and process their commands
 		for (id, sequence_instance) in &mut self.sequence_instances {
@@ -173,7 +173,7 @@ impl Sequences {
 		// remove finished sequences
 		for id in self.sequence_instances_to_remove.drain(..) {
 			let instance = self.sequence_instances.remove(&id).unwrap();
-			match sequences_to_unload_producer.push(instance) {
+			match sequences_to_unload_sender.push(instance) {
 				Ok(_) => {}
 				Err(instance) => {
 					self.sequence_instances.insert(id, instance);

@@ -167,7 +167,7 @@ use ringbuf::RingBuffer;
 use std::{hash::Hash, vec};
 
 use crate::{
-	command::producer::CommandProducer,
+	command::sender::CommandSender,
 	group::{groups::Groups, GroupId},
 	instance::{
 		InstanceId, InstanceSettings, PauseInstanceSettings, ResumeInstanceSettings,
@@ -545,17 +545,16 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 		&self,
 		settings: SequenceInstanceSettings,
 		id: SequenceInstanceId,
-		command_producer: CommandProducer,
+		command_sender: CommandSender,
 	) -> (SequenceInstance, SequenceInstanceHandle<CustomEvent>) {
 		let (raw_sequence, events) = self.into_raw_sequence();
-		let (event_producer, event_consumer) =
-			RingBuffer::new(settings.event_queue_capacity).split();
-		let instance = SequenceInstance::new(raw_sequence, event_producer);
+		let (event_sender, event_receiver) = RingBuffer::new(settings.event_queue_capacity).split();
+		let instance = SequenceInstance::new(raw_sequence, event_sender);
 		let handle = SequenceInstanceHandle::new(
 			id,
 			instance.public_state(),
-			command_producer,
-			event_consumer,
+			command_sender,
+			event_receiver,
 			events,
 		);
 		(instance, handle)

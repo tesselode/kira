@@ -1,5 +1,5 @@
 use crate::{
-	command::{producer::CommandProducer, ParameterCommand},
+	command::{sender::CommandSender, ParameterCommand},
 	AudioResult,
 };
 
@@ -7,14 +7,14 @@ use super::{ParameterId, Tween};
 
 pub struct ParameterHandle {
 	id: ParameterId,
-	command_producer: CommandProducer,
+	command_sender: CommandSender,
 }
 
 impl ParameterHandle {
-	pub(crate) fn new(id: ParameterId, command_producer: CommandProducer) -> Self {
+	pub(crate) fn new(id: ParameterId, command_sender: CommandSender) -> Self {
 		Self {
 			id,
-			command_producer,
+			command_sender,
 		}
 	}
 
@@ -23,12 +23,12 @@ impl ParameterHandle {
 	}
 
 	pub fn remove(&mut self) -> AudioResult<()> {
-		self.command_producer
+		self.command_sender
 			.push(ParameterCommand::RemoveParameter(self.id).into())
 	}
 
 	pub fn set(&mut self, value: f64, tween: impl Into<Option<Tween>>) -> AudioResult<()> {
-		self.command_producer
+		self.command_sender
 			.push(ParameterCommand::SetParameter(self.id, value, tween.into()).into())
 	}
 }

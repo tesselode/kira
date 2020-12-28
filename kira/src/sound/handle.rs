@@ -1,5 +1,5 @@
 use crate::{
-	command::{producer::CommandProducer, InstanceCommand, ResourceCommand},
+	command::{sender::CommandSender, InstanceCommand, ResourceCommand},
 	instance::{
 		Instance, InstanceHandle, InstanceId, InstanceSettings, PauseInstanceSettings,
 		ResumeInstanceSettings, StopInstanceSettings,
@@ -13,15 +13,12 @@ use super::SoundId;
 #[derive(Clone)]
 pub struct SoundHandle {
 	id: SoundId,
-	command_producer: CommandProducer,
+	command_sender: CommandSender,
 }
 
 impl SoundHandle {
-	pub(crate) fn new(id: SoundId, command_producer: CommandProducer) -> Self {
-		Self {
-			id,
-			command_producer,
-		}
+	pub(crate) fn new(id: SoundId, command_sender: CommandSender) -> Self {
+		Self { id, command_sender }
 	}
 
 	pub fn id(&self) -> SoundId {
@@ -50,31 +47,31 @@ impl SoundHandle {
 		let handle = InstanceHandle::new(
 			instance_id,
 			instance.public_state(),
-			self.command_producer.clone(),
+			self.command_sender.clone(),
 		);
-		self.command_producer
+		self.command_sender
 			.push(InstanceCommand::Play(instance_id, instance).into())
 			.map(|()| handle)
 	}
 
 	pub fn pause(&mut self, settings: PauseInstanceSettings) -> AudioResult<()> {
-		self.command_producer
+		self.command_sender
 			.push(InstanceCommand::PauseInstancesOf(self.id.into(), settings).into())
 	}
 
 	pub fn resume(&mut self, settings: ResumeInstanceSettings) -> AudioResult<()> {
-		self.command_producer
+		self.command_sender
 			.push(InstanceCommand::ResumeInstancesOf(self.id.into(), settings).into())
 	}
 
 	pub fn stop(&mut self, settings: StopInstanceSettings) -> AudioResult<()> {
-		self.command_producer
+		self.command_sender
 			.push(InstanceCommand::StopInstancesOf(self.id.into(), settings).into())
 	}
 
 	pub fn unload(&mut self) -> AudioResult<()> {
 		self.stop(Default::default())?;
-		self.command_producer
+		self.command_sender
 			.push(ResourceCommand::RemoveSound(self.id).into())
 	}
 }

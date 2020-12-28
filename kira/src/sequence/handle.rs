@@ -2,10 +2,10 @@ use std::{cell::RefCell, rc::Rc, sync::Arc};
 
 use atomic::{Atomic, Ordering};
 use indexmap::IndexSet;
-use ringbuf::Consumer;
+use ringbuf::Receiver;
 
 use crate::{
-	command::{producer::CommandProducer, InstanceCommand, SequenceCommand},
+	command::{sender::CommandSender, InstanceCommand, SequenceCommand},
 	instance::{PauseInstanceSettings, ResumeInstanceSettings, StopInstanceSettings},
 	AudioError, AudioResult,
 };
@@ -15,8 +15,8 @@ use super::{SequenceInstanceId, SequenceInstanceState};
 pub struct SequenceInstanceHandle<CustomEvent> {
 	id: SequenceInstanceId,
 	state: Arc<Atomic<SequenceInstanceState>>,
-	command_producer: CommandProducer,
-	raw_event_consumer: Rc<RefCell<Consumer<usize>>>,
+	command_sender: CommandSender,
+	raw_event_receiver: Rc<RefCell<Receiver<usize>>>,
 	events: IndexSet<CustomEvent>,
 }
 
@@ -24,15 +24,15 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 	pub(crate) fn new(
 		id: SequenceInstanceId,
 		state: Arc<Atomic<SequenceInstanceState>>,
-		command_producer: CommandProducer,
-		raw_event_consumer: Consumer<usize>,
+		command_sender: CommandSender,
+		raw_event_receiver: Receiver<usize>,
 		events: IndexSet<CustomEvent>,
 	) -> Self {
 		Self {
 			id,
 			state,
-			command_producer,
-			raw_event_consumer: Rc::new(RefCell::new(raw_event_consumer)),
+			command_sender,
+			raw_event_receiver: Rc::new(RefCell::new(raw_event_receiver)),
 			events,
 		}
 	}
@@ -46,27 +46,27 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 	}
 
 	pub fn mute(&mut self) -> AudioResult<()> {
-		self.command_producer
+		self.command_sender
 			.push(SequenceCommand::MuteSequenceInstance(self.id).into())
 	}
 
 	pub fn unmute(&mut self) -> AudioResult<()> {
-		self.command_producer
+		self.command_sender
 			.push(SequenceCommand::UnmuteSequenceInstance(self.id).into())
 	}
 
 	pub fn pause(&mut self) -> AudioResult<()> {
-		self.command_producer
+		self.command_sender
 			.push(SequenceCommand::PauseSequenceInstance(self.id).into())
 	}
 
 	pub fn resume(&mut self) -> AudioResult<()> {
-		self.command_producer
+		self.command_sender
 			.push(SequenceCommand::ResumeSequenceInstance(self.id).into())
 	}
 
 	pub fn stop(&mut self) -> AudioResult<()> {
-		self.command_producer
+		self.command_sender
 			.push(SequenceCommand::StopSequenceInstance(self.id).into())
 	}
 
@@ -74,9 +74,9 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 		&mut self,
 		settings: PauseInstanceSettings,
 	) -> AudioResult<()> {
-		self.command_producer
+		self.command_sender
 			.push(SequenceCommand::PauseSequenceInstance(self.id).into())?;
-		self.command_producer
+		self.command_sender
 			.push(InstanceCommand::PauseInstancesOfSequence(self.id, settings).into())?;
 		Ok(())
 	}
@@ -85,9 +85,9 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 		&mut self,
 		settings: ResumeInstanceSettings,
 	) -> AudioResult<()> {
-		self.command_producer
+		self.command_sender
 			.push(SequenceCommand::ResumeSequenceInstance(self.id).into())?;
-		self.command_producer
+		self.command_sender
 			.push(InstanceCommand::ResumeInstancesOfSequence(self.id, settings).into())?;
 		Ok(())
 	}
@@ -96,9 +96,9 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 		&mut self,
 		settings: StopInstanceSettings,
 	) -> AudioResult<()> {
-		self.command_producer
+		self.command_sender
 			.push(SequenceCommand::StopSequenceInstance(self.id).into())?;
-		self.command_producer
+		self.command_sender
 			.push(InstanceCommand::StopInstancesOfSequence(self.id, settings).into())?;
 		Ok(())
 	}
@@ -108,7 +108,7 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 	pub fn pop_event(&mut self) -> AudioResult<Option<&CustomEvent>> {
 		Ok(
 			match self
-				.raw_event_consumer
+				.raw_event_receiver
 				.try_borrow_mut()
 				.map_err(|_| AudioError::EventReceiverBorrowed)?
 				.pop()

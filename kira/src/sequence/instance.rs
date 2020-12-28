@@ -5,7 +5,7 @@ use std::sync::{
 
 use atomic::Atomic;
 use nanorand::{tls_rng, RNG};
-use ringbuf::Producer;
+use ringbuf::Sender;
 
 use crate::{
 	group::{groups::Groups, GroupId},
@@ -52,11 +52,11 @@ pub struct SequenceInstance {
 	position: usize,
 	wait_timer: Option<f64>,
 	muted: bool,
-	event_producer: Producer<usize>,
+	event_sender: Sender<usize>,
 }
 
 impl SequenceInstance {
-	pub fn new(sequence: RawSequence, event_producer: Producer<usize>) -> Self {
+	pub fn new(sequence: RawSequence, event_sender: Sender<usize>) -> Self {
 		Self {
 			sequence,
 			state: SequenceInstanceState::Playing,
@@ -64,7 +64,7 @@ impl SequenceInstance {
 			position: 0,
 			wait_timer: None,
 			muted: false,
-			event_producer,
+			event_sender,
 		}
 	}
 
@@ -166,7 +166,7 @@ impl SequenceInstance {
 							}
 							SequenceStep::EmitCustomEvent(event) => {
 								if !self.muted {
-									match self.event_producer.push(*event) {
+									match self.event_sender.push(*event) {
 										Ok(_) => {}
 										Err(_) => {}
 									}
