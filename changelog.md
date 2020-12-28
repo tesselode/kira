@@ -6,7 +6,7 @@ Kira now runs on any platform supporting `wasm32` and having a
 `cpal` backend. This means one can now run an instance of Kira
 in a web browser.
 
-# v0.3.0
+# v0.3.0 - December 26th, 2020
 
 ## Per-sequence custom event types
 Previously, custom events emitted by sequences were retrieved
@@ -26,6 +26,12 @@ Audio streams provide a way of sending arbitrary audio data
 to the mixer. Sometimes, you need to play audio that you
 generate in real time, like voice chats. This feature
 lets you do that.
+
+## Groups
+Sounds, arrangements, and sequences can now be grouped so that
+they can all be paused, resumed, or stopped at once. This is
+useful for controlling broad categories of sounds, like gameplay
+sounds or music.
 
 ## Other changes
 - Added `Sequence::play_random`
