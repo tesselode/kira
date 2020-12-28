@@ -12,20 +12,16 @@ use flume::{Receiver, Sender, TryIter};
 
 use crate::{
 	arrangement::{Arrangement, ArrangementHandle, ArrangementId},
-	audio_stream::{AudioStream, AudioStreamId},
+	audio_stream::AudioStream,
 	command::{
 		sender::CommandSender, GroupCommand, InstanceCommand, MetronomeCommand, MixerCommand,
-		ParameterCommand, ResourceCommand, SequenceCommand, StreamCommand,
+		ParameterCommand, ResourceCommand, SequenceCommand,
 	},
 	error::{AudioError, AudioResult},
 	group::{Group, GroupId},
 	instance::{PauseInstanceSettings, ResumeInstanceSettings, StopInstanceSettings},
 	metronome::MetronomeSettings,
-	mixer::{
-		effect::{Effect, EffectId, EffectSettings},
-		effect_slot::EffectSlot,
-		SubTrackId, Track, TrackHandle, TrackIndex, TrackSettings,
-	},
+	mixer::{effect_slot::EffectSlot, SubTrackId, Track, TrackHandle, TrackIndex, TrackSettings},
 	parameter::{ParameterHandle, ParameterId},
 	playable::PlayableSettings,
 	sequence::SequenceInstance,
@@ -300,6 +296,12 @@ impl AudioManager {
 		self.add_sound(sound)
 	}
 
+	pub fn remove_sound(&mut self, id: impl Into<SoundId>) -> AudioResult<()> {
+		self.thread_channels
+			.command_sender
+			.push(ResourceCommand::RemoveSound(id.into()).into())
+	}
+
 	/// Sends a arrangement to the audio thread and returns a handle to the arrangement.
 	pub fn add_arrangement(&mut self, arrangement: Arrangement) -> AudioResult<ArrangementHandle> {
 		let id = ArrangementId::new(&arrangement);
@@ -310,6 +312,12 @@ impl AudioManager {
 			id,
 			self.thread_channels.command_sender.clone(),
 		))
+	}
+
+	pub fn remove_arrangement(&mut self, id: impl Into<ArrangementId>) -> AudioResult<()> {
+		self.thread_channels
+			.command_sender
+			.push(ResourceCommand::RemoveArrangement(id.into()).into())
 	}
 
 	/// Frees resources that are no longer in use, such as unloaded sounds
@@ -394,6 +402,12 @@ impl AudioManager {
 			id,
 			self.thread_channels.command_sender.clone(),
 		))
+	}
+
+	pub fn remove_parameter(&mut self, id: impl Into<ParameterId>) -> AudioResult<()> {
+		self.thread_channels
+			.command_sender
+			.push(ParameterCommand::RemoveParameter(id.into()).into())
 	}
 
 	/// Creates a mixer sub-track.

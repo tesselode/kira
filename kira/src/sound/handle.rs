@@ -68,10 +68,4 @@ impl SoundHandle {
 		self.command_sender
 			.push(InstanceCommand::StopInstancesOf(self.id.into(), settings).into())
 	}
-
-	pub fn unload(&mut self) -> AudioResult<()> {
-		self.stop(Default::default())?;
-		self.command_sender
-			.push(ResourceCommand::RemoveSound(self.id).into())
-	}
 }
