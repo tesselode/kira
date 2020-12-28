@@ -14,12 +14,11 @@ use crate::{
 	arrangement::{Arrangement, ArrangementHandle, ArrangementId},
 	audio_stream::AudioStream,
 	command::{
-		sender::CommandSender, GroupCommand, InstanceCommand, MetronomeCommand, MixerCommand,
-		ParameterCommand, ResourceCommand, SequenceCommand,
+		sender::CommandSender, GroupCommand, MetronomeCommand, MixerCommand, ParameterCommand,
+		ResourceCommand, SequenceCommand,
 	},
 	error::{AudioError, AudioResult},
-	group::{Group, GroupId},
-	instance::{PauseInstanceSettings, ResumeInstanceSettings, StopInstanceSettings},
+	group::{Group, GroupHandle, GroupId},
 	metronome::MetronomeSettings,
 	mixer::{effect_slot::EffectSlot, SubTrackId, Track, TrackHandle, TrackIndex, TrackSettings},
 	parameter::{ParameterHandle, ParameterId},
@@ -430,57 +429,26 @@ impl AudioManager {
 	}
 
 	/// Adds a group.
-	pub fn add_group<T: Into<Vec<GroupId>>>(&mut self, parent_groups: T) -> AudioResult<GroupId> {
+	pub fn add_group<T: Into<Vec<GroupId>>>(
+		&mut self,
+		parent_groups: T,
+	) -> AudioResult<GroupHandle> {
 		let id = GroupId::new();
 		let group = Group::new(index_set_from_vec(parent_groups.into()));
 		self.thread_channels
 			.command_sender
 			.push(GroupCommand::AddGroup(id, group).into())?;
-		Ok(id)
+		Ok(GroupHandle::new(
+			id,
+			self.thread_channels.command_sender.clone(),
+		))
 	}
 
 	/// Removes a group.
-	pub fn remove_group(&mut self, id: GroupId) -> AudioResult<()> {
+	pub fn remove_group(&mut self, id: impl Into<GroupId>) -> AudioResult<()> {
 		self.thread_channels
 			.command_sender
-			.push(GroupCommand::RemoveGroup(id).into())
-	}
-
-	/// Pauses all instances of sounds, arrangements, and sequences in a group.
-	pub fn pause_group(&mut self, id: GroupId, settings: PauseInstanceSettings) -> AudioResult<()> {
-		self.thread_channels
-			.command_sender
-			.push(InstanceCommand::PauseGroup(id, settings).into())?;
-		self.thread_channels
-			.command_sender
-			.push(SequenceCommand::PauseGroup(id).into())?;
-		Ok(())
-	}
-
-	/// Resumes all instances of sounds, arrangements, and sequences in a group.
-	pub fn resume_group(
-		&mut self,
-		id: GroupId,
-		settings: ResumeInstanceSettings,
-	) -> AudioResult<()> {
-		self.thread_channels
-			.command_sender
-			.push(InstanceCommand::ResumeGroup(id, settings).into())?;
-		self.thread_channels
-			.command_sender
-			.push(SequenceCommand::ResumeGroup(id).into())?;
-		Ok(())
-	}
-
-	/// Stops all instances of sounds, arrangements, and sequences in a group.
-	pub fn stop_group(&mut self, id: GroupId, settings: StopInstanceSettings) -> AudioResult<()> {
-		self.thread_channels
-			.command_sender
-			.push(InstanceCommand::StopGroup(id, settings).into())?;
-		self.thread_channels
-			.command_sender
-			.push(SequenceCommand::StopGroup(id).into())?;
-		Ok(())
+			.push(GroupCommand::RemoveGroup(id.into()).into())
 	}
 
 	pub fn event_iter(&mut self) -> TryIter<Event> {

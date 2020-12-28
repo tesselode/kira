@@ -1,5 +1,5 @@
 use crate::{
-	command::{sender::CommandSender, InstanceCommand, ResourceCommand},
+	command::{sender::CommandSender, InstanceCommand},
 	instance::{
 		Instance, InstanceHandle, InstanceId, InstanceSettings, PauseInstanceSettings,
 		ResumeInstanceSettings, StopInstanceSettings,

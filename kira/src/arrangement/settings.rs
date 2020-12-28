@@ -65,6 +65,12 @@ impl LoopArrangementSettings {
 			..self
 		}
 	}
+
+	/// Adds this arrangement to a group.
+	pub fn group(mut self, group: impl Into<GroupId>) -> Self {
+		self.groups.push(group.into());
+		self
+	}
 }
 
 impl Default for LoopArrangementSettings {
