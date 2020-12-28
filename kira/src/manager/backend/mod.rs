@@ -20,9 +20,9 @@ use crate::{
 	sequence::SequenceInstance,
 	sound::{Sound, SoundId},
 };
+use flume::{Receiver, Sender};
 use indexmap::IndexMap;
 use instances::Instances;
-use ringbuf::{Sender, Receiver};
 use sequences::Sequences;
 use streams::Streams;
 
@@ -76,9 +76,8 @@ impl Backend {
 	}
 
 	fn process_commands(&mut self) {
-		while let Some(command) = self.thread_channels.command_receiver.pop() {
-			self.command_queue.push(command);
-		}
+		self.command_queue
+			.extend(self.thread_channels.command_receiver.try_iter());
 		for command in self.command_queue.drain(..) {
 			match command {
 				Command::Resource(command) => match command {
@@ -89,9 +88,10 @@ impl Backend {
 						self.instances
 							.stop_instances_of(Playable::Sound(id), Default::default());
 						if let Some(sound) = self.sounds.remove(&id) {
-							match self.thread_channels.sounds_to_unload_sender.push(sound) {
-								_ => {}
-							}
+							self.thread_channels
+								.sounds_to_unload_sender
+								.try_send(sound)
+								.ok();
 						}
 					}
 					ResourceCommand::AddArrangement(id, arrangement) => {
@@ -101,13 +101,10 @@ impl Backend {
 						self.instances
 							.stop_instances_of(Playable::Arrangement(id), Default::default());
 						if let Some(arrangement) = self.arrangements.remove(&id) {
-							match self
-								.thread_channels
+							self.thread_channels
 								.arrangements_to_unload_sender
-								.push(arrangement)
-							{
-								_ => {}
-							}
+								.try_send(arrangement)
+								.ok();
 						}
 					}
 				},
@@ -137,17 +134,15 @@ impl Backend {
 				}
 				Command::Group(command) => {
 					if let Some(group) = self.groups.run_command(command) {
-						match self.thread_channels.groups_to_unload_sender.push(group) {
-							Ok(_) => {}
-							Err(_) => {}
-						}
+						self.thread_channels
+							.groups_to_unload_sender
+							.try_send(group)
+							.ok();
 					}
 				}
 				Command::Stream(command) => {
-					self.streams.run_command(
-						command,
-						&mut self.thread_channels.streams_to_unload_sender,
-					);
+					self.streams
+						.run_command(command, &mut self.thread_channels.streams_to_unload_sender);
 				}
 			}
 		}
@@ -167,14 +162,10 @@ impl Backend {
 
 	fn update_metronome(&mut self) {
 		for interval in self.metronome.update(self.dt, &self.parameters) {
-			match self
-				.thread_channels
+			self.thread_channels
 				.event_sender
-				.push(Event::MetronomeIntervalPassed(interval))
-			{
-				Ok(_) => {}
-				Err(_) => {}
-			}
+				.try_send(Event::MetronomeIntervalPassed(interval))
+				.ok();
 		}
 	}
 

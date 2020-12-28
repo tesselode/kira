@@ -1,5 +1,5 @@
+use flume::Sender;
 use indexmap::IndexMap;
-use ringbuf::Sender;
 
 use crate::{
 	command::MixerCommand,
@@ -42,9 +42,7 @@ impl Mixer {
 			}
 			MixerCommand::RemoveSubTrack(id) => {
 				if let Some(track) = self.sub_tracks.remove(&id) {
-					match tracks_to_unload_sender.push(track) {
-						_ => {}
-					}
+					tracks_to_unload_sender.try_send(track).ok();
 				}
 			}
 			MixerCommand::RemoveEffect(effect_id) => {
@@ -54,9 +52,7 @@ impl Mixer {
 				};
 				if let Some(track) = track {
 					if let Some(effect_slot) = track.remove_effect(effect_id) {
-						match effect_slots_to_unload_sender.push(effect_slot) {
-							_ => {}
-						}
+						effect_slots_to_unload_sender.try_send(effect_slot).ok();
 					}
 				}
 			}

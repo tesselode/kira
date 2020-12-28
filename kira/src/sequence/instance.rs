@@ -4,8 +4,8 @@ use std::sync::{
 };
 
 use atomic::Atomic;
+use flume::Sender;
 use nanorand::{tls_rng, RNG};
-use ringbuf::Sender;
 
 use crate::{
 	group::{groups::Groups, GroupId},
@@ -166,10 +166,7 @@ impl SequenceInstance {
 							}
 							SequenceStep::EmitCustomEvent(event) => {
 								if !self.muted {
-									match self.event_sender.push(*event) {
-										Ok(_) => {}
-										Err(_) => {}
-									}
+									self.event_sender.try_send(*event).ok();
 								}
 								self.start_step(self.position + 1);
 							}

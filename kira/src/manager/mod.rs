@@ -8,6 +8,7 @@ use std::{hash::Hash, path::Path};
 use backend::Backend;
 #[cfg(feature = "benchmarking")]
 pub use backend::Backend;
+use flume::{Receiver, Sender, TryIter};
 
 use crate::{
 	arrangement::{Arrangement, ArrangementHandle, ArrangementId},
@@ -25,7 +26,7 @@ use crate::{
 		effect_slot::EffectSlot,
 		SubTrackId, Track, TrackIndex, TrackSettings,
 	},
-	parameter::{ParameterHandle, ParameterId, Tween},
+	parameter::{ParameterHandle, ParameterId},
 	playable::PlayableSettings,
 	sequence::SequenceInstance,
 	sequence::{Sequence, SequenceInstanceHandle, SequenceInstanceId, SequenceInstanceSettings},
@@ -39,7 +40,6 @@ use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	Stream,
 };
-use ringbuf::{Receiver, RingBuffer, Sender};
 
 use self::backend::BackendThreadChannels;
 
@@ -125,34 +125,35 @@ pub struct AudioManager {
 impl AudioManager {
 	/// Creates a new audio manager and starts an audio thread.
 	pub fn new(settings: AudioManagerSettings) -> AudioResult<Self> {
-		let (audio_manager_thread_channels, backend_thread_channels, mut quit_signal_receiver) =
+		let (audio_manager_thread_channels, backend_thread_channels, quit_signal_receiver) =
 			Self::create_thread_channels(&settings);
 
 		let stream = {
-			let (mut setup_result_sender, mut setup_result_receiver) =
-				RingBuffer::<AudioResult<()>>::new(1).split();
+			let (setup_result_sender, setup_result_receiver) = flume::bounded(1);
 			// set up a cpal stream on a new thread. we could do this on the main thread,
 			// but that causes issues with LÖVE.
 			std::thread::spawn(move || {
 				match Self::setup_stream(settings, backend_thread_channels) {
 					Ok(_stream) => {
-						setup_result_sender.push(Ok(())).unwrap();
+						setup_result_sender.try_send(Ok(())).unwrap();
 						// wait for a quit message before ending the thread and dropping
 						// the stream
-						while let None = quit_signal_receiver.pop() {
+						while quit_signal_receiver.try_recv().is_err() {
 							std::thread::sleep(std::time::Duration::from_secs_f64(
 								WRAPPER_THREAD_SLEEP_DURATION,
 							));
 						}
 					}
 					Err(error) => {
-						setup_result_sender.push(Err(error)).unwrap();
+						setup_result_sender.try_send(Err(error)).unwrap();
 					}
 				}
 			});
 			// wait for the audio thread to report back a result
 			loop {
-				if let Some(result) = setup_result_receiver.pop() {
+				// TODO: figure out if we need to handle
+				// TryRecvError::Disconnected
+				if let Ok(result) = setup_result_receiver.try_recv() {
 					match result {
 						Ok(_) => break,
 						Err(error) => return Err(error),
@@ -176,23 +177,23 @@ impl AudioManager {
 		BackendThreadChannels,
 		Receiver<bool>,
 	) {
-		let (quit_signal_sender, quit_signal_receiver) = RingBuffer::new(1).split();
-		let (command_sender, command_receiver) = RingBuffer::new(settings.num_commands).split();
+		let (quit_signal_sender, quit_signal_receiver) = flume::bounded(1);
+		let (command_sender, command_receiver) = flume::bounded(settings.num_commands);
 		let (sounds_to_unload_sender, sounds_to_unload_receiver) =
-			RingBuffer::new(settings.num_sounds).split();
+			flume::bounded(settings.num_sounds);
 		let (arrangements_to_unload_sender, arrangements_to_unload_receiver) =
-			RingBuffer::new(settings.num_arrangements).split();
+			flume::bounded(settings.num_arrangements);
 		let (sequence_instances_to_unload_sender, sequence_instances_to_unload_receiver) =
-			RingBuffer::new(settings.num_sequences).split();
+			flume::bounded(settings.num_sequences);
 		let (tracks_to_unload_sender, tracks_to_unload_receiver) =
-			RingBuffer::new(settings.num_tracks).split();
+			flume::bounded(settings.num_tracks);
 		let (effect_slots_to_unload_sender, effect_slots_to_unload_receiver) =
-			RingBuffer::new(settings.num_tracks * settings.num_effects_per_track).split();
+			flume::bounded(settings.num_tracks * settings.num_effects_per_track);
 		let (groups_to_unload_sender, groups_to_unload_receiver) =
-			RingBuffer::new(settings.num_groups).split();
-		let (event_sender, event_receiver) = RingBuffer::new(settings.num_events).split();
+			flume::bounded(settings.num_groups);
+		let (event_sender, event_receiver) = flume::bounded(settings.num_events);
 		let (streams_to_unload_sender, streams_to_unload_receiver) =
-			RingBuffer::new(settings.num_streams).split();
+			flume::bounded(settings.num_streams);
 		let audio_manager_thread_channels = AudioManagerThreadChannels {
 			quit_signal_sender,
 			command_sender: CommandSender::new(command_sender),
@@ -314,17 +315,26 @@ impl AudioManager {
 	/// Frees resources that are no longer in use, such as unloaded sounds
 	/// or finished sequences.
 	pub fn free_unused_resources(&mut self) {
-		while let Some(_) = self.thread_channels.sounds_to_unload_receiver.pop() {}
-		while let Some(_) = self.thread_channels.arrangements_to_unload_receiver.pop() {}
-		while let Some(_) = self
+		for _ in self.thread_channels.sounds_to_unload_receiver.try_iter() {}
+		for _ in self.thread_channels.sounds_to_unload_receiver.try_iter() {}
+		for _ in self
+			.thread_channels
+			.arrangements_to_unload_receiver
+			.try_iter()
+		{}
+		for _ in self
 			.thread_channels
 			.sequence_instances_to_unload_receiver
-			.pop()
+			.try_iter()
 		{}
-		while let Some(_) = self.thread_channels.tracks_to_unload_receiver.pop() {}
-		while let Some(_) = self.thread_channels.effect_slots_to_unload_receiver.pop() {}
-		while let Some(_) = self.thread_channels.groups_to_unload_receiver.pop() {}
-		while let Some(_) = self.thread_channels.streams_to_unload_receiver.pop() {}
+		for _ in self.thread_channels.tracks_to_unload_receiver.try_iter() {}
+		for _ in self
+			.thread_channels
+			.effect_slots_to_unload_receiver
+			.try_iter()
+		{}
+		for _ in self.thread_channels.groups_to_unload_receiver.try_iter() {}
+		for _ in self.thread_channels.streams_to_unload_receiver.try_iter() {}
 	}
 
 	/// Sets the tempo of the metronome.
@@ -498,14 +508,14 @@ impl AudioManager {
 		Ok(())
 	}
 
-	/// Pops an event that was sent by the audio thread.
-	pub fn pop_event(&mut self) -> Option<Event> {
-		self.thread_channels.event_receiver.pop()
+	pub fn event_iter(&mut self) -> TryIter<Event> {
+		self.thread_channels.event_receiver.try_iter()
 	}
 }
 
 impl Drop for AudioManager {
 	fn drop(&mut self) {
-		self.thread_channels.quit_signal_sender.push(true).unwrap();
+		// TODO: add proper error handling here without breaking benchmarks
+		self.thread_channels.quit_signal_sender.send(true).ok();
 	}
 }

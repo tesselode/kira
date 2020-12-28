@@ -12,10 +12,7 @@ pub struct ParameterHandle {
 
 impl ParameterHandle {
 	pub(crate) fn new(id: ParameterId, command_sender: CommandSender) -> Self {
-		Self {
-			id,
-			command_sender,
-		}
+		Self { id, command_sender }
 	}
 
 	pub fn id(&self) -> ParameterId {

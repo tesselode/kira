@@ -18,10 +18,7 @@ pub struct ArrangementHandle {
 
 impl ArrangementHandle {
 	pub(crate) fn new(id: ArrangementId, command_sender: CommandSender) -> Self {
-		Self {
-			id,
-			command_sender,
-		}
+		Self { id, command_sender }
 	}
 
 	pub fn id(&self) -> ArrangementId {

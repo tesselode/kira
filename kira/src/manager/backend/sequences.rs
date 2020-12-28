@@ -5,8 +5,8 @@ use crate::{
 	metronome::Metronome,
 	sequence::{SequenceInstance, SequenceInstanceId, SequenceOutputCommand},
 };
+use flume::Sender;
 use indexmap::IndexMap;
-use ringbuf::Sender;
 use std::vec::Drain;
 
 pub(crate) struct Sequences {
@@ -173,12 +173,7 @@ impl Sequences {
 		// remove finished sequences
 		for id in self.sequence_instances_to_remove.drain(..) {
 			let instance = self.sequence_instances.remove(&id).unwrap();
-			match sequences_to_unload_sender.push(instance) {
-				Ok(_) => {}
-				Err(instance) => {
-					self.sequence_instances.insert(id, instance);
-				}
-			}
+			sequences_to_unload_sender.try_send(instance).ok();
 		}
 		self.output_command_queue.drain(..)
 	}

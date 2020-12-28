@@ -6,8 +6,8 @@ use crate::{
 
 use super::mixer::Mixer;
 
+use flume::Sender;
 use indexmap::IndexMap;
-use ringbuf::Sender;
 
 pub(crate) struct Streams {
 	streams: IndexMap<AudioStreamId, (TrackIndex, Box<dyn AudioStream>)>,
@@ -31,7 +31,7 @@ impl Streams {
 			}
 			StreamCommand::RemoveStream(stream_id) => {
 				if let Some((_, stream)) = self.streams.remove(&stream_id) {
-					unloader.push(stream).ok();
+					unloader.try_send(stream).ok();
 				}
 			}
 		}

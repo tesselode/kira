@@ -1,8 +1,8 @@
 use std::{cell::RefCell, rc::Rc, sync::Arc};
 
 use atomic::{Atomic, Ordering};
+use flume::Receiver;
 use indexmap::IndexSet;
-use ringbuf::Receiver;
 
 use crate::{
 	command::{sender::CommandSender, InstanceCommand, SequenceCommand},
@@ -111,9 +111,10 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 				.raw_event_receiver
 				.try_borrow_mut()
 				.map_err(|_| AudioError::EventReceiverBorrowed)?
-				.pop()
+				.try_recv()
+				.ok()
 			{
-				Some(index) => self.events.get_index(index),
+				Some(index) => Some(self.events.get_index(index).unwrap()),
 				None => None,
 			},
 		)

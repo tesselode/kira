@@ -19,9 +19,9 @@ pub enum AudioError {
 	/// The queue that sends signals from the main thread
 	/// to the audio thread is full.
 	CommandQueueFull,
-	/// The queue that sends signals from the main thread
-	/// to the audio thread is already being borrowed.
-	CommandQueueBorrowed,
+	/// The backend cannot receive commands because it no
+	/// longer exists.
+	BackendDisconnected,
 	/// A channel that sends events from the audio thread
 	/// to the main thread is already being borrowed.
 	EventReceiverBorrowed,
@@ -67,8 +67,8 @@ impl Display for AudioError {
 			AudioError::CommandQueueFull => {
 				f.write_str("Cannot send a command to the audio thread because the queue is full")
 			}
-			AudioError::CommandQueueBorrowed => {
-				f.write_str("Cannot send a command to the audio thread because the queue is currently mutably borrowed")
+			AudioError::BackendDisconnected => {
+				f.write_str("The backend cannot receive commands because it no longer exists.")
 			}
 			AudioError::EventReceiverBorrowed => {
 				f.write_str("Cannot pop an event from a receiver because the receiver is currently mutably borrowed")

@@ -1,26 +1,21 @@
-use std::{cell::RefCell, rc::Rc};
-
-use ringbuf::Sender;
+use flume::Sender;
 
 use crate::{command::Command, AudioError, AudioResult};
 
 #[derive(Clone)]
 pub(crate) struct CommandSender {
-	sender: Rc<RefCell<Sender<Command>>>,
+	sender: Sender<Command>,
 }
 
 impl CommandSender {
 	pub fn new(sender: Sender<Command>) -> Self {
-		Self {
-			sender: Rc::new(RefCell::new(sender)),
-		}
+		Self { sender }
 	}
 
 	pub fn push(&mut self, command: Command) -> AudioResult<()> {
-		self.sender
-			.try_borrow_mut()
-			.map_err(|_| AudioError::CommandQueueBorrowed)?
-			.push(command)
-			.map_err(|_| AudioError::CommandQueueFull)
+		self.sender.try_send(command).map_err(|error| match error {
+			flume::TrySendError::Full(_) => AudioError::CommandQueueFull,
+			flume::TrySendError::Disconnected(_) => AudioError::BackendDisconnected,
+		})
 	}
 }
