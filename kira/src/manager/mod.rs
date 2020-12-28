@@ -131,6 +131,7 @@ impl AudioManager {
 		let (audio_manager_thread_channels, backend_thread_channels, mut quit_signal_consumer) =
 			Self::create_thread_channels(&settings);
 
+		#[cfg(not(target_arch = "wasm32"))]
 		let stream = {
 			let (mut setup_result_producer, mut setup_result_consumer) =
 				RingBuffer::<AudioResult<()>>::new(1).split();
@@ -165,6 +166,9 @@ impl AudioManager {
 
 			None
 		};
+
+		#[cfg(target_arch = "wasm32")]
+		let stream = Some(Self::setup_stream(settings, backend_thread_channels)?);
 
 		Ok(Self {
 			thread_channels: audio_manager_thread_channels,
