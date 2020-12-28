@@ -1,8 +1,9 @@
-use std::f32::consts::PI;
+use std::{f32::consts::PI, vec};
 
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion, Fun};
 use kira::{
-	manager::{AudioManager, AudioManagerSettings},
+	instance::InstanceId,
+	manager::{AudioManager, AudioManagerSettings, Backend},
 	playable::PlayableSettings,
 	sound::Sound,
 	Frame,
@@ -27,12 +28,11 @@ fn create_test_sound(num_samples: usize) -> Sound {
 	)
 }
 
-fn instances_benchmark(c: &mut Criterion) {
-	const NUM_INSTANCES: usize = 100_000;
+fn create_manager_with_instances(num_instances: usize) -> (AudioManager, Backend, Vec<InstanceId>) {
 	let (mut audio_manager, mut backend) =
 		AudioManager::new_without_audio_thread(AudioManagerSettings {
-			num_instances: NUM_INSTANCES,
-			num_commands: NUM_INSTANCES,
+			num_instances: num_instances,
+			num_commands: num_instances,
 			..Default::default()
 		})
 		.unwrap();
@@ -40,12 +40,38 @@ fn instances_benchmark(c: &mut Criterion) {
 	let sound_id = audio_manager.add_sound(create_test_sound(48000)).unwrap();
 	backend.process();
 	// start a bunch of instances
-	for _ in 0..NUM_INSTANCES {
-		audio_manager.play(sound_id, Default::default()).unwrap();
-	}
+	let instance_ids = (0..num_instances)
+		.map(|_| audio_manager.play(sound_id, Default::default()).unwrap())
+		.collect();
 	backend.process();
-	// benchmark updating the instances
-	c.bench_function("instances", |b| b.iter(|| backend.process()));
+	(audio_manager, backend, instance_ids)
+}
+
+fn instances_benchmark(c: &mut Criterion) {
+	const NUM_INSTANCES: usize = 100_000;
+	c.bench_functions(
+		"instances",
+		vec![
+			Fun::new("no pitch change", |b, _| {
+				let (_, mut backend, _) = create_manager_with_instances(NUM_INSTANCES);
+				b.iter(|| backend.process());
+			}),
+			Fun::new("with pitch change", |b, _| {
+				let (mut manager, mut backend, instance_ids) =
+					create_manager_with_instances(NUM_INSTANCES);
+				let mut instance_to_update = 0;
+				b.iter(|| {
+					manager
+						.set_instance_pitch(instance_ids[instance_to_update], 0.5..1.5)
+						.unwrap();
+					instance_to_update += 1;
+					instance_to_update %= NUM_INSTANCES;
+					backend.process();
+				});
+			}),
+		],
+		(),
+	);
 }
 
 criterion_group!(benches, instances_benchmark);
