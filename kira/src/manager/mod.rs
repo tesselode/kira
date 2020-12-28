@@ -46,8 +46,6 @@ use ringbuf::{Consumer, Producer, RingBuffer};
 
 use self::backend::BackendThreadChannels;
 
-const WRAPPER_THREAD_SLEEP_DURATION: f64 = 1.0 / 60.0;
-
 /// Settings for an [`AudioManager`](crate::manager::AudioManager).
 #[derive(Debug, Clone)]
 pub struct AudioManagerSettings {
@@ -128,11 +126,13 @@ pub struct AudioManager {
 impl AudioManager {
 	/// Creates a new audio manager and starts an audio thread.
 	pub fn new(settings: AudioManagerSettings) -> AudioResult<Self> {
-		let (audio_manager_thread_channels, backend_thread_channels, mut quit_signal_consumer) =
+		let (audio_manager_thread_channels, backend_thread_channels, quit_signal_consumer) =
 			Self::create_thread_channels(&settings);
 
 		#[cfg(not(target_arch = "wasm32"))]
 		let stream = {
+			const WRAPPER_THREAD_SLEEP_DURATION: f64 = 1.0 / 60.0;
+
 			let (mut setup_result_producer, mut setup_result_consumer) =
 				RingBuffer::<AudioResult<()>>::new(1).split();
 			// set up a cpal stream on a new thread. we could do this on the main thread,
@@ -143,6 +143,7 @@ impl AudioManager {
 						setup_result_producer.push(Ok(())).unwrap();
 						// wait for a quit message before ending the thread and dropping
 						// the stream
+						let mut quit_signal_consumer = quit_signal_consumer;
 						while let None = quit_signal_consumer.pop() {
 							std::thread::sleep(std::time::Duration::from_secs_f64(
 								WRAPPER_THREAD_SLEEP_DURATION,
@@ -168,7 +169,11 @@ impl AudioManager {
 		};
 
 		#[cfg(target_arch = "wasm32")]
-		let stream = Some(Self::setup_stream(settings, backend_thread_channels)?);
+		let stream = {
+			// the quit signal is not meant to be consumed on wasm
+			let _ = quit_signal_consumer;
+			Some(Self::setup_stream(settings, backend_thread_channels)?)
+		};
 
 		Ok(Self {
 			thread_channels: audio_manager_thread_channels,
