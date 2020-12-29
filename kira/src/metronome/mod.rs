@@ -2,6 +2,7 @@ mod handle;
 mod metronomes;
 mod settings;
 
+use flume::Sender;
 pub use handle::MetronomeHandle;
 pub(crate) use metronomes::Metronomes;
 pub use settings::MetronomeSettings;
@@ -9,7 +10,7 @@ pub use settings::MetronomeSettings;
 use atomic::Ordering;
 
 use crate::{parameter::Parameters, tempo::Tempo, value::CachedValue, Value};
-use std::{sync::atomic::AtomicUsize, vec::Drain};
+use std::sync::atomic::AtomicUsize;
 
 static NEXT_METRONOME_INDEX: AtomicUsize = AtomicUsize::new(0);
 
@@ -38,19 +39,18 @@ pub(crate) struct Metronome {
 	ticking: bool,
 	time: f64,
 	previous_time: f64,
-	interval_event_queue: Vec<f64>,
+	event_sender: Sender<f64>,
 }
 
 impl Metronome {
-	pub fn new(settings: MetronomeSettings) -> Self {
-		let num_interval_events = settings.interval_events_to_emit.len();
+	pub fn new(settings: MetronomeSettings, event_sender: Sender<f64>) -> Self {
 		Self {
 			tempo: CachedValue::new(settings.tempo, Tempo(120.0)),
 			interval_events_to_emit: settings.interval_events_to_emit,
 			ticking: false,
 			time: 0.0,
 			previous_time: 0.0,
-			interval_event_queue: Vec::with_capacity(num_interval_events),
+			event_sender,
 		}
 	}
 
@@ -80,18 +80,17 @@ impl Metronome {
 		self.previous_time = 0.0;
 	}
 
-	pub fn update(&mut self, dt: f64, parameters: &Parameters) -> Drain<f64> {
+	pub fn update(&mut self, dt: f64, parameters: &Parameters) {
 		self.tempo.update(parameters);
 		if self.ticking {
 			self.previous_time = self.time;
 			self.time += (self.tempo.value().0 / 60.0) * dt;
 			for interval in &self.interval_events_to_emit {
 				if self.interval_passed(*interval) {
-					self.interval_event_queue.push(*interval);
+					self.event_sender.try_send(*interval).ok();
 				}
 			}
 		}
-		self.interval_event_queue.drain(..)
 	}
 
 	pub fn interval_passed(&self, interval: f64) -> bool {

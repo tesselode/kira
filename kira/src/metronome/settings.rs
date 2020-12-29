@@ -11,6 +11,7 @@ pub struct MetronomeSettings {
 	/// the audio manager will receive `MetronomeIntervalPassed` events
 	/// every quarter of a beat, half of a beat, and beat.
 	pub interval_events_to_emit: Vec<f64>,
+	pub event_queue_capacity: usize,
 }
 
 impl Default for MetronomeSettings {
@@ -18,6 +19,7 @@ impl Default for MetronomeSettings {
 		Self {
 			tempo: Tempo(120.0).into(),
 			interval_events_to_emit: vec![],
+			event_queue_capacity: 10,
 		}
 	}
 }

@@ -349,11 +349,18 @@ impl AudioManager {
 
 	pub fn add_metronome(&mut self, settings: MetronomeSettings) -> AudioResult<MetronomeHandle> {
 		let id = MetronomeId::new();
-		let metronome = Metronome::new(settings);
+		let (event_sender, event_receiver) = flume::bounded(settings.event_queue_capacity);
+		let metronome = Metronome::new(settings, event_sender);
 		self.thread_channels
 			.command_sender
 			.push(MetronomeCommand::AddMetronome(id, metronome).into())
-			.map(|_| MetronomeHandle::new(id, self.thread_channels.command_sender.clone()))
+			.map(|_| {
+				MetronomeHandle::new(
+					id,
+					self.thread_channels.command_sender.clone(),
+					event_receiver,
+				)
+			})
 	}
 
 	pub fn remove_metronome(&mut self, id: impl Into<MetronomeId>) -> AudioResult<()> {
