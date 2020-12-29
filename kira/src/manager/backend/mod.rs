@@ -29,7 +29,7 @@ pub struct Backend {
 	arrangements: IndexMap<ArrangementId, Arrangement>,
 	command_queue: Vec<Command>,
 	command_receiver: Receiver<Command>,
-	resources_to_unload_sender: Sender<Resource>,
+	unloader: Sender<Resource>,
 	metronomes: Metronomes,
 	parameters: Parameters,
 	instances: Instances,
@@ -44,7 +44,7 @@ impl Backend {
 		sample_rate: u32,
 		settings: AudioManagerSettings,
 		command_receiver: Receiver<Command>,
-		resources_to_unload_sender: Sender<Resource>,
+		unloader: Sender<Resource>,
 	) -> Self {
 		Self {
 			dt: 1.0 / sample_rate as f64,
@@ -52,7 +52,7 @@ impl Backend {
 			arrangements: IndexMap::with_capacity(settings.num_arrangements),
 			command_queue: Vec::with_capacity(settings.num_commands),
 			command_receiver,
-			resources_to_unload_sender,
+			unloader,
 			parameters: Parameters::new(settings.num_parameters),
 			metronomes: Metronomes::new(settings.num_metronomes),
 			instances: Instances::new(settings.num_instances),
@@ -75,9 +75,7 @@ impl Backend {
 						self.instances
 							.stop_instances_of(Playable::Sound(id), Default::default());
 						if let Some(sound) = self.sounds.remove(&id) {
-							self.resources_to_unload_sender
-								.try_send(Resource::Sound(sound))
-								.ok();
+							self.unloader.try_send(Resource::Sound(sound)).ok();
 						}
 					}
 					ResourceCommand::AddArrangement(id, arrangement) => {
@@ -87,15 +85,14 @@ impl Backend {
 						self.instances
 							.stop_instances_of(Playable::Arrangement(id), Default::default());
 						if let Some(arrangement) = self.arrangements.remove(&id) {
-							self.resources_to_unload_sender
+							self.unloader
 								.try_send(Resource::Arrangement(arrangement))
 								.ok();
 						}
 					}
 				},
 				Command::Metronome(command) => {
-					self.metronomes
-						.run_command(command, &mut self.resources_to_unload_sender);
+					self.metronomes.run_command(command, &mut self.unloader);
 				}
 				Command::Instance(command) => {
 					self.instances.run_command(
@@ -109,22 +106,18 @@ impl Backend {
 					self.sequences.run_command(command, &self.groups);
 				}
 				Command::Mixer(command) => {
-					self.mixer
-						.run_command(command, &mut self.resources_to_unload_sender);
+					self.mixer.run_command(command, &mut self.unloader);
 				}
 				Command::Parameter(command) => {
 					self.parameters.run_command(command);
 				}
 				Command::Group(command) => {
 					if let Some(group) = self.groups.run_command(command) {
-						self.resources_to_unload_sender
-							.try_send(Resource::Group(group))
-							.ok();
+						self.unloader.try_send(Resource::Group(group)).ok();
 					}
 				}
 				Command::Stream(command) => {
-					self.streams
-						.run_command(command, &mut self.resources_to_unload_sender);
+					self.streams.run_command(command, &mut self.unloader);
 				}
 			}
 		}
@@ -143,11 +136,10 @@ impl Backend {
 	}
 
 	fn update_sequences(&mut self) {
-		for command in self.sequences.update(
-			self.dt,
-			&self.metronomes,
-			&mut self.resources_to_unload_sender,
-		) {
+		for command in self
+			.sequences
+			.update(self.dt, &self.metronomes, &mut self.unloader)
+		{
 			self.command_queue.push(command.into());
 		}
 	}
