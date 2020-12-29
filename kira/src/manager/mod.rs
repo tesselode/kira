@@ -345,6 +345,11 @@ impl AudioManager {
 		{}
 		for _ in self.thread_channels.groups_to_unload_receiver.try_iter() {}
 		for _ in self.thread_channels.streams_to_unload_receiver.try_iter() {}
+		for _ in self
+			.thread_channels
+			.metronomes_to_unload_receiver
+			.try_iter()
+		{}
 	}
 
 	pub fn add_metronome(&mut self, settings: MetronomeSettings) -> AudioResult<MetronomeHandle> {
