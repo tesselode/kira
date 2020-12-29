@@ -106,15 +106,6 @@
 //! # Ok::<(), kira::AudioError>(())
 //! ```
 
-/*
-TODO: figure out if remove functions (remove_parameter, remove_sub_track,
-etc.) should be on the audio manager or on the corresponding handles.
-the benefit of having those functions on the handles is that it
-declutters the audio manager. however, if one piece of code passes
-a handle to a track/parameter/etc. to another, you may not want to allow
-removing the thing you have a handle to.
-*/
-
 pub mod arrangement;
 pub mod audio_stream;
 mod command;
