@@ -13,8 +13,8 @@ use flume::{Receiver, Sender};
 use crate::{
 	arrangement::{Arrangement, ArrangementHandle, ArrangementId},
 	command::{
-		sender::CommandSender, GroupCommand, MetronomeCommand, MixerCommand, ParameterCommand,
-		ResourceCommand, SequenceCommand,
+		sender::CommandSender, Command, GroupCommand, MetronomeCommand, MixerCommand,
+		ParameterCommand, ResourceCommand, SequenceCommand,
 	},
 	error::{AudioError, AudioResult},
 	group::{Group, GroupHandle, GroupId},
@@ -31,8 +31,6 @@ use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	Stream,
 };
-
-use self::backend::BackendThreadChannels;
 
 const WRAPPER_THREAD_SLEEP_DURATION: f64 = 1.0 / 60.0;
 
@@ -84,12 +82,6 @@ impl Default for AudioManagerSettings {
 	}
 }
 
-pub(crate) struct AudioManagerThreadChannels {
-	pub quit_signal_sender: Sender<bool>,
-	pub command_sender: CommandSender,
-	pub resources_to_unload_receiver: Receiver<Resource>,
-}
-
 /**
 Plays and manages audio.
 
@@ -97,7 +89,9 @@ The audio manager is responsible for all communication between the gameplay thre
 and the audio thread.
 */
 pub struct AudioManager {
-	thread_channels: AudioManagerThreadChannels,
+	quit_signal_sender: Sender<bool>,
+	command_sender: CommandSender,
+	resources_to_unload_receiver: Receiver<Resource>,
 	// holds the stream if it has been created on the main thread
 	// so it can live for as long as the audio manager
 	_stream: Option<Stream>,
@@ -106,15 +100,21 @@ pub struct AudioManager {
 impl AudioManager {
 	/// Creates a new audio manager and starts an audio thread.
 	pub fn new(settings: AudioManagerSettings) -> AudioResult<Self> {
-		let (audio_manager_thread_channels, backend_thread_channels, quit_signal_receiver) =
-			Self::create_thread_channels(&settings);
+		let (
+			quit_signal_sender,
+			command_sender,
+			resources_to_unload_receiver,
+			command_receiver,
+			resources_to_unload_sender,
+			quit_signal_receiver,
+		) = Self::create_thread_channels(&settings);
 
 		let stream = {
 			let (setup_result_sender, setup_result_receiver) = flume::bounded(1);
 			// set up a cpal stream on a new thread. we could do this on the main thread,
 			// but that causes issues with LÖVE.
 			std::thread::spawn(move || {
-				match Self::setup_stream(settings, backend_thread_channels) {
+				match Self::setup_stream(settings, command_receiver, resources_to_unload_sender) {
 					Ok(_stream) => {
 						setup_result_sender.try_send(Ok(())).unwrap();
 						// wait for a quit message before ending the thread and dropping
@@ -146,7 +146,9 @@ impl AudioManager {
 		};
 
 		Ok(Self {
-			thread_channels: audio_manager_thread_channels,
+			quit_signal_sender,
+			command_sender,
+			resources_to_unload_receiver,
 			_stream: stream,
 		})
 	}
@@ -154,33 +156,31 @@ impl AudioManager {
 	fn create_thread_channels(
 		settings: &AudioManagerSettings,
 	) -> (
-		AudioManagerThreadChannels,
-		BackendThreadChannels,
+		Sender<bool>,
+		CommandSender,
+		Receiver<Resource>,
+		Receiver<Command>,
+		Sender<Resource>,
 		Receiver<bool>,
 	) {
 		let (quit_signal_sender, quit_signal_receiver) = flume::bounded(1);
 		let (command_sender, command_receiver) = flume::bounded(settings.num_commands);
 		// TODO: add a setting or constant for max number of resources to unload
 		let (resources_to_unload_sender, resources_to_unload_receiver) = flume::bounded(10);
-		let audio_manager_thread_channels = AudioManagerThreadChannels {
+		(
 			quit_signal_sender,
-			command_sender: CommandSender::new(command_sender),
+			CommandSender::new(command_sender),
 			resources_to_unload_receiver,
-		};
-		let backend_thread_channels = BackendThreadChannels {
 			command_receiver,
 			resources_to_unload_sender,
-		};
-		(
-			audio_manager_thread_channels,
-			backend_thread_channels,
 			quit_signal_receiver,
 		)
 	}
 
 	fn setup_stream(
 		settings: AudioManagerSettings,
-		backend_thread_channels: BackendThreadChannels,
+		command_receiver: Receiver<Command>,
+		resources_to_unload_sender: Sender<Resource>,
 	) -> AudioResult<Stream> {
 		let host = cpal::default_host();
 		let device = host
@@ -189,7 +189,12 @@ impl AudioManager {
 		let config = device.default_output_config()?.config();
 		let sample_rate = config.sample_rate.0;
 		let channels = config.channels;
-		let mut backend = Backend::new(sample_rate, settings, backend_thread_channels);
+		let mut backend = Backend::new(
+			sample_rate,
+			settings,
+			command_receiver,
+			resources_to_unload_sender,
+		);
 		let stream = device.build_output_stream(
 			&config,
 			move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
@@ -219,26 +224,35 @@ impl AudioManager {
 		settings: AudioManagerSettings,
 	) -> AudioResult<(Self, Backend)> {
 		const SAMPLE_RATE: u32 = 48000;
-		let (audio_manager_thread_channels, backend_thread_channels, _) =
-			Self::create_thread_channels(&settings);
+		let (
+			quit_signal_sender,
+			command_sender,
+			resources_to_unload_receiver,
+			command_receiver,
+			resources_to_unload_sender,
+			_,
+		) = Self::create_thread_channels(&settings);
 		let audio_manager = Self {
-			thread_channels: audio_manager_thread_channels,
+			quit_signal_sender,
+			command_sender,
+			resources_to_unload_receiver,
 			_stream: None,
 		};
-		let backend = Backend::new(SAMPLE_RATE, settings, backend_thread_channels);
+		let backend = Backend::new(
+			SAMPLE_RATE,
+			settings,
+			command_receiver,
+			resources_to_unload_sender,
+		);
 		Ok((audio_manager, backend))
 	}
 
 	/// Sends a sound to the audio thread and returns a handle to the sound.
 	pub fn add_sound(&mut self, sound: Sound) -> AudioResult<SoundHandle> {
 		let id = SoundId::new(&sound);
-		self.thread_channels
-			.command_sender
+		self.command_sender
 			.push(ResourceCommand::AddSound(id, sound).into())?;
-		Ok(SoundHandle::new(
-			id,
-			self.thread_channels.command_sender.clone(),
-		))
+		Ok(SoundHandle::new(id, self.command_sender.clone()))
 	}
 
 	/// Loads a sound from a file and returns a handle to the sound.
@@ -255,33 +269,27 @@ impl AudioManager {
 	}
 
 	pub fn remove_sound(&mut self, id: impl Into<SoundId>) -> AudioResult<()> {
-		self.thread_channels
-			.command_sender
+		self.command_sender
 			.push(ResourceCommand::RemoveSound(id.into()).into())
 	}
 
 	/// Sends a arrangement to the audio thread and returns a handle to the arrangement.
 	pub fn add_arrangement(&mut self, arrangement: Arrangement) -> AudioResult<ArrangementHandle> {
 		let id = ArrangementId::new(&arrangement);
-		self.thread_channels
-			.command_sender
+		self.command_sender
 			.push(ResourceCommand::AddArrangement(id, arrangement).into())?;
-		Ok(ArrangementHandle::new(
-			id,
-			self.thread_channels.command_sender.clone(),
-		))
+		Ok(ArrangementHandle::new(id, self.command_sender.clone()))
 	}
 
 	pub fn remove_arrangement(&mut self, id: impl Into<ArrangementId>) -> AudioResult<()> {
-		self.thread_channels
-			.command_sender
+		self.command_sender
 			.push(ResourceCommand::RemoveArrangement(id.into()).into())
 	}
 
 	/// Frees resources that are no longer in use, such as unloaded sounds
 	/// or finished sequences.
 	pub fn free_unused_resources(&mut self) {
-		for resource in self.thread_channels.resources_to_unload_receiver.try_iter() {
+		for resource in self.resources_to_unload_receiver.try_iter() {
 			println!(
 				"{}",
 				match resource {
@@ -302,21 +310,13 @@ impl AudioManager {
 		let id = MetronomeId::new();
 		let (event_sender, event_receiver) = flume::bounded(settings.event_queue_capacity);
 		let metronome = Metronome::new(settings, event_sender);
-		self.thread_channels
-			.command_sender
+		self.command_sender
 			.push(MetronomeCommand::AddMetronome(id, metronome).into())
-			.map(|_| {
-				MetronomeHandle::new(
-					id,
-					self.thread_channels.command_sender.clone(),
-					event_receiver,
-				)
-			})
+			.map(|_| MetronomeHandle::new(id, self.command_sender.clone(), event_receiver))
 	}
 
 	pub fn remove_metronome(&mut self, id: impl Into<MetronomeId>) -> AudioResult<()> {
-		self.thread_channels
-			.command_sender
+		self.command_sender
 			.push(MetronomeCommand::RemoveMetronome(id.into()).into())
 	}
 
@@ -329,9 +329,8 @@ impl AudioManager {
 		sequence.validate()?;
 		let id = SequenceInstanceId::new();
 		let (instance, handle) =
-			sequence.create_instance(settings, id, self.thread_channels.command_sender.clone());
-		self.thread_channels
-			.command_sender
+			sequence.create_instance(settings, id, self.command_sender.clone());
+		self.command_sender
 			.push(SequenceCommand::StartSequenceInstance(id, instance).into())?;
 		Ok(handle)
 	}
@@ -339,37 +338,27 @@ impl AudioManager {
 	/// Creates a parameter with the specified starting value.
 	pub fn add_parameter(&mut self, value: f64) -> AudioResult<ParameterHandle> {
 		let id = ParameterId::new();
-		self.thread_channels
-			.command_sender
+		self.command_sender
 			.push(ParameterCommand::AddParameter(id, value).into())?;
-		Ok(ParameterHandle::new(
-			id,
-			self.thread_channels.command_sender.clone(),
-		))
+		Ok(ParameterHandle::new(id, self.command_sender.clone()))
 	}
 
 	pub fn remove_parameter(&mut self, id: impl Into<ParameterId>) -> AudioResult<()> {
-		self.thread_channels
-			.command_sender
+		self.command_sender
 			.push(ParameterCommand::RemoveParameter(id.into()).into())
 	}
 
 	/// Creates a mixer sub-track.
 	pub fn add_sub_track(&mut self, settings: TrackSettings) -> AudioResult<TrackHandle> {
 		let id = SubTrackId::new();
-		self.thread_channels
-			.command_sender
+		self.command_sender
 			.push(MixerCommand::AddSubTrack(id, Track::new(settings)).into())?;
-		Ok(TrackHandle::new(
-			id.into(),
-			self.thread_channels.command_sender.clone(),
-		))
+		Ok(TrackHandle::new(id.into(), self.command_sender.clone()))
 	}
 
 	/// Removes a sub-track from the mixer.
 	pub fn remove_sub_track(&mut self, id: SubTrackId) -> AudioResult<()> {
-		self.thread_channels
-			.command_sender
+		self.command_sender
 			.push(MixerCommand::RemoveSubTrack(id.into()).into())
 	}
 
@@ -380,19 +369,14 @@ impl AudioManager {
 	) -> AudioResult<GroupHandle> {
 		let id = GroupId::new();
 		let group = Group::new(index_set_from_vec(parent_groups.into()));
-		self.thread_channels
-			.command_sender
+		self.command_sender
 			.push(GroupCommand::AddGroup(id, group).into())?;
-		Ok(GroupHandle::new(
-			id,
-			self.thread_channels.command_sender.clone(),
-		))
+		Ok(GroupHandle::new(id, self.command_sender.clone()))
 	}
 
 	/// Removes a group.
 	pub fn remove_group(&mut self, id: impl Into<GroupId>) -> AudioResult<()> {
-		self.thread_channels
-			.command_sender
+		self.command_sender
 			.push(GroupCommand::RemoveGroup(id.into()).into())
 	}
 }
@@ -400,6 +384,6 @@ impl AudioManager {
 impl Drop for AudioManager {
 	fn drop(&mut self) {
 		// TODO: add proper error handling here without breaking benchmarks
-		self.thread_channels.quit_signal_sender.send(true).ok();
+		self.quit_signal_sender.send(true).ok();
 	}
 }
