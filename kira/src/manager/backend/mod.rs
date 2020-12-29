@@ -8,16 +8,13 @@ use self::mixer::Mixer;
 use super::AudioManagerSettings;
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
-	audio_stream::AudioStream,
 	command::{Command, ResourceCommand},
 	frame::Frame,
-	group::{groups::Groups, Group},
-	metronome::{Metronome, Metronomes},
-	mixer::effect_slot::EffectSlot,
-	mixer::Track,
+	group::groups::Groups,
+	metronome::Metronomes,
 	parameter::Parameters,
 	playable::Playable,
-	sequence::SequenceInstance,
+	resource::Resource,
 	sound::{Sound, SoundId},
 };
 use flume::{Receiver, Sender};
@@ -28,14 +25,7 @@ use streams::Streams;
 
 pub(crate) struct BackendThreadChannels {
 	pub command_receiver: Receiver<Command>,
-	pub sounds_to_unload_sender: Sender<Sound>,
-	pub arrangements_to_unload_sender: Sender<Arrangement>,
-	pub sequence_instances_to_unload_sender: Sender<SequenceInstance>,
-	pub tracks_to_unload_sender: Sender<Track>,
-	pub effect_slots_to_unload_sender: Sender<EffectSlot>,
-	pub groups_to_unload_sender: Sender<Group>,
-	pub streams_to_unload_sender: Sender<Box<dyn AudioStream>>,
-	pub metronomes_to_unload_sender: Sender<Metronome>,
+	pub resources_to_unload_sender: Sender<Resource>,
 }
 
 pub struct Backend {
@@ -89,8 +79,8 @@ impl Backend {
 							.stop_instances_of(Playable::Sound(id), Default::default());
 						if let Some(sound) = self.sounds.remove(&id) {
 							self.thread_channels
-								.sounds_to_unload_sender
-								.try_send(sound)
+								.resources_to_unload_sender
+								.try_send(Resource::Sound(sound))
 								.ok();
 						}
 					}
@@ -102,8 +92,8 @@ impl Backend {
 							.stop_instances_of(Playable::Arrangement(id), Default::default());
 						if let Some(arrangement) = self.arrangements.remove(&id) {
 							self.thread_channels
-								.arrangements_to_unload_sender
-								.try_send(arrangement)
+								.resources_to_unload_sender
+								.try_send(Resource::Arrangement(arrangement))
 								.ok();
 						}
 					}
@@ -111,7 +101,7 @@ impl Backend {
 				Command::Metronome(command) => {
 					self.metronomes.run_command(
 						command,
-						&mut self.thread_channels.metronomes_to_unload_sender,
+						&mut self.thread_channels.resources_to_unload_sender,
 					);
 				}
 				Command::Instance(command) => {
@@ -128,8 +118,7 @@ impl Backend {
 				Command::Mixer(command) => {
 					self.mixer.run_command(
 						command,
-						&mut self.thread_channels.tracks_to_unload_sender,
-						&mut self.thread_channels.effect_slots_to_unload_sender,
+						&mut self.thread_channels.resources_to_unload_sender,
 					);
 				}
 				Command::Parameter(command) => {
@@ -138,14 +127,16 @@ impl Backend {
 				Command::Group(command) => {
 					if let Some(group) = self.groups.run_command(command) {
 						self.thread_channels
-							.groups_to_unload_sender
-							.try_send(group)
+							.resources_to_unload_sender
+							.try_send(Resource::Group(group))
 							.ok();
 					}
 				}
 				Command::Stream(command) => {
-					self.streams
-						.run_command(command, &mut self.thread_channels.streams_to_unload_sender);
+					self.streams.run_command(
+						command,
+						&mut self.thread_channels.resources_to_unload_sender,
+					);
 				}
 			}
 		}
@@ -167,7 +158,7 @@ impl Backend {
 		for command in self.sequences.update(
 			self.dt,
 			&self.metronomes,
-			&mut self.thread_channels.sequence_instances_to_unload_sender,
+			&mut self.thread_channels.resources_to_unload_sender,
 		) {
 			self.command_queue.push(command.into());
 		}

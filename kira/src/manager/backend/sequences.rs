@@ -3,6 +3,7 @@ use crate::{
 	group::groups::Groups,
 	instance::Instance,
 	metronome::Metronomes,
+	resource::Resource,
 	sequence::{SequenceInstance, SequenceInstanceId, SequenceOutputCommand},
 };
 use flume::Sender;
@@ -89,7 +90,7 @@ impl Sequences {
 		&mut self,
 		dt: f64,
 		metronomes: &Metronomes,
-		sequences_to_unload_sender: &mut Sender<SequenceInstance>,
+		unloader: &mut Sender<Resource>,
 	) -> Drain<Command> {
 		// update sequences and process their commands
 		for (id, sequence_instance) in &mut self.sequence_instances {
@@ -173,7 +174,7 @@ impl Sequences {
 		// remove finished sequences
 		for id in self.sequence_instances_to_remove.drain(..) {
 			let instance = self.sequence_instances.remove(&id).unwrap();
-			sequences_to_unload_sender.try_send(instance).ok();
+			unloader.try_send(Resource::SequenceInstance(instance)).ok();
 		}
 		self.output_command_queue.drain(..)
 	}

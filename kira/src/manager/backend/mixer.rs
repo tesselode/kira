@@ -4,8 +4,9 @@ use indexmap::IndexMap;
 use crate::{
 	command::MixerCommand,
 	frame::Frame,
-	mixer::{effect_slot::EffectSlot, SubTrackId, Track, TrackIndex, TrackSettings},
+	mixer::{SubTrackId, Track, TrackIndex, TrackSettings},
 	parameter::Parameters,
+	resource::Resource,
 };
 
 pub(crate) struct Mixer {
@@ -21,12 +22,7 @@ impl Mixer {
 		}
 	}
 
-	pub fn run_command(
-		&mut self,
-		command: MixerCommand,
-		tracks_to_unload_sender: &mut Sender<Track>,
-		effect_slots_to_unload_sender: &mut Sender<EffectSlot>,
-	) {
+	pub fn run_command(&mut self, command: MixerCommand, unloader: &mut Sender<Resource>) {
 		match command {
 			MixerCommand::AddSubTrack(id, track) => {
 				self.sub_tracks.insert(id, track);
@@ -42,7 +38,7 @@ impl Mixer {
 			}
 			MixerCommand::RemoveSubTrack(id) => {
 				if let Some(track) = self.sub_tracks.remove(&id) {
-					tracks_to_unload_sender.try_send(track).ok();
+					unloader.try_send(Resource::Track(track)).ok();
 				}
 			}
 			MixerCommand::RemoveEffect(effect_id) => {
@@ -52,7 +48,7 @@ impl Mixer {
 				};
 				if let Some(track) = track {
 					if let Some(effect_slot) = track.remove_effect(effect_id) {
-						effect_slots_to_unload_sender.try_send(effect_slot).ok();
+						unloader.try_send(Resource::EffectSlot(effect_slot)).ok();
 					}
 				}
 			}

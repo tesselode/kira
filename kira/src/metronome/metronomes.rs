@@ -5,6 +5,7 @@ use crate::{
 	command::MetronomeCommand,
 	metronome::{Metronome, MetronomeId},
 	parameter::Parameters,
+	resource::Resource,
 };
 
 pub(crate) struct Metronomes {
@@ -22,14 +23,14 @@ impl Metronomes {
 		self.metronomes.get(&id)
 	}
 
-	pub fn run_command(&mut self, command: MetronomeCommand, unloader: &mut Sender<Metronome>) {
+	pub fn run_command(&mut self, command: MetronomeCommand, unloader: &mut Sender<Resource>) {
 		match command {
 			MetronomeCommand::AddMetronome(id, metronome) => {
 				self.metronomes.insert(id, metronome);
 			}
 			MetronomeCommand::RemoveMetronome(id) => {
 				if let Some(metronome) = self.metronomes.remove(&id) {
-					unloader.try_send(metronome).ok();
+					unloader.try_send(Resource::Metronome(metronome)).ok();
 				}
 			}
 			MetronomeCommand::SetMetronomeTempo(id, tempo) => {

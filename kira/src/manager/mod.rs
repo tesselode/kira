@@ -12,7 +12,6 @@ use flume::{Receiver, Sender};
 
 use crate::{
 	arrangement::{Arrangement, ArrangementHandle, ArrangementId},
-	audio_stream::AudioStream,
 	command::{
 		sender::CommandSender, GroupCommand, MetronomeCommand, MixerCommand, ParameterCommand,
 		ResourceCommand, SequenceCommand,
@@ -20,10 +19,10 @@ use crate::{
 	error::{AudioError, AudioResult},
 	group::{Group, GroupHandle, GroupId},
 	metronome::{Metronome, MetronomeHandle, MetronomeId, MetronomeSettings},
-	mixer::{effect_slot::EffectSlot, SubTrackId, Track, TrackHandle, TrackIndex, TrackSettings},
+	mixer::{SubTrackId, Track, TrackHandle, TrackIndex, TrackSettings},
 	parameter::{ParameterHandle, ParameterId},
 	playable::PlayableSettings,
-	sequence::SequenceInstance,
+	resource::Resource,
 	sequence::{Sequence, SequenceInstanceHandle, SequenceInstanceId, SequenceInstanceSettings},
 	sound::{Sound, SoundHandle, SoundId},
 	util::index_set_from_vec,
@@ -88,14 +87,7 @@ impl Default for AudioManagerSettings {
 pub(crate) struct AudioManagerThreadChannels {
 	pub quit_signal_sender: Sender<bool>,
 	pub command_sender: CommandSender,
-	pub sounds_to_unload_receiver: Receiver<Sound>,
-	pub arrangements_to_unload_receiver: Receiver<Arrangement>,
-	pub sequence_instances_to_unload_receiver: Receiver<SequenceInstance>,
-	pub tracks_to_unload_receiver: Receiver<Track>,
-	pub effect_slots_to_unload_receiver: Receiver<EffectSlot>,
-	pub groups_to_unload_receiver: Receiver<Group>,
-	pub streams_to_unload_receiver: Receiver<Box<dyn AudioStream>>,
-	pub metronomes_to_unload_receiver: Receiver<Metronome>,
+	pub resources_to_unload_receiver: Receiver<Resource>,
 }
 
 /**
@@ -168,44 +160,16 @@ impl AudioManager {
 	) {
 		let (quit_signal_sender, quit_signal_receiver) = flume::bounded(1);
 		let (command_sender, command_receiver) = flume::bounded(settings.num_commands);
-		let (sounds_to_unload_sender, sounds_to_unload_receiver) =
-			flume::bounded(settings.num_sounds);
-		let (arrangements_to_unload_sender, arrangements_to_unload_receiver) =
-			flume::bounded(settings.num_arrangements);
-		let (sequence_instances_to_unload_sender, sequence_instances_to_unload_receiver) =
-			flume::bounded(settings.num_sequences);
-		let (tracks_to_unload_sender, tracks_to_unload_receiver) =
-			flume::bounded(settings.num_tracks);
-		let (effect_slots_to_unload_sender, effect_slots_to_unload_receiver) =
-			flume::bounded(settings.num_tracks * settings.num_effects_per_track);
-		let (groups_to_unload_sender, groups_to_unload_receiver) =
-			flume::bounded(settings.num_groups);
-		let (streams_to_unload_sender, streams_to_unload_receiver) =
-			flume::bounded(settings.num_streams);
-		let (metronomes_to_unload_sender, metronomes_to_unload_receiver) =
-			flume::bounded(settings.num_metronomes);
+		// TODO: add a setting or constant for max number of resources to unload
+		let (resources_to_unload_sender, resources_to_unload_receiver) = flume::bounded(10);
 		let audio_manager_thread_channels = AudioManagerThreadChannels {
 			quit_signal_sender,
 			command_sender: CommandSender::new(command_sender),
-			sounds_to_unload_receiver,
-			arrangements_to_unload_receiver,
-			sequence_instances_to_unload_receiver,
-			tracks_to_unload_receiver,
-			effect_slots_to_unload_receiver,
-			groups_to_unload_receiver,
-			streams_to_unload_receiver,
-			metronomes_to_unload_receiver,
+			resources_to_unload_receiver,
 		};
 		let backend_thread_channels = BackendThreadChannels {
 			command_receiver,
-			sounds_to_unload_sender,
-			arrangements_to_unload_sender,
-			sequence_instances_to_unload_sender,
-			tracks_to_unload_sender,
-			effect_slots_to_unload_sender,
-			groups_to_unload_sender,
-			streams_to_unload_sender,
-			metronomes_to_unload_sender,
+			resources_to_unload_sender,
 		};
 		(
 			audio_manager_thread_channels,
@@ -317,31 +281,21 @@ impl AudioManager {
 	/// Frees resources that are no longer in use, such as unloaded sounds
 	/// or finished sequences.
 	pub fn free_unused_resources(&mut self) {
-		for _ in self.thread_channels.sounds_to_unload_receiver.try_iter() {}
-		for _ in self.thread_channels.sounds_to_unload_receiver.try_iter() {}
-		for _ in self
-			.thread_channels
-			.arrangements_to_unload_receiver
-			.try_iter()
-		{}
-		for _ in self
-			.thread_channels
-			.sequence_instances_to_unload_receiver
-			.try_iter()
-		{}
-		for _ in self.thread_channels.tracks_to_unload_receiver.try_iter() {}
-		for _ in self
-			.thread_channels
-			.effect_slots_to_unload_receiver
-			.try_iter()
-		{}
-		for _ in self.thread_channels.groups_to_unload_receiver.try_iter() {}
-		for _ in self.thread_channels.streams_to_unload_receiver.try_iter() {}
-		for _ in self
-			.thread_channels
-			.metronomes_to_unload_receiver
-			.try_iter()
-		{}
+		for resource in self.thread_channels.resources_to_unload_receiver.try_iter() {
+			println!(
+				"{}",
+				match resource {
+					Resource::Sound(_) => "Sound",
+					Resource::Arrangement(_) => "Arrangement",
+					Resource::SequenceInstance(_) => "SequenceInstance",
+					Resource::Track(_) => "Track",
+					Resource::EffectSlot(_) => "EffectSlot",
+					Resource::Group(_) => "Group",
+					Resource::Stream(_) => "Stream",
+					Resource::Metronome(_) => "Metronome",
+				}
+			)
+		}
 	}
 
 	pub fn add_metronome(&mut self, settings: MetronomeSettings) -> AudioResult<MetronomeHandle> {
