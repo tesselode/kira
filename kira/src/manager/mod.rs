@@ -8,7 +8,7 @@ use std::{hash::Hash, path::Path};
 use backend::Backend;
 #[cfg(feature = "benchmarking")]
 pub use backend::Backend;
-use flume::{Receiver, Sender, TryIter};
+use flume::{Receiver, Sender};
 
 use crate::{
 	arrangement::{Arrangement, ArrangementHandle, ArrangementId},
@@ -27,7 +27,6 @@ use crate::{
 	sequence::{Sequence, SequenceInstanceHandle, SequenceInstanceId, SequenceInstanceSettings},
 	sound::{Sound, SoundHandle, SoundId},
 	util::index_set_from_vec,
-	Event,
 };
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
@@ -46,8 +45,6 @@ pub struct AudioManagerSettings {
 	/// Each action you take, like starting an instance or pausing a sequence,
 	/// queues up one command.
 	pub num_commands: usize,
-	/// The number of events the audio thread can send at a time.
-	pub num_events: usize,
 	/// The maximum number of sounds that can be loaded at a time.
 	pub num_sounds: usize,
 	/// The maximum number of arrangements that can be loaded at a time.
@@ -74,7 +71,6 @@ impl Default for AudioManagerSettings {
 	fn default() -> Self {
 		Self {
 			num_commands: 100,
-			num_events: 100,
 			num_sounds: 100,
 			num_arrangements: 100,
 			num_parameters: 100,
@@ -92,7 +88,6 @@ impl Default for AudioManagerSettings {
 pub(crate) struct AudioManagerThreadChannels {
 	pub quit_signal_sender: Sender<bool>,
 	pub command_sender: CommandSender,
-	pub event_receiver: Receiver<Event>,
 	pub sounds_to_unload_receiver: Receiver<Sound>,
 	pub arrangements_to_unload_receiver: Receiver<Arrangement>,
 	pub sequence_instances_to_unload_receiver: Receiver<SequenceInstance>,
@@ -185,7 +180,6 @@ impl AudioManager {
 			flume::bounded(settings.num_tracks * settings.num_effects_per_track);
 		let (groups_to_unload_sender, groups_to_unload_receiver) =
 			flume::bounded(settings.num_groups);
-		let (event_sender, event_receiver) = flume::bounded(settings.num_events);
 		let (streams_to_unload_sender, streams_to_unload_receiver) =
 			flume::bounded(settings.num_streams);
 		let (metronomes_to_unload_sender, metronomes_to_unload_receiver) =
@@ -193,7 +187,6 @@ impl AudioManager {
 		let audio_manager_thread_channels = AudioManagerThreadChannels {
 			quit_signal_sender,
 			command_sender: CommandSender::new(command_sender),
-			event_receiver,
 			sounds_to_unload_receiver,
 			arrangements_to_unload_receiver,
 			sequence_instances_to_unload_receiver,
@@ -205,7 +198,6 @@ impl AudioManager {
 		};
 		let backend_thread_channels = BackendThreadChannels {
 			command_receiver,
-			event_sender,
 			sounds_to_unload_sender,
 			arrangements_to_unload_sender,
 			sequence_instances_to_unload_sender,
@@ -448,10 +440,6 @@ impl AudioManager {
 		self.thread_channels
 			.command_sender
 			.push(GroupCommand::RemoveGroup(id.into()).into())
-	}
-
-	pub fn event_iter(&mut self) -> TryIter<Event> {
-		self.thread_channels.event_receiver.try_iter()
 	}
 }
 

@@ -5,7 +5,7 @@ mod streams;
 
 use self::mixer::Mixer;
 
-use super::{AudioManagerSettings, Event};
+use super::AudioManagerSettings;
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
 	audio_stream::AudioStream,
@@ -28,7 +28,6 @@ use streams::Streams;
 
 pub(crate) struct BackendThreadChannels {
 	pub command_receiver: Receiver<Command>,
-	pub event_sender: Sender<Event>,
 	pub sounds_to_unload_sender: Sender<Sound>,
 	pub arrangements_to_unload_sender: Sender<Arrangement>,
 	pub sequence_instances_to_unload_sender: Sender<SequenceInstance>,

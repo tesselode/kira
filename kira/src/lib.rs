@@ -120,7 +120,6 @@ pub mod audio_stream;
 mod command;
 mod duration;
 mod error;
-mod event;
 mod frame;
 pub mod group;
 pub mod instance;
@@ -137,7 +136,6 @@ mod value;
 
 pub use duration::Duration;
 pub use error::{AudioError, AudioResult};
-pub use event::Event;
 pub use frame::Frame;
 pub use metronome::MetronomeSettings;
 pub use tempo::Tempo;
