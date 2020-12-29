@@ -2,7 +2,7 @@ use crate::{
 	command::{Command, InstanceCommand, MetronomeCommand, ParameterCommand, SequenceCommand},
 	group::groups::Groups,
 	instance::Instance,
-	metronome::Metronome,
+	metronome::Metronomes,
 	sequence::{SequenceInstance, SequenceInstanceId, SequenceOutputCommand},
 };
 use flume::Sender;
@@ -88,12 +88,12 @@ impl Sequences {
 	pub fn update(
 		&mut self,
 		dt: f64,
-		metronome: &Metronome,
+		metronomes: &Metronomes,
 		sequences_to_unload_sender: &mut Sender<SequenceInstance>,
 	) -> Drain<Command> {
 		// update sequences and process their commands
 		for (id, sequence_instance) in &mut self.sequence_instances {
-			sequence_instance.update(dt, metronome, &mut self.sequence_output_command_queue);
+			sequence_instance.update(dt, metronomes, &mut self.sequence_output_command_queue);
 			// convert sequence commands to commands that can be consumed
 			// by the backend
 			for command in self.sequence_output_command_queue.drain(..) {
@@ -149,17 +149,17 @@ impl Sequences {
 					SequenceOutputCommand::StopInstancesOfSequence(id, settings) => {
 						Command::Instance(InstanceCommand::StopInstancesOfSequence(id, settings))
 					}
-					SequenceOutputCommand::SetMetronomeTempo(tempo) => {
-						Command::Metronome(MetronomeCommand::SetMetronomeTempo(tempo))
+					SequenceOutputCommand::SetMetronomeTempo(id, tempo) => {
+						Command::Metronome(MetronomeCommand::SetMetronomeTempo(id, tempo))
 					}
-					SequenceOutputCommand::StartMetronome => {
-						Command::Metronome(MetronomeCommand::StartMetronome)
+					SequenceOutputCommand::StartMetronome(id) => {
+						Command::Metronome(MetronomeCommand::StartMetronome(id))
 					}
-					SequenceOutputCommand::PauseMetronome => {
-						Command::Metronome(MetronomeCommand::PauseMetronome)
+					SequenceOutputCommand::PauseMetronome(id) => {
+						Command::Metronome(MetronomeCommand::PauseMetronome(id))
 					}
-					SequenceOutputCommand::StopMetronome => {
-						Command::Metronome(MetronomeCommand::StopMetronome)
+					SequenceOutputCommand::StopMetronome(id) => {
+						Command::Metronome(MetronomeCommand::StopMetronome(id))
 					}
 					SequenceOutputCommand::SetParameter(id, target, tween) => {
 						Command::Parameter(ParameterCommand::SetParameter(id, target, tween))

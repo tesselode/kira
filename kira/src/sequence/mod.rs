@@ -172,6 +172,7 @@ use crate::{
 		InstanceId, InstanceSettings, PauseInstanceSettings, ResumeInstanceSettings,
 		StopInstanceSettings,
 	},
+	metronome::MetronomeId,
 	parameter::{ParameterId, Tween},
 	playable::Playable,
 	util::index_set_from_vec,
@@ -181,6 +182,8 @@ use crate::{
 /// Settings for an instance of a [`Sequence`].
 #[derive(Debug, Copy, Clone)]
 pub struct SequenceInstanceSettings {
+	/// The metronome this sequence should sync to.
+	pub metronome: Option<MetronomeId>,
 	/// How many events can be queued at a time.
 	pub event_queue_capacity: usize,
 }
@@ -188,6 +191,7 @@ pub struct SequenceInstanceSettings {
 impl Default for SequenceInstanceSettings {
 	fn default() -> Self {
 		Self {
+			metronome: None,
 			event_queue_capacity: 10,
 		}
 	}
@@ -211,10 +215,10 @@ pub(crate) enum SequenceOutputCommand {
 	PauseInstancesOfSequence(SequenceInstanceId, PauseInstanceSettings),
 	ResumeInstancesOfSequence(SequenceInstanceId, ResumeInstanceSettings),
 	StopInstancesOfSequence(SequenceInstanceId, StopInstanceSettings),
-	SetMetronomeTempo(Value<Tempo>),
-	StartMetronome,
-	PauseMetronome,
-	StopMetronome,
+	SetMetronomeTempo(MetronomeId, Value<Tempo>),
+	StartMetronome(MetronomeId),
+	PauseMetronome(MetronomeId),
+	StopMetronome(MetronomeId),
 	SetParameter(ParameterId, f64, Option<Tween>),
 }
 
@@ -458,26 +462,31 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	}
 
 	/// Adds a step to set the tempo of the metronome.
-	pub fn set_metronome_tempo<T: Into<Value<Tempo>>>(&mut self, tempo: T) {
+	pub fn set_metronome_tempo(
+		&mut self,
+		id: impl Into<MetronomeId>,
+		tempo: impl Into<Value<Tempo>>,
+	) {
 		self.steps
-			.push(SequenceOutputCommand::SetMetronomeTempo(tempo.into()).into());
+			.push(SequenceOutputCommand::SetMetronomeTempo(id.into(), tempo.into()).into());
 	}
 
 	/// Adds a step to start the metronome.
-	pub fn start_metronome(&mut self) {
+	pub fn start_metronome(&mut self, id: impl Into<MetronomeId>) {
 		self.steps
-			.push(SequenceOutputCommand::StartMetronome.into());
+			.push(SequenceOutputCommand::StartMetronome(id.into()).into());
 	}
 
 	/// Adds a step to pause the metronome.
-	pub fn pause_metronome(&mut self) {
+	pub fn pause_metronome(&mut self, id: impl Into<MetronomeId>) {
 		self.steps
-			.push(SequenceOutputCommand::PauseMetronome.into());
+			.push(SequenceOutputCommand::PauseMetronome(id.into()).into());
 	}
 
 	/// Adds a step to stop the metronome.
-	pub fn stop_metronome(&mut self) {
-		self.steps.push(SequenceOutputCommand::StopMetronome.into());
+	pub fn stop_metronome(&mut self, id: impl Into<MetronomeId>) {
+		self.steps
+			.push(SequenceOutputCommand::StopMetronome(id.into()).into());
 	}
 
 	/// Adds a step to set a parameter.
@@ -548,7 +557,7 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	) -> (SequenceInstance, SequenceInstanceHandle<CustomEvent>) {
 		let (raw_sequence, events) = self.into_raw_sequence();
 		let (event_sender, event_receiver) = flume::bounded(settings.event_queue_capacity);
-		let instance = SequenceInstance::new(raw_sequence, event_sender);
+		let instance = SequenceInstance::new(raw_sequence, event_sender, settings.metronome);
 		let handle = SequenceInstanceHandle::new(
 			id,
 			instance.public_state(),

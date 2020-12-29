@@ -12,7 +12,7 @@ use crate::{
 	command::{Command, ResourceCommand},
 	frame::Frame,
 	group::{groups::Groups, Group},
-	metronome::Metronome,
+	metronome::{Metronome, Metronomes},
 	mixer::effect_slot::EffectSlot,
 	mixer::Track,
 	parameter::Parameters,
@@ -36,6 +36,7 @@ pub(crate) struct BackendThreadChannels {
 	pub effect_slots_to_unload_sender: Sender<EffectSlot>,
 	pub groups_to_unload_sender: Sender<Group>,
 	pub streams_to_unload_sender: Sender<Box<dyn AudioStream>>,
+	pub metronomes_to_unload_sender: Sender<Metronome>,
 }
 
 pub struct Backend {
@@ -44,7 +45,7 @@ pub struct Backend {
 	arrangements: IndexMap<ArrangementId, Arrangement>,
 	command_queue: Vec<Command>,
 	thread_channels: BackendThreadChannels,
-	metronome: Metronome,
+	metronomes: Metronomes,
 	parameters: Parameters,
 	instances: Instances,
 	sequences: Sequences,
@@ -66,7 +67,7 @@ impl Backend {
 			command_queue: Vec::with_capacity(settings.num_commands),
 			thread_channels,
 			parameters: Parameters::new(settings.num_parameters),
-			metronome: Metronome::new(settings.metronome_settings),
+			metronomes: Metronomes::new(settings.num_metronomes),
 			instances: Instances::new(settings.num_instances),
 			sequences: Sequences::new(settings.num_sequences, settings.num_commands),
 			mixer: Mixer::new(),
@@ -109,7 +110,10 @@ impl Backend {
 					}
 				},
 				Command::Metronome(command) => {
-					self.metronome.run_command(command);
+					self.metronomes.run_command(
+						command,
+						&mut self.thread_channels.metronomes_to_unload_sender,
+					);
 				}
 				Command::Instance(command) => {
 					self.instances.run_command(
@@ -160,19 +164,10 @@ impl Backend {
 		}
 	}
 
-	fn update_metronome(&mut self) {
-		for interval in self.metronome.update(self.dt, &self.parameters) {
-			self.thread_channels
-				.event_sender
-				.try_send(Event::MetronomeIntervalPassed(interval))
-				.ok();
-		}
-	}
-
 	fn update_sequences(&mut self) {
 		for command in self.sequences.update(
 			self.dt,
-			&self.metronome,
+			&self.metronomes,
 			&mut self.thread_channels.sequence_instances_to_unload_sender,
 		) {
 			self.command_queue.push(command.into());
@@ -184,7 +179,7 @@ impl Backend {
 		self.parameters.update(self.dt);
 		self.update_sounds();
 		self.update_arrangements();
-		self.update_metronome();
+		self.metronomes.update(self.dt, &self.parameters);
 		self.update_sequences();
 		self.streams.process(self.dt, &mut self.mixer);
 		self.instances.process(

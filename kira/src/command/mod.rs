@@ -7,6 +7,7 @@ use crate::{
 	instance::{
 		Instance, InstanceId, PauseInstanceSettings, ResumeInstanceSettings, StopInstanceSettings,
 	},
+	metronome::{Metronome, MetronomeId},
 	mixer::{
 		effect::{Effect, EffectId, EffectSettings},
 		SubTrackId, Track, TrackIndex,
@@ -49,12 +50,14 @@ pub(crate) enum InstanceCommand {
 	StopGroup(GroupId, StopInstanceSettings),
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub(crate) enum MetronomeCommand {
-	SetMetronomeTempo(Value<Tempo>),
-	StartMetronome,
-	PauseMetronome,
-	StopMetronome,
+	AddMetronome(MetronomeId, Metronome),
+	RemoveMetronome(MetronomeId),
+	SetMetronomeTempo(MetronomeId, Value<Tempo>),
+	StartMetronome(MetronomeId),
+	PauseMetronome(MetronomeId),
+	StopMetronome(MetronomeId),
 }
 
 pub(crate) enum SequenceCommand {

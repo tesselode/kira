@@ -19,16 +19,14 @@ use crate::{
 	},
 	error::{AudioError, AudioResult},
 	group::{Group, GroupHandle, GroupId},
-	metronome::MetronomeSettings,
+	metronome::{Metronome, MetronomeHandle, MetronomeId, MetronomeSettings},
 	mixer::{effect_slot::EffectSlot, SubTrackId, Track, TrackHandle, TrackIndex, TrackSettings},
 	parameter::{ParameterHandle, ParameterId},
 	playable::PlayableSettings,
 	sequence::SequenceInstance,
 	sequence::{Sequence, SequenceInstanceHandle, SequenceInstanceId, SequenceInstanceSettings},
 	sound::{Sound, SoundHandle, SoundId},
-	tempo::Tempo,
 	util::index_set_from_vec,
-	value::Value,
 	Event,
 };
 use cpal::{
@@ -68,8 +66,8 @@ pub struct AudioManagerSettings {
 	pub num_groups: usize,
 	/// The maximum number of audio strams that can be used at a time.
 	pub num_streams: usize,
-	/// Settings for the metronome.
-	pub metronome_settings: MetronomeSettings,
+	/// The maximum number of metronomes that can be used at a time.
+	pub num_metronomes: usize,
 }
 
 impl Default for AudioManagerSettings {
@@ -86,7 +84,7 @@ impl Default for AudioManagerSettings {
 			num_effects_per_track: 10,
 			num_groups: 100,
 			num_streams: 100,
-			metronome_settings: MetronomeSettings::default(),
+			num_metronomes: 100,
 		}
 	}
 }
@@ -102,6 +100,7 @@ pub(crate) struct AudioManagerThreadChannels {
 	pub effect_slots_to_unload_receiver: Receiver<EffectSlot>,
 	pub groups_to_unload_receiver: Receiver<Group>,
 	pub streams_to_unload_receiver: Receiver<Box<dyn AudioStream>>,
+	pub metronomes_to_unload_receiver: Receiver<Metronome>,
 }
 
 /**
@@ -189,6 +188,8 @@ impl AudioManager {
 		let (event_sender, event_receiver) = flume::bounded(settings.num_events);
 		let (streams_to_unload_sender, streams_to_unload_receiver) =
 			flume::bounded(settings.num_streams);
+		let (metronomes_to_unload_sender, metronomes_to_unload_receiver) =
+			flume::bounded(settings.num_metronomes);
 		let audio_manager_thread_channels = AudioManagerThreadChannels {
 			quit_signal_sender,
 			command_sender: CommandSender::new(command_sender),
@@ -200,6 +201,7 @@ impl AudioManager {
 			effect_slots_to_unload_receiver,
 			groups_to_unload_receiver,
 			streams_to_unload_receiver,
+			metronomes_to_unload_receiver,
 		};
 		let backend_thread_channels = BackendThreadChannels {
 			command_receiver,
@@ -211,6 +213,7 @@ impl AudioManager {
 			effect_slots_to_unload_sender,
 			groups_to_unload_sender,
 			streams_to_unload_sender,
+			metronomes_to_unload_sender,
 		};
 		(
 			audio_manager_thread_channels,
@@ -344,35 +347,19 @@ impl AudioManager {
 		for _ in self.thread_channels.streams_to_unload_receiver.try_iter() {}
 	}
 
-	/// Sets the tempo of the metronome.
-	pub fn set_metronome_tempo<T: Into<Value<Tempo>>>(
-		&mut self,
-		tempo: T,
-	) -> Result<(), AudioError> {
+	pub fn add_metronome(&mut self, settings: MetronomeSettings) -> AudioResult<MetronomeHandle> {
+		let id = MetronomeId::new();
+		let metronome = Metronome::new(settings);
 		self.thread_channels
 			.command_sender
-			.push(MetronomeCommand::SetMetronomeTempo(tempo.into()).into())
+			.push(MetronomeCommand::AddMetronome(id, metronome).into())
+			.map(|_| MetronomeHandle::new(id, self.thread_channels.command_sender.clone()))
 	}
 
-	/// Starts or resumes the metronome.
-	pub fn start_metronome(&mut self) -> Result<(), AudioError> {
+	pub fn remove_metronome(&mut self, id: impl Into<MetronomeId>) -> AudioResult<()> {
 		self.thread_channels
 			.command_sender
-			.push(MetronomeCommand::StartMetronome.into())
-	}
-
-	/// Pauses the metronome.
-	pub fn pause_metronome(&mut self) -> Result<(), AudioError> {
-		self.thread_channels
-			.command_sender
-			.push(MetronomeCommand::PauseMetronome.into())
-	}
-
-	/// Stops and resets the metronome.
-	pub fn stop_metronome(&mut self) -> Result<(), AudioError> {
-		self.thread_channels
-			.command_sender
-			.push(MetronomeCommand::StopMetronome.into())
+			.push(MetronomeCommand::RemoveMetronome(id.into()).into())
 	}
 
 	/// Starts a sequence.

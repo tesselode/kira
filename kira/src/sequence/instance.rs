@@ -9,7 +9,8 @@ use nanorand::{tls_rng, RNG};
 
 use crate::{
 	group::{groups::Groups, GroupId},
-	metronome::Metronome,
+	metronome::{MetronomeId, Metronomes},
+	Tempo,
 };
 
 use super::{RawSequence, SequenceInstanceHandle, SequenceOutputCommand, SequenceStep};
@@ -47,6 +48,7 @@ pub enum SequenceInstanceState {
 
 pub struct SequenceInstance {
 	sequence: RawSequence,
+	metronome: Option<MetronomeId>,
 	state: SequenceInstanceState,
 	public_state: Arc<Atomic<SequenceInstanceState>>,
 	position: usize,
@@ -56,9 +58,14 @@ pub struct SequenceInstance {
 }
 
 impl SequenceInstance {
-	pub fn new(sequence: RawSequence, event_sender: Sender<usize>) -> Self {
+	pub fn new(
+		sequence: RawSequence,
+		event_sender: Sender<usize>,
+		metronome: Option<MetronomeId>,
+	) -> Self {
 		Self {
 			sequence,
+			metronome,
 			state: SequenceInstanceState::Playing,
 			public_state: Arc::new(Atomic::new(SequenceInstanceState::Playing)),
 			position: 0,
@@ -120,9 +127,10 @@ impl SequenceInstance {
 	pub(crate) fn update(
 		&mut self,
 		dt: f64,
-		metronome: &Metronome,
+		metronomes: &Metronomes,
 		output_command_queue: &mut Vec<SequenceOutputCommand>,
 	) {
+		let metronome = self.metronome.map(|id| metronomes.get(id)).flatten();
 		loop {
 			match self.state {
 				SequenceInstanceState::Paused | SequenceInstanceState::Finished => {
@@ -133,7 +141,12 @@ impl SequenceInstance {
 						match step {
 							SequenceStep::Wait(duration) => {
 								if let Some(time) = self.wait_timer.as_mut() {
-									let duration = duration.in_seconds(metronome.effective_tempo());
+									let duration =
+										duration.in_seconds(if let Some(metronome) = metronome {
+											metronome.effective_tempo()
+										} else {
+											Tempo(0.0)
+										});
 									*time -= dt / duration;
 									if *time <= 0.0 {
 										self.start_step(self.position + 1);
@@ -142,8 +155,10 @@ impl SequenceInstance {
 								}
 							}
 							SequenceStep::WaitForInterval(interval) => {
-								if metronome.interval_passed(*interval) {
-									self.start_step(self.position + 1);
+								if let Some(metronome) = metronome {
+									if metronome.interval_passed(*interval) {
+										self.start_step(self.position + 1);
+									}
 								}
 								break;
 							}
