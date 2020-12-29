@@ -1,11 +1,12 @@
 use crate::{
 	command::{Command, InstanceCommand, MetronomeCommand, ParameterCommand, SequenceCommand},
 	group::groups::Groups,
+	instance::Instance,
 	metronome::Metronome,
 	sequence::{SequenceInstance, SequenceInstanceId, SequenceOutputCommand},
 };
+use flume::Sender;
 use indexmap::IndexMap;
-use ringbuf::Producer;
 use std::vec::Drain;
 
 pub(crate) struct Sequences {
@@ -88,7 +89,7 @@ impl Sequences {
 		&mut self,
 		dt: f64,
 		metronome: &Metronome,
-		sequences_to_unload_producer: &mut Producer<SequenceInstance>,
+		sequences_to_unload_sender: &mut Sender<SequenceInstance>,
 	) -> Drain<Command> {
 		// update sequences and process their commands
 		for (id, sequence_instance) in &mut self.sequence_instances {
@@ -100,9 +101,7 @@ impl Sequences {
 					SequenceOutputCommand::PlaySound(instance_id, playable, settings) => {
 						Command::Instance(InstanceCommand::Play(
 							instance_id,
-							playable,
-							Some(*id),
-							settings,
+							Instance::new(playable, Some(*id), settings),
 						))
 					}
 					SequenceOutputCommand::SetInstanceVolume(id, volume) => {
@@ -174,12 +173,7 @@ impl Sequences {
 		// remove finished sequences
 		for id in self.sequence_instances_to_remove.drain(..) {
 			let instance = self.sequence_instances.remove(&id).unwrap();
-			match sequences_to_unload_producer.push(instance) {
-				Ok(_) => {}
-				Err(instance) => {
-					self.sequence_instances.insert(id, instance);
-				}
-			}
+			sequences_to_unload_sender.try_send(instance).ok();
 		}
 		self.output_command_queue.drain(..)
 	}

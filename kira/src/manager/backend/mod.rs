@@ -20,22 +20,22 @@ use crate::{
 	sequence::SequenceInstance,
 	sound::{Sound, SoundId},
 };
+use flume::{Receiver, Sender};
 use indexmap::IndexMap;
 use instances::Instances;
-use ringbuf::{Consumer, Producer};
 use sequences::Sequences;
 use streams::Streams;
 
 pub(crate) struct BackendThreadChannels {
-	pub command_consumer: Consumer<Command>,
-	pub event_producer: Producer<Event>,
-	pub sounds_to_unload_producer: Producer<Sound>,
-	pub arrangements_to_unload_producer: Producer<Arrangement>,
-	pub sequence_instances_to_unload_producer: Producer<SequenceInstance>,
-	pub tracks_to_unload_producer: Producer<Track>,
-	pub effect_slots_to_unload_producer: Producer<EffectSlot>,
-	pub groups_to_unload_producer: Producer<Group>,
-	pub streams_to_unload_producer: Producer<Box<dyn AudioStream>>,
+	pub command_receiver: Receiver<Command>,
+	pub event_sender: Sender<Event>,
+	pub sounds_to_unload_sender: Sender<Sound>,
+	pub arrangements_to_unload_sender: Sender<Arrangement>,
+	pub sequence_instances_to_unload_sender: Sender<SequenceInstance>,
+	pub tracks_to_unload_sender: Sender<Track>,
+	pub effect_slots_to_unload_sender: Sender<EffectSlot>,
+	pub groups_to_unload_sender: Sender<Group>,
+	pub streams_to_unload_sender: Sender<Box<dyn AudioStream>>,
 }
 
 pub struct Backend {
@@ -76,9 +76,8 @@ impl Backend {
 	}
 
 	fn process_commands(&mut self) {
-		while let Some(command) = self.thread_channels.command_consumer.pop() {
-			self.command_queue.push(command);
-		}
+		self.command_queue
+			.extend(self.thread_channels.command_receiver.try_iter());
 		for command in self.command_queue.drain(..) {
 			match command {
 				Command::Resource(command) => match command {
@@ -89,9 +88,10 @@ impl Backend {
 						self.instances
 							.stop_instances_of(Playable::Sound(id), Default::default());
 						if let Some(sound) = self.sounds.remove(&id) {
-							match self.thread_channels.sounds_to_unload_producer.push(sound) {
-								_ => {}
-							}
+							self.thread_channels
+								.sounds_to_unload_sender
+								.try_send(sound)
+								.ok();
 						}
 					}
 					ResourceCommand::AddArrangement(id, arrangement) => {
@@ -101,13 +101,10 @@ impl Backend {
 						self.instances
 							.stop_instances_of(Playable::Arrangement(id), Default::default());
 						if let Some(arrangement) = self.arrangements.remove(&id) {
-							match self
-								.thread_channels
-								.arrangements_to_unload_producer
-								.push(arrangement)
-							{
-								_ => {}
-							}
+							self.thread_channels
+								.arrangements_to_unload_sender
+								.try_send(arrangement)
+								.ok();
 						}
 					}
 				},
@@ -128,8 +125,8 @@ impl Backend {
 				Command::Mixer(command) => {
 					self.mixer.run_command(
 						command,
-						&mut self.thread_channels.tracks_to_unload_producer,
-						&mut self.thread_channels.effect_slots_to_unload_producer,
+						&mut self.thread_channels.tracks_to_unload_sender,
+						&mut self.thread_channels.effect_slots_to_unload_sender,
 					);
 				}
 				Command::Parameter(command) => {
@@ -137,15 +134,15 @@ impl Backend {
 				}
 				Command::Group(command) => {
 					if let Some(group) = self.groups.run_command(command) {
-						match self.thread_channels.groups_to_unload_producer.push(group) {
-							Ok(_) => {}
-							Err(_) => {}
-						}
+						self.thread_channels
+							.groups_to_unload_sender
+							.try_send(group)
+							.ok();
 					}
 				}
 				Command::Stream(command) => {
 					self.streams
-						.run_command(command, &mut self.thread_channels.streams_to_unload_producer);
+						.run_command(command, &mut self.thread_channels.streams_to_unload_sender);
 				}
 			}
 		}
@@ -165,14 +162,10 @@ impl Backend {
 
 	fn update_metronome(&mut self) {
 		for interval in self.metronome.update(self.dt, &self.parameters) {
-			match self
-				.thread_channels
-				.event_producer
-				.push(Event::MetronomeIntervalPassed(interval))
-			{
-				Ok(_) => {}
-				Err(_) => {}
-			}
+			self.thread_channels
+				.event_sender
+				.try_send(Event::MetronomeIntervalPassed(interval))
+				.ok();
 		}
 	}
 
@@ -180,7 +173,7 @@ impl Backend {
 		for command in self.sequences.update(
 			self.dt,
 			&self.metronome,
-			&mut self.thread_channels.sequence_instances_to_unload_producer,
+			&mut self.thread_channels.sequence_instances_to_unload_sender,
 		) {
 			self.command_queue.push(command.into());
 		}

@@ -5,10 +5,10 @@ use std::vec;
 use indexmap::IndexMap;
 
 use crate::{
-	arrangement::{Arrangement, ArrangementId},
+	arrangement::{Arrangement, ArrangementHandle, ArrangementId},
 	group::{groups::Groups, GroupId},
 	mixer::TrackIndex,
-	sound::{Sound, SoundId},
+	sound::{Sound, SoundHandle, SoundId},
 	Frame,
 };
 
@@ -88,6 +88,12 @@ impl PlayableSettings {
 			groups: groups.into(),
 			..self
 		}
+	}
+
+	/// Adds this item to a group.
+	pub fn group(mut self, group: impl Into<GroupId>) -> Self {
+		self.groups.push(group.into());
+		self
 	}
 }
 
@@ -204,5 +210,17 @@ impl From<SoundId> for Playable {
 impl From<ArrangementId> for Playable {
 	fn from(id: ArrangementId) -> Self {
 		Self::Arrangement(id)
+	}
+}
+
+impl From<SoundHandle> for Playable {
+	fn from(handle: SoundHandle) -> Self {
+		Self::Sound(handle.id())
+	}
+}
+
+impl From<ArrangementHandle> for Playable {
+	fn from(handle: ArrangementHandle) -> Self {
+		Self::Arrangement(handle.id())
 	}
 }

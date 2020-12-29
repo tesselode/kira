@@ -3,7 +3,7 @@ use std::ops::Range;
 use nanorand::{tls_rng, RNG};
 
 use crate::{
-	parameter::{Mapping, ParameterId, Parameters},
+	parameter::{Mapping, ParameterHandle, ParameterId, Parameters},
 	util::lerp,
 };
 
@@ -27,6 +27,12 @@ impl<T: From<f64> + Into<f64> + Copy> From<T> for Value<T> {
 impl<T: From<f64> + Into<f64> + Copy> From<ParameterId> for Value<T> {
 	fn from(id: ParameterId) -> Self {
 		Self::Parameter(id, Mapping::default())
+	}
+}
+
+impl<T: From<f64> + Into<f64> + Copy> From<&ParameterHandle> for Value<T> {
+	fn from(handle: &ParameterHandle) -> Self {
+		Self::Parameter(handle.id(), Mapping::default())
 	}
 }
 

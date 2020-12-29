@@ -57,8 +57,11 @@
 //! loop start point, it will wrap around to the end
 //! of the instance.
 
+mod handle;
 mod settings;
 
+use atomic::Atomic;
+pub use handle::InstanceHandle;
 pub use settings::*;
 
 use indexmap::IndexMap;
@@ -75,7 +78,10 @@ use crate::{
 	value::CachedValue,
 	value::Value,
 };
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{
+	atomic::{AtomicUsize, Ordering},
+	Arc,
+};
 
 static NEXT_INSTANCE_INDEX: AtomicUsize = AtomicUsize::new(0);
 
@@ -97,8 +103,14 @@ impl InstanceId {
 	}
 }
 
+impl From<&InstanceHandle> for InstanceId {
+	fn from(handle: &InstanceHandle) -> Self {
+		handle.id()
+	}
+}
+
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub(crate) enum InstanceState {
+pub enum InstanceState {
 	Playing,
 	Paused(f64),
 	Stopped,
@@ -106,7 +118,7 @@ pub(crate) enum InstanceState {
 	Stopping,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub(crate) struct Instance {
 	playable: Playable,
 	track_index: TrackIndex,
@@ -117,6 +129,7 @@ pub(crate) struct Instance {
 	loop_start: Option<f64>,
 	reverse: bool,
 	state: InstanceState,
+	public_state: Arc<Atomic<InstanceState>>,
 	position: f64,
 	fade_volume: Parameter,
 }
@@ -147,6 +160,7 @@ impl Instance {
 			reverse: settings.reverse,
 			loop_start: settings.loop_start.into_option(playable),
 			state: InstanceState::Playing,
+			public_state: Arc::new(Atomic::new(InstanceState::Playing)),
 			position: settings.start_position,
 			fade_volume,
 		}
@@ -166,6 +180,10 @@ impl Instance {
 
 	pub fn effective_volume(&self) -> f64 {
 		self.volume.value() * self.fade_volume.value()
+	}
+
+	pub fn public_state(&self) -> Arc<Atomic<InstanceState>> {
+		self.public_state.clone()
 	}
 
 	pub fn playing(&self) -> bool {
@@ -213,19 +231,24 @@ impl Instance {
 		self.position = position;
 	}
 
+	fn set_state(&mut self, state: InstanceState) {
+		self.state = state;
+		self.public_state.store(state, Ordering::Relaxed);
+	}
+
 	pub fn pause(&mut self, settings: PauseInstanceSettings) {
-		self.state = if settings.fade_tween.is_some() {
+		self.set_state(if settings.fade_tween.is_some() {
 			InstanceState::Pausing(self.position)
 		} else {
 			InstanceState::Paused(self.position)
-		};
+		});
 		self.fade_volume.set(0.0, settings.fade_tween);
 	}
 
 	pub fn resume(&mut self, settings: ResumeInstanceSettings) {
 		match self.state {
 			InstanceState::Paused(position) | InstanceState::Pausing(position) => {
-				self.state = InstanceState::Playing;
+				self.set_state(InstanceState::Playing);
 				if settings.rewind_to_pause_position {
 					self.seek_to(position);
 				}
@@ -236,11 +259,11 @@ impl Instance {
 	}
 
 	pub fn stop(&mut self, settings: StopInstanceSettings) {
-		self.state = if settings.fade_tween.is_some() {
+		self.set_state(if settings.fade_tween.is_some() {
 			InstanceState::Stopping
 		} else {
 			InstanceState::Stopped
-		};
+		});
 		self.fade_volume.set(0.0, settings.fade_tween);
 	}
 
@@ -260,7 +283,7 @@ impl Instance {
 						self.position += self.playable.duration() - loop_start;
 					}
 				} else if self.position < 0.0 {
-					self.state = InstanceState::Stopped;
+					self.set_state(InstanceState::Stopped);
 				}
 			} else {
 				if let Some(loop_start) = self.loop_start {
@@ -268,7 +291,7 @@ impl Instance {
 						self.position -= self.playable.duration() - loop_start;
 					}
 				} else if self.position > self.playable.duration() {
-					self.state = InstanceState::Stopped;
+					self.set_state(InstanceState::Stopped);
 				}
 			}
 		}
@@ -276,10 +299,10 @@ impl Instance {
 		if finished_fading {
 			match self.state {
 				InstanceState::Pausing(position) => {
-					self.state = InstanceState::Paused(position);
+					self.set_state(InstanceState::Paused(position));
 				}
 				InstanceState::Stopping => {
-					self.state = InstanceState::Stopped;
+					self.set_state(InstanceState::Stopped);
 				}
 				_ => {}
 			}

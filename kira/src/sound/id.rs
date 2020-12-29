@@ -5,7 +5,7 @@ use std::{
 
 use crate::mixer::TrackIndex;
 
-use super::Sound;
+use super::{Sound, SoundHandle};
 
 static NEXT_SOUND_INDEX: AtomicUsize = AtomicUsize::new(0);
 
@@ -23,6 +23,17 @@ pub struct SoundId {
 }
 
 impl SoundId {
+	pub(crate) fn new(sound: &Sound) -> Self {
+		let index = NEXT_SOUND_INDEX.fetch_add(1, Ordering::Relaxed);
+		Self {
+			index,
+			duration: sound.duration(),
+			default_track: sound.default_track(),
+			semantic_duration: sound.semantic_duration(),
+			default_loop_start: sound.default_loop_start(),
+		}
+	}
+
 	/// Gets the duration of the sound.
 	pub fn duration(&self) -> f64 {
 		self.duration
@@ -61,15 +72,8 @@ impl Hash for SoundId {
 	}
 }
 
-impl SoundId {
-	pub(crate) fn new(sound: &Sound) -> Self {
-		let index = NEXT_SOUND_INDEX.fetch_add(1, Ordering::Relaxed);
-		Self {
-			index,
-			duration: sound.duration(),
-			default_track: sound.default_track(),
-			semantic_duration: sound.semantic_duration(),
-			default_loop_start: sound.default_loop_start(),
-		}
+impl From<&SoundHandle> for SoundId {
+	fn from(handle: &SoundHandle) -> Self {
+		handle.id()
 	}
 }

@@ -19,6 +19,12 @@ pub enum AudioError {
 	/// The queue that sends signals from the main thread
 	/// to the audio thread is full.
 	CommandQueueFull,
+	/// The backend cannot receive commands because it no
+	/// longer exists.
+	BackendDisconnected,
+	/// A channel that sends events from the audio thread
+	/// to the main thread is already being borrowed.
+	EventReceiverBorrowed,
 	/// Tried to load audio that isn't mono or stereo.
 	UnsupportedChannelConfiguration,
 	/// Tried to load audio in an unsupported file format.
@@ -61,6 +67,12 @@ impl Display for AudioError {
 			AudioError::CommandQueueFull => {
 				f.write_str("Cannot send a command to the audio thread because the queue is full")
 			}
+			AudioError::BackendDisconnected => {
+				f.write_str("The backend cannot receive commands because it no longer exists.")
+			}
+			AudioError::EventReceiverBorrowed => {
+				f.write_str("Cannot pop an event from a receiver because the receiver is currently mutably borrowed")
+			}
 			AudioError::UnsupportedChannelConfiguration => {
 				f.write_str("Only mono and stereo audio is supported")
 			}
@@ -78,9 +90,7 @@ impl Display for AudioError {
 				f.write_str("mp3s with variable sample rates are not supported")
 			}
 			#[cfg(feature = "mp3")]
-			AudioError::UnknownMp3SampleRate => {
-				f.write_str("Could not get the sample rate of the mp3")
-			}
+			AudioError::UnknownMp3SampleRate => f.write_str("Could not get the sample rate of the mp3"),
 			#[cfg(feature = "ogg")]
 			AudioError::OggError(error) => f.write_str(&format!("{}", error)),
 			#[cfg(feature = "flac")]

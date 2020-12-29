@@ -154,19 +154,19 @@
 //! # Ok::<(), kira::AudioError>(())
 //! ```
 
-mod event_receiver;
+mod handle;
 mod instance;
 
-pub use event_receiver::EventReceiver;
+pub use handle::SequenceInstanceHandle;
 pub(crate) use instance::SequenceInstance;
-pub use instance::SequenceInstanceId;
+pub use instance::{SequenceInstanceId, SequenceInstanceState};
 
 use indexmap::IndexSet;
-use ringbuf::RingBuffer;
 
 use std::{hash::Hash, vec};
 
 use crate::{
+	command::sender::CommandSender,
 	group::{groups::Groups, GroupId},
 	instance::{
 		InstanceId, InstanceSettings, PauseInstanceSettings, ResumeInstanceSettings,
@@ -335,83 +335,96 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	}
 
 	/// Adds a step to set the volume of an instance.
-	pub fn set_instance_volume(&mut self, id: InstanceId, volume: Value<f64>) {
+	pub fn set_instance_volume(&mut self, id: impl Into<InstanceId>, volume: Value<f64>) {
 		self.steps
-			.push(SequenceOutputCommand::SetInstanceVolume(id, volume).into());
+			.push(SequenceOutputCommand::SetInstanceVolume(id.into(), volume).into());
 	}
 
 	/// Adds a step to set the pitch of an instance.
-	pub fn set_instance_pitch(&mut self, id: InstanceId, pitch: Value<f64>) {
+	pub fn set_instance_pitch(&mut self, id: impl Into<InstanceId>, pitch: Value<f64>) {
 		self.steps
-			.push(SequenceOutputCommand::SetInstancePitch(id, pitch).into());
+			.push(SequenceOutputCommand::SetInstancePitch(id.into(), pitch).into());
 	}
 
 	/// Adds a step to set the panning of an instance.
-	pub fn set_instance_panning(&mut self, id: InstanceId, panning: Value<f64>) {
+	pub fn set_instance_panning(&mut self, id: impl Into<InstanceId>, panning: Value<f64>) {
 		self.steps
-			.push(SequenceOutputCommand::SetInstancePanning(id, panning).into());
+			.push(SequenceOutputCommand::SetInstancePanning(id.into(), panning).into());
 	}
 
 	/// Adds a step to pause an instance.
-	pub fn pause_instance(&mut self, id: InstanceId, settings: PauseInstanceSettings) {
+	pub fn pause_instance(&mut self, id: impl Into<InstanceId>, settings: PauseInstanceSettings) {
 		self.steps
-			.push(SequenceOutputCommand::PauseInstance(id, settings).into());
+			.push(SequenceOutputCommand::PauseInstance(id.into(), settings).into());
 	}
 
 	/// Adds a step to resume an instance.
-	pub fn resume_instance(&mut self, id: InstanceId, settings: ResumeInstanceSettings) {
+	pub fn resume_instance(&mut self, id: impl Into<InstanceId>, settings: ResumeInstanceSettings) {
 		self.steps
-			.push(SequenceOutputCommand::ResumeInstance(id, settings).into());
+			.push(SequenceOutputCommand::ResumeInstance(id.into(), settings).into());
 	}
 
 	/// Adds a step to stop an instance.
-	pub fn stop_instance(&mut self, id: InstanceId, settings: StopInstanceSettings) {
+	pub fn stop_instance(&mut self, id: impl Into<InstanceId>, settings: StopInstanceSettings) {
 		self.steps
-			.push(SequenceOutputCommand::StopInstance(id, settings).into());
+			.push(SequenceOutputCommand::StopInstance(id.into(), settings).into());
 	}
 
 	/// Adds a step to pause all instances of a sound or arrangement.
-	pub fn pause_instances_of(&mut self, playable: Playable, settings: PauseInstanceSettings) {
+	pub fn pause_instances_of(
+		&mut self,
+		playable: impl Into<Playable>,
+		settings: PauseInstanceSettings,
+	) {
 		self.steps
-			.push(SequenceOutputCommand::PauseInstancesOf(playable, settings).into());
+			.push(SequenceOutputCommand::PauseInstancesOf(playable.into(), settings).into());
 	}
 
 	/// Adds a step to resume all instances of a sound or arrangement.
-	pub fn resume_instances_of(&mut self, playable: Playable, settings: ResumeInstanceSettings) {
+	pub fn resume_instances_of(
+		&mut self,
+		playable: impl Into<Playable>,
+		settings: ResumeInstanceSettings,
+	) {
 		self.steps
-			.push(SequenceOutputCommand::ResumeInstancesOf(playable, settings).into());
+			.push(SequenceOutputCommand::ResumeInstancesOf(playable.into(), settings).into());
 	}
 
 	/// Adds a step to stop all instances of a sound or arrangement.
-	pub fn stop_instances_of(&mut self, playable: Playable, settings: StopInstanceSettings) {
+	pub fn stop_instances_of(
+		&mut self,
+		playable: impl Into<Playable>,
+		settings: StopInstanceSettings,
+	) {
 		self.steps
-			.push(SequenceOutputCommand::StopInstancesOf(playable, settings).into());
+			.push(SequenceOutputCommand::StopInstancesOf(playable.into(), settings).into());
 	}
 
 	/// Adds a step to pause a sequence.
-	pub fn pause_sequence(&mut self, id: SequenceInstanceId) {
+	pub fn pause_sequence(&mut self, id: impl Into<SequenceInstanceId>) {
 		self.steps
-			.push(SequenceOutputCommand::PauseSequence(id).into());
+			.push(SequenceOutputCommand::PauseSequence(id.into()).into());
 	}
 
 	/// Adds a step to resume a sequence.
-	pub fn resume_sequence(&mut self, id: SequenceInstanceId) {
+	pub fn resume_sequence(&mut self, id: impl Into<SequenceInstanceId>) {
 		self.steps
-			.push(SequenceOutputCommand::ResumeSequence(id).into());
+			.push(SequenceOutputCommand::ResumeSequence(id.into()).into());
 	}
 
 	/// Adds a step to stop a sequence.
-	pub fn stop_sequence(&mut self, id: SequenceInstanceId) {
+	pub fn stop_sequence(&mut self, id: impl Into<SequenceInstanceId>) {
 		self.steps
-			.push(SequenceOutputCommand::StopSequence(id).into());
+			.push(SequenceOutputCommand::StopSequence(id.into()).into());
 	}
 
 	/// Adds a step to pause a sequence and all instances played by it.
 	pub fn pause_sequence_and_instances(
 		&mut self,
-		id: SequenceInstanceId,
+		id: impl Into<SequenceInstanceId>,
 		settings: PauseInstanceSettings,
 	) {
+		let id: SequenceInstanceId = id.into();
 		self.steps
 			.push(SequenceOutputCommand::PauseSequence(id).into());
 		self.steps
@@ -421,9 +434,10 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	/// Adds a step to resume a sequence and all instances played by it.
 	pub fn resume_sequence_and_instances(
 		&mut self,
-		id: SequenceInstanceId,
+		id: impl Into<SequenceInstanceId>,
 		settings: ResumeInstanceSettings,
 	) {
+		let id: SequenceInstanceId = id.into();
 		self.steps
 			.push(SequenceOutputCommand::ResumeSequence(id).into());
 		self.steps
@@ -433,9 +447,10 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	/// Adds a step to stop a sequence and all instances played by it.
 	pub fn stop_sequence_and_instances(
 		&mut self,
-		id: SequenceInstanceId,
+		id: impl Into<SequenceInstanceId>,
 		settings: StopInstanceSettings,
 	) {
+		let id: SequenceInstanceId = id.into();
 		self.steps
 			.push(SequenceOutputCommand::StopSequence(id).into());
 		self.steps
@@ -466,9 +481,9 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	}
 
 	/// Adds a step to set a parameter.
-	pub fn set_parameter(&mut self, id: ParameterId, target: f64, tween: Option<Tween>) {
+	pub fn set_parameter(&mut self, id: impl Into<ParameterId>, target: f64, tween: Option<Tween>) {
 		self.steps
-			.push(SequenceOutputCommand::SetParameter(id, target, tween).into());
+			.push(SequenceOutputCommand::SetParameter(id.into(), target, tween).into());
 	}
 
 	/// Adds a step to emit a custom event.
@@ -528,13 +543,20 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	pub(crate) fn create_instance(
 		&self,
 		settings: SequenceInstanceSettings,
-	) -> (SequenceInstance, EventReceiver<CustomEvent>) {
+		id: SequenceInstanceId,
+		command_sender: CommandSender,
+	) -> (SequenceInstance, SequenceInstanceHandle<CustomEvent>) {
 		let (raw_sequence, events) = self.into_raw_sequence();
-		let (event_producer, event_consumer) =
-			RingBuffer::new(settings.event_queue_capacity).split();
-		let instance = SequenceInstance::new(raw_sequence, event_producer);
-		let event_receiver = EventReceiver::new(event_consumer, events);
-		(instance, event_receiver)
+		let (event_sender, event_receiver) = flume::bounded(settings.event_queue_capacity);
+		let instance = SequenceInstance::new(raw_sequence, event_sender);
+		let handle = SequenceInstanceHandle::new(
+			id,
+			instance.public_state(),
+			command_sender,
+			event_receiver,
+			events,
+		);
+		(instance, handle)
 	}
 
 	/// Returns if this sequence is in the group with the given ID.

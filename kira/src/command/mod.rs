@@ -1,10 +1,11 @@
+pub(crate) mod sender;
+
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
 	audio_stream::{AudioStream, AudioStreamId},
 	group::{Group, GroupId},
 	instance::{
-		InstanceId, InstanceSettings, PauseInstanceSettings, ResumeInstanceSettings,
-		StopInstanceSettings,
+		Instance, InstanceId, PauseInstanceSettings, ResumeInstanceSettings, StopInstanceSettings,
 	},
 	mixer::{
 		effect::{Effect, EffectId, EffectSettings},
@@ -26,14 +27,9 @@ pub(crate) enum ResourceCommand {
 	RemoveArrangement(ArrangementId),
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub(crate) enum InstanceCommand {
-	Play(
-		InstanceId,
-		Playable,
-		Option<SequenceInstanceId>,
-		InstanceSettings,
-	),
+	Play(InstanceId, Instance),
 	SetInstanceVolume(InstanceId, Value<f64>),
 	SetInstancePitch(InstanceId, Value<f64>),
 	SetInstancePanning(InstanceId, Value<f64>),

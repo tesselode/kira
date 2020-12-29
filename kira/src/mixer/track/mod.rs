@@ -1,3 +1,7 @@
+mod handle;
+
+pub use handle::TrackHandle;
+
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use indexmap::IndexMap;
@@ -55,6 +59,12 @@ impl Default for TrackIndex {
 impl From<SubTrackId> for TrackIndex {
 	fn from(id: SubTrackId) -> Self {
 		Self::Sub(id)
+	}
+}
+
+impl From<&TrackHandle> for TrackIndex {
+	fn from(handle: &TrackHandle) -> Self {
+		handle.index()
 	}
 }
 

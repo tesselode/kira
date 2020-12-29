@@ -1,5 +1,5 @@
+use flume::Sender;
 use indexmap::IndexMap;
-use ringbuf::Producer;
 
 use crate::{
 	command::MixerCommand,
@@ -24,8 +24,8 @@ impl Mixer {
 	pub fn run_command(
 		&mut self,
 		command: MixerCommand,
-		tracks_to_unload_producer: &mut Producer<Track>,
-		effect_slots_to_unload_producer: &mut Producer<EffectSlot>,
+		tracks_to_unload_sender: &mut Sender<Track>,
+		effect_slots_to_unload_sender: &mut Sender<EffectSlot>,
 	) {
 		match command {
 			MixerCommand::AddSubTrack(id, track) => {
@@ -42,9 +42,7 @@ impl Mixer {
 			}
 			MixerCommand::RemoveSubTrack(id) => {
 				if let Some(track) = self.sub_tracks.remove(&id) {
-					match tracks_to_unload_producer.push(track) {
-						_ => {}
-					}
+					tracks_to_unload_sender.try_send(track).ok();
 				}
 			}
 			MixerCommand::RemoveEffect(effect_id) => {
@@ -54,9 +52,7 @@ impl Mixer {
 				};
 				if let Some(track) = track {
 					if let Some(effect_slot) = track.remove_effect(effect_id) {
-						match effect_slots_to_unload_producer.push(effect_slot) {
-							_ => {}
-						}
+						effect_slots_to_unload_sender.try_send(effect_slot).ok();
 					}
 				}
 			}

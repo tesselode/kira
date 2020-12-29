@@ -14,6 +14,9 @@
 //! their ancestry.
 
 pub(crate) mod groups;
+mod handle;
+
+pub use handle::GroupHandle;
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -37,6 +40,12 @@ impl GroupId {
 	pub(crate) fn new() -> Self {
 		let index = NEXT_GROUP_INDEX.fetch_add(1, Ordering::Relaxed);
 		Self { index }
+	}
+}
+
+impl From<&GroupHandle> for GroupId {
+	fn from(handle: &GroupHandle) -> Self {
+		handle.id()
 	}
 }
 
