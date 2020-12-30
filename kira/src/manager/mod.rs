@@ -2,7 +2,7 @@
 
 mod backend;
 
-use std::{hash::Hash, path::Path};
+use std::hash::Hash;
 
 #[cfg(not(feature = "benchmarking"))]
 use backend::Backend;
@@ -21,7 +21,6 @@ use crate::{
 	metronome::{Metronome, MetronomeHandle, MetronomeId, MetronomeSettings},
 	mixer::{SubTrackId, Track, TrackHandle, TrackIndex, TrackSettings},
 	parameter::{ParameterHandle, ParameterId},
-	playable::PlayableSettings,
 	resource::Resource,
 	sequence::{Sequence, SequenceInstanceHandle, SequenceInstanceId, SequenceInstanceSettings},
 	sound::{Sound, SoundHandle, SoundId},
@@ -31,8 +30,6 @@ use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	Stream,
 };
-
-const WRAPPER_THREAD_SLEEP_DURATION: f64 = 1.0 / 60.0;
 
 /// Settings for an [`AudioManager`](crate::manager::AudioManager).
 #[derive(Debug, Clone)]
@@ -109,7 +106,10 @@ impl AudioManager {
 			quit_signal_receiver,
 		) = Self::create_thread_channels(&settings);
 
+		#[cfg(not(target_arch = "wasm32"))]
 		let stream = {
+			const WRAPPER_THREAD_SLEEP_DURATION: f64 = 1.0 / 60.0;
+
 			let (setup_result_sender, setup_result_receiver) = flume::bounded(1);
 			// set up a cpal stream on a new thread. we could do this on the main thread,
 			// but that causes issues with LÖVE.
@@ -143,6 +143,13 @@ impl AudioManager {
 			}
 
 			None
+		};
+
+		#[cfg(target_arch = "wasm32")]
+		let stream = {
+			// the quit signal is not meant to be consumed on wasm
+			let _ = quit_signal_receiver;
+			Some(Self::setup_stream(settings, command_receiver, unloader)?)
 		};
 
 		Ok(Self {
@@ -249,10 +256,11 @@ impl AudioManager {
 	///
 	/// This is a shortcut for constructing the sound manually and adding it
 	/// using [`AudioManager::add_sound`].
-	pub fn load_sound<P: AsRef<Path>>(
+	#[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
+	pub fn load_sound<P: AsRef<std::path::Path>>(
 		&mut self,
 		path: P,
-		settings: PlayableSettings,
+		settings: crate::playable::PlayableSettings,
 	) -> AudioResult<SoundHandle> {
 		let sound = Sound::from_file(path, settings)?;
 		self.add_sound(sound)

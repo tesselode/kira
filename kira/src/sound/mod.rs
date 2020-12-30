@@ -19,9 +19,10 @@ use crate::{
 #[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
 use crate::{error::AudioError, error::AudioResult};
 
+use std::fmt::{Debug, Formatter};
+
 #[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
 use std::{
-	fmt::{Debug, Formatter},
 	fs::File,
 	path::Path,
 };
