@@ -89,13 +89,18 @@ pub struct AudioManager {
 	quit_signal_sender: Sender<bool>,
 	command_sender: CommandSender,
 	resources_to_unload_receiver: Receiver<Resource>,
-	// holds the stream if it has been created on the main thread
+
+	// on wasm, holds the stream (as it has been created on the main thread)
 	// so it can live for as long as the audio manager
-	_stream: Option<Stream>,
+	// in all cases, in benchmarking mode, we do not want an
+	// audio stream anyway so we leave it out
+	#[cfg(all(target_arch = "wasm32", not(feature = "benchmarking")))]
+	_stream: Stream,
 }
 
 impl AudioManager {
 	/// Creates a new audio manager and starts an audio thread.
+	#[cfg(not(target_arch = "wasm32"))]
 	pub fn new(settings: AudioManagerSettings) -> AudioResult<Self> {
 		let (
 			quit_signal_sender,
@@ -106,57 +111,64 @@ impl AudioManager {
 			quit_signal_receiver,
 		) = Self::create_thread_channels(&settings);
 
-		#[cfg(not(target_arch = "wasm32"))]
-		let stream = {
-			const WRAPPER_THREAD_SLEEP_DURATION: f64 = 1.0 / 60.0;
+		const WRAPPER_THREAD_SLEEP_DURATION: f64 = 1.0 / 60.0;
 
-			let (setup_result_sender, setup_result_receiver) = flume::bounded(1);
-			// set up a cpal stream on a new thread. we could do this on the main thread,
-			// but that causes issues with LÖVE.
-			std::thread::spawn(move || {
-				match Self::setup_stream(settings, command_receiver, unloader) {
-					Ok(_stream) => {
-						setup_result_sender.try_send(Ok(())).unwrap();
-						// wait for a quit message before ending the thread and dropping
-						// the stream
-						while quit_signal_receiver.try_recv().is_err() {
-							std::thread::sleep(std::time::Duration::from_secs_f64(
-								WRAPPER_THREAD_SLEEP_DURATION,
-							));
-						}
-					}
-					Err(error) => {
-						setup_result_sender.try_send(Err(error)).unwrap();
+		let (setup_result_sender, setup_result_receiver) = flume::bounded(1);
+		// set up a cpal stream on a new thread. we could do this on the main thread,
+		// but that causes issues with LÖVE.
+		std::thread::spawn(move || {
+			match Self::setup_stream(settings, command_receiver, unloader) {
+				Ok(_stream) => {
+					setup_result_sender.try_send(Ok(())).unwrap();
+					// wait for a quit message before ending the thread and dropping
+					// the stream
+					while quit_signal_receiver.try_recv().is_err() {
+						std::thread::sleep(std::time::Duration::from_secs_f64(
+							WRAPPER_THREAD_SLEEP_DURATION,
+						));
 					}
 				}
-			});
-			// wait for the audio thread to report back a result
-			loop {
-				// TODO: figure out if we need to handle
-				// TryRecvError::Disconnected
-				if let Ok(result) = setup_result_receiver.try_recv() {
-					match result {
-						Ok(_) => break,
-						Err(error) => return Err(error),
-					}
+				Err(error) => {
+					setup_result_sender.try_send(Err(error)).unwrap();
 				}
 			}
-
-			None
-		};
-
-		#[cfg(target_arch = "wasm32")]
-		let stream = {
-			// the quit signal is not meant to be consumed on wasm
-			let _ = quit_signal_receiver;
-			Some(Self::setup_stream(settings, command_receiver, unloader)?)
-		};
+		});
+		// wait for the audio thread to report back a result
+		loop {
+			// TODO: figure out if we need to handle
+			// TryRecvError::Disconnected
+			if let Ok(result) = setup_result_receiver.try_recv() {
+				match result {
+					Ok(_) => break,
+					Err(error) => return Err(error),
+				}
+			}
+		}
 
 		Ok(Self {
 			quit_signal_sender,
 			command_sender,
 			resources_to_unload_receiver,
-			_stream: stream,
+		})
+	}
+
+	/// Creates a new audio manager and starts an audio thread.
+	#[cfg(target_arch = "wasm32")]
+	pub fn new(settings: AudioManagerSettings) -> AudioResult<Self> {
+		let (
+			quit_signal_sender,
+			command_sender,
+			resources_to_unload_receiver,
+			command_receiver,
+			unloader,
+			_,
+		) = Self::create_thread_channels(&settings);
+
+		Ok(Self {
+			quit_signal_sender,
+			command_sender,
+			resources_to_unload_receiver,
+			_stream: Self::setup_stream(settings, command_receiver, unloader)?,
 		})
 	}
 
@@ -238,7 +250,6 @@ impl AudioManager {
 			quit_signal_sender,
 			command_sender,
 			resources_to_unload_receiver,
-			_stream: None,
 		};
 		let backend = Backend::new(SAMPLE_RATE, settings, command_receiver, unloader);
 		Ok((audio_manager, backend))
