@@ -12,6 +12,7 @@ use crate::{
 
 use super::{SequenceInstanceId, SequenceInstanceState};
 
+#[derive(Clone)]
 pub struct SequenceInstanceHandle<CustomEvent> {
 	id: SequenceInstanceId,
 	state: Arc<Atomic<SequenceInstanceState>>,
