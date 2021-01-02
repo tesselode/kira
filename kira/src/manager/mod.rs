@@ -287,21 +287,7 @@ impl AudioManager {
 	/// Frees resources that are no longer in use, such as unloaded sounds
 	/// or finished sequences.
 	pub fn free_unused_resources(&mut self) {
-		for resource in self.resources_to_unload_receiver.try_iter() {
-			println!(
-				"{}",
-				match resource {
-					Resource::Sound(_) => "Sound",
-					Resource::Arrangement(_) => "Arrangement",
-					Resource::SequenceInstance(_) => "SequenceInstance",
-					Resource::Track(_) => "Track",
-					Resource::EffectSlot(_) => "EffectSlot",
-					Resource::Group(_) => "Group",
-					Resource::Stream(_) => "Stream",
-					Resource::Metronome(_) => "Metronome",
-				}
-			)
-		}
+		for _ in self.resources_to_unload_receiver.try_iter() {}
 	}
 
 	pub fn add_metronome(&mut self, settings: MetronomeSettings) -> AudioResult<MetronomeHandle> {
