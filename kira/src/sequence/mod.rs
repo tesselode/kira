@@ -167,7 +167,7 @@ use std::{hash::Hash, vec};
 
 use crate::{
 	command::sender::CommandSender,
-	group::{groups::Groups, GroupId},
+	group::{groups::Groups, GroupId, GroupSet},
 	instance::{
 		InstanceId, InstanceSettings, PauseInstanceSettings, ResumeInstanceSettings,
 		StopInstanceSettings,
@@ -175,7 +175,6 @@ use crate::{
 	metronome::MetronomeId,
 	parameter::{ParameterId, Tween},
 	playable::Playable,
-	util::index_set_from_vec,
 	AudioError, AudioResult, Duration, Tempo, Value,
 };
 
@@ -241,7 +240,7 @@ impl<CustomEvent: Clone + Eq + Hash> From<SequenceOutputCommand> for SequenceSte
 #[derive(Debug, Clone)]
 pub struct SequenceSettings {
 	/// The groups this sequence will belong to.
-	pub groups: Vec<GroupId>,
+	pub groups: GroupSet,
 }
 
 impl SequenceSettings {
@@ -251,7 +250,7 @@ impl SequenceSettings {
 	}
 
 	/// Sets the groups this sequence will belong to.
-	pub fn groups<T: Into<Vec<GroupId>>>(self, groups: T) -> Self {
+	pub fn groups(self, groups: impl Into<GroupSet>) -> Self {
 		Self {
 			groups: groups.into(),
 			..self
@@ -261,7 +260,9 @@ impl SequenceSettings {
 
 impl Default for SequenceSettings {
 	fn default() -> Self {
-		Self { groups: vec![] }
+		Self {
+			groups: GroupSet::new(),
+		}
 	}
 }
 
@@ -270,7 +271,7 @@ impl Default for SequenceSettings {
 pub struct Sequence<CustomEvent: Clone + Eq + Hash = ()> {
 	steps: Vec<SequenceStep<CustomEvent>>,
 	loop_point: Option<usize>,
-	groups: IndexSet<GroupId>,
+	groups: GroupSet,
 }
 
 impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
@@ -279,14 +280,14 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 		Self {
 			steps: vec![],
 			loop_point: None,
-			groups: index_set_from_vec(settings.groups),
+			groups: settings.groups,
 		}
 	}
 
 	fn with_components(
 		steps: Vec<SequenceStep<CustomEvent>>,
 		loop_point: Option<usize>,
-		groups: IndexSet<GroupId>,
+		groups: GroupSet,
 	) -> Self {
 		Self {
 			steps,
@@ -569,24 +570,8 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	}
 
 	/// Returns if this sequence is in the group with the given ID.
-	pub(crate) fn is_in_group(&self, parent_id: GroupId, groups: &Groups) -> bool {
-		if groups.get(parent_id).is_none() {
-			return false;
-		}
-		// check if this sequence is a direct descendant of the requested group
-		if self.groups.contains(&parent_id) {
-			return true;
-		}
-		// otherwise, recursively check if any of the direct parents of this
-		// sequence is in the requested group
-		for id in &self.groups {
-			if let Some(group) = groups.get(*id) {
-				if group.is_in_group(parent_id, groups) {
-					return true;
-				}
-			}
-		}
-		false
+	pub(crate) fn is_in_group(&self, id: GroupId, all_groups: &Groups) -> bool {
+		self.groups.has_ancestor(id, all_groups)
 	}
 }
 

@@ -1,4 +1,4 @@
-use crate::{group::GroupId, mixer::TrackIndex};
+use crate::{group::GroupSet, mixer::TrackIndex};
 
 /// Settings for a looping [`Arrangement`](super::Arrangement).
 #[derive(Debug, Clone)]
@@ -25,7 +25,7 @@ pub struct LoopArrangementSettings {
 	/// used as the default end point when looping the arrangement.
 	pub semantic_duration: Option<f64>,
 	/// The groups this arrangement belongs to.
-	pub groups: Vec<GroupId>,
+	pub groups: GroupSet,
 }
 
 impl LoopArrangementSettings {
@@ -59,17 +59,11 @@ impl LoopArrangementSettings {
 	}
 
 	/// Sets the group this arrangement belongs to.
-	pub fn groups<T: Into<Vec<GroupId>>>(self, groups: T) -> Self {
+	pub fn groups(self, groups: impl Into<GroupSet>) -> Self {
 		Self {
 			groups: groups.into(),
 			..self
 		}
-	}
-
-	/// Adds this arrangement to a group.
-	pub fn group(mut self, group: impl Into<GroupId>) -> Self {
-		self.groups.push(group.into());
-		self
 	}
 }
 
@@ -79,7 +73,7 @@ impl Default for LoopArrangementSettings {
 			default_track: TrackIndex::Main,
 			cooldown: Some(0.0001),
 			semantic_duration: None,
-			groups: vec![],
+			groups: GroupSet::new(),
 		}
 	}
 }

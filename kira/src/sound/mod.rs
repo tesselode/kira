@@ -6,14 +6,11 @@ mod id;
 pub use handle::SoundHandle;
 pub use id::SoundId;
 
-use indexmap::IndexSet;
-
 use crate::{
 	frame::Frame,
-	group::{groups::Groups, GroupId},
+	group::{groups::Groups, GroupId, GroupSet},
 	mixer::TrackIndex,
 	playable::PlayableSettings,
-	util::index_set_from_vec,
 };
 
 #[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
@@ -22,10 +19,7 @@ use crate::{error::AudioError, error::AudioResult};
 use std::fmt::{Debug, Formatter};
 
 #[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
-use std::{
-	fs::File,
-	path::Path,
-};
+use std::{fs::File, path::Path};
 
 /// A piece of audio that can be played by an [`AudioManager`](crate::manager::AudioManager).
 #[derive(Clone)]
@@ -37,7 +31,7 @@ pub struct Sound {
 	cooldown: Option<f64>,
 	semantic_duration: Option<f64>,
 	default_loop_start: Option<f64>,
-	groups: IndexSet<GroupId>,
+	groups: GroupSet,
 	cooldown_timer: f64,
 }
 
@@ -53,7 +47,7 @@ impl Sound {
 			cooldown: settings.cooldown,
 			semantic_duration: settings.semantic_duration,
 			default_loop_start: settings.default_loop_start,
-			groups: index_set_from_vec(settings.groups),
+			groups: settings.groups,
 			cooldown_timer: 0.0,
 		}
 	}
@@ -342,24 +336,8 @@ impl Sound {
 	}
 
 	/// Returns if this sound is in the group with the given ID.
-	pub(crate) fn is_in_group(&self, parent_id: GroupId, groups: &Groups) -> bool {
-		if groups.get(parent_id).is_none() {
-			return false;
-		}
-		// check if this sound is a direct descendant of the requested group
-		if self.groups.contains(&parent_id) {
-			return true;
-		}
-		// otherwise, recursively check if any of the direct parents of this
-		// sound is in the requested group
-		for id in &self.groups {
-			if let Some(group) = groups.get(*id) {
-				if group.is_in_group(parent_id, groups) {
-					return true;
-				}
-			}
-		}
-		false
+	pub(crate) fn is_in_group(&self, id: GroupId, all_groups: &Groups) -> bool {
+		self.groups.has_ancestor(id, all_groups)
 	}
 }
 

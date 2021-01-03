@@ -17,14 +17,13 @@ use crate::{
 		ParameterCommand, ResourceCommand, SequenceCommand,
 	},
 	error::{AudioError, AudioResult},
-	group::{Group, GroupHandle, GroupId},
+	group::{Group, GroupHandle, GroupId, GroupSet},
 	metronome::{Metronome, MetronomeHandle, MetronomeId, MetronomeSettings},
 	mixer::{SubTrackId, Track, TrackHandle, TrackIndex, TrackSettings},
 	parameter::{ParameterHandle, ParameterId},
 	resource::Resource,
 	sequence::{Sequence, SequenceInstanceHandle, SequenceInstanceId, SequenceInstanceSettings},
 	sound::{Sound, SoundHandle, SoundId},
-	util::index_set_from_vec,
 };
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
@@ -347,12 +346,9 @@ impl AudioManager {
 	}
 
 	/// Adds a group.
-	pub fn add_group<T: Into<Vec<GroupId>>>(
-		&mut self,
-		parent_groups: T,
-	) -> AudioResult<GroupHandle> {
+	pub fn add_group(&mut self, parent_groups: GroupSet) -> AudioResult<GroupHandle> {
 		let id = GroupId::new();
-		let group = Group::new(index_set_from_vec(parent_groups.into()));
+		let group = Group::new(parent_groups);
 		self.command_sender
 			.push(GroupCommand::AddGroup(id, group).into())?;
 		Ok(GroupHandle::new(id, self.command_sender.clone()))
