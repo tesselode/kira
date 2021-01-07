@@ -1,21 +1,18 @@
-use std::sync::{
-	atomic::{AtomicUsize, Ordering},
-	Arc,
-};
+use std::sync::{atomic::Ordering, Arc};
 
 use atomic::Atomic;
 use flume::Sender;
 use nanorand::{tls_rng, RNG};
+use uuid::Uuid;
 
 use crate::{
 	group::{groups::Groups, GroupId},
 	metronome::{MetronomeId, Metronomes},
+	util::generate_uuid,
 	Tempo,
 };
 
 use super::{RawSequence, SequenceInstanceHandle, SequenceOutputCommand, SequenceStep};
-
-static NEXT_SEQUENCE_INSTANCE_INDEX: AtomicUsize = AtomicUsize::new(0);
 
 /// A unique identifier for an instance of a [`Sequence`](crate::sequence::Sequence).
 ///
@@ -23,13 +20,14 @@ static NEXT_SEQUENCE_INSTANCE_INDEX: AtomicUsize = AtomicUsize::new(0);
 /// when you start a sequence with an [`AudioManager`](crate::manager::AudioManager).
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct SequenceInstanceId {
-	index: usize,
+	uuid: Uuid,
 }
 
 impl SequenceInstanceId {
 	pub(crate) fn new() -> Self {
-		let index = NEXT_SEQUENCE_INSTANCE_INDEX.fetch_add(1, Ordering::Relaxed);
-		Self { index }
+		Self {
+			uuid: generate_uuid(),
+		}
 	}
 }
 

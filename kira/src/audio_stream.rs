@@ -10,9 +10,10 @@
 //! [instances](crate::instance).
 
 use std::fmt::Debug;
-use std::sync::atomic::{AtomicUsize, Ordering};
 
-use crate::Frame;
+use uuid::Uuid;
+
+use crate::{util::generate_uuid, Frame};
 
 /// Produces a constant flow of audio data in real time.
 pub trait AudioStream: Debug + Send + 'static {
@@ -26,20 +27,19 @@ pub trait AudioStream: Debug + Send + 'static {
 	fn next(&mut self, dt: f64) -> Frame;
 }
 
-static NEXT_AUDIO_STREAM_INSTANCE_INDEX: AtomicUsize = AtomicUsize::new(0);
-
 /// A unique identifier for an [`AudioStream`](crate::audio_stream::AudioStream).
 ///
 /// You cannot create this manually - an audio stream ID is returned
 /// when you start an audio stream with an [`AudioManager`](crate::manager::AudioManager).
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct AudioStreamId {
-	index: usize,
+	uuid: Uuid,
 }
 
 impl AudioStreamId {
 	pub(crate) fn new() -> Self {
-		let index = NEXT_AUDIO_STREAM_INSTANCE_INDEX.fetch_add(1, Ordering::Relaxed);
-		Self { index }
+		Self {
+			uuid: generate_uuid(),
+		}
 	}
 }

@@ -1,19 +1,16 @@
 mod handle;
 
 pub use handle::TrackHandle;
-
-use std::sync::atomic::{AtomicUsize, Ordering};
+use uuid::Uuid;
 
 use indexmap::IndexMap;
 
-use crate::{frame::Frame, parameter::Parameters};
+use crate::{frame::Frame, parameter::Parameters, util::generate_uuid};
 
 use super::{
 	effect::{Effect, EffectId, EffectSettings},
 	effect_slot::EffectSlot,
 };
-
-static NEXT_SUB_TRACK_INDEX: AtomicUsize = AtomicUsize::new(0);
 
 /**
 A unique identifier for a sub-track.
@@ -23,13 +20,14 @@ when you create a sub-track with an [`AudioManager`](crate::manager::AudioManage
 */
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct SubTrackId {
-	index: usize,
+	uuid: Uuid,
 }
 
 impl SubTrackId {
 	pub(crate) fn new() -> Self {
-		let index = NEXT_SUB_TRACK_INDEX.fetch_add(1, Ordering::Relaxed);
-		Self { index }
+		Self {
+			uuid: generate_uuid(),
+		}
 	}
 }
 

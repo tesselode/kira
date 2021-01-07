@@ -3,16 +3,12 @@ mod metronomes;
 mod settings;
 
 use flume::Sender;
+use uuid::Uuid;
+
+use crate::{parameter::Parameters, tempo::Tempo, util::generate_uuid, value::CachedValue, Value};
 pub use handle::MetronomeHandle;
 pub(crate) use metronomes::Metronomes;
 pub use settings::MetronomeSettings;
-
-use atomic::Ordering;
-
-use crate::{parameter::Parameters, tempo::Tempo, value::CachedValue, Value};
-use std::sync::atomic::AtomicUsize;
-
-static NEXT_METRONOME_INDEX: AtomicUsize = AtomicUsize::new(0);
 
 /**
 A unique identifier for a metronome.
@@ -22,13 +18,14 @@ when you create a metronome with an [`AudioManager`](crate::manager::AudioManage
 */
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct MetronomeId {
-	index: usize,
+	uuid: Uuid,
 }
 
 impl MetronomeId {
 	pub(crate) fn new() -> Self {
-		let index = NEXT_METRONOME_INDEX.fetch_add(1, Ordering::Relaxed);
-		Self { index }
+		Self {
+			uuid: generate_uuid(),
+		}
 	}
 }
 

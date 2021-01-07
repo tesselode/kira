@@ -1,8 +1,8 @@
-use std::sync::atomic::{AtomicUsize, Ordering};
+use uuid::Uuid;
 
-use super::{ParameterHandle, Tween};
+use crate::util::generate_uuid;
 
-static NEXT_PARAMETER_INDEX: AtomicUsize = AtomicUsize::new(0);
+use super::Tween;
 
 /**
 A unique identifier for a parameter.
@@ -10,21 +10,16 @@ A unique identifier for a parameter.
 You cannot create this manually - a parameter ID is created
 when you create a parameter with an [`AudioManager`](crate::manager::AudioManager).
 */
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ParameterId {
-	index: usize,
+	uuid: Uuid,
 }
 
 impl ParameterId {
 	pub(crate) fn new() -> Self {
-		let index = NEXT_PARAMETER_INDEX.fetch_add(1, Ordering::Relaxed);
-		Self { index }
-	}
-}
-
-impl From<&ParameterHandle> for ParameterId {
-	fn from(handle: &ParameterHandle) -> Self {
-		handle.id()
+		Self {
+			uuid: generate_uuid(),
+		}
 	}
 }
 

@@ -65,6 +65,7 @@ pub use handle::InstanceHandle;
 pub use settings::*;
 
 use indexmap::IndexMap;
+use uuid::Uuid;
 
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
@@ -75,15 +76,11 @@ use crate::{
 	playable::Playable,
 	sequence::SequenceInstanceId,
 	sound::{Sound, SoundId},
+	util::generate_uuid,
 	value::CachedValue,
 	value::Value,
 };
-use std::sync::{
-	atomic::{AtomicUsize, Ordering},
-	Arc,
-};
-
-static NEXT_INSTANCE_INDEX: AtomicUsize = AtomicUsize::new(0);
+use std::sync::{atomic::Ordering, Arc};
 
 /**
 A unique identifier for an instance.
@@ -93,13 +90,14 @@ when you play a sound with an [`AudioManager`](crate::manager::AudioManager).
 */
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct InstanceId {
-	index: usize,
+	uuid: Uuid,
 }
 
 impl InstanceId {
 	pub(crate) fn new() -> Self {
-		let index = NEXT_INSTANCE_INDEX.fetch_add(1, Ordering::Relaxed);
-		Self { index }
+		Self {
+			uuid: generate_uuid(),
+		}
 	}
 }
 

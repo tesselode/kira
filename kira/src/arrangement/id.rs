@@ -1,13 +1,10 @@
-use std::{
-	hash::Hash,
-	sync::atomic::{AtomicUsize, Ordering},
-};
+use std::hash::Hash;
 
-use crate::mixer::TrackIndex;
+use uuid::Uuid;
+
+use crate::{mixer::TrackIndex, util::generate_uuid};
 
 use super::{Arrangement, ArrangementHandle};
-
-static NEXT_ARRANGEMENT_INDEX: AtomicUsize = AtomicUsize::new(0);
 
 /**
 A unique identifier for an [`Arrangement`](Arrangement).
@@ -18,7 +15,7 @@ to an [`AudioManager`](crate::manager::AudioManager).
 */
 #[derive(Debug, Copy, Clone)]
 pub struct ArrangementId {
-	index: usize,
+	uuid: Uuid,
 	duration: f64,
 	default_track: TrackIndex,
 	semantic_duration: Option<f64>,
@@ -27,9 +24,8 @@ pub struct ArrangementId {
 
 impl ArrangementId {
 	pub(crate) fn new(arrangement: &Arrangement) -> Self {
-		let index = NEXT_ARRANGEMENT_INDEX.fetch_add(1, Ordering::Relaxed);
 		Self {
-			index,
+			uuid: generate_uuid(),
 			duration: arrangement.duration(),
 			default_track: arrangement.default_track,
 			semantic_duration: arrangement.semantic_duration,
@@ -63,7 +59,7 @@ impl ArrangementId {
 
 impl PartialEq for ArrangementId {
 	fn eq(&self, other: &Self) -> bool {
-		self.index == other.index
+		self.uuid == other.uuid
 	}
 }
 
@@ -71,7 +67,7 @@ impl Eq for ArrangementId {}
 
 impl Hash for ArrangementId {
 	fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-		self.index.hash(state);
+		self.uuid.hash(state);
 	}
 }
 

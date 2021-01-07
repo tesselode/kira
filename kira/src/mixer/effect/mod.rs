@@ -1,15 +1,12 @@
 pub mod filter;
 
-use std::{
-	fmt::Debug,
-	sync::atomic::{AtomicUsize, Ordering},
-};
+use std::fmt::Debug;
 
-use crate::{frame::Frame, parameter::Parameters};
+use uuid::Uuid;
+
+use crate::{frame::Frame, parameter::Parameters, util::generate_uuid};
 
 use super::TrackIndex;
-
-static NEXT_EFFECT_INDEX: AtomicUsize = AtomicUsize::new(0);
 
 /**
 A unique identifier for an effect.
@@ -19,14 +16,16 @@ when you add an effect to a mixer track with an [`AudioManager`](crate::manager:
 */
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct EffectId {
-	index: usize,
+	uuid: Uuid,
 	track_index: TrackIndex,
 }
 
 impl EffectId {
 	pub(crate) fn new(track_index: TrackIndex) -> Self {
-		let index = NEXT_EFFECT_INDEX.fetch_add(1, Ordering::Relaxed);
-		Self { index, track_index }
+		Self {
+			uuid: generate_uuid(),
+			track_index,
+		}
 	}
 
 	/// Gets the mixer track that this effect applies to.

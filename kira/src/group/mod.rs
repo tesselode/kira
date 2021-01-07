@@ -19,10 +19,9 @@ mod set;
 
 pub use handle::GroupHandle;
 pub use set::GroupSet;
+use uuid::Uuid;
 
-use std::sync::atomic::{AtomicUsize, Ordering};
-
-static NEXT_GROUP_INDEX: AtomicUsize = AtomicUsize::new(0);
+use crate::util::generate_uuid;
 
 /**
 A unique identifier for a group.
@@ -32,13 +31,14 @@ when you create a group with an [`AudioManager`](crate::manager::AudioManager).
 */
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct GroupId {
-	index: usize,
+	uuid: Uuid,
 }
 
 impl GroupId {
 	pub(crate) fn new() -> Self {
-		let index = NEXT_GROUP_INDEX.fetch_add(1, Ordering::Relaxed);
-		Self { index }
+		Self {
+			uuid: generate_uuid(),
+		}
 	}
 }
 
