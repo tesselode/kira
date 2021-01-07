@@ -256,10 +256,11 @@ impl AudioManager {
 
 	/// Sends a sound to the audio thread and returns a handle to the sound.
 	pub fn add_sound(&mut self, sound: Sound) -> AudioResult<SoundHandle> {
-		let id = SoundId::new(&sound);
+		let id = SoundId::new();
+		let handle = SoundHandle::new(id, &sound, self.command_sender.clone());
 		self.command_sender
 			.push(ResourceCommand::AddSound(id, sound).into())?;
-		Ok(SoundHandle::new(id, self.command_sender.clone()))
+		Ok(handle)
 	}
 
 	/// Loads a sound from a file and returns a handle to the sound.
@@ -283,10 +284,11 @@ impl AudioManager {
 
 	/// Sends a arrangement to the audio thread and returns a handle to the arrangement.
 	pub fn add_arrangement(&mut self, arrangement: Arrangement) -> AudioResult<ArrangementHandle> {
-		let id = ArrangementId::new(&arrangement);
+		let id = ArrangementId::new();
+		let handle = ArrangementHandle::new(id, &arrangement, self.command_sender.clone());
 		self.command_sender
 			.push(ResourceCommand::AddArrangement(id, arrangement).into())?;
-		Ok(ArrangementHandle::new(id, self.command_sender.clone()))
+		Ok(handle)
 	}
 
 	pub fn remove_arrangement(&mut self, id: impl Into<ArrangementId>) -> AudioResult<()> {

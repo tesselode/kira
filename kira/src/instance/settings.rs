@@ -1,7 +1,11 @@
+use indexmap::IndexMap;
+
 use crate::{
+	arrangement::{Arrangement, ArrangementId},
 	mixer::{SubTrackId, TrackIndex},
 	parameter::{EaseDirection, Easing, Tween},
 	playable::Playable,
+	sound::{Sound, SoundId},
 	Value,
 };
 
@@ -15,9 +19,23 @@ pub enum InstanceTrackIndex {
 }
 
 impl InstanceTrackIndex {
-	pub(super) fn or_default(&self, default: TrackIndex) -> TrackIndex {
+	pub(crate) fn get(
+		&self,
+		playable: Playable,
+		sounds: &IndexMap<SoundId, Sound>,
+		arrangements: &IndexMap<ArrangementId, Arrangement>,
+	) -> TrackIndex {
 		match self {
-			InstanceTrackIndex::DefaultForSound => default,
+			InstanceTrackIndex::DefaultForSound => match playable {
+				Playable::Sound(id) => sounds
+					.get(&id)
+					.map(|sound| sound.default_track())
+					.unwrap_or(TrackIndex::Main),
+				Playable::Arrangement(id) => arrangements
+					.get(&id)
+					.map(|arrangement| arrangement.default_track())
+					.unwrap_or(TrackIndex::Main),
+			},
 			InstanceTrackIndex::Custom(index) => *index,
 		}
 	}
@@ -50,16 +68,6 @@ pub enum InstanceLoopStart {
 	None,
 	/// A custom loop start point in seconds.
 	Custom(f64),
-}
-
-impl InstanceLoopStart {
-	pub(super) fn into_option(&self, playable: Playable) -> Option<f64> {
-		match self {
-			Self::Default => playable.default_loop_start(),
-			Self::None => None,
-			Self::Custom(position) => Some(*position),
-		}
-	}
 }
 
 impl Default for InstanceLoopStart {

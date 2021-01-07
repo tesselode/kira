@@ -239,6 +239,18 @@ impl Arrangement {
 		self.duration
 	}
 
+	pub fn default_track(&self) -> TrackIndex {
+		self.default_track
+	}
+
+	pub fn semantic_duration(&self) -> Option<f64> {
+		self.semantic_duration
+	}
+
+	pub fn default_loop_start(&self) -> Option<f64> {
+		self.default_loop_start
+	}
+
 	/// Gets the frame at the given position of the arrangement.
 	pub(crate) fn get_frame_at_position(
 		&self,

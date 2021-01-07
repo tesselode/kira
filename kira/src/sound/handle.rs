@@ -8,17 +8,28 @@ use crate::{
 	AudioResult,
 };
 
-use super::SoundId;
+use super::{Sound, SoundId};
 
 #[derive(Clone)]
 pub struct SoundHandle {
 	id: SoundId,
+	duration: f64,
+	default_track: TrackIndex,
+	semantic_duration: Option<f64>,
+	default_loop_start: Option<f64>,
 	command_sender: CommandSender,
 }
 
 impl SoundHandle {
-	pub(crate) fn new(id: SoundId, command_sender: CommandSender) -> Self {
-		Self { id, command_sender }
+	pub(crate) fn new(id: SoundId, sound: &Sound, command_sender: CommandSender) -> Self {
+		Self {
+			id,
+			duration: sound.duration(),
+			default_track: sound.default_track(),
+			semantic_duration: sound.semantic_duration(),
+			default_loop_start: sound.default_loop_start(),
+			command_sender,
+		}
 	}
 
 	pub fn id(&self) -> SoundId {
@@ -26,19 +37,19 @@ impl SoundHandle {
 	}
 
 	pub fn duration(&self) -> f64 {
-		self.id.duration()
+		self.duration
 	}
 
 	pub fn default_track(&self) -> TrackIndex {
-		self.id.default_track()
+		self.default_track
 	}
 
 	pub fn semantic_duration(&self) -> Option<f64> {
-		self.id.semantic_duration()
+		self.semantic_duration
 	}
 
 	pub fn default_loop_start(&self) -> Option<f64> {
-		self.id.default_loop_start()
+		self.default_loop_start
 	}
 
 	pub fn play(&mut self, settings: InstanceSettings) -> AudioResult<InstanceHandle> {

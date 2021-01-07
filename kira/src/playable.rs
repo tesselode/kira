@@ -5,7 +5,6 @@ use indexmap::IndexMap;
 use crate::{
 	arrangement::{Arrangement, ArrangementHandle, ArrangementId},
 	group::{groups::Groups, GroupId},
-	mixer::TrackIndex,
 	sound::{Sound, SoundHandle, SoundId},
 	Frame,
 };
@@ -20,32 +19,6 @@ pub enum Playable {
 }
 
 impl Playable {
-	/// Gets the default track instances of this item will play on.
-	pub fn default_track(&self) -> TrackIndex {
-		match self {
-			Playable::Sound(id) => id.default_track(),
-			Playable::Arrangement(id) => id.default_track(),
-		}
-	}
-
-	/// Gets the [semantic duration](crate::playable::PlayableSettings#structfield.semantic_duration)
-	/// of the item.
-	pub fn semantic_duration(&self) -> Option<f64> {
-		match self {
-			Playable::Sound(id) => id.semantic_duration(),
-			Playable::Arrangement(id) => id.semantic_duration(),
-		}
-	}
-
-	/// Gets the default loop start point for instances of this
-	/// item.
-	pub fn default_loop_start(&self) -> Option<f64> {
-		match self {
-			Playable::Sound(id) => id.default_loop_start(),
-			Playable::Arrangement(id) => id.default_loop_start(),
-		}
-	}
-
 	/// Gets the frame this item will output at a certain time.
 	pub(crate) fn get_frame_at_position(
 		&self,

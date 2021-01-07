@@ -171,7 +171,9 @@ impl Instances {
 		for (instance_id, instance) in &mut self.instances {
 			if instance.playing() {
 				mixer.add_input(
-					instance.track_index(),
+					instance
+						.track_index()
+						.get(instance.playable(), sounds, arrangements),
 					instance.get_sample(sounds, arrangements),
 				);
 			}

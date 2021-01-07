@@ -71,7 +71,6 @@ use crate::{
 	arrangement::{Arrangement, ArrangementId},
 	frame::Frame,
 	group::{groups::Groups, GroupId},
-	mixer::TrackIndex,
 	parameter::{Parameter, Parameters},
 	playable::Playable,
 	sequence::SequenceInstanceId,
@@ -119,12 +118,12 @@ pub enum InstanceState {
 #[derive(Debug, Clone)]
 pub(crate) struct Instance {
 	playable: Playable,
-	track_index: TrackIndex,
+	track_index: InstanceTrackIndex,
 	sequence_id: Option<SequenceInstanceId>,
 	volume: CachedValue<f64>,
 	pitch: CachedValue<f64>,
 	panning: CachedValue<f64>,
-	loop_start: Option<f64>,
+	loop_start: InstanceLoopStart,
 	state: InstanceState,
 	public_state: Arc<Atomic<InstanceState>>,
 	position: f64,
@@ -146,12 +145,12 @@ impl Instance {
 		}
 		Self {
 			playable,
-			track_index: settings.track.or_default(playable.default_track()),
+			track_index: settings.track,
 			sequence_id,
 			volume: CachedValue::new(settings.volume, 1.0),
 			pitch: CachedValue::new(settings.pitch, 1.0),
 			panning: CachedValue::new(settings.panning, 0.5),
-			loop_start: settings.loop_start.into_option(playable),
+			loop_start: settings.loop_start,
 			state: InstanceState::Playing,
 			public_state: Arc::new(Atomic::new(InstanceState::Playing)),
 			position: settings.start_position,
@@ -163,7 +162,7 @@ impl Instance {
 		self.playable
 	}
 
-	pub fn track_index(&self) -> TrackIndex {
+	pub fn track_index(&self) -> InstanceTrackIndex {
 		self.track_index
 	}
 
@@ -275,13 +274,27 @@ impl Instance {
 					.map(|arrangement| arrangement.duration())
 					.unwrap_or(0.0),
 			};
+			let loop_start = match self.loop_start {
+				InstanceLoopStart::Default => match self.playable {
+					Playable::Sound(id) => sounds
+						.get(&id)
+						.map(|sound| sound.default_loop_start())
+						.unwrap_or(None),
+					Playable::Arrangement(id) => arrangements
+						.get(&id)
+						.map(|arrangement| arrangement.default_loop_start())
+						.unwrap_or(None),
+				},
+				InstanceLoopStart::None => None,
+				InstanceLoopStart::Custom(position) => Some(position),
+			};
 			self.volume.update(parameters);
 			self.pitch.update(parameters);
 			self.panning.update(parameters);
 			let pitch = self.pitch.value();
 			self.position += pitch * dt;
 			if pitch < 0.0 {
-				if let Some(loop_start) = self.loop_start {
+				if let Some(loop_start) = loop_start {
 					while self.position < loop_start {
 						self.position += duration - loop_start;
 					}
@@ -289,7 +302,7 @@ impl Instance {
 					self.set_state(InstanceState::Stopped);
 				}
 			} else {
-				if let Some(loop_start) = self.loop_start {
+				if let Some(loop_start) = loop_start {
 					while self.position > duration {
 						self.position -= duration - loop_start;
 					}
