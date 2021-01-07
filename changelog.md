@@ -6,6 +6,16 @@ Kira now runs on any platform supporting `wasm32` and having a
 `cpal` backend. This means one can now run an instance of Kira
 in a web browser.
 
+## Handle-based API
+TODO
+
+## Multiple metronomes
+TODO
+
+## Other changes
+- Add `GroupSet` struct
+- Derive `Clone` for `SequenceInstanceHandle`
+
 # v0.3.0 - December 26th, 2020
 
 ## Per-sequence custom event types
