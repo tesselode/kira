@@ -21,9 +21,9 @@ pub struct SoundHandle {
 }
 
 impl SoundHandle {
-	pub(crate) fn new(id: SoundId, sound: &Sound, command_sender: CommandSender) -> Self {
+	pub(crate) fn new(sound: &Sound, command_sender: CommandSender) -> Self {
 		Self {
-			id,
+			id: sound.id(),
 			duration: sound.duration(),
 			default_track: sound.default_track(),
 			semantic_duration: sound.semantic_duration(),

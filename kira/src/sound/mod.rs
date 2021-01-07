@@ -25,6 +25,7 @@ use std::{fs::File, path::Path};
 /// A piece of audio that can be played by an [`AudioManager`](crate::manager::AudioManager).
 #[derive(Clone)]
 pub struct Sound {
+	id: SoundId,
 	sample_rate: u32,
 	frames: Vec<Frame>,
 	duration: f64,
@@ -41,6 +42,7 @@ impl Sound {
 	pub fn from_frames(sample_rate: u32, frames: Vec<Frame>, settings: SoundSettings) -> Self {
 		let duration = frames.len() as f64 / sample_rate as f64;
 		Self {
+			id: settings.id,
 			sample_rate,
 			frames,
 			duration,
@@ -258,6 +260,11 @@ impl Sound {
 			}
 		}
 		Err(AudioError::UnsupportedAudioFileFormat)
+	}
+
+	/// Gets the unique identifier for this sound.
+	pub fn id(&self) -> SoundId {
+		self.id
 	}
 
 	/// Gets the default track that the sound plays on.

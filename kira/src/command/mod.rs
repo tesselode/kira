@@ -22,9 +22,9 @@ use crate::{
 
 #[derive(Debug, Clone)]
 pub(crate) enum ResourceCommand {
-	AddSound(SoundId, Sound),
+	AddSound(Sound),
 	RemoveSound(SoundId),
-	AddArrangement(ArrangementId, Arrangement),
+	AddArrangement(Arrangement),
 	RemoveArrangement(ArrangementId),
 }
 

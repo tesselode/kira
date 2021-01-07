@@ -143,6 +143,7 @@ use crate::{
 /// An arrangement of sound clips to play at specific times.
 #[derive(Debug, Clone)]
 pub struct Arrangement {
+	id: ArrangementId,
 	clips: Vec<SoundClip>,
 	duration: f64,
 	default_track: TrackIndex,
@@ -157,6 +158,7 @@ impl Arrangement {
 	/// Creates a new, empty arrangement.
 	pub fn new(settings: ArrangementSettings) -> Self {
 		Self {
+			id: settings.id,
 			clips: vec![],
 			duration: 0.0,
 			default_track: settings.default_track,
@@ -178,6 +180,7 @@ impl Arrangement {
 			.semantic_duration()
 			.unwrap_or(sound_handle.duration());
 		let mut arrangement = Self::new(ArrangementSettings {
+			id: settings.id,
 			default_track: settings.default_track,
 			cooldown: settings.cooldown,
 			semantic_duration: settings.semantic_duration,
@@ -209,6 +212,7 @@ impl Arrangement {
 			.semantic_duration()
 			.unwrap_or(loop_sound_handle.duration());
 		let mut arrangement = Self::new(ArrangementSettings {
+			id: settings.id,
 			default_track: settings.default_track,
 			cooldown: settings.cooldown,
 			semantic_duration: settings.semantic_duration,
@@ -230,6 +234,11 @@ impl Arrangement {
 		self.duration = self.duration.max(clip.clip_time_range.1);
 		self.clips.push(clip);
 		self
+	}
+
+	/// Gets the unique identifier for this arrangement.
+	pub fn id(&self) -> ArrangementId {
+		self.id
 	}
 
 	/// Gets the duration of the arrangement.

@@ -21,13 +21,9 @@ pub struct ArrangementHandle {
 }
 
 impl ArrangementHandle {
-	pub(crate) fn new(
-		id: ArrangementId,
-		arrangement: &Arrangement,
-		command_sender: CommandSender,
-	) -> Self {
+	pub(crate) fn new(arrangement: &Arrangement, command_sender: CommandSender) -> Self {
 		Self {
-			id,
+			id: arrangement.id(),
 			duration: arrangement.duration(),
 			default_track: arrangement.default_track(),
 			semantic_duration: arrangement.semantic_duration(),

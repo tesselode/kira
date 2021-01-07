@@ -1,8 +1,12 @@
 use crate::{group::GroupSet, mixer::TrackIndex};
 
+use super::ArrangementId;
+
 /// Settings for an [`Arrangement`](crate::arrangement::Arrangement).
 #[derive(Debug, Clone)]
 pub struct ArrangementSettings {
+	/// The unique identifier for this arrangement.
+	pub id: ArrangementId,
 	/// The track instances of this arrangement will play on by default.
 	pub default_track: TrackIndex,
 	/// Whether the arrangement should have a "cool off" period after playing
@@ -36,6 +40,14 @@ impl ArrangementSettings {
 	/// Creates a new `ArrangementSettings` with the default settings.
 	pub fn new() -> Self {
 		Self::default()
+	}
+
+	/// Sets the unique identifier for the arrangement.
+	pub fn id(self, id: impl Into<ArrangementId>) -> Self {
+		Self {
+			id: id.into(),
+			..self
+		}
 	}
 
 	/// Sets the track instances of this arrangement will play on by default.
@@ -82,6 +94,7 @@ impl ArrangementSettings {
 impl Default for ArrangementSettings {
 	fn default() -> Self {
 		Self {
+			id: ArrangementId::new(),
 			default_track: TrackIndex::Main,
 			cooldown: Some(0.0001),
 			semantic_duration: None,
@@ -94,6 +107,8 @@ impl Default for ArrangementSettings {
 /// Settings for a looping [`Arrangement`](super::Arrangement).
 #[derive(Debug, Clone)]
 pub struct LoopArrangementSettings {
+	/// The unique identifier for this arrangement.
+	pub id: ArrangementId,
 	/// The track instances of this arrangement will play on by default.
 	pub default_track: TrackIndex,
 	/// Whether the arrangement should have a "cool off" period after playing
@@ -123,6 +138,14 @@ impl LoopArrangementSettings {
 	/// Creates a new `LoopArrangementSettings` with the default settings.
 	pub fn new() -> Self {
 		Self::default()
+	}
+
+	/// Sets the unique identifier for the arrangement.
+	pub fn id(self, id: impl Into<ArrangementId>) -> Self {
+		Self {
+			id: id.into(),
+			..self
+		}
 	}
 
 	/// Sets the track instances of this arrangement will play on by default.
@@ -161,6 +184,7 @@ impl LoopArrangementSettings {
 impl Default for LoopArrangementSettings {
 	fn default() -> Self {
 		Self {
+			id: ArrangementId::new(),
 			default_track: TrackIndex::Main,
 			cooldown: Some(0.0001),
 			semantic_duration: None,

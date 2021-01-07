@@ -1,8 +1,12 @@
 use crate::{group::GroupSet, mixer::TrackIndex};
 
+use super::SoundId;
+
 /// Settings for a [`Sound`](crate::sound::Sound).
 #[derive(Debug, Clone)]
 pub struct SoundSettings {
+	/// The unique identifier for the sound.
+	pub id: SoundId,
 	/// The track instances of this sound will play on by default.
 	pub default_track: TrackIndex,
 	/// Whether the sound should have a "cool off" period after playing
@@ -33,9 +37,17 @@ pub struct SoundSettings {
 }
 
 impl SoundSettings {
-	/// Creates a new `Sound` with the default settings.
+	/// Creates a new `SoundSettings` with the default settings.
 	pub fn new() -> Self {
 		Self::default()
+	}
+
+	/// Sets the unique identifier for the sound.
+	pub fn id(self, id: impl Into<SoundId>) -> Self {
+		Self {
+			id: id.into(),
+			..self
+		}
 	}
 
 	/// Sets the track instances of this sound will play on by default.
@@ -82,6 +94,7 @@ impl SoundSettings {
 impl Default for SoundSettings {
 	fn default() -> Self {
 		Self {
+			id: SoundId::new(),
 			default_track: TrackIndex::Main,
 			cooldown: Some(0.0001),
 			semantic_duration: None,

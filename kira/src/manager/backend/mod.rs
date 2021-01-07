@@ -68,8 +68,10 @@ impl Backend {
 		for command in self.command_queue.drain(..) {
 			match command {
 				Command::Resource(command) => match command {
-					ResourceCommand::AddSound(id, sound) => {
-						self.sounds.insert(id, sound);
+					ResourceCommand::AddSound(sound) => {
+						if let Some(sound) = self.sounds.insert(sound.id(), sound) {
+							self.unloader.try_send(Resource::Sound(sound)).ok();
+						}
 					}
 					ResourceCommand::RemoveSound(id) => {
 						self.instances
@@ -78,8 +80,14 @@ impl Backend {
 							self.unloader.try_send(Resource::Sound(sound)).ok();
 						}
 					}
-					ResourceCommand::AddArrangement(id, arrangement) => {
-						self.arrangements.insert(id, arrangement);
+					ResourceCommand::AddArrangement(arrangement) => {
+						if let Some(arrangement) =
+							self.arrangements.insert(arrangement.id(), arrangement)
+						{
+							self.unloader
+								.try_send(Resource::Arrangement(arrangement))
+								.ok();
+						}
 					}
 					ResourceCommand::RemoveArrangement(id) => {
 						self.instances
