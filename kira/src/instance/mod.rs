@@ -125,7 +125,6 @@ pub(crate) struct Instance {
 	pitch: CachedValue<f64>,
 	panning: CachedValue<f64>,
 	loop_start: Option<f64>,
-	reverse: bool,
 	state: InstanceState,
 	public_state: Arc<Atomic<InstanceState>>,
 	position: f64,
@@ -136,7 +135,7 @@ impl Instance {
 	pub fn new(
 		playable: Playable,
 		sequence_id: Option<SequenceInstanceId>,
-		mut settings: InstanceSettings,
+		settings: InstanceSettings,
 	) -> Self {
 		let mut fade_volume;
 		if let Some(tween) = settings.fade_in_tween {
@@ -145,9 +144,6 @@ impl Instance {
 		} else {
 			fade_volume = Parameter::new(1.0);
 		}
-		if settings.reverse {
-			settings.start_position = playable.duration() - settings.start_position;
-		}
 		Self {
 			playable,
 			track_index: settings.track.or_default(playable.default_track()),
@@ -155,7 +151,6 @@ impl Instance {
 			volume: CachedValue::new(settings.volume, 1.0),
 			pitch: CachedValue::new(settings.pitch, 1.0),
 			panning: CachedValue::new(settings.panning, 0.5),
-			reverse: settings.reverse,
 			loop_start: settings.loop_start.into_option(playable),
 			state: InstanceState::Playing,
 			public_state: Arc::new(Atomic::new(InstanceState::Playing)),
@@ -270,10 +265,7 @@ impl Instance {
 			self.volume.update(parameters);
 			self.pitch.update(parameters);
 			self.panning.update(parameters);
-			let mut pitch = self.pitch.value();
-			if self.reverse {
-				pitch *= -1.0;
-			}
+			let pitch = self.pitch.value();
 			self.position += pitch * dt;
 			if pitch < 0.0 {
 				if let Some(loop_start) = self.loop_start {

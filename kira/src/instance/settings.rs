@@ -92,8 +92,6 @@ pub struct InstanceSettings {
 	pub pitch: Value<f64>,
 	/// The panning of the instance (0 = hard left, 1 = hard right).
 	pub panning: Value<f64>,
-	/// Whether the instance should be played in reverse.
-	pub reverse: bool,
 	/// The position to start playing the instance at (in seconds).
 	pub start_position: f64,
 	/// Whether to fade in the instance from silence, and if so,
@@ -132,14 +130,6 @@ impl InstanceSettings {
 	pub fn panning<P: Into<Value<f64>>>(self, panning: P) -> Self {
 		Self {
 			panning: panning.into(),
-			..self
-		}
-	}
-
-	/// Enables reverse playback for the instance.
-	pub fn reverse(self) -> Self {
-		Self {
-			reverse: true,
 			..self
 		}
 	}
@@ -183,7 +173,6 @@ impl Default for InstanceSettings {
 			volume: Value::Fixed(1.0),
 			pitch: Value::Fixed(1.0),
 			panning: Value::Fixed(0.5),
-			reverse: false,
 			start_position: 0.0,
 			fade_in_tween: None,
 			loop_start: InstanceLoopStart::default(),
