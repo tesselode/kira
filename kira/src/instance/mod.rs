@@ -260,8 +260,21 @@ impl Instance {
 		self.fade_volume.set(0.0, settings.fade_tween);
 	}
 
-	pub fn update(&mut self, dt: f64, parameters: &Parameters) {
+	pub fn update(
+		&mut self,
+		dt: f64,
+		parameters: &Parameters,
+		sounds: &IndexMap<SoundId, Sound>,
+		arrangements: &IndexMap<ArrangementId, Arrangement>,
+	) {
 		if self.playing() {
+			let duration = match self.playable {
+				Playable::Sound(id) => sounds.get(&id).map(|sound| sound.duration()).unwrap_or(0.0),
+				Playable::Arrangement(id) => arrangements
+					.get(&id)
+					.map(|arrangement| arrangement.duration())
+					.unwrap_or(0.0),
+			};
 			self.volume.update(parameters);
 			self.pitch.update(parameters);
 			self.panning.update(parameters);
@@ -270,17 +283,17 @@ impl Instance {
 			if pitch < 0.0 {
 				if let Some(loop_start) = self.loop_start {
 					while self.position < loop_start {
-						self.position += self.playable.duration() - loop_start;
+						self.position += duration - loop_start;
 					}
 				} else if self.position < 0.0 {
 					self.set_state(InstanceState::Stopped);
 				}
 			} else {
 				if let Some(loop_start) = self.loop_start {
-					while self.position > self.playable.duration() {
-						self.position -= self.playable.duration() - loop_start;
+					while self.position > duration {
+						self.position -= duration - loop_start;
 					}
-				} else if self.position > self.playable.duration() {
+				} else if self.position > duration {
 					self.set_state(InstanceState::Stopped);
 				}
 			}

@@ -136,7 +136,7 @@ use indexmap::IndexMap;
 use crate::{
 	group::{groups::Groups, GroupId, GroupSet},
 	mixer::TrackIndex,
-	sound::{Sound, SoundId},
+	sound::{Sound, SoundHandle, SoundId},
 	Frame,
 };
 
@@ -173,9 +173,10 @@ impl Arrangement {
 	/// If the sound has a semantic duration, it will be used to
 	/// set the point where the sound loops. Any audio after the loop
 	/// point will be preserved when the loop starts.
-	pub fn new_loop(sound_id: impl Into<SoundId>, settings: LoopArrangementSettings) -> Self {
-		let sound_id: SoundId = sound_id.into();
-		let duration = sound_id.semantic_duration().unwrap_or(sound_id.duration());
+	pub fn new_loop(sound_handle: &SoundHandle, settings: LoopArrangementSettings) -> Self {
+		let duration = sound_handle
+			.semantic_duration()
+			.unwrap_or(sound_handle.duration());
 		let mut arrangement = Self::new(ArrangementSettings {
 			default_track: settings.default_track,
 			cooldown: settings.cooldown,
@@ -184,8 +185,8 @@ impl Arrangement {
 			groups: settings.groups,
 		});
 		arrangement
-			.add_clip(SoundClip::new(sound_id, 0.0))
-			.add_clip(SoundClip::new(sound_id, duration).trim(duration));
+			.add_clip(SoundClip::new(sound_handle, 0.0))
+			.add_clip(SoundClip::new(sound_handle, duration).trim(duration));
 		arrangement
 	}
 
@@ -197,18 +198,16 @@ impl Arrangement {
 	/// it will be used to set the point where the sound repeats. Any audio
 	/// after the loop point will be preserved when the sound repeats.
 	pub fn new_loop_with_intro(
-		intro_sound_id: impl Into<SoundId>,
-		loop_sound_id: impl Into<SoundId>,
+		intro_sound_handle: &SoundHandle,
+		loop_sound_handle: &SoundHandle,
 		settings: LoopArrangementSettings,
 	) -> Self {
-		let loop_sound_id: SoundId = loop_sound_id.into();
-		let intro_sound_id: SoundId = intro_sound_id.into();
-		let intro_duration = intro_sound_id
+		let intro_duration = intro_sound_handle
 			.semantic_duration()
-			.unwrap_or(intro_sound_id.duration());
-		let loop_duration = loop_sound_id
+			.unwrap_or(intro_sound_handle.duration());
+		let loop_duration = loop_sound_handle
 			.semantic_duration()
-			.unwrap_or(loop_sound_id.duration());
+			.unwrap_or(loop_sound_handle.duration());
 		let mut arrangement = Self::new(ArrangementSettings {
 			default_track: settings.default_track,
 			cooldown: settings.cooldown,
@@ -217,10 +216,11 @@ impl Arrangement {
 			groups: settings.groups,
 		});
 		arrangement
-			.add_clip(SoundClip::new(intro_sound_id, 0.0))
-			.add_clip(SoundClip::new(loop_sound_id, intro_duration))
+			.add_clip(SoundClip::new(intro_sound_handle, 0.0))
+			.add_clip(SoundClip::new(loop_sound_handle, intro_duration))
 			.add_clip(
-				SoundClip::new(loop_sound_id, intro_duration + loop_duration).trim(loop_duration),
+				SoundClip::new(loop_sound_handle, intro_duration + loop_duration)
+					.trim(loop_duration),
 			);
 		arrangement
 	}

@@ -20,14 +20,6 @@ pub enum Playable {
 }
 
 impl Playable {
-	/// Gets the duration of the item.
-	pub fn duration(&self) -> f64 {
-		match self {
-			Playable::Sound(id) => id.duration(),
-			Playable::Arrangement(id) => id.duration(),
-		}
-	}
-
 	/// Gets the default track instances of this item will play on.
 	pub fn default_track(&self) -> TrackIndex {
 		match self {

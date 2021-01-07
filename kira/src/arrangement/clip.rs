@@ -1,7 +1,7 @@
 use indexmap::IndexMap;
 
 use crate::{
-	sound::{Sound, SoundId},
+	sound::{Sound, SoundHandle, SoundId},
 	util::inverse_lerp,
 	util::lerp,
 	Frame,
@@ -25,12 +25,11 @@ impl SoundClip {
 	/// Creates a new sound clip that starts at the specified time
 	/// and contains the whole sound without any cropping or
 	/// speed up/slow down.
-	pub fn new(sound_id: impl Into<SoundId>, clip_start_time: f64) -> Self {
-		let sound_id: SoundId = sound_id.into();
+	pub fn new(sound_handle: &SoundHandle, clip_start_time: f64) -> Self {
 		Self {
-			sound_id,
-			clip_time_range: (clip_start_time, clip_start_time + sound_id.duration()),
-			sound_time_range: (0.0, sound_id.duration()),
+			sound_id: sound_handle.id(),
+			clip_time_range: (clip_start_time, clip_start_time + sound_handle.duration()),
+			sound_time_range: (0.0, sound_handle.duration()),
 		}
 	}
 

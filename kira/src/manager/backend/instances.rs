@@ -178,7 +178,7 @@ impl Instances {
 			if instance.finished() {
 				self.instances_to_remove.push(*instance_id);
 			}
-			instance.update(dt, parameters);
+			instance.update(dt, parameters, sounds, arrangements);
 		}
 		for instance_id in self.instances_to_remove.drain(..) {
 			self.instances.remove(&instance_id);
