@@ -129,14 +129,13 @@ mod settings;
 pub use clip::SoundClip;
 pub use handle::ArrangementHandle;
 pub use id::ArrangementId;
-pub use settings::LoopArrangementSettings;
+pub use settings::{ArrangementSettings, LoopArrangementSettings};
 
 use indexmap::IndexMap;
 
 use crate::{
 	group::{groups::Groups, GroupId, GroupSet},
 	mixer::TrackIndex,
-	playable::PlayableSettings,
 	sound::{Sound, SoundId},
 	Frame,
 };
@@ -156,7 +155,7 @@ pub struct Arrangement {
 
 impl Arrangement {
 	/// Creates a new, empty arrangement.
-	pub fn new(settings: PlayableSettings) -> Self {
+	pub fn new(settings: ArrangementSettings) -> Self {
 		Self {
 			clips: vec![],
 			duration: 0.0,
@@ -177,7 +176,7 @@ impl Arrangement {
 	pub fn new_loop(sound_id: impl Into<SoundId>, settings: LoopArrangementSettings) -> Self {
 		let sound_id: SoundId = sound_id.into();
 		let duration = sound_id.semantic_duration().unwrap_or(sound_id.duration());
-		let mut arrangement = Self::new(PlayableSettings {
+		let mut arrangement = Self::new(ArrangementSettings {
 			default_track: settings.default_track,
 			cooldown: settings.cooldown,
 			semantic_duration: settings.semantic_duration,
@@ -210,7 +209,7 @@ impl Arrangement {
 		let loop_duration = loop_sound_id
 			.semantic_duration()
 			.unwrap_or(loop_sound_id.duration());
-		let mut arrangement = Self::new(PlayableSettings {
+		let mut arrangement = Self::new(ArrangementSettings {
 			default_track: settings.default_track,
 			cooldown: settings.cooldown,
 			semantic_duration: settings.semantic_duration,

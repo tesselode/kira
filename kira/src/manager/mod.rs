@@ -270,7 +270,7 @@ impl AudioManager {
 	pub fn load_sound<P: AsRef<std::path::Path>>(
 		&mut self,
 		path: P,
-		settings: crate::playable::PlayableSettings,
+		settings: crate::sound::SoundSettings,
 	) -> AudioResult<SoundHandle> {
 		let sound = Sound::from_file(path, settings)?;
 		self.add_sound(sound)

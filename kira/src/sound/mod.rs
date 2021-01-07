@@ -2,15 +2,16 @@
 
 mod handle;
 mod id;
+mod settings;
 
 pub use handle::SoundHandle;
 pub use id::SoundId;
+pub use settings::SoundSettings;
 
 use crate::{
 	frame::Frame,
 	group::{groups::Groups, GroupId, GroupSet},
 	mixer::TrackIndex,
-	playable::PlayableSettings,
 };
 
 #[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
@@ -37,7 +38,7 @@ pub struct Sound {
 
 impl Sound {
 	/// Creates a new sound from raw sample data.
-	pub fn from_frames(sample_rate: u32, frames: Vec<Frame>, settings: PlayableSettings) -> Self {
+	pub fn from_frames(sample_rate: u32, frames: Vec<Frame>, settings: SoundSettings) -> Self {
 		let duration = frames.len() as f64 / sample_rate as f64;
 		Self {
 			sample_rate,
@@ -54,7 +55,7 @@ impl Sound {
 
 	/// Decodes a sound from an mp3 file.
 	#[cfg(feature = "mp3")]
-	pub fn from_mp3_file<P>(path: P, settings: PlayableSettings) -> AudioResult<Self>
+	pub fn from_mp3_file<P>(path: P, settings: SoundSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -113,7 +114,7 @@ impl Sound {
 
 	/// Decodes a sound from an ogg file.
 	#[cfg(feature = "ogg")]
-	pub fn from_ogg_file<P>(path: P, settings: PlayableSettings) -> AudioResult<Self>
+	pub fn from_ogg_file<P>(path: P, settings: SoundSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -146,7 +147,7 @@ impl Sound {
 
 	/// Decodes a sound from a flac file.
 	#[cfg(feature = "flac")]
-	pub fn from_flac_file<P>(path: P, settings: PlayableSettings) -> AudioResult<Self>
+	pub fn from_flac_file<P>(path: P, settings: SoundSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -181,7 +182,7 @@ impl Sound {
 
 	/// Decodes a sound from a wav file.
 	#[cfg(feature = "wav")]
-	pub fn from_wav_file<P>(path: P, settings: PlayableSettings) -> AudioResult<Self>
+	pub fn from_wav_file<P>(path: P, settings: SoundSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -237,7 +238,7 @@ impl Sound {
 	///
 	/// The audio format will be automatically determined from the file extension.
 	#[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
-	pub fn from_file<P>(path: P, settings: PlayableSettings) -> AudioResult<Self>
+	pub fn from_file<P>(path: P, settings: SoundSettings) -> AudioResult<Self>
 	where
 		P: AsRef<Path>,
 	{
