@@ -6,8 +6,6 @@ use uuid::Uuid;
 
 use crate::{frame::Frame, parameter::Parameters, util::generate_uuid};
 
-use super::TrackIndex;
-
 /**
 A unique identifier for an effect.
 
@@ -17,20 +15,13 @@ when you add an effect to a mixer track with an [`AudioManager`](crate::manager:
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct EffectId {
 	uuid: Uuid,
-	track_index: TrackIndex,
 }
 
 impl EffectId {
-	pub(crate) fn new(track_index: TrackIndex) -> Self {
+	pub(crate) fn new() -> Self {
 		Self {
 			uuid: generate_uuid(),
-			track_index,
 		}
-	}
-
-	/// Gets the mixer track that this effect applies to.
-	pub fn track_index(&self) -> TrackIndex {
-		self.track_index
 	}
 }
 

@@ -29,7 +29,7 @@ impl TrackHandle {
 		effect: impl Effect + 'static,
 		settings: EffectSettings,
 	) -> AudioResult<EffectId> {
-		let effect_id = EffectId::new(self.index);
+		let effect_id = EffectId::new();
 		self.command_sender
 			.push(MixerCommand::AddEffect(self.index, effect_id, Box::new(effect), settings).into())
 			.map(|_| effect_id)
@@ -37,7 +37,7 @@ impl TrackHandle {
 
 	pub fn remove_effect(&mut self, id: EffectId) -> AudioResult<()> {
 		self.command_sender
-			.push(MixerCommand::RemoveEffect(id).into())
+			.push(MixerCommand::RemoveEffect(self.index, id).into())
 	}
 
 	pub fn add_stream(&mut self, stream: impl AudioStream) -> AudioResult<AudioStreamId> {
