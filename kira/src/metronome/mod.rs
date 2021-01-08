@@ -17,6 +17,11 @@ You cannot create this manually - a metronome ID is created
 when you create a metronome with an [`AudioManager`](crate::manager::AudioManager).
 */
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(transparent)
+)]
 pub struct MetronomeId {
 	uuid: Uuid,
 }

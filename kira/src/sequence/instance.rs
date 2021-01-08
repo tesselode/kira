@@ -19,6 +19,11 @@ use super::{RawSequence, SequenceInstanceHandle, SequenceOutputCommand, Sequence
 /// You cannot create this manually - a sequence instance ID is returned
 /// when you start a sequence with an [`AudioManager`](crate::manager::AudioManager).
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(transparent)
+)]
 pub struct SequenceInstanceId {
 	uuid: Uuid,
 }

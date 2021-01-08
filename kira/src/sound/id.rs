@@ -11,6 +11,11 @@ use super::SoundHandle;
 /// You cannot create this manually - a sound ID is returned
 /// when you add a sound to an [`AudioManager`](crate::manager::AudioManager).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(transparent)
+)]
 pub struct SoundId {
 	uuid: Uuid,
 }

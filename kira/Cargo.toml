@@ -18,7 +18,7 @@ mp3 = ["minimp3"]
 ogg = ["lewton"]
 flac = ["claxon"]
 wav = ["hound"]
-serde_support = ["serde"]
+serde_support = ["serde", "indexmap/serde", "uuid/serde"]
 default = ["mp3", "ogg", "flac", "wav"]
 
 [dependencies]

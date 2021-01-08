@@ -4,6 +4,11 @@ use super::ArrangementId;
 
 /// Settings for an [`Arrangement`](crate::arrangement::Arrangement).
 #[derive(Debug, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(default)
+)]
 pub struct ArrangementSettings {
 	/// The unique identifier for this arrangement.
 	pub id: ArrangementId,

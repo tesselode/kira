@@ -11,6 +11,11 @@ You cannot create this manually - a parameter ID is created
 when you create a parameter with an [`AudioManager`](crate::manager::AudioManager).
 */
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(transparent)
+)]
 pub struct ParameterId {
 	uuid: Uuid,
 }

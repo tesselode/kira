@@ -4,6 +4,11 @@ use super::SoundId;
 
 /// Settings for a [`Sound`](crate::sound::Sound).
 #[derive(Debug, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(default)
+)]
 pub struct SoundSettings {
 	/// The unique identifier for the sound.
 	pub id: SoundId,
