@@ -27,15 +27,26 @@ impl Sequences {
 		}
 	}
 
-	fn start_sequence_instance(&mut self, id: SequenceInstanceId, mut instance: SequenceInstance) {
+	fn start_sequence_instance(
+		&mut self,
+		id: SequenceInstanceId,
+		mut instance: SequenceInstance,
+	) -> Option<SequenceInstance> {
 		instance.start();
-		self.sequence_instances.insert(id, instance);
+		self.sequence_instances.insert(id, instance)
 	}
 
-	pub fn run_command(&mut self, command: SequenceCommand, groups: &Groups) {
+	pub fn run_command(
+		&mut self,
+		command: SequenceCommand,
+		groups: &Groups,
+		unloader: &mut Sender<Resource>,
+	) {
 		match command {
 			SequenceCommand::StartSequenceInstance(id, instance) => {
-				self.start_sequence_instance(id, instance);
+				if let Some(instance) = self.start_sequence_instance(id, instance) {
+					unloader.try_send(Resource::SequenceInstance(instance)).ok();
+				}
 			}
 			SequenceCommand::MuteSequenceInstance(id) => {
 				if let Some(instance) = self.sequence_instances.get_mut(&id) {

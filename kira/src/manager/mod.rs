@@ -22,7 +22,7 @@ use crate::{
 	mixer::{SubTrackId, Track, TrackHandle, TrackIndex, TrackSettings},
 	parameter::{ParameterHandle, ParameterId, ParameterSettings},
 	resource::Resource,
-	sequence::{Sequence, SequenceInstanceHandle, SequenceInstanceId, SequenceInstanceSettings},
+	sequence::{Sequence, SequenceInstanceHandle, SequenceInstanceSettings},
 	sound::{Sound, SoundHandle, SoundId},
 };
 use cpal::{
@@ -321,11 +321,9 @@ impl AudioManager {
 		settings: SequenceInstanceSettings,
 	) -> Result<SequenceInstanceHandle<CustomEvent>, AudioError> {
 		sequence.validate()?;
-		let id = SequenceInstanceId::new();
-		let (instance, handle) =
-			sequence.create_instance(settings, id, self.command_sender.clone());
+		let (instance, handle) = sequence.create_instance(settings, self.command_sender.clone());
 		self.command_sender
-			.push(SequenceCommand::StartSequenceInstance(id, instance).into())?;
+			.push(SequenceCommand::StartSequenceInstance(settings.id, instance).into())?;
 		Ok(handle)
 	}
 

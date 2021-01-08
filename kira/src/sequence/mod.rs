@@ -181,15 +181,44 @@ use crate::{
 /// Settings for an instance of a [`Sequence`].
 #[derive(Debug, Copy, Clone)]
 pub struct SequenceInstanceSettings {
+	pub id: SequenceInstanceId,
 	/// The metronome this sequence should sync to.
 	pub metronome: Option<MetronomeId>,
 	/// How many events can be queued at a time.
 	pub event_queue_capacity: usize,
 }
 
+impl SequenceInstanceSettings {
+	pub fn new() -> Self {
+		Self::default()
+	}
+
+	pub fn id(self, id: impl Into<SequenceInstanceId>) -> Self {
+		Self {
+			id: id.into(),
+			..self
+		}
+	}
+
+	pub fn metronome(self, metronome: impl Into<MetronomeId>) -> Self {
+		Self {
+			metronome: Some(metronome.into()),
+			..self
+		}
+	}
+
+	pub fn event_queue_capacity(self, event_queue_capacity: usize) -> Self {
+		Self {
+			event_queue_capacity,
+			..self
+		}
+	}
+}
+
 impl Default for SequenceInstanceSettings {
 	fn default() -> Self {
 		Self {
+			id: SequenceInstanceId::new(),
 			metronome: None,
 			event_queue_capacity: 10,
 		}
@@ -551,14 +580,13 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	pub(crate) fn create_instance(
 		&self,
 		settings: SequenceInstanceSettings,
-		id: SequenceInstanceId,
 		command_sender: CommandSender,
 	) -> (SequenceInstance, SequenceInstanceHandle<CustomEvent>) {
 		let (raw_sequence, events) = self.into_raw_sequence();
 		let (event_sender, event_receiver) = flume::bounded(settings.event_queue_capacity);
 		let instance = SequenceInstance::new(raw_sequence, event_sender, settings.metronome);
 		let handle = SequenceInstanceHandle::new(
-			id,
+			settings.id,
 			instance.public_state(),
 			command_sender,
 			event_receiver,

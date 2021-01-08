@@ -111,7 +111,8 @@ impl Backend {
 					);
 				}
 				Command::Sequence(command) => {
-					self.sequences.run_command(command, &self.groups);
+					self.sequences
+						.run_command(command, &self.groups, &mut self.unloader);
 				}
 				Command::Mixer(command) => {
 					self.mixer.run_command(command, &mut self.unloader);
