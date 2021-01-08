@@ -1,8 +1,8 @@
 use crate::{
 	command::{sender::CommandSender, InstanceCommand},
 	instance::{
-		Instance, InstanceHandle, InstanceId, InstanceSettings, PauseInstanceSettings,
-		ResumeInstanceSettings, StopInstanceSettings,
+		Instance, InstanceHandle, InstanceSettings, PauseInstanceSettings, ResumeInstanceSettings,
+		StopInstanceSettings,
 	},
 	mixer::TrackIndex,
 	AudioResult,
@@ -53,16 +53,15 @@ impl ArrangementHandle {
 	}
 
 	pub fn play(&mut self, settings: InstanceSettings) -> AudioResult<InstanceHandle> {
-		let instance_id = InstanceId::new();
 		let instance = Instance::new(self.id.into(), None, settings);
 		let handle = InstanceHandle::new(
-			instance_id,
+			&instance,
 			instance.public_state(),
 			self.command_sender.clone(),
 		);
 		self.command_sender
-			.push(InstanceCommand::Play(instance_id, instance).into())
-			.map(|()| handle)
+			.push(InstanceCommand::Play(instance).into())?;
+		Ok(handle)
 	}
 
 	pub fn pause(&mut self, settings: PauseInstanceSettings) -> AudioResult<()> {

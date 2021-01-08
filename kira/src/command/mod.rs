@@ -30,7 +30,7 @@ pub(crate) enum ResourceCommand {
 
 #[derive(Debug, Clone)]
 pub(crate) enum InstanceCommand {
-	Play(InstanceId, Instance),
+	Play(Instance),
 	SetInstanceVolume(InstanceId, Value<f64>),
 	SetInstancePitch(InstanceId, Value<f64>),
 	SetInstancePanning(InstanceId, Value<f64>),

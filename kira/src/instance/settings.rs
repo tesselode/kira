@@ -9,6 +9,8 @@ use crate::{
 	Value,
 };
 
+use super::InstanceId;
+
 /// A track index for an instance to play on.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum InstanceTrackIndex {
@@ -94,6 +96,7 @@ impl From<Option<f64>> for InstanceLoopStart {
 /// Settings for an instance.
 #[derive(Debug, Copy, Clone)]
 pub struct InstanceSettings {
+	pub id: InstanceId,
 	/// The volume of the instance.
 	pub volume: Value<f64>,
 	/// The pitch of the instance, as a factor of the original pitch.
@@ -116,6 +119,13 @@ impl InstanceSettings {
 	/// Creates a new `InstanceSettings` with the default settings.
 	pub fn new() -> Self {
 		Self::default()
+	}
+
+	pub fn id(self, id: impl Into<InstanceId>) -> Self {
+		Self {
+			id: id.into(),
+			..self
+		}
 	}
 
 	/// Sets the volume of the instance.
@@ -178,6 +188,7 @@ impl InstanceSettings {
 impl Default for InstanceSettings {
 	fn default() -> Self {
 		Self {
+			id: InstanceId::new(),
 			volume: Value::Fixed(1.0),
 			pitch: Value::Fixed(1.0),
 			panning: Value::Fixed(0.5),

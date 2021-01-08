@@ -171,11 +171,10 @@ impl SequenceInstance {
 								}
 								self.start_step(self.position + 1);
 							}
-							SequenceStep::PlayRandom(id, choices, settings) => {
+							SequenceStep::PlayRandom(choices, settings) => {
 								let choice_index = tls_rng().generate_range(0, choices.len());
 								if !self.muted {
 									output_command_queue.push(SequenceOutputCommand::PlaySound(
-										*id,
 										choices[choice_index],
 										*settings,
 									));
