@@ -77,6 +77,11 @@ impl From<&TrackHandle> for TrackIndex {
 
 /// Settings for a mixer track.
 #[derive(Debug, Copy, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(default)
+)]
 pub struct TrackSettings {
 	/// The unique identifier for the track.
 	pub id: SubTrackId,
