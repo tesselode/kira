@@ -180,6 +180,11 @@ use crate::{
 
 /// Settings for an instance of a [`Sequence`].
 #[derive(Debug, Copy, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(default)
+)]
 pub struct SequenceInstanceSettings {
 	pub id: SequenceInstanceId,
 	/// The metronome this sequence should sync to.
@@ -226,6 +231,10 @@ impl Default for SequenceInstanceSettings {
 }
 
 #[derive(Debug, Copy, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize)
+)]
 pub(crate) enum SequenceOutputCommand {
 	PlaySound(Playable, InstanceSettings),
 	SetInstanceVolume(InstanceId, Value<f64>),
@@ -251,6 +260,14 @@ pub(crate) enum SequenceOutputCommand {
 }
 
 #[derive(Debug, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(bound(
+		serialize = "CustomEvent: serde::Serialize",
+		deserialize = "CustomEvent: serde::Deserialize<'de>"
+	))
+)]
 pub(crate) enum SequenceStep<CustomEvent: Clone + Eq + Hash> {
 	Wait(Duration),
 	WaitForInterval(f64),
@@ -267,6 +284,11 @@ impl<CustomEvent: Clone + Eq + Hash> From<SequenceOutputCommand> for SequenceSte
 
 /// Settings for a [`Sequence`].
 #[derive(Debug, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(default)
+)]
 pub struct SequenceSettings {
 	/// The groups this sequence will belong to.
 	pub groups: GroupSet,
@@ -297,6 +319,15 @@ impl Default for SequenceSettings {
 
 /// A series of steps to execute at certain times.
 #[derive(Debug, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(default),
+	serde(bound(
+		serialize = "CustomEvent: serde::Serialize",
+		deserialize = "CustomEvent: serde::Deserialize<'de>"
+	))
+)]
 pub struct Sequence<CustomEvent: Clone + Eq + Hash = ()> {
 	steps: Vec<SequenceStep<CustomEvent>>,
 	loop_point: Option<usize>,
@@ -598,6 +629,16 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	/// Returns if this sequence is in the group with the given ID.
 	pub(crate) fn is_in_group(&self, id: GroupId, all_groups: &Groups) -> bool {
 		self.groups.has_ancestor(id, all_groups)
+	}
+}
+
+impl<CustomEvent: Clone + Eq + Hash> Default for Sequence<CustomEvent> {
+	fn default() -> Self {
+		Self {
+			steps: vec![],
+			loop_point: None,
+			groups: GroupSet::new(),
+		}
 	}
 }
 

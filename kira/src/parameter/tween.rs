@@ -3,6 +3,10 @@
 /// Given a position in a tween `t` from 0-1, each easing
 /// function transforms `t` differently.
 #[derive(Debug, Copy, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize)
+)]
 pub enum Easing {
 	/// Applies no transformation.
 	Linear,
@@ -31,6 +35,10 @@ impl Default for Easing {
 
 /// A direction for an easing curve.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize)
+)]
 pub enum EaseDirection {
 	In,
 	Out,
@@ -45,6 +53,10 @@ impl Default for EaseDirection {
 
 /// A movement of one value to another over time.
 #[derive(Debug, Copy, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize)
+)]
 pub struct Tween {
 	pub duration: f64,
 	pub easing: Easing,

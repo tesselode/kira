@@ -32,6 +32,11 @@ use cpal::{
 
 /// Settings for an [`AudioManager`](crate::manager::AudioManager).
 #[derive(Debug, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(default)
+)]
 pub struct AudioManagerSettings {
 	/// The number of commands that be sent to the audio thread at a time.
 	///

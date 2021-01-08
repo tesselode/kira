@@ -9,6 +9,10 @@ use crate::{
 
 /// A value that something can be set to.
 #[derive(Debug, Copy, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize)
+)]
 pub enum Value<T: From<f64> + Into<f64> + Copy> {
 	/// A fixed value.
 	Fixed(T),

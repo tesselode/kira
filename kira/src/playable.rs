@@ -11,6 +11,10 @@ use crate::{
 
 /// Represents something you can play multiple instances of.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize)
+)]
 pub enum Playable {
 	/// A sound.
 	Sound(SoundId),

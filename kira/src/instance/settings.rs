@@ -13,6 +13,10 @@ use super::InstanceId;
 
 /// A track index for an instance to play on.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize)
+)]
 pub enum InstanceTrackIndex {
 	/// The default track for the sound.
 	DefaultForSound,
@@ -63,6 +67,10 @@ impl From<SubTrackId> for InstanceTrackIndex {
 
 /// A loop start point for an instance.
 #[derive(Debug, Copy, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize)
+)]
 pub enum InstanceLoopStart {
 	/// The default loop start point for the sound or arrangement.
 	Default,
@@ -95,6 +103,11 @@ impl From<Option<f64>> for InstanceLoopStart {
 
 /// Settings for an instance.
 #[derive(Debug, Copy, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(default)
+)]
 pub struct InstanceSettings {
 	pub id: InstanceId,
 	/// The volume of the instance.
@@ -202,6 +215,11 @@ impl Default for InstanceSettings {
 
 /// Settings for pausing an instance.
 #[derive(Debug, Copy, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(default)
+)]
 pub struct PauseInstanceSettings {
 	/// Whether to fade the instance to silence, and if so,
 	/// the tween to use.
@@ -237,6 +255,11 @@ impl Default for PauseInstanceSettings {
 
 /// Settings for resuming an instance.
 #[derive(Debug, Copy, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(default)
+)]
 pub struct ResumeInstanceSettings {
 	/// Whether to fade in the instance from silence, and if so,
 	/// the tween to use.
@@ -285,6 +308,11 @@ impl Default for ResumeInstanceSettings {
 
 /// Settings for stopping an instance.
 #[derive(Debug, Copy, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(default)
+)]
 pub struct StopInstanceSettings {
 	/// Whether to fade the instance to silence, and if so,
 	/// the tween to use.

@@ -2,8 +2,13 @@ use crate::{Tempo, Value};
 
 use super::MetronomeId;
 
-#[derive(Debug, Clone)]
 /// Settings for the metronome.
+#[derive(Debug, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(default)
+)]
 pub struct MetronomeSettings {
 	pub id: MetronomeId,
 	/// The tempo of the metronome (in beats per minute).

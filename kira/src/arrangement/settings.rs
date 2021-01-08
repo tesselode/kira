@@ -111,6 +111,11 @@ impl Default for ArrangementSettings {
 
 /// Settings for a looping [`Arrangement`](super::Arrangement).
 #[derive(Debug, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(default)
+)]
 pub struct LoopArrangementSettings {
 	/// The unique identifier for this arrangement.
 	pub id: ArrangementId,

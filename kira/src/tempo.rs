@@ -1,5 +1,9 @@
 /// Represents a tempo, or speed, of some music (in beats per minute).
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize)
+)]
 pub struct Tempo(pub f64);
 
 impl Tempo {

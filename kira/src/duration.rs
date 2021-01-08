@@ -4,6 +4,10 @@ use crate::tempo::Tempo;
 
 /// Represents a duration of time.
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize)
+)]
 pub enum Duration {
 	/// Represents a duration of time in seconds.
 	Seconds(f64),

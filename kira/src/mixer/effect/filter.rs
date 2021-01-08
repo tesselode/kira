@@ -11,6 +11,10 @@ use super::Effect;
 // https://github.com/wrl/baseplug/blob/trunk/examples/svf/svf_simper.rs
 
 #[derive(Debug, Copy, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize)
+)]
 pub enum FilterMode {
 	LowPass,
 	BandPass,
@@ -19,6 +23,11 @@ pub enum FilterMode {
 }
 
 #[derive(Debug, Copy, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(default)
+)]
 pub struct FilterSettings {
 	pub mode: FilterMode,
 	pub cutoff: Value<f64>,

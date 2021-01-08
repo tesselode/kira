@@ -1,5 +1,10 @@
 /// A transformation from one range of values to another.
 #[derive(Debug, Copy, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(default)
+)]
 pub struct Mapping {
 	/// The input range of the mapping.
 	pub input_range: (f64, f64),
