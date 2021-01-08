@@ -53,14 +53,68 @@ impl From<&GroupHandle> for GroupId {
 	}
 }
 
+/// Settings for a group.
+#[derive(Debug, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(default)
+)]
+pub struct GroupSettings {
+	/// The unique identifier for the group.
+	pub id: GroupId,
+	/// The groups this group belongs to.
+	pub groups: GroupSet,
+}
+
+impl GroupSettings {
+	/// Creates a new `GroupSettings` with the default settings.
+	pub fn new() -> Self {
+		Self::default()
+	}
+
+	/// Sets the unique identifier for the group.
+	pub fn id(self, id: impl Into<GroupId>) -> Self {
+		Self {
+			id: id.into(),
+			..Default::default()
+		}
+	}
+
+	/// Sets the groups this group belongs to.
+	pub fn groups(self, groups: impl Into<GroupSet>) -> Self {
+		Self {
+			groups: groups.into(),
+			..Default::default()
+		}
+	}
+}
+
+impl Default for GroupSettings {
+	fn default() -> Self {
+		Self {
+			id: GroupId::new(),
+			groups: GroupSet::new(),
+		}
+	}
+}
+
 #[derive(Debug, Clone)]
 pub(crate) struct Group {
+	id: GroupId,
 	groups: GroupSet,
 }
 
 impl Group {
-	pub fn new(groups: GroupSet) -> Self {
-		Self { groups }
+	pub fn new(settings: GroupSettings) -> Self {
+		Self {
+			id: settings.id,
+			groups: settings.groups,
+		}
+	}
+
+	pub fn id(&self) -> GroupId {
+		self.id
 	}
 
 	pub fn groups(&self) -> &GroupSet {

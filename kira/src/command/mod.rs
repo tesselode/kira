@@ -89,7 +89,7 @@ pub(crate) enum ParameterCommand {
 
 #[derive(Debug, Clone)]
 pub(crate) enum GroupCommand {
-	AddGroup(GroupId, Group),
+	AddGroup(Group),
 	RemoveGroup(GroupId),
 }
 
