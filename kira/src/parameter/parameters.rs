@@ -28,8 +28,7 @@ impl Parameters {
 	pub(crate) fn run_command(&mut self, command: ParameterCommand) {
 		match command {
 			ParameterCommand::AddParameter(id, value) => {
-				let parameter = Parameter::new(value);
-				self.parameters.insert(id, parameter);
+				self.parameters.insert(id, Parameter::new(value));
 			}
 			ParameterCommand::SetParameter(id, value, tween) => {
 				if let Some(parameter) = self.parameters.get_mut(&id) {

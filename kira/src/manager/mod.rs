@@ -20,7 +20,7 @@ use crate::{
 	group::{Group, GroupHandle, GroupId, GroupSettings},
 	metronome::{Metronome, MetronomeHandle, MetronomeId, MetronomeSettings},
 	mixer::{SubTrackId, Track, TrackHandle, TrackIndex, TrackSettings},
-	parameter::{ParameterHandle, ParameterId},
+	parameter::{ParameterHandle, ParameterId, ParameterSettings},
 	resource::Resource,
 	sequence::{Sequence, SequenceInstanceHandle, SequenceInstanceId, SequenceInstanceSettings},
 	sound::{Sound, SoundHandle, SoundId},
@@ -330,11 +330,13 @@ impl AudioManager {
 	}
 
 	/// Creates a parameter with the specified starting value.
-	pub fn add_parameter(&mut self, value: f64) -> AudioResult<ParameterHandle> {
-		let id = ParameterId::new();
+	pub fn add_parameter(&mut self, settings: ParameterSettings) -> AudioResult<ParameterHandle> {
 		self.command_sender
-			.push(ParameterCommand::AddParameter(id, value).into())?;
-		Ok(ParameterHandle::new(id, self.command_sender.clone()))
+			.push(ParameterCommand::AddParameter(settings.id, settings.value).into())?;
+		Ok(ParameterHandle::new(
+			settings.id,
+			self.command_sender.clone(),
+		))
 	}
 
 	pub fn remove_parameter(&mut self, id: impl Into<ParameterId>) -> AudioResult<()> {

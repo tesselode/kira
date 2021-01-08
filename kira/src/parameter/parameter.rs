@@ -28,6 +28,52 @@ impl ParameterId {
 	}
 }
 
+/// Settings for a parameter.
+#[derive(Debug, Copy, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(default)
+)]
+pub struct ParameterSettings {
+	/// The unique identifier for the parameter.
+	pub id: ParameterId,
+	/// The volume of the parameter.
+	pub value: f64,
+}
+
+impl ParameterSettings {
+	/// Creates a new `ParameterSettings` with the default settings.
+	pub fn new() -> Self {
+		Self::default()
+	}
+
+	/// Sets the unique identifier for the parameter.
+	pub fn id(self, id: impl Into<ParameterId>) -> Self {
+		Self {
+			id: id.into(),
+			..self
+		}
+	}
+
+	/// Sets the initial value of the parameter.
+	pub fn value(self, value: impl Into<f64>) -> Self {
+		Self {
+			value: value.into(),
+			..self
+		}
+	}
+}
+
+impl Default for ParameterSettings {
+	fn default() -> Self {
+		Self {
+			id: ParameterId::new(),
+			value: 1.0,
+		}
+	}
+}
+
 #[derive(Debug, Copy, Clone)]
 struct TweenState {
 	tween: Tween,
