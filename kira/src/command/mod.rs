@@ -52,7 +52,7 @@ pub(crate) enum InstanceCommand {
 
 #[derive(Debug, Clone)]
 pub(crate) enum MetronomeCommand {
-	AddMetronome(MetronomeId, Metronome),
+	AddMetronome(Metronome),
 	RemoveMetronome(MetronomeId),
 	SetMetronomeTempo(MetronomeId, Value<Tempo>),
 	StartMetronome(MetronomeId),

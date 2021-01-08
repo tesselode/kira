@@ -5,7 +5,7 @@ use crate::{
 	AudioResult, Tempo, Value,
 };
 
-use super::MetronomeId;
+use super::{Metronome, MetronomeId};
 
 pub struct MetronomeHandle {
 	id: MetronomeId,
@@ -15,12 +15,12 @@ pub struct MetronomeHandle {
 
 impl MetronomeHandle {
 	pub(crate) fn new(
-		id: MetronomeId,
+		metronome: &Metronome,
 		command_sender: CommandSender,
 		event_receiver: Receiver<f64>,
 	) -> Self {
 		Self {
-			id,
+			id: metronome.id(),
 			command_sender,
 			event_receiver,
 		}

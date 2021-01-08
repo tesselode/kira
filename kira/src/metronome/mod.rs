@@ -36,6 +36,7 @@ impl MetronomeId {
 
 #[derive(Debug, Clone)]
 pub(crate) struct Metronome {
+	id: MetronomeId,
 	tempo: CachedValue<Tempo>,
 	interval_events_to_emit: Vec<f64>,
 	ticking: bool,
@@ -47,6 +48,7 @@ pub(crate) struct Metronome {
 impl Metronome {
 	pub fn new(settings: MetronomeSettings, event_sender: Sender<f64>) -> Self {
 		Self {
+			id: settings.id,
 			tempo: CachedValue::new(settings.tempo, Tempo(120.0)),
 			interval_events_to_emit: settings.interval_events_to_emit,
 			ticking: false,
@@ -54,6 +56,10 @@ impl Metronome {
 			previous_time: 0.0,
 			event_sender,
 		}
+	}
+
+	pub fn id(&self) -> MetronomeId {
+		self.id
 	}
 
 	pub fn effective_tempo(&self) -> Tempo {
