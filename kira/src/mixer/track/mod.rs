@@ -78,18 +78,47 @@ impl From<&TrackHandle> for TrackIndex {
 /// Settings for a mixer track.
 #[derive(Debug, Copy, Clone)]
 pub struct TrackSettings {
+	/// The unique identifier for the track.
+	pub id: SubTrackId,
 	/// The volume of the track.
 	pub volume: f64,
 }
 
+impl TrackSettings {
+	/// Creates a new `TrackSettings` with the default settings.
+	pub fn new() -> Self {
+		Self::default()
+	}
+
+	/// Sets the unique identifier for the track.
+	pub fn id(self, id: impl Into<SubTrackId>) -> Self {
+		Self {
+			id: id.into(),
+			..self
+		}
+	}
+
+	/// Sets the volume of the track.
+	pub fn volume(self, volume: impl Into<f64>) -> Self {
+		Self {
+			volume: volume.into(),
+			..self
+		}
+	}
+}
+
 impl Default for TrackSettings {
 	fn default() -> Self {
-		Self { volume: 1.0 }
+		Self {
+			id: SubTrackId::new(),
+			volume: 1.0,
+		}
 	}
 }
 
 #[derive(Debug)]
 pub(crate) struct Track {
+	id: SubTrackId,
 	volume: f64,
 	effect_slots: IndexMap<EffectId, EffectSlot>,
 	input: Frame,
@@ -98,10 +127,15 @@ pub(crate) struct Track {
 impl Track {
 	pub fn new(settings: TrackSettings) -> Self {
 		Self {
+			id: settings.id,
 			volume: settings.volume,
 			effect_slots: IndexMap::new(),
 			input: Frame::from_mono(0.0),
 		}
+	}
+
+	pub fn id(&self) -> SubTrackId {
+		self.id
 	}
 
 	pub fn add_effect(&mut self, id: EffectId, effect: Box<dyn Effect>, settings: EffectSettings) {

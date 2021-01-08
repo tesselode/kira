@@ -344,10 +344,10 @@ impl AudioManager {
 
 	/// Creates a mixer sub-track.
 	pub fn add_sub_track(&mut self, settings: TrackSettings) -> AudioResult<TrackHandle> {
-		let id = SubTrackId::new();
+		let handle = TrackHandle::new(TrackIndex::Sub(settings.id), self.command_sender.clone());
 		self.command_sender
-			.push(MixerCommand::AddSubTrack(id, Track::new(settings)).into())?;
-		Ok(TrackHandle::new(id.into(), self.command_sender.clone()))
+			.push(MixerCommand::AddSubTrack(Track::new(settings)).into())?;
+		Ok(handle)
 	}
 
 	/// Removes a sub-track from the mixer.

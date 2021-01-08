@@ -24,8 +24,10 @@ impl Mixer {
 
 	pub fn run_command(&mut self, command: MixerCommand, unloader: &mut Sender<Resource>) {
 		match command {
-			MixerCommand::AddSubTrack(id, track) => {
-				self.sub_tracks.insert(id, track);
+			MixerCommand::AddSubTrack(track) => {
+				if let Some(track) = self.sub_tracks.insert(track.id(), track) {
+					unloader.try_send(Resource::Track(track)).ok();
+				}
 			}
 			MixerCommand::AddEffect(index, id, effect, settings) => {
 				let track = match index {

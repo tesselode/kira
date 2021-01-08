@@ -74,7 +74,7 @@ pub(crate) enum SequenceCommand {
 
 #[derive(Debug)]
 pub(crate) enum MixerCommand {
-	AddSubTrack(SubTrackId, Track),
+	AddSubTrack(Track),
 	RemoveSubTrack(SubTrackId),
 	AddEffect(TrackIndex, EffectId, Box<dyn Effect>, EffectSettings),
 	RemoveEffect(EffectId),
