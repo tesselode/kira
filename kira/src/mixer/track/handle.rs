@@ -29,10 +29,10 @@ impl TrackHandle {
 		effect: impl Effect + 'static,
 		settings: EffectSettings,
 	) -> AudioResult<EffectId> {
-		let effect_id = EffectId::new();
+		let id = settings.id;
 		self.command_sender
-			.push(MixerCommand::AddEffect(self.index, effect_id, Box::new(effect), settings).into())
-			.map(|_| effect_id)
+			.push(MixerCommand::AddEffect(self.index, Box::new(effect), settings).into())?;
+		Ok(id)
 	}
 
 	pub fn remove_effect(&mut self, id: EffectId) -> AudioResult<()> {

@@ -29,13 +29,13 @@ impl Mixer {
 					unloader.try_send(Resource::Track(track)).ok();
 				}
 			}
-			MixerCommand::AddEffect(index, id, effect, settings) => {
+			MixerCommand::AddEffect(index, effect, settings) => {
 				let track = match index {
 					TrackIndex::Main => Some(&mut self.main_track),
 					TrackIndex::Sub(id) => self.sub_tracks.get_mut(&id),
 				};
 				if let Some(track) = track {
-					track.add_effect(id, effect, settings);
+					track.add_effect(effect, settings);
 				}
 			}
 			MixerCommand::RemoveSubTrack(id) => {

@@ -143,9 +143,9 @@ impl Track {
 		self.id
 	}
 
-	pub fn add_effect(&mut self, id: EffectId, effect: Box<dyn Effect>, settings: EffectSettings) {
-		self.effect_slots
-			.insert(id, EffectSlot::new(effect, settings));
+	pub fn add_effect(&mut self, effect: Box<dyn Effect>, settings: EffectSettings) {
+		let effect_slot = EffectSlot::new(effect, settings);
+		self.effect_slots.insert(effect_slot.id(), effect_slot);
 	}
 
 	pub fn remove_effect(&mut self, id: EffectId) -> Option<EffectSlot> {
