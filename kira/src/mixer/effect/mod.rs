@@ -1,4 +1,7 @@
 pub mod filter;
+mod handle;
+
+pub use handle::EffectHandle;
 
 use std::fmt::Debug;
 
@@ -27,6 +30,12 @@ impl EffectId {
 		Self {
 			uuid: generate_uuid(),
 		}
+	}
+}
+
+impl From<&EffectHandle> for EffectId {
+	fn from(handle: &EffectHandle) -> Self {
+		handle.id()
 	}
 }
 

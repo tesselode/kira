@@ -43,6 +43,17 @@ impl Mixer {
 					unloader.try_send(Resource::Track(track)).ok();
 				}
 			}
+			MixerCommand::SetEffectEnabled(track_index, effect_id, enabled) => {
+				let track = match track_index {
+					TrackIndex::Main => Some(&mut self.main_track),
+					TrackIndex::Sub(id) => self.sub_tracks.get_mut(&id),
+				};
+				if let Some(track) = track {
+					if let Some(effect_slot) = track.effect_mut(effect_id) {
+						effect_slot.enabled = enabled;
+					}
+				}
+			}
 			MixerCommand::RemoveEffect(track_index, effect_id) => {
 				let track = match track_index {
 					TrackIndex::Main => Some(&mut self.main_track),

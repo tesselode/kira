@@ -1,7 +1,7 @@
 use crate::{
 	audio_stream::{AudioStream, AudioStreamId},
 	command::{sender::CommandSender, MixerCommand, StreamCommand},
-	mixer::effect::{Effect, EffectId, EffectSettings},
+	mixer::effect::{Effect, EffectHandle, EffectId, EffectSettings},
 	AudioResult,
 };
 
@@ -28,16 +28,16 @@ impl TrackHandle {
 		&mut self,
 		effect: impl Effect + 'static,
 		settings: EffectSettings,
-	) -> AudioResult<EffectId> {
-		let id = settings.id;
+	) -> AudioResult<EffectHandle> {
+		let handle = EffectHandle::new(self.index, &settings, self.command_sender.clone());
 		self.command_sender
 			.push(MixerCommand::AddEffect(self.index, Box::new(effect), settings).into())?;
-		Ok(id)
+		Ok(handle)
 	}
 
-	pub fn remove_effect(&mut self, id: EffectId) -> AudioResult<()> {
+	pub fn remove_effect(&mut self, id: impl Into<EffectId>) -> AudioResult<()> {
 		self.command_sender
-			.push(MixerCommand::RemoveEffect(self.index, id).into())
+			.push(MixerCommand::RemoveEffect(self.index, id.into()).into())
 	}
 
 	pub fn add_stream(&mut self, stream: impl AudioStream) -> AudioResult<AudioStreamId> {

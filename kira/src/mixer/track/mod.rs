@@ -148,6 +148,10 @@ impl Track {
 		self.effect_slots.insert(effect_slot.id(), effect_slot);
 	}
 
+	pub fn effect_mut(&mut self, id: EffectId) -> Option<&mut EffectSlot> {
+		self.effect_slots.get_mut(&id)
+	}
+
 	pub fn remove_effect(&mut self, id: EffectId) -> Option<EffectSlot> {
 		self.effect_slots.remove(&id)
 	}

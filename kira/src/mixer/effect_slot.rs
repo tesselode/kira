@@ -6,7 +6,7 @@ use super::effect::{Effect, EffectId, EffectSettings};
 pub(crate) struct EffectSlot {
 	id: EffectId,
 	effect: Box<dyn Effect>,
-	enabled: bool,
+	pub enabled: bool,
 }
 
 impl EffectSlot {
