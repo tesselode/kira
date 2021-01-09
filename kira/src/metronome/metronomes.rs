@@ -25,8 +25,8 @@ impl Metronomes {
 
 	pub fn run_command(&mut self, command: MetronomeCommand, unloader: &mut Sender<Resource>) {
 		match command {
-			MetronomeCommand::AddMetronome(metronome) => {
-				if let Some(metronome) = self.metronomes.insert(metronome.id(), metronome) {
+			MetronomeCommand::AddMetronome(id, metronome) => {
+				if let Some(metronome) = self.metronomes.insert(id, metronome) {
 					unloader.try_send(Resource::Metronome(metronome)).ok();
 				}
 			}

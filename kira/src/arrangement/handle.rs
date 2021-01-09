@@ -53,14 +53,11 @@ impl ArrangementHandle {
 	}
 
 	pub fn play(&mut self, settings: InstanceSettings) -> AudioResult<InstanceHandle> {
+		let id = settings.id;
 		let instance = Instance::new(self.id.into(), None, settings);
-		let handle = InstanceHandle::new(
-			&instance,
-			instance.public_state(),
-			self.command_sender.clone(),
-		);
+		let handle = InstanceHandle::new(id, instance.public_state(), self.command_sender.clone());
 		self.command_sender
-			.push(InstanceCommand::Play(instance).into())?;
+			.push(InstanceCommand::Play(id, instance).into())?;
 		Ok(handle)
 	}
 

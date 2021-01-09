@@ -40,11 +40,11 @@ impl Instances {
 		groups: &Groups,
 	) {
 		match command {
-			InstanceCommand::Play(instance) => match instance.playable() {
+			InstanceCommand::Play(instance_id, instance) => match instance.playable() {
 				Playable::Sound(id) => {
 					if let Some(sound) = sounds.get_mut(&id) {
 						if !sound.cooling_down() {
-							self.instances.insert(instance.id(), instance);
+							self.instances.insert(instance_id, instance);
 							sound.start_cooldown();
 						}
 					}
@@ -52,7 +52,7 @@ impl Instances {
 				Playable::Arrangement(id) => {
 					if let Some(arrangement) = arrangements.get_mut(&id) {
 						if !arrangement.cooling_down() {
-							self.instances.insert(instance.id(), instance);
+							self.instances.insert(instance_id, instance);
 							arrangement.start_cooldown();
 						}
 					}

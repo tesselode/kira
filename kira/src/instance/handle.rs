@@ -8,8 +8,7 @@ use crate::{
 };
 
 use super::{
-	Instance, InstanceId, InstanceState, PauseInstanceSettings, ResumeInstanceSettings,
-	StopInstanceSettings,
+	InstanceId, InstanceState, PauseInstanceSettings, ResumeInstanceSettings, StopInstanceSettings,
 };
 
 pub struct InstanceHandle {
@@ -20,12 +19,12 @@ pub struct InstanceHandle {
 
 impl InstanceHandle {
 	pub(crate) fn new(
-		instance: &Instance,
+		id: InstanceId,
 		state: Arc<Atomic<InstanceState>>,
 		command_sender: CommandSender,
 	) -> Self {
 		Self {
-			id: instance.id(),
+			id,
 			state,
 			command_sender,
 		}

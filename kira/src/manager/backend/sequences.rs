@@ -110,9 +110,13 @@ impl Sequences {
 			// by the backend
 			for command in self.sequence_output_command_queue.drain(..) {
 				self.output_command_queue.push(match command {
-					SequenceOutputCommand::PlaySound(playable, settings) => Command::Instance(
-						InstanceCommand::Play(Instance::new(playable, Some(*id), settings)),
-					),
+					SequenceOutputCommand::PlaySound(playable, settings) => {
+						let instance_id = settings.id;
+						Command::Instance(InstanceCommand::Play(
+							instance_id,
+							Instance::new(playable, Some(*id), settings),
+						))
+					}
 					SequenceOutputCommand::SetInstanceVolume(id, volume) => {
 						Command::Instance(InstanceCommand::SetInstanceVolume(id, volume))
 					}

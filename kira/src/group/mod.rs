@@ -101,20 +101,14 @@ impl Default for GroupSettings {
 
 #[derive(Debug, Clone)]
 pub(crate) struct Group {
-	id: GroupId,
 	groups: GroupSet,
 }
 
 impl Group {
 	pub fn new(settings: GroupSettings) -> Self {
 		Self {
-			id: settings.id,
 			groups: settings.groups,
 		}
-	}
-
-	pub fn id(&self) -> GroupId {
-		self.id
 	}
 
 	pub fn groups(&self) -> &GroupSet {

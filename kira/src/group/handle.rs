@@ -4,7 +4,7 @@ use crate::{
 	AudioResult,
 };
 
-use super::{Group, GroupId};
+use super::GroupId;
 
 pub struct GroupHandle {
 	id: GroupId,
@@ -12,11 +12,8 @@ pub struct GroupHandle {
 }
 
 impl GroupHandle {
-	pub(crate) fn new(group: &Group, command_sender: CommandSender) -> Self {
-		Self {
-			id: group.id(),
-			command_sender,
-		}
+	pub(crate) fn new(id: GroupId, command_sender: CommandSender) -> Self {
+		Self { id, command_sender }
 	}
 
 	pub fn id(&self) -> GroupId {

@@ -122,7 +122,6 @@ pub enum InstanceState {
 
 #[derive(Debug, Clone)]
 pub(crate) struct Instance {
-	id: InstanceId,
 	playable: Playable,
 	track_index: InstanceTrackIndex,
 	sequence_id: Option<SequenceInstanceId>,
@@ -150,7 +149,6 @@ impl Instance {
 			fade_volume = Parameter::new(1.0);
 		}
 		Self {
-			id: settings.id,
 			playable,
 			track_index: settings.track,
 			sequence_id,
@@ -163,10 +161,6 @@ impl Instance {
 			position: settings.start_position,
 			fade_volume,
 		}
-	}
-
-	pub fn id(&self) -> InstanceId {
-		self.id
 	}
 
 	pub fn playable(&self) -> Playable {

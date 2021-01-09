@@ -30,7 +30,7 @@ pub(crate) enum ResourceCommand {
 
 #[derive(Debug, Clone)]
 pub(crate) enum InstanceCommand {
-	Play(Instance),
+	Play(InstanceId, Instance),
 	SetInstanceVolume(InstanceId, Value<f64>),
 	SetInstancePitch(InstanceId, Value<f64>),
 	SetInstancePanning(InstanceId, Value<f64>),
@@ -52,7 +52,7 @@ pub(crate) enum InstanceCommand {
 
 #[derive(Debug, Clone)]
 pub(crate) enum MetronomeCommand {
-	AddMetronome(Metronome),
+	AddMetronome(MetronomeId, Metronome),
 	RemoveMetronome(MetronomeId),
 	SetMetronomeTempo(MetronomeId, Value<Tempo>),
 	StartMetronome(MetronomeId),
@@ -90,7 +90,7 @@ pub(crate) enum ParameterCommand {
 
 #[derive(Debug, Clone)]
 pub(crate) enum GroupCommand {
-	AddGroup(Group),
+	AddGroup(GroupId, Group),
 	RemoveGroup(GroupId),
 }
 

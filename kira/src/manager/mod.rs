@@ -307,11 +307,15 @@ impl AudioManager {
 
 	pub fn add_metronome(&mut self, settings: MetronomeSettings) -> AudioResult<MetronomeHandle> {
 		let (event_sender, event_receiver) = flume::bounded(settings.event_queue_capacity);
-		let metronome = Metronome::new(settings, event_sender);
-		let handle = MetronomeHandle::new(&metronome, self.command_sender.clone(), event_receiver);
-		self.command_sender
-			.push(MetronomeCommand::AddMetronome(metronome).into())?;
-		Ok(handle)
+		let id = settings.id;
+		self.command_sender.push(
+			MetronomeCommand::AddMetronome(id, Metronome::new(settings, event_sender)).into(),
+		)?;
+		Ok(MetronomeHandle::new(
+			id,
+			self.command_sender.clone(),
+			event_receiver,
+		))
 	}
 
 	pub fn remove_metronome(&mut self, id: impl Into<MetronomeId>) -> AudioResult<()> {
@@ -363,11 +367,10 @@ impl AudioManager {
 
 	/// Adds a group.
 	pub fn add_group(&mut self, settings: GroupSettings) -> AudioResult<GroupHandle> {
-		let group = Group::new(settings);
-		let handle = GroupHandle::new(&group, self.command_sender.clone());
+		let id = settings.id;
 		self.command_sender
-			.push(GroupCommand::AddGroup(group).into())?;
-		Ok(handle)
+			.push(GroupCommand::AddGroup(id, Group::new(settings)).into())?;
+		Ok(GroupHandle::new(id, self.command_sender.clone()))
 	}
 
 	/// Removes a group.
