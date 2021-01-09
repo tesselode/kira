@@ -34,6 +34,12 @@ impl MetronomeId {
 	}
 }
 
+impl From<&MetronomeHandle> for MetronomeId {
+	fn from(handle: &MetronomeHandle) -> Self {
+		handle.id()
+	}
+}
+
 #[derive(Debug, Clone)]
 pub(crate) struct Metronome {
 	tempo: CachedValue<Tempo>,

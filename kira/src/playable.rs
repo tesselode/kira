@@ -83,14 +83,14 @@ impl From<ArrangementId> for Playable {
 	}
 }
 
-impl From<SoundHandle> for Playable {
-	fn from(handle: SoundHandle) -> Self {
+impl From<&SoundHandle> for Playable {
+	fn from(handle: &SoundHandle) -> Self {
 		Self::Sound(handle.id())
 	}
 }
 
-impl From<ArrangementHandle> for Playable {
-	fn from(handle: ArrangementHandle) -> Self {
+impl From<&ArrangementHandle> for Playable {
+	fn from(handle: &ArrangementHandle) -> Self {
 		Self::Arrangement(handle.id())
 	}
 }
