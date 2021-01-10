@@ -101,7 +101,30 @@ impl Display for AudioError {
 	}
 }
 
-impl Error for AudioError {}
+impl Error for AudioError {
+	fn source(&self) -> Option<&(dyn Error + 'static)> {
+		match self {
+			AudioError::NoDefaultOutputDevice => None,
+			AudioError::DefaultStreamConfigError(error) => Some(error),
+			AudioError::NoSupportedAudioConfig => None,
+			AudioError::BuildStreamError(error) => Some(error),
+			AudioError::PlayStreamError(error) => Some(error),
+			AudioError::CommandQueueFull => None,
+			AudioError::BackendDisconnected => None,
+			AudioError::EventReceiverBorrowed => None,
+			AudioError::UnsupportedChannelConfiguration => None,
+			AudioError::UnsupportedAudioFileFormat => None,
+			AudioError::InvalidSequenceLoopPoint => None,
+			AudioError::IoError(error) => Some(error),
+			AudioError::Mp3Error(error) => Some(error),
+			AudioError::VariableMp3SampleRate => None,
+			AudioError::UnknownMp3SampleRate => None,
+			AudioError::OggError(error) => Some(error),
+			AudioError::FlacError(error) => Some(error),
+			AudioError::WavError(error) => Some(error),
+		}
+	}
+}
 
 impl From<std::io::Error> for AudioError {
 	fn from(error: std::io::Error) -> Self {
