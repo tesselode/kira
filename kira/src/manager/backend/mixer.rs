@@ -68,20 +68,45 @@ impl Mixer {
 		}
 	}
 
+	pub fn track_mut(&mut self, index: TrackIndex) -> Option<&mut Track> {
+		match index {
+			TrackIndex::Main => Some(&mut self.main_track),
+			TrackIndex::Sub(id) => self.sub_tracks.get_mut(&id),
+		}
+	}
+
 	pub fn add_input(&mut self, index: TrackIndex, input: Frame) {
-		let track = match index {
-			TrackIndex::Main => &mut self.main_track,
-			TrackIndex::Sub(id) => self.sub_tracks.get_mut(&id).unwrap_or(&mut self.main_track),
-		};
-		track.add_input(input);
+		if let Some(track) = self.track_mut(index) {
+			track.add_input(input);
+		}
+	}
+
+	fn process_track(
+		&mut self,
+		dt: f64,
+		parameters: &Parameters,
+		track_index: TrackIndex,
+	) -> Frame {
+		let mut input = Frame::from_mono(0.0);
+		// process all the children of this track and add up their inputs
+		for i in 0..self.sub_tracks.len() {
+			let (id, track) = self.sub_tracks.get_index(i).unwrap();
+			let id = *id;
+			if track.parent_track() == track_index {
+				input += self.process_track(dt, parameters, TrackIndex::Sub(id));
+			}
+		}
+		// add the cumulative input to this track and run it through the
+		// effects chain
+		if let Some(track) = self.track_mut(track_index) {
+			track.add_input(input);
+			track.process(dt, parameters)
+		} else {
+			Frame::from_mono(0.0)
+		}
 	}
 
 	pub fn process(&mut self, dt: f64, parameters: &Parameters) -> Frame {
-		let mut main_input = Frame::from_mono(0.0);
-		for (_, sub_track) in &mut self.sub_tracks {
-			main_input += sub_track.process(dt, parameters);
-		}
-		self.main_track.add_input(main_input);
-		self.main_track.process(dt, parameters)
+		self.process_track(dt, parameters, TrackIndex::Main)
 	}
 }
