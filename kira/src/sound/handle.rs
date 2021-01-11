@@ -52,7 +52,10 @@ impl SoundHandle {
 		self.default_loop_start
 	}
 
-	pub fn play(&mut self, settings: InstanceSettings) -> AudioResult<InstanceHandle> {
+	pub fn play(&mut self, mut settings: InstanceSettings) -> AudioResult<InstanceHandle> {
+		if settings.reverse {
+			settings.start_position = self.duration() - settings.start_position;
+		}
 		let id = settings.id;
 		let instance = Instance::new(self.id.into(), None, settings);
 		let handle = InstanceHandle::new(id, instance.public_state(), self.command_sender.clone());

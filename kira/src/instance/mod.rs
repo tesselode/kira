@@ -128,6 +128,7 @@ pub(crate) struct Instance {
 	volume: CachedValue<f64>,
 	pitch: CachedValue<f64>,
 	panning: CachedValue<f64>,
+	reverse: bool,
 	loop_start: InstanceLoopStart,
 	state: InstanceState,
 	public_state: Arc<Atomic<InstanceState>>,
@@ -155,6 +156,7 @@ impl Instance {
 			volume: CachedValue::new(settings.volume, 1.0),
 			pitch: CachedValue::new(settings.pitch, 1.0),
 			panning: CachedValue::new(settings.panning, 0.5),
+			reverse: settings.reverse,
 			loop_start: settings.loop_start,
 			state: InstanceState::Playing,
 			public_state: Arc::new(Atomic::new(InstanceState::Playing)),
@@ -296,7 +298,10 @@ impl Instance {
 			self.volume.update(parameters);
 			self.pitch.update(parameters);
 			self.panning.update(parameters);
-			let pitch = self.pitch.value();
+			let mut pitch = self.pitch.value();
+			if self.reverse {
+				pitch *= -1.0;
+			}
 			self.position += pitch * dt;
 			if pitch < 0.0 {
 				if let Some(loop_start) = loop_start {

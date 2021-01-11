@@ -118,6 +118,8 @@ pub struct InstanceSettings {
 	pub panning: Value<f64>,
 	/// The position to start playing the instance at (in seconds).
 	pub start_position: f64,
+	/// Whether to play the instance in reverse.
+	pub reverse: bool,
 	/// Whether to fade in the instance from silence, and if so,
 	/// the tween to use.
 	pub fade_in_tween: Option<Tween>,
@@ -173,6 +175,14 @@ impl InstanceSettings {
 		}
 	}
 
+	/// Play the instance in reverse.
+	pub fn reverse(self) -> Self {
+		Self {
+			reverse: true,
+			..self
+		}
+	}
+
 	/// Sets the tween the instance will use to fade in from silence.
 	pub fn fade_in_tween(self, fade_in_tween: Tween) -> Self {
 		Self {
@@ -206,6 +216,7 @@ impl Default for InstanceSettings {
 			pitch: Value::Fixed(1.0),
 			panning: Value::Fixed(0.5),
 			start_position: 0.0,
+			reverse: false,
 			fade_in_tween: None,
 			loop_start: InstanceLoopStart::default(),
 			track: InstanceTrackIndex::default(),
