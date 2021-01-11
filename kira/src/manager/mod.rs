@@ -30,6 +30,8 @@ use cpal::{
 	Stream,
 };
 
+const RESOURCE_UNLOADER_CAPACITY: usize = 10;
+
 /// Settings for an [`AudioManager`](crate::manager::AudioManager).
 #[derive(Debug, Clone)]
 #[cfg_attr(
@@ -106,14 +108,9 @@ impl AudioManager {
 	/// Creates a new audio manager and starts an audio thread.
 	#[cfg(not(target_arch = "wasm32"))]
 	pub fn new(settings: AudioManagerSettings) -> AudioResult<Self> {
-		let (
-			quit_signal_sender,
-			command_sender,
-			resources_to_unload_receiver,
-			command_receiver,
-			unloader,
-			quit_signal_receiver,
-		) = Self::create_thread_channels(&settings);
+		let (quit_signal_sender, quit_signal_receiver) = flume::bounded(1);
+		let (command_sender, command_receiver) = flume::bounded(settings.num_commands);
+		let (unloader, resources_to_unload_receiver) = flume::bounded(RESOURCE_UNLOADER_CAPACITY);
 
 		const WRAPPER_THREAD_SLEEP_DURATION: f64 = 1.0 / 60.0;
 
@@ -151,7 +148,7 @@ impl AudioManager {
 
 		Ok(Self {
 			quit_signal_sender,
-			command_sender,
+			command_sender: CommandSender::new(command_sender),
 			resources_to_unload_receiver,
 		})
 	}
@@ -159,45 +156,15 @@ impl AudioManager {
 	/// Creates a new audio manager and starts an audio thread.
 	#[cfg(target_arch = "wasm32")]
 	pub fn new(settings: AudioManagerSettings) -> AudioResult<Self> {
-		let (
-			quit_signal_sender,
-			command_sender,
-			resources_to_unload_receiver,
-			command_receiver,
-			unloader,
-			_,
-		) = Self::create_thread_channels(&settings);
-
+		let (quit_signal_sender, quit_signal_receiver) = flume::bounded(1);
+		let (command_sender, command_receiver) = flume::bounded(settings.num_commands);
+		let (unloader, resources_to_unload_receiver) = flume::bounded(RESOURCE_UNLOADER_CAPACITY);
 		Ok(Self {
 			quit_signal_sender,
-			command_sender,
+			command_sender: CommandSender::new(command_sender),
 			resources_to_unload_receiver,
 			_stream: Self::setup_stream(settings, command_receiver, unloader)?,
 		})
-	}
-
-	fn create_thread_channels(
-		settings: &AudioManagerSettings,
-	) -> (
-		Sender<bool>,
-		CommandSender,
-		Receiver<Resource>,
-		Receiver<Command>,
-		Sender<Resource>,
-		Receiver<bool>,
-	) {
-		let (quit_signal_sender, quit_signal_receiver) = flume::bounded(1);
-		let (command_sender, command_receiver) = flume::bounded(settings.num_commands);
-		// TODO: add a setting or constant for max number of resources to unload
-		let (unloader, resources_to_unload_receiver) = flume::bounded(10);
-		(
-			quit_signal_sender,
-			CommandSender::new(command_sender),
-			resources_to_unload_receiver,
-			command_receiver,
-			unloader,
-			quit_signal_receiver,
-		)
 	}
 
 	fn setup_stream(
@@ -242,17 +209,12 @@ impl AudioManager {
 		settings: AudioManagerSettings,
 	) -> AudioResult<(Self, Backend)> {
 		const SAMPLE_RATE: u32 = 48000;
-		let (
-			quit_signal_sender,
-			command_sender,
-			resources_to_unload_receiver,
-			command_receiver,
-			unloader,
-			_,
-		) = Self::create_thread_channels(&settings);
+		let (quit_signal_sender, _) = flume::bounded(1);
+		let (command_sender, command_receiver) = flume::bounded(settings.num_commands);
+		let (unloader, resources_to_unload_receiver) = flume::bounded(RESOURCE_UNLOADER_CAPACITY);
 		let audio_manager = Self {
 			quit_signal_sender,
-			command_sender,
+			command_sender: CommandSender::new(command_sender),
 			resources_to_unload_receiver,
 		};
 		let backend = Backend::new(SAMPLE_RATE, settings, command_receiver, unloader);
