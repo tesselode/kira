@@ -13,7 +13,7 @@ use crate::{
 	group::groups::Groups,
 	metronome::Metronomes,
 	parameter::Parameters,
-	playable::Playable,
+	playable::PlayableId,
 	resource::Resource,
 	sound::{Sound, SoundId},
 };
@@ -75,7 +75,7 @@ impl Backend {
 					}
 					ResourceCommand::RemoveSound(id) => {
 						self.instances
-							.stop_instances_of(Playable::Sound(id), Default::default());
+							.stop_instances_of(PlayableId::Sound(id), Default::default());
 						if let Some(sound) = self.sounds.remove(&id) {
 							self.unloader.try_send(Resource::Sound(sound)).ok();
 						}
@@ -91,7 +91,7 @@ impl Backend {
 					}
 					ResourceCommand::RemoveArrangement(id) => {
 						self.instances
-							.stop_instances_of(Playable::Arrangement(id), Default::default());
+							.stop_instances_of(PlayableId::Arrangement(id), Default::default());
 						if let Some(arrangement) = self.arrangements.remove(&id) {
 							self.unloader
 								.try_send(Resource::Arrangement(arrangement))

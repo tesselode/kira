@@ -72,7 +72,7 @@ use crate::{
 	frame::Frame,
 	group::{groups::Groups, GroupId},
 	parameter::{Parameter, Parameters},
-	playable::Playable,
+	playable::PlayableId,
 	sequence::SequenceInstanceId,
 	sound::{Sound, SoundId},
 	util::generate_uuid,
@@ -122,7 +122,7 @@ pub enum InstanceState {
 
 #[derive(Debug, Clone)]
 pub(crate) struct Instance {
-	playable: Playable,
+	playable_id: PlayableId,
 	track_index: InstanceTrackIndex,
 	sequence_id: Option<SequenceInstanceId>,
 	volume: CachedValue<f64>,
@@ -138,7 +138,7 @@ pub(crate) struct Instance {
 
 impl Instance {
 	pub fn new(
-		playable: Playable,
+		playable: PlayableId,
 		sequence_id: Option<SequenceInstanceId>,
 		settings: InstanceSettings,
 	) -> Self {
@@ -150,7 +150,7 @@ impl Instance {
 			fade_volume = Parameter::new(1.0);
 		}
 		Self {
-			playable,
+			playable_id: playable,
 			track_index: settings.track,
 			sequence_id,
 			volume: CachedValue::new(settings.volume, 1.0),
@@ -165,8 +165,8 @@ impl Instance {
 		}
 	}
 
-	pub fn playable(&self) -> Playable {
-		self.playable
+	pub fn playable_id(&self) -> PlayableId {
+		self.playable_id
 	}
 
 	pub fn track_index(&self) -> InstanceTrackIndex {
@@ -206,7 +206,7 @@ impl Instance {
 		arrangements: &IndexMap<ArrangementId, Arrangement>,
 		groups: &Groups,
 	) -> bool {
-		self.playable
+		self.playable_id
 			.is_in_group(parent_id, sounds, arrangements, groups)
 	}
 
@@ -274,20 +274,22 @@ impl Instance {
 		arrangements: &IndexMap<ArrangementId, Arrangement>,
 	) {
 		if self.playing() {
-			let duration = match self.playable {
-				Playable::Sound(id) => sounds.get(&id).map(|sound| sound.duration()).unwrap_or(0.0),
-				Playable::Arrangement(id) => arrangements
+			let duration = match self.playable_id {
+				PlayableId::Sound(id) => {
+					sounds.get(&id).map(|sound| sound.duration()).unwrap_or(0.0)
+				}
+				PlayableId::Arrangement(id) => arrangements
 					.get(&id)
 					.map(|arrangement| arrangement.duration())
 					.unwrap_or(0.0),
 			};
 			let loop_start = match self.loop_start {
-				InstanceLoopStart::Default => match self.playable {
-					Playable::Sound(id) => sounds
+				InstanceLoopStart::Default => match self.playable_id {
+					PlayableId::Sound(id) => sounds
 						.get(&id)
 						.map(|sound| sound.default_loop_start())
 						.unwrap_or(None),
-					Playable::Arrangement(id) => arrangements
+					PlayableId::Arrangement(id) => arrangements
 						.get(&id)
 						.map(|arrangement| arrangement.default_loop_start())
 						.unwrap_or(None),
@@ -341,7 +343,7 @@ impl Instance {
 		arrangements: &IndexMap<ArrangementId, Arrangement>,
 	) -> Frame {
 		let mut out = self
-			.playable
+			.playable_id
 			.get_frame_at_position(self.position, sounds, arrangements);
 		out = out.panned(self.panning.value() as f32);
 		out * (self.effective_volume() as f32)

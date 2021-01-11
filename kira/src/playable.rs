@@ -15,14 +15,14 @@ use crate::{
 	feature = "serde_support",
 	derive(serde::Serialize, serde::Deserialize)
 )]
-pub enum Playable {
+pub enum PlayableId {
 	/// A sound.
 	Sound(SoundId),
 	/// An arrangement.
 	Arrangement(ArrangementId),
 }
 
-impl Playable {
+impl PlayableId {
 	/// Gets the frame this item will output at a certain time.
 	pub(crate) fn get_frame_at_position(
 		&self,
@@ -31,14 +31,14 @@ impl Playable {
 		arrangements: &IndexMap<ArrangementId, Arrangement>,
 	) -> Frame {
 		match self {
-			Playable::Sound(id) => {
+			PlayableId::Sound(id) => {
 				if let Some(sound) = sounds.get(id) {
 					sound.get_frame_at_position(position)
 				} else {
 					Frame::from_mono(0.0)
 				}
 			}
-			Playable::Arrangement(id) => {
+			PlayableId::Arrangement(id) => {
 				if let Some(arrangement) = arrangements.get(id) {
 					arrangement.get_frame_at_position(position, sounds)
 				} else {
@@ -56,12 +56,12 @@ impl Playable {
 		groups: &Groups,
 	) -> bool {
 		match self {
-			Playable::Sound(id) => {
+			PlayableId::Sound(id) => {
 				if let Some(sound) = sounds.get(id) {
 					return sound.is_in_group(parent_id, groups);
 				}
 			}
-			Playable::Arrangement(id) => {
+			PlayableId::Arrangement(id) => {
 				if let Some(arrangement) = arrangements.get(id) {
 					return arrangement.is_in_group(parent_id, groups);
 				}
@@ -71,25 +71,25 @@ impl Playable {
 	}
 }
 
-impl From<SoundId> for Playable {
+impl From<SoundId> for PlayableId {
 	fn from(id: SoundId) -> Self {
 		Self::Sound(id)
 	}
 }
 
-impl From<ArrangementId> for Playable {
+impl From<ArrangementId> for PlayableId {
 	fn from(id: ArrangementId) -> Self {
 		Self::Arrangement(id)
 	}
 }
 
-impl From<&SoundHandle> for Playable {
+impl From<&SoundHandle> for PlayableId {
 	fn from(handle: &SoundHandle) -> Self {
 		Self::Sound(handle.id())
 	}
 }
 
-impl From<&ArrangementHandle> for Playable {
+impl From<&ArrangementHandle> for PlayableId {
 	fn from(handle: &ArrangementHandle) -> Self {
 		Self::Arrangement(handle.id())
 	}

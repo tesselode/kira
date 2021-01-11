@@ -4,7 +4,7 @@ use crate::{
 	group::groups::Groups,
 	instance::{Instance, InstanceId, StopInstanceSettings},
 	parameter::Parameters,
-	playable::Playable,
+	playable::PlayableId,
 	sound::{Sound, SoundId},
 };
 use indexmap::IndexMap;
@@ -24,9 +24,9 @@ impl Instances {
 		}
 	}
 
-	pub fn stop_instances_of(&mut self, playable: Playable, settings: StopInstanceSettings) {
+	pub fn stop_instances_of(&mut self, playable: PlayableId, settings: StopInstanceSettings) {
 		for (_, instance) in &mut self.instances {
-			if instance.playable() == playable {
+			if instance.playable_id() == playable {
 				instance.stop(settings);
 			}
 		}
@@ -40,8 +40,8 @@ impl Instances {
 		groups: &Groups,
 	) {
 		match command {
-			InstanceCommand::Play(instance_id, instance) => match instance.playable() {
-				Playable::Sound(id) => {
+			InstanceCommand::Play(instance_id, instance) => match instance.playable_id() {
+				PlayableId::Sound(id) => {
 					if let Some(sound) = sounds.get_mut(&id) {
 						if !sound.cooling_down() {
 							self.instances.insert(instance_id, instance);
@@ -49,7 +49,7 @@ impl Instances {
 						}
 					}
 				}
-				Playable::Arrangement(id) => {
+				PlayableId::Arrangement(id) => {
 					if let Some(arrangement) = arrangements.get_mut(&id) {
 						if !arrangement.cooling_down() {
 							self.instances.insert(instance_id, instance);
@@ -100,14 +100,14 @@ impl Instances {
 			}
 			InstanceCommand::PauseInstancesOf(playable, settings) => {
 				for (_, instance) in &mut self.instances {
-					if instance.playable() == playable {
+					if instance.playable_id() == playable {
 						instance.pause(settings);
 					}
 				}
 			}
 			InstanceCommand::ResumeInstancesOf(playable, settings) => {
 				for (_, instance) in &mut self.instances {
-					if instance.playable() == playable {
+					if instance.playable_id() == playable {
 						instance.resume(settings);
 					}
 				}
@@ -173,7 +173,7 @@ impl Instances {
 				mixer.add_input(
 					instance
 						.track_index()
-						.get(instance.playable(), sounds, arrangements),
+						.get(instance.playable_id(), sounds, arrangements),
 					instance.get_sample(sounds, arrangements),
 				);
 			}

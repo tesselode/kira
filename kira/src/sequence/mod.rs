@@ -174,7 +174,7 @@ use crate::{
 	},
 	metronome::MetronomeId,
 	parameter::{ParameterId, Tween},
-	playable::Playable,
+	playable::PlayableId,
 	AudioError, AudioResult, Duration, Tempo, Value,
 };
 
@@ -236,16 +236,16 @@ impl Default for SequenceInstanceSettings {
 	derive(serde::Serialize, serde::Deserialize)
 )]
 pub(crate) enum SequenceOutputCommand {
-	PlaySound(Playable, InstanceSettings),
+	PlaySound(PlayableId, InstanceSettings),
 	SetInstanceVolume(InstanceId, Value<f64>),
 	SetInstancePitch(InstanceId, Value<f64>),
 	SetInstancePanning(InstanceId, Value<f64>),
 	PauseInstance(InstanceId, PauseInstanceSettings),
 	ResumeInstance(InstanceId, ResumeInstanceSettings),
 	StopInstance(InstanceId, StopInstanceSettings),
-	PauseInstancesOf(Playable, PauseInstanceSettings),
-	ResumeInstancesOf(Playable, ResumeInstanceSettings),
-	StopInstancesOf(Playable, StopInstanceSettings),
+	PauseInstancesOf(PlayableId, PauseInstanceSettings),
+	ResumeInstancesOf(PlayableId, ResumeInstanceSettings),
+	StopInstancesOf(PlayableId, StopInstanceSettings),
 	PauseSequence(SequenceInstanceId),
 	ResumeSequence(SequenceInstanceId),
 	StopSequence(SequenceInstanceId),
@@ -272,7 +272,7 @@ pub(crate) enum SequenceStep<CustomEvent: Clone + Eq + Hash> {
 	Wait(Duration),
 	WaitForInterval(f64),
 	RunCommand(SequenceOutputCommand),
-	PlayRandom(Vec<Playable>, InstanceSettings),
+	PlayRandom(Vec<PlayableId>, InstanceSettings),
 	EmitCustomEvent(CustomEvent),
 }
 
@@ -375,7 +375,7 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	}
 
 	/// Adds a step to play a sound or arrangement.
-	pub fn play<P: Into<Playable>>(
+	pub fn play<P: Into<PlayableId>>(
 		&mut self,
 		playable: P,
 		settings: InstanceSettings,
@@ -389,7 +389,7 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	/// list of choices.
 	pub fn play_random(
 		&mut self,
-		choices: Vec<Playable>,
+		choices: Vec<PlayableId>,
 		settings: InstanceSettings,
 	) -> InstanceId {
 		self.steps
@@ -436,7 +436,7 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	/// Adds a step to pause all instances of a sound or arrangement.
 	pub fn pause_instances_of(
 		&mut self,
-		playable: impl Into<Playable>,
+		playable: impl Into<PlayableId>,
 		settings: PauseInstanceSettings,
 	) {
 		self.steps
@@ -446,7 +446,7 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	/// Adds a step to resume all instances of a sound or arrangement.
 	pub fn resume_instances_of(
 		&mut self,
-		playable: impl Into<Playable>,
+		playable: impl Into<PlayableId>,
 		settings: ResumeInstanceSettings,
 	) {
 		self.steps
@@ -456,7 +456,7 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	/// Adds a step to stop all instances of a sound or arrangement.
 	pub fn stop_instances_of(
 		&mut self,
-		playable: impl Into<Playable>,
+		playable: impl Into<PlayableId>,
 		settings: StopInstanceSettings,
 	) {
 		self.steps
