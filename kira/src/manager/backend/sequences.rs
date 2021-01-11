@@ -3,6 +3,7 @@ use crate::{
 	group::groups::Groups,
 	instance::Instance,
 	metronome::Metronomes,
+	playable::Playables,
 	resource::Resource,
 	sequence::{SequenceInstance, SequenceInstanceId, SequenceOutputCommand},
 };
@@ -100,6 +101,7 @@ impl Sequences {
 	pub fn update(
 		&mut self,
 		dt: f64,
+		playables: &Playables,
 		metronomes: &Metronomes,
 		unloader: &mut Sender<Resource>,
 	) -> Drain<Command> {
@@ -109,75 +111,116 @@ impl Sequences {
 			// convert sequence commands to commands that can be consumed
 			// by the backend
 			for command in self.sequence_output_command_queue.drain(..) {
-				self.output_command_queue.push(match command {
-					SequenceOutputCommand::PlaySound(playable, settings) => {
-						let instance_id = settings.id;
-						Command::Instance(InstanceCommand::Play(
-							instance_id,
-							Instance::new(playable, Some(*id), settings),
-						))
+				match command {
+					SequenceOutputCommand::PlaySound(playable_id, settings) => {
+						if let Some(playable) = playables.playable(playable_id) {
+							let instance_id = settings.id;
+							self.output_command_queue.push(Command::Instance(
+								InstanceCommand::Play(
+									instance_id,
+									Instance::new(
+										playable_id,
+										playable.duration(),
+										Some(*id),
+										settings.into_internal(
+											playable.duration(),
+											playable.default_loop_start(),
+											playable.default_track(),
+										),
+									),
+								),
+							))
+						}
 					}
 					SequenceOutputCommand::SetInstanceVolume(id, volume) => {
-						Command::Instance(InstanceCommand::SetInstanceVolume(id, volume))
+						self.output_command_queue.push(Command::Instance(
+							InstanceCommand::SetInstanceVolume(id, volume),
+						))
 					}
 					SequenceOutputCommand::SetInstancePitch(id, pitch) => {
-						Command::Instance(InstanceCommand::SetInstancePitch(id, pitch))
+						self.output_command_queue.push(Command::Instance(
+							InstanceCommand::SetInstancePitch(id, pitch),
+						))
 					}
 					SequenceOutputCommand::SetInstancePanning(id, panning) => {
-						Command::Instance(InstanceCommand::SetInstancePanning(id, panning))
+						self.output_command_queue.push(Command::Instance(
+							InstanceCommand::SetInstancePanning(id, panning),
+						))
 					}
 					SequenceOutputCommand::PauseInstance(id, settings) => {
-						Command::Instance(InstanceCommand::PauseInstance(id, settings))
+						self.output_command_queue.push(Command::Instance(
+							InstanceCommand::PauseInstance(id, settings),
+						))
 					}
 					SequenceOutputCommand::ResumeInstance(id, settings) => {
-						Command::Instance(InstanceCommand::ResumeInstance(id, settings))
+						self.output_command_queue.push(Command::Instance(
+							InstanceCommand::ResumeInstance(id, settings),
+						))
 					}
 					SequenceOutputCommand::StopInstance(id, settings) => {
-						Command::Instance(InstanceCommand::StopInstance(id, settings))
+						self.output_command_queue.push(Command::Instance(
+							InstanceCommand::StopInstance(id, settings),
+						))
 					}
 					SequenceOutputCommand::PauseInstancesOf(id, settings) => {
-						Command::Instance(InstanceCommand::PauseInstancesOf(id, settings))
+						self.output_command_queue.push(Command::Instance(
+							InstanceCommand::PauseInstancesOf(id, settings),
+						))
 					}
 					SequenceOutputCommand::ResumeInstancesOf(id, settings) => {
-						Command::Instance(InstanceCommand::ResumeInstancesOf(id, settings))
+						self.output_command_queue.push(Command::Instance(
+							InstanceCommand::ResumeInstancesOf(id, settings),
+						))
 					}
 					SequenceOutputCommand::StopInstancesOf(id, settings) => {
-						Command::Instance(InstanceCommand::StopInstancesOf(id, settings))
+						self.output_command_queue.push(Command::Instance(
+							InstanceCommand::StopInstancesOf(id, settings),
+						))
 					}
-					SequenceOutputCommand::PauseSequence(id) => {
-						Command::Sequence(SequenceCommand::PauseSequenceInstance(id))
-					}
-					SequenceOutputCommand::ResumeSequence(id) => {
-						Command::Sequence(SequenceCommand::ResumeSequenceInstance(id))
-					}
-					SequenceOutputCommand::StopSequence(id) => {
-						Command::Sequence(SequenceCommand::StopSequenceInstance(id))
-					}
+					SequenceOutputCommand::PauseSequence(id) => self.output_command_queue.push(
+						Command::Sequence(SequenceCommand::PauseSequenceInstance(id)),
+					),
+					SequenceOutputCommand::ResumeSequence(id) => self.output_command_queue.push(
+						Command::Sequence(SequenceCommand::ResumeSequenceInstance(id)),
+					),
+					SequenceOutputCommand::StopSequence(id) => self
+						.output_command_queue
+						.push(Command::Sequence(SequenceCommand::StopSequenceInstance(id))),
 					SequenceOutputCommand::PauseInstancesOfSequence(id, settings) => {
-						Command::Instance(InstanceCommand::PauseInstancesOfSequence(id, settings))
+						self.output_command_queue.push(Command::Instance(
+							InstanceCommand::PauseInstancesOfSequence(id, settings),
+						))
 					}
 					SequenceOutputCommand::ResumeInstancesOfSequence(id, settings) => {
-						Command::Instance(InstanceCommand::ResumeInstancesOfSequence(id, settings))
+						self.output_command_queue.push(Command::Instance(
+							InstanceCommand::ResumeInstancesOfSequence(id, settings),
+						))
 					}
 					SequenceOutputCommand::StopInstancesOfSequence(id, settings) => {
-						Command::Instance(InstanceCommand::StopInstancesOfSequence(id, settings))
+						self.output_command_queue.push(Command::Instance(
+							InstanceCommand::StopInstancesOfSequence(id, settings),
+						))
 					}
 					SequenceOutputCommand::SetMetronomeTempo(id, tempo) => {
-						Command::Metronome(MetronomeCommand::SetMetronomeTempo(id, tempo))
+						self.output_command_queue.push(Command::Metronome(
+							MetronomeCommand::SetMetronomeTempo(id, tempo),
+						))
 					}
-					SequenceOutputCommand::StartMetronome(id) => {
-						Command::Metronome(MetronomeCommand::StartMetronome(id))
-					}
-					SequenceOutputCommand::PauseMetronome(id) => {
-						Command::Metronome(MetronomeCommand::PauseMetronome(id))
-					}
-					SequenceOutputCommand::StopMetronome(id) => {
-						Command::Metronome(MetronomeCommand::StopMetronome(id))
-					}
+					SequenceOutputCommand::StartMetronome(id) => self
+						.output_command_queue
+						.push(Command::Metronome(MetronomeCommand::StartMetronome(id))),
+					SequenceOutputCommand::PauseMetronome(id) => self
+						.output_command_queue
+						.push(Command::Metronome(MetronomeCommand::PauseMetronome(id))),
+					SequenceOutputCommand::StopMetronome(id) => self
+						.output_command_queue
+						.push(Command::Metronome(MetronomeCommand::StopMetronome(id))),
 					SequenceOutputCommand::SetParameter(id, target, tween) => {
-						Command::Parameter(ParameterCommand::SetParameter(id, target, tween))
+						self.output_command_queue.push(Command::Parameter(
+							ParameterCommand::SetParameter(id, target, tween),
+						))
 					}
-				});
+				}
 			}
 			if sequence_instance.finished() {
 				self.sequence_instances_to_remove.push(*id);

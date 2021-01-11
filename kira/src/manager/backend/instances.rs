@@ -162,17 +162,12 @@ impl Instances {
 	) {
 		for (instance_id, instance) in &mut self.instances {
 			if instance.playing() {
-				mixer.add_input(
-					instance
-						.track_index()
-						.get(instance.playable_id(), playables),
-					instance.get_sample(playables),
-				);
+				mixer.add_input(instance.track_index(), instance.get_sample(playables));
 			}
 			if instance.finished() {
 				self.instances_to_remove.push(*instance_id);
 			}
-			instance.update(dt, parameters, playables);
+			instance.update(dt, parameters);
 		}
 		for instance_id in self.instances_to_remove.drain(..) {
 			self.instances.remove(&instance_id);

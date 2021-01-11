@@ -1,7 +1,6 @@
 use crate::{
 	mixer::{SubTrackId, TrackIndex},
 	parameter::{EaseDirection, Easing, Tween},
-	playable::{PlayableId, Playables},
 	Value,
 };
 
@@ -18,18 +17,6 @@ pub enum InstanceTrackIndex {
 	DefaultForSound,
 	/// A manually set track index.
 	Custom(TrackIndex),
-}
-
-impl InstanceTrackIndex {
-	pub(crate) fn get(&self, id: PlayableId, playables: &Playables) -> TrackIndex {
-		match self {
-			InstanceTrackIndex::DefaultForSound => playables
-				.playable(id)
-				.map(|playable| playable.default_track())
-				.unwrap_or(TrackIndex::Main),
-			InstanceTrackIndex::Custom(index) => *index,
-		}
-	}
 }
 
 impl Default for InstanceTrackIndex {
@@ -191,6 +178,36 @@ impl InstanceSettings {
 			..self
 		}
 	}
+
+	pub(crate) fn into_internal(
+		self,
+		duration: f64,
+		default_loop_start: Option<f64>,
+		default_track: TrackIndex,
+	) -> InternalInstanceSettings {
+		InternalInstanceSettings {
+			id: self.id,
+			volume: self.volume,
+			pitch: self.pitch,
+			panning: self.panning,
+			start_position: if self.reverse {
+				duration - self.start_position
+			} else {
+				self.start_position
+			},
+			reverse: self.reverse,
+			fade_in_tween: self.fade_in_tween,
+			loop_start: match self.loop_start {
+				InstanceLoopStart::Default => default_loop_start,
+				InstanceLoopStart::None => None,
+				InstanceLoopStart::Custom(position) => Some(position),
+			},
+			track: match self.track {
+				InstanceTrackIndex::DefaultForSound => default_track,
+				InstanceTrackIndex::Custom(track) => track,
+			},
+		}
+	}
 }
 
 impl Default for InstanceSettings {
@@ -207,6 +224,18 @@ impl Default for InstanceSettings {
 			track: InstanceTrackIndex::default(),
 		}
 	}
+}
+
+pub(crate) struct InternalInstanceSettings {
+	pub id: InstanceId,
+	pub volume: Value<f64>,
+	pub pitch: Value<f64>,
+	pub panning: Value<f64>,
+	pub start_position: f64,
+	pub reverse: bool,
+	pub fade_in_tween: Option<Tween>,
+	pub loop_start: Option<f64>,
+	pub track: TrackIndex,
 }
 
 /// Settings for pausing an instance.

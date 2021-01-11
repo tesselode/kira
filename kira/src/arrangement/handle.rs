@@ -52,12 +52,14 @@ impl ArrangementHandle {
 		self.default_loop_start
 	}
 
-	pub fn play(&mut self, mut settings: InstanceSettings) -> AudioResult<InstanceHandle> {
-		if settings.reverse {
-			settings.start_position = self.duration() - settings.start_position;
-		}
+	pub fn play(&mut self, settings: InstanceSettings) -> AudioResult<InstanceHandle> {
 		let id = settings.id;
-		let instance = Instance::new(self.id.into(), None, settings);
+		let instance = Instance::new(
+			self.id.into(),
+			self.duration,
+			None,
+			settings.into_internal(self.duration, self.default_loop_start, self.default_track),
+		);
 		let handle = InstanceHandle::new(id, instance.public_state(), self.command_sender.clone());
 		self.command_sender
 			.push(InstanceCommand::Play(id, instance).into())?;

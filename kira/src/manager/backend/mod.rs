@@ -90,10 +90,12 @@ impl Backend {
 	}
 
 	fn update_sequences(&mut self) {
-		for command in self
-			.sequences
-			.update(self.dt, &self.metronomes, &mut self.unloader)
-		{
+		for command in self.sequences.update(
+			self.dt,
+			&self.playables,
+			&self.metronomes,
+			&mut self.unloader,
+		) {
 			self.command_queue.push(command.into());
 		}
 	}

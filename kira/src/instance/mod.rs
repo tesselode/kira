@@ -68,6 +68,7 @@ use uuid::Uuid;
 
 use crate::{
 	frame::Frame,
+	mixer::TrackIndex,
 	parameter::{Parameter, Parameters},
 	playable::{PlayableId, Playables},
 	sequence::SequenceInstanceId,
@@ -119,13 +120,14 @@ pub enum InstanceState {
 #[derive(Debug, Clone)]
 pub(crate) struct Instance {
 	playable_id: PlayableId,
-	track_index: InstanceTrackIndex,
+	duration: f64,
 	sequence_id: Option<SequenceInstanceId>,
+	track_index: TrackIndex,
 	volume: CachedValue<f64>,
 	pitch: CachedValue<f64>,
 	panning: CachedValue<f64>,
 	reverse: bool,
-	loop_start: InstanceLoopStart,
+	loop_start: Option<f64>,
 	state: InstanceState,
 	public_state: Arc<Atomic<InstanceState>>,
 	position: f64,
@@ -135,8 +137,9 @@ pub(crate) struct Instance {
 impl Instance {
 	pub fn new(
 		playable: PlayableId,
+		duration: f64,
 		sequence_id: Option<SequenceInstanceId>,
-		settings: InstanceSettings,
+		settings: InternalInstanceSettings,
 	) -> Self {
 		let mut fade_volume;
 		if let Some(tween) = settings.fade_in_tween {
@@ -147,8 +150,9 @@ impl Instance {
 		}
 		Self {
 			playable_id: playable,
-			track_index: settings.track,
+			duration,
 			sequence_id,
+			track_index: settings.track,
 			volume: CachedValue::new(settings.volume, 1.0),
 			pitch: CachedValue::new(settings.pitch, 1.0),
 			panning: CachedValue::new(settings.panning, 0.5),
@@ -165,7 +169,7 @@ impl Instance {
 		self.playable_id
 	}
 
-	pub fn track_index(&self) -> InstanceTrackIndex {
+	pub fn track_index(&self) -> TrackIndex {
 		self.track_index
 	}
 
@@ -251,20 +255,8 @@ impl Instance {
 		self.fade_volume.set(0.0, settings.fade_tween);
 	}
 
-	pub fn update(&mut self, dt: f64, parameters: &Parameters, playables: &Playables) {
+	pub fn update(&mut self, dt: f64, parameters: &Parameters) {
 		if self.playing() {
-			let duration = playables
-				.playable(self.playable_id)
-				.map(|playable| playable.duration())
-				.unwrap_or(0.0);
-			let loop_start = match self.loop_start {
-				InstanceLoopStart::Default => playables
-					.playable(self.playable_id)
-					.map(|playable| playable.default_loop_start())
-					.unwrap_or(None),
-				InstanceLoopStart::None => None,
-				InstanceLoopStart::Custom(position) => Some(position),
-			};
 			self.volume.update(parameters);
 			self.pitch.update(parameters);
 			self.panning.update(parameters);
@@ -274,19 +266,19 @@ impl Instance {
 			}
 			self.position += pitch * dt;
 			if pitch < 0.0 {
-				if let Some(loop_start) = loop_start {
+				if let Some(loop_start) = self.loop_start {
 					while self.position < loop_start {
-						self.position += duration - loop_start;
+						self.position += self.duration - loop_start;
 					}
 				} else if self.position < 0.0 {
 					self.set_state(InstanceState::Stopped);
 				}
 			} else {
-				if let Some(loop_start) = loop_start {
-					while self.position > duration {
-						self.position -= duration - loop_start;
+				if let Some(loop_start) = self.loop_start {
+					while self.position > self.duration {
+						self.position -= self.duration - loop_start;
 					}
-				} else if self.position > duration {
+				} else if self.position > self.duration {
 					self.set_state(InstanceState::Stopped);
 				}
 			}
