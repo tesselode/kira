@@ -1,11 +1,7 @@
-use indexmap::IndexMap;
-
 use crate::{
-	arrangement::{Arrangement, ArrangementId},
 	mixer::{SubTrackId, TrackIndex},
 	parameter::{EaseDirection, Easing, Tween},
-	playable::PlayableId,
-	sound::{Sound, SoundId},
+	playable::{PlayableId, Playables},
 	Value,
 };
 
@@ -25,23 +21,12 @@ pub enum InstanceTrackIndex {
 }
 
 impl InstanceTrackIndex {
-	pub(crate) fn get(
-		&self,
-		playable: PlayableId,
-		sounds: &IndexMap<SoundId, Sound>,
-		arrangements: &IndexMap<ArrangementId, Arrangement>,
-	) -> TrackIndex {
+	pub(crate) fn get(&self, id: PlayableId, playables: &Playables) -> TrackIndex {
 		match self {
-			InstanceTrackIndex::DefaultForSound => match playable {
-				PlayableId::Sound(id) => sounds
-					.get(&id)
-					.map(|sound| sound.default_track())
-					.unwrap_or(TrackIndex::Main),
-				PlayableId::Arrangement(id) => arrangements
-					.get(&id)
-					.map(|arrangement| arrangement.default_track())
-					.unwrap_or(TrackIndex::Main),
-			},
+			InstanceTrackIndex::DefaultForSound => playables
+				.playable(id)
+				.map(|playable| playable.default_track())
+				.unwrap_or(TrackIndex::Main),
 			InstanceTrackIndex::Custom(index) => *index,
 		}
 	}

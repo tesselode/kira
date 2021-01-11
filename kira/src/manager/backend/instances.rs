@@ -1,11 +1,9 @@
 use crate::{
-	arrangement::{Arrangement, ArrangementId},
 	command::InstanceCommand,
 	group::groups::Groups,
 	instance::{Instance, InstanceId, StopInstanceSettings},
 	parameter::Parameters,
-	playable::PlayableId,
-	sound::{Sound, SoundId},
+	playable::{PlayableId, Playables},
 };
 use indexmap::IndexMap;
 
@@ -35,29 +33,18 @@ impl Instances {
 	pub fn run_command(
 		&mut self,
 		command: InstanceCommand,
-		sounds: &mut IndexMap<SoundId, Sound>,
-		arrangements: &mut IndexMap<ArrangementId, Arrangement>,
-		groups: &Groups,
+		playables: &mut Playables,
+		all_groups: &Groups,
 	) {
 		match command {
-			InstanceCommand::Play(instance_id, instance) => match instance.playable_id() {
-				PlayableId::Sound(id) => {
-					if let Some(sound) = sounds.get_mut(&id) {
-						if !sound.cooling_down() {
-							self.instances.insert(instance_id, instance);
-							sound.start_cooldown();
-						}
+			InstanceCommand::Play(instance_id, instance) => {
+				if let Some(mut playable) = playables.playable_mut(instance.playable_id()) {
+					if !playable.cooling_down() {
+						self.instances.insert(instance_id, instance);
+						playable.start_cooldown();
 					}
 				}
-				PlayableId::Arrangement(id) => {
-					if let Some(arrangement) = arrangements.get_mut(&id) {
-						if !arrangement.cooling_down() {
-							self.instances.insert(instance_id, instance);
-							arrangement.start_cooldown();
-						}
-					}
-				}
-			},
+			}
 			InstanceCommand::SetInstanceVolume(id, value) => {
 				if let Some(instance) = self.instances.get_mut(&id) {
 					instance.set_volume(value);
@@ -117,22 +104,28 @@ impl Instances {
 			}
 			InstanceCommand::PauseGroup(id, settings) => {
 				for (_, instance) in &mut self.instances {
-					if instance.is_in_group(id, sounds, arrangements, groups) {
-						instance.pause(settings);
+					if let Some(playable) = playables.playable(instance.playable_id()) {
+						if playable.is_in_group(id, all_groups) {
+							instance.pause(settings);
+						}
 					}
 				}
 			}
 			InstanceCommand::ResumeGroup(id, settings) => {
 				for (_, instance) in &mut self.instances {
-					if instance.is_in_group(id, sounds, arrangements, groups) {
-						instance.resume(settings);
+					if let Some(playable) = playables.playable(instance.playable_id()) {
+						if playable.is_in_group(id, all_groups) {
+							instance.resume(settings);
+						}
 					}
 				}
 			}
 			InstanceCommand::StopGroup(id, settings) => {
 				for (_, instance) in &mut self.instances {
-					if instance.is_in_group(id, sounds, arrangements, groups) {
-						instance.stop(settings);
+					if let Some(playable) = playables.playable(instance.playable_id()) {
+						if playable.is_in_group(id, all_groups) {
+							instance.stop(settings);
+						}
 					}
 				}
 			}
@@ -163,8 +156,7 @@ impl Instances {
 	pub fn process(
 		&mut self,
 		dt: f64,
-		sounds: &IndexMap<SoundId, Sound>,
-		arrangements: &IndexMap<ArrangementId, Arrangement>,
+		playables: &Playables,
 		mixer: &mut Mixer,
 		parameters: &Parameters,
 	) {
@@ -173,14 +165,14 @@ impl Instances {
 				mixer.add_input(
 					instance
 						.track_index()
-						.get(instance.playable_id(), sounds, arrangements),
-					instance.get_sample(sounds, arrangements),
+						.get(instance.playable_id(), playables),
+					instance.get_sample(playables),
 				);
 			}
 			if instance.finished() {
 				self.instances_to_remove.push(*instance_id);
 			}
-			instance.update(dt, parameters, sounds, arrangements);
+			instance.update(dt, parameters, playables);
 		}
 		for instance_id in self.instances_to_remove.drain(..) {
 			self.instances.remove(&instance_id);

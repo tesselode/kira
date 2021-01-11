@@ -7,26 +7,17 @@ use self::mixer::Mixer;
 
 use super::AudioManagerSettings;
 use crate::{
-	arrangement::{Arrangement, ArrangementId},
-	command::{Command, ResourceCommand},
-	frame::Frame,
-	group::groups::Groups,
-	metronome::Metronomes,
-	parameter::Parameters,
-	playable::PlayableId,
-	resource::Resource,
-	sound::{Sound, SoundId},
+	command::Command, frame::Frame, group::groups::Groups, metronome::Metronomes,
+	parameter::Parameters, playable::Playables, resource::Resource,
 };
 use flume::{Receiver, Sender};
-use indexmap::IndexMap;
 use instances::Instances;
 use sequences::Sequences;
 use streams::Streams;
 
 pub struct Backend {
 	dt: f64,
-	sounds: IndexMap<SoundId, Sound>,
-	arrangements: IndexMap<ArrangementId, Arrangement>,
+	playables: Playables,
 	command_queue: Vec<Command>,
 	command_receiver: Receiver<Command>,
 	unloader: Sender<Resource>,
@@ -48,8 +39,7 @@ impl Backend {
 	) -> Self {
 		Self {
 			dt: 1.0 / sample_rate as f64,
-			sounds: IndexMap::with_capacity(settings.num_sounds),
-			arrangements: IndexMap::with_capacity(settings.num_arrangements),
+			playables: Playables::new(settings.num_sounds, settings.num_arrangements),
 			command_queue: Vec::with_capacity(settings.num_commands),
 			command_receiver,
 			unloader,
@@ -67,48 +57,15 @@ impl Backend {
 		self.command_queue.extend(self.command_receiver.try_iter());
 		for command in self.command_queue.drain(..) {
 			match command {
-				Command::Resource(command) => match command {
-					ResourceCommand::AddSound(sound) => {
-						if let Some(sound) = self.sounds.insert(sound.id(), sound) {
-							self.unloader.try_send(Resource::Sound(sound)).ok();
-						}
-					}
-					ResourceCommand::RemoveSound(id) => {
-						self.instances
-							.stop_instances_of(PlayableId::Sound(id), Default::default());
-						if let Some(sound) = self.sounds.remove(&id) {
-							self.unloader.try_send(Resource::Sound(sound)).ok();
-						}
-					}
-					ResourceCommand::AddArrangement(arrangement) => {
-						if let Some(arrangement) =
-							self.arrangements.insert(arrangement.id(), arrangement)
-						{
-							self.unloader
-								.try_send(Resource::Arrangement(arrangement))
-								.ok();
-						}
-					}
-					ResourceCommand::RemoveArrangement(id) => {
-						self.instances
-							.stop_instances_of(PlayableId::Arrangement(id), Default::default());
-						if let Some(arrangement) = self.arrangements.remove(&id) {
-							self.unloader
-								.try_send(Resource::Arrangement(arrangement))
-								.ok();
-						}
-					}
-				},
+				Command::Resource(command) => {
+					self.playables.run_command(command, &mut self.unloader);
+				}
 				Command::Metronome(command) => {
 					self.metronomes.run_command(command, &mut self.unloader);
 				}
 				Command::Instance(command) => {
-					self.instances.run_command(
-						command,
-						&mut self.sounds,
-						&mut self.arrangements,
-						&self.groups,
-					);
+					self.instances
+						.run_command(command, &mut self.playables, &self.groups);
 				}
 				Command::Sequence(command) => {
 					self.sequences
@@ -132,18 +89,6 @@ impl Backend {
 		}
 	}
 
-	fn update_sounds(&mut self) {
-		for (_, sound) in &mut self.sounds {
-			sound.update_cooldown(self.dt);
-		}
-	}
-
-	fn update_arrangements(&mut self) {
-		for (_, arrangement) in &mut self.arrangements {
-			arrangement.update_cooldown(self.dt);
-		}
-	}
-
 	fn update_sequences(&mut self) {
 		for command in self
 			.sequences
@@ -156,18 +101,12 @@ impl Backend {
 	pub fn process(&mut self) -> Frame {
 		self.process_commands();
 		self.parameters.update(self.dt);
-		self.update_sounds();
-		self.update_arrangements();
+		self.playables.update(self.dt);
 		self.metronomes.update(self.dt, &self.parameters);
 		self.update_sequences();
 		self.streams.process(self.dt, &mut self.mixer);
-		self.instances.process(
-			self.dt,
-			&self.sounds,
-			&self.arrangements,
-			&mut self.mixer,
-			&self.parameters,
-		);
+		self.instances
+			.process(self.dt, &self.playables, &mut self.mixer, &self.parameters);
 		self.mixer.process(self.dt, &self.parameters)
 	}
 }

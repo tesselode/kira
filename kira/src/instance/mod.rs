@@ -64,17 +64,13 @@ use atomic::Atomic;
 pub use handle::InstanceHandle;
 pub use settings::*;
 
-use indexmap::IndexMap;
 use uuid::Uuid;
 
 use crate::{
-	arrangement::{Arrangement, ArrangementId},
 	frame::Frame,
-	group::{groups::Groups, GroupId},
 	parameter::{Parameter, Parameters},
-	playable::PlayableId,
+	playable::{PlayableId, Playables},
 	sequence::SequenceInstanceId,
-	sound::{Sound, SoundId},
 	util::generate_uuid,
 	value::CachedValue,
 	value::Value,
@@ -199,17 +195,6 @@ impl Instance {
 		self.state == InstanceState::Stopped
 	}
 
-	pub fn is_in_group(
-		&self,
-		parent_id: GroupId,
-		sounds: &IndexMap<SoundId, Sound>,
-		arrangements: &IndexMap<ArrangementId, Arrangement>,
-		groups: &Groups,
-	) -> bool {
-		self.playable_id
-			.is_in_group(parent_id, sounds, arrangements, groups)
-	}
-
 	pub fn set_volume(&mut self, volume: Value<f64>) {
 		self.volume.set(volume);
 	}
@@ -266,34 +251,17 @@ impl Instance {
 		self.fade_volume.set(0.0, settings.fade_tween);
 	}
 
-	pub fn update(
-		&mut self,
-		dt: f64,
-		parameters: &Parameters,
-		sounds: &IndexMap<SoundId, Sound>,
-		arrangements: &IndexMap<ArrangementId, Arrangement>,
-	) {
+	pub fn update(&mut self, dt: f64, parameters: &Parameters, playables: &Playables) {
 		if self.playing() {
-			let duration = match self.playable_id {
-				PlayableId::Sound(id) => {
-					sounds.get(&id).map(|sound| sound.duration()).unwrap_or(0.0)
-				}
-				PlayableId::Arrangement(id) => arrangements
-					.get(&id)
-					.map(|arrangement| arrangement.duration())
-					.unwrap_or(0.0),
-			};
+			let duration = playables
+				.playable(self.playable_id)
+				.map(|playable| playable.duration())
+				.unwrap_or(0.0);
 			let loop_start = match self.loop_start {
-				InstanceLoopStart::Default => match self.playable_id {
-					PlayableId::Sound(id) => sounds
-						.get(&id)
-						.map(|sound| sound.default_loop_start())
-						.unwrap_or(None),
-					PlayableId::Arrangement(id) => arrangements
-						.get(&id)
-						.map(|arrangement| arrangement.default_loop_start())
-						.unwrap_or(None),
-				},
+				InstanceLoopStart::Default => playables
+					.playable(self.playable_id)
+					.map(|playable| playable.default_loop_start())
+					.unwrap_or(None),
 				InstanceLoopStart::None => None,
 				InstanceLoopStart::Custom(position) => Some(position),
 			};
@@ -337,14 +305,10 @@ impl Instance {
 		}
 	}
 
-	pub fn get_sample(
-		&self,
-		sounds: &IndexMap<SoundId, Sound>,
-		arrangements: &IndexMap<ArrangementId, Arrangement>,
-	) -> Frame {
-		let mut out = self
-			.playable_id
-			.get_frame_at_position(self.position, sounds, arrangements);
+	pub fn get_sample(&self, playables: &Playables) -> Frame {
+		let mut out = playables
+			.frame_at_position(self.playable_id, self.position)
+			.unwrap_or(Frame::from_mono(0.0));
 		out = out.panned(self.panning.value() as f32);
 		out * (self.effective_volume() as f32)
 	}
