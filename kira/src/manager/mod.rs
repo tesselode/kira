@@ -77,8 +77,8 @@ impl Default for AudioManagerSettings {
 			num_sequences: 25,
 			num_tracks: 100,
 			num_groups: 100,
-			num_streams: 100,
-			num_metronomes: 100,
+			num_streams: 10,
+			num_metronomes: 5,
 		}
 	}
 }
