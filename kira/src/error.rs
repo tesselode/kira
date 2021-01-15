@@ -2,8 +2,8 @@ use cpal::{BuildStreamError, DefaultStreamConfigError, PlayStreamError};
 use thiserror::Error;
 
 use crate::{
-	arrangement::ArrangementId, audio_stream::AudioStreamId, group::GroupId,
-	metronome::MetronomeId, mixer::SubTrackId, parameter::ParameterId, sound::SoundId,
+	arrangement::ArrangementId, group::GroupId, metronome::MetronomeId, mixer::SubTrackId,
+	parameter::ParameterId, sound::SoundId,
 };
 
 /// Something that can go wrong.
