@@ -58,8 +58,6 @@ pub struct AudioManagerSettings {
 	pub num_sequences: usize,
 	/// The maximum number of mixer tracks that can be used at a time.
 	pub num_tracks: usize,
-	/// The maximum number of effects that can be running at a time on a mixer track.
-	pub num_effects_per_track: usize,
 	/// The maximum number of groups that can be used at a time.
 	pub num_groups: usize,
 	/// The maximum number of audio strams that can be used at a time.
@@ -78,7 +76,6 @@ impl Default for AudioManagerSettings {
 			num_instances: 100,
 			num_sequences: 25,
 			num_tracks: 100,
-			num_effects_per_track: 10,
 			num_groups: 100,
 			num_streams: 100,
 			num_metronomes: 100,
