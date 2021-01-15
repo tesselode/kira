@@ -1,6 +1,11 @@
 use cpal::{BuildStreamError, DefaultStreamConfigError, PlayStreamError};
 use thiserror::Error;
 
+use crate::{
+	arrangement::ArrangementId, audio_stream::AudioStreamId, group::GroupId,
+	metronome::MetronomeId, mixer::SubTrackId, parameter::ParameterId, sound::SoundId,
+};
+
 /// Something that can go wrong.
 #[derive(Debug, Error)]
 pub enum AudioError {
@@ -29,6 +34,42 @@ pub enum AudioError {
 		"Cannot pop an event from a receiver because the receiver is currently mutably borrowed"
 	)]
 	EventReceiverBorrowed,
+
+	#[error("Cannot add a sound because the max number of sounds has been reached")]
+	SoundLimitReached,
+
+	#[error("Cannot add an arrangement because the max number of arrangements has been reached")]
+	ArrangementLimitReached,
+
+	#[error("Cannot add an parameter because the max number of parameters has been reached")]
+	ParameterLimitReached,
+
+	#[error("Cannot add an track because the max number of tracks has been reached")]
+	TrackLimitReached,
+
+	#[error("Cannot add an group because the max number of groups has been reached")]
+	GroupLimitReached,
+
+	#[error("Cannot add an metronome because the max number of metronomes has been reached")]
+	MetronomeLimitReached,
+
+	#[error("The sound with the specified ID does not exist")]
+	NoSoundWithId(SoundId),
+
+	#[error("The arrangement with the specified ID does not exist")]
+	NoArrangementWithId(ArrangementId),
+
+	#[error("The parameter with the specified ID does not exist")]
+	NoParameterWithId(ParameterId),
+
+	#[error("The track with the specified ID does not exist")]
+	NoTrackWithId(SubTrackId),
+
+	#[error("The group with the specified ID does not exist")]
+	NoGroupWithId(GroupId),
+
+	#[error("The metronome with the specified ID does not exist")]
+	NoMetronomeWithId(MetronomeId),
 
 	#[error("Only mono and stereo audio is supported")]
 	UnsupportedChannelConfiguration,

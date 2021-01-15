@@ -9,6 +9,7 @@ use backend::Backend;
 #[cfg(feature = "benchmarking")]
 pub use backend::Backend;
 use flume::{Receiver, Sender};
+use indexmap::IndexSet;
 
 use crate::{
 	arrangement::{Arrangement, ArrangementHandle, ArrangementId},
@@ -85,6 +86,118 @@ impl Default for AudioManagerSettings {
 	}
 }
 
+struct ActiveIds {
+	active_sound_ids: IndexSet<SoundId>,
+	active_arrangement_ids: IndexSet<ArrangementId>,
+	active_parameter_ids: IndexSet<ParameterId>,
+	active_track_ids: IndexSet<SubTrackId>,
+	active_group_ids: IndexSet<GroupId>,
+	active_metronome_ids: IndexSet<MetronomeId>,
+}
+
+impl ActiveIds {
+	fn new(settings: &AudioManagerSettings) -> Self {
+		Self {
+			active_sound_ids: IndexSet::with_capacity(settings.num_sounds),
+			active_arrangement_ids: IndexSet::with_capacity(settings.num_arrangements),
+			active_parameter_ids: IndexSet::with_capacity(settings.num_parameters),
+			active_track_ids: IndexSet::with_capacity(settings.num_tracks),
+			active_group_ids: IndexSet::with_capacity(settings.num_groups),
+			active_metronome_ids: IndexSet::with_capacity(settings.num_metronomes),
+		}
+	}
+
+	fn add_sound_id(&mut self, id: SoundId) -> AudioResult<()> {
+		if self.active_sound_ids.len() >= self.active_sound_ids.capacity() {
+			return Err(AudioError::SoundLimitReached);
+		}
+		self.active_sound_ids.insert(id);
+		Ok(())
+	}
+
+	fn remove_sound_id(&mut self, id: SoundId) -> AudioResult<()> {
+		if !self.active_sound_ids.remove(&id) {
+			return Err(AudioError::NoSoundWithId(id));
+		}
+		Ok(())
+	}
+
+	fn add_arrangement_id(&mut self, id: ArrangementId) -> AudioResult<()> {
+		if self.active_arrangement_ids.len() >= self.active_arrangement_ids.capacity() {
+			return Err(AudioError::ArrangementLimitReached);
+		}
+		self.active_arrangement_ids.insert(id);
+		Ok(())
+	}
+
+	fn remove_arrangement_id(&mut self, id: ArrangementId) -> AudioResult<()> {
+		if !self.active_arrangement_ids.remove(&id) {
+			return Err(AudioError::NoArrangementWithId(id));
+		}
+		Ok(())
+	}
+
+	fn add_parameter_id(&mut self, id: ParameterId) -> AudioResult<()> {
+		if self.active_parameter_ids.len() >= self.active_parameter_ids.capacity() {
+			return Err(AudioError::ParameterLimitReached);
+		}
+		self.active_parameter_ids.insert(id);
+		Ok(())
+	}
+
+	fn remove_parameter_id(&mut self, id: ParameterId) -> AudioResult<()> {
+		if !self.active_parameter_ids.remove(&id) {
+			return Err(AudioError::NoParameterWithId(id));
+		}
+		Ok(())
+	}
+
+	fn add_track_id(&mut self, id: SubTrackId) -> AudioResult<()> {
+		if self.active_track_ids.len() >= self.active_track_ids.capacity() {
+			return Err(AudioError::TrackLimitReached);
+		}
+		self.active_track_ids.insert(id);
+		Ok(())
+	}
+
+	fn remove_track_id(&mut self, id: SubTrackId) -> AudioResult<()> {
+		if !self.active_track_ids.remove(&id) {
+			return Err(AudioError::NoTrackWithId(id));
+		}
+		Ok(())
+	}
+
+	fn add_group_id(&mut self, id: GroupId) -> AudioResult<()> {
+		if self.active_group_ids.len() >= self.active_group_ids.capacity() {
+			return Err(AudioError::GroupLimitReached);
+		}
+		self.active_group_ids.insert(id);
+		Ok(())
+	}
+
+	fn remove_group_id(&mut self, id: GroupId) -> AudioResult<()> {
+		if !self.active_group_ids.remove(&id) {
+			return Err(AudioError::NoGroupWithId(id));
+		}
+		Ok(())
+	}
+
+	fn add_metronome_id(&mut self, id: MetronomeId) -> AudioResult<()> {
+		if self.active_metronome_ids.len() >= self.active_metronome_ids.capacity() {
+			return Err(AudioError::MetronomeLimitReached);
+		}
+		self.active_metronome_ids.insert(id);
+		Ok(())
+	}
+
+	fn remove_metronome_id(&mut self, id: MetronomeId) -> AudioResult<()> {
+		if !self.active_metronome_ids.remove(&id) {
+			return Err(AudioError::NoMetronomeWithId(id));
+		}
+		Ok(())
+	}
+}
+
 /**
 Plays and manages audio.
 
@@ -95,6 +208,7 @@ pub struct AudioManager {
 	quit_signal_sender: Sender<bool>,
 	command_sender: CommandSender,
 	resources_to_unload_receiver: Receiver<Resource>,
+	active_ids: ActiveIds,
 
 	// on wasm, holds the stream (as it has been created on the main thread)
 	// so it can live for as long as the audio manager
@@ -108,6 +222,7 @@ impl AudioManager {
 	/// Creates a new audio manager and starts an audio thread.
 	#[cfg(not(target_arch = "wasm32"))]
 	pub fn new(settings: AudioManagerSettings) -> AudioResult<Self> {
+		let active_ids = ActiveIds::new(&settings);
 		let (quit_signal_sender, quit_signal_receiver) = flume::bounded(1);
 		let (command_sender, command_receiver) = flume::bounded(settings.num_commands);
 		let (unloader, resources_to_unload_receiver) = flume::bounded(RESOURCE_UNLOADER_CAPACITY);
@@ -149,6 +264,7 @@ impl AudioManager {
 		Ok(Self {
 			quit_signal_sender,
 			command_sender: CommandSender::new(command_sender),
+			active_ids,
 			resources_to_unload_receiver,
 		})
 	}
@@ -156,12 +272,14 @@ impl AudioManager {
 	/// Creates a new audio manager and starts an audio thread.
 	#[cfg(target_arch = "wasm32")]
 	pub fn new(settings: AudioManagerSettings) -> AudioResult<Self> {
+		let active_ids = ActiveIds::new(&settings);
 		let (quit_signal_sender, quit_signal_receiver) = flume::bounded(1);
 		let (command_sender, command_receiver) = flume::bounded(settings.num_commands);
 		let (unloader, resources_to_unload_receiver) = flume::bounded(RESOURCE_UNLOADER_CAPACITY);
 		Ok(Self {
 			quit_signal_sender,
 			command_sender: CommandSender::new(command_sender),
+			active_ids,
 			resources_to_unload_receiver,
 			_stream: Self::setup_stream(settings, command_receiver, unloader)?,
 		})
@@ -215,6 +333,7 @@ impl AudioManager {
 		let audio_manager = Self {
 			quit_signal_sender,
 			command_sender: CommandSender::new(command_sender),
+			active_ids: ActiveIds::new(&settings),
 			resources_to_unload_receiver,
 		};
 		let backend = Backend::new(SAMPLE_RATE, settings, command_receiver, unloader);
@@ -223,6 +342,7 @@ impl AudioManager {
 
 	/// Sends a sound to the audio thread and returns a handle to the sound.
 	pub fn add_sound(&mut self, sound: Sound) -> AudioResult<SoundHandle> {
+		self.active_ids.add_sound_id(sound.id())?;
 		let handle = SoundHandle::new(&sound, self.command_sender.clone());
 		self.command_sender
 			.push(ResourceCommand::AddSound(sound).into())?;
@@ -244,12 +364,15 @@ impl AudioManager {
 	}
 
 	pub fn remove_sound(&mut self, id: impl Into<SoundId>) -> AudioResult<()> {
+		let id = id.into();
+		self.active_ids.remove_sound_id(id)?;
 		self.command_sender
-			.push(ResourceCommand::RemoveSound(id.into()).into())
+			.push(ResourceCommand::RemoveSound(id).into())
 	}
 
 	/// Sends a arrangement to the audio thread and returns a handle to the arrangement.
 	pub fn add_arrangement(&mut self, arrangement: Arrangement) -> AudioResult<ArrangementHandle> {
+		self.active_ids.add_arrangement_id(arrangement.id())?;
 		let handle = ArrangementHandle::new(&arrangement, self.command_sender.clone());
 		self.command_sender
 			.push(ResourceCommand::AddArrangement(arrangement).into())?;
@@ -257,6 +380,8 @@ impl AudioManager {
 	}
 
 	pub fn remove_arrangement(&mut self, id: impl Into<ArrangementId>) -> AudioResult<()> {
+		let id = id.into();
+		self.active_ids.remove_arrangement_id(id)?;
 		self.command_sender
 			.push(ResourceCommand::RemoveArrangement(id.into()).into())
 	}
@@ -268,8 +393,9 @@ impl AudioManager {
 	}
 
 	pub fn add_metronome(&mut self, settings: MetronomeSettings) -> AudioResult<MetronomeHandle> {
-		let (event_sender, event_receiver) = flume::bounded(settings.event_queue_capacity);
 		let id = settings.id;
+		self.active_ids.add_metronome_id(id)?;
+		let (event_sender, event_receiver) = flume::bounded(settings.event_queue_capacity);
 		self.command_sender.push(
 			MetronomeCommand::AddMetronome(id, Metronome::new(settings, event_sender)).into(),
 		)?;
@@ -281,8 +407,10 @@ impl AudioManager {
 	}
 
 	pub fn remove_metronome(&mut self, id: impl Into<MetronomeId>) -> AudioResult<()> {
+		let id = id.into();
+		self.active_ids.remove_metronome_id(id)?;
 		self.command_sender
-			.push(MetronomeCommand::RemoveMetronome(id.into()).into())
+			.push(MetronomeCommand::RemoveMetronome(id).into())
 	}
 
 	/// Starts a sequence.
@@ -300,6 +428,7 @@ impl AudioManager {
 
 	/// Creates a parameter with the specified starting value.
 	pub fn add_parameter(&mut self, settings: ParameterSettings) -> AudioResult<ParameterHandle> {
+		self.active_ids.add_parameter_id(settings.id)?;
 		self.command_sender
 			.push(ParameterCommand::AddParameter(settings.id, settings.value).into())?;
 		Ok(ParameterHandle::new(
@@ -309,12 +438,15 @@ impl AudioManager {
 	}
 
 	pub fn remove_parameter(&mut self, id: impl Into<ParameterId>) -> AudioResult<()> {
+		let id = id.into();
+		self.active_ids.remove_parameter_id(id)?;
 		self.command_sender
-			.push(ParameterCommand::RemoveParameter(id.into()).into())
+			.push(ParameterCommand::RemoveParameter(id).into())
 	}
 
 	/// Creates a mixer sub-track.
 	pub fn add_sub_track(&mut self, settings: TrackSettings) -> AudioResult<TrackHandle> {
+		self.active_ids.add_track_id(settings.id)?;
 		let handle = TrackHandle::new(TrackIndex::Sub(settings.id), self.command_sender.clone());
 		self.command_sender
 			.push(MixerCommand::AddSubTrack(Track::new(settings)).into())?;
@@ -323,13 +455,16 @@ impl AudioManager {
 
 	/// Removes a sub-track from the mixer.
 	pub fn remove_sub_track(&mut self, id: SubTrackId) -> AudioResult<()> {
+		let id = id.into();
+		self.active_ids.remove_track_id(id)?;
 		self.command_sender
-			.push(MixerCommand::RemoveSubTrack(id.into()).into())
+			.push(MixerCommand::RemoveSubTrack(id).into())
 	}
 
 	/// Adds a group.
 	pub fn add_group(&mut self, settings: GroupSettings) -> AudioResult<GroupHandle> {
 		let id = settings.id;
+		self.active_ids.add_group_id(id)?;
 		self.command_sender
 			.push(GroupCommand::AddGroup(id, Group::new(settings)).into())?;
 		Ok(GroupHandle::new(id, self.command_sender.clone()))
@@ -337,8 +472,10 @@ impl AudioManager {
 
 	/// Removes a group.
 	pub fn remove_group(&mut self, id: impl Into<GroupId>) -> AudioResult<()> {
+		let id = id.into();
+		self.active_ids.remove_group_id(id)?;
 		self.command_sender
-			.push(GroupCommand::RemoveGroup(id.into()).into())
+			.push(GroupCommand::RemoveGroup(id).into())
 	}
 }
 
