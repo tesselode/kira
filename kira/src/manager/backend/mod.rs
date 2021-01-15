@@ -78,9 +78,7 @@ impl Backend {
 					self.parameters.run_command(command);
 				}
 				Command::Group(command) => {
-					if let Some(group) = self.groups.run_command(command) {
-						self.unloader.try_send(Resource::Group(group)).ok();
-					}
+					self.groups.run_command(command, &mut self.unloader);
 				}
 				Command::Stream(command) => {
 					self.streams.run_command(command, &mut self.unloader);
