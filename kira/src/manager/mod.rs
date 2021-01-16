@@ -14,7 +14,7 @@ pub use backend::Backend;
 use error::{
 	AddArrangementError, AddGroupError, AddMetronomeError, AddParameterError, AddSoundError,
 	AddTrackError, LoadSoundError, RemoveArrangementError, RemoveGroupError, RemoveMetronomeError,
-	RemoveParameterError, RemoveSoundError, RemoveTrackError,
+	RemoveParameterError, RemoveSoundError, RemoveTrackError, SetupError, StartSequenceError,
 };
 use flume::{Receiver, Sender};
 
@@ -24,7 +24,6 @@ use crate::{
 		Command, GroupCommand, MetronomeCommand, MixerCommand, ParameterCommand, ResourceCommand,
 		SequenceCommand,
 	},
-	error::{AudioError, AudioResult},
 	group::{Group, GroupHandle, GroupId, GroupSettings},
 	metronome::{Metronome, MetronomeHandle, MetronomeId, MetronomeSettings},
 	mixer::{SubTrackId, Track, TrackHandle, TrackIndex, TrackSettings},
@@ -113,7 +112,7 @@ pub struct AudioManager {
 impl AudioManager {
 	/// Creates a new audio manager and starts an audio thread.
 	#[cfg(not(target_arch = "wasm32"))]
-	pub fn new(settings: AudioManagerSettings) -> AudioResult<Self> {
+	pub fn new(settings: AudioManagerSettings) -> Result<Self, SetupError> {
 		let active_ids = ActiveIds::new(&settings);
 		let (quit_signal_sender, quit_signal_receiver) = flume::bounded(1);
 		let (command_sender, command_receiver) = flume::bounded(settings.num_commands);
@@ -163,7 +162,7 @@ impl AudioManager {
 
 	/// Creates a new audio manager and starts an audio thread.
 	#[cfg(target_arch = "wasm32")]
-	pub fn new(settings: AudioManagerSettings) -> AudioResult<Self> {
+	pub fn new(settings: AudioManagerSettings) -> Result<Self, SetupError> {
 		let active_ids = ActiveIds::new(&settings);
 		let (quit_signal_sender, quit_signal_receiver) = flume::bounded(1);
 		let (command_sender, command_receiver) = flume::bounded(settings.num_commands);
@@ -181,11 +180,11 @@ impl AudioManager {
 		settings: AudioManagerSettings,
 		command_receiver: Receiver<Command>,
 		unloader: Sender<Resource>,
-	) -> AudioResult<Stream> {
+	) -> Result<Stream, SetupError> {
 		let host = cpal::default_host();
 		let device = host
 			.default_output_device()
-			.ok_or(AudioError::NoDefaultOutputDevice)?;
+			.ok_or(SetupError::NoDefaultOutputDevice)?;
 		let config = device.default_output_config()?.config();
 		let sample_rate = config.sample_rate.0;
 		let channels = config.channels;
@@ -215,9 +214,7 @@ impl AudioManager {
 	///
 	/// This is useful for updating the backend manually for
 	/// benchmarking.
-	pub fn new_without_audio_thread(
-		settings: AudioManagerSettings,
-	) -> AudioResult<(Self, Backend)> {
+	pub fn new_without_audio_thread(settings: AudioManagerSettings) -> (Self, Backend) {
 		const SAMPLE_RATE: u32 = 48000;
 		let (quit_signal_sender, _) = flume::bounded(1);
 		let (command_sender, command_receiver) = flume::bounded(settings.num_commands);
@@ -229,7 +226,7 @@ impl AudioManager {
 			resources_to_unload_receiver,
 		};
 		let backend = Backend::new(SAMPLE_RATE, settings, command_receiver, unloader);
-		Ok((audio_manager, backend))
+		(audio_manager, backend)
 	}
 
 	/// Sends a sound to the audio thread and returns a handle to the sound.
@@ -327,12 +324,12 @@ impl AudioManager {
 		&mut self,
 		sequence: Sequence<CustomEvent>,
 		settings: SequenceInstanceSettings,
-	) -> Result<SequenceInstanceHandle<CustomEvent>, AudioError> {
+	) -> Result<SequenceInstanceHandle<CustomEvent>, StartSequenceError> {
 		sequence.validate()?;
 		let (instance, handle) = sequence.create_instance(settings, self.command_sender.clone());
 		self.command_sender
 			.send(SequenceCommand::StartSequenceInstance(settings.id, instance).into())
-			.map_err(|_| AudioError::BackendDisconnected)?;
+			.map_err(|_| StartSequenceError::BackendDisconnected)?;
 		Ok(handle)
 	}
 

@@ -154,9 +154,11 @@
 //! # Ok::<(), kira::AudioError>(())
 //! ```
 
+pub mod error;
 mod handle;
 mod instance;
 
+use error::SequenceError;
 use flume::Sender;
 pub use handle::SequenceInstanceHandle;
 pub(crate) use instance::SequenceInstance;
@@ -176,7 +178,7 @@ use crate::{
 	metronome::MetronomeId,
 	parameter::{ParameterId, Tween},
 	playable::PlayableId,
-	AudioError, AudioResult, Duration, Tempo, Value,
+	Duration, Tempo, Value,
 };
 
 /// Settings for an instance of a [`Sequence`].
@@ -563,10 +565,10 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	/// Makes sure nothing's wrong with the sequence that would make
 	/// it unplayable. Currently, this only checks that the loop
 	/// point isn't at the very end of the sequence.
-	pub(crate) fn validate(&self) -> AudioResult<()> {
+	pub(crate) fn validate(&self) -> Result<(), SequenceError> {
 		if let Some(loop_point) = self.loop_point {
 			if loop_point >= self.steps.len() {
-				return Err(AudioError::InvalidSequenceLoopPoint);
+				return Err(SequenceError::InvalidLoopPoint);
 			}
 		}
 		Ok(())

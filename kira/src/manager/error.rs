@@ -1,3 +1,4 @@
+use cpal::{BuildStreamError, DefaultStreamConfigError, PlayStreamError};
 use thiserror::Error;
 
 use crate::{
@@ -6,8 +7,27 @@ use crate::{
 	metronome::MetronomeId,
 	mixer::SubTrackId,
 	parameter::ParameterId,
+	sequence::error::SequenceError,
 	sound::{error::SoundFromFileError, SoundId},
 };
+
+#[derive(Debug, Error)]
+pub enum SetupError {
+	#[error("Cannot find the default audio output device")]
+	NoDefaultOutputDevice,
+
+	#[error("{0}")]
+	DefaultStreamConfigError(#[from] DefaultStreamConfigError),
+
+	#[error("No supported audio configurations")]
+	NoSupportedAudioConfig,
+
+	#[error("{0}")]
+	BuildStreamError(#[from] BuildStreamError),
+
+	#[error("{0}")]
+	PlayStreamError(#[from] PlayStreamError),
+}
 
 #[derive(Debug, Error)]
 pub enum AddSoundError {
@@ -121,6 +141,15 @@ pub enum AddTrackError {
 pub enum RemoveTrackError {
 	#[error("The track with the specified ID does not exist")]
 	NoTrackWithId(SubTrackId),
+
+	#[error("The backend cannot receive commands because it no longer exists")]
+	BackendDisconnected,
+}
+
+#[derive(Debug, Error)]
+pub enum StartSequenceError {
+	#[error("{0}")]
+	SequenceError(#[from] SequenceError),
 
 	#[error("The backend cannot receive commands because it no longer exists")]
 	BackendDisconnected,

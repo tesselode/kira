@@ -35,8 +35,7 @@ fn create_manager_with_instances(
 			num_instances: num_instances,
 			num_commands: num_instances,
 			..Default::default()
-		})
-		.unwrap();
+		});
 	// add a test sound
 	let mut sound_handle = audio_manager.add_sound(create_test_sound(48000)).unwrap();
 	backend.process();
