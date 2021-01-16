@@ -13,9 +13,8 @@ impl CommandSender {
 	}
 
 	pub fn push(&mut self, command: Command) -> AudioResult<()> {
-		self.sender.try_send(command).map_err(|error| match error {
-			flume::TrySendError::Full(_) => AudioError::CommandQueueFull,
-			flume::TrySendError::Disconnected(_) => AudioError::BackendDisconnected,
-		})
+		self.sender
+			.send(command)
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 }

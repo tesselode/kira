@@ -24,9 +24,6 @@ pub enum AudioError {
 	#[error("{0}")]
 	PlayStreamError(#[from] PlayStreamError),
 
-	#[error("Cannot send a command to the audio thread because the queue is full")]
-	CommandQueueFull,
-
 	#[error("The backend cannot receive commands because it no longer exists")]
 	BackendDisconnected,
 
