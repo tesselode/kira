@@ -1,11 +1,18 @@
 use flume::{Receiver, Sender, TryIter};
+use thiserror::Error;
 
 use crate::{
 	command::{Command, MetronomeCommand},
-	AudioError, AudioResult, Tempo, Value,
+	Tempo, Value,
 };
 
 use super::MetronomeId;
+
+#[derive(Debug, Error)]
+pub enum MetronomeHandleError {
+	#[error("The backend cannot receive commands because it no longer exists")]
+	BackendDisconnected,
+}
 
 pub struct MetronomeHandle {
 	id: MetronomeId,
@@ -30,28 +37,31 @@ impl MetronomeHandle {
 		self.id
 	}
 
-	pub fn set_tempo(&mut self, tempo: impl Into<Value<Tempo>>) -> AudioResult<()> {
+	pub fn set_tempo(
+		&mut self,
+		tempo: impl Into<Value<Tempo>>,
+	) -> Result<(), MetronomeHandleError> {
 		self.command_sender
 			.send(MetronomeCommand::SetMetronomeTempo(self.id(), tempo.into()).into())
-			.map_err(|_| AudioError::BackendDisconnected)
+			.map_err(|_| MetronomeHandleError::BackendDisconnected)
 	}
 
-	pub fn start(&mut self) -> AudioResult<()> {
+	pub fn start(&mut self) -> Result<(), MetronomeHandleError> {
 		self.command_sender
 			.send(MetronomeCommand::StartMetronome(self.id()).into())
-			.map_err(|_| AudioError::BackendDisconnected)
+			.map_err(|_| MetronomeHandleError::BackendDisconnected)
 	}
 
-	pub fn pause(&mut self) -> AudioResult<()> {
+	pub fn pause(&mut self) -> Result<(), MetronomeHandleError> {
 		self.command_sender
 			.send(MetronomeCommand::PauseMetronome(self.id()).into())
-			.map_err(|_| AudioError::BackendDisconnected)
+			.map_err(|_| MetronomeHandleError::BackendDisconnected)
 	}
 
-	pub fn stop(&mut self) -> AudioResult<()> {
+	pub fn stop(&mut self) -> Result<(), MetronomeHandleError> {
 		self.command_sender
 			.send(MetronomeCommand::StopMetronome(self.id()).into())
-			.map_err(|_| AudioError::BackendDisconnected)
+			.map_err(|_| MetronomeHandleError::BackendDisconnected)
 	}
 
 	pub fn event_iter(&mut self) -> TryIter<f64> {

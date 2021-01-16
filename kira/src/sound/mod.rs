@@ -1,12 +1,11 @@
 //! Provides an interface to work with pieces of audio.
 
 pub mod error;
-mod handle;
+pub mod handle;
 mod id;
 mod settings;
 
 use error::SoundFromFileError;
-pub use handle::SoundHandle;
 pub use id::SoundId;
 pub use settings::SoundSettings;
 

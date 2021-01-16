@@ -1,7 +1,7 @@
 pub mod filter;
-mod handle;
+pub mod handle;
 
-pub use handle::EffectHandle;
+use handle::EffectHandle;
 
 use std::fmt::Debug;
 

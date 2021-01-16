@@ -3,7 +3,7 @@ use std::ops::Range;
 use nanorand::{tls_rng, RNG};
 
 use crate::{
-	parameter::{Mapping, ParameterHandle, ParameterId, Parameters},
+	parameter::{handle::ParameterHandle, Mapping, ParameterId, Parameters},
 	util::lerp,
 };
 

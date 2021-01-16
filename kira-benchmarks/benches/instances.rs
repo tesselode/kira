@@ -2,7 +2,7 @@ use std::{f32::consts::PI, vec};
 
 use criterion::{criterion_group, criterion_main, Criterion, Fun};
 use kira::{
-	instance::InstanceHandle,
+	instance::handle::InstanceHandle,
 	manager::{AudioManager, AudioManagerSettings, Backend},
 	sound::{Sound, SoundSettings},
 	Frame,

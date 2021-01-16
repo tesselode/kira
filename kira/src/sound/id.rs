@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use crate::util::generate_uuid;
 
-use super::SoundHandle;
+use super::handle::SoundHandle;
 
 /// A unique identifier for a [`Sound`](crate::sound::Sound).
 ///

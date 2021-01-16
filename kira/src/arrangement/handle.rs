@@ -1,16 +1,22 @@
 use flume::Sender;
+use thiserror::Error;
 
 use crate::{
 	command::{Command, InstanceCommand},
 	instance::{
-		Instance, InstanceHandle, InstanceSettings, PauseInstanceSettings, ResumeInstanceSettings,
-		StopInstanceSettings,
+		handle::InstanceHandle, Instance, InstanceSettings, PauseInstanceSettings,
+		ResumeInstanceSettings, StopInstanceSettings,
 	},
 	mixer::TrackIndex,
-	AudioError, AudioResult,
 };
 
 use super::{Arrangement, ArrangementId};
+
+#[derive(Debug, Error)]
+pub enum ArrangementHandleError {
+	#[error("The backend cannot receive commands because it no longer exists")]
+	BackendDisconnected,
+}
 
 #[derive(Clone)]
 pub struct ArrangementHandle {
@@ -54,7 +60,10 @@ impl ArrangementHandle {
 		self.default_loop_start
 	}
 
-	pub fn play(&mut self, settings: InstanceSettings) -> AudioResult<InstanceHandle> {
+	pub fn play(
+		&mut self,
+		settings: InstanceSettings,
+	) -> Result<InstanceHandle, ArrangementHandleError> {
 		let id = settings.id;
 		let instance = Instance::new(
 			self.id.into(),
@@ -65,25 +74,28 @@ impl ArrangementHandle {
 		let handle = InstanceHandle::new(id, instance.public_state(), self.command_sender.clone());
 		self.command_sender
 			.send(InstanceCommand::Play(id, instance).into())
-			.map_err(|_| AudioError::BackendDisconnected)?;
+			.map_err(|_| ArrangementHandleError::BackendDisconnected)?;
 		Ok(handle)
 	}
 
-	pub fn pause(&mut self, settings: PauseInstanceSettings) -> AudioResult<()> {
+	pub fn pause(&mut self, settings: PauseInstanceSettings) -> Result<(), ArrangementHandleError> {
 		self.command_sender
 			.send(InstanceCommand::PauseInstancesOf(self.id.into(), settings).into())
-			.map_err(|_| AudioError::BackendDisconnected)
+			.map_err(|_| ArrangementHandleError::BackendDisconnected)
 	}
 
-	pub fn resume(&mut self, settings: ResumeInstanceSettings) -> AudioResult<()> {
+	pub fn resume(
+		&mut self,
+		settings: ResumeInstanceSettings,
+	) -> Result<(), ArrangementHandleError> {
 		self.command_sender
 			.send(InstanceCommand::ResumeInstancesOf(self.id.into(), settings).into())
-			.map_err(|_| AudioError::BackendDisconnected)
+			.map_err(|_| ArrangementHandleError::BackendDisconnected)
 	}
 
-	pub fn stop(&mut self, settings: StopInstanceSettings) -> AudioResult<()> {
+	pub fn stop(&mut self, settings: StopInstanceSettings) -> Result<(), ArrangementHandleError> {
 		self.command_sender
 			.send(InstanceCommand::StopInstancesOf(self.id.into(), settings).into())
-			.map_err(|_| AudioError::BackendDisconnected)
+			.map_err(|_| ArrangementHandleError::BackendDisconnected)
 	}
 }

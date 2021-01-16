@@ -57,11 +57,11 @@
 //! loop start point, it will wrap around to the end
 //! of the instance.
 
-mod handle;
+pub mod handle;
 mod settings;
 
 use atomic::Atomic;
-pub use handle::InstanceHandle;
+use handle::InstanceHandle;
 pub use settings::*;
 
 use uuid::Uuid;

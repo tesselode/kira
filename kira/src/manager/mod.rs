@@ -19,18 +19,18 @@ use error::{
 use flume::{Receiver, Sender};
 
 use crate::{
-	arrangement::{Arrangement, ArrangementHandle, ArrangementId},
+	arrangement::{handle::ArrangementHandle, Arrangement, ArrangementId},
 	command::{
 		Command, GroupCommand, MetronomeCommand, MixerCommand, ParameterCommand, ResourceCommand,
 		SequenceCommand,
 	},
-	group::{Group, GroupHandle, GroupId, GroupSettings},
-	metronome::{Metronome, MetronomeHandle, MetronomeId, MetronomeSettings},
-	mixer::{SubTrackId, Track, TrackHandle, TrackIndex, TrackSettings},
-	parameter::{ParameterHandle, ParameterId, ParameterSettings},
+	group::{handle::GroupHandle, Group, GroupId, GroupSettings},
+	metronome::{handle::MetronomeHandle, Metronome, MetronomeId, MetronomeSettings},
+	mixer::{handle::TrackHandle, SubTrackId, Track, TrackIndex, TrackSettings},
+	parameter::{handle::ParameterHandle, ParameterId, ParameterSettings},
 	resource::Resource,
-	sequence::{Sequence, SequenceInstanceHandle, SequenceInstanceSettings},
-	sound::{Sound, SoundHandle, SoundId},
+	sequence::{handle::SequenceInstanceHandle, Sequence, SequenceInstanceSettings},
+	sound::{handle::SoundHandle, Sound, SoundId},
 };
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},

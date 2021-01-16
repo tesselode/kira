@@ -122,7 +122,6 @@ pub mod arrangement;
 pub mod audio_stream;
 mod command;
 mod duration;
-mod error;
 mod frame;
 pub mod group;
 pub mod instance;
@@ -139,7 +138,6 @@ mod util;
 mod value;
 
 pub use duration::Duration;
-pub use error::{AudioError, AudioResult};
 pub use frame::Frame;
 pub use tempo::Tempo;
 pub use value::{CachedValue, Value};

@@ -14,10 +14,10 @@
 //! their ancestry.
 
 pub(crate) mod groups;
-mod handle;
+pub mod handle;
 mod set;
 
-pub use handle::GroupHandle;
+use handle::GroupHandle;
 pub use set::GroupSet;
 use uuid::Uuid;
 

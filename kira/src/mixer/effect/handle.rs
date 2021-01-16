@@ -1,12 +1,18 @@
 use flume::Sender;
+use thiserror::Error;
 
 use crate::{
 	command::{Command, MixerCommand},
 	mixer::TrackIndex,
-	AudioError, AudioResult,
 };
 
 use super::{EffectId, EffectSettings};
+
+#[derive(Debug, Error)]
+pub enum EffectHandleError {
+	#[error("The backend cannot receive commands because it no longer exists")]
+	BackendDisconnected,
+}
 
 pub struct EffectHandle {
 	id: EffectId,
@@ -41,10 +47,10 @@ impl EffectHandle {
 		self.enabled
 	}
 
-	pub fn set_enabled(&mut self, enabled: bool) -> AudioResult<()> {
+	pub fn set_enabled(&mut self, enabled: bool) -> Result<(), EffectHandleError> {
 		self.enabled = enabled;
 		self.command_sender
 			.send(MixerCommand::SetEffectEnabled(self.track_index, self.id, enabled).into())
-			.map_err(|_| AudioError::BackendDisconnected)
+			.map_err(|_| EffectHandleError::BackendDisconnected)
 	}
 }

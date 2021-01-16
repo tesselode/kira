@@ -155,12 +155,12 @@
 //! ```
 
 pub mod error;
-mod handle;
+pub mod handle;
 mod instance;
 
 use error::SequenceError;
 use flume::Sender;
-pub use handle::SequenceInstanceHandle;
+use handle::SequenceInstanceHandle;
 pub(crate) use instance::SequenceInstance;
 pub use instance::{SequenceInstanceId, SequenceInstanceState};
 

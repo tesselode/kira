@@ -122,12 +122,12 @@
 //! to create these.
 
 mod clip;
-mod handle;
+pub mod handle;
 mod id;
 mod settings;
 
 pub use clip::SoundClip;
-pub use handle::ArrangementHandle;
+use handle::ArrangementHandle;
 pub use id::ArrangementId;
 pub use settings::{ArrangementSettings, LoopArrangementSettings};
 
@@ -136,7 +136,7 @@ use indexmap::IndexMap;
 use crate::{
 	group::{groups::Groups, GroupId, GroupSet},
 	mixer::TrackIndex,
-	sound::{Sound, SoundHandle, SoundId},
+	sound::{handle::SoundHandle, Sound, SoundId},
 	Frame,
 };
 

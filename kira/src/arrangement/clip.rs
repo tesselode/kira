@@ -1,7 +1,7 @@
 use indexmap::IndexMap;
 
 use crate::{
-	sound::{Sound, SoundHandle, SoundId},
+	sound::{handle::SoundHandle, Sound, SoundId},
 	util::inverse_lerp,
 	util::lerp,
 	Frame,

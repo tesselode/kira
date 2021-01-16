@@ -1,13 +1,19 @@
 use flume::Sender;
+use thiserror::Error;
 
 use crate::{
 	audio_stream::{AudioStream, AudioStreamId},
 	command::{Command, MixerCommand, StreamCommand},
-	mixer::effect::{Effect, EffectHandle, EffectId, EffectSettings},
-	AudioError, AudioResult,
+	mixer::effect::{handle::EffectHandle, Effect, EffectId, EffectSettings},
 };
 
 use super::TrackIndex;
+
+#[derive(Debug, Error)]
+pub enum TrackHandleError {
+	#[error("The backend cannot receive commands because it no longer exists")]
+	BackendDisconnected,
+}
 
 pub struct TrackHandle {
 	index: TrackIndex,
@@ -30,31 +36,34 @@ impl TrackHandle {
 		&mut self,
 		effect: impl Effect + 'static,
 		settings: EffectSettings,
-	) -> AudioResult<EffectHandle> {
+	) -> Result<EffectHandle, TrackHandleError> {
 		let handle = EffectHandle::new(self.index, &settings, self.command_sender.clone());
 		self.command_sender
 			.send(MixerCommand::AddEffect(self.index, Box::new(effect), settings).into())
-			.map_err(|_| AudioError::BackendDisconnected)?;
+			.map_err(|_| TrackHandleError::BackendDisconnected)?;
 		Ok(handle)
 	}
 
-	pub fn remove_effect(&mut self, id: impl Into<EffectId>) -> AudioResult<()> {
+	pub fn remove_effect(&mut self, id: impl Into<EffectId>) -> Result<(), TrackHandleError> {
 		self.command_sender
 			.send(MixerCommand::RemoveEffect(self.index, id.into()).into())
-			.map_err(|_| AudioError::BackendDisconnected)
+			.map_err(|_| TrackHandleError::BackendDisconnected)
 	}
 
-	pub fn add_stream(&mut self, stream: impl AudioStream) -> AudioResult<AudioStreamId> {
+	pub fn add_stream(
+		&mut self,
+		stream: impl AudioStream,
+	) -> Result<AudioStreamId, TrackHandleError> {
 		let stream_id = AudioStreamId::new();
 		self.command_sender
 			.send(StreamCommand::AddStream(stream_id, self.index(), Box::new(stream)).into())
-			.map_err(|_| AudioError::BackendDisconnected)
+			.map_err(|_| TrackHandleError::BackendDisconnected)
 			.map(|()| stream_id)
 	}
 
-	pub fn remove_stream(&mut self, id: AudioStreamId) -> AudioResult<()> {
+	pub fn remove_stream(&mut self, id: AudioStreamId) -> Result<(), TrackHandleError> {
 		self.command_sender
 			.send(StreamCommand::RemoveStream(id).into())
-			.map_err(|_| AudioError::BackendDisconnected)
+			.map_err(|_| TrackHandleError::BackendDisconnected)
 	}
 }

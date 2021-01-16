@@ -5,10 +5,10 @@ mod playables;
 pub(crate) use playables::Playables;
 
 use crate::{
-	arrangement::{Arrangement, ArrangementHandle, ArrangementId},
+	arrangement::{handle::ArrangementHandle, Arrangement, ArrangementId},
 	group::{groups::Groups, GroupId},
 	mixer::TrackIndex,
-	sound::{Sound, SoundHandle, SoundId},
+	sound::{handle::SoundHandle, Sound, SoundId},
 };
 
 /// Represents something you can play multiple instances of.

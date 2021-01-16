@@ -1,6 +1,6 @@
-mod handle;
+pub mod handle;
 
-pub use handle::TrackHandle;
+use handle::TrackHandle;
 use uuid::Uuid;
 
 use indexmap::IndexMap;

@@ -1,4 +1,4 @@
-mod handle;
+pub mod handle;
 mod metronomes;
 mod settings;
 
@@ -6,7 +6,7 @@ use flume::Sender;
 use uuid::Uuid;
 
 use crate::{parameter::Parameters, tempo::Tempo, util::generate_uuid, value::CachedValue, Value};
-pub use handle::MetronomeHandle;
+use handle::MetronomeHandle;
 pub(crate) use metronomes::Metronomes;
 pub use settings::MetronomeSettings;
 
