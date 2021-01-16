@@ -1,7 +1,9 @@
+use flume::Sender;
+
 use crate::{
-	command::{sender::CommandSender, MixerCommand},
+	command::{Command, MixerCommand},
 	mixer::TrackIndex,
-	AudioResult,
+	AudioError, AudioResult,
 };
 
 use super::{EffectId, EffectSettings};
@@ -10,14 +12,14 @@ pub struct EffectHandle {
 	id: EffectId,
 	track_index: TrackIndex,
 	enabled: bool,
-	command_sender: CommandSender,
+	command_sender: Sender<Command>,
 }
 
 impl EffectHandle {
 	pub(crate) fn new(
 		track_index: TrackIndex,
 		settings: &EffectSettings,
-		command_sender: CommandSender,
+		command_sender: Sender<Command>,
 	) -> Self {
 		Self {
 			id: settings.id,
@@ -42,6 +44,7 @@ impl EffectHandle {
 	pub fn set_enabled(&mut self, enabled: bool) -> AudioResult<()> {
 		self.enabled = enabled;
 		self.command_sender
-			.push(MixerCommand::SetEffectEnabled(self.track_index, self.id, enabled).into())
+			.send(MixerCommand::SetEffectEnabled(self.track_index, self.id, enabled).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 }

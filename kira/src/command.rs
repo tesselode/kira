@@ -1,5 +1,3 @@
-pub(crate) mod sender;
-
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
 	audio_stream::{AudioStream, AudioStreamId},

@@ -1,11 +1,11 @@
 use std::{cell::RefCell, rc::Rc, sync::Arc};
 
 use atomic::{Atomic, Ordering};
-use flume::Receiver;
+use flume::{Receiver, Sender};
 use indexmap::IndexSet;
 
 use crate::{
-	command::{sender::CommandSender, InstanceCommand, SequenceCommand},
+	command::{Command, InstanceCommand, SequenceCommand},
 	instance::{PauseInstanceSettings, ResumeInstanceSettings, StopInstanceSettings},
 	AudioError, AudioResult,
 };
@@ -16,7 +16,7 @@ use super::{SequenceInstanceId, SequenceInstanceState};
 pub struct SequenceInstanceHandle<CustomEvent> {
 	id: SequenceInstanceId,
 	state: Arc<Atomic<SequenceInstanceState>>,
-	command_sender: CommandSender,
+	command_sender: Sender<Command>,
 	raw_event_receiver: Rc<RefCell<Receiver<usize>>>,
 	events: IndexSet<CustomEvent>,
 }
@@ -25,7 +25,7 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 	pub(crate) fn new(
 		id: SequenceInstanceId,
 		state: Arc<Atomic<SequenceInstanceState>>,
-		command_sender: CommandSender,
+		command_sender: Sender<Command>,
 		raw_event_receiver: Receiver<usize>,
 		events: IndexSet<CustomEvent>,
 	) -> Self {
@@ -48,27 +48,32 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 
 	pub fn mute(&mut self) -> AudioResult<()> {
 		self.command_sender
-			.push(SequenceCommand::MuteSequenceInstance(self.id).into())
+			.send(SequenceCommand::MuteSequenceInstance(self.id).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 
 	pub fn unmute(&mut self) -> AudioResult<()> {
 		self.command_sender
-			.push(SequenceCommand::UnmuteSequenceInstance(self.id).into())
+			.send(SequenceCommand::UnmuteSequenceInstance(self.id).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 
 	pub fn pause(&mut self) -> AudioResult<()> {
 		self.command_sender
-			.push(SequenceCommand::PauseSequenceInstance(self.id).into())
+			.send(SequenceCommand::PauseSequenceInstance(self.id).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 
 	pub fn resume(&mut self) -> AudioResult<()> {
 		self.command_sender
-			.push(SequenceCommand::ResumeSequenceInstance(self.id).into())
+			.send(SequenceCommand::ResumeSequenceInstance(self.id).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 
 	pub fn stop(&mut self) -> AudioResult<()> {
 		self.command_sender
-			.push(SequenceCommand::StopSequenceInstance(self.id).into())
+			.send(SequenceCommand::StopSequenceInstance(self.id).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 
 	pub fn pause_sequence_and_instances(
@@ -76,9 +81,11 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 		settings: PauseInstanceSettings,
 	) -> AudioResult<()> {
 		self.command_sender
-			.push(SequenceCommand::PauseSequenceInstance(self.id).into())?;
+			.send(SequenceCommand::PauseSequenceInstance(self.id).into())
+			.map_err(|_| AudioError::BackendDisconnected)?;
 		self.command_sender
-			.push(InstanceCommand::PauseInstancesOfSequence(self.id, settings).into())?;
+			.send(InstanceCommand::PauseInstancesOfSequence(self.id, settings).into())
+			.map_err(|_| AudioError::BackendDisconnected)?;
 		Ok(())
 	}
 
@@ -87,9 +94,11 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 		settings: ResumeInstanceSettings,
 	) -> AudioResult<()> {
 		self.command_sender
-			.push(SequenceCommand::ResumeSequenceInstance(self.id).into())?;
+			.send(SequenceCommand::ResumeSequenceInstance(self.id).into())
+			.map_err(|_| AudioError::BackendDisconnected)?;
 		self.command_sender
-			.push(InstanceCommand::ResumeInstancesOfSequence(self.id, settings).into())?;
+			.send(InstanceCommand::ResumeInstancesOfSequence(self.id, settings).into())
+			.map_err(|_| AudioError::BackendDisconnected)?;
 		Ok(())
 	}
 
@@ -98,9 +107,11 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 		settings: StopInstanceSettings,
 	) -> AudioResult<()> {
 		self.command_sender
-			.push(SequenceCommand::StopSequenceInstance(self.id).into())?;
+			.send(SequenceCommand::StopSequenceInstance(self.id).into())
+			.map_err(|_| AudioError::BackendDisconnected)?;
 		self.command_sender
-			.push(InstanceCommand::StopInstancesOfSequence(self.id, settings).into())?;
+			.send(InstanceCommand::StopInstancesOfSequence(self.id, settings).into())
+			.map_err(|_| AudioError::BackendDisconnected)?;
 		Ok(())
 	}
 

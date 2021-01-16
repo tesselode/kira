@@ -1,11 +1,13 @@
+use flume::Sender;
+
 use crate::{
-	command::{sender::CommandSender, InstanceCommand},
+	command::{Command, InstanceCommand},
 	instance::{
 		Instance, InstanceHandle, InstanceSettings, PauseInstanceSettings, ResumeInstanceSettings,
 		StopInstanceSettings,
 	},
 	mixer::TrackIndex,
-	AudioResult,
+	AudioError, AudioResult,
 };
 
 use super::{Arrangement, ArrangementId};
@@ -17,11 +19,11 @@ pub struct ArrangementHandle {
 	default_track: TrackIndex,
 	semantic_duration: Option<f64>,
 	default_loop_start: Option<f64>,
-	command_sender: CommandSender,
+	command_sender: Sender<Command>,
 }
 
 impl ArrangementHandle {
-	pub(crate) fn new(arrangement: &Arrangement, command_sender: CommandSender) -> Self {
+	pub(crate) fn new(arrangement: &Arrangement, command_sender: Sender<Command>) -> Self {
 		Self {
 			id: arrangement.id(),
 			duration: arrangement.duration(),
@@ -62,22 +64,26 @@ impl ArrangementHandle {
 		);
 		let handle = InstanceHandle::new(id, instance.public_state(), self.command_sender.clone());
 		self.command_sender
-			.push(InstanceCommand::Play(id, instance).into())?;
+			.send(InstanceCommand::Play(id, instance).into())
+			.map_err(|_| AudioError::BackendDisconnected)?;
 		Ok(handle)
 	}
 
 	pub fn pause(&mut self, settings: PauseInstanceSettings) -> AudioResult<()> {
 		self.command_sender
-			.push(InstanceCommand::PauseInstancesOf(self.id.into(), settings).into())
+			.send(InstanceCommand::PauseInstancesOf(self.id.into(), settings).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 
 	pub fn resume(&mut self, settings: ResumeInstanceSettings) -> AudioResult<()> {
 		self.command_sender
-			.push(InstanceCommand::ResumeInstancesOf(self.id.into(), settings).into())
+			.send(InstanceCommand::ResumeInstancesOf(self.id.into(), settings).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 
 	pub fn stop(&mut self, settings: StopInstanceSettings) -> AudioResult<()> {
 		self.command_sender
-			.push(InstanceCommand::StopInstancesOf(self.id.into(), settings).into())
+			.send(InstanceCommand::StopInstancesOf(self.id.into(), settings).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 }

@@ -1,17 +1,19 @@
+use flume::Sender;
+
 use crate::{
-	command::{sender::CommandSender, ParameterCommand},
-	AudioResult,
+	command::{Command, ParameterCommand},
+	AudioError, AudioResult,
 };
 
 use super::{ParameterId, Tween};
 
 pub struct ParameterHandle {
 	id: ParameterId,
-	command_sender: CommandSender,
+	command_sender: Sender<Command>,
 }
 
 impl ParameterHandle {
-	pub(crate) fn new(id: ParameterId, command_sender: CommandSender) -> Self {
+	pub(crate) fn new(id: ParameterId, command_sender: Sender<Command>) -> Self {
 		Self { id, command_sender }
 	}
 
@@ -21,6 +23,7 @@ impl ParameterHandle {
 
 	pub fn set(&mut self, value: f64, tween: impl Into<Option<Tween>>) -> AudioResult<()> {
 		self.command_sender
-			.push(ParameterCommand::SetParameter(self.id, value, tween.into()).into())
+			.send(ParameterCommand::SetParameter(self.id, value, tween.into()).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 }

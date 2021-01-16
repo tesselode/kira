@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
 use atomic::{Atomic, Ordering};
+use flume::Sender;
 
 use crate::{
-	command::{sender::CommandSender, InstanceCommand},
-	AudioResult, Value,
+	command::{Command, InstanceCommand},
+	AudioError, AudioResult, Value,
 };
 
 use super::{
@@ -14,14 +15,14 @@ use super::{
 pub struct InstanceHandle {
 	id: InstanceId,
 	state: Arc<Atomic<InstanceState>>,
-	command_sender: CommandSender,
+	command_sender: Sender<Command>,
 }
 
 impl InstanceHandle {
 	pub(crate) fn new(
 		id: InstanceId,
 		state: Arc<Atomic<InstanceState>>,
-		command_sender: CommandSender,
+		command_sender: Sender<Command>,
 	) -> Self {
 		Self {
 			id,
@@ -40,41 +41,49 @@ impl InstanceHandle {
 
 	pub fn set_volume(&mut self, volume: impl Into<Value<f64>>) -> AudioResult<()> {
 		self.command_sender
-			.push(InstanceCommand::SetInstanceVolume(self.id, volume.into()).into())
+			.send(InstanceCommand::SetInstanceVolume(self.id, volume.into()).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 
 	pub fn set_pitch(&mut self, pitch: impl Into<Value<f64>>) -> AudioResult<()> {
 		self.command_sender
-			.push(InstanceCommand::SetInstancePitch(self.id, pitch.into()).into())
+			.send(InstanceCommand::SetInstancePitch(self.id, pitch.into()).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 
 	pub fn set_panning(&mut self, panning: impl Into<Value<f64>>) -> AudioResult<()> {
 		self.command_sender
-			.push(InstanceCommand::SetInstancePanning(self.id, panning.into()).into())
+			.send(InstanceCommand::SetInstancePanning(self.id, panning.into()).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 
 	pub fn seek(&mut self, offset: f64) -> AudioResult<()> {
 		self.command_sender
-			.push(InstanceCommand::SeekInstance(self.id, offset).into())
+			.send(InstanceCommand::SeekInstance(self.id, offset).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 
 	pub fn seek_to(&mut self, position: f64) -> AudioResult<()> {
 		self.command_sender
-			.push(InstanceCommand::SeekInstanceTo(self.id, position).into())
+			.send(InstanceCommand::SeekInstanceTo(self.id, position).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 
 	pub fn pause(&mut self, settings: PauseInstanceSettings) -> AudioResult<()> {
 		self.command_sender
-			.push(InstanceCommand::PauseInstance(self.id, settings).into())
+			.send(InstanceCommand::PauseInstance(self.id, settings).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 
 	pub fn resume(&mut self, settings: ResumeInstanceSettings) -> AudioResult<()> {
 		self.command_sender
-			.push(InstanceCommand::ResumeInstance(self.id, settings).into())
+			.send(InstanceCommand::ResumeInstance(self.id, settings).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 
 	pub fn stop(&mut self, settings: StopInstanceSettings) -> AudioResult<()> {
 		self.command_sender
-			.push(InstanceCommand::StopInstance(self.id, settings).into())
+			.send(InstanceCommand::StopInstance(self.id, settings).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 }

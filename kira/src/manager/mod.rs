@@ -15,8 +15,8 @@ use flume::{Receiver, Sender};
 use crate::{
 	arrangement::{Arrangement, ArrangementHandle, ArrangementId},
 	command::{
-		sender::CommandSender, Command, GroupCommand, MetronomeCommand, MixerCommand,
-		ParameterCommand, ResourceCommand, SequenceCommand,
+		Command, GroupCommand, MetronomeCommand, MixerCommand, ParameterCommand, ResourceCommand,
+		SequenceCommand,
 	},
 	error::{AudioError, AudioResult},
 	group::{Group, GroupHandle, GroupId, GroupSettings},
@@ -92,7 +92,7 @@ and the audio thread.
 */
 pub struct AudioManager {
 	quit_signal_sender: Sender<bool>,
-	command_sender: CommandSender,
+	command_sender: Sender<Command>,
 	resources_to_unload_receiver: Receiver<Resource>,
 	active_ids: ActiveIds,
 
@@ -149,7 +149,7 @@ impl AudioManager {
 
 		Ok(Self {
 			quit_signal_sender,
-			command_sender: CommandSender::new(command_sender),
+			command_sender,
 			active_ids,
 			resources_to_unload_receiver,
 		})
@@ -164,7 +164,7 @@ impl AudioManager {
 		let (unloader, resources_to_unload_receiver) = flume::bounded(RESOURCE_UNLOADER_CAPACITY);
 		Ok(Self {
 			quit_signal_sender,
-			command_sender: CommandSender::new(command_sender),
+			command_sender,
 			active_ids,
 			resources_to_unload_receiver,
 			_stream: Self::setup_stream(settings, command_receiver, unloader)?,
@@ -218,7 +218,7 @@ impl AudioManager {
 		let (unloader, resources_to_unload_receiver) = flume::bounded(RESOURCE_UNLOADER_CAPACITY);
 		let audio_manager = Self {
 			quit_signal_sender,
-			command_sender: CommandSender::new(command_sender),
+			command_sender,
 			active_ids: ActiveIds::new(&settings),
 			resources_to_unload_receiver,
 		};
@@ -231,7 +231,8 @@ impl AudioManager {
 		self.active_ids.add_sound_id(sound.id())?;
 		let handle = SoundHandle::new(&sound, self.command_sender.clone());
 		self.command_sender
-			.push(ResourceCommand::AddSound(sound).into())?;
+			.send(ResourceCommand::AddSound(sound).into())
+			.map_err(|_| AudioError::BackendDisconnected)?;
 		Ok(handle)
 	}
 
@@ -253,7 +254,8 @@ impl AudioManager {
 		let id = id.into();
 		self.active_ids.remove_sound_id(id)?;
 		self.command_sender
-			.push(ResourceCommand::RemoveSound(id).into())
+			.send(ResourceCommand::RemoveSound(id).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 
 	/// Sends a arrangement to the audio thread and returns a handle to the arrangement.
@@ -261,7 +263,8 @@ impl AudioManager {
 		self.active_ids.add_arrangement_id(arrangement.id())?;
 		let handle = ArrangementHandle::new(&arrangement, self.command_sender.clone());
 		self.command_sender
-			.push(ResourceCommand::AddArrangement(arrangement).into())?;
+			.send(ResourceCommand::AddArrangement(arrangement).into())
+			.map_err(|_| AudioError::BackendDisconnected)?;
 		Ok(handle)
 	}
 
@@ -269,7 +272,8 @@ impl AudioManager {
 		let id = id.into();
 		self.active_ids.remove_arrangement_id(id)?;
 		self.command_sender
-			.push(ResourceCommand::RemoveArrangement(id.into()).into())
+			.send(ResourceCommand::RemoveArrangement(id.into()).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 
 	/// Frees resources that are no longer in use, such as unloaded sounds
@@ -282,9 +286,9 @@ impl AudioManager {
 		let id = settings.id;
 		self.active_ids.add_metronome_id(id)?;
 		let (event_sender, event_receiver) = flume::bounded(settings.event_queue_capacity);
-		self.command_sender.push(
-			MetronomeCommand::AddMetronome(id, Metronome::new(settings, event_sender)).into(),
-		)?;
+		self.command_sender
+			.send(MetronomeCommand::AddMetronome(id, Metronome::new(settings, event_sender)).into())
+			.map_err(|_| AudioError::BackendDisconnected)?;
 		Ok(MetronomeHandle::new(
 			id,
 			self.command_sender.clone(),
@@ -296,7 +300,8 @@ impl AudioManager {
 		let id = id.into();
 		self.active_ids.remove_metronome_id(id)?;
 		self.command_sender
-			.push(MetronomeCommand::RemoveMetronome(id).into())
+			.send(MetronomeCommand::RemoveMetronome(id).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 
 	/// Starts a sequence.
@@ -308,7 +313,8 @@ impl AudioManager {
 		sequence.validate()?;
 		let (instance, handle) = sequence.create_instance(settings, self.command_sender.clone());
 		self.command_sender
-			.push(SequenceCommand::StartSequenceInstance(settings.id, instance).into())?;
+			.send(SequenceCommand::StartSequenceInstance(settings.id, instance).into())
+			.map_err(|_| AudioError::BackendDisconnected)?;
 		Ok(handle)
 	}
 
@@ -316,7 +322,8 @@ impl AudioManager {
 	pub fn add_parameter(&mut self, settings: ParameterSettings) -> AudioResult<ParameterHandle> {
 		self.active_ids.add_parameter_id(settings.id)?;
 		self.command_sender
-			.push(ParameterCommand::AddParameter(settings.id, settings.value).into())?;
+			.send(ParameterCommand::AddParameter(settings.id, settings.value).into())
+			.map_err(|_| AudioError::BackendDisconnected)?;
 		Ok(ParameterHandle::new(
 			settings.id,
 			self.command_sender.clone(),
@@ -327,7 +334,8 @@ impl AudioManager {
 		let id = id.into();
 		self.active_ids.remove_parameter_id(id)?;
 		self.command_sender
-			.push(ParameterCommand::RemoveParameter(id).into())
+			.send(ParameterCommand::RemoveParameter(id).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 
 	/// Creates a mixer sub-track.
@@ -335,7 +343,8 @@ impl AudioManager {
 		self.active_ids.add_track_id(settings.id)?;
 		let handle = TrackHandle::new(TrackIndex::Sub(settings.id), self.command_sender.clone());
 		self.command_sender
-			.push(MixerCommand::AddSubTrack(Track::new(settings)).into())?;
+			.send(MixerCommand::AddSubTrack(Track::new(settings)).into())
+			.map_err(|_| AudioError::BackendDisconnected)?;
 		Ok(handle)
 	}
 
@@ -344,7 +353,8 @@ impl AudioManager {
 		let id = id.into();
 		self.active_ids.remove_track_id(id)?;
 		self.command_sender
-			.push(MixerCommand::RemoveSubTrack(id).into())
+			.send(MixerCommand::RemoveSubTrack(id).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 
 	/// Adds a group.
@@ -352,7 +362,8 @@ impl AudioManager {
 		let id = settings.id;
 		self.active_ids.add_group_id(id)?;
 		self.command_sender
-			.push(GroupCommand::AddGroup(id, Group::new(settings)).into())?;
+			.send(GroupCommand::AddGroup(id, Group::new(settings)).into())
+			.map_err(|_| AudioError::BackendDisconnected)?;
 		Ok(GroupHandle::new(id, self.command_sender.clone()))
 	}
 
@@ -361,7 +372,8 @@ impl AudioManager {
 		let id = id.into();
 		self.active_ids.remove_group_id(id)?;
 		self.command_sender
-			.push(GroupCommand::RemoveGroup(id).into())
+			.send(GroupCommand::RemoveGroup(id).into())
+			.map_err(|_| AudioError::BackendDisconnected)
 	}
 }
 

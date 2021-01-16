@@ -1,18 +1,20 @@
+use flume::Sender;
+
 use crate::{
-	command::{sender::CommandSender, InstanceCommand, SequenceCommand},
+	command::{Command, InstanceCommand, SequenceCommand},
 	instance::{PauseInstanceSettings, ResumeInstanceSettings, StopInstanceSettings},
-	AudioResult,
+	AudioError, AudioResult,
 };
 
 use super::GroupId;
 
 pub struct GroupHandle {
 	id: GroupId,
-	command_sender: CommandSender,
+	command_sender: Sender<Command>,
 }
 
 impl GroupHandle {
-	pub(crate) fn new(id: GroupId, command_sender: CommandSender) -> Self {
+	pub(crate) fn new(id: GroupId, command_sender: Sender<Command>) -> Self {
 		Self { id, command_sender }
 	}
 
@@ -23,27 +25,33 @@ impl GroupHandle {
 	/// Pauses all instances of sounds, arrangements, and sequences in this group.
 	pub fn pause(&mut self, settings: PauseInstanceSettings) -> AudioResult<()> {
 		self.command_sender
-			.push(InstanceCommand::PauseGroup(self.id().into(), settings).into())?;
+			.send(InstanceCommand::PauseGroup(self.id().into(), settings).into())
+			.map_err(|_| AudioError::BackendDisconnected)?;
 		self.command_sender
-			.push(SequenceCommand::PauseGroup(self.id().into()).into())?;
+			.send(SequenceCommand::PauseGroup(self.id().into()).into())
+			.map_err(|_| AudioError::BackendDisconnected)?;
 		Ok(())
 	}
 
 	/// Resumes all instances of sounds, arrangements, and sequences in this group.
 	pub fn resume(&mut self, settings: ResumeInstanceSettings) -> AudioResult<()> {
 		self.command_sender
-			.push(InstanceCommand::ResumeGroup(self.id().into(), settings).into())?;
+			.send(InstanceCommand::ResumeGroup(self.id().into(), settings).into())
+			.map_err(|_| AudioError::BackendDisconnected)?;
 		self.command_sender
-			.push(SequenceCommand::ResumeGroup(self.id().into()).into())?;
+			.send(SequenceCommand::ResumeGroup(self.id().into()).into())
+			.map_err(|_| AudioError::BackendDisconnected)?;
 		Ok(())
 	}
 
 	/// Stops all instances of sounds, arrangements, and sequences in this group.
 	pub fn stop(&mut self, settings: StopInstanceSettings) -> AudioResult<()> {
 		self.command_sender
-			.push(InstanceCommand::StopGroup(self.id().into(), settings).into())?;
+			.send(InstanceCommand::StopGroup(self.id().into(), settings).into())
+			.map_err(|_| AudioError::BackendDisconnected)?;
 		self.command_sender
-			.push(SequenceCommand::StopGroup(self.id().into()).into())?;
+			.send(SequenceCommand::StopGroup(self.id().into()).into())
+			.map_err(|_| AudioError::BackendDisconnected)?;
 		Ok(())
 	}
 }
