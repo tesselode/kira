@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc, sync::Arc};
+use std::sync::Arc;
 
 use atomic::{Atomic, Ordering};
 use flume::{Receiver, Sender};
@@ -17,7 +17,7 @@ pub struct SequenceInstanceHandle<CustomEvent> {
 	id: SequenceInstanceId,
 	state: Arc<Atomic<SequenceInstanceState>>,
 	command_sender: Sender<Command>,
-	raw_event_receiver: Rc<RefCell<Receiver<usize>>>,
+	raw_event_receiver: Receiver<usize>,
 	events: IndexSet<CustomEvent>,
 }
 
@@ -33,7 +33,7 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 			id,
 			state,
 			command_sender,
-			raw_event_receiver: Rc::new(RefCell::new(raw_event_receiver)),
+			raw_event_receiver,
 			events,
 		}
 	}
@@ -118,17 +118,9 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 	/// Gets the first event that was emitted since the last
 	/// call to `pop_event`.
 	pub fn pop_event(&mut self) -> AudioResult<Option<&CustomEvent>> {
-		Ok(
-			match self
-				.raw_event_receiver
-				.try_borrow_mut()
-				.map_err(|_| AudioError::EventReceiverBorrowed)?
-				.try_recv()
-				.ok()
-			{
-				Some(index) => Some(self.events.get_index(index).unwrap()),
-				None => None,
-			},
-		)
+		Ok(match self.raw_event_receiver.try_recv().ok() {
+			Some(index) => Some(self.events.get_index(index).unwrap()),
+			None => None,
+		})
 	}
 }
