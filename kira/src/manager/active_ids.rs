@@ -1,16 +1,18 @@
 use crate::{
-	arrangement::ArrangementId,
-	error::{AudioError, AudioResult},
-	group::GroupId,
-	metronome::MetronomeId,
-	mixer::SubTrackId,
-	parameter::ParameterId,
-	sound::SoundId,
+	arrangement::ArrangementId, group::GroupId, metronome::MetronomeId, mixer::SubTrackId,
+	parameter::ParameterId, sound::SoundId,
 };
 
 use indexmap::IndexSet;
 
-use super::AudioManagerSettings;
+use super::{
+	error::{
+		AddArrangementError, AddGroupError, AddMetronomeError, AddParameterError, AddSoundError,
+		AddTrackError, RemoveArrangementError, RemoveGroupError, RemoveMetronomeError,
+		RemoveParameterError, RemoveSoundError, RemoveTrackError,
+	},
+	AudioManagerSettings,
+};
 
 pub struct ActiveIds {
 	pub active_sound_ids: IndexSet<SoundId>,
@@ -33,92 +35,95 @@ impl ActiveIds {
 		}
 	}
 
-	pub fn add_sound_id(&mut self, id: SoundId) -> AudioResult<()> {
+	pub fn add_sound_id(&mut self, id: SoundId) -> Result<(), AddSoundError> {
 		if self.active_sound_ids.len() >= self.active_sound_ids.capacity() {
-			return Err(AudioError::SoundLimitReached);
+			return Err(AddSoundError::SoundLimitReached);
 		}
 		self.active_sound_ids.insert(id);
 		Ok(())
 	}
 
-	pub fn remove_sound_id(&mut self, id: SoundId) -> AudioResult<()> {
+	pub fn remove_sound_id(&mut self, id: SoundId) -> Result<(), RemoveSoundError> {
 		if !self.active_sound_ids.remove(&id) {
-			return Err(AudioError::NoSoundWithId(id));
+			return Err(RemoveSoundError::NoSoundWithId(id));
 		}
 		Ok(())
 	}
 
-	pub fn add_arrangement_id(&mut self, id: ArrangementId) -> AudioResult<()> {
+	pub fn add_arrangement_id(&mut self, id: ArrangementId) -> Result<(), AddArrangementError> {
 		if self.active_arrangement_ids.len() >= self.active_arrangement_ids.capacity() {
-			return Err(AudioError::ArrangementLimitReached);
+			return Err(AddArrangementError::ArrangementLimitReached);
 		}
 		self.active_arrangement_ids.insert(id);
 		Ok(())
 	}
 
-	pub fn remove_arrangement_id(&mut self, id: ArrangementId) -> AudioResult<()> {
+	pub fn remove_arrangement_id(
+		&mut self,
+		id: ArrangementId,
+	) -> Result<(), RemoveArrangementError> {
 		if !self.active_arrangement_ids.remove(&id) {
-			return Err(AudioError::NoArrangementWithId(id));
+			return Err(RemoveArrangementError::NoArrangementWithId(id));
 		}
 		Ok(())
 	}
 
-	pub fn add_parameter_id(&mut self, id: ParameterId) -> AudioResult<()> {
+	pub fn add_parameter_id(&mut self, id: ParameterId) -> Result<(), AddParameterError> {
 		if self.active_parameter_ids.len() >= self.active_parameter_ids.capacity() {
-			return Err(AudioError::ParameterLimitReached);
+			return Err(AddParameterError::ParameterLimitReached);
 		}
 		self.active_parameter_ids.insert(id);
 		Ok(())
 	}
 
-	pub fn remove_parameter_id(&mut self, id: ParameterId) -> AudioResult<()> {
+	pub fn remove_parameter_id(&mut self, id: ParameterId) -> Result<(), RemoveParameterError> {
 		if !self.active_parameter_ids.remove(&id) {
-			return Err(AudioError::NoParameterWithId(id));
+			return Err(RemoveParameterError::NoParameterWithId(id));
 		}
 		Ok(())
 	}
 
-	pub fn add_track_id(&mut self, id: SubTrackId) -> AudioResult<()> {
+	pub fn add_track_id(&mut self, id: SubTrackId) -> Result<(), AddTrackError> {
 		if self.active_track_ids.len() >= self.active_track_ids.capacity() {
-			return Err(AudioError::TrackLimitReached);
+			return Err(AddTrackError::TrackLimitReached);
 		}
 		self.active_track_ids.insert(id);
 		Ok(())
 	}
 
-	pub fn remove_track_id(&mut self, id: SubTrackId) -> AudioResult<()> {
+	pub fn remove_track_id(&mut self, id: SubTrackId) -> Result<(), RemoveTrackError> {
 		if !self.active_track_ids.remove(&id) {
-			return Err(AudioError::NoTrackWithId(id));
+			return Err(RemoveTrackError::NoTrackWithId(id));
 		}
 		Ok(())
 	}
 
-	pub fn add_group_id(&mut self, id: GroupId) -> AudioResult<()> {
+	pub fn add_group_id(&mut self, id: GroupId) -> Result<(), AddGroupError> {
 		if self.active_group_ids.len() >= self.active_group_ids.capacity() {
-			return Err(AudioError::GroupLimitReached);
+			return Err(AddGroupError::GroupLimitReached);
 		}
 		self.active_group_ids.insert(id);
 		Ok(())
 	}
 
-	pub fn remove_group_id(&mut self, id: GroupId) -> AudioResult<()> {
+	pub fn remove_group_id(&mut self, id: GroupId) -> Result<(), RemoveGroupError> {
 		if !self.active_group_ids.remove(&id) {
-			return Err(AudioError::NoGroupWithId(id));
+			return Err(RemoveGroupError::NoGroupWithId(id));
 		}
 		Ok(())
 	}
 
-	pub fn add_metronome_id(&mut self, id: MetronomeId) -> AudioResult<()> {
+	pub fn add_metronome_id(&mut self, id: MetronomeId) -> Result<(), AddMetronomeError> {
 		if self.active_metronome_ids.len() >= self.active_metronome_ids.capacity() {
-			return Err(AudioError::MetronomeLimitReached);
+			return Err(AddMetronomeError::MetronomeLimitReached);
 		}
 		self.active_metronome_ids.insert(id);
 		Ok(())
 	}
 
-	pub fn remove_metronome_id(&mut self, id: MetronomeId) -> AudioResult<()> {
+	pub fn remove_metronome_id(&mut self, id: MetronomeId) -> Result<(), RemoveMetronomeError> {
 		if !self.active_metronome_ids.remove(&id) {
-			return Err(AudioError::NoMetronomeWithId(id));
+			return Err(RemoveMetronomeError::NoMetronomeWithId(id));
 		}
 		Ok(())
 	}

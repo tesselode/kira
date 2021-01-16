@@ -1,9 +1,11 @@
 //! Provides an interface to work with pieces of audio.
 
+pub mod error;
 mod handle;
 mod id;
 mod settings;
 
+use error::SoundFromFileError;
 pub use handle::SoundHandle;
 pub use id::SoundId;
 pub use settings::SoundSettings;
@@ -13,9 +15,6 @@ use crate::{
 	group::{groups::Groups, GroupId, GroupSet},
 	mixer::TrackIndex,
 };
-
-#[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
-use crate::{error::AudioError, error::AudioResult};
 
 use std::fmt::{Debug, Formatter};
 
@@ -57,7 +56,7 @@ impl Sound {
 
 	/// Decodes a sound from an mp3 file.
 	#[cfg(feature = "mp3")]
-	pub fn from_mp3_file<P>(path: P, settings: SoundSettings) -> AudioResult<Self>
+	pub fn from_mp3_file<P>(path: P, settings: SoundSettings) -> Result<Self, SoundFromFileError>
 	where
 		P: AsRef<Path>,
 	{
@@ -69,7 +68,7 @@ impl Sound {
 				Ok(frame) => {
 					if let Some(sample_rate) = sample_rate {
 						if sample_rate != frame.sample_rate {
-							return Err(AudioError::VariableMp3SampleRate);
+							return Err(SoundFromFileError::VariableMp3SampleRate);
 						}
 					} else {
 						sample_rate = Some(frame.sample_rate);
@@ -94,7 +93,7 @@ impl Sound {
 								))
 							}
 						}
-						_ => return Err(AudioError::UnsupportedChannelConfiguration),
+						_ => return Err(SoundFromFileError::UnsupportedChannelConfiguration),
 					}
 				}
 				Err(error) => match error {
@@ -105,7 +104,7 @@ impl Sound {
 		}
 		let sample_rate = match sample_rate {
 			Some(sample_rate) => sample_rate,
-			None => return Err(AudioError::UnknownMp3SampleRate),
+			None => return Err(SoundFromFileError::UnknownMp3SampleRate),
 		};
 		Ok(Self::from_frames(
 			sample_rate as u32,
@@ -116,7 +115,7 @@ impl Sound {
 
 	/// Decodes a sound from an ogg file.
 	#[cfg(feature = "ogg")]
-	pub fn from_ogg_file<P>(path: P, settings: SoundSettings) -> AudioResult<Self>
+	pub fn from_ogg_file<P>(path: P, settings: SoundSettings) -> Result<Self, SoundFromFileError>
 	where
 		P: AsRef<Path>,
 	{
@@ -137,7 +136,7 @@ impl Sound {
 						stereo_samples.push(Frame::new(packet[0][i], packet[1][i]));
 					}
 				}
-				_ => return Err(AudioError::UnsupportedChannelConfiguration),
+				_ => return Err(SoundFromFileError::UnsupportedChannelConfiguration),
 			}
 		}
 		Ok(Self::from_frames(
@@ -149,7 +148,7 @@ impl Sound {
 
 	/// Decodes a sound from a flac file.
 	#[cfg(feature = "flac")]
-	pub fn from_flac_file<P>(path: P, settings: SoundSettings) -> AudioResult<Self>
+	pub fn from_flac_file<P>(path: P, settings: SoundSettings) -> Result<Self, SoundFromFileError>
 	where
 		P: AsRef<Path>,
 	{
@@ -173,7 +172,7 @@ impl Sound {
 					stereo_samples.push(Frame::from_i32(left?, right?, streaminfo.bits_per_sample));
 				}
 			}
-			_ => return Err(AudioError::UnsupportedChannelConfiguration),
+			_ => return Err(SoundFromFileError::UnsupportedChannelConfiguration),
 		}
 		Ok(Self::from_frames(
 			streaminfo.sample_rate,
@@ -184,7 +183,7 @@ impl Sound {
 
 	/// Decodes a sound from a wav file.
 	#[cfg(feature = "wav")]
-	pub fn from_wav_file<P>(path: P, settings: SoundSettings) -> AudioResult<Self>
+	pub fn from_wav_file<P>(path: P, settings: SoundSettings) -> Result<Self, SoundFromFileError>
 	where
 		P: AsRef<Path>,
 	{
@@ -227,7 +226,7 @@ impl Sound {
 					}
 				}
 			},
-			_ => return Err(AudioError::UnsupportedChannelConfiguration),
+			_ => return Err(SoundFromFileError::UnsupportedChannelConfiguration),
 		}
 		Ok(Self::from_frames(
 			reader.spec().sample_rate,
@@ -240,7 +239,7 @@ impl Sound {
 	///
 	/// The audio format will be automatically determined from the file extension.
 	#[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
-	pub fn from_file<P>(path: P, settings: SoundSettings) -> AudioResult<Self>
+	pub fn from_file<P>(path: P, settings: SoundSettings) -> Result<Self, SoundFromFileError>
 	where
 		P: AsRef<Path>,
 	{
@@ -259,7 +258,7 @@ impl Sound {
 				}
 			}
 		}
-		Err(AudioError::UnsupportedAudioFileFormat)
+		Err(SoundFromFileError::UnsupportedAudioFileFormat)
 	}
 
 	/// Gets the unique identifier for this sound.

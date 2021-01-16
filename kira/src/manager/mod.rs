@@ -2,6 +2,7 @@
 
 mod active_ids;
 mod backend;
+pub mod error;
 
 use std::hash::Hash;
 
@@ -10,6 +11,11 @@ use active_ids::ActiveIds;
 use backend::Backend;
 #[cfg(feature = "benchmarking")]
 pub use backend::Backend;
+use error::{
+	AddArrangementError, AddGroupError, AddMetronomeError, AddParameterError, AddSoundError,
+	AddTrackError, LoadSoundError, RemoveArrangementError, RemoveGroupError, RemoveMetronomeError,
+	RemoveParameterError, RemoveSoundError, RemoveTrackError,
+};
 use flume::{Receiver, Sender};
 
 use crate::{
@@ -227,12 +233,12 @@ impl AudioManager {
 	}
 
 	/// Sends a sound to the audio thread and returns a handle to the sound.
-	pub fn add_sound(&mut self, sound: Sound) -> AudioResult<SoundHandle> {
+	pub fn add_sound(&mut self, sound: Sound) -> Result<SoundHandle, AddSoundError> {
 		self.active_ids.add_sound_id(sound.id())?;
 		let handle = SoundHandle::new(&sound, self.command_sender.clone());
 		self.command_sender
 			.send(ResourceCommand::AddSound(sound).into())
-			.map_err(|_| AudioError::BackendDisconnected)?;
+			.map_err(|_| AddSoundError::BackendDisconnected)?;
 		Ok(handle)
 	}
 
@@ -241,39 +247,45 @@ impl AudioManager {
 	/// This is a shortcut for constructing the sound manually and adding it
 	/// using [`AudioManager::add_sound`].
 	#[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
-	pub fn load_sound<P: AsRef<std::path::Path>>(
+	pub fn load_sound(
 		&mut self,
-		path: P,
+		path: impl AsRef<std::path::Path>,
 		settings: crate::sound::SoundSettings,
-	) -> AudioResult<SoundHandle> {
+	) -> Result<SoundHandle, LoadSoundError> {
 		let sound = Sound::from_file(path, settings)?;
-		self.add_sound(sound)
+		Ok(self.add_sound(sound)?)
 	}
 
-	pub fn remove_sound(&mut self, id: impl Into<SoundId>) -> AudioResult<()> {
+	pub fn remove_sound(&mut self, id: impl Into<SoundId>) -> Result<(), RemoveSoundError> {
 		let id = id.into();
 		self.active_ids.remove_sound_id(id)?;
 		self.command_sender
 			.send(ResourceCommand::RemoveSound(id).into())
-			.map_err(|_| AudioError::BackendDisconnected)
+			.map_err(|_| RemoveSoundError::BackendDisconnected)
 	}
 
 	/// Sends a arrangement to the audio thread and returns a handle to the arrangement.
-	pub fn add_arrangement(&mut self, arrangement: Arrangement) -> AudioResult<ArrangementHandle> {
+	pub fn add_arrangement(
+		&mut self,
+		arrangement: Arrangement,
+	) -> Result<ArrangementHandle, AddArrangementError> {
 		self.active_ids.add_arrangement_id(arrangement.id())?;
 		let handle = ArrangementHandle::new(&arrangement, self.command_sender.clone());
 		self.command_sender
 			.send(ResourceCommand::AddArrangement(arrangement).into())
-			.map_err(|_| AudioError::BackendDisconnected)?;
+			.map_err(|_| AddArrangementError::BackendDisconnected)?;
 		Ok(handle)
 	}
 
-	pub fn remove_arrangement(&mut self, id: impl Into<ArrangementId>) -> AudioResult<()> {
+	pub fn remove_arrangement(
+		&mut self,
+		id: impl Into<ArrangementId>,
+	) -> Result<(), RemoveArrangementError> {
 		let id = id.into();
 		self.active_ids.remove_arrangement_id(id)?;
 		self.command_sender
 			.send(ResourceCommand::RemoveArrangement(id.into()).into())
-			.map_err(|_| AudioError::BackendDisconnected)
+			.map_err(|_| RemoveArrangementError::BackendDisconnected)
 	}
 
 	/// Frees resources that are no longer in use, such as unloaded sounds
@@ -282,13 +294,16 @@ impl AudioManager {
 		for _ in self.resources_to_unload_receiver.try_iter() {}
 	}
 
-	pub fn add_metronome(&mut self, settings: MetronomeSettings) -> AudioResult<MetronomeHandle> {
+	pub fn add_metronome(
+		&mut self,
+		settings: MetronomeSettings,
+	) -> Result<MetronomeHandle, AddMetronomeError> {
 		let id = settings.id;
 		self.active_ids.add_metronome_id(id)?;
 		let (event_sender, event_receiver) = flume::bounded(settings.event_queue_capacity);
 		self.command_sender
 			.send(MetronomeCommand::AddMetronome(id, Metronome::new(settings, event_sender)).into())
-			.map_err(|_| AudioError::BackendDisconnected)?;
+			.map_err(|_| AddMetronomeError::BackendDisconnected)?;
 		Ok(MetronomeHandle::new(
 			id,
 			self.command_sender.clone(),
@@ -296,12 +311,15 @@ impl AudioManager {
 		))
 	}
 
-	pub fn remove_metronome(&mut self, id: impl Into<MetronomeId>) -> AudioResult<()> {
+	pub fn remove_metronome(
+		&mut self,
+		id: impl Into<MetronomeId>,
+	) -> Result<(), RemoveMetronomeError> {
 		let id = id.into();
 		self.active_ids.remove_metronome_id(id)?;
 		self.command_sender
 			.send(MetronomeCommand::RemoveMetronome(id).into())
-			.map_err(|_| AudioError::BackendDisconnected)
+			.map_err(|_| RemoveMetronomeError::BackendDisconnected)
 	}
 
 	/// Starts a sequence.
@@ -319,61 +337,67 @@ impl AudioManager {
 	}
 
 	/// Creates a parameter with the specified starting value.
-	pub fn add_parameter(&mut self, settings: ParameterSettings) -> AudioResult<ParameterHandle> {
+	pub fn add_parameter(
+		&mut self,
+		settings: ParameterSettings,
+	) -> Result<ParameterHandle, AddParameterError> {
 		self.active_ids.add_parameter_id(settings.id)?;
 		self.command_sender
 			.send(ParameterCommand::AddParameter(settings.id, settings.value).into())
-			.map_err(|_| AudioError::BackendDisconnected)?;
+			.map_err(|_| AddParameterError::BackendDisconnected)?;
 		Ok(ParameterHandle::new(
 			settings.id,
 			self.command_sender.clone(),
 		))
 	}
 
-	pub fn remove_parameter(&mut self, id: impl Into<ParameterId>) -> AudioResult<()> {
+	pub fn remove_parameter(
+		&mut self,
+		id: impl Into<ParameterId>,
+	) -> Result<(), RemoveParameterError> {
 		let id = id.into();
 		self.active_ids.remove_parameter_id(id)?;
 		self.command_sender
 			.send(ParameterCommand::RemoveParameter(id).into())
-			.map_err(|_| AudioError::BackendDisconnected)
+			.map_err(|_| RemoveParameterError::BackendDisconnected)
 	}
 
 	/// Creates a mixer sub-track.
-	pub fn add_sub_track(&mut self, settings: TrackSettings) -> AudioResult<TrackHandle> {
+	pub fn add_sub_track(&mut self, settings: TrackSettings) -> Result<TrackHandle, AddTrackError> {
 		self.active_ids.add_track_id(settings.id)?;
 		let handle = TrackHandle::new(TrackIndex::Sub(settings.id), self.command_sender.clone());
 		self.command_sender
 			.send(MixerCommand::AddSubTrack(Track::new(settings)).into())
-			.map_err(|_| AudioError::BackendDisconnected)?;
+			.map_err(|_| AddTrackError::BackendDisconnected)?;
 		Ok(handle)
 	}
 
 	/// Removes a sub-track from the mixer.
-	pub fn remove_sub_track(&mut self, id: SubTrackId) -> AudioResult<()> {
+	pub fn remove_sub_track(&mut self, id: SubTrackId) -> Result<(), RemoveTrackError> {
 		let id = id.into();
 		self.active_ids.remove_track_id(id)?;
 		self.command_sender
 			.send(MixerCommand::RemoveSubTrack(id).into())
-			.map_err(|_| AudioError::BackendDisconnected)
+			.map_err(|_| RemoveTrackError::BackendDisconnected)
 	}
 
 	/// Adds a group.
-	pub fn add_group(&mut self, settings: GroupSettings) -> AudioResult<GroupHandle> {
+	pub fn add_group(&mut self, settings: GroupSettings) -> Result<GroupHandle, AddGroupError> {
 		let id = settings.id;
 		self.active_ids.add_group_id(id)?;
 		self.command_sender
 			.send(GroupCommand::AddGroup(id, Group::new(settings)).into())
-			.map_err(|_| AudioError::BackendDisconnected)?;
+			.map_err(|_| AddGroupError::BackendDisconnected)?;
 		Ok(GroupHandle::new(id, self.command_sender.clone()))
 	}
 
 	/// Removes a group.
-	pub fn remove_group(&mut self, id: impl Into<GroupId>) -> AudioResult<()> {
+	pub fn remove_group(&mut self, id: impl Into<GroupId>) -> Result<(), RemoveGroupError> {
 		let id = id.into();
 		self.active_ids.remove_group_id(id)?;
 		self.command_sender
 			.send(GroupCommand::RemoveGroup(id).into())
-			.map_err(|_| AudioError::BackendDisconnected)
+			.map_err(|_| RemoveGroupError::BackendDisconnected)
 	}
 }
 
