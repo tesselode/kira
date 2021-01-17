@@ -13,16 +13,18 @@ use backend::Backend;
 pub use backend::Backend;
 use error::{
 	AddArrangementError, AddGroupError, AddMetronomeError, AddParameterError, AddSoundError,
-	AddTrackError, LoadSoundError, RemoveArrangementError, RemoveGroupError, RemoveMetronomeError,
-	RemoveParameterError, RemoveSoundError, RemoveTrackError, SetupError, StartSequenceError,
+	AddStreamError, AddTrackError, LoadSoundError, RemoveArrangementError, RemoveGroupError,
+	RemoveMetronomeError, RemoveParameterError, RemoveSoundError, RemoveStreamError,
+	RemoveTrackError, SetupError, StartSequenceError,
 };
 use flume::{Receiver, Sender};
 
 use crate::{
 	arrangement::{handle::ArrangementHandle, Arrangement, ArrangementId},
+	audio_stream::{AudioStream, AudioStreamId},
 	command::{
 		Command, GroupCommand, MetronomeCommand, MixerCommand, ParameterCommand, ResourceCommand,
-		SequenceCommand,
+		SequenceCommand, StreamCommand,
 	},
 	group::{handle::GroupHandle, Group, GroupId, GroupSettings},
 	metronome::{handle::MetronomeHandle, Metronome, MetronomeId, MetronomeSettings},
@@ -395,6 +397,28 @@ impl AudioManager {
 		self.command_sender
 			.send(GroupCommand::RemoveGroup(id).into())
 			.map_err(|_| RemoveGroupError::BackendDisconnected)
+	}
+
+	/// Adds an audio stream.
+	pub fn add_stream(
+		&mut self,
+		stream: impl AudioStream,
+		track: TrackIndex,
+	) -> Result<AudioStreamId, AddStreamError> {
+		let id = AudioStreamId::new();
+		self.active_ids.add_stream_id(id)?;
+		self.command_sender
+			.send(StreamCommand::AddStream(id, track, Box::new(stream)).into())
+			.map_err(|_| AddStreamError::BackendDisconnected)
+			.map(|()| id)
+	}
+
+	/// Removes an audio stream.
+	pub fn remove_stream(&mut self, id: AudioStreamId) -> Result<(), RemoveStreamError> {
+		self.active_ids.remove_stream_id(id)?;
+		self.command_sender
+			.send(StreamCommand::RemoveStream(id).into())
+			.map_err(|_| RemoveStreamError::BackendDisconnected)
 	}
 }
 

@@ -49,21 +49,4 @@ impl TrackHandle {
 			.send(MixerCommand::RemoveEffect(self.index, id.into()).into())
 			.map_err(|_| TrackHandleError::BackendDisconnected)
 	}
-
-	pub fn add_stream(
-		&mut self,
-		stream: impl AudioStream,
-	) -> Result<AudioStreamId, TrackHandleError> {
-		let stream_id = AudioStreamId::new();
-		self.command_sender
-			.send(StreamCommand::AddStream(stream_id, self.index(), Box::new(stream)).into())
-			.map_err(|_| TrackHandleError::BackendDisconnected)
-			.map(|()| stream_id)
-	}
-
-	pub fn remove_stream(&mut self, id: AudioStreamId) -> Result<(), TrackHandleError> {
-		self.command_sender
-			.send(StreamCommand::RemoveStream(id).into())
-			.map_err(|_| TrackHandleError::BackendDisconnected)
-	}
 }

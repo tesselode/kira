@@ -3,6 +3,7 @@ use thiserror::Error;
 
 use crate::{
 	arrangement::ArrangementId,
+	audio_stream::AudioStreamId,
 	group::GroupId,
 	metronome::MetronomeId,
 	mixer::SubTrackId,
@@ -141,6 +142,24 @@ pub enum AddTrackError {
 pub enum RemoveTrackError {
 	#[error("The track with the specified ID does not exist")]
 	NoTrackWithId(SubTrackId),
+
+	#[error("The backend cannot receive commands because it no longer exists")]
+	BackendDisconnected,
+}
+
+#[derive(Debug, Error)]
+pub enum AddStreamError {
+	#[error("Cannot add a stream because the max number of streams has been reached")]
+	StreamLimitReached,
+
+	#[error("The backend cannot receive commands because it no longer exists")]
+	BackendDisconnected,
+}
+
+#[derive(Debug, Error)]
+pub enum RemoveStreamError {
+	#[error("The stream with the specified ID does not exist")]
+	NoStreamWithId(AudioStreamId),
 
 	#[error("The backend cannot receive commands because it no longer exists")]
 	BackendDisconnected,

@@ -106,18 +106,6 @@
 //! # Ok::<(), kira::AudioError>(())
 //! ```
 
-/*
-	TODO: move add_stream/remove_stream to the AudioManager
-
-	while it currently makes sense to have the stream adding/removing
-	functions live on the mixer track handles, since currently
-	streams can only be routed to mixer tracks, if 3D audio ever becomes
-	a thing, streams may be routed to emitters as well. so they aren't
-	inherently tied to mixer tracks. furthermore, it'll be easier to
-	check for stream limit reached/no stream with ID errors
-	if those functions live on the audio manager.
-*/
-
 pub mod arrangement;
 pub mod audio_stream;
 mod command;
