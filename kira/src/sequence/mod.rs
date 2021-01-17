@@ -563,15 +563,23 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	}
 
 	/// Makes sure nothing's wrong with the sequence that would make
-	/// it unplayable. Currently, this only checks that the loop
-	/// point isn't at the very end of the sequence.
+	/// it unplayable.
+	///
+	/// Currently, this only checks that the looping portion of a
+	/// sequence (if there is one) contains at least one wait command
+	/// (to prevent infinite loops).
 	pub(crate) fn validate(&self) -> Result<(), SequenceError> {
 		if let Some(loop_point) = self.loop_point {
-			if loop_point >= self.steps.len() {
-				return Err(SequenceError::InvalidLoopPoint);
+			for step in self.steps.iter().skip(loop_point) {
+				match step {
+					SequenceStep::Wait(_) | SequenceStep::WaitForInterval(_) => {
+						return Ok(());
+					}
+					_ => {}
+				}
 			}
 		}
-		Ok(())
+		Err(SequenceError::InfiniteLoop)
 	}
 
 	/// Gets a set of all of the events this sequence can emit.
