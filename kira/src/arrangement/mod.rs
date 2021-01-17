@@ -69,47 +69,50 @@
 //!
 //! ```no_run
 //! # use kira::{
-//! # 	arrangement::Arrangement, arrangement::SoundClip, manager::{AudioManager, AudioManagerSettings},
-//! # 	playable::PlayableSettings, sound::Sound, Tempo,
+//! # 	arrangement::{Arrangement, ArrangementSettings, SoundClip},
+//! # 	manager::{AudioManager, AudioManagerSettings},
+//! # 	sound::{Sound, SoundSettings}, Tempo,
 //! # };
 //! #
 //! # let mut audio_manager = AudioManager::new(AudioManagerSettings::default())?;
-//! # let sound_id = audio_manager.add_sound(Sound::from_file(
+//! # let sound_handle = audio_manager.add_sound(Sound::from_file(
 //! # 	std::env::current_dir()?.join("assets/loop.wav"),
-//! # 	PlayableSettings::default(),
+//! # 	SoundSettings::default(),
 //! # )?)?;
 //! #
 //! let tempo = Tempo(140.0);
-//! let mut arrangement =
-//! 	Arrangement::new(PlayableSettings::new().default_loop_start(tempo.beats_to_seconds(16.0)));
+//! let mut arrangement = Arrangement::new(
+//! 	ArrangementSettings::new().default_loop_start(tempo.beats_to_seconds(16.0)),
+//! );
 //! arrangement
-//! 	.add_clip(SoundClip::new(sound_id, 0.0))
+//! 	.add_clip(SoundClip::new(&sound_handle, 0.0))
 //! 	.add_clip(
-//! 		SoundClip::new(sound_id, tempo.beats_to_seconds(16.0))
+//! 		SoundClip::new(&sound_handle, tempo.beats_to_seconds(16.0))
 //! 			.trim(tempo.beats_to_seconds(16.0)),
 //! 	);
-//! # Ok::<(), kira::AudioError>(())
+//! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!
 //! Or you can just use [`Arrangement::new_loop`], which will do the work for you:
 //!
 //! ```no_run
 //! # use kira::{
-//! # 	arrangement::{Arrangement, LoopArrangementSettings}, arrangement::SoundClip, manager::{AudioManager, AudioManagerSettings},
-//! # 	playable::PlayableSettings, sound::Sound, Tempo,
+//! # 	arrangement::{Arrangement, LoopArrangementSettings, SoundClip},
+//! # 	manager::{AudioManager, AudioManagerSettings},
+//! # 	sound::{Sound, SoundSettings}, Tempo,
 //! # };
 //! #
 //! # let mut audio_manager = AudioManager::new(AudioManagerSettings::default())?;
 //! let tempo = Tempo(140.0);
-//! let sound_id = audio_manager.add_sound(Sound::from_file(
+//! let sound_handle = audio_manager.add_sound(Sound::from_file(
 //! 	std::env::current_dir()?.join("assets/loop.wav"),
-//! 	PlayableSettings {
+//! 	SoundSettings {
 //! 		semantic_duration: Some(tempo.beats_to_seconds(16.0)),
 //! 		..Default::default()
 //! 	},
 //! )?)?;
-//! let arrangement = Arrangement::new_loop(sound_id, LoopArrangementSettings::default());
-//! # Ok::<(), kira::AudioError>(())
+//! let arrangement = Arrangement::new_loop(&sound_handle, LoopArrangementSettings::default());
+//! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!
 //! ### Loops with intros

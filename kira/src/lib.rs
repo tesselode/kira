@@ -11,10 +11,11 @@
 //! To use Kira, first create an [`AudioManager`](manager::AudioManager):
 //! ```no_run
 //! # use std::error::Error;
+//! #
 //! # use kira::manager::{AudioManager, AudioManagerSettings};
 //! #
 //! let mut audio_manager = AudioManager::new(AudioManagerSettings::default())?;
-//! # Ok::<(), kira::AudioError>(())
+//! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!
 //! All audio-related actions go through the [`AudioManager`](manager::AudioManager).
@@ -23,17 +24,17 @@
 //!
 //! ```no_run
 //! # use std::error::Error;
+//! #
 //! # use kira::{
-//! # 	manager::{AudioManager, AudioManagerSettings},
-//! # 	sound::Sound,
-//! # 	playable::PlayableSettings,
 //! # 	instance::InstanceSettings,
+//! # 	manager::{AudioManager, AudioManagerSettings},
+//! # 	sound::SoundSettings,
 //! # };
 //! #
 //! # let mut audio_manager = AudioManager::new(AudioManagerSettings::default())?;
-//! let sound_id = audio_manager.load_sound("loop.ogg", PlayableSettings::default())?;
-//! audio_manager.play(sound_id, InstanceSettings::default())?;
-//! # Ok::<(), kira::AudioError>(())
+//! let mut sound_handle = audio_manager.load_sound("sound.ogg", SoundSettings::default())?;
+//! sound_handle.play(InstanceSettings::default())?;
+//! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!
 //! ### Looping a song while preserving trailing sounds
@@ -42,23 +43,24 @@
 //! # use std::error::Error;
 //! #
 //! # use kira::{
-//! # 	arrangement::{Arrangement, LoopArrangementSettings}, manager::{AudioManager, AudioManagerSettings},
-//! # 	playable::PlayableSettings, sound::Sound, instance::InstanceSettings,
+//! # 	arrangement::{Arrangement, LoopArrangementSettings},
+//! # 	instance::InstanceSettings,
+//! # 	manager::{AudioManager, AudioManagerSettings},
+//! # 	sound::SoundSettings,
 //! # 	Tempo,
 //! # };
 //! #
-//! # let mut audio_manager = AudioManager::new(Default::default())?;
-//! let sound_id = audio_manager.load_sound(
-//! 	std::env::current_dir()?.join("assets/loop.wav"),
-//! 	PlayableSettings {
-//! 		semantic_duration: Some(Tempo(140.0).beats_to_seconds(16.0)),
-//! 		..Default::default()
-//! 	},
+//! # let mut audio_manager = AudioManager::new(AudioManagerSettings::default())?;
+//! let sound_handle = audio_manager.load_sound(
+//! 	"loop.ogg",
+//! 	SoundSettings::new().semantic_duration(Tempo(128.0).beats_to_seconds(8.0)),
 //! )?;
-//! let arrangement = Arrangement::new_loop(sound_id, LoopArrangementSettings::default());
-//! let arrangement_id = audio_manager.add_arrangement(arrangement)?;
-//! audio_manager.play(arrangement_id, InstanceSettings::default())?;
-//! # Ok::<(), kira::AudioError>(())
+//! let mut arrangement_handle = audio_manager.add_arrangement(Arrangement::new_loop(
+//! 	&sound_handle,
+//! 	LoopArrangementSettings::default(),
+//! ))?;
+//! arrangement_handle.play(InstanceSettings::default())?;
+//! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!
 //! ### Scripting audio sequences
@@ -71,39 +73,35 @@
 //! #
 //! # use kira::{
 //! # 	instance::InstanceSettings,
-//! # 	manager::AudioManager,
-//! # 	sequence::{Sequence, SequenceSettings, SequenceInstanceSettings},
-//! # 	sound::Sound,
-//! # 	playable::PlayableSettings,
+//! # 	manager::{AudioManager, AudioManagerSettings},
+//! # 	metronome::MetronomeSettings,
+//! # 	sequence::{Sequence, SequenceInstanceSettings, SequenceSettings},
+//! # 	sound::SoundSettings,
 //! # 	Tempo,
 //! # };
 //! #
-//! #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+//! #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 //! enum CustomEvent {
-//! 	KickDrum,
+//! 	Kick,
 //! }
-//! #
-//! # let mut audio_manager = AudioManager::new(Default::default())?;
-//! # let kick_drum_sound_id = audio_manager.add_sound(Sound::from_file(
-//! # 	"kick.ogg",
-//! # 	PlayableSettings {
-//! # 		semantic_duration: Some(Tempo(128.0).beats_to_seconds(16.0)),
-//! # 		..Default::default()
-//! # 	},
-//! # )?)?;
-//! let mut sequence = Sequence::<CustomEvent>::new(SequenceSettings::default());
-//! sequence.start_loop();
-//! sequence.wait_for_interval(4.0);
-//! sequence.play(kick_drum_sound_id, InstanceSettings::default());
-//! sequence.emit(CustomEvent::KickDrum);
-//! let (id, mut event_receiver) = audio_manager.start_sequence(sequence, SequenceInstanceSettings::default())?;
-//! // start the metronome so the sequence will have a pulse to listen for
-//! audio_manager.start_metronome()?;
-//! // pop events
-//! while let Some(event) = event_receiver.pop() {
-//! 	println!("{:?}", event);
-//! }
-//! # Ok::<(), kira::AudioError>(())
+//!
+//! # let mut audio_manager = AudioManager::new(AudioManagerSettings::default())?;
+//! let kick_sound_handle = audio_manager.load_sound("kick.wav", SoundSettings::default())?;
+//! let mut metronome_handle =
+//! 	audio_manager.add_metronome(MetronomeSettings::new().tempo(Tempo(150.0)))?;
+//! audio_manager.start_sequence(
+//! 	{
+//! 		let mut sequence = Sequence::new(SequenceSettings::default());
+//! 		sequence.start_loop();
+//! 		sequence.play(&kick_sound_handle, InstanceSettings::default());
+//! 		sequence.emit(CustomEvent::Kick);
+//! 		sequence.wait(kira::Duration::Beats(1.0));
+//! 		sequence
+//! 	},
+//! 	SequenceInstanceSettings::new().metronome(&metronome_handle),
+//! )?;
+//! metronome_handle.start()?;
+//! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 
 pub mod arrangement;

@@ -7,7 +7,7 @@ use crate::util::generate_uuid;
 use super::ArrangementHandle;
 
 /**
-A unique identifier for an [`Arrangement`](Arrangement).
+A unique identifier for an [`Arrangement`](super::Arrangement).
 
 You cannot create this manually - an arrangement ID is created
 when you [add an arrangement](crate::manager::AudioManager::add_arrangement)

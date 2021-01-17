@@ -7,11 +7,9 @@
 //! to any number of groups when they're created.
 //! Groups themselves can also be assigned to groups.
 //!
-//! [`pause_group`](crate::manager::AudioManager::pause_group),
-//! [`resume_group`](crate::manager::AudioManager::resume_group), and
-//! [`stop_group`](crate::manager::AudioManager::stop_group) will
-//! affect all instances that have the specified group anywhere in
-//! their ancestry.
+//! The [`pause`](handle::GroupHandle::pause), [`resume`](handle::GroupHandle::resume), and
+//! [`stop`](handle::GroupHandle::stop) functions on [`GroupHandle`](handle::GroupHandle)s will
+//! affect all instances that have the specified group anywhere in their ancestry.
 
 pub(crate) mod groups;
 pub mod handle;

@@ -14,9 +14,9 @@
 //! # use kira::{manager::AudioManager, instance::InstanceSettings, sound::Sound};
 //! #
 //! # let mut audio_manager = AudioManager::new(Default::default())?;
-//! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
-//! let instance_id = audio_manager.play(sound_id, InstanceSettings::new().pitch(0.5))?;
-//! # Ok::<(), Box<dyn Error>>(())
+//! # let mut sound = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
+//! let instance_handle = sound.play(InstanceSettings::new().pitch(0.5))?;
+//! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!
 //! ### Fading out a sound over 2 seconds
@@ -27,10 +27,10 @@
 //! # use kira::{manager::AudioManager, sound::Sound, parameter::Tween, instance::StopInstanceSettings};
 //! #
 //! # let mut audio_manager = AudioManager::new(Default::default())?;
-//! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
-//! # let instance_id = audio_manager.play(sound_id, Default::default())?;
-//! audio_manager.stop_instance(instance_id, StopInstanceSettings::new().fade_tween(Some(2.0.into())))?;
-//! # Ok::<(), Box<dyn Error>>(())
+//! # let mut sound = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
+//! # let mut instance_handle = sound.play(Default::default())?;
+//! instance_handle.stop(StopInstanceSettings::new().fade_tween(Some(2.0.into())))?;
+//! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!
 //! ## Reverse playback and loop points

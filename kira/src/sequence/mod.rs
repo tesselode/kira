@@ -14,16 +14,16 @@
 //! # 	Duration, Tempo,
 //! # };
 //! # let mut audio_manager = AudioManager::new(Default::default())?;
-//! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
+//! # let sound_handle = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
 //! let mut sequence = Sequence::<()>::new(SequenceSettings::default());
 //! // play a sound
-//! let instance_id = sequence.play(sound_id, InstanceSettings::default());
+//! let instance_id = sequence.play(&sound_handle, InstanceSettings::default());
 //! // wait 2 seconds
 //! sequence.wait(Duration::Seconds(2.0));
 //! // stop the sound
 //! sequence.stop_instance(instance_id, StopInstanceSettings::default());
 //! # audio_manager.start_sequence(sequence, SequenceInstanceSettings::default())?;
-//! # Ok::<(), kira::AudioError>(())
+//! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!
 //! To start the sequence, use `AudioManager::start_sequence()`:
@@ -37,10 +37,10 @@
 //! # 	Duration, Tempo,
 //! # };
 //! # let mut audio_manager = AudioManager::new(Default::default())?;
-//! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
+//! # let sound_handle = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
 //! # let mut sequence = Sequence::<()>::new(SequenceSettings::default());
 //! audio_manager.start_sequence(sequence, SequenceInstanceSettings::default())?;
-//! # Ok::<(), kira::AudioError>(())
+//! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!
 //! ## Timing events
@@ -61,12 +61,12 @@
 //! # 	Duration, Tempo,
 //! # };
 //! # let mut audio_manager = AudioManager::new(Default::default())?;
-//! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
+//! # let sound_handle = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
 //! # let mut sequence = Sequence::<()>::new(SequenceSettings::default());
 //! sequence.wait_for_interval(4.0);
-//! sequence.play(sound_id, InstanceSettings::default());
+//! sequence.play(&sound_handle, InstanceSettings::default());
 //! # audio_manager.start_sequence(sequence, SequenceInstanceSettings::default())?;
-//! # Ok::<(), kira::AudioError>(())
+//! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!
 //! Note that the metronome has to be running for the interval to work.
@@ -86,15 +86,15 @@
 //! # 	Duration, Tempo,
 //! # };
 //! # let mut audio_manager = AudioManager::new(Default::default())?;
-//! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
+//! # let sound_handle = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
 //! # let mut sequence = Sequence::<()>::new(SequenceSettings::default());
 //! sequence.wait_for_interval(4.0);
 //! sequence.start_loop();
 //! // when the sequence finishes, it will loop back to this step
-//! sequence.play(sound_id, InstanceSettings::default());
+//! sequence.play(&sound_handle, InstanceSettings::default());
 //! sequence.wait(Duration::Beats(1.0));
 //! # audio_manager.start_sequence(sequence, SequenceInstanceSettings::default())?;
-//! # Ok::<(), kira::AudioError>(())
+//! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!
 //! ## Custom events
@@ -114,19 +114,22 @@
 //! enum CustomEvent {
 //! 	Beat,
 //! }
+//!
 //! # let mut audio_manager = AudioManager::new(Default::default())?;
-//! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
+//! # let sound_handle = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
 //! # let mut sequence = Sequence::<CustomEvent>::new(SequenceSettings::default());
 //! sequence.wait_for_interval(4.0);
 //! sequence.start_loop();
 //! sequence.emit(CustomEvent::Beat);
 //! sequence.wait(Duration::Beats(1.0));
-//! let (id, mut event_receiver) = audio_manager.start_sequence(sequence, SequenceInstanceSettings::default())?;
-//! # Ok::<(), kira::AudioError>(())
+//!
+//! let mut sequence_instance_handle =
+//! 	audio_manager.start_sequence(sequence, SequenceInstanceSettings::default())?;
+//! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!
-//! When you start a sequence, an [`EventReceiver`](EventReceiver)
-//! is returned that you can pop events from:
+//! You can retrieve events that the sequence emits using the
+//! [`SequenceInstanceHandle`](handle::SequenceInstanceHandle).
 //!
 //! ```no_run
 //! # use kira::{
@@ -136,22 +139,23 @@
 //! # 	sound::Sound,
 //! # 	Duration, Tempo,
 //! # };
-//! #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-//! enum CustomEvent {
-//! 	Beat,
-//! }
+//! # #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+//! # enum CustomEvent {
+//! # 	Beat,
+//! # }
+//! #
 //! # let mut audio_manager = AudioManager::new(Default::default())?;
-//! # let sound_id = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
+//! # let sound_handle = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
 //! # let mut sequence = Sequence::<CustomEvent>::new(SequenceSettings::default());
 //! # sequence.wait_for_interval(4.0);
 //! # sequence.start_loop();
 //! # sequence.emit(CustomEvent::Beat);
 //! # sequence.wait(Duration::Beats(1.0));
-//! # let (id, mut event_receiver) = audio_manager.start_sequence(sequence, SequenceInstanceSettings::default())?;
-//! while let Some(event) = event_receiver.pop() {
+//! # let mut sequence_instance_handle = audio_manager.start_sequence(sequence, SequenceInstanceSettings::default())?;
+//! while let Some(event) = sequence_instance_handle.pop_event() {
 //! 	println!("{:?}", event);
 //! }
-//! # Ok::<(), kira::AudioError>(())
+//! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 
 pub mod error;
