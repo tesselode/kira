@@ -2,8 +2,7 @@ use flume::Sender;
 use thiserror::Error;
 
 use crate::{
-	audio_stream::{AudioStream, AudioStreamId},
-	command::{Command, MixerCommand, StreamCommand},
+	command::{Command, MixerCommand},
 	mixer::effect::{handle::EffectHandle, Effect, EffectId, EffectSettings},
 };
 
