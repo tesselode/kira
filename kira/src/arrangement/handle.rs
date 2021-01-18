@@ -1,3 +1,5 @@
+//! An interface for controlling arrangements.
+
 use flume::Sender;
 use thiserror::Error;
 
@@ -12,12 +14,16 @@ use crate::{
 
 use super::{Arrangement, ArrangementId};
 
+/// Something that can go wrong when using an [`ArrangementHandle`] to
+/// control a arrangement.
 #[derive(Debug, Error)]
 pub enum ArrangementHandleError {
+	/// The audio thread has finished and can no longer receive commands.
 	#[error("The backend cannot receive commands because it no longer exists")]
 	BackendDisconnected,
 }
 
+/// Allows you to control an arrangement.
 #[derive(Clone)]
 pub struct ArrangementHandle {
 	id: ArrangementId,
@@ -40,26 +46,36 @@ impl ArrangementHandle {
 		}
 	}
 
+	/// Returns the ID of the arrangement.
 	pub fn id(&self) -> ArrangementId {
 		self.id
 	}
 
+	/// Returns the duration of the arrangement (in seconds).
 	pub fn duration(&self) -> f64 {
 		self.duration
 	}
 
+	/// Returns the default track instances of this
+	/// arrangement will play on.
 	pub fn default_track(&self) -> TrackIndex {
 		self.default_track
 	}
 
+	/// Returns the "musical length" of this arrangement (if there
+	/// is one).
 	pub fn semantic_duration(&self) -> Option<f64> {
 		self.semantic_duration
 	}
 
+	/// Returns the default time (in seconds) instances
+	/// of this arrangement will loop back to when they reach
+	/// the end.
 	pub fn default_loop_start(&self) -> Option<f64> {
 		self.default_loop_start
 	}
 
+	/// Plays the arrangement.
 	pub fn play(
 		&mut self,
 		settings: InstanceSettings,
@@ -78,12 +94,14 @@ impl ArrangementHandle {
 		Ok(handle)
 	}
 
+	/// Pauses all instances of this arrangement.
 	pub fn pause(&mut self, settings: PauseInstanceSettings) -> Result<(), ArrangementHandleError> {
 		self.command_sender
 			.send(InstanceCommand::PauseInstancesOf(self.id.into(), settings).into())
 			.map_err(|_| ArrangementHandleError::BackendDisconnected)
 	}
 
+	/// Resumes all instances of this arrangement.
 	pub fn resume(
 		&mut self,
 		settings: ResumeInstanceSettings,
@@ -93,6 +111,7 @@ impl ArrangementHandle {
 			.map_err(|_| ArrangementHandleError::BackendDisconnected)
 	}
 
+	/// Stops all instances of this arrangement.
 	pub fn stop(&mut self, settings: StopInstanceSettings) -> Result<(), ArrangementHandleError> {
 		self.command_sender
 			.send(InstanceCommand::StopInstancesOf(self.id.into(), settings).into())

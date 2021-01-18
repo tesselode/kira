@@ -1,4 +1,4 @@
-//! Provides an interface for combining individual sounds into larger pieces.
+//! Combines individual sounds into larger pieces.
 //!
 //! `Arrangement`s are containers of `SoundClip`s, which are portions of
 //! a sound that can be positioned in time, stretched, trimmed, and
@@ -251,14 +251,19 @@ impl Arrangement {
 		self.duration
 	}
 
+	/// Gets the default track instances of this arrangement will play on.
 	pub fn default_track(&self) -> TrackIndex {
 		self.default_track
 	}
 
+	/// Gets the "musical length" of the arrangement (if there is one).
 	pub fn semantic_duration(&self) -> Option<f64> {
 		self.semantic_duration
 	}
 
+	/// Returns the default time (in seconds) instances
+	/// of this arrangement will loop back to when they reach
+	/// the end.
 	pub fn default_loop_start(&self) -> Option<f64> {
 		self.default_loop_start
 	}

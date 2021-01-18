@@ -1,5 +1,5 @@
-//! Provides an interface to control "instances", or individual occurrences,
-//! of [`Sound`](crate::sound::Sound)s and [`Arrangement`](crate::arrangement::Arrangement)s.
+//! Individual occurrences of [`Sound`](crate::sound::Sound)s
+//! and [`Arrangement`](crate::arrangement::Arrangement)s.
 //!
 //! You can control the volume and pitch of individual instances as well as
 //! pausing, resuming, and stopping them.
@@ -103,12 +103,26 @@ impl From<&InstanceHandle> for InstanceId {
 	}
 }
 
+/// The playback state of the instance.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum InstanceState {
+	/// The instance is playing.
 	Playing,
+	/// The instance is paused.
+	///
+	/// The pause command was received at the specified playback
+	/// position (in seconds).
 	Paused(f64),
+	/// The instance is stopped and cannot be resumed.
 	Stopped,
+	/// The instance is fading out and will be paused when
+	/// the fadeout is finished.
+	///
+	/// The pause command was received at the specified playback
+	/// position (in seconds).
 	Pausing(f64),
+	/// The instance is fading out and will be stopped when
+	/// the fadeout is finished.
 	Stopping,
 }
 

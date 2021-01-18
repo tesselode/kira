@@ -1,3 +1,5 @@
+//! An interface for controlling groups.
+
 use flume::Sender;
 use thiserror::Error;
 
@@ -8,12 +10,16 @@ use crate::{
 
 use super::GroupId;
 
+/// Something that can go wrong when using a [`GroupHandle`] to
+/// control a group.
 #[derive(Debug, Error)]
 pub enum GroupHandleError {
+	/// The audio thread has finished and can no longer receive commands.
 	#[error("The backend cannot receive commands because it no longer exists")]
 	BackendDisconnected,
 }
 
+/// Allows you to control a group.
 pub struct GroupHandle {
 	id: GroupId,
 	command_sender: Sender<Command>,
@@ -24,6 +30,7 @@ impl GroupHandle {
 		Self { id, command_sender }
 	}
 
+	/// Returns the ID of the group.
 	pub fn id(&self) -> GroupId {
 		self.id
 	}

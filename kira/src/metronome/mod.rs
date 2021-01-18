@@ -1,3 +1,8 @@
+//! Keeps time with steady pulses.
+//!
+//! Metronomes are especially useful as a timing source
+//! for [sequences](crate::sequence).
+
 pub mod handle;
 mod metronomes;
 mod settings;

@@ -2,6 +2,7 @@ use indexmap::IndexSet;
 
 use super::{groups::Groups, GroupId};
 
+/// A set of groups that an item can belong to.
 #[derive(Debug, Clone)]
 #[cfg_attr(
 	feature = "serde_support",
@@ -11,20 +12,24 @@ use super::{groups::Groups, GroupId};
 pub struct GroupSet(IndexSet<GroupId>);
 
 impl GroupSet {
+	/// Creates a new, empty `GroupSet`.
 	pub fn new() -> Self {
 		Self(IndexSet::new())
 	}
 
+	/// Adds a group to the set.
 	pub fn add(mut self, id: impl Into<GroupId>) -> Self {
 		self.0.insert(id.into());
 		self
 	}
 
+	/// Removes a group from the set.
 	pub fn remove(mut self, id: impl Into<GroupId>) -> Self {
 		self.0.remove(&id.into());
 		self
 	}
 
+	/// Returns true if the set contains the specified group.
 	pub fn contains(&self, id: impl Into<GroupId>) -> bool {
 		self.0.contains(&id.into())
 	}

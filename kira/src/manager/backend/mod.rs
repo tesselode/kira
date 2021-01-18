@@ -15,6 +15,7 @@ use instances::Instances;
 use sequences::Sequences;
 use streams::Streams;
 
+/// Processes audio on the audio thread.
 pub struct Backend {
 	dt: f64,
 	playables: Playables,
@@ -98,6 +99,7 @@ impl Backend {
 		}
 	}
 
+	/// Produces a frame of audio.
 	pub fn process(&mut self) -> Frame {
 		self.process_commands();
 		self.parameters.update(self.dt);

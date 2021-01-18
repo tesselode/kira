@@ -1,5 +1,4 @@
-//! Provides an interface for sending arbitrary audio
-//! data to a mixer track.
+//! A stream of arbitrary audio.
 //!
 //! Audio streams are useful if you need to dynamically generate
 //! audio. For instance, you can use an audio stream to synthesize

@@ -1,4 +1,4 @@
-//! Provides an interface to script timed audio events.
+//! Scripts audio events with precise timing.
 //!
 //! ## Creating and starting sequences
 //!

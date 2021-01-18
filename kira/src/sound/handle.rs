@@ -56,19 +56,19 @@ impl SoundHandle {
 		self.duration
 	}
 
-	/// Returns the default track that instance of this
+	/// Returns the default track instances of this
 	/// sound will play on.
 	pub fn default_track(&self) -> TrackIndex {
 		self.default_track
 	}
 
-	/// Returns the "musical length" of a sound (if there
+	/// Returns the "musical length" of the sound (if there
 	/// is one).
 	pub fn semantic_duration(&self) -> Option<f64> {
 		self.semantic_duration
 	}
 
-	/// Returns the default time (in seconds) that instances
+	/// Returns the default time (in seconds) instances
 	/// of this sound will loop back to when they reach
 	/// the end.
 	pub fn default_loop_start(&self) -> Option<f64> {

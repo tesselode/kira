@@ -1,4 +1,4 @@
-//! Provides a bridge between the main thread and the audio thread.
+//! Bridges the main thread and the audio thread.
 
 mod active_ids;
 mod backend;
@@ -255,6 +255,7 @@ impl AudioManager {
 		Ok(self.add_sound(sound)?)
 	}
 
+	/// Removes a sound from the audio thread.
 	pub fn remove_sound(&mut self, id: impl Into<SoundId>) -> Result<(), RemoveSoundError> {
 		let id = id.into();
 		self.active_ids.remove_sound_id(id)?;
@@ -276,6 +277,7 @@ impl AudioManager {
 		Ok(handle)
 	}
 
+	/// Removes an arrangement from the audio thread.
 	pub fn remove_arrangement(
 		&mut self,
 		id: impl Into<ArrangementId>,
@@ -293,6 +295,7 @@ impl AudioManager {
 		for _ in self.resources_to_unload_receiver.try_iter() {}
 	}
 
+	/// Adds a metronome and returns a handle to it.
 	pub fn add_metronome(
 		&mut self,
 		settings: MetronomeSettings,
@@ -310,6 +313,7 @@ impl AudioManager {
 		))
 	}
 
+	/// Removes a metronome from the audio thread.
 	pub fn remove_metronome(
 		&mut self,
 		id: impl Into<MetronomeId>,
@@ -350,6 +354,7 @@ impl AudioManager {
 		))
 	}
 
+	/// Removes a parameter from the audio thread.
 	pub fn remove_parameter(
 		&mut self,
 		id: impl Into<ParameterId>,

@@ -1,4 +1,4 @@
-//! Provides an interface for smoothly changing values over time.
+//! Tweenable values that can be used by many other objects.
 
 pub mod handle;
 mod mapping;

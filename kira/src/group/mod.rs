@@ -1,5 +1,4 @@
-//! Provides an interface for controlling multiple instances
-//! and sequences at a time.
+//! Control multiple instances and sequences at a time.
 //!
 //! Groups can be created with [`AudioManager::add_group`](crate::manager::AudioManager::add_group).
 //! [`Sound`](crate::sound::Sound)s, [`Arrangement`](crate::arrangement::Arrangement)s

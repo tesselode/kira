@@ -81,6 +81,7 @@ impl From<Option<f64>> for InstanceLoopStart {
 	serde(default)
 )]
 pub struct InstanceSettings {
+	/// The unique identifier for the instance.
 	pub id: InstanceId,
 	/// The volume of the instance.
 	pub volume: Value<f64>,
@@ -108,6 +109,7 @@ impl InstanceSettings {
 		Self::default()
 	}
 
+	/// Sets the unique identifier for the instance.
 	pub fn id(self, id: impl Into<InstanceId>) -> Self {
 		Self {
 			id: id.into(),

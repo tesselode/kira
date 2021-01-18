@@ -1,4 +1,4 @@
-//! Provides an interface to work with pieces of audio.
+//! A chunk of audio data.
 
 pub mod error;
 pub mod handle;
@@ -265,7 +265,7 @@ impl Sound {
 		self.id
 	}
 
-	/// Gets the default track that the sound plays on.
+	/// Gets the default track instances of this sound will play on.
 	pub fn default_track(&self) -> TrackIndex {
 		self.default_track
 	}
@@ -275,13 +275,14 @@ impl Sound {
 		self.duration
 	}
 
-	/// Gets the metadata associated with the sound.
+	/// Gets the "musical length" of the sound (if there is one).
 	pub fn semantic_duration(&self) -> Option<f64> {
 		self.semantic_duration
 	}
 
-	/// Gets the default loop start point for instances
-	/// of this sound.
+	/// Returns the default time (in seconds) instances
+	/// of this sound will loop back to when they reach
+	/// the end.
 	pub fn default_loop_start(&self) -> Option<f64> {
 		self.default_loop_start
 	}

@@ -1,4 +1,4 @@
-//! Provides a wrapper around sounds and arrangements.
+//! A wrapper around sounds and arrangements.
 
 mod playables;
 
