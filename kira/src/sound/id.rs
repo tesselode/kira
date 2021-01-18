@@ -7,9 +7,6 @@ use crate::util::generate_uuid;
 use super::handle::SoundHandle;
 
 /// A unique identifier for a [`Sound`](crate::sound::Sound).
-///
-/// You cannot create this manually - a sound ID is returned
-/// when you add a sound to an [`AudioManager`](crate::manager::AudioManager).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(
 	feature = "serde_support",

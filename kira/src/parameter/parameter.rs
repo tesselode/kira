@@ -4,12 +4,7 @@ use crate::util::generate_uuid;
 
 use super::Tween;
 
-/**
-A unique identifier for a parameter.
-
-You cannot create this manually - a parameter ID is created
-when you create a parameter with an [`AudioManager`](crate::manager::AudioManager).
-*/
+/// A unique identifier for a parameter.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(
 	feature = "serde_support",

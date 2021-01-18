@@ -30,7 +30,7 @@ impl Default for Mapping {
 }
 
 impl Mapping {
-	/// Transforms an input value to an output value.
+	/// Transforms an input value to an output value using this mapping.
 	pub fn map(&self, input: f64) -> f64 {
 		let relative_input =
 			(input - self.input_range.0) / (self.input_range.1 - self.input_range.0);

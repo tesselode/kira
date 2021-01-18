@@ -104,6 +104,8 @@
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 
+#![warn(missing_docs)]
+
 pub mod arrangement;
 pub mod audio_stream;
 mod command;

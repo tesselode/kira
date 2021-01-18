@@ -193,6 +193,7 @@ use crate::{
 	serde(default)
 )]
 pub struct SequenceInstanceSettings {
+	/// The ID of the sequence instance.
 	pub id: SequenceInstanceId,
 	/// The metronome this sequence should sync to.
 	pub metronome: Option<MetronomeId>,
@@ -201,10 +202,12 @@ pub struct SequenceInstanceSettings {
 }
 
 impl SequenceInstanceSettings {
+	/// Creates a new `SequenceInstanceSettings` with the default settings.
 	pub fn new() -> Self {
 		Self::default()
 	}
 
+	/// Sets the ID of the sequence instance.
 	pub fn id(self, id: impl Into<SequenceInstanceId>) -> Self {
 		Self {
 			id: id.into(),
@@ -212,6 +215,7 @@ impl SequenceInstanceSettings {
 		}
 	}
 
+	/// Sets the metronome that the sequence instance should sync to.
 	pub fn metronome(self, metronome: impl Into<MetronomeId>) -> Self {
 		Self {
 			metronome: Some(metronome.into()),
@@ -219,6 +223,7 @@ impl SequenceInstanceSettings {
 		}
 	}
 
+	/// Sets how many events can be queued at a time.
 	pub fn event_queue_capacity(self, event_queue_capacity: usize) -> Self {
 		Self {
 			event_queue_capacity,

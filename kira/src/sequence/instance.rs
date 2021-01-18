@@ -15,9 +15,6 @@ use crate::{
 use super::{RawSequence, SequenceInstanceHandle, SequenceOutputCommand, SequenceStep};
 
 /// A unique identifier for an instance of a [`Sequence`](crate::sequence::Sequence).
-///
-/// You cannot create this manually - a sequence instance ID is returned
-/// when you start a sequence with an [`AudioManager`](crate::manager::AudioManager).
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(
 	feature = "serde_support",
@@ -42,10 +39,17 @@ impl<CustomEvent> From<&SequenceInstanceHandle<CustomEvent>> for SequenceInstanc
 	}
 }
 
+/// The playback state of an instance of a sequence.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum SequenceInstanceState {
+	/// The sequence instance is playing.
 	Playing,
+	/// The sequence instance is paused.
+	///
+	/// Any wait commands are currently on hold.
 	Paused,
+	/// The sequence has finished and will not perform
+	/// any more actions.
 	Finished,
 }
 

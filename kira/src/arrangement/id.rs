@@ -6,13 +6,7 @@ use crate::util::generate_uuid;
 
 use super::ArrangementHandle;
 
-/**
-A unique identifier for an [`Arrangement`](super::Arrangement).
-
-You cannot create this manually - an arrangement ID is created
-when you [add an arrangement](crate::manager::AudioManager::add_arrangement)
-to an [`AudioManager`](crate::manager::AudioManager).
-*/
+/// A unique identifier for an [`Arrangement`](super::Arrangement).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(
 	feature = "serde_support",

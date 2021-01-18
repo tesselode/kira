@@ -10,6 +10,7 @@ use super::MetronomeId;
 	serde(default)
 )]
 pub struct MetronomeSettings {
+	/// The unique identifier for the metronome.
 	pub id: MetronomeId,
 	/// The tempo of the metronome (in beats per minute).
 	pub tempo: Value<Tempo>,
@@ -19,14 +20,17 @@ pub struct MetronomeSettings {
 	/// the audio manager will receive `MetronomeIntervalPassed` events
 	/// every quarter of a beat, half of a beat, and beat.
 	pub interval_events_to_emit: Vec<f64>,
+	/// How many interval events can be queued at a time.
 	pub event_queue_capacity: usize,
 }
 
 impl MetronomeSettings {
+	/// Creates a new `MetronomeSettings` with the default settings.
 	pub fn new() -> Self {
 		Self::default()
 	}
 
+	/// Sets the ID of the metronome.
 	pub fn id(self, id: impl Into<MetronomeId>) -> Self {
 		Self {
 			id: id.into(),
@@ -34,6 +38,7 @@ impl MetronomeSettings {
 		}
 	}
 
+	/// Sets the tempo of the metronome.
 	pub fn tempo(self, tempo: impl Into<Value<Tempo>>) -> Self {
 		Self {
 			tempo: tempo.into(),
@@ -41,6 +46,7 @@ impl MetronomeSettings {
 		}
 	}
 
+	/// Sets which intervals (in beats) the metronome should emit events for.
 	pub fn interval_events_to_emit(self, interval_events_to_emit: impl Into<Vec<f64>>) -> Self {
 		Self {
 			interval_events_to_emit: interval_events_to_emit.into(),
@@ -48,6 +54,7 @@ impl MetronomeSettings {
 		}
 	}
 
+	/// Sets how many interval events can be queued at a time.
 	pub fn event_queue_capacity(self, event_queue_capacity: usize) -> Self {
 		Self {
 			event_queue_capacity,

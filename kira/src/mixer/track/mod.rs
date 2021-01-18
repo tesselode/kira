@@ -12,12 +12,7 @@ use super::{
 	effect_slot::EffectSlot,
 };
 
-/**
-A unique identifier for a sub-track.
-
-You cannot create this manually - a `SubTrackId` is created
-when you create a sub-track with an [`AudioManager`](crate::manager::AudioManager).
-*/
+/// A unique identifier for a sub-track.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(
 	feature = "serde_support",

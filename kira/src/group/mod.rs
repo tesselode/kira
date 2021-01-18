@@ -21,12 +21,7 @@ use uuid::Uuid;
 
 use crate::util::generate_uuid;
 
-/**
-A unique identifier for a group.
-
-You cannot create this manually - a group ID is created
-when you create a group with an [`AudioManager`](crate::manager::AudioManager).
-*/
+/// A unique identifier for a group.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(
 	feature = "serde_support",

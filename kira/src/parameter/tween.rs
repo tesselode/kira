@@ -40,8 +40,12 @@ impl Default for Easing {
 	derive(serde::Serialize, serde::Deserialize)
 )]
 pub enum EaseDirection {
+	/// The easing curve is applied forward.
 	In,
+	/// The easing curve is applied in reverse.
 	Out,
+	/// The easing curve is applied forward for the first
+	/// half of the tween, and backward for the second half.
 	InOut,
 }
 
@@ -58,8 +62,11 @@ impl Default for EaseDirection {
 	derive(serde::Serialize, serde::Deserialize)
 )]
 pub struct Tween {
+	/// The duration of the motion.
 	pub duration: f64,
+	/// The curve of the motion.
 	pub easing: Easing,
+	/// What direction the curve is applied in.
 	pub ease_direction: EaseDirection,
 }
 

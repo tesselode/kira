@@ -9,12 +9,7 @@ use uuid::Uuid;
 
 use crate::{frame::Frame, parameter::Parameters, util::generate_uuid};
 
-/**
-A unique identifier for an effect.
-
-You cannot create this manually - an effect ID is created
-when you add an effect to a mixer track with an [`AudioManager`](crate::manager::AudioManager).
-*/
+/// A unique identifier for an effect.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(
 	feature = "serde_support",

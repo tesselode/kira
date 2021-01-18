@@ -78,12 +78,7 @@ use crate::{
 };
 use std::sync::{atomic::Ordering, Arc};
 
-/**
-A unique identifier for an instance.
-
-You cannot create this manually - an instance ID is created
-when you play a sound with an [`AudioManager`](crate::manager::AudioManager).
-*/
+/// A unique identifier for an instance.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(
 	feature = "serde_support",

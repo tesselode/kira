@@ -1,3 +1,5 @@
+//! An interface for controlling sounds.
+
 use flume::Sender;
 use thiserror::Error;
 
@@ -12,12 +14,16 @@ use crate::{
 
 use super::{Sound, SoundId};
 
+/// Something that can go wrong when using a [`SoundHandle`] to
+/// control a sound.
 #[derive(Debug, Error)]
 pub enum SoundHandleError {
+	/// The audio thread has finished and can no longer receive commands.
 	#[error("The backend cannot receive commands because it no longer exists")]
 	BackendDisconnected,
 }
 
+/// Allows you to control a sound.
 #[derive(Clone)]
 pub struct SoundHandle {
 	id: SoundId,
@@ -40,26 +46,36 @@ impl SoundHandle {
 		}
 	}
 
+	/// Returns the ID of the sound.
 	pub fn id(&self) -> SoundId {
 		self.id
 	}
 
+	/// Returns the duration of the sound (in seconds).
 	pub fn duration(&self) -> f64 {
 		self.duration
 	}
 
+	/// Returns the default track that instance of this
+	/// sound will play on.
 	pub fn default_track(&self) -> TrackIndex {
 		self.default_track
 	}
 
+	/// Returns the "musical length" of a sound (if there
+	/// is one).
 	pub fn semantic_duration(&self) -> Option<f64> {
 		self.semantic_duration
 	}
 
+	/// Returns the default time (in seconds) that instances
+	/// of this sound will loop back to when they reach
+	/// the end.
 	pub fn default_loop_start(&self) -> Option<f64> {
 		self.default_loop_start
 	}
 
+	/// Plays the sound.
 	pub fn play(&mut self, settings: InstanceSettings) -> Result<InstanceHandle, SoundHandleError> {
 		let id = settings.id;
 		let instance = Instance::new(
@@ -75,18 +91,21 @@ impl SoundHandle {
 		Ok(handle)
 	}
 
+	/// Pauses all instances of this sound.
 	pub fn pause(&mut self, settings: PauseInstanceSettings) -> Result<(), SoundHandleError> {
 		self.command_sender
 			.send(InstanceCommand::PauseInstancesOf(self.id.into(), settings).into())
 			.map_err(|_| SoundHandleError::BackendDisconnected)
 	}
 
+	/// Resumes all instances of this sound.
 	pub fn resume(&mut self, settings: ResumeInstanceSettings) -> Result<(), SoundHandleError> {
 		self.command_sender
 			.send(InstanceCommand::ResumeInstancesOf(self.id.into(), settings).into())
 			.map_err(|_| SoundHandleError::BackendDisconnected)
 	}
 
+	/// Stops all instances of this sound.
 	pub fn stop(&mut self, settings: StopInstanceSettings) -> Result<(), SoundHandleError> {
 		self.command_sender
 			.send(InstanceCommand::StopInstancesOf(self.id.into(), settings).into())

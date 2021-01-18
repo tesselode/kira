@@ -10,12 +10,7 @@ use handle::MetronomeHandle;
 pub(crate) use metronomes::Metronomes;
 pub use settings::MetronomeSettings;
 
-/**
-A unique identifier for a metronome.
-
-You cannot create this manually - a metronome ID is created
-when you create a metronome with an [`AudioManager`](crate::manager::AudioManager).
-*/
+/// A unique identifier for a metronome.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(
 	feature = "serde_support",
