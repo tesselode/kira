@@ -11,7 +11,7 @@ use crate::{
 	sound::{handle::SoundHandle, Sound, SoundId},
 };
 
-/// Represents something you can play multiple instances of.
+/// An unique identifier for something you can play multiple instances of.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[cfg_attr(
 	feature = "serde_support",

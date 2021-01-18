@@ -31,7 +31,7 @@ impl SubTrackId {
 	}
 }
 
-/// Represents a mixer track.
+/// An identifier for a mixer track.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(
 	feature = "serde_support",
@@ -80,6 +80,7 @@ impl From<&TrackHandle> for TrackIndex {
 pub struct TrackSettings {
 	/// The unique identifier for the track.
 	pub id: SubTrackId,
+	/// The track that this track's output will be routed to.
 	pub parent_track: TrackIndex,
 	/// The volume of the track.
 	pub volume: f64,
@@ -91,17 +92,18 @@ impl TrackSettings {
 		Self::default()
 	}
 
-	pub fn parent_track(self, parent_track: impl Into<TrackIndex>) -> Self {
-		Self {
-			parent_track: parent_track.into(),
-			..self
-		}
-	}
-
 	/// Sets the unique identifier for the track.
 	pub fn id(self, id: impl Into<SubTrackId>) -> Self {
 		Self {
 			id: id.into(),
+			..self
+		}
+	}
+
+	/// Sets the track that this track's output will be routed to.
+	pub fn parent_track(self, parent_track: impl Into<TrackIndex>) -> Self {
+		Self {
+			parent_track: parent_track.into(),
 			..self
 		}
 	}

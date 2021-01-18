@@ -2,21 +2,21 @@ use std::ops::{Div, DivAssign, Mul, MulAssign};
 
 use crate::tempo::Tempo;
 
-/// Represents a duration of time.
+/// A duration of time.
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(
 	feature = "serde_support",
 	derive(serde::Serialize, serde::Deserialize)
 )]
 pub enum Duration {
-	/// Represents a duration of time in seconds.
+	/// A duration of time in seconds.
 	Seconds(f64),
-	/// Represents a duration of time in beats.
+	/// A duration of time in beats.
 	Beats(f64),
 }
 
 impl Duration {
-	/// Gets the time in seconds.
+	/// Gets the duration in seconds.
 	pub fn in_seconds(&self, tempo: Tempo) -> f64 {
 		match self {
 			Duration::Seconds(seconds) => *seconds,

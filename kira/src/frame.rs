@@ -1,6 +1,6 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
-/// Represents an audio sample with a left and right channel.
+/// An audio sample with a left and right channel.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Frame {
 	/// The sample for the left channel.

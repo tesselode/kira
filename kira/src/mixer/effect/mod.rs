@@ -1,3 +1,5 @@
+//! Modifies audio in real time.
+
 pub mod filter;
 pub mod handle;
 
@@ -42,16 +44,19 @@ impl From<&EffectHandle> for EffectId {
 	serde(default)
 )]
 pub struct EffectSettings {
+	/// The unique identifier for the effect.
 	pub id: EffectId,
 	/// Whether the effect is initially enabled.
 	pub enabled: bool,
 }
 
 impl EffectSettings {
+	/// Creates a new `EffectSettings` with the default settings.
 	pub fn new() -> Self {
 		Self::default()
 	}
 
+	/// Sets the unique identifier for the effect.
 	pub fn id(self, id: impl Into<EffectId>) -> Self {
 		Self {
 			id: id.into(),
@@ -59,6 +64,7 @@ impl EffectSettings {
 		}
 	}
 
+	/// Sets whether the effect is initially enabled.
 	pub fn enabled(self, enabled: bool) -> Self {
 		Self { enabled, ..self }
 	}
@@ -73,6 +79,13 @@ impl Default for EffectSettings {
 	}
 }
 
+/// Receives input audio from a mixer track and outputs modified audio.
 pub trait Effect: Send + Debug {
+	/// Modifies an input frame.
+	/// - `dt` is the time that's elapsed since the previous frame (in seconds)
+	/// - `input` is the input audio
+	/// - `parameters` is a set of all parameter IDs and their corresponding values.
+	/// This is useful in conjunction with [`CachedValue`](crate::CachedValue)s,
+	/// which can respond to parameter changes and update their value accordingly.
 	fn process(&mut self, dt: f64, input: Frame, parameters: &Parameters) -> Frame;
 }

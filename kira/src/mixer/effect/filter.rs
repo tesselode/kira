@@ -1,3 +1,5 @@
+//! Removes frequencies from a sound.
+
 use std::f64::consts::PI;
 
 use crate::{
@@ -8,20 +10,27 @@ use crate::{
 
 use super::Effect;
 
+// This filter code is based on the filter code from baseplug:
 // https://github.com/wrl/baseplug/blob/trunk/examples/svf/svf_simper.rs
 
+/// The frequencies that the filter will remove.
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(
 	feature = "serde_support",
 	derive(serde::Serialize, serde::Deserialize)
 )]
 pub enum FilterMode {
+	/// Removes frequencies above the cutoff frequency.
 	LowPass,
+	/// Removes frequencies above and below the cutoff frequency.
 	BandPass,
+	/// Removes frequencies below the cutoff frequency.
 	HighPass,
+	/// Removes frequencies around the cutoff frequency.
 	Notch,
 }
 
+/// Settings for a filter.
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(
 	feature = "serde_support",
@@ -29,20 +38,29 @@ pub enum FilterMode {
 	serde(default)
 )]
 pub struct FilterSettings {
+	/// The frequencies that the filter will remove.
 	pub mode: FilterMode,
+	/// The cutoff frequency of the filter (in hertz).
 	pub cutoff: Value<f64>,
+	/// The resonance of the filter.
+	///
+	/// The resonance is a feedback effect that produces
+	/// a distinctive "ringing" sound.
 	pub resonance: Value<f64>,
 }
 
 impl FilterSettings {
+	/// Creates a new `FilterSettings` with the default settings.
 	pub fn new() -> Self {
 		Self::default()
 	}
 
+	/// Sets the frequencies that the filter will remove.
 	pub fn mode(self, mode: FilterMode) -> Self {
 		Self { mode, ..self }
 	}
 
+	/// Sets the cutoff frequency of the filter (in hertz).
 	pub fn cutoff<V: Into<Value<f64>>>(self, cutoff: V) -> Self {
 		Self {
 			cutoff: cutoff.into(),
@@ -50,6 +68,7 @@ impl FilterSettings {
 		}
 	}
 
+	/// Sets the resonance of the filter.
 	pub fn resonance<V: Into<Value<f64>>>(self, resonance: V) -> Self {
 		Self {
 			resonance: resonance.into(),
@@ -68,6 +87,7 @@ impl Default for FilterSettings {
 	}
 }
 
+/// An effect that removes frequencies from input audio.
 #[derive(Debug, Copy, Clone)]
 pub struct Filter {
 	mode: FilterMode,
@@ -78,6 +98,7 @@ pub struct Filter {
 }
 
 impl Filter {
+	/// Creates a new filter.
 	pub fn new(settings: FilterSettings) -> Self {
 		Self {
 			mode: settings.mode,

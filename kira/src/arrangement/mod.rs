@@ -176,8 +176,9 @@ impl Arrangement {
 	/// Creates a new arrangement that seamlessly loops a sound.
 	///
 	/// If the sound has a semantic duration, it will be used to
-	/// set the point where the sound loops. Any audio after the loop
-	/// point will be preserved when the loop starts.
+	/// set the point where the sound loops. Any audio after the
+	/// semantic end of the sound will be preserved when the sound
+	/// loops.
 	pub fn new_loop(sound_handle: &SoundHandle, settings: LoopArrangementSettings) -> Self {
 		let duration = sound_handle
 			.semantic_duration()
@@ -202,7 +203,8 @@ impl Arrangement {
 	/// If the intro has a semantic duration, it will be used to determine
 	/// when the loop sound starts. If the loop sound has a semantic duration,
 	/// it will be used to set the point where the sound repeats. Any audio
-	/// after the loop point will be preserved when the sound repeats.
+	/// after the semantic end of the sound will be preserved when the sound
+	/// loops.
 	pub fn new_loop_with_intro(
 		intro_sound_handle: &SoundHandle,
 		loop_sound_handle: &SoundHandle,

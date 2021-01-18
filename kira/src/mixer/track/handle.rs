@@ -1,3 +1,5 @@
+//! An interface for controlling mixer tracks.
+
 use flume::Sender;
 use thiserror::Error;
 
@@ -8,12 +10,16 @@ use crate::{
 
 use super::TrackIndex;
 
+/// Something that can go wrong when using a [`TrackHandle`] to
+/// control a mixer track.
 #[derive(Debug, Error)]
 pub enum TrackHandleError {
+	/// The audio thread has finished and can no longer receive commands.
 	#[error("The backend cannot receive commands because it no longer exists")]
 	BackendDisconnected,
 }
 
+/// Allows you to control a mixer sound.
 pub struct TrackHandle {
 	index: TrackIndex,
 	command_sender: Sender<Command>,
@@ -27,10 +33,12 @@ impl TrackHandle {
 		}
 	}
 
+	/// Gets the track that this handle controls.
 	pub fn index(&self) -> TrackIndex {
 		self.index
 	}
 
+	/// Adds an effect to the track.
 	pub fn add_effect(
 		&mut self,
 		effect: impl Effect + 'static,
@@ -43,6 +51,7 @@ impl TrackHandle {
 		Ok(handle)
 	}
 
+	/// Removes an effect from the track.
 	pub fn remove_effect(&mut self, id: impl Into<EffectId>) -> Result<(), TrackHandleError> {
 		self.command_sender
 			.send(MixerCommand::RemoveEffect(self.index, id.into()).into())

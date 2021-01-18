@@ -1,4 +1,4 @@
-/// Represents a tempo, or speed, of some music (in beats per minute).
+/// A tempo, or speed, of some music (in beats per minute).
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(
 	feature = "serde_support",
