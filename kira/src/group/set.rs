@@ -34,6 +34,11 @@ impl GroupSet {
 		self.0.contains(&id.into())
 	}
 
+	/// Returns an iterator over the group IDs in this set.
+	pub fn iter(&self) -> indexmap::set::Iter<GroupId> {
+		self.0.iter()
+	}
+
 	/// Returns true if one of the groups in the set has a specified
 	/// group as an ancestor or is that group itself.
 	pub(crate) fn has_ancestor(&self, ancestor: GroupId, all_groups: &Groups) -> bool {
@@ -57,5 +62,15 @@ impl GroupSet {
 			}
 		}
 		false
+	}
+}
+
+impl<'a> IntoIterator for &'a GroupSet {
+	type Item = &'a GroupId;
+
+	type IntoIter = indexmap::set::Iter<'a, GroupId>;
+
+	fn into_iter(self) -> Self::IntoIter {
+		self.iter()
 	}
 }

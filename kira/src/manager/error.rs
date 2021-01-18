@@ -8,7 +8,7 @@ use crate::{
 	audio_stream::AudioStreamId,
 	group::GroupId,
 	metronome::MetronomeId,
-	mixer::SubTrackId,
+	mixer::{SubTrackId, TrackIndex},
 	parameter::ParameterId,
 	sequence::error::SequenceError,
 	sound::{error::SoundFromFileError, SoundId},
@@ -40,6 +40,14 @@ pub enum AddSoundError {
 	/// The maximum sound limit has been reached.
 	#[error("Cannot add a sound because the max number of sounds has been reached")]
 	SoundLimitReached,
+
+	/// The default track for the sound does not exist.
+	#[error("The default track for the sound does not exist")]
+	NoTrackWithIndex(TrackIndex),
+
+	/// The sound belongs to a group that does not exist.
+	#[error("The sound belongs to a group that does not exist")]
+	NoGroupWithId(GroupId),
 
 	/// The audio thread has finished and can no longer receive commands.
 	#[error("The backend cannot receive commands because it no longer exists")]
@@ -78,6 +86,14 @@ pub enum AddArrangementError {
 	/// The maximum arrangement limit has been reached.
 	#[error("Cannot add an arrangement because the max number of arrangements has been reached")]
 	ArrangementLimitReached,
+
+	/// The default track for the arrangement does not exist.
+	#[error("The default track for the arrangement does not exist")]
+	NoTrackWithIndex(TrackIndex),
+
+	/// The arrangement belongs to a group that does not exist.
+	#[error("The arrangement belongs to a group that does not exist")]
+	NoGroupWithId(GroupId),
 
 	/// The audio thread has finished and can no longer receive commands.
 	#[error("The backend cannot receive commands because it no longer exists")]
@@ -129,6 +145,10 @@ pub enum AddGroupError {
 	#[error("Cannot add an group because the max number of groups has been reached")]
 	GroupLimitReached,
 
+	/// The group belongs to a parent group that does not exist.
+	#[error("The group belongs to a parent group that does not exist")]
+	NoGroupWithId(GroupId),
+
 	/// The audio thread has finished and can no longer receive commands.
 	#[error("The backend cannot receive commands because it no longer exists")]
 	BackendDisconnected,
@@ -179,6 +199,10 @@ pub enum AddTrackError {
 	#[error("Cannot add an track because the max number of tracks has been reached")]
 	TrackLimitReached,
 
+	/// The track's parent track does not exist.
+	#[error("The track's parent track does not exist")]
+	NoTrackWithIndex(TrackIndex),
+
 	/// The audio thread has finished and can no longer receive commands.
 	#[error("The backend cannot receive commands because it no longer exists")]
 	BackendDisconnected,
@@ -204,6 +228,10 @@ pub enum AddStreamError {
 	#[error("Cannot add a stream because the max number of streams has been reached")]
 	StreamLimitReached,
 
+	/// The specified track for the stream does not exist.
+	#[error("The specified track for the stream does not exist")]
+	NoTrackWithIndex(TrackIndex),
+
 	/// The audio thread has finished and can no longer receive commands.
 	#[error("The backend cannot receive commands because it no longer exists")]
 	BackendDisconnected,
@@ -228,6 +256,10 @@ pub enum StartSequenceError {
 	/// The sequence is in an invalid state.
 	#[error("{0}")]
 	SequenceError(#[from] SequenceError),
+
+	/// The sequence belongs to a group that does not exist.
+	#[error("The sequence belongs to a group that does not exist")]
+	NoGroupWithId(GroupId),
 
 	/// The audio thread has finished and can no longer receive commands.
 	#[error("The backend cannot receive commands because it no longer exists")]

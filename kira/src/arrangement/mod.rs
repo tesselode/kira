@@ -258,6 +258,11 @@ impl Arrangement {
 		self.default_track
 	}
 
+	/// Gets the groups this arrangement belongs to.
+	pub fn groups(&self) -> &GroupSet {
+		&self.groups
+	}
+
 	/// Gets the "musical length" of the arrangement (if there is one).
 	pub fn semantic_duration(&self) -> Option<f64> {
 		self.semantic_duration

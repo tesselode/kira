@@ -270,6 +270,11 @@ impl Sound {
 		self.default_track
 	}
 
+	/// Gets the groups this sound belongs to.
+	pub fn groups(&self) -> &GroupSet {
+		&self.groups
+	}
+
 	/// Gets the duration of the sound (in seconds).
 	pub fn duration(&self) -> f64 {
 		self.duration

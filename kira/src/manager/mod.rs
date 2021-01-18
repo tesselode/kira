@@ -26,7 +26,7 @@ use crate::{
 		Command, GroupCommand, MetronomeCommand, MixerCommand, ParameterCommand, ResourceCommand,
 		SequenceCommand, StreamCommand,
 	},
-	group::{handle::GroupHandle, Group, GroupId, GroupSettings},
+	group::{handle::GroupHandle, Group, GroupId, GroupSet, GroupSettings},
 	metronome::{handle::MetronomeHandle, Metronome, MetronomeId, MetronomeSettings},
 	mixer::{handle::TrackHandle, SubTrackId, Track, TrackIndex, TrackSettings},
 	parameter::{handle::ParameterHandle, ParameterId, ParameterSettings},
@@ -231,8 +231,28 @@ impl AudioManager {
 		(audio_manager, backend)
 	}
 
+	fn does_track_exist(&self, track: TrackIndex) -> bool {
+		match track {
+			TrackIndex::Main => true,
+			TrackIndex::Sub(id) => self.active_ids.active_track_ids.contains(&id),
+		}
+	}
+
+	/// Finds the first group that doesn't exist in a group set.
+	fn first_missing_group_in_set(&self, set: &GroupSet) -> Option<GroupId> {
+		set.iter()
+			.find(|id| !self.active_ids.active_group_ids.contains(*id))
+			.copied()
+	}
+
 	/// Sends a sound to the audio thread and returns a handle to the sound.
 	pub fn add_sound(&mut self, sound: Sound) -> Result<SoundHandle, AddSoundError> {
+		if !self.does_track_exist(sound.default_track()) {
+			return Err(AddSoundError::NoTrackWithIndex(sound.default_track()));
+		}
+		if let Some(group) = self.first_missing_group_in_set(sound.groups()) {
+			return Err(AddSoundError::NoGroupWithId(group));
+		}
 		self.active_ids.add_sound_id(sound.id())?;
 		let handle = SoundHandle::new(&sound, self.command_sender.clone());
 		self.command_sender
@@ -269,6 +289,14 @@ impl AudioManager {
 		&mut self,
 		arrangement: Arrangement,
 	) -> Result<ArrangementHandle, AddArrangementError> {
+		if !self.does_track_exist(arrangement.default_track()) {
+			return Err(AddArrangementError::NoTrackWithIndex(
+				arrangement.default_track(),
+			));
+		}
+		if let Some(group) = self.first_missing_group_in_set(arrangement.groups()) {
+			return Err(AddArrangementError::NoGroupWithId(group));
+		}
 		self.active_ids.add_arrangement_id(arrangement.id())?;
 		let handle = ArrangementHandle::new(&arrangement, self.command_sender.clone());
 		self.command_sender
@@ -331,6 +359,9 @@ impl AudioManager {
 		sequence: Sequence<CustomEvent>,
 		settings: SequenceInstanceSettings,
 	) -> Result<SequenceInstanceHandle<CustomEvent>, StartSequenceError> {
+		if let Some(group) = self.first_missing_group_in_set(sequence.groups()) {
+			return Err(StartSequenceError::NoGroupWithId(group));
+		}
 		sequence.validate()?;
 		let (instance, handle) = sequence.create_instance(settings, self.command_sender.clone());
 		self.command_sender
@@ -368,6 +399,9 @@ impl AudioManager {
 
 	/// Creates a mixer sub-track.
 	pub fn add_sub_track(&mut self, settings: TrackSettings) -> Result<TrackHandle, AddTrackError> {
+		if !self.does_track_exist(settings.parent_track) {
+			return Err(AddTrackError::NoTrackWithIndex(settings.parent_track));
+		}
 		self.active_ids.add_track_id(settings.id)?;
 		let handle = TrackHandle::new(TrackIndex::Sub(settings.id), self.command_sender.clone());
 		self.command_sender
@@ -387,6 +421,9 @@ impl AudioManager {
 
 	/// Adds a group.
 	pub fn add_group(&mut self, settings: GroupSettings) -> Result<GroupHandle, AddGroupError> {
+		if let Some(group) = self.first_missing_group_in_set(&settings.groups) {
+			return Err(AddGroupError::NoGroupWithId(group));
+		}
 		let id = settings.id;
 		self.active_ids.add_group_id(id)?;
 		self.command_sender
@@ -410,6 +447,9 @@ impl AudioManager {
 		stream: impl AudioStream,
 		track: TrackIndex,
 	) -> Result<AudioStreamId, AddStreamError> {
+		if !self.does_track_exist(track) {
+			return Err(AddStreamError::NoTrackWithIndex(track));
+		}
 		let id = AudioStreamId::new();
 		self.active_ids.add_stream_id(id)?;
 		self.command_sender

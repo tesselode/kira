@@ -368,6 +368,11 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 		}
 	}
 
+	/// Gets the groups this sequence belongs to.
+	pub fn groups(&self) -> &GroupSet {
+		&self.groups
+	}
+
 	/// Adds a step to wait for a certain length of time
 	/// before moving to the next step.
 	pub fn wait(&mut self, duration: Duration) {
