@@ -592,8 +592,10 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 					_ => {}
 				}
 			}
+			Err(SequenceError::InfiniteLoop)
+		} else {
+			Ok(())
 		}
-		Err(SequenceError::InfiniteLoop)
 	}
 
 	/// Gets a set of all of the events this sequence can emit.
