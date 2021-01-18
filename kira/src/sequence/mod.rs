@@ -180,7 +180,7 @@ use crate::{
 		StopInstanceSettings,
 	},
 	metronome::MetronomeId,
-	parameter::{ParameterId, Tween},
+	parameter::{tween::Tween, ParameterId},
 	playable::PlayableId,
 	Duration, Tempo, Value,
 };

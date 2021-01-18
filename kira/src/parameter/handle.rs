@@ -5,7 +5,7 @@ use thiserror::Error;
 
 use crate::command::{Command, ParameterCommand};
 
-use super::{ParameterId, Tween};
+use super::{tween::Tween, ParameterId};
 
 /// Something that can go wrong when using a [`ParameterHandle`]
 /// to control a parameter.

@@ -1,6 +1,6 @@
 use crate::{
 	mixer::{SubTrackId, TrackIndex},
-	parameter::{EaseDirection, Easing, Tween},
+	parameter::tween::{EaseDirection, Easing, Tween},
 	Value,
 };
 

@@ -2,7 +2,7 @@ use uuid::Uuid;
 
 use crate::util::generate_uuid;
 
-use super::Tween;
+use super::tween::Tween;
 
 /// A unique identifier for a parameter.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

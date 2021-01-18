@@ -10,7 +10,7 @@ use crate::{
 		effect::{Effect, EffectId, EffectSettings},
 		SubTrackId, Track, TrackIndex,
 	},
-	parameter::{ParameterId, Tween},
+	parameter::{tween::Tween, ParameterId},
 	playable::PlayableId,
 	sequence::{SequenceInstance, SequenceInstanceId},
 	sound::{Sound, SoundId},

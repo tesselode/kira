@@ -117,7 +117,7 @@ pub mod manager;
 pub mod metronome;
 pub mod mixer;
 pub mod parameter;
-pub mod playable;
+mod playable;
 mod resource;
 pub mod sequence;
 pub mod sound;
@@ -127,5 +127,6 @@ mod value;
 
 pub use duration::Duration;
 pub use frame::Frame;
+pub use playable::PlayableId;
 pub use tempo::Tempo;
 pub use value::{CachedValue, Value};

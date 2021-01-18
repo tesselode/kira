@@ -1,3 +1,5 @@
+//! A movement from one value to another over time.
+
 /// A curve that can be applied to a [`Tween`].
 ///
 /// Given a position in a tween `t` from 0-1, each easing
