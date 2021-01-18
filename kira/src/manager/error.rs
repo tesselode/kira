@@ -23,9 +23,6 @@ pub enum SetupError {
 	#[error("{0}")]
 	DefaultStreamConfigError(#[from] DefaultStreamConfigError),
 
-	#[error("No supported audio configurations")]
-	NoSupportedAudioConfig,
-
 	#[error("{0}")]
 	BuildStreamError(#[from] BuildStreamError),
 
