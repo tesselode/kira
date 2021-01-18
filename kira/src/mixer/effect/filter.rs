@@ -30,7 +30,7 @@ pub enum FilterMode {
 	Notch,
 }
 
-/// Settings for a filter.
+/// Settings for a [`Filter`].
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(
 	feature = "serde_support",

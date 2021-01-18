@@ -1,4 +1,4 @@
-//! Provides an interface for organizing and applying effects to sounds.
+//! Organizes and applies effects to audio.
 
 pub mod effect;
 pub(crate) mod effect_slot;
