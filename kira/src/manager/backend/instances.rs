@@ -165,6 +165,8 @@ impl Instances {
 		mixer: &mut Mixer,
 		parameters: &Parameters,
 	) {
+		// TODO: simplify this code (preferably by removing self.instances_to_remove)
+		// while making sure every sample of the sound gets played before the instance is removed
 		for (instance_id, instance) in &mut self.instances {
 			if instance.playing() {
 				mixer.add_input(instance.track_index(), instance.get_sample(playables));
