@@ -40,6 +40,11 @@ impl Instances {
 			InstanceCommand::Play(instance_id, instance) => {
 				if let Some(mut playable) = playables.playable_mut(instance.playable_id()) {
 					if !playable.cooling_down() {
+						// if we're at the instance limit, remove the instance that was
+						// started the longest time ago.
+						if self.instances.len() >= self.instances.capacity() {
+							self.instances.shift_remove_index(0);
+						}
 						self.instances.insert(instance_id, instance);
 						playable.start_cooldown();
 					}
@@ -170,7 +175,7 @@ impl Instances {
 			instance.update(dt, parameters);
 		}
 		for instance_id in self.instances_to_remove.drain(..) {
-			self.instances.remove(&instance_id);
+			self.instances.shift_remove(&instance_id);
 		}
 	}
 }
