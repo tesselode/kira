@@ -19,6 +19,7 @@ pub enum GroupHandleError {
 	BackendDisconnected,
 }
 
+#[derive(Debug, Clone)]
 /// Allows you to control a group.
 pub struct GroupHandle {
 	id: GroupId,

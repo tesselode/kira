@@ -24,7 +24,7 @@ pub enum SoundHandleError {
 }
 
 /// Allows you to control a sound.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SoundHandle {
 	id: SoundId,
 	duration: f64,

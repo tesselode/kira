@@ -24,7 +24,7 @@ pub enum ArrangementHandleError {
 }
 
 /// Allows you to control an arrangement.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct ArrangementHandle {
 	id: ArrangementId,
 	duration: f64,

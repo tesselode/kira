@@ -16,6 +16,7 @@ pub enum ParameterHandleError {
 	BackendDisconnected,
 }
 
+#[derive(Debug, Clone)]
 /// Allows you to control a parameter.
 pub struct ParameterHandle {
 	id: ParameterId,

@@ -24,6 +24,7 @@ pub enum InstanceHandleError {
 	BackendDisconnected,
 }
 
+#[derive(Debug, Clone)]
 /// Allows you to control an instance of a sound or arrangement.
 pub struct InstanceHandle {
 	id: InstanceId,

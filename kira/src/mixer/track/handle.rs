@@ -19,6 +19,7 @@ pub enum TrackHandleError {
 	BackendDisconnected,
 }
 
+#[derive(Debug, Clone)]
 /// Allows you to control a mixer sound.
 pub struct TrackHandle {
 	index: TrackIndex,

@@ -19,6 +19,7 @@ pub enum MetronomeHandleError {
 	BackendDisconnected,
 }
 
+#[derive(Debug, Clone)]
 /// Allows you to control a metronome.
 pub struct MetronomeHandle {
 	id: MetronomeId,

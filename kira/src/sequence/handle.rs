@@ -24,7 +24,7 @@ pub enum SequenceInstanceHandleError {
 }
 
 /// Allows you to control an instance of a sequence..
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SequenceInstanceHandle<CustomEvent> {
 	id: SequenceInstanceId,
 	state: Arc<Atomic<SequenceInstanceState>>,

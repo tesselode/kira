@@ -19,6 +19,7 @@ pub enum EffectHandleError {
 	BackendDisconnected,
 }
 
+#[derive(Debug, Clone)]
 /// Allows you to control an effect.
 pub struct EffectHandle {
 	id: EffectId,
