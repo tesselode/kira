@@ -1,4 +1,4 @@
-# Unreleased
+# v0.4.0 - January 23, 2021
 
 ## `wasm32` support
 Kira now runs on any platform supporting `wasm32` and having a
