@@ -1,20 +1,67 @@
 # Unreleased
 
 ## `wasm32` support
-
 Kira now runs on any platform supporting `wasm32` and having a
 `cpal` backend. This means one can now run an instance of Kira
 in a web browser.
 
 ## Handle-based API
-TODO
+The API has gone through a major revision. Previously, to do
+just about anything, you would have to use the `AudioManager`:
+
+```rust
+audio_manager.stop_instance(instance_id)?;
+audio_manager.set_metronome_tempo(Tempo(128.0))?;
+// etc...
+```
+
+This meant that you had to pass a reference to the audio manager
+to every part of the code that needs it. It also meant that
+the `AudioManager` struct had an overwhelming number of methods.
+
+The API has been changed so that whenever you create a new thing
+(like a sound, an instance, or a mixer track), you receive a handle
+to that thing that you can use to control it.
+
+```rust
+let mut sound = audio_manager.load_sound("sound.ogg", SoundSettings::default())?;
+let mut instance = sound.play(InstanceSettings::default())?;
+instance.set_pitch(2.0)?;
+```
 
 ## Multiple metronomes
-TODO
+You can now create multiple metronomes. Each sequence instance
+can be assigned to a different metronome, and interval events
+can be received from a `MetronomeHandle`:
 
-## Other changes
-- Add `GroupSet` struct
-- Derive `Clone` for `SequenceInstanceHandle`
+```rust
+let mut metronome = audio_manager.add_metronome(
+	MetronomeSettings::new().interval_events_to_emit([0.25, 0.5, 1.0]))?;
+audio_manager.start_sequence({
+	let mut sequence = Sequence::<()>::new(SequenceSettings::default());
+	// sequence code
+	sequence
+}, SequenceInstanceSettings::new().metronome(&metronome))?;
+metronome.start()?;
+for interval in metronome.event_iter() {
+	println!("{}", interval);
+}
+```
+
+Most people will only need one metronome at a time - the main
+point of this is to move more functionality out of the
+`AudioManager` struct.
+
+## Serde support
+Sequences and most config structs now have serialization/deserialization
+support via the `serde_support` feature.
+
+## Improved error handling
+The capacity limits specified in `AudioManagerSettings` are now enforced,
+and the audio manager will also check that when you remove something with
+an ID, something with that ID actually exists. Because this creates a lot
+of new error variants, the large `AudioError` enum has been split up into
+smaller, situational error enums.
 
 # v0.3.0 - December 26th, 2020
 
