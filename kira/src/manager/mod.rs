@@ -354,6 +354,7 @@ impl AudioManager {
 	}
 
 	/// Starts a sequence.
+	// TODO: find a way to make sure we're not exceeding the sequence instance limit
 	pub fn start_sequence<CustomEvent: Clone + Eq + Hash>(
 		&mut self,
 		sequence: Sequence<CustomEvent>,
