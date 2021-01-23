@@ -13,9 +13,9 @@ use backend::Backend;
 pub use backend::Backend;
 use error::{
 	AddArrangementError, AddGroupError, AddMetronomeError, AddParameterError, AddSoundError,
-	AddStreamError, AddTrackError, LoadSoundError, RemoveArrangementError, RemoveGroupError,
-	RemoveMetronomeError, RemoveParameterError, RemoveSoundError, RemoveStreamError,
-	RemoveTrackError, SetupError, StartSequenceError,
+	AddStreamError, AddTrackError, RemoveArrangementError, RemoveGroupError, RemoveMetronomeError,
+	RemoveParameterError, RemoveSoundError, RemoveStreamError, RemoveTrackError, SetupError,
+	StartSequenceError,
 };
 use flume::{Receiver, Sender};
 
@@ -167,7 +167,7 @@ impl AudioManager {
 	#[cfg(target_arch = "wasm32")]
 	pub fn new(settings: AudioManagerSettings) -> Result<Self, SetupError> {
 		let active_ids = ActiveIds::new(&settings);
-		let (quit_signal_sender, quit_signal_receiver) = flume::bounded(1);
+		let (quit_signal_sender, _) = flume::bounded(1);
 		let (command_sender, command_receiver) = flume::bounded(settings.num_commands);
 		let (unloader, resources_to_unload_receiver) = flume::bounded(RESOURCE_UNLOADER_CAPACITY);
 		Ok(Self {
@@ -271,7 +271,7 @@ impl AudioManager {
 		&mut self,
 		path: impl AsRef<std::path::Path>,
 		settings: crate::sound::SoundSettings,
-	) -> Result<SoundHandle, LoadSoundError> {
+	) -> Result<SoundHandle, error::LoadSoundError> {
 		let sound = Sound::from_file(path, settings)?;
 		Ok(self.add_sound(sound)?)
 	}
