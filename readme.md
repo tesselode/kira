@@ -1,11 +1,12 @@
 # Kira
 
-Kira is an audio library designed to help create expressive audio
-for games. It aims to fill the holes in many game engines' built-in
-audio APIs with features like custom loop points and audio event
-scripting.
+#### [Documentation](https://docs.rs/kira/) | [Web demo](https://kira-demo.surge.sh/) [(source)](https://github.com/Moxinilian/kira-web-demo)
 
-You can find a demo of some of Kira's features [here](https://github.com/tesselode/kira-demo/).
+Kira is an audio library designed to help create expressive audio
+for games. Besides the common features you'd expect from an audio
+library, it provides interfaces for scripting audio events,
+seamlessly looping complex pieces of music, smoothly changing
+parameters, and more.
 
 ## Examples
 
@@ -13,57 +14,62 @@ You can find a demo of some of Kira's features [here](https://github.com/tesselo
 
 ```rust
 let mut audio_manager = AudioManager::new(AudioManagerSettings::default())?;
-let sound_id = audio_manager.load_sound("loop.ogg", PlayableSettings::default())?;
-audio_manager.play(sound_id, InstanceSettings::default())?;
+let mut sound_handle = audio_manager.load_sound("sound.ogg", SoundSettings::default())?;
+sound_handle.play(InstanceSettings::default())?;
 ```
 
 ### Looping a song while preserving trailing sounds
 
 ```rust
-let sound_id = audio_manager.load_sound(
-	std::env::current_dir()?.join("assets/loop.wav"),
-	PlayableSettings {
-		semantic_duration: Some(Tempo(140.0).beats_to_seconds(16.0)),
-		..Default::default()
-	},
+let sound_handle = audio_manager.load_sound(
+	"loop.ogg",
+	SoundSettings::new().semantic_duration(Tempo(128.0).beats_to_seconds(8.0)),
 )?;
-let arrangement_id = audio_manager.add_arrangement(Arrangement::new_loop(sound_id, LoopingArrangementSettings::default()))?;
-audio_manager.play(arrangement_id, InstanceSettings::default())?;
+let mut arrangement_handle = audio_manager.add_arrangement(Arrangement::new_loop(
+	&sound_handle,
+	LoopArrangementSettings::default(),
+))?;
+arrangement_handle.play(InstanceSettings::default())?;
 ```
 
 ### Playing sounds and emitting events in time with a metronome
 
 ```rust
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum CustomEvent {
-	KickDrum,
+	Kick,
 }
 
-let mut sequence = Sequence::<CustomEvent>::new(SequenceSettings::default());
-sequence.start_loop();
-sequence.wait_for_interval(4.0);
-sequence.play(kick_drum_sound_id, InstanceSettings::default());
-sequence.emit(CustomEvent::KickDrum);
-let (id, mut event_receiver) = audio_manager.start_sequence(sequence, SequenceInstanceSettings::default())?;
-// start the metronome so the sequence will have a pulse to listen for
-audio_manager.start_metronome()?;
-// pop events
-while let Some(event) = event_receiver.pop() {
-	println!("{:?}", event);
-}
+let kick_sound_handle = audio_manager.load_sound("kick.wav", SoundSettings::default())?;
+let mut metronome_handle =
+	audio_manager.add_metronome(MetronomeSettings::new().tempo(Tempo(150.0)))?;
+audio_manager.start_sequence(
+	{
+		let mut sequence = Sequence::new(SequenceSettings::default());
+		sequence.start_loop();
+		sequence.play(&kick_sound_handle, InstanceSettings::default());
+		sequence.emit(CustomEvent::Kick);
+		sequence.wait(kira::Duration::Beats(1.0));
+		sequence
+	},
+	SequenceInstanceSettings::new().metronome(&metronome_handle),
+)?;
+metronome_handle.start()?;
 ```
+
+## Platform support
+
+Kira should support all of the platforms supported by cpal.
+Windows, Linux, and WASM have been tested.
 
 ## Roadmap
 
-Kira is in very early development, and is not production ready.
+Kira is in early development, and is not production ready.
 Here are some features that I'd like the library to have:
-- More observable events (like `InstanceFinished`)
-- Custom commands that sequences can wait on
 - More mixer effects (delay, reverb, EQ, etc.)
-- Nested mixer tracks and send tracks
+- Send tracks
 - C API
-- A project system for setting up assets using JSON (maybe,
-not entirely sure if the library needs this)
+- 3d audio (maybe!)
 
 ## Contributing
 
