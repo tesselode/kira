@@ -317,12 +317,6 @@ impl AudioManager {
 			.map_err(|_| RemoveArrangementError::BackendDisconnected)
 	}
 
-	/// Frees resources that are no longer in use, such as unloaded sounds
-	/// or finished sequences.
-	pub fn free_unused_resources(&mut self) {
-		for _ in self.resources_to_unload_receiver.try_iter() {}
-	}
-
 	/// Adds a metronome and returns a handle to it.
 	pub fn add_metronome(
 		&mut self,
@@ -469,6 +463,12 @@ impl AudioManager {
 		self.command_sender
 			.send(StreamCommand::RemoveStream(id).into())
 			.map_err(|_| RemoveStreamError::BackendDisconnected)
+	}
+
+	/// Frees resources that are no longer in use, such as unloaded sounds
+	/// or finished sequences.
+	pub fn free_unused_resources(&mut self) {
+		for _ in self.resources_to_unload_receiver.try_iter() {}
 	}
 }
 
