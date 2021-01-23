@@ -2,7 +2,7 @@ use uuid::Uuid;
 
 use crate::util::generate_uuid;
 
-use super::tween::Tween;
+use super::{handle::ParameterHandle, tween::Tween};
 
 /// A unique identifier for a parameter.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -20,6 +20,12 @@ impl ParameterId {
 		Self {
 			uuid: generate_uuid(),
 		}
+	}
+}
+
+impl From<&ParameterHandle> for ParameterId {
+	fn from(handle: &ParameterHandle) -> Self {
+		handle.id()
 	}
 }
 
