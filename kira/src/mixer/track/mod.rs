@@ -84,6 +84,8 @@ pub struct TrackSettings {
 	pub parent_track: TrackIndex,
 	/// The volume of the track.
 	pub volume: f64,
+	/// The maximum number of effects this track can hold.
+	pub num_effects: usize,
 }
 
 impl TrackSettings {
@@ -115,6 +117,14 @@ impl TrackSettings {
 			..self
 		}
 	}
+
+	/// Sets the maximum number of effects this track can hold.
+	pub fn num_effects(self, num_effects: usize) -> Self {
+		Self {
+			num_effects,
+			..self
+		}
+	}
 }
 
 impl Default for TrackSettings {
@@ -123,6 +133,7 @@ impl Default for TrackSettings {
 			id: SubTrackId::new(),
 			parent_track: TrackIndex::Main,
 			volume: 1.0,
+			num_effects: 10,
 		}
 	}
 }
@@ -142,7 +153,7 @@ impl Track {
 			id: settings.id,
 			parent_track: settings.parent_track,
 			volume: settings.volume,
-			effect_slots: IndexMap::new(),
+			effect_slots: IndexMap::with_capacity(settings.num_effects),
 			input: Frame::from_mono(0.0),
 		}
 	}
