@@ -403,7 +403,11 @@ impl AudioManager {
 			return Err(AddTrackError::NoTrackWithIndex(settings.parent_track));
 		}
 		self.active_ids.add_track_id(settings.id)?;
-		let handle = TrackHandle::new(TrackIndex::Sub(settings.id), self.command_sender.clone());
+		let handle = TrackHandle::new(
+			TrackIndex::Sub(settings.id),
+			&settings,
+			self.command_sender.clone(),
+		);
 		self.command_sender
 			.send(MixerCommand::AddSubTrack(Track::new(settings)).into())
 			.map_err(|_| AddTrackError::BackendDisconnected)?;
