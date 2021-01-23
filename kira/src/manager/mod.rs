@@ -98,6 +98,7 @@ The audio manager is responsible for all communication between the gameplay thre
 and the audio thread.
 */
 pub struct AudioManager {
+	// TODO: don't compile quit_signal_sender on wasm
 	quit_signal_sender: Sender<bool>,
 	command_sender: Sender<Command>,
 	resources_to_unload_receiver: Receiver<Resource>,
