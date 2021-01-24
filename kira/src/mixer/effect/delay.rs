@@ -88,11 +88,6 @@ impl Effect for Delay {
 		self.delay_time.update(parameters);
 		self.feedback.update(parameters);
 
-		// write input audio to the buffer
-		self.write_position += 1;
-		self.write_position %= self.buffer.len();
-		self.buffer[self.write_position] = input;
-
 		// get the read position (in samples)
 		let mut read_position = self.write_position as f32 - (self.delay_time.value() / dt) as f32;
 		while read_position < 0.0 {
@@ -109,12 +104,19 @@ impl Effect for Delay {
 		let next_sample_index = (current_sample_index + 1) % self.buffer.len();
 		let next_sample_index_2 = (current_sample_index + 2) % self.buffer.len();
 		let fraction = read_position % 1.0;
-		util::interpolate_frame(
+		let output = util::interpolate_frame(
 			self.buffer[previous_sample_index],
 			self.buffer[current_sample_index],
 			self.buffer[next_sample_index],
 			self.buffer[next_sample_index_2],
 			fraction,
-		)
+		);
+
+		// write input audio to the buffer
+		self.write_position += 1;
+		self.write_position %= self.buffer.len();
+		self.buffer[self.write_position] = input + output * self.feedback.value() as f32;
+
+		output
 	}
 }
