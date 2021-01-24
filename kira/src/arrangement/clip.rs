@@ -9,6 +9,10 @@ use crate::{
 
 /// A segment of a sound in an arrangement.
 #[derive(Debug, Copy, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize)
+)]
 pub struct SoundClip {
 	/// The ID of the sound.
 	pub sound_id: SoundId,

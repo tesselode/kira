@@ -145,6 +145,10 @@ use crate::{
 
 /// An arrangement of sound clips to play at specific times.
 #[derive(Debug, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize)
+)]
 pub struct Arrangement {
 	id: ArrangementId,
 	clips: Vec<SoundClip>,

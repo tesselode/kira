@@ -1,3 +1,6 @@
+# v0.4.1 - January 23, 2021
+Added serde support for `Arrangement`s and `SoundClip`s
+
 # v0.4.0 - January 23, 2021
 
 ## `wasm32` support
