@@ -1,5 +1,6 @@
 //! Modifies audio in real time.
 
+pub mod delay;
 pub mod filter;
 pub mod handle;
 
