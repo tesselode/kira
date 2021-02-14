@@ -1,6 +1,9 @@
 use crate::{parameter::Parameters, util, CachedValue, Frame, Value};
 
-use super::Effect;
+use super::{
+	filter::{Filter, FilterSettings},
+	Effect,
+};
 
 /// Settings for a [`Delay`] effect.
 #[derive(Debug, Copy, Clone)]
@@ -17,6 +20,9 @@ pub struct DelaySettings {
 	/// The number of frames of audio the delay will store.
 	/// This affects the maximum delay time.
 	buffer_length: usize,
+	/// Whether a filter should be added to the feedback loop,
+	/// and if so, the settings to use for the filter.
+	filter_settings: Option<FilterSettings>,
 }
 
 impl DelaySettings {
@@ -48,6 +54,15 @@ impl DelaySettings {
 			..self
 		}
 	}
+
+	/// Sets whether a filter should be added to the feedback loop,
+	/// and if so, the settings to use for the filter.
+	pub fn filter_settings(self, filter_settings: impl Into<Option<FilterSettings>>) -> Self {
+		Self {
+			filter_settings: filter_settings.into(),
+			..self
+		}
+	}
 }
 
 impl Default for DelaySettings {
@@ -56,6 +71,7 @@ impl Default for DelaySettings {
 			delay_time: Value::Fixed(0.5),
 			feedback: Value::Fixed(0.5),
 			buffer_length: 48000 * 10,
+			filter_settings: None,
 		}
 	}
 }
@@ -68,6 +84,7 @@ pub struct Delay {
 	feedback: CachedValue<f64>,
 	buffer: Vec<Frame>,
 	write_position: usize,
+	filter: Option<Filter>,
 }
 
 impl Delay {
@@ -78,6 +95,9 @@ impl Delay {
 			feedback: CachedValue::new(settings.feedback, 0.5),
 			buffer: vec![Frame::from_mono(0.0); settings.buffer_length],
 			write_position: 0,
+			filter: settings
+				.filter_settings
+				.map(|settings| Filter::new(settings)),
 		}
 	}
 }
@@ -115,7 +135,11 @@ impl Effect for Delay {
 		// write input audio to the buffer
 		self.write_position += 1;
 		self.write_position %= self.buffer.len();
-		self.buffer[self.write_position] = input + output * self.feedback.value() as f32;
+		let filtered_output = match &mut self.filter {
+			Some(filter) => filter.process(dt, output, parameters),
+			None => output,
+		};
+		self.buffer[self.write_position] = input + filtered_output * self.feedback.value() as f32;
 
 		output
 	}
