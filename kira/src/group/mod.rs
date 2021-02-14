@@ -18,8 +18,6 @@ use handle::GroupHandle;
 pub use set::GroupSet;
 use uuid::Uuid;
 
-use crate::util::generate_uuid;
-
 /// A unique identifier for a group.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(
@@ -34,7 +32,7 @@ pub struct GroupId {
 impl GroupId {
 	pub(crate) fn new() -> Self {
 		Self {
-			uuid: generate_uuid(),
+			uuid: Uuid::new_v4(),
 		}
 	}
 }

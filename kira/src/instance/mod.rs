@@ -72,7 +72,6 @@ use crate::{
 	parameter::{Parameter, Parameters},
 	playable::{PlayableId, Playables},
 	sequence::SequenceInstanceId,
-	util::generate_uuid,
 	value::CachedValue,
 	value::Value,
 };
@@ -92,7 +91,7 @@ pub struct InstanceId {
 impl InstanceId {
 	pub(crate) fn new() -> Self {
 		Self {
-			uuid: generate_uuid(),
+			uuid: Uuid::new_v4(),
 		}
 	}
 }

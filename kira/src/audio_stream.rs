@@ -12,7 +12,7 @@ use std::fmt::Debug;
 
 use uuid::Uuid;
 
-use crate::{util::generate_uuid, Frame};
+use crate::Frame;
 
 /// Produces a constant flow of audio data in real time.
 pub trait AudioStream: Debug + Send + 'static {
@@ -40,7 +40,7 @@ pub struct AudioStreamId {
 impl AudioStreamId {
 	pub(crate) fn new() -> Self {
 		Self {
-			uuid: generate_uuid(),
+			uuid: Uuid::new_v4(),
 		}
 	}
 }

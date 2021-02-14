@@ -10,7 +10,7 @@ mod settings;
 use flume::Sender;
 use uuid::Uuid;
 
-use crate::{parameter::Parameters, tempo::Tempo, util::generate_uuid, value::CachedValue, Value};
+use crate::{parameter::Parameters, tempo::Tempo, value::CachedValue, Value};
 use handle::MetronomeHandle;
 pub(crate) use metronomes::Metronomes;
 pub use settings::MetronomeSettings;
@@ -29,7 +29,7 @@ pub struct MetronomeId {
 impl MetronomeId {
 	pub(crate) fn new() -> Self {
 		Self {
-			uuid: generate_uuid(),
+			uuid: Uuid::new_v4(),
 		}
 	}
 }

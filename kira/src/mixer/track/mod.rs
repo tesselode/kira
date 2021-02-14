@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use indexmap::IndexMap;
 
-use crate::{frame::Frame, parameter::Parameters, util::generate_uuid};
+use crate::{frame::Frame, parameter::Parameters};
 
 use super::{
 	effect::{Effect, EffectId, EffectSettings},
@@ -26,7 +26,7 @@ pub struct SubTrackId {
 impl SubTrackId {
 	pub(crate) fn new() -> Self {
 		Self {
-			uuid: generate_uuid(),
+			uuid: Uuid::new_v4(),
 		}
 	}
 }

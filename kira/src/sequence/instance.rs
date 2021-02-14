@@ -2,13 +2,12 @@ use std::sync::{atomic::Ordering, Arc};
 
 use atomic::Atomic;
 use flume::Sender;
-use nanorand::{tls_rng, RNG};
+use rand::{thread_rng, Rng};
 use uuid::Uuid;
 
 use crate::{
 	group::{groups::Groups, GroupId},
 	metronome::{MetronomeId, Metronomes},
-	util::generate_uuid,
 	Tempo,
 };
 
@@ -28,7 +27,7 @@ pub struct SequenceInstanceId {
 impl SequenceInstanceId {
 	pub(crate) fn new() -> Self {
 		Self {
-			uuid: generate_uuid(),
+			uuid: Uuid::new_v4(),
 		}
 	}
 }
@@ -176,8 +175,8 @@ impl SequenceInstance {
 								self.start_step(self.position + 1);
 							}
 							SequenceStep::PlayRandom(choices, settings) => {
-								let choice_index = tls_rng().generate_range(0, choices.len());
 								if !self.muted {
+									let choice_index = thread_rng().gen_range(0..choices.len());
 									output_command_queue.push(SequenceOutputCommand::PlaySound(
 										choices[choice_index],
 										*settings,

@@ -9,7 +9,7 @@ use std::fmt::Debug;
 
 use uuid::Uuid;
 
-use crate::{frame::Frame, parameter::Parameters, util::generate_uuid};
+use crate::{frame::Frame, parameter::Parameters};
 
 /// A unique identifier for an effect.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -25,7 +25,7 @@ pub struct EffectId {
 impl EffectId {
 	pub(crate) fn new() -> Self {
 		Self {
-			uuid: generate_uuid(),
+			uuid: Uuid::new_v4(),
 		}
 	}
 }

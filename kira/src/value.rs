@@ -1,11 +1,8 @@
 use std::ops::Range;
 
-use nanorand::{tls_rng, RNG};
+use rand::{thread_rng, Rng};
 
-use crate::{
-	parameter::{handle::ParameterHandle, Mapping, ParameterId, Parameters},
-	util::lerp,
-};
+use crate::parameter::{handle::ParameterHandle, Mapping, ParameterId, Parameters};
 
 /// A value that something can be set to.
 #[derive(Debug, Copy, Clone)]
@@ -57,8 +54,9 @@ pub struct CachedValue<T: From<f64> + Into<f64> + Copy> {
 
 impl<T: From<f64> + Into<f64> + Copy> CachedValue<T> {
 	fn pick_random(lower: T, upper: T) -> T {
-		let fraction = f64::from(tls_rng().generate::<u32>()) / f64::from(std::u32::MAX);
-		lerp(lower.into(), upper.into(), fraction).into()
+		let lower: f64 = lower.into();
+		let upper: f64 = upper.into();
+		thread_rng().gen_range(lower..upper).into()
 	}
 
 	/// Creates a `CachedValue` with an initial value setting

@@ -1,7 +1,5 @@
 use uuid::Uuid;
 
-use crate::util::generate_uuid;
-
 use super::{handle::ParameterHandle, tween::Tween};
 
 /// A unique identifier for a parameter.
@@ -18,7 +16,7 @@ pub struct ParameterId {
 impl ParameterId {
 	pub(crate) fn new() -> Self {
 		Self {
-			uuid: generate_uuid(),
+			uuid: Uuid::new_v4(),
 		}
 	}
 }

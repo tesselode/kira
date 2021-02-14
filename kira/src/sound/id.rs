@@ -2,8 +2,6 @@ use std::hash::Hash;
 
 use uuid::Uuid;
 
-use crate::util::generate_uuid;
-
 use super::handle::SoundHandle;
 
 /// A unique identifier for a [`Sound`](crate::sound::Sound).
@@ -20,7 +18,7 @@ pub struct SoundId {
 impl SoundId {
 	pub(crate) fn new() -> Self {
 		Self {
-			uuid: generate_uuid(),
+			uuid: Uuid::new_v4(),
 		}
 	}
 }
