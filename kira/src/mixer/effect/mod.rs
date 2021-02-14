@@ -1,5 +1,6 @@
 //! Modifies audio in real time.
 
+pub mod delay;
 pub mod filter;
 pub mod handle;
 
@@ -9,7 +10,7 @@ use std::fmt::Debug;
 
 use uuid::Uuid;
 
-use crate::{frame::Frame, parameter::Parameters};
+use crate::{frame::Frame, parameter::Parameters, Value};
 
 /// A unique identifier for an effect.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -48,6 +49,10 @@ pub struct EffectSettings {
 	pub id: EffectId,
 	/// Whether the effect is initially enabled.
 	pub enabled: bool,
+	/// The balance between dry (unaffected) signal and wet
+	/// (affected) signal to output. 0.0 is fully dry,
+	/// 1.0 is fully wet.
+	pub mix: Value<f64>,
 }
 
 impl EffectSettings {
@@ -68,6 +73,16 @@ impl EffectSettings {
 	pub fn enabled(self, enabled: bool) -> Self {
 		Self { enabled, ..self }
 	}
+
+	/// Sets the balance between dry (unaffected) signal and wet
+	/// (affected) signal to output. 0.0 is fully dry,
+	/// 1.0 is fully wet.
+	pub fn mix(self, mix: impl Into<Value<f64>>) -> Self {
+		Self {
+			mix: mix.into(),
+			..self
+		}
+	}
 }
 
 impl Default for EffectSettings {
@@ -75,6 +90,7 @@ impl Default for EffectSettings {
 		Self {
 			id: EffectId::new(),
 			enabled: true,
+			mix: Value::Fixed(1.0),
 		}
 	}
 }
