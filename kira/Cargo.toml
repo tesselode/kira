@@ -23,6 +23,7 @@ default = ["mp3", "ogg", "flac", "wav"]
 
 [dependencies]
 atomic = "0.5.0"
+basedrop = "0.1.0"
 claxon = { version = "0.4.3", optional = true }
 cpal = { version = "0.13.1", features = ["wasm-bindgen"] }
 flume = { version = "0.10.0", default-features = false }

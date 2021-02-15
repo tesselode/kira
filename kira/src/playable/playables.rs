@@ -1,10 +1,9 @@
-use flume::Sender;
+use basedrop::Owned;
 use indexmap::IndexMap;
 
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
 	command::ResourceCommand,
-	resource::Resource,
 	sound::{Sound, SoundId},
 	Frame,
 };
@@ -12,8 +11,8 @@ use crate::{
 use super::{Playable, PlayableId, PlayableMut};
 
 pub(crate) struct Playables {
-	sounds: IndexMap<SoundId, Sound>,
-	arrangements: IndexMap<ArrangementId, Arrangement>,
+	sounds: IndexMap<SoundId, Owned<Sound>>,
+	arrangements: IndexMap<ArrangementId, Owned<Arrangement>>,
 }
 
 impl Playables {
@@ -24,19 +23,19 @@ impl Playables {
 		}
 	}
 
-	pub fn sound(&self, id: SoundId) -> Option<&Sound> {
+	pub fn sound(&self, id: SoundId) -> Option<&Owned<Sound>> {
 		self.sounds.get(&id)
 	}
 
-	pub fn sound_mut(&mut self, id: SoundId) -> Option<&mut Sound> {
+	pub fn sound_mut(&mut self, id: SoundId) -> Option<&mut Owned<Sound>> {
 		self.sounds.get_mut(&id)
 	}
 
-	pub fn arrangement(&self, id: ArrangementId) -> Option<&Arrangement> {
+	pub fn arrangement(&self, id: ArrangementId) -> Option<&Owned<Arrangement>> {
 		self.arrangements.get(&id)
 	}
 
-	pub fn arrangement_mut(&mut self, id: ArrangementId) -> Option<&mut Arrangement> {
+	pub fn arrangement_mut(&mut self, id: ArrangementId) -> Option<&mut Owned<Arrangement>> {
 		self.arrangements.get_mut(&id)
 	}
 
@@ -65,27 +64,19 @@ impl Playables {
 		}
 	}
 
-	pub fn run_command(&mut self, command: ResourceCommand, unloader: &mut Sender<Resource>) {
+	pub fn run_command(&mut self, command: ResourceCommand) {
 		match command {
 			ResourceCommand::AddSound(sound) => {
-				if let Some(sound) = self.sounds.insert(sound.id(), sound) {
-					unloader.try_send(Resource::Sound(sound)).ok();
-				}
+				self.sounds.insert(sound.id(), sound);
 			}
 			ResourceCommand::RemoveSound(id) => {
-				if let Some(sound) = self.sounds.remove(&id) {
-					unloader.try_send(Resource::Sound(sound)).ok();
-				}
+				self.sounds.remove(&id);
 			}
 			ResourceCommand::AddArrangement(arrangement) => {
-				if let Some(arrangement) = self.arrangements.insert(arrangement.id(), arrangement) {
-					unloader.try_send(Resource::Arrangement(arrangement)).ok();
-				}
+				self.arrangements.insert(arrangement.id(), arrangement);
 			}
 			ResourceCommand::RemoveArrangement(id) => {
-				if let Some(arrangement) = self.arrangements.remove(&id) {
-					unloader.try_send(Resource::Arrangement(arrangement)).ok();
-				}
+				self.arrangements.remove(&id);
 			}
 		}
 	}

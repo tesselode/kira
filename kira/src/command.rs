@@ -1,3 +1,5 @@
+use basedrop::Owned;
+
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
 	audio_stream::{AudioStream, AudioStreamId},
@@ -18,11 +20,11 @@ use crate::{
 	value::Value,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub(crate) enum ResourceCommand {
-	AddSound(Sound),
+	AddSound(Owned<Sound>),
 	RemoveSound(SoundId),
-	AddArrangement(Arrangement),
+	AddArrangement(Owned<Arrangement>),
 	RemoveArrangement(ArrangementId),
 }
 
@@ -48,9 +50,9 @@ pub(crate) enum InstanceCommand {
 	StopGroup(GroupId, StopInstanceSettings),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub(crate) enum MetronomeCommand {
-	AddMetronome(MetronomeId, Metronome),
+	AddMetronome(MetronomeId, Owned<Metronome>),
 	RemoveMetronome(MetronomeId),
 	SetMetronomeTempo(MetronomeId, Value<Tempo>),
 	StartMetronome(MetronomeId),
@@ -59,7 +61,7 @@ pub(crate) enum MetronomeCommand {
 }
 
 pub(crate) enum SequenceCommand {
-	StartSequenceInstance(SequenceInstanceId, SequenceInstance),
+	StartSequenceInstance(SequenceInstanceId, Owned<SequenceInstance>),
 	MuteSequenceInstance(SequenceInstanceId),
 	UnmuteSequenceInstance(SequenceInstanceId),
 	PauseSequenceInstance(SequenceInstanceId),
@@ -70,11 +72,10 @@ pub(crate) enum SequenceCommand {
 	StopGroup(GroupId),
 }
 
-#[derive(Debug)]
 pub(crate) enum MixerCommand {
-	AddSubTrack(Track),
+	AddSubTrack(Owned<Track>),
 	RemoveSubTrack(SubTrackId),
-	AddEffect(TrackIndex, Box<dyn Effect>, EffectSettings),
+	AddEffect(TrackIndex, Owned<Box<dyn Effect>>, EffectSettings),
 	SetEffectEnabled(TrackIndex, EffectId, bool),
 	RemoveEffect(TrackIndex, EffectId),
 }
@@ -86,15 +87,14 @@ pub(crate) enum ParameterCommand {
 	SetParameter(ParameterId, f64, Option<Tween>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub(crate) enum GroupCommand {
-	AddGroup(GroupId, Group),
+	AddGroup(GroupId, Owned<Group>),
 	RemoveGroup(GroupId),
 }
 
-#[derive(Debug)]
 pub(crate) enum StreamCommand {
-	AddStream(AudioStreamId, TrackIndex, Box<dyn AudioStream>),
+	AddStream(AudioStreamId, TrackIndex, Owned<Box<dyn AudioStream>>),
 	RemoveStream(AudioStreamId),
 }
 

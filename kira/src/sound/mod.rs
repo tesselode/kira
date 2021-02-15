@@ -12,7 +12,7 @@ use crate::{
 	frame::Frame,
 	group::{groups::Groups, GroupId, GroupSet},
 	mixer::TrackIndex,
-	util::{self, interpolate_frame},
+	util,
 };
 
 use std::fmt::{Debug, Formatter};

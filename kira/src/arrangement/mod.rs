@@ -129,6 +129,7 @@ pub mod handle;
 mod id;
 mod settings;
 
+use basedrop::Owned;
 pub use clip::SoundClip;
 use handle::ArrangementHandle;
 pub use id::ArrangementId;
@@ -283,7 +284,7 @@ impl Arrangement {
 	pub(crate) fn get_frame_at_position(
 		&self,
 		position: f64,
-		sounds: &IndexMap<SoundId, Sound>,
+		sounds: &IndexMap<SoundId, Owned<Sound>>,
 	) -> Frame {
 		let mut frame = Frame::from_mono(0.0);
 		for clip in &self.clips {

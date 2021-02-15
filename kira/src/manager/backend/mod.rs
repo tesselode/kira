@@ -8,9 +8,9 @@ use self::mixer::Mixer;
 use super::AudioManagerSettings;
 use crate::{
 	command::Command, frame::Frame, group::groups::Groups, metronome::Metronomes,
-	parameter::Parameters, playable::Playables, resource::Resource,
+	parameter::Parameters, playable::Playables,
 };
-use flume::{Receiver, Sender};
+use flume::Receiver;
 use instances::Instances;
 use sequences::Sequences;
 use streams::Streams;
@@ -21,7 +21,6 @@ pub struct Backend {
 	playables: Playables,
 	command_queue: Vec<Command>,
 	command_receiver: Receiver<Command>,
-	unloader: Sender<Resource>,
 	metronomes: Metronomes,
 	parameters: Parameters,
 	instances: Instances,
@@ -36,14 +35,12 @@ impl Backend {
 		sample_rate: u32,
 		settings: AudioManagerSettings,
 		command_receiver: Receiver<Command>,
-		unloader: Sender<Resource>,
 	) -> Self {
 		Self {
 			dt: 1.0 / sample_rate as f64,
 			playables: Playables::new(settings.num_sounds, settings.num_arrangements),
 			command_queue: Vec::with_capacity(settings.num_commands),
 			command_receiver,
-			unloader,
 			parameters: Parameters::new(settings.num_parameters),
 			metronomes: Metronomes::new(settings.num_metronomes),
 			instances: Instances::new(settings.num_instances),
@@ -59,42 +56,39 @@ impl Backend {
 		for command in self.command_queue.drain(..) {
 			match command {
 				Command::Resource(command) => {
-					self.playables.run_command(command, &mut self.unloader);
+					self.playables.run_command(command);
 				}
 				Command::Metronome(command) => {
-					self.metronomes.run_command(command, &mut self.unloader);
+					self.metronomes.run_command(command);
 				}
 				Command::Instance(command) => {
 					self.instances
 						.run_command(command, &mut self.playables, &self.groups);
 				}
 				Command::Sequence(command) => {
-					self.sequences
-						.run_command(command, &self.groups, &mut self.unloader);
+					self.sequences.run_command(command, &self.groups);
 				}
 				Command::Mixer(command) => {
-					self.mixer.run_command(command, &mut self.unloader);
+					self.mixer.run_command(command);
 				}
 				Command::Parameter(command) => {
 					self.parameters.run_command(command);
 				}
 				Command::Group(command) => {
-					self.groups.run_command(command, &mut self.unloader);
+					self.groups.run_command(command);
 				}
 				Command::Stream(command) => {
-					self.streams.run_command(command, &mut self.unloader);
+					self.streams.run_command(command);
 				}
 			}
 		}
 	}
 
 	fn update_sequences(&mut self) {
-		for command in self.sequences.update(
-			self.dt,
-			&self.playables,
-			&self.metronomes,
-			&mut self.unloader,
-		) {
+		for command in self
+			.sequences
+			.update(self.dt, &self.playables, &self.metronomes)
+		{
 			self.command_queue.push(command.into());
 		}
 	}

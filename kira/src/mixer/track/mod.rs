@@ -1,5 +1,6 @@
 pub mod handle;
 
+use basedrop::Owned;
 use handle::TrackHandle;
 use uuid::Uuid;
 
@@ -138,7 +139,6 @@ impl Default for TrackSettings {
 	}
 }
 
-#[derive(Debug)]
 pub(crate) struct Track {
 	id: SubTrackId,
 	parent_track: TrackIndex,
@@ -166,7 +166,7 @@ impl Track {
 		self.parent_track
 	}
 
-	pub fn add_effect(&mut self, effect: Box<dyn Effect>, settings: EffectSettings) {
+	pub fn add_effect(&mut self, effect: Owned<Box<dyn Effect>>, settings: EffectSettings) {
 		let id = settings.id;
 		let effect_slot = EffectSlot::new(effect, settings);
 		self.effect_slots.insert(id, effect_slot);
@@ -176,8 +176,8 @@ impl Track {
 		self.effect_slots.get_mut(&id)
 	}
 
-	pub fn remove_effect(&mut self, id: EffectId) -> Option<EffectSlot> {
-		self.effect_slots.remove(&id)
+	pub fn remove_effect(&mut self, id: EffectId) {
+		self.effect_slots.remove(&id);
 	}
 
 	pub fn add_input(&mut self, input: Frame) {

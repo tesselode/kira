@@ -1,12 +1,12 @@
-use flume::Sender;
+use basedrop::Owned;
 use indexmap::IndexMap;
 
-use crate::{command::GroupCommand, resource::Resource};
+use crate::command::GroupCommand;
 
 use super::{Group, GroupId};
 
 pub(crate) struct Groups {
-	groups: IndexMap<GroupId, Group>,
+	groups: IndexMap<GroupId, Owned<Group>>,
 }
 
 impl Groups {
@@ -16,21 +16,17 @@ impl Groups {
 		}
 	}
 
-	pub fn get(&self, id: GroupId) -> Option<&Group> {
+	pub fn get(&self, id: GroupId) -> Option<&Owned<Group>> {
 		self.groups.get(&id)
 	}
 
-	pub fn run_command(&mut self, command: GroupCommand, unloader: &mut Sender<Resource>) {
+	pub fn run_command(&mut self, command: GroupCommand) {
 		match command {
 			GroupCommand::AddGroup(id, group) => {
-				if let Some(group) = self.groups.insert(id, group) {
-					unloader.try_send(Resource::Group(group)).ok();
-				}
+				self.groups.insert(id, group);
 			}
 			GroupCommand::RemoveGroup(id) => {
-				if let Some(group) = self.groups.remove(&id) {
-					unloader.try_send(Resource::Group(group)).ok();
-				}
+				self.groups.remove(&id);
 			}
 		}
 	}

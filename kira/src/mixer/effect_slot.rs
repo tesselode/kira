@@ -1,16 +1,17 @@
+use basedrop::Owned;
+
 use crate::{frame::Frame, parameter::Parameters, CachedValue};
 
 use super::effect::{Effect, EffectSettings};
 
-#[derive(Debug)]
 pub(crate) struct EffectSlot {
-	effect: Box<dyn Effect>,
+	effect: Owned<Box<dyn Effect>>,
 	pub enabled: bool,
 	pub mix: CachedValue<f64>,
 }
 
 impl EffectSlot {
-	pub fn new(effect: Box<dyn Effect>, settings: EffectSettings) -> Self {
+	pub fn new(effect: Owned<Box<dyn Effect>>, settings: EffectSettings) -> Self {
 		Self {
 			effect,
 			enabled: settings.enabled,

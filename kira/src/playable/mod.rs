@@ -2,6 +2,7 @@
 
 mod playables;
 
+use basedrop::Owned;
 pub(crate) use playables::Playables;
 
 use crate::{
@@ -48,10 +49,10 @@ impl From<&ArrangementHandle> for PlayableId {
 	}
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub(crate) enum Playable<'a> {
-	Sound(&'a Sound),
-	Arrangement(&'a Arrangement),
+	Sound(&'a Owned<Sound>),
+	Arrangement(&'a Owned<Arrangement>),
 }
 
 impl<'a> Playable<'a> {
@@ -84,10 +85,9 @@ impl<'a> Playable<'a> {
 	}
 }
 
-#[derive(Debug)]
 pub(crate) enum PlayableMut<'a> {
-	Sound(&'a mut Sound),
-	Arrangement(&'a mut Arrangement),
+	Sound(&'a mut Owned<Sound>),
+	Arrangement(&'a mut Owned<Arrangement>),
 }
 
 impl<'a> PlayableMut<'a> {

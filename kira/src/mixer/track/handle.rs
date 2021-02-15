@@ -1,5 +1,6 @@
 //! An interface for controlling mixer tracks.
 
+use basedrop::Owned;
 use flume::Sender;
 use indexmap::IndexSet;
 use thiserror::Error;
@@ -28,12 +29,12 @@ pub enum TrackHandleError {
 	BackendDisconnected,
 }
 
-#[derive(Debug)]
 /// Allows you to control a mixer sound.
 pub struct TrackHandle {
 	index: TrackIndex,
 	command_sender: Sender<Command>,
 	active_effect_ids: IndexSet<EffectId>,
+	resource_collector_handle: basedrop::Handle,
 }
 
 impl TrackHandle {
@@ -41,11 +42,13 @@ impl TrackHandle {
 		index: TrackIndex,
 		settings: &TrackSettings,
 		command_sender: Sender<Command>,
+		resource_collector_handle: basedrop::Handle,
 	) -> Self {
 		Self {
 			index,
 			command_sender,
 			active_effect_ids: IndexSet::with_capacity(settings.num_effects),
+			resource_collector_handle,
 		}
 	}
 
@@ -66,7 +69,14 @@ impl TrackHandle {
 		let id = settings.id;
 		let handle = EffectHandle::new(self.index, &settings, self.command_sender.clone());
 		self.command_sender
-			.send(MixerCommand::AddEffect(self.index, Box::new(effect), settings).into())
+			.send(
+				MixerCommand::AddEffect(
+					self.index,
+					Owned::new(&self.resource_collector_handle, Box::new(effect)),
+					settings,
+				)
+				.into(),
+			)
 			.map_err(|_| TrackHandleError::BackendDisconnected)?;
 		self.active_effect_ids.insert(id);
 		Ok(handle)

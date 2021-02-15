@@ -4,13 +4,18 @@ mod active_ids;
 mod backend;
 pub mod error;
 
-use std::hash::Hash;
+use std::{
+	hash::Hash,
+	io::{stderr, Write},
+	time::Instant,
+};
 
 use active_ids::ActiveIds;
 #[cfg(not(feature = "benchmarking"))]
 use backend::Backend;
 #[cfg(feature = "benchmarking")]
 pub use backend::Backend;
+use basedrop::{Collector, Owned};
 use error::{
 	AddArrangementError, AddGroupError, AddMetronomeError, AddParameterError, AddSoundError,
 	AddStreamError, AddTrackError, RemoveArrangementError, RemoveGroupError, RemoveMetronomeError,
@@ -30,7 +35,6 @@ use crate::{
 	metronome::{handle::MetronomeHandle, Metronome, MetronomeId, MetronomeSettings},
 	mixer::{handle::TrackHandle, SubTrackId, Track, TrackIndex, TrackSettings},
 	parameter::{handle::ParameterHandle, ParameterId, ParameterSettings},
-	resource::Resource,
 	sequence::{handle::SequenceInstanceHandle, Sequence, SequenceInstanceSettings},
 	sound::{handle::SoundHandle, Sound, SoundId},
 };
@@ -39,7 +43,7 @@ use cpal::{
 	Stream,
 };
 
-const RESOURCE_UNLOADER_CAPACITY: usize = 10;
+const DROP_CLEANUP_TIMEOUT_MILLIS: u64 = 1000;
 
 /// Settings for an [`AudioManager`](crate::manager::AudioManager).
 #[derive(Debug, Clone)]
@@ -101,7 +105,7 @@ pub struct AudioManager {
 	// TODO: don't compile quit_signal_sender on wasm
 	quit_signal_sender: Sender<bool>,
 	command_sender: Sender<Command>,
-	resources_to_unload_receiver: Receiver<Resource>,
+	resource_collector: Option<Collector>,
 	active_ids: ActiveIds,
 
 	// on wasm, holds the stream (as it has been created on the main thread)
@@ -119,7 +123,7 @@ impl AudioManager {
 		let active_ids = ActiveIds::new(&settings);
 		let (quit_signal_sender, quit_signal_receiver) = flume::bounded(1);
 		let (command_sender, command_receiver) = flume::bounded(settings.num_commands);
-		let (unloader, resources_to_unload_receiver) = flume::bounded(RESOURCE_UNLOADER_CAPACITY);
+		let resource_collector = Collector::new();
 
 		const WRAPPER_THREAD_SLEEP_DURATION: f64 = 1.0 / 60.0;
 
@@ -127,7 +131,7 @@ impl AudioManager {
 		// set up a cpal stream on a new thread. we could do this on the main thread,
 		// but that causes issues with LÖVE.
 		std::thread::spawn(move || {
-			match Self::setup_stream(settings, command_receiver, unloader) {
+			match Self::setup_stream(settings, command_receiver) {
 				Ok(_stream) => {
 					setup_result_sender.try_send(Ok(())).unwrap();
 					// wait for a quit message before ending the thread and dropping
@@ -159,7 +163,7 @@ impl AudioManager {
 			quit_signal_sender,
 			command_sender,
 			active_ids,
-			resources_to_unload_receiver,
+			resource_collector: Some(resource_collector),
 		})
 	}
 
@@ -169,20 +173,20 @@ impl AudioManager {
 		let active_ids = ActiveIds::new(&settings);
 		let (quit_signal_sender, _) = flume::bounded(1);
 		let (command_sender, command_receiver) = flume::bounded(settings.num_commands);
-		let (unloader, resources_to_unload_receiver) = flume::bounded(RESOURCE_UNLOADER_CAPACITY);
+		let resource_collector = Collector::new();
+		let _stream = Self::setup_stream(settings, command_receiver, resource_collector.handle())?;
 		Ok(Self {
 			quit_signal_sender,
 			command_sender,
 			active_ids,
-			resources_to_unload_receiver,
-			_stream: Self::setup_stream(settings, command_receiver, unloader)?,
+			resource_collector: Some(resource_collector),
+			_stream,
 		})
 	}
 
 	fn setup_stream(
 		settings: AudioManagerSettings,
 		command_receiver: Receiver<Command>,
-		unloader: Sender<Resource>,
 	) -> Result<Stream, SetupError> {
 		let host = cpal::default_host();
 		let device = host
@@ -191,7 +195,7 @@ impl AudioManager {
 		let config = device.default_output_config()?.config();
 		let sample_rate = config.sample_rate.0;
 		let channels = config.channels;
-		let mut backend = Backend::new(sample_rate, settings, command_receiver, unloader);
+		let mut backend = Backend::new(sample_rate, settings, command_receiver);
 		let stream = device.build_output_stream(
 			&config,
 			move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
@@ -221,14 +225,14 @@ impl AudioManager {
 		const SAMPLE_RATE: u32 = 48000;
 		let (quit_signal_sender, _) = flume::bounded(1);
 		let (command_sender, command_receiver) = flume::bounded(settings.num_commands);
-		let (unloader, resources_to_unload_receiver) = flume::bounded(RESOURCE_UNLOADER_CAPACITY);
+		let resource_collector = Collector::new();
 		let audio_manager = Self {
 			quit_signal_sender,
 			command_sender,
 			active_ids: ActiveIds::new(&settings),
-			resources_to_unload_receiver,
+			resource_collector: Some(resource_collector),
 		};
-		let backend = Backend::new(SAMPLE_RATE, settings, command_receiver, unloader);
+		let backend = Backend::new(SAMPLE_RATE, settings, command_receiver);
 		(audio_manager, backend)
 	}
 
@@ -246,6 +250,14 @@ impl AudioManager {
 			.copied()
 	}
 
+	fn resource_collector(&self) -> &Collector {
+		self.resource_collector.as_ref().unwrap()
+	}
+
+	fn resource_collector_mut(&mut self) -> &mut Collector {
+		self.resource_collector.as_mut().unwrap()
+	}
+
 	/// Sends a sound to the audio thread and returns a handle to the sound.
 	pub fn add_sound(&mut self, sound: Sound) -> Result<SoundHandle, AddSoundError> {
 		if !self.does_track_exist(sound.default_track()) {
@@ -256,6 +268,7 @@ impl AudioManager {
 		}
 		self.active_ids.add_sound_id(sound.id())?;
 		let handle = SoundHandle::new(&sound, self.command_sender.clone());
+		let sound = Owned::new(&self.resource_collector().handle(), sound);
 		self.command_sender
 			.send(ResourceCommand::AddSound(sound).into())
 			.map_err(|_| AddSoundError::BackendDisconnected)?;
@@ -300,6 +313,7 @@ impl AudioManager {
 		}
 		self.active_ids.add_arrangement_id(arrangement.id())?;
 		let handle = ArrangementHandle::new(&arrangement, self.command_sender.clone());
+		let arrangement = Owned::new(&self.resource_collector().handle(), arrangement);
 		self.command_sender
 			.send(ResourceCommand::AddArrangement(arrangement).into())
 			.map_err(|_| AddArrangementError::BackendDisconnected)?;
@@ -326,8 +340,12 @@ impl AudioManager {
 		let id = settings.id;
 		self.active_ids.add_metronome_id(id)?;
 		let (event_sender, event_receiver) = flume::bounded(settings.event_queue_capacity);
+		let metronome = Owned::new(
+			&self.resource_collector().handle(),
+			Metronome::new(settings, event_sender),
+		);
 		self.command_sender
-			.send(MetronomeCommand::AddMetronome(id, Metronome::new(settings, event_sender)).into())
+			.send(MetronomeCommand::AddMetronome(id, metronome).into())
 			.map_err(|_| AddMetronomeError::BackendDisconnected)?;
 		Ok(MetronomeHandle::new(
 			id,
@@ -360,6 +378,7 @@ impl AudioManager {
 		}
 		sequence.validate()?;
 		let (instance, handle) = sequence.create_instance(settings, self.command_sender.clone());
+		let instance = Owned::new(&self.resource_collector().handle(), instance);
 		self.command_sender
 			.send(SequenceCommand::StartSequenceInstance(settings.id, instance).into())
 			.map_err(|_| StartSequenceError::BackendDisconnected)?;
@@ -403,9 +422,11 @@ impl AudioManager {
 			TrackIndex::Sub(settings.id),
 			&settings,
 			self.command_sender.clone(),
+			self.resource_collector().handle(),
 		);
+		let track = Owned::new(&self.resource_collector().handle(), Track::new(settings));
 		self.command_sender
-			.send(MixerCommand::AddSubTrack(Track::new(settings)).into())
+			.send(MixerCommand::AddSubTrack(track).into())
 			.map_err(|_| AddTrackError::BackendDisconnected)?;
 		Ok(handle)
 	}
@@ -426,8 +447,9 @@ impl AudioManager {
 		}
 		let id = settings.id;
 		self.active_ids.add_group_id(id)?;
+		let group = Owned::new(&self.resource_collector().handle(), Group::new(settings));
 		self.command_sender
-			.send(GroupCommand::AddGroup(id, Group::new(settings)).into())
+			.send(GroupCommand::AddGroup(id, group).into())
 			.map_err(|_| AddGroupError::BackendDisconnected)?;
 		Ok(GroupHandle::new(id, self.command_sender.clone()))
 	}
@@ -453,7 +475,14 @@ impl AudioManager {
 		let id = AudioStreamId::new();
 		self.active_ids.add_stream_id(id)?;
 		self.command_sender
-			.send(StreamCommand::AddStream(id, track, Box::new(stream)).into())
+			.send(
+				StreamCommand::AddStream(
+					id,
+					track,
+					Owned::new(&self.resource_collector().handle(), Box::new(stream)),
+				)
+				.into(),
+			)
 			.map_err(|_| AddStreamError::BackendDisconnected)
 			.map(|()| id)
 	}
@@ -469,7 +498,7 @@ impl AudioManager {
 	/// Frees resources that are no longer in use, such as unloaded sounds
 	/// or finished sequences.
 	pub fn free_unused_resources(&mut self) {
-		for _ in self.resources_to_unload_receiver.try_iter() {}
+		self.resource_collector_mut().collect();
 	}
 }
 
@@ -477,5 +506,26 @@ impl Drop for AudioManager {
 	fn drop(&mut self) {
 		// TODO: add proper error handling here without breaking benchmarks
 		self.quit_signal_sender.send(true).ok();
+
+		// cleanup all unused resources. if we can't get everything to successfully
+		// drop within a reasonable amount of time, just give up
+		let mut resource_collector = Err(self.resource_collector.take().unwrap());
+		let start_time = Instant::now();
+		while let Err(mut collector) = resource_collector {
+			if Instant::now() - start_time
+				> std::time::Duration::from_millis(DROP_CLEANUP_TIMEOUT_MILLIS)
+			{
+				// TODO: consider integrating with the log crate
+				writeln!(
+					stderr(),
+					"Kira failed to free up resources after {} milliseconds, giving up",
+					DROP_CLEANUP_TIMEOUT_MILLIS
+				)
+				.ok();
+				return;
+			}
+			collector.collect();
+			resource_collector = collector.try_cleanup();
+		}
 	}
 }

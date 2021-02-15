@@ -2,16 +2,15 @@ use crate::{
 	audio_stream::{AudioStream, AudioStreamId},
 	command::StreamCommand,
 	manager::TrackIndex,
-	resource::Resource,
 };
 
 use super::mixer::Mixer;
 
-use flume::Sender;
+use basedrop::Owned;
 use indexmap::IndexMap;
 
 pub(crate) struct Streams {
-	streams: IndexMap<AudioStreamId, (TrackIndex, Box<dyn AudioStream>)>,
+	streams: IndexMap<AudioStreamId, (TrackIndex, Owned<Box<dyn AudioStream>>)>,
 }
 
 impl Streams {
@@ -21,15 +20,13 @@ impl Streams {
 		}
 	}
 
-	pub fn run_command(&mut self, command: StreamCommand, unloader: &mut Sender<Resource>) {
+	pub fn run_command(&mut self, command: StreamCommand) {
 		match command {
 			StreamCommand::AddStream(stream_id, track_id, stream) => {
 				self.streams.insert(stream_id, (track_id, stream));
 			}
 			StreamCommand::RemoveStream(stream_id) => {
-				if let Some((_, stream)) = self.streams.remove(&stream_id) {
-					unloader.try_send(Resource::Stream(stream)).ok();
-				}
+				self.streams.remove(&stream_id);
 			}
 		}
 	}

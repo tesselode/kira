@@ -1,4 +1,4 @@
-use flume::Sender;
+use basedrop::Owned;
 use indexmap::IndexMap;
 
 use crate::{
@@ -6,12 +6,11 @@ use crate::{
 	frame::Frame,
 	mixer::{SubTrackId, Track, TrackIndex, TrackSettings},
 	parameter::Parameters,
-	resource::Resource,
 };
 
 pub(crate) struct Mixer {
 	main_track: Track,
-	sub_tracks: IndexMap<SubTrackId, Track>,
+	sub_tracks: IndexMap<SubTrackId, Owned<Track>>,
 }
 
 impl Mixer {
@@ -22,62 +21,67 @@ impl Mixer {
 		}
 	}
 
-	pub fn run_command(&mut self, command: MixerCommand, unloader: &mut Sender<Resource>) {
+	pub fn run_command(&mut self, command: MixerCommand) {
 		match command {
 			MixerCommand::AddSubTrack(track) => {
-				if let Some(track) = self.sub_tracks.insert(track.id(), track) {
-					unloader.try_send(Resource::Track(track)).ok();
-				}
+				self.sub_tracks.insert(track.id(), track);
 			}
 			MixerCommand::AddEffect(index, effect, settings) => {
-				let track = match index {
-					TrackIndex::Main => Some(&mut self.main_track),
-					TrackIndex::Sub(id) => self.sub_tracks.get_mut(&id),
+				match index {
+					TrackIndex::Main => {
+						self.main_track.add_effect(effect, settings);
+					}
+					TrackIndex::Sub(id) => {
+						if let Some(track) = self.sub_tracks.get_mut(&id) {
+							track.add_effect(effect, settings);
+						}
+					}
 				};
-				if let Some(track) = track {
-					track.add_effect(effect, settings);
-				}
 			}
 			MixerCommand::RemoveSubTrack(id) => {
-				if let Some(track) = self.sub_tracks.remove(&id) {
-					unloader.try_send(Resource::Track(track)).ok();
-				}
+				self.sub_tracks.remove(&id);
 			}
 			MixerCommand::SetEffectEnabled(track_index, effect_id, enabled) => {
-				let track = match track_index {
-					TrackIndex::Main => Some(&mut self.main_track),
-					TrackIndex::Sub(id) => self.sub_tracks.get_mut(&id),
-				};
-				if let Some(track) = track {
-					if let Some(effect_slot) = track.effect_mut(effect_id) {
-						effect_slot.enabled = enabled;
+				match track_index {
+					TrackIndex::Main => {
+						if let Some(effect_slot) = self.main_track.effect_mut(effect_id) {
+							effect_slot.enabled = enabled;
+						}
 					}
-				}
+					TrackIndex::Sub(id) => {
+						if let Some(track) = self.sub_tracks.get_mut(&id) {
+							if let Some(effect_slot) = track.effect_mut(effect_id) {
+								effect_slot.enabled = enabled;
+							}
+						}
+					}
+				};
 			}
 			MixerCommand::RemoveEffect(track_index, effect_id) => {
-				let track = match track_index {
-					TrackIndex::Main => Some(&mut self.main_track),
-					TrackIndex::Sub(id) => self.sub_tracks.get_mut(&id),
-				};
-				if let Some(track) = track {
-					if let Some(effect_slot) = track.remove_effect(effect_id) {
-						unloader.try_send(Resource::EffectSlot(effect_slot)).ok();
+				match track_index {
+					TrackIndex::Main => {
+						self.main_track.remove_effect(effect_id);
 					}
-				}
+					TrackIndex::Sub(id) => {
+						if let Some(track) = self.sub_tracks.get_mut(&id) {
+							track.remove_effect(effect_id);
+						}
+					}
+				};
 			}
-		}
-	}
-
-	pub fn track_mut(&mut self, index: TrackIndex) -> Option<&mut Track> {
-		match index {
-			TrackIndex::Main => Some(&mut self.main_track),
-			TrackIndex::Sub(id) => self.sub_tracks.get_mut(&id),
 		}
 	}
 
 	pub fn add_input(&mut self, index: TrackIndex, input: Frame) {
-		if let Some(track) = self.track_mut(index) {
-			track.add_input(input);
+		match index {
+			TrackIndex::Main => {
+				self.main_track.add_input(input);
+			}
+			TrackIndex::Sub(id) => {
+				if let Some(track) = self.sub_tracks.get_mut(&id) {
+					track.add_input(input);
+				}
+			}
 		}
 	}
 
@@ -98,11 +102,19 @@ impl Mixer {
 		}
 		// add the cumulative input to this track and run it through the
 		// effects chain
-		if let Some(track) = self.track_mut(track_index) {
-			track.add_input(input);
-			track.process(dt, parameters)
-		} else {
-			Frame::from_mono(0.0)
+		match track_index {
+			TrackIndex::Main => {
+				self.main_track.add_input(input);
+				self.main_track.process(dt, parameters)
+			}
+			TrackIndex::Sub(id) => {
+				if let Some(track) = self.sub_tracks.get_mut(&id) {
+					track.add_input(input);
+					track.process(dt, parameters)
+				} else {
+					Frame::from_mono(0.0)
+				}
+			}
 		}
 	}
 

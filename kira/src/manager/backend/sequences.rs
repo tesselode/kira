@@ -4,15 +4,14 @@ use crate::{
 	instance::Instance,
 	metronome::Metronomes,
 	playable::Playables,
-	resource::Resource,
 	sequence::{SequenceInstance, SequenceInstanceId, SequenceOutputCommand},
 };
-use flume::Sender;
+use basedrop::Owned;
 use indexmap::IndexMap;
 use std::vec::Drain;
 
 pub(crate) struct Sequences {
-	sequence_instances: IndexMap<SequenceInstanceId, SequenceInstance>,
+	sequence_instances: IndexMap<SequenceInstanceId, Owned<SequenceInstance>>,
 	sequence_instances_to_remove: Vec<SequenceInstanceId>,
 	sequence_output_command_queue: Vec<SequenceOutputCommand>,
 	output_command_queue: Vec<Command>,
@@ -31,23 +30,16 @@ impl Sequences {
 	fn start_sequence_instance(
 		&mut self,
 		id: SequenceInstanceId,
-		mut instance: SequenceInstance,
-	) -> Option<SequenceInstance> {
+		mut instance: Owned<SequenceInstance>,
+	) {
 		instance.start();
-		self.sequence_instances.insert(id, instance)
+		self.sequence_instances.insert(id, instance);
 	}
 
-	pub fn run_command(
-		&mut self,
-		command: SequenceCommand,
-		groups: &Groups,
-		unloader: &mut Sender<Resource>,
-	) {
+	pub fn run_command(&mut self, command: SequenceCommand, groups: &Groups) {
 		match command {
 			SequenceCommand::StartSequenceInstance(id, instance) => {
-				if let Some(instance) = self.start_sequence_instance(id, instance) {
-					unloader.try_send(Resource::SequenceInstance(instance)).ok();
-				}
+				self.start_sequence_instance(id, instance);
 			}
 			SequenceCommand::MuteSequenceInstance(id) => {
 				if let Some(instance) = self.sequence_instances.get_mut(&id) {
@@ -103,7 +95,6 @@ impl Sequences {
 		dt: f64,
 		playables: &Playables,
 		metronomes: &Metronomes,
-		unloader: &mut Sender<Resource>,
 	) -> Drain<Command> {
 		// update sequences and process their commands
 		for (id, sequence_instance) in &mut self.sequence_instances {
@@ -228,8 +219,7 @@ impl Sequences {
 		}
 		// remove finished sequences
 		for id in self.sequence_instances_to_remove.drain(..) {
-			let instance = self.sequence_instances.remove(&id).unwrap();
-			unloader.try_send(Resource::SequenceInstance(instance)).ok();
+			self.sequence_instances.remove(&id).unwrap();
 		}
 		self.output_command_queue.drain(..)
 	}
