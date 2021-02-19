@@ -20,7 +20,7 @@ pub struct Backend {
 	dt: f64,
 	playables: Playables,
 	command_queue: Vec<Command>,
-	command_receiver: Consumer<Command>,
+	command_consumer: Consumer<Command>,
 	metronomes: Metronomes,
 	parameters: Parameters,
 	instances: Instances,
@@ -34,13 +34,13 @@ impl Backend {
 	pub(crate) fn new(
 		sample_rate: u32,
 		settings: AudioManagerSettings,
-		command_receiver: Consumer<Command>,
+		command_consumer: Consumer<Command>,
 	) -> Self {
 		Self {
 			dt: 1.0 / sample_rate as f64,
 			playables: Playables::new(settings.num_sounds, settings.num_arrangements),
 			command_queue: Vec::with_capacity(settings.num_commands),
-			command_receiver,
+			command_consumer,
 			parameters: Parameters::new(settings.num_parameters),
 			metronomes: Metronomes::new(settings.num_metronomes),
 			instances: Instances::new(settings.num_instances),
@@ -52,7 +52,7 @@ impl Backend {
 	}
 
 	fn process_commands(&mut self) {
-		while let Some(command) = self.command_receiver.pop() {
+		while let Some(command) = self.command_consumer.pop() {
 			self.command_queue.push(command);
 		}
 		for command in self.command_queue.drain(..) {

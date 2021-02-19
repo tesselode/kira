@@ -60,13 +60,13 @@ pub struct SequenceInstance {
 	position: usize,
 	wait_timer: Option<f64>,
 	muted: bool,
-	event_sender: Producer<usize>,
+	event_producer: Producer<usize>,
 }
 
 impl SequenceInstance {
 	pub fn new(
 		sequence: RawSequence,
-		event_sender: Producer<usize>,
+		event_producer: Producer<usize>,
 		metronome: Option<MetronomeId>,
 	) -> Self {
 		Self {
@@ -77,7 +77,7 @@ impl SequenceInstance {
 			position: 0,
 			wait_timer: None,
 			muted: false,
-			event_sender,
+			event_producer,
 		}
 	}
 
@@ -186,7 +186,7 @@ impl SequenceInstance {
 							}
 							SequenceStep::EmitCustomEvent(event) => {
 								if !self.muted {
-									self.event_sender.push(*event).ok();
+									self.event_producer.push(*event).ok();
 								}
 								self.start_step(self.position + 1);
 							}

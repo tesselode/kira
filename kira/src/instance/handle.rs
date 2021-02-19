@@ -21,19 +21,19 @@ use super::{
 pub struct InstanceHandle {
 	id: InstanceId,
 	state: Arc<Atomic<InstanceState>>,
-	command_sender: CommandProducer,
+	command_producer: CommandProducer,
 }
 
 impl InstanceHandle {
 	pub(crate) fn new(
 		id: InstanceId,
 		state: Arc<Atomic<InstanceState>>,
-		command_sender: CommandProducer,
+		command_producer: CommandProducer,
 	) -> Self {
 		Self {
 			id,
 			state,
-			command_sender,
+			command_producer,
 		}
 	}
 
@@ -49,49 +49,49 @@ impl InstanceHandle {
 
 	/// Sets the volume of the instance.
 	pub fn set_volume(&mut self, volume: impl Into<Value<f64>>) -> Result<(), CommandError> {
-		self.command_sender
+		self.command_producer
 			.push(InstanceCommand::SetInstanceVolume(self.id, volume.into()).into())
 	}
 
 	/// Sets the pitch of the instance.
 	pub fn set_pitch(&mut self, pitch: impl Into<Value<f64>>) -> Result<(), CommandError> {
-		self.command_sender
+		self.command_producer
 			.push(InstanceCommand::SetInstancePitch(self.id, pitch.into()).into())
 	}
 
 	/// Sets the panning of the instance.
 	pub fn set_panning(&mut self, panning: impl Into<Value<f64>>) -> Result<(), CommandError> {
-		self.command_sender
+		self.command_producer
 			.push(InstanceCommand::SetInstancePanning(self.id, panning.into()).into())
 	}
 
 	/// Offsets the playback position of the instance by the specified amount (in seconds).
 	pub fn seek(&mut self, offset: f64) -> Result<(), CommandError> {
-		self.command_sender
+		self.command_producer
 			.push(InstanceCommand::SeekInstance(self.id, offset).into())
 	}
 
 	/// Sets the playback position of the instance to the specified time (in seconds).
 	pub fn seek_to(&mut self, position: f64) -> Result<(), CommandError> {
-		self.command_sender
+		self.command_producer
 			.push(InstanceCommand::SeekInstanceTo(self.id, position).into())
 	}
 
 	/// Pauses the instance.
 	pub fn pause(&mut self, settings: PauseInstanceSettings) -> Result<(), CommandError> {
-		self.command_sender
+		self.command_producer
 			.push(InstanceCommand::PauseInstance(self.id, settings).into())
 	}
 
 	/// Resumes the instance.
 	pub fn resume(&mut self, settings: ResumeInstanceSettings) -> Result<(), CommandError> {
-		self.command_sender
+		self.command_producer
 			.push(InstanceCommand::ResumeInstance(self.id, settings).into())
 	}
 
 	/// Stops the instance.
 	pub fn stop(&mut self, settings: StopInstanceSettings) -> Result<(), CommandError> {
-		self.command_sender
+		self.command_producer
 			.push(InstanceCommand::StopInstance(self.id, settings).into())
 	}
 }

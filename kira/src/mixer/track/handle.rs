@@ -46,7 +46,7 @@ pub enum RemoveEffectError {
 /// Allows you to control a mixer sound.
 pub struct TrackHandle {
 	index: TrackIndex,
-	command_sender: CommandProducer,
+	command_producer: CommandProducer,
 	active_effect_ids: IndexSet<EffectId>,
 	resource_collector_handle: basedrop::Handle,
 }
@@ -55,12 +55,12 @@ impl TrackHandle {
 	pub(crate) fn new(
 		index: TrackIndex,
 		settings: &TrackSettings,
-		command_sender: CommandProducer,
+		command_producer: CommandProducer,
 		resource_collector_handle: basedrop::Handle,
 	) -> Self {
 		Self {
 			index,
-			command_sender,
+			command_producer,
 			active_effect_ids: IndexSet::with_capacity(settings.num_effects),
 			resource_collector_handle,
 		}
@@ -81,8 +81,8 @@ impl TrackHandle {
 			return Err(AddEffectError::EffectLimitReached);
 		}
 		let id = settings.id;
-		let handle = EffectHandle::new(self.index, &settings, self.command_sender.clone());
-		self.command_sender.push(
+		let handle = EffectHandle::new(self.index, &settings, self.command_producer.clone());
+		self.command_producer.push(
 			MixerCommand::AddEffect(
 				self.index,
 				Owned::new(&self.resource_collector_handle, Box::new(effect)),
@@ -100,7 +100,7 @@ impl TrackHandle {
 		if !self.active_effect_ids.remove(&id) {
 			return Err(RemoveEffectError::NoEffectWithId(id));
 		}
-		self.command_sender
+		self.command_producer
 			.push(MixerCommand::RemoveEffect(self.index, id).into())?;
 		Ok(())
 	}

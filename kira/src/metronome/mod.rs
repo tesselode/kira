@@ -47,18 +47,18 @@ pub(crate) struct Metronome {
 	ticking: bool,
 	time: f64,
 	previous_time: f64,
-	event_sender: Producer<f64>,
+	event_producer: Producer<f64>,
 }
 
 impl Metronome {
-	pub fn new(settings: MetronomeSettings, event_sender: Producer<f64>) -> Self {
+	pub fn new(settings: MetronomeSettings, event_producer: Producer<f64>) -> Self {
 		Self {
 			tempo: CachedValue::new(settings.tempo, Tempo(120.0)),
 			interval_events_to_emit: settings.interval_events_to_emit,
 			ticking: false,
 			time: 0.0,
 			previous_time: 0.0,
-			event_sender,
+			event_producer,
 		}
 	}
 
@@ -95,7 +95,7 @@ impl Metronome {
 			self.time += (self.tempo.value().0 / 60.0) * dt;
 			for interval in &self.interval_events_to_emit {
 				if self.interval_passed(*interval) {
-					self.event_sender.push(*interval).ok();
+					self.event_producer.push(*interval).ok();
 				}
 			}
 		}

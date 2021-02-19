@@ -11,12 +11,15 @@ use super::{tween::Tween, ParameterId};
 /// Allows you to control a parameter.
 pub struct ParameterHandle {
 	id: ParameterId,
-	command_sender: CommandProducer,
+	command_producer: CommandProducer,
 }
 
 impl ParameterHandle {
-	pub(crate) fn new(id: ParameterId, command_sender: CommandProducer) -> Self {
-		Self { id, command_sender }
+	pub(crate) fn new(id: ParameterId, command_producer: CommandProducer) -> Self {
+		Self {
+			id,
+			command_producer,
+		}
 	}
 
 	/// Returns the ID of the parameter.
@@ -26,7 +29,7 @@ impl ParameterHandle {
 
 	/// Sets the parameter to a value with an optional tween.
 	pub fn set(&mut self, value: f64, tween: impl Into<Option<Tween>>) -> Result<(), CommandError> {
-		self.command_sender
+		self.command_producer
 			.push(ParameterCommand::SetParameter(self.id, value, tween.into()).into())
 	}
 }

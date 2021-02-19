@@ -22,18 +22,18 @@ pub struct ArrangementHandle {
 	default_track: TrackIndex,
 	semantic_duration: Option<f64>,
 	default_loop_start: Option<f64>,
-	command_sender: CommandProducer,
+	command_producer: CommandProducer,
 }
 
 impl ArrangementHandle {
-	pub(crate) fn new(arrangement: &Arrangement, command_sender: CommandProducer) -> Self {
+	pub(crate) fn new(arrangement: &Arrangement, command_producer: CommandProducer) -> Self {
 		Self {
 			id: arrangement.id(),
 			duration: arrangement.duration(),
 			default_track: arrangement.default_track(),
 			semantic_duration: arrangement.semantic_duration(),
 			default_loop_start: arrangement.default_loop_start(),
-			command_sender,
+			command_producer,
 		}
 	}
 
@@ -75,27 +75,27 @@ impl ArrangementHandle {
 			None,
 			settings.into_internal(self.duration, self.default_loop_start, self.default_track),
 		);
-		let handle = InstanceHandle::new(id, instance.public_state(), self.command_sender.clone());
-		self.command_sender
+		let handle = InstanceHandle::new(id, instance.public_state(), self.command_producer.clone());
+		self.command_producer
 			.push(InstanceCommand::Play(id, instance).into())?;
 		Ok(handle)
 	}
 
 	/// Pauses all instances of this arrangement.
 	pub fn pause(&mut self, settings: PauseInstanceSettings) -> Result<(), CommandError> {
-		self.command_sender
+		self.command_producer
 			.push(InstanceCommand::PauseInstancesOf(self.id.into(), settings).into())
 	}
 
 	/// Resumes all instances of this arrangement.
 	pub fn resume(&mut self, settings: ResumeInstanceSettings) -> Result<(), CommandError> {
-		self.command_sender
+		self.command_producer
 			.push(InstanceCommand::ResumeInstancesOf(self.id.into(), settings).into())
 	}
 
 	/// Stops all instances of this arrangement.
 	pub fn stop(&mut self, settings: StopInstanceSettings) -> Result<(), CommandError> {
-		self.command_sender
+		self.command_producer
 			.push(InstanceCommand::StopInstancesOf(self.id.into(), settings).into())
 	}
 }

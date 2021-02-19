@@ -19,8 +19,8 @@ use super::MetronomeId;
 /// to receive an event from a metronome.
 #[derive(Debug, Error)]
 pub enum PopMetronomeEventError {
-	/// A thread panicked while using the event receiver.
-	#[error("The event receiver cannot be used because a thread panicked while borrowing it.")]
+	/// A thread panicked while using the event consumer.
+	#[error("The event consumer cannot be used because a thread panicked while borrowing it.")]
 	MutexPoisoned,
 }
 
@@ -30,20 +30,20 @@ pub enum PopMetronomeEventError {
 // TODO: add a manual impl of Debug
 pub struct MetronomeHandle {
 	id: MetronomeId,
-	command_sender: CommandProducer,
-	event_receiver: Arc<Mutex<Consumer<f64>>>,
+	command_producer: CommandProducer,
+	event_consumer: Arc<Mutex<Consumer<f64>>>,
 }
 
 impl MetronomeHandle {
 	pub(crate) fn new(
 		id: MetronomeId,
-		command_sender: CommandProducer,
-		event_receiver: Consumer<f64>,
+		command_producer: CommandProducer,
+		event_consumer: Consumer<f64>,
 	) -> Self {
 		Self {
 			id,
-			command_sender,
-			event_receiver: Arc::new(Mutex::new(event_receiver)),
+			command_producer,
+			event_consumer: Arc::new(Mutex::new(event_consumer)),
 		}
 	}
 
@@ -54,25 +54,25 @@ impl MetronomeHandle {
 
 	/// Sets the tempo of the metronome (in beats per minute).
 	pub fn set_tempo(&mut self, tempo: impl Into<Value<Tempo>>) -> Result<(), CommandError> {
-		self.command_sender
+		self.command_producer
 			.push(MetronomeCommand::SetMetronomeTempo(self.id(), tempo.into()).into())
 	}
 
 	/// Starts the metronome.
 	pub fn start(&mut self) -> Result<(), CommandError> {
-		self.command_sender
+		self.command_producer
 			.push(MetronomeCommand::StartMetronome(self.id()).into())
 	}
 
 	/// Pauses the metronome.
 	pub fn pause(&mut self) -> Result<(), CommandError> {
-		self.command_sender
+		self.command_producer
 			.push(MetronomeCommand::PauseMetronome(self.id()).into())
 	}
 
 	/// Stops the metronome and resets its time to zero.
 	pub fn stop(&mut self) -> Result<(), CommandError> {
-		self.command_sender
+		self.command_producer
 			.push(MetronomeCommand::StopMetronome(self.id()).into())
 	}
 
@@ -80,7 +80,7 @@ impl MetronomeHandle {
 	/// metronome since the last call to `pop_event`.
 	pub fn pop_event(&mut self) -> Result<Option<f64>, PopMetronomeEventError> {
 		Ok(self
-			.event_receiver
+			.event_consumer
 			.lock()
 			.map_err(|_| PopMetronomeEventError::MutexPoisoned)?
 			.pop())

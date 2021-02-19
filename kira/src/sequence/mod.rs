@@ -638,16 +638,17 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	pub(crate) fn create_instance(
 		&self,
 		settings: SequenceInstanceSettings,
-		command_sender: CommandProducer,
+		command_producer: CommandProducer,
 	) -> (SequenceInstance, SequenceInstanceHandle<CustomEvent>) {
 		let (raw_sequence, events) = self.into_raw_sequence();
-		let (event_sender, event_receiver) = RingBuffer::new(settings.event_queue_capacity).split();
-		let instance = SequenceInstance::new(raw_sequence, event_sender, settings.metronome);
+		let (event_producer, event_consumer) =
+			RingBuffer::new(settings.event_queue_capacity).split();
+		let instance = SequenceInstance::new(raw_sequence, event_producer, settings.metronome);
 		let handle = SequenceInstanceHandle::new(
 			settings.id,
 			instance.public_state(),
-			command_sender,
-			event_receiver,
+			command_producer,
+			event_consumer,
 			events,
 		);
 		(instance, handle)

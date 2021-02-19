@@ -102,9 +102,9 @@ The audio manager is responsible for all communication between the gameplay thre
 and the audio thread.
 */
 pub struct AudioManager {
-	// TODO: don't compile quit_signal_sender on wasm
-	quit_signal_sender: Producer<bool>,
-	command_sender: CommandProducer,
+	// TODO: don't compile quit_signal_producer on wasm
+	quit_signal_producer: Producer<bool>,
+	command_producer: CommandProducer,
 	resource_collector: Option<Collector>,
 	active_ids: ActiveIds,
 
@@ -121,29 +121,29 @@ impl AudioManager {
 	#[cfg(not(target_arch = "wasm32"))]
 	pub fn new(settings: AudioManagerSettings) -> Result<Self, SetupError> {
 		let active_ids = ActiveIds::new(&settings);
-		let (quit_signal_sender, mut quit_signal_receiver) = RingBuffer::new(1).split();
-		let (command_sender, command_receiver) = RingBuffer::new(settings.num_commands).split();
+		let (quit_signal_producer, mut quit_signal_consumer) = RingBuffer::new(1).split();
+		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
 		let resource_collector = Collector::new();
 
 		const WRAPPER_THREAD_SLEEP_DURATION: f64 = 1.0 / 60.0;
 
-		let (mut setup_result_sender, mut setup_result_receiver) = RingBuffer::new(1).split();
+		let (mut setup_result_producer, mut setup_result_consumer) = RingBuffer::new(1).split();
 		// set up a cpal stream on a new thread. we could do this on the main thread,
 		// but that causes issues with LÖVE.
 		std::thread::spawn(move || {
-			match Self::setup_stream(settings, command_receiver) {
+			match Self::setup_stream(settings, command_consumer) {
 				Ok(_stream) => {
-					setup_result_sender.push(Ok(())).unwrap();
+					setup_result_producer.push(Ok(())).unwrap();
 					// wait for a quit message before ending the thread and dropping
 					// the stream
-					while quit_signal_receiver.pop().is_none() {
+					while quit_signal_consumer.pop().is_none() {
 						std::thread::sleep(std::time::Duration::from_secs_f64(
 							WRAPPER_THREAD_SLEEP_DURATION,
 						));
 					}
 				}
 				Err(error) => {
-					setup_result_sender.push(Err(error)).unwrap();
+					setup_result_producer.push(Err(error)).unwrap();
 				}
 			}
 		});
@@ -151,7 +151,7 @@ impl AudioManager {
 		loop {
 			// TODO: figure out if we need to handle
 			// TryRecvError::Disconnected
-			if let Some(result) = setup_result_receiver.pop() {
+			if let Some(result) = setup_result_consumer.pop() {
 				match result {
 					Ok(_) => break,
 					Err(error) => return Err(error),
@@ -160,8 +160,8 @@ impl AudioManager {
 		}
 
 		Ok(Self {
-			quit_signal_sender,
-			command_sender: CommandProducer::new(command_sender),
+			quit_signal_producer,
+			command_producer: CommandProducer::new(command_producer),
 			active_ids,
 			resource_collector: Some(resource_collector),
 		})
@@ -171,13 +171,13 @@ impl AudioManager {
 	#[cfg(target_arch = "wasm32")]
 	pub fn new(settings: AudioManagerSettings) -> Result<Self, SetupError> {
 		let active_ids = ActiveIds::new(&settings);
-		let (quit_signal_sender, _) = RingBuffer::new(1).split();
-		let (command_sender, command_receiver) = RingBuffer::new(settings.num_commands).split();
+		let (quit_signal_producer, _) = RingBuffer::new(1).split();
+		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
 		let resource_collector = Collector::new();
-		let _stream = Self::setup_stream(settings, command_receiver, resource_collector.handle())?;
+		let _stream = Self::setup_stream(settings, command_consumer, resource_collector.handle())?;
 		Ok(Self {
-			quit_signal_sender,
-			command_sender: CommandProducer::new(command_sender),
+			quit_signal_producer,
+			command_producer: CommandProducer::new(command_producer),
 			active_ids,
 			resource_collector: Some(resource_collector),
 			_stream,
@@ -186,7 +186,7 @@ impl AudioManager {
 
 	fn setup_stream(
 		settings: AudioManagerSettings,
-		command_receiver: Consumer<Command>,
+		command_consumer: Consumer<Command>,
 	) -> Result<Stream, SetupError> {
 		let host = cpal::default_host();
 		let device = host
@@ -195,7 +195,7 @@ impl AudioManager {
 		let config = device.default_output_config()?.config();
 		let sample_rate = config.sample_rate.0;
 		let channels = config.channels;
-		let mut backend = Backend::new(sample_rate, settings, command_receiver);
+		let mut backend = Backend::new(sample_rate, settings, command_consumer);
 		let stream = device.build_output_stream(
 			&config,
 			move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
@@ -223,16 +223,16 @@ impl AudioManager {
 	/// benchmarking.
 	pub fn new_without_audio_thread(settings: AudioManagerSettings) -> (Self, Backend) {
 		const SAMPLE_RATE: u32 = 48000;
-		let (quit_signal_sender, _) = RingBuffer::new(1).split();
-		let (command_sender, command_receiver) = RingBuffer::new(settings.num_commands).split();
+		let (quit_signal_producer, _) = RingBuffer::new(1).split();
+		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
 		let resource_collector = Collector::new();
 		let audio_manager = Self {
-			quit_signal_sender,
-			command_sender: CommandProducer::new(command_sender),
+			quit_signal_producer,
+			command_producer: CommandProducer::new(command_producer),
 			active_ids: ActiveIds::new(&settings),
 			resource_collector: Some(resource_collector),
 		};
-		let backend = Backend::new(SAMPLE_RATE, settings, command_receiver);
+		let backend = Backend::new(SAMPLE_RATE, settings, command_consumer);
 		(audio_manager, backend)
 	}
 
@@ -267,9 +267,9 @@ impl AudioManager {
 			return Err(AddSoundError::NoGroupWithId(group));
 		}
 		self.active_ids.add_sound_id(sound.id())?;
-		let handle = SoundHandle::new(&sound, self.command_sender.clone());
+		let handle = SoundHandle::new(&sound, self.command_producer.clone());
 		let sound = Owned::new(&self.resource_collector().handle(), sound);
-		self.command_sender
+		self.command_producer
 			.push(ResourceCommand::AddSound(sound).into())?;
 		Ok(handle)
 	}
@@ -292,7 +292,7 @@ impl AudioManager {
 	pub fn remove_sound(&mut self, id: impl Into<SoundId>) -> Result<(), RemoveSoundError> {
 		let id = id.into();
 		self.active_ids.remove_sound_id(id)?;
-		self.command_sender
+		self.command_producer
 			.push(ResourceCommand::RemoveSound(id).into())?;
 		Ok(())
 	}
@@ -311,9 +311,9 @@ impl AudioManager {
 			return Err(AddArrangementError::NoGroupWithId(group));
 		}
 		self.active_ids.add_arrangement_id(arrangement.id())?;
-		let handle = ArrangementHandle::new(&arrangement, self.command_sender.clone());
+		let handle = ArrangementHandle::new(&arrangement, self.command_producer.clone());
 		let arrangement = Owned::new(&self.resource_collector().handle(), arrangement);
-		self.command_sender
+		self.command_producer
 			.push(ResourceCommand::AddArrangement(arrangement).into())?;
 		Ok(handle)
 	}
@@ -325,7 +325,7 @@ impl AudioManager {
 	) -> Result<(), RemoveArrangementError> {
 		let id = id.into();
 		self.active_ids.remove_arrangement_id(id)?;
-		self.command_sender
+		self.command_producer
 			.push(ResourceCommand::RemoveArrangement(id.into()).into())?;
 		Ok(())
 	}
@@ -337,17 +337,18 @@ impl AudioManager {
 	) -> Result<MetronomeHandle, AddMetronomeError> {
 		let id = settings.id;
 		self.active_ids.add_metronome_id(id)?;
-		let (event_sender, event_receiver) = RingBuffer::new(settings.event_queue_capacity).split();
+		let (event_producer, event_consumer) =
+			RingBuffer::new(settings.event_queue_capacity).split();
 		let metronome = Owned::new(
 			&self.resource_collector().handle(),
-			Metronome::new(settings, event_sender),
+			Metronome::new(settings, event_producer),
 		);
-		self.command_sender
+		self.command_producer
 			.push(MetronomeCommand::AddMetronome(id, metronome).into())?;
 		Ok(MetronomeHandle::new(
 			id,
-			self.command_sender.clone(),
-			event_receiver,
+			self.command_producer.clone(),
+			event_consumer,
 		))
 	}
 
@@ -358,7 +359,7 @@ impl AudioManager {
 	) -> Result<(), RemoveMetronomeError> {
 		let id = id.into();
 		self.active_ids.remove_metronome_id(id)?;
-		self.command_sender
+		self.command_producer
 			.push(MetronomeCommand::RemoveMetronome(id).into())?;
 		Ok(())
 	}
@@ -374,9 +375,9 @@ impl AudioManager {
 			return Err(StartSequenceError::NoGroupWithId(group));
 		}
 		sequence.validate()?;
-		let (instance, handle) = sequence.create_instance(settings, self.command_sender.clone());
+		let (instance, handle) = sequence.create_instance(settings, self.command_producer.clone());
 		let instance = Owned::new(&self.resource_collector().handle(), instance);
-		self.command_sender
+		self.command_producer
 			.push(SequenceCommand::StartSequenceInstance(settings.id, instance).into())?;
 		Ok(handle)
 	}
@@ -387,11 +388,11 @@ impl AudioManager {
 		settings: ParameterSettings,
 	) -> Result<ParameterHandle, AddParameterError> {
 		self.active_ids.add_parameter_id(settings.id)?;
-		self.command_sender
+		self.command_producer
 			.push(ParameterCommand::AddParameter(settings.id, settings.value).into())?;
 		Ok(ParameterHandle::new(
 			settings.id,
-			self.command_sender.clone(),
+			self.command_producer.clone(),
 		))
 	}
 
@@ -402,7 +403,7 @@ impl AudioManager {
 	) -> Result<(), RemoveParameterError> {
 		let id = id.into();
 		self.active_ids.remove_parameter_id(id)?;
-		self.command_sender
+		self.command_producer
 			.push(ParameterCommand::RemoveParameter(id).into())?;
 		Ok(())
 	}
@@ -416,11 +417,11 @@ impl AudioManager {
 		let handle = TrackHandle::new(
 			TrackIndex::Sub(settings.id),
 			&settings,
-			self.command_sender.clone(),
+			self.command_producer.clone(),
 			self.resource_collector().handle(),
 		);
 		let track = Owned::new(&self.resource_collector().handle(), Track::new(settings));
-		self.command_sender
+		self.command_producer
 			.push(MixerCommand::AddSubTrack(track).into())?;
 		Ok(handle)
 	}
@@ -429,7 +430,7 @@ impl AudioManager {
 	pub fn remove_sub_track(&mut self, id: SubTrackId) -> Result<(), RemoveTrackError> {
 		let id = id.into();
 		self.active_ids.remove_track_id(id)?;
-		self.command_sender
+		self.command_producer
 			.push(MixerCommand::RemoveSubTrack(id).into())?;
 		Ok(())
 	}
@@ -442,16 +443,16 @@ impl AudioManager {
 		let id = settings.id;
 		self.active_ids.add_group_id(id)?;
 		let group = Owned::new(&self.resource_collector().handle(), Group::new(settings));
-		self.command_sender
+		self.command_producer
 			.push(GroupCommand::AddGroup(id, group).into())?;
-		Ok(GroupHandle::new(id, self.command_sender.clone()))
+		Ok(GroupHandle::new(id, self.command_producer.clone()))
 	}
 
 	/// Removes a group.
 	pub fn remove_group(&mut self, id: impl Into<GroupId>) -> Result<(), RemoveGroupError> {
 		let id = id.into();
 		self.active_ids.remove_group_id(id)?;
-		self.command_sender
+		self.command_producer
 			.push(GroupCommand::RemoveGroup(id).into())?;
 		Ok(())
 	}
@@ -467,7 +468,7 @@ impl AudioManager {
 		}
 		let id = AudioStreamId::new();
 		self.active_ids.add_stream_id(id)?;
-		self.command_sender.push(
+		self.command_producer.push(
 			StreamCommand::AddStream(
 				id,
 				track,
@@ -481,7 +482,7 @@ impl AudioManager {
 	/// Removes an audio stream.
 	pub fn remove_stream(&mut self, id: AudioStreamId) -> Result<(), RemoveStreamError> {
 		self.active_ids.remove_stream_id(id)?;
-		self.command_sender
+		self.command_producer
 			.push(StreamCommand::RemoveStream(id).into())?;
 		Ok(())
 	}
@@ -496,7 +497,7 @@ impl AudioManager {
 impl Drop for AudioManager {
 	fn drop(&mut self) {
 		// TODO: add proper error handling here without breaking benchmarks
-		self.quit_signal_sender.push(true).ok();
+		self.quit_signal_producer.push(true).ok();
 
 		// cleanup all unused resources. if we can't get everything to successfully
 		// drop within a reasonable amount of time, just give up
