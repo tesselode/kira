@@ -163,17 +163,17 @@ pub mod handle;
 mod instance;
 
 use error::SequenceError;
-use flume::Sender;
 use handle::SequenceInstanceHandle;
 pub(crate) use instance::SequenceInstance;
 pub use instance::{SequenceInstanceId, SequenceInstanceState};
 
 use indexmap::IndexSet;
+use ringbuf::RingBuffer;
 
 use std::{hash::Hash, vec};
 
 use crate::{
-	command::Command,
+	command::producer::CommandProducer,
 	group::{groups::Groups, GroupId, GroupSet},
 	instance::{
 		InstanceId, InstanceSettings, PauseInstanceSettings, ResumeInstanceSettings,
@@ -638,10 +638,10 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 	pub(crate) fn create_instance(
 		&self,
 		settings: SequenceInstanceSettings,
-		command_sender: Sender<Command>,
+		command_sender: CommandProducer,
 	) -> (SequenceInstance, SequenceInstanceHandle<CustomEvent>) {
 		let (raw_sequence, events) = self.into_raw_sequence();
-		let (event_sender, event_receiver) = flume::bounded(settings.event_queue_capacity);
+		let (event_sender, event_receiver) = RingBuffer::new(settings.event_queue_capacity).split();
 		let instance = SequenceInstance::new(raw_sequence, event_sender, settings.metronome);
 		let handle = SequenceInstanceHandle::new(
 			settings.id,

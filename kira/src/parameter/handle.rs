@@ -1,30 +1,21 @@
 //! An interface for controlling parameters.
 
-use flume::Sender;
-use thiserror::Error;
-
-use crate::command::{Command, ParameterCommand};
+use crate::command::{
+	producer::{CommandProducer, CommandProducerError},
+	ParameterCommand,
+};
 
 use super::{tween::Tween, ParameterId};
-
-/// Something that can go wrong when using a [`ParameterHandle`]
-/// to control a parameter.
-#[derive(Debug, Error)]
-pub enum ParameterHandleError {
-	/// The audio thread has finished and can no longer receive commands.
-	#[error("The backend cannot receive commands because it no longer exists")]
-	BackendDisconnected,
-}
 
 #[derive(Debug, Clone)]
 /// Allows you to control a parameter.
 pub struct ParameterHandle {
 	id: ParameterId,
-	command_sender: Sender<Command>,
+	command_sender: CommandProducer,
 }
 
 impl ParameterHandle {
-	pub(crate) fn new(id: ParameterId, command_sender: Sender<Command>) -> Self {
+	pub(crate) fn new(id: ParameterId, command_sender: CommandProducer) -> Self {
 		Self { id, command_sender }
 	}
 
@@ -38,9 +29,8 @@ impl ParameterHandle {
 		&mut self,
 		value: f64,
 		tween: impl Into<Option<Tween>>,
-	) -> Result<(), ParameterHandleError> {
+	) -> Result<(), CommandProducerError> {
 		self.command_sender
-			.send(ParameterCommand::SetParameter(self.id, value, tween.into()).into())
-			.map_err(|_| ParameterHandleError::BackendDisconnected)
+			.push(ParameterCommand::SetParameter(self.id, value, tween.into()).into())
 	}
 }

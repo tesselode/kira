@@ -1,14 +1,17 @@
 //! An interface for controlling sequence instances.
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use atomic::{Atomic, Ordering};
-use flume::{Receiver, Sender};
 use indexmap::IndexSet;
+use ringbuf::Consumer;
 use thiserror::Error;
 
 use crate::{
-	command::{Command, InstanceCommand, SequenceCommand},
+	command::{
+		producer::{CommandProducer, CommandProducerError},
+		InstanceCommand, SequenceCommand,
+	},
 	instance::{PauseInstanceSettings, ResumeInstanceSettings, StopInstanceSettings},
 };
 
@@ -18,18 +21,18 @@ use super::{SequenceInstanceId, SequenceInstanceState};
 /// to control a sequence instance.
 #[derive(Debug, Error)]
 pub enum SequenceInstanceHandleError {
-	/// The audio thread has finished and can no longer receive commands.
-	#[error("The backend cannot receive commands because it no longer exists")]
-	BackendDisconnected,
+	/// A thread panicked while using the event receiver.
+	#[error("The event receiver cannot be used because a thread panicked while borrowing it.")]
+	MutexPoisoned,
 }
 
 /// Allows you to control an instance of a sequence..
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct SequenceInstanceHandle<CustomEvent> {
 	id: SequenceInstanceId,
 	state: Arc<Atomic<SequenceInstanceState>>,
-	command_sender: Sender<Command>,
-	raw_event_receiver: Receiver<usize>,
+	command_sender: CommandProducer,
+	raw_event_receiver: Arc<Mutex<Consumer<usize>>>,
 	events: IndexSet<CustomEvent>,
 }
 
@@ -37,15 +40,15 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 	pub(crate) fn new(
 		id: SequenceInstanceId,
 		state: Arc<Atomic<SequenceInstanceState>>,
-		command_sender: Sender<Command>,
-		raw_event_receiver: Receiver<usize>,
+		command_sender: CommandProducer,
+		raw_event_receiver: Consumer<usize>,
 		events: IndexSet<CustomEvent>,
 	) -> Self {
 		Self {
 			id,
 			state,
 			command_sender,
-			raw_event_receiver,
+			raw_event_receiver: Arc::new(Mutex::new(raw_event_receiver)),
 			events,
 		}
 	}
@@ -65,38 +68,33 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 	/// Muted instances will continue waiting for durations and
 	/// intervals, but they will not play sounds, emit events,
 	/// or perform any other actions.
-	pub fn mute(&mut self) -> Result<(), SequenceInstanceHandleError> {
+	pub fn mute(&mut self) -> Result<(), CommandProducerError> {
 		self.command_sender
-			.send(SequenceCommand::MuteSequenceInstance(self.id).into())
-			.map_err(|_| SequenceInstanceHandleError::BackendDisconnected)
+			.push(SequenceCommand::MuteSequenceInstance(self.id).into())
 	}
 
 	/// Unmutes the sequence instance.
-	pub fn unmute(&mut self) -> Result<(), SequenceInstanceHandleError> {
+	pub fn unmute(&mut self) -> Result<(), CommandProducerError> {
 		self.command_sender
-			.send(SequenceCommand::UnmuteSequenceInstance(self.id).into())
-			.map_err(|_| SequenceInstanceHandleError::BackendDisconnected)
+			.push(SequenceCommand::UnmuteSequenceInstance(self.id).into())
 	}
 
 	/// Pauses the sequence instance.
-	pub fn pause(&mut self) -> Result<(), SequenceInstanceHandleError> {
+	pub fn pause(&mut self) -> Result<(), CommandProducerError> {
 		self.command_sender
-			.send(SequenceCommand::PauseSequenceInstance(self.id).into())
-			.map_err(|_| SequenceInstanceHandleError::BackendDisconnected)
+			.push(SequenceCommand::PauseSequenceInstance(self.id).into())
 	}
 
 	/// Resumes the sequence instance.
-	pub fn resume(&mut self) -> Result<(), SequenceInstanceHandleError> {
+	pub fn resume(&mut self) -> Result<(), CommandProducerError> {
 		self.command_sender
-			.send(SequenceCommand::ResumeSequenceInstance(self.id).into())
-			.map_err(|_| SequenceInstanceHandleError::BackendDisconnected)
+			.push(SequenceCommand::ResumeSequenceInstance(self.id).into())
 	}
 
 	/// Stops the sequence instance.
-	pub fn stop(&mut self) -> Result<(), SequenceInstanceHandleError> {
+	pub fn stop(&mut self) -> Result<(), CommandProducerError> {
 		self.command_sender
-			.send(SequenceCommand::StopSequenceInstance(self.id).into())
-			.map_err(|_| SequenceInstanceHandleError::BackendDisconnected)
+			.push(SequenceCommand::StopSequenceInstance(self.id).into())
 	}
 
 	/// Pauses this sequence instance and all instances of sounds
@@ -104,13 +102,11 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 	pub fn pause_sequence_and_instances(
 		&mut self,
 		settings: PauseInstanceSettings,
-	) -> Result<(), SequenceInstanceHandleError> {
+	) -> Result<(), CommandProducerError> {
 		self.command_sender
-			.send(SequenceCommand::PauseSequenceInstance(self.id).into())
-			.map_err(|_| SequenceInstanceHandleError::BackendDisconnected)?;
+			.push(SequenceCommand::PauseSequenceInstance(self.id).into());
 		self.command_sender
-			.send(InstanceCommand::PauseInstancesOfSequence(self.id, settings).into())
-			.map_err(|_| SequenceInstanceHandleError::BackendDisconnected)?;
+			.push(InstanceCommand::PauseInstancesOfSequence(self.id, settings).into());
 		Ok(())
 	}
 
@@ -119,13 +115,11 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 	pub fn resume_sequence_and_instances(
 		&mut self,
 		settings: ResumeInstanceSettings,
-	) -> Result<(), SequenceInstanceHandleError> {
+	) -> Result<(), CommandProducerError> {
 		self.command_sender
-			.send(SequenceCommand::ResumeSequenceInstance(self.id).into())
-			.map_err(|_| SequenceInstanceHandleError::BackendDisconnected)?;
+			.push(SequenceCommand::ResumeSequenceInstance(self.id).into());
 		self.command_sender
-			.send(InstanceCommand::ResumeInstancesOfSequence(self.id, settings).into())
-			.map_err(|_| SequenceInstanceHandleError::BackendDisconnected)?;
+			.push(InstanceCommand::ResumeInstancesOfSequence(self.id, settings).into());
 		Ok(())
 	}
 
@@ -134,22 +128,22 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 	pub fn stop_sequence_and_instances(
 		&mut self,
 		settings: StopInstanceSettings,
-	) -> Result<(), SequenceInstanceHandleError> {
+	) -> Result<(), CommandProducerError> {
 		self.command_sender
-			.send(SequenceCommand::StopSequenceInstance(self.id).into())
-			.map_err(|_| SequenceInstanceHandleError::BackendDisconnected)?;
+			.push(SequenceCommand::StopSequenceInstance(self.id).into());
 		self.command_sender
-			.send(InstanceCommand::StopInstancesOfSequence(self.id, settings).into())
-			.map_err(|_| SequenceInstanceHandleError::BackendDisconnected)?;
+			.push(InstanceCommand::StopInstancesOfSequence(self.id, settings).into());
 		Ok(())
 	}
 
 	/// Gets the first event that was emitted by this sequence
 	/// instance since the last call to `pop_event`.
-	pub fn pop_event(&mut self) -> Option<&CustomEvent> {
-		match self.raw_event_receiver.try_recv().ok() {
-			Some(index) => Some(self.events.get_index(index).unwrap()),
-			None => None,
-		}
+	pub fn pop_event(&mut self) -> Result<Option<&CustomEvent>, SequenceInstanceHandleError> {
+		Ok(self
+			.raw_event_receiver
+			.lock()
+			.map_err(|_| SequenceInstanceHandleError::MutexPoisoned)?
+			.pop()
+			.map(|index| self.events.get_index(index).unwrap()))
 	}
 }

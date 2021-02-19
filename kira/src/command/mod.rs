@@ -1,4 +1,4 @@
-mod producer;
+pub mod producer;
 
 use basedrop::Owned;
 

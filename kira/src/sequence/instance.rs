@@ -1,8 +1,8 @@
 use std::sync::{atomic::Ordering, Arc};
 
 use atomic::Atomic;
-use flume::Sender;
 use rand::{thread_rng, Rng};
+use ringbuf::Producer;
 use uuid::Uuid;
 
 use crate::{
@@ -60,13 +60,13 @@ pub struct SequenceInstance {
 	position: usize,
 	wait_timer: Option<f64>,
 	muted: bool,
-	event_sender: Sender<usize>,
+	event_sender: Producer<usize>,
 }
 
 impl SequenceInstance {
 	pub fn new(
 		sequence: RawSequence,
-		event_sender: Sender<usize>,
+		event_sender: Producer<usize>,
 		metronome: Option<MetronomeId>,
 	) -> Self {
 		Self {
@@ -186,7 +186,7 @@ impl SequenceInstance {
 							}
 							SequenceStep::EmitCustomEvent(event) => {
 								if !self.muted {
-									self.event_sender.try_send(*event).ok();
+									self.event_sender.push(*event).ok();
 								}
 								self.start_step(self.position + 1);
 							}

@@ -1,10 +1,10 @@
 //! An interface for controlling sounds.
 
-use flume::Sender;
-use thiserror::Error;
-
 use crate::{
-	command::{Command, InstanceCommand},
+	command::{
+		producer::{CommandProducer, CommandProducerError},
+		InstanceCommand,
+	},
 	instance::{
 		handle::InstanceHandle, Instance, InstanceSettings, PauseInstanceSettings,
 		ResumeInstanceSettings, StopInstanceSettings,
@@ -14,15 +14,6 @@ use crate::{
 
 use super::{Sound, SoundId};
 
-/// Something that can go wrong when using a [`SoundHandle`] to
-/// control a sound.
-#[derive(Debug, Error)]
-pub enum SoundHandleError {
-	/// The audio thread has finished and can no longer receive commands.
-	#[error("The backend cannot receive commands because it no longer exists")]
-	BackendDisconnected,
-}
-
 /// Allows you to control a sound.
 #[derive(Debug, Clone)]
 pub struct SoundHandle {
@@ -31,11 +22,11 @@ pub struct SoundHandle {
 	default_track: TrackIndex,
 	semantic_duration: Option<f64>,
 	default_loop_start: Option<f64>,
-	command_sender: Sender<Command>,
+	command_sender: CommandProducer,
 }
 
 impl SoundHandle {
-	pub(crate) fn new(sound: &Sound, command_sender: Sender<Command>) -> Self {
+	pub(crate) fn new(sound: &Sound, command_sender: CommandProducer) -> Self {
 		Self {
 			id: sound.id(),
 			duration: sound.duration(),
@@ -76,7 +67,10 @@ impl SoundHandle {
 	}
 
 	/// Plays the sound.
-	pub fn play(&mut self, settings: InstanceSettings) -> Result<InstanceHandle, SoundHandleError> {
+	pub fn play(
+		&mut self,
+		settings: InstanceSettings,
+	) -> Result<InstanceHandle, CommandProducerError> {
 		let id = settings.id;
 		let instance = Instance::new(
 			self.id.into(),
@@ -86,29 +80,25 @@ impl SoundHandle {
 		);
 		let handle = InstanceHandle::new(id, instance.public_state(), self.command_sender.clone());
 		self.command_sender
-			.send(InstanceCommand::Play(id, instance).into())
-			.map_err(|_| SoundHandleError::BackendDisconnected)?;
+			.push(InstanceCommand::Play(id, instance).into())?;
 		Ok(handle)
 	}
 
 	/// Pauses all instances of this sound.
-	pub fn pause(&mut self, settings: PauseInstanceSettings) -> Result<(), SoundHandleError> {
+	pub fn pause(&mut self, settings: PauseInstanceSettings) -> Result<(), CommandProducerError> {
 		self.command_sender
-			.send(InstanceCommand::PauseInstancesOf(self.id.into(), settings).into())
-			.map_err(|_| SoundHandleError::BackendDisconnected)
+			.push(InstanceCommand::PauseInstancesOf(self.id.into(), settings).into())
 	}
 
 	/// Resumes all instances of this sound.
-	pub fn resume(&mut self, settings: ResumeInstanceSettings) -> Result<(), SoundHandleError> {
+	pub fn resume(&mut self, settings: ResumeInstanceSettings) -> Result<(), CommandProducerError> {
 		self.command_sender
-			.send(InstanceCommand::ResumeInstancesOf(self.id.into(), settings).into())
-			.map_err(|_| SoundHandleError::BackendDisconnected)
+			.push(InstanceCommand::ResumeInstancesOf(self.id.into(), settings).into())
 	}
 
 	/// Stops all instances of this sound.
-	pub fn stop(&mut self, settings: StopInstanceSettings) -> Result<(), SoundHandleError> {
+	pub fn stop(&mut self, settings: StopInstanceSettings) -> Result<(), CommandProducerError> {
 		self.command_sender
-			.send(InstanceCommand::StopInstancesOf(self.id.into(), settings).into())
-			.map_err(|_| SoundHandleError::BackendDisconnected)
+			.push(InstanceCommand::StopInstancesOf(self.id.into(), settings).into())
 	}
 }
