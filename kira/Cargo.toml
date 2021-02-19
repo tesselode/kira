@@ -34,4 +34,10 @@ rand = "0.8.3"
 ringbuf = "0.2.3"
 serde = { version = "1.0.118", optional = true, features = ["derive"] }
 thiserror = "1.0.23"
+
+[target.'cfg(not(target_arch="wasm32"))'.dependencies]
 uuid = { version = "0.8.1", features = ["v4"] }
+
+[target.'cfg(target_arch="wasm32")'.dependencies]
+getrandom = { version = "0.2.2", features = ["js"] }
+uuid = { version = "0.8.1", features = ["v4", "stdweb", "wasm-bindgen"] }

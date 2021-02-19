@@ -174,7 +174,7 @@ impl AudioManager {
 		let (quit_signal_producer, _) = RingBuffer::new(1).split();
 		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
 		let resource_collector = Collector::new();
-		let _stream = Self::setup_stream(settings, command_consumer, resource_collector.handle())?;
+		let _stream = Self::setup_stream(settings, command_consumer)?;
 		Ok(Self {
 			quit_signal_producer,
 			command_producer: CommandProducer::new(command_producer),
