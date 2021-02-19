@@ -127,6 +127,7 @@ mod tempo;
 mod util;
 mod value;
 
+pub use command::producer::CommandError;
 pub use duration::Duration;
 pub use frame::Frame;
 pub use playable::PlayableId;

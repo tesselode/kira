@@ -52,7 +52,6 @@ pub(crate) enum InstanceCommand {
 	StopGroup(GroupId, StopInstanceSettings),
 }
 
-#[derive(Clone)]
 pub(crate) enum MetronomeCommand {
 	AddMetronome(MetronomeId, Owned<Metronome>),
 	RemoveMetronome(MetronomeId),

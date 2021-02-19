@@ -1,3 +1,13 @@
+# Unreleased
+- Changes to errors related to sending commands to the audio thread:
+  - Command-sending related errors are now listed in the `CommandError` enum
+  - `BackendDisconnected` is no longer included in error enums
+  - Handle structs whose only error variant was `BackendDisconnected` now
+  return a `CommandError`
+  - `TrackHandleError` was split into `AddEffectError` and `RemoveEffectError`
+- `MetronomeHandle.event_iter` has been replaced with `MetronomeHandle.pop_event`,
+which works the same way as `SequenceInstanceHandle.pop_event`
+
 # v0.4.1 - January 23, 2021
 Added serde support for `Arrangement`s and `SoundClip`s
 

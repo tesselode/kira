@@ -1,33 +1,24 @@
 //! An interface for controlling groups.
 
-use flume::Sender;
-use thiserror::Error;
-
 use crate::{
-	command::{Command, InstanceCommand, SequenceCommand},
+	command::{
+		producer::{CommandError, CommandProducer},
+		InstanceCommand, SequenceCommand,
+	},
 	instance::{PauseInstanceSettings, ResumeInstanceSettings, StopInstanceSettings},
 };
 
 use super::GroupId;
 
-/// Something that can go wrong when using a [`GroupHandle`] to
-/// control a group.
-#[derive(Debug, Error)]
-pub enum GroupHandleError {
-	/// The audio thread has finished and can no longer receive commands.
-	#[error("The backend cannot receive commands because it no longer exists")]
-	BackendDisconnected,
-}
-
 #[derive(Debug, Clone)]
 /// Allows you to control a group.
 pub struct GroupHandle {
 	id: GroupId,
-	command_sender: Sender<Command>,
+	command_sender: CommandProducer,
 }
 
 impl GroupHandle {
-	pub(crate) fn new(id: GroupId, command_sender: Sender<Command>) -> Self {
+	pub(crate) fn new(id: GroupId, command_sender: CommandProducer) -> Self {
 		Self { id, command_sender }
 	}
 
@@ -37,35 +28,29 @@ impl GroupHandle {
 	}
 
 	/// Pauses all instances of sounds, arrangements, and sequences in this group.
-	pub fn pause(&mut self, settings: PauseInstanceSettings) -> Result<(), GroupHandleError> {
+	pub fn pause(&mut self, settings: PauseInstanceSettings) -> Result<(), CommandError> {
 		self.command_sender
-			.send(InstanceCommand::PauseGroup(self.id().into(), settings).into())
-			.map_err(|_| GroupHandleError::BackendDisconnected)?;
+			.push(InstanceCommand::PauseGroup(self.id().into(), settings).into())?;
 		self.command_sender
-			.send(SequenceCommand::PauseGroup(self.id().into()).into())
-			.map_err(|_| GroupHandleError::BackendDisconnected)?;
+			.push(SequenceCommand::PauseGroup(self.id().into()).into())?;
 		Ok(())
 	}
 
 	/// Resumes all instances of sounds, arrangements, and sequences in this group.
-	pub fn resume(&mut self, settings: ResumeInstanceSettings) -> Result<(), GroupHandleError> {
+	pub fn resume(&mut self, settings: ResumeInstanceSettings) -> Result<(), CommandError> {
 		self.command_sender
-			.send(InstanceCommand::ResumeGroup(self.id().into(), settings).into())
-			.map_err(|_| GroupHandleError::BackendDisconnected)?;
+			.push(InstanceCommand::ResumeGroup(self.id().into(), settings).into())?;
 		self.command_sender
-			.send(SequenceCommand::ResumeGroup(self.id().into()).into())
-			.map_err(|_| GroupHandleError::BackendDisconnected)?;
+			.push(SequenceCommand::ResumeGroup(self.id().into()).into())?;
 		Ok(())
 	}
 
 	/// Stops all instances of sounds, arrangements, and sequences in this group.
-	pub fn stop(&mut self, settings: StopInstanceSettings) -> Result<(), GroupHandleError> {
+	pub fn stop(&mut self, settings: StopInstanceSettings) -> Result<(), CommandError> {
 		self.command_sender
-			.send(InstanceCommand::StopGroup(self.id().into(), settings).into())
-			.map_err(|_| GroupHandleError::BackendDisconnected)?;
+			.push(InstanceCommand::StopGroup(self.id().into(), settings).into())?;
 		self.command_sender
-			.send(SequenceCommand::StopGroup(self.id().into()).into())
-			.map_err(|_| GroupHandleError::BackendDisconnected)?;
+			.push(SequenceCommand::StopGroup(self.id().into()).into())?;
 		Ok(())
 	}
 }

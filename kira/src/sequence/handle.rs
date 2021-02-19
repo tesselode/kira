@@ -9,7 +9,7 @@ use thiserror::Error;
 
 use crate::{
 	command::{
-		producer::{CommandProducer, CommandProducerError},
+		producer::{CommandError, CommandProducer},
 		InstanceCommand, SequenceCommand,
 	},
 	instance::{PauseInstanceSettings, ResumeInstanceSettings, StopInstanceSettings},
@@ -18,15 +18,17 @@ use crate::{
 use super::{SequenceInstanceId, SequenceInstanceState};
 
 /// Something that can go wrong when using a [`SequenceInstanceHandle`]
-/// to control a sequence instance.
+/// to receive an event from a sequence instance.
 #[derive(Debug, Error)]
-pub enum SequenceInstanceHandleError {
+pub enum PopSequenceInstanceEventError {
 	/// A thread panicked while using the event receiver.
 	#[error("The event receiver cannot be used because a thread panicked while borrowing it.")]
 	MutexPoisoned,
 }
 
-/// Allows you to control an instance of a sequence..
+/// Allows you to control an instance of a sequence.
+
+// TODO: add a manual impl of Debug
 #[derive(Clone)]
 pub struct SequenceInstanceHandle<CustomEvent> {
 	id: SequenceInstanceId,
@@ -68,31 +70,31 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 	/// Muted instances will continue waiting for durations and
 	/// intervals, but they will not play sounds, emit events,
 	/// or perform any other actions.
-	pub fn mute(&mut self) -> Result<(), CommandProducerError> {
+	pub fn mute(&mut self) -> Result<(), CommandError> {
 		self.command_sender
 			.push(SequenceCommand::MuteSequenceInstance(self.id).into())
 	}
 
 	/// Unmutes the sequence instance.
-	pub fn unmute(&mut self) -> Result<(), CommandProducerError> {
+	pub fn unmute(&mut self) -> Result<(), CommandError> {
 		self.command_sender
 			.push(SequenceCommand::UnmuteSequenceInstance(self.id).into())
 	}
 
 	/// Pauses the sequence instance.
-	pub fn pause(&mut self) -> Result<(), CommandProducerError> {
+	pub fn pause(&mut self) -> Result<(), CommandError> {
 		self.command_sender
 			.push(SequenceCommand::PauseSequenceInstance(self.id).into())
 	}
 
 	/// Resumes the sequence instance.
-	pub fn resume(&mut self) -> Result<(), CommandProducerError> {
+	pub fn resume(&mut self) -> Result<(), CommandError> {
 		self.command_sender
 			.push(SequenceCommand::ResumeSequenceInstance(self.id).into())
 	}
 
 	/// Stops the sequence instance.
-	pub fn stop(&mut self) -> Result<(), CommandProducerError> {
+	pub fn stop(&mut self) -> Result<(), CommandError> {
 		self.command_sender
 			.push(SequenceCommand::StopSequenceInstance(self.id).into())
 	}
@@ -102,11 +104,11 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 	pub fn pause_sequence_and_instances(
 		&mut self,
 		settings: PauseInstanceSettings,
-	) -> Result<(), CommandProducerError> {
+	) -> Result<(), CommandError> {
 		self.command_sender
-			.push(SequenceCommand::PauseSequenceInstance(self.id).into());
+			.push(SequenceCommand::PauseSequenceInstance(self.id).into())?;
 		self.command_sender
-			.push(InstanceCommand::PauseInstancesOfSequence(self.id, settings).into());
+			.push(InstanceCommand::PauseInstancesOfSequence(self.id, settings).into())?;
 		Ok(())
 	}
 
@@ -115,11 +117,11 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 	pub fn resume_sequence_and_instances(
 		&mut self,
 		settings: ResumeInstanceSettings,
-	) -> Result<(), CommandProducerError> {
+	) -> Result<(), CommandError> {
 		self.command_sender
-			.push(SequenceCommand::ResumeSequenceInstance(self.id).into());
+			.push(SequenceCommand::ResumeSequenceInstance(self.id).into())?;
 		self.command_sender
-			.push(InstanceCommand::ResumeInstancesOfSequence(self.id, settings).into());
+			.push(InstanceCommand::ResumeInstancesOfSequence(self.id, settings).into())?;
 		Ok(())
 	}
 
@@ -128,22 +130,25 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 	pub fn stop_sequence_and_instances(
 		&mut self,
 		settings: StopInstanceSettings,
-	) -> Result<(), CommandProducerError> {
+	) -> Result<(), CommandError> {
 		self.command_sender
-			.push(SequenceCommand::StopSequenceInstance(self.id).into());
+			.push(SequenceCommand::StopSequenceInstance(self.id).into())?;
 		self.command_sender
-			.push(InstanceCommand::StopInstancesOfSequence(self.id, settings).into());
+			.push(InstanceCommand::StopInstancesOfSequence(self.id, settings).into())?;
 		Ok(())
 	}
 
 	/// Gets the first event that was emitted by this sequence
 	/// instance since the last call to `pop_event`.
-	pub fn pop_event(&mut self) -> Result<Option<&CustomEvent>, SequenceInstanceHandleError> {
-		Ok(self
+	pub fn pop_event(&mut self) -> Result<Option<&CustomEvent>, PopSequenceInstanceEventError> {
+		let mut raw_event_receiver = self
 			.raw_event_receiver
 			.lock()
-			.map_err(|_| SequenceInstanceHandleError::MutexPoisoned)?
-			.pop()
-			.map(|index| self.events.get_index(index).unwrap()))
+			.map_err(|_| PopSequenceInstanceEventError::MutexPoisoned)?;
+		if let Some(index) = raw_event_receiver.pop() {
+			Ok(Some(self.events.get_index(index).unwrap()))
+		} else {
+			Ok(None)
+		}
 	}
 }

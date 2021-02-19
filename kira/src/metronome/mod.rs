@@ -7,7 +7,7 @@ pub mod handle;
 mod metronomes;
 mod settings;
 
-use flume::Sender;
+use ringbuf::Producer;
 use uuid::Uuid;
 
 use crate::{parameter::Parameters, tempo::Tempo, value::CachedValue, Value};
@@ -40,18 +40,18 @@ impl From<&MetronomeHandle> for MetronomeId {
 	}
 }
 
-#[derive(Debug, Clone)]
+// TODO: add a manual impl of Debug
 pub(crate) struct Metronome {
 	tempo: CachedValue<Tempo>,
 	interval_events_to_emit: Vec<f64>,
 	ticking: bool,
 	time: f64,
 	previous_time: f64,
-	event_sender: Sender<f64>,
+	event_sender: Producer<f64>,
 }
 
 impl Metronome {
-	pub fn new(settings: MetronomeSettings, event_sender: Sender<f64>) -> Self {
+	pub fn new(settings: MetronomeSettings, event_sender: Producer<f64>) -> Self {
 		Self {
 			tempo: CachedValue::new(settings.tempo, Tempo(120.0)),
 			interval_events_to_emit: settings.interval_events_to_emit,
@@ -95,7 +95,7 @@ impl Metronome {
 			self.time += (self.tempo.value().0 / 60.0) * dt;
 			for interval in &self.interval_events_to_emit {
 				if self.interval_passed(*interval) {
-					self.event_sender.try_send(*interval).ok();
+					self.event_sender.push(*interval).ok();
 				}
 			}
 		}

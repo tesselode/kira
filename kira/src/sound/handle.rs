@@ -2,7 +2,7 @@
 
 use crate::{
 	command::{
-		producer::{CommandProducer, CommandProducerError},
+		producer::{CommandError, CommandProducer},
 		InstanceCommand,
 	},
 	instance::{
@@ -67,10 +67,7 @@ impl SoundHandle {
 	}
 
 	/// Plays the sound.
-	pub fn play(
-		&mut self,
-		settings: InstanceSettings,
-	) -> Result<InstanceHandle, CommandProducerError> {
+	pub fn play(&mut self, settings: InstanceSettings) -> Result<InstanceHandle, CommandError> {
 		let id = settings.id;
 		let instance = Instance::new(
 			self.id.into(),
@@ -85,19 +82,19 @@ impl SoundHandle {
 	}
 
 	/// Pauses all instances of this sound.
-	pub fn pause(&mut self, settings: PauseInstanceSettings) -> Result<(), CommandProducerError> {
+	pub fn pause(&mut self, settings: PauseInstanceSettings) -> Result<(), CommandError> {
 		self.command_sender
 			.push(InstanceCommand::PauseInstancesOf(self.id.into(), settings).into())
 	}
 
 	/// Resumes all instances of this sound.
-	pub fn resume(&mut self, settings: ResumeInstanceSettings) -> Result<(), CommandProducerError> {
+	pub fn resume(&mut self, settings: ResumeInstanceSettings) -> Result<(), CommandError> {
 		self.command_sender
 			.push(InstanceCommand::ResumeInstancesOf(self.id.into(), settings).into())
 	}
 
 	/// Stops all instances of this sound.
-	pub fn stop(&mut self, settings: StopInstanceSettings) -> Result<(), CommandProducerError> {
+	pub fn stop(&mut self, settings: StopInstanceSettings) -> Result<(), CommandError> {
 		self.command_sender
 			.push(InstanceCommand::StopInstancesOf(self.id.into(), settings).into())
 	}

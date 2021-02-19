@@ -10,8 +10,8 @@ use crate::{
 	command::Command, frame::Frame, group::groups::Groups, metronome::Metronomes,
 	parameter::Parameters, playable::Playables,
 };
-use flume::Receiver;
 use instances::Instances;
+use ringbuf::Consumer;
 use sequences::Sequences;
 use streams::Streams;
 
@@ -20,7 +20,7 @@ pub struct Backend {
 	dt: f64,
 	playables: Playables,
 	command_queue: Vec<Command>,
-	command_receiver: Receiver<Command>,
+	command_receiver: Consumer<Command>,
 	metronomes: Metronomes,
 	parameters: Parameters,
 	instances: Instances,
@@ -34,7 +34,7 @@ impl Backend {
 	pub(crate) fn new(
 		sample_rate: u32,
 		settings: AudioManagerSettings,
-		command_receiver: Receiver<Command>,
+		command_receiver: Consumer<Command>,
 	) -> Self {
 		Self {
 			dt: 1.0 / sample_rate as f64,
@@ -52,7 +52,9 @@ impl Backend {
 	}
 
 	fn process_commands(&mut self) {
-		self.command_queue.extend(self.command_receiver.try_iter());
+		while let Some(command) = self.command_receiver.pop() {
+			self.command_queue.push(command);
+		}
 		for command in self.command_queue.drain(..) {
 			match command {
 				Command::Resource(command) => {

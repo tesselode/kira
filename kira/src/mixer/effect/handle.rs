@@ -1,23 +1,14 @@
 //! An interface for controlling effects.
 
-use flume::Sender;
-use thiserror::Error;
-
 use crate::{
-	command::{Command, MixerCommand},
+	command::{
+		producer::{CommandError, CommandProducer},
+		MixerCommand,
+	},
 	mixer::TrackIndex,
 };
 
 use super::{EffectId, EffectSettings};
-
-/// Something that can go wrong when using an [`EffectHandle`] to
-/// control an effect.
-#[derive(Debug, Error)]
-pub enum EffectHandleError {
-	/// The audio thread has finished and can no longer receive commands.
-	#[error("The backend cannot receive commands because it no longer exists")]
-	BackendDisconnected,
-}
 
 #[derive(Debug, Clone)]
 /// Allows you to control an effect.
@@ -25,14 +16,14 @@ pub struct EffectHandle {
 	id: EffectId,
 	track_index: TrackIndex,
 	enabled: bool,
-	command_sender: Sender<Command>,
+	command_sender: CommandProducer,
 }
 
 impl EffectHandle {
 	pub(crate) fn new(
 		track_index: TrackIndex,
 		settings: &EffectSettings,
-		command_sender: Sender<Command>,
+		command_sender: CommandProducer,
 	) -> Self {
 		Self {
 			id: settings.id,
@@ -58,10 +49,9 @@ impl EffectHandle {
 	}
 
 	/// Sets whether the effect is currently enabled.
-	pub fn set_enabled(&mut self, enabled: bool) -> Result<(), EffectHandleError> {
+	pub fn set_enabled(&mut self, enabled: bool) -> Result<(), CommandError> {
 		self.enabled = enabled;
 		self.command_sender
-			.send(MixerCommand::SetEffectEnabled(self.track_index, self.id, enabled).into())
-			.map_err(|_| EffectHandleError::BackendDisconnected)
+			.push(MixerCommand::SetEffectEnabled(self.track_index, self.id, enabled).into())
 	}
 }

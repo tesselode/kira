@@ -6,6 +6,7 @@ use thiserror::Error;
 use crate::{
 	arrangement::ArrangementId,
 	audio_stream::AudioStreamId,
+	command::producer::CommandError,
 	group::GroupId,
 	metronome::MetronomeId,
 	mixer::{SubTrackId, TrackIndex},
@@ -49,9 +50,9 @@ pub enum AddSoundError {
 	#[error("The sound belongs to a group that does not exist")]
 	NoGroupWithId(GroupId),
 
-	/// The audio thread has finished and can no longer receive commands.
-	#[error("The backend cannot receive commands because it no longer exists")]
-	BackendDisconnected,
+	/// A command could not be sent to the audio thread.
+	#[error("Could not send the command to the audio thread.")]
+	CommandProducerError(#[from] CommandError),
 }
 
 /// Things that can go wrong when loading a sound from a file
@@ -75,9 +76,9 @@ pub enum RemoveSoundError {
 	#[error("The sound with the specified ID does not exist")]
 	NoSoundWithId(SoundId),
 
-	/// The audio thread has finished and can no longer receive commands.
-	#[error("The backend cannot receive commands because it no longer exists")]
-	BackendDisconnected,
+	/// A command could not be sent to the audio thread.
+	#[error("Could not send the command to the audio thread.")]
+	CommandProducerError(#[from] CommandError),
 }
 
 /// Things that can go wrong when adding an arrangement to the audio thread.
@@ -95,9 +96,9 @@ pub enum AddArrangementError {
 	#[error("The arrangement belongs to a group that does not exist")]
 	NoGroupWithId(GroupId),
 
-	/// The audio thread has finished and can no longer receive commands.
-	#[error("The backend cannot receive commands because it no longer exists")]
-	BackendDisconnected,
+	/// A command could not be sent to the audio thread.
+	#[error("Could not send the command to the audio thread.")]
+	CommandProducerError(#[from] CommandError),
 }
 
 /// Things that can go wrong when removing an arrangement from the
@@ -108,9 +109,9 @@ pub enum RemoveArrangementError {
 	#[error("The arrangement with the specified ID does not exist")]
 	NoArrangementWithId(ArrangementId),
 
-	/// The audio thread has finished and can no longer receive commands.
-	#[error("The backend cannot receive commands because it no longer exists")]
-	BackendDisconnected,
+	/// A command could not be sent to the audio thread.
+	#[error("Could not send the command to the audio thread.")]
+	CommandProducerError(#[from] CommandError),
 }
 
 /// Things that can go wrong when adding a metronome to the audio thread.
@@ -120,9 +121,9 @@ pub enum AddMetronomeError {
 	#[error("Cannot add a metronome because the max number of metronomes has been reached")]
 	MetronomeLimitReached,
 
-	/// The audio thread has finished and can no longer receive commands.
-	#[error("The backend cannot receive commands because it no longer exists")]
-	BackendDisconnected,
+	/// A command could not be sent to the audio thread.
+	#[error("Could not send the command to the audio thread.")]
+	CommandProducerError(#[from] CommandError),
 }
 
 /// Things that can go wrong when removing a metronome from the
@@ -133,9 +134,9 @@ pub enum RemoveMetronomeError {
 	#[error("The metronome with the specified ID does not exist")]
 	NoMetronomeWithId(MetronomeId),
 
-	/// The audio thread has finished and can no longer receive commands.
-	#[error("The backend cannot receive commands because it no longer exists")]
-	BackendDisconnected,
+	/// A command could not be sent to the audio thread.
+	#[error("Could not send the command to the audio thread.")]
+	CommandProducerError(#[from] CommandError),
 }
 
 /// Things that can go wrong when adding a group to the audio thread.
@@ -149,9 +150,9 @@ pub enum AddGroupError {
 	#[error("The group belongs to a parent group that does not exist")]
 	NoGroupWithId(GroupId),
 
-	/// The audio thread has finished and can no longer receive commands.
-	#[error("The backend cannot receive commands because it no longer exists")]
-	BackendDisconnected,
+	/// A command could not be sent to the audio thread.
+	#[error("Could not send the command to the audio thread.")]
+	CommandProducerError(#[from] CommandError),
 }
 
 /// Things that can go wrong when removing a group from the
@@ -162,9 +163,9 @@ pub enum RemoveGroupError {
 	#[error("The group with the specified ID does not exist")]
 	NoGroupWithId(GroupId),
 
-	/// The audio thread has finished and can no longer receive commands.
-	#[error("The backend cannot receive commands because it no longer exists")]
-	BackendDisconnected,
+	/// A command could not be sent to the audio thread.
+	#[error("Could not send the command to the audio thread.")]
+	CommandProducerError(#[from] CommandError),
 }
 
 /// Things that can go wrong when adding a parameter to the audio thread.
@@ -174,9 +175,9 @@ pub enum AddParameterError {
 	#[error("Cannot add an parameter because the max number of parameters has been reached")]
 	ParameterLimitReached,
 
-	/// The audio thread has finished and can no longer receive commands.
-	#[error("The backend cannot receive commands because it no longer exists")]
-	BackendDisconnected,
+	/// A command could not be sent to the audio thread.
+	#[error("Could not send the command to the audio thread.")]
+	CommandProducerError(#[from] CommandError),
 }
 
 /// Things that can go wrong when removing a parameter from the
@@ -187,9 +188,9 @@ pub enum RemoveParameterError {
 	#[error("The parameter with the specified ID does not exist")]
 	NoParameterWithId(ParameterId),
 
-	/// The audio thread has finished and can no longer receive commands.
-	#[error("The backend cannot receive commands because it no longer exists")]
-	BackendDisconnected,
+	/// A command could not be sent to the audio thread.
+	#[error("Could not send the command to the audio thread.")]
+	CommandProducerError(#[from] CommandError),
 }
 
 /// Things that can go wrong when adding a mixer track to the audio thread.
@@ -203,9 +204,9 @@ pub enum AddTrackError {
 	#[error("The track's parent track does not exist")]
 	NoTrackWithIndex(TrackIndex),
 
-	/// The audio thread has finished and can no longer receive commands.
-	#[error("The backend cannot receive commands because it no longer exists")]
-	BackendDisconnected,
+	/// A command could not be sent to the audio thread.
+	#[error("Could not send the command to the audio thread.")]
+	CommandProducerError(#[from] CommandError),
 }
 
 /// Things that can go wrong when removing a mixer track from the
@@ -216,9 +217,9 @@ pub enum RemoveTrackError {
 	#[error("The track with the specified ID does not exist")]
 	NoTrackWithId(SubTrackId),
 
-	/// The audio thread has finished and can no longer receive commands.
-	#[error("The backend cannot receive commands because it no longer exists")]
-	BackendDisconnected,
+	/// A command could not be sent to the audio thread.
+	#[error("Could not send the command to the audio thread.")]
+	CommandProducerError(#[from] CommandError),
 }
 
 /// Things that can go wrong when adding an audio stream to the audio thread.
@@ -232,9 +233,9 @@ pub enum AddStreamError {
 	#[error("The specified track for the stream does not exist")]
 	NoTrackWithIndex(TrackIndex),
 
-	/// The audio thread has finished and can no longer receive commands.
-	#[error("The backend cannot receive commands because it no longer exists")]
-	BackendDisconnected,
+	/// A command could not be sent to the audio thread.
+	#[error("Could not send the command to the audio thread.")]
+	CommandProducerError(#[from] CommandError),
 }
 
 /// Things that can go wrong when removing an audio stream from the
@@ -245,9 +246,9 @@ pub enum RemoveStreamError {
 	#[error("The stream with the specified ID does not exist")]
 	NoStreamWithId(AudioStreamId),
 
-	/// The audio thread has finished and can no longer receive commands.
-	#[error("The backend cannot receive commands because it no longer exists")]
-	BackendDisconnected,
+	/// A command could not be sent to the audio thread.
+	#[error("Could not send the command to the audio thread.")]
+	CommandProducerError(#[from] CommandError),
 }
 
 /// Things that can go wrong when starting a sequence.
@@ -261,7 +262,7 @@ pub enum StartSequenceError {
 	#[error("The sequence belongs to a group that does not exist")]
 	NoGroupWithId(GroupId),
 
-	/// The audio thread has finished and can no longer receive commands.
-	#[error("The backend cannot receive commands because it no longer exists")]
-	BackendDisconnected,
+	/// A command could not be sent to the audio thread.
+	#[error("Could not send the command to the audio thread.")]
+	CommandProducerError(#[from] CommandError),
 }

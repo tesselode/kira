@@ -1,7 +1,7 @@
 //! An interface for controlling parameters.
 
 use crate::command::{
-	producer::{CommandProducer, CommandProducerError},
+	producer::{CommandError, CommandProducer},
 	ParameterCommand,
 };
 
@@ -25,11 +25,7 @@ impl ParameterHandle {
 	}
 
 	/// Sets the parameter to a value with an optional tween.
-	pub fn set(
-		&mut self,
-		value: f64,
-		tween: impl Into<Option<Tween>>,
-	) -> Result<(), CommandProducerError> {
+	pub fn set(&mut self, value: f64, tween: impl Into<Option<Tween>>) -> Result<(), CommandError> {
 		self.command_sender
 			.push(ParameterCommand::SetParameter(self.id, value, tween.into()).into())
 	}

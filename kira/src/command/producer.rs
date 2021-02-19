@@ -8,7 +8,7 @@ use super::Command;
 /// Something that can go wrong when using a [`CommandProducer`]
 /// to send a command to the audio thread.
 #[derive(Debug, Error)]
-pub enum CommandProducerError {
+pub enum CommandError {
 	/// The command queue is full.
 	#[error("Commands cannot be sent to the audio thread because the command queue is full")]
 	CommandQueueFull,
@@ -18,7 +18,7 @@ pub enum CommandProducerError {
 }
 
 #[derive(Clone)]
-pub struct CommandProducer {
+pub(crate) struct CommandProducer {
 	producer: Arc<Mutex<Producer<Command>>>,
 }
 
@@ -29,12 +29,12 @@ impl CommandProducer {
 		}
 	}
 
-	pub fn push(&mut self, command: Command) -> Result<(), CommandProducerError> {
+	pub fn push(&mut self, command: Command) -> Result<(), CommandError> {
 		self.producer
 			.lock()
-			.map_err(|_| CommandProducerError::MutexPoisoned)?
+			.map_err(|_| CommandError::MutexPoisoned)?
 			.push(command)
-			.map_err(|_| CommandProducerError::CommandQueueFull)
+			.map_err(|_| CommandError::CommandQueueFull)
 	}
 }
 
