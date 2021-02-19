@@ -1,3 +1,5 @@
+mod producer;
+
 use basedrop::Owned;
 
 use crate::{
