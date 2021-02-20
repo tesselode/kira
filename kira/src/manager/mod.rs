@@ -494,6 +494,7 @@ impl AudioManager {
 	}
 }
 
+#[cfg(not(feature = "benchmarking"))]
 impl Drop for AudioManager {
 	fn drop(&mut self) {
 		// TODO: add proper error handling here without breaking benchmarks
