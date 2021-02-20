@@ -4,20 +4,20 @@ use crate::{
 	instance::{Instance, InstanceId, StopInstanceSettings},
 	parameter::Parameters,
 	playable::{PlayableId, Playables},
+	static_container::index_map::StaticIndexMap,
 };
-use indexmap::IndexMap;
 
 use super::mixer::Mixer;
 
 pub(crate) struct Instances {
-	instances: IndexMap<InstanceId, Instance>,
+	instances: StaticIndexMap<InstanceId, Instance>,
 	instances_to_remove: Vec<InstanceId>,
 }
 
 impl Instances {
 	pub fn new(capacity: usize) -> Self {
 		Self {
-			instances: IndexMap::with_capacity(capacity),
+			instances: StaticIndexMap::new(capacity),
 			instances_to_remove: Vec::with_capacity(capacity),
 		}
 	}
@@ -45,7 +45,7 @@ impl Instances {
 						if self.instances.len() >= self.instances.capacity() {
 							self.instances.shift_remove_index(0);
 						}
-						self.instances.insert(instance_id, instance);
+						self.instances.try_insert(instance_id, instance).ok();
 						playable.start_cooldown();
 					}
 				}

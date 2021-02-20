@@ -1,25 +1,25 @@
 use basedrop::Owned;
-use indexmap::IndexMap;
 
 use crate::{
 	arrangement::{Arrangement, ArrangementId},
 	command::ResourceCommand,
 	sound::{Sound, SoundId},
+	static_container::index_map::StaticIndexMap,
 	Frame,
 };
 
 use super::{Playable, PlayableId, PlayableMut};
 
 pub(crate) struct Playables {
-	sounds: IndexMap<SoundId, Owned<Sound>>,
-	arrangements: IndexMap<ArrangementId, Owned<Arrangement>>,
+	sounds: StaticIndexMap<SoundId, Owned<Sound>>,
+	arrangements: StaticIndexMap<ArrangementId, Owned<Arrangement>>,
 }
 
 impl Playables {
 	pub fn new(sound_capacity: usize, arrangement_capacity: usize) -> Self {
 		Self {
-			sounds: IndexMap::with_capacity(sound_capacity),
-			arrangements: IndexMap::with_capacity(arrangement_capacity),
+			sounds: StaticIndexMap::new(sound_capacity),
+			arrangements: StaticIndexMap::new(arrangement_capacity),
 		}
 	}
 
@@ -67,13 +67,15 @@ impl Playables {
 	pub fn run_command(&mut self, command: ResourceCommand) {
 		match command {
 			ResourceCommand::AddSound(sound) => {
-				self.sounds.insert(sound.id(), sound);
+				self.sounds.try_insert(sound.id(), sound).ok();
 			}
 			ResourceCommand::RemoveSound(id) => {
 				self.sounds.remove(&id);
 			}
 			ResourceCommand::AddArrangement(arrangement) => {
-				self.arrangements.insert(arrangement.id(), arrangement);
+				self.arrangements
+					.try_insert(arrangement.id(), arrangement)
+					.ok();
 			}
 			ResourceCommand::RemoveArrangement(id) => {
 				self.arrangements.remove(&id);

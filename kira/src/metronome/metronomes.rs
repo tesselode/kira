@@ -1,20 +1,20 @@
 use basedrop::Owned;
-use indexmap::IndexMap;
 
 use crate::{
 	command::MetronomeCommand,
 	metronome::{Metronome, MetronomeId},
 	parameter::Parameters,
+	static_container::index_map::StaticIndexMap,
 };
 
 pub(crate) struct Metronomes {
-	metronomes: IndexMap<MetronomeId, Owned<Metronome>>,
+	metronomes: StaticIndexMap<MetronomeId, Owned<Metronome>>,
 }
 
 impl Metronomes {
 	pub fn new(capacity: usize) -> Self {
 		Self {
-			metronomes: IndexMap::with_capacity(capacity),
+			metronomes: StaticIndexMap::new(capacity),
 		}
 	}
 
@@ -25,7 +25,7 @@ impl Metronomes {
 	pub fn run_command(&mut self, command: MetronomeCommand) {
 		match command {
 			MetronomeCommand::AddMetronome(id, metronome) => {
-				self.metronomes.insert(id, metronome);
+				self.metronomes.try_insert(id, metronome).ok();
 			}
 			MetronomeCommand::RemoveMetronome(id) => {
 				self.metronomes.remove(&id);

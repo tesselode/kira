@@ -5,13 +5,13 @@ use crate::{
 	metronome::Metronomes,
 	playable::Playables,
 	sequence::{SequenceInstance, SequenceInstanceId, SequenceOutputCommand},
+	static_container::index_map::StaticIndexMap,
 };
 use basedrop::Owned;
-use indexmap::IndexMap;
 use std::vec::Drain;
 
 pub(crate) struct Sequences {
-	sequence_instances: IndexMap<SequenceInstanceId, Owned<SequenceInstance>>,
+	sequence_instances: StaticIndexMap<SequenceInstanceId, Owned<SequenceInstance>>,
 	sequence_instances_to_remove: Vec<SequenceInstanceId>,
 	sequence_output_command_queue: Vec<SequenceOutputCommand>,
 	output_command_queue: Vec<Command>,
@@ -20,7 +20,7 @@ pub(crate) struct Sequences {
 impl Sequences {
 	pub fn new(sequence_capacity: usize, command_capacity: usize) -> Self {
 		Self {
-			sequence_instances: IndexMap::with_capacity(sequence_capacity),
+			sequence_instances: StaticIndexMap::new(sequence_capacity),
 			sequence_instances_to_remove: Vec::with_capacity(sequence_capacity),
 			sequence_output_command_queue: Vec::with_capacity(command_capacity),
 			output_command_queue: Vec::with_capacity(command_capacity),
@@ -33,7 +33,7 @@ impl Sequences {
 		mut instance: Owned<SequenceInstance>,
 	) {
 		instance.start();
-		self.sequence_instances.insert(id, instance);
+		self.sequence_instances.try_insert(id, instance).ok();
 	}
 
 	pub fn run_command(&mut self, command: SequenceCommand, groups: &Groups) {

@@ -4,9 +4,7 @@ use basedrop::Owned;
 use handle::TrackHandle;
 use uuid::Uuid;
 
-use indexmap::IndexMap;
-
-use crate::{frame::Frame, parameter::Parameters};
+use crate::{frame::Frame, parameter::Parameters, static_container::index_map::StaticIndexMap};
 
 use super::{
 	effect::{Effect, EffectId, EffectSettings},
@@ -143,7 +141,7 @@ pub(crate) struct Track {
 	id: SubTrackId,
 	parent_track: TrackIndex,
 	volume: f64,
-	effect_slots: IndexMap<EffectId, EffectSlot>,
+	effect_slots: StaticIndexMap<EffectId, EffectSlot>,
 	input: Frame,
 }
 
@@ -153,7 +151,7 @@ impl Track {
 			id: settings.id,
 			parent_track: settings.parent_track,
 			volume: settings.volume,
-			effect_slots: IndexMap::with_capacity(settings.num_effects),
+			effect_slots: StaticIndexMap::new(settings.num_effects),
 			input: Frame::from_mono(0.0),
 		}
 	}
@@ -169,7 +167,7 @@ impl Track {
 	pub fn add_effect(&mut self, effect: Owned<Box<dyn Effect>>, settings: EffectSettings) {
 		let id = settings.id;
 		let effect_slot = EffectSlot::new(effect, settings);
-		self.effect_slots.insert(id, effect_slot);
+		self.effect_slots.try_insert(id, effect_slot).ok();
 	}
 
 	pub fn effect_mut(&mut self, id: EffectId) -> Option<&mut EffectSlot> {

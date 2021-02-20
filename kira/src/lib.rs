@@ -123,6 +123,7 @@ pub mod parameter;
 mod playable;
 pub mod sequence;
 pub mod sound;
+mod static_container;
 mod tempo;
 mod util;
 mod value;

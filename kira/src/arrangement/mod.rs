@@ -135,12 +135,11 @@ use handle::ArrangementHandle;
 pub use id::ArrangementId;
 pub use settings::{ArrangementSettings, LoopArrangementSettings};
 
-use indexmap::IndexMap;
-
 use crate::{
 	group::{groups::Groups, GroupId, GroupSet},
 	mixer::TrackIndex,
 	sound::{handle::SoundHandle, Sound, SoundId},
+	static_container::index_map::StaticIndexMap,
 	Frame,
 };
 
@@ -284,7 +283,7 @@ impl Arrangement {
 	pub(crate) fn get_frame_at_position(
 		&self,
 		position: f64,
-		sounds: &IndexMap<SoundId, Owned<Sound>>,
+		sounds: &StaticIndexMap<SoundId, Owned<Sound>>,
 	) -> Frame {
 		let mut frame = Frame::from_mono(0.0);
 		for clip in &self.clips {

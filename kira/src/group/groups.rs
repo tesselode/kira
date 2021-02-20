@@ -1,18 +1,17 @@
 use basedrop::Owned;
-use indexmap::IndexMap;
 
-use crate::command::GroupCommand;
+use crate::{command::GroupCommand, static_container::index_map::StaticIndexMap};
 
 use super::{Group, GroupId};
 
 pub(crate) struct Groups {
-	groups: IndexMap<GroupId, Owned<Group>>,
+	groups: StaticIndexMap<GroupId, Owned<Group>>,
 }
 
 impl Groups {
 	pub fn new(capacity: usize) -> Self {
 		Self {
-			groups: IndexMap::with_capacity(capacity),
+			groups: StaticIndexMap::new(capacity),
 		}
 	}
 
@@ -23,7 +22,7 @@ impl Groups {
 	pub fn run_command(&mut self, command: GroupCommand) {
 		match command {
 			GroupCommand::AddGroup(id, group) => {
-				self.groups.insert(id, group);
+				self.groups.try_insert(id, group).ok();
 			}
 			GroupCommand::RemoveGroup(id) => {
 				self.groups.remove(&id);

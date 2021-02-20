@@ -2,28 +2,28 @@ use crate::{
 	audio_stream::{AudioStream, AudioStreamId},
 	command::StreamCommand,
 	manager::TrackIndex,
+	static_container::index_map::StaticIndexMap,
 };
 
 use super::mixer::Mixer;
 
 use basedrop::Owned;
-use indexmap::IndexMap;
 
 pub(crate) struct Streams {
-	streams: IndexMap<AudioStreamId, (TrackIndex, Owned<Box<dyn AudioStream>>)>,
+	streams: StaticIndexMap<AudioStreamId, (TrackIndex, Owned<Box<dyn AudioStream>>)>,
 }
 
 impl Streams {
 	pub fn new(capacity: usize) -> Self {
 		Self {
-			streams: IndexMap::with_capacity(capacity),
+			streams: StaticIndexMap::new(capacity),
 		}
 	}
 
 	pub fn run_command(&mut self, command: StreamCommand) {
 		match command {
 			StreamCommand::AddStream(stream_id, track_id, stream) => {
-				self.streams.insert(stream_id, (track_id, stream));
+				self.streams.try_insert(stream_id, (track_id, stream)).ok();
 			}
 			StreamCommand::RemoveStream(stream_id) => {
 				self.streams.remove(&stream_id);
