@@ -75,8 +75,12 @@ impl SoundHandle {
 			None,
 			settings.into_internal(self.duration, self.default_loop_start, self.default_track),
 		);
-		let handle =
-			InstanceHandle::new(id, instance.public_state(), self.command_producer.clone());
+		let handle = InstanceHandle::new(
+			id,
+			instance.public_state(),
+			instance.public_position(),
+			self.command_producer.clone(),
+		);
 		self.command_producer
 			.push(InstanceCommand::Play(id, instance).into())?;
 		Ok(handle)

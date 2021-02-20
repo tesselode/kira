@@ -139,6 +139,7 @@ pub(crate) struct Instance {
 	state: InstanceState,
 	public_state: Arc<Atomic<InstanceState>>,
 	position: f64,
+	public_position: Arc<Atomic<f64>>,
 	fade_volume: Parameter,
 }
 
@@ -169,6 +170,7 @@ impl Instance {
 			state: InstanceState::Playing,
 			public_state: Arc::new(Atomic::new(InstanceState::Playing)),
 			position: settings.start_position,
+			public_position: Arc::new(Atomic::new(settings.start_position)),
 			fade_volume,
 		}
 	}
@@ -191,6 +193,10 @@ impl Instance {
 
 	pub fn public_state(&self) -> Arc<Atomic<InstanceState>> {
 		self.public_state.clone()
+	}
+
+	pub fn public_position(&self) -> Arc<Atomic<f64>> {
+		self.public_position.clone()
 	}
 
 	pub fn playing(&self) -> bool {
@@ -303,6 +309,7 @@ impl Instance {
 				_ => {}
 			}
 		}
+		self.public_position.store(self.position, Ordering::Relaxed);
 	}
 
 	pub fn get_sample(&self, playables: &Playables) -> Frame {

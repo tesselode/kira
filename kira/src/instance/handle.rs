@@ -21,6 +21,7 @@ use super::{
 pub struct InstanceHandle {
 	id: InstanceId,
 	state: Arc<Atomic<InstanceState>>,
+	position: Arc<Atomic<f64>>,
 	command_producer: CommandProducer,
 }
 
@@ -28,11 +29,13 @@ impl InstanceHandle {
 	pub(crate) fn new(
 		id: InstanceId,
 		state: Arc<Atomic<InstanceState>>,
+		position: Arc<Atomic<f64>>,
 		command_producer: CommandProducer,
 	) -> Self {
 		Self {
 			id,
 			state,
+			position,
 			command_producer,
 		}
 	}
@@ -45,6 +48,11 @@ impl InstanceHandle {
 	/// Returns the playback state of the instance.
 	pub fn state(&self) -> InstanceState {
 		self.state.load(Ordering::Relaxed)
+	}
+
+	/// Returns the playback position of the instance.
+	pub fn position(&self) -> f64 {
+		self.position.load(Ordering::Relaxed)
 	}
 
 	/// Sets the volume of the instance.
