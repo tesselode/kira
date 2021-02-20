@@ -141,6 +141,6 @@ impl Effect for Delay {
 		};
 		self.buffer[self.write_position] = input + filtered_output * self.feedback.value() as f32;
 
-		output
+		filtered_output
 	}
 }
