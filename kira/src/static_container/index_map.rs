@@ -94,7 +94,7 @@ impl<'a, K: Eq + Hash, V> IntoIterator for &'a StaticIndexMap<K, V> {
 	type IntoIter = indexmap::map::Iter<'a, K, V>;
 
 	fn into_iter(self) -> Self::IntoIter {
-		self.index_map.iter()
+		self.iter()
 	}
 }
 
@@ -104,6 +104,6 @@ impl<'a, K: Eq + Hash, V> IntoIterator for &'a mut StaticIndexMap<K, V> {
 	type IntoIter = indexmap::map::IterMut<'a, K, V>;
 
 	fn into_iter(self) -> Self::IntoIter {
-		self.index_map.iter_mut()
+		self.iter_mut()
 	}
 }

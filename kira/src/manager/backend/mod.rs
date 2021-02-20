@@ -8,7 +8,7 @@ use self::mixer::Mixer;
 use super::AudioManagerSettings;
 use crate::{
 	command::Command, frame::Frame, group::groups::Groups, metronome::Metronomes,
-	parameter::Parameters, playable::Playables,
+	parameter::Parameters, playable::Playables, static_container::vec::StaticVec,
 };
 use instances::Instances;
 use ringbuf::Consumer;
@@ -19,7 +19,7 @@ use streams::Streams;
 pub struct Backend {
 	dt: f64,
 	playables: Playables,
-	command_queue: Vec<Command>,
+	command_queue: StaticVec<Command>,
 	command_consumer: Consumer<Command>,
 	metronomes: Metronomes,
 	parameters: Parameters,
@@ -39,7 +39,7 @@ impl Backend {
 		Self {
 			dt: 1.0 / sample_rate as f64,
 			playables: Playables::new(settings.num_sounds, settings.num_arrangements),
-			command_queue: Vec::with_capacity(settings.num_commands),
+			command_queue: StaticVec::new(settings.num_commands),
 			command_consumer,
 			parameters: Parameters::new(settings.num_parameters),
 			metronomes: Metronomes::new(settings.num_metronomes),
@@ -53,7 +53,11 @@ impl Backend {
 
 	fn process_commands(&mut self) {
 		while let Some(command) = self.command_consumer.pop() {
-			self.command_queue.push(command);
+			// TODO: find a way to avoid sharing the command queue
+			// between user-called functions and sequence-produced
+			// commands. I don't want sequence commands cutting
+			// into the capacity of the command queue
+			self.command_queue.try_push(command).ok();
 		}
 		for command in self.command_queue.drain(..) {
 			match command {
@@ -91,7 +95,7 @@ impl Backend {
 			.sequences
 			.update(self.dt, &self.playables, &self.metronomes)
 		{
-			self.command_queue.push(command.into());
+			self.command_queue.try_push(command.into()).ok();
 		}
 	}
 

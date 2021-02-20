@@ -8,6 +8,7 @@ use uuid::Uuid;
 use crate::{
 	group::{groups::Groups, GroupId},
 	metronome::{MetronomeId, Metronomes},
+	static_container::vec::StaticVec,
 	Tempo,
 };
 
@@ -134,7 +135,7 @@ impl SequenceInstance {
 		&mut self,
 		dt: f64,
 		metronomes: &Metronomes,
-		output_command_queue: &mut Vec<SequenceOutputCommand>,
+		output_command_queue: &mut StaticVec<SequenceOutputCommand>,
 	) {
 		let metronome = self.metronome.map(|id| metronomes.get(id)).flatten();
 		loop {
@@ -170,17 +171,19 @@ impl SequenceInstance {
 							}
 							SequenceStep::RunCommand(command) => {
 								if !self.muted {
-									output_command_queue.push(*command);
+									output_command_queue.try_push(*command).ok();
 								}
 								self.start_step(self.position + 1);
 							}
 							SequenceStep::PlayRandom(choices, settings) => {
 								if !self.muted {
 									let choice_index = thread_rng().gen_range(0..choices.len());
-									output_command_queue.push(SequenceOutputCommand::PlaySound(
-										choices[choice_index],
-										*settings,
-									));
+									output_command_queue
+										.try_push(SequenceOutputCommand::PlaySound(
+											choices[choice_index],
+											*settings,
+										))
+										.ok();
 								}
 								self.start_step(self.position + 1);
 							}
