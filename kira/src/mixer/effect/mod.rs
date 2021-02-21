@@ -3,6 +3,7 @@
 pub mod delay;
 pub mod filter;
 pub mod handle;
+pub mod reverb;
 
 use handle::EffectHandle;
 
