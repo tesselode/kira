@@ -1,4 +1,5 @@
 pub mod handle;
+pub mod sends;
 
 use basedrop::Owned;
 use handle::TrackHandle;
