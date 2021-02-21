@@ -12,7 +12,7 @@ use crate::{
 	mixer::effect::{handle::EffectHandle, Effect, EffectId, EffectSettings},
 };
 
-use super::{SendTrackId, SubTrackId, SubTrackSettings};
+use super::{SendTrackId, SendTrackSettings, SubTrackId, SubTrackSettings};
 
 /// Something that can go wrong when using a [`TrackHandle`] to
 /// add an effect to a mixer track.
@@ -117,7 +117,7 @@ pub struct SendTrackHandle {
 impl SendTrackHandle {
 	pub(crate) fn new(
 		id: SendTrackId,
-		settings: &SubTrackSettings,
+		settings: &SendTrackSettings,
 		command_producer: CommandProducer,
 		resource_collector_handle: basedrop::Handle,
 	) -> Self {

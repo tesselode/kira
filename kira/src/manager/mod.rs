@@ -33,7 +33,10 @@ use crate::{
 	},
 	group::{handle::GroupHandle, Group, GroupId, GroupSet, GroupSettings},
 	metronome::{handle::MetronomeHandle, Metronome, MetronomeId, MetronomeSettings},
-	mixer::{handle::SubTrackHandle, SubTrackId, SubTrackSettings, Track, TrackIndex},
+	mixer::{
+		SendTrackHandle, SendTrackId, SendTrackSettings, SubTrackHandle, SubTrackId,
+		SubTrackSettings, Track, TrackIndex,
+	},
 	parameter::{handle::ParameterHandle, ParameterId, ParameterSettings},
 	sequence::{handle::SequenceInstanceHandle, Sequence, SequenceInstanceSettings},
 	sound::{handle::SoundHandle, Sound, SoundId},
@@ -432,7 +435,7 @@ impl AudioManager {
 			Track::new_normal_track(settings),
 		);
 		self.command_producer
-			.push(MixerCommand::AddSubTrack(track).into())?;
+			.push(MixerCommand::AddTrack(track).into())?;
 		Ok(handle)
 	}
 
@@ -442,6 +445,36 @@ impl AudioManager {
 		self.active_ids.remove_sub_track_id(id)?;
 		self.command_producer
 			.push(MixerCommand::RemoveSubTrack(id).into())?;
+		Ok(())
+	}
+
+	/// Creates a mixer send track.
+	pub fn add_send_track(
+		&mut self,
+		settings: SendTrackSettings,
+	) -> Result<SendTrackHandle, AddTrackError> {
+		self.active_ids.add_send_track_id(settings.id)?;
+		let handle = SendTrackHandle::new(
+			settings.id,
+			&settings,
+			self.command_producer.clone(),
+			self.resource_collector().handle(),
+		);
+		let track = Owned::new(
+			&self.resource_collector().handle(),
+			Track::new_send_track(settings),
+		);
+		self.command_producer
+			.push(MixerCommand::AddTrack(track).into())?;
+		Ok(handle)
+	}
+
+	/// Removes a send track from the mixer.
+	pub fn remove_send_track(&mut self, id: SendTrackId) -> Result<(), RemoveTrackError> {
+		let id = id.into();
+		self.active_ids.remove_send_track_id(id)?;
+		self.command_producer
+			.push(MixerCommand::RemoveSendTrack(id).into())?;
 		Ok(())
 	}
 

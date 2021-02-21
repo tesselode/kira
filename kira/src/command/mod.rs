@@ -12,7 +12,7 @@ use crate::{
 	metronome::{Metronome, MetronomeId},
 	mixer::{
 		effect::{Effect, EffectId, EffectSettings},
-		SubTrackId, Track, TrackIndex,
+		SendTrackId, SubTrackId, Track, TrackIndex,
 	},
 	parameter::{tween::Tween, ParameterId},
 	playable::PlayableId,
@@ -74,8 +74,9 @@ pub(crate) enum SequenceCommand {
 }
 
 pub(crate) enum MixerCommand {
-	AddSubTrack(Owned<Track>),
+	AddTrack(Owned<Track>),
 	RemoveSubTrack(SubTrackId),
+	RemoveSendTrack(SendTrackId),
 	AddEffect(TrackIndex, Owned<Box<dyn Effect>>, EffectSettings),
 	SetEffectEnabled(TrackIndex, EffectId, bool),
 	RemoveEffect(TrackIndex, EffectId),
