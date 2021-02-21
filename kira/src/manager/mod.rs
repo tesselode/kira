@@ -33,7 +33,7 @@ use crate::{
 	},
 	group::{handle::GroupHandle, Group, GroupId, GroupSet, GroupSettings},
 	metronome::{handle::MetronomeHandle, Metronome, MetronomeId, MetronomeSettings},
-	mixer::{handle::TrackHandle, SubTrackId, Track, TrackIndex, TrackSettings},
+	mixer::{handle::SubTrackHandle, SubTrackId, SubTrackSettings, Track, TrackIndex},
 	parameter::{handle::ParameterHandle, ParameterId, ParameterSettings},
 	sequence::{handle::SequenceInstanceHandle, Sequence, SequenceInstanceSettings},
 	sound::{handle::SoundHandle, Sound, SoundId},
@@ -68,8 +68,10 @@ pub struct AudioManagerSettings {
 	pub num_instances: usize,
 	/// The maximum number of sequences that can be running at a time.
 	pub num_sequences: usize,
-	/// The maximum number of mixer tracks that can be used at a time.
-	pub num_tracks: usize,
+	/// The maximum number of mixer sub-tracks that can be used at a time.
+	pub num_sub_tracks: usize,
+	/// The maximum number of mixer send tracks that can be used at a time.
+	pub num_send_tracks: usize,
 	/// The maximum number of groups that can be used at a time.
 	pub num_groups: usize,
 	/// The maximum number of audio strams that can be used at a time.
@@ -87,7 +89,8 @@ impl Default for AudioManagerSettings {
 			num_parameters: 100,
 			num_instances: 100,
 			num_sequences: 25,
-			num_tracks: 100,
+			num_sub_tracks: 100,
+			num_send_tracks: 10,
 			num_groups: 100,
 			num_streams: 10,
 			num_metronomes: 5,
@@ -239,7 +242,8 @@ impl AudioManager {
 	fn does_track_exist(&self, track: TrackIndex) -> bool {
 		match track {
 			TrackIndex::Main => true,
-			TrackIndex::Sub(id) => self.active_ids.active_track_ids.contains(&id),
+			TrackIndex::Sub(id) => self.active_ids.active_sub_track_ids.contains(&id),
+			_ => todo!(),
 		}
 	}
 
@@ -409,18 +413,24 @@ impl AudioManager {
 	}
 
 	/// Creates a mixer sub-track.
-	pub fn add_sub_track(&mut self, settings: TrackSettings) -> Result<TrackHandle, AddTrackError> {
+	pub fn add_sub_track(
+		&mut self,
+		settings: SubTrackSettings,
+	) -> Result<SubTrackHandle, AddTrackError> {
 		if !self.does_track_exist(settings.parent_track) {
 			return Err(AddTrackError::NoTrackWithIndex(settings.parent_track));
 		}
-		self.active_ids.add_track_id(settings.id)?;
-		let handle = TrackHandle::new(
-			TrackIndex::Sub(settings.id),
+		self.active_ids.add_sub_track_id(settings.id)?;
+		let handle = SubTrackHandle::new(
+			settings.id,
 			&settings,
 			self.command_producer.clone(),
 			self.resource_collector().handle(),
 		);
-		let track = Owned::new(&self.resource_collector().handle(), Track::new(settings));
+		let track = Owned::new(
+			&self.resource_collector().handle(),
+			Track::new_normal_track(settings),
+		);
 		self.command_producer
 			.push(MixerCommand::AddSubTrack(track).into())?;
 		Ok(handle)
@@ -429,7 +439,7 @@ impl AudioManager {
 	/// Removes a sub-track from the mixer.
 	pub fn remove_sub_track(&mut self, id: SubTrackId) -> Result<(), RemoveTrackError> {
 		let id = id.into();
-		self.active_ids.remove_track_id(id)?;
+		self.active_ids.remove_sub_track_id(id)?;
 		self.command_producer
 			.push(MixerCommand::RemoveSubTrack(id).into())?;
 		Ok(())

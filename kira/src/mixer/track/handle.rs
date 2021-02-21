@@ -12,7 +12,7 @@ use crate::{
 	mixer::effect::{handle::EffectHandle, Effect, EffectId, EffectSettings},
 };
 
-use super::{TrackIndex, TrackSettings};
+use super::{SendTrackId, SubTrackId, SubTrackSettings};
 
 /// Something that can go wrong when using a [`TrackHandle`] to
 /// add an effect to a mixer track.
@@ -43,23 +43,23 @@ pub enum RemoveEffectError {
 	CommandProducerError(#[from] CommandError),
 }
 
-/// Allows you to control a mixer sound.
-pub struct TrackHandle {
-	index: TrackIndex,
+/// Allows you to control a mixer sub-track.
+pub struct SubTrackHandle {
+	id: SubTrackId,
 	command_producer: CommandProducer,
 	active_effect_ids: IndexSet<EffectId>,
 	resource_collector_handle: basedrop::Handle,
 }
 
-impl TrackHandle {
+impl SubTrackHandle {
 	pub(crate) fn new(
-		index: TrackIndex,
-		settings: &TrackSettings,
+		id: SubTrackId,
+		settings: &SubTrackSettings,
 		command_producer: CommandProducer,
 		resource_collector_handle: basedrop::Handle,
 	) -> Self {
 		Self {
-			index,
+			id,
 			command_producer,
 			active_effect_ids: IndexSet::with_capacity(settings.num_effects),
 			resource_collector_handle,
@@ -67,8 +67,8 @@ impl TrackHandle {
 	}
 
 	/// Gets the track that this handle controls.
-	pub fn index(&self) -> TrackIndex {
-		self.index
+	pub fn id(&self) -> SubTrackId {
+		self.id
 	}
 
 	/// Adds an effect to the track.
@@ -81,10 +81,10 @@ impl TrackHandle {
 			return Err(AddEffectError::EffectLimitReached);
 		}
 		let id = settings.id;
-		let handle = EffectHandle::new(self.index, &settings, self.command_producer.clone());
+		let handle = EffectHandle::new(self.id.into(), &settings, self.command_producer.clone());
 		self.command_producer.push(
 			MixerCommand::AddEffect(
-				self.index,
+				self.id.into(),
 				Owned::new(&self.resource_collector_handle, Box::new(effect)),
 				settings,
 			)
@@ -101,7 +101,70 @@ impl TrackHandle {
 			return Err(RemoveEffectError::NoEffectWithId(id));
 		}
 		self.command_producer
-			.push(MixerCommand::RemoveEffect(self.index, id).into())?;
+			.push(MixerCommand::RemoveEffect(self.id.into(), id).into())?;
+		Ok(())
+	}
+}
+
+/// Allows you to control a mixer send track.
+pub struct SendTrackHandle {
+	id: SendTrackId,
+	command_producer: CommandProducer,
+	active_effect_ids: IndexSet<EffectId>,
+	resource_collector_handle: basedrop::Handle,
+}
+
+impl SendTrackHandle {
+	pub(crate) fn new(
+		id: SendTrackId,
+		settings: &SubTrackSettings,
+		command_producer: CommandProducer,
+		resource_collector_handle: basedrop::Handle,
+	) -> Self {
+		Self {
+			id,
+			command_producer,
+			active_effect_ids: IndexSet::with_capacity(settings.num_effects),
+			resource_collector_handle,
+		}
+	}
+
+	/// Gets the track that this handle controls.
+	pub fn id(&self) -> SendTrackId {
+		self.id
+	}
+
+	/// Adds an effect to the track.
+	pub fn add_effect(
+		&mut self,
+		effect: impl Effect + 'static,
+		settings: EffectSettings,
+	) -> Result<EffectHandle, AddEffectError> {
+		if self.active_effect_ids.len() >= self.active_effect_ids.capacity() {
+			return Err(AddEffectError::EffectLimitReached);
+		}
+		let id = settings.id;
+		let handle = EffectHandle::new(self.id.into(), &settings, self.command_producer.clone());
+		self.command_producer.push(
+			MixerCommand::AddEffect(
+				self.id.into(),
+				Owned::new(&self.resource_collector_handle, Box::new(effect)),
+				settings,
+			)
+			.into(),
+		)?;
+		self.active_effect_ids.insert(id);
+		Ok(handle)
+	}
+
+	/// Removes an effect from the track.
+	pub fn remove_effect(&mut self, id: impl Into<EffectId>) -> Result<(), RemoveEffectError> {
+		let id = id.into();
+		if !self.active_effect_ids.remove(&id) {
+			return Err(RemoveEffectError::NoEffectWithId(id));
+		}
+		self.command_producer
+			.push(MixerCommand::RemoveEffect(self.id.into(), id).into())?;
 		Ok(())
 	}
 }

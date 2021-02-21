@@ -1,6 +1,11 @@
 use crate::{
-	arrangement::ArrangementId, audio_stream::AudioStreamId, group::GroupId,
-	metronome::MetronomeId, mixer::SubTrackId, parameter::ParameterId, sound::SoundId,
+	arrangement::ArrangementId,
+	audio_stream::AudioStreamId,
+	group::GroupId,
+	metronome::MetronomeId,
+	mixer::{SendTrackId, SubTrackId},
+	parameter::ParameterId,
+	sound::SoundId,
 };
 
 use indexmap::IndexSet;
@@ -19,7 +24,8 @@ pub struct ActiveIds {
 	pub active_sound_ids: IndexSet<SoundId>,
 	pub active_arrangement_ids: IndexSet<ArrangementId>,
 	pub active_parameter_ids: IndexSet<ParameterId>,
-	pub active_track_ids: IndexSet<SubTrackId>,
+	pub active_sub_track_ids: IndexSet<SubTrackId>,
+	pub active_send_track_ids: IndexSet<SendTrackId>,
 	pub active_group_ids: IndexSet<GroupId>,
 	pub active_metronome_ids: IndexSet<MetronomeId>,
 	pub active_stream_ids: IndexSet<AudioStreamId>,
@@ -31,7 +37,8 @@ impl ActiveIds {
 			active_sound_ids: IndexSet::with_capacity(settings.num_sounds),
 			active_arrangement_ids: IndexSet::with_capacity(settings.num_arrangements),
 			active_parameter_ids: IndexSet::with_capacity(settings.num_parameters),
-			active_track_ids: IndexSet::with_capacity(settings.num_tracks),
+			active_sub_track_ids: IndexSet::with_capacity(settings.num_sub_tracks),
+			active_send_track_ids: IndexSet::with_capacity(settings.num_send_tracks),
 			active_group_ids: IndexSet::with_capacity(settings.num_groups),
 			active_metronome_ids: IndexSet::with_capacity(settings.num_metronomes),
 			active_stream_ids: IndexSet::with_capacity(settings.num_streams),
@@ -86,17 +93,32 @@ impl ActiveIds {
 		Ok(())
 	}
 
-	pub fn add_track_id(&mut self, id: SubTrackId) -> Result<(), AddTrackError> {
-		if self.active_track_ids.len() >= self.active_track_ids.capacity() {
+	pub fn add_sub_track_id(&mut self, id: SubTrackId) -> Result<(), AddTrackError> {
+		if self.active_sub_track_ids.len() >= self.active_sub_track_ids.capacity() {
 			return Err(AddTrackError::TrackLimitReached);
 		}
-		self.active_track_ids.insert(id);
+		self.active_sub_track_ids.insert(id);
 		Ok(())
 	}
 
-	pub fn remove_track_id(&mut self, id: SubTrackId) -> Result<(), RemoveTrackError> {
-		if !self.active_track_ids.remove(&id) {
-			return Err(RemoveTrackError::NoTrackWithId(id));
+	pub fn remove_sub_track_id(&mut self, id: SubTrackId) -> Result<(), RemoveTrackError> {
+		if !self.active_sub_track_ids.remove(&id) {
+			return Err(RemoveTrackError::NoSubTrackWithId(id));
+		}
+		Ok(())
+	}
+
+	pub fn add_send_track_id(&mut self, id: SendTrackId) -> Result<(), AddTrackError> {
+		if self.active_send_track_ids.len() >= self.active_send_track_ids.capacity() {
+			return Err(AddTrackError::TrackLimitReached);
+		}
+		self.active_send_track_ids.insert(id);
+		Ok(())
+	}
+
+	pub fn remove_send_track_id(&mut self, id: SendTrackId) -> Result<(), RemoveTrackError> {
+		if !self.active_send_track_ids.remove(&id) {
+			return Err(RemoveTrackError::NoSendTrackWithId(id));
 		}
 		Ok(())
 	}

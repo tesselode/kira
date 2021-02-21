@@ -4,28 +4,35 @@ use indexmap::IndexMap;
 use crate::{
 	command::MixerCommand,
 	frame::Frame,
-	mixer::{SubTrackId, Track, TrackIndex, TrackSettings},
+	mixer::{SendTrackId, SubTrackId, SubTrackSettings, Track, TrackIndex, TrackKind},
 	parameter::Parameters,
 };
 
 pub(crate) struct Mixer {
 	main_track: Track,
 	sub_tracks: IndexMap<SubTrackId, Owned<Track>>,
+	send_tracks: IndexMap<SendTrackId, Owned<Track>>,
 }
 
 impl Mixer {
 	pub fn new() -> Self {
 		Self {
-			main_track: Track::new(TrackSettings::default()),
+			main_track: Track::new_normal_track(SubTrackSettings::default()),
 			sub_tracks: IndexMap::new(),
+			send_tracks: IndexMap::new(),
 		}
 	}
 
 	pub fn run_command(&mut self, command: MixerCommand) {
 		match command {
-			MixerCommand::AddSubTrack(track) => {
-				self.sub_tracks.insert(track.id(), track);
-			}
+			MixerCommand::AddSubTrack(track) => match track.kind() {
+				TrackKind::Normal { id, .. } => {
+					self.sub_tracks.insert(*id, track);
+				}
+				TrackKind::Send { id } => {
+					self.send_tracks.insert(*id, track);
+				}
+			},
 			MixerCommand::AddEffect(index, effect, settings) => {
 				match index {
 					TrackIndex::Main => {
@@ -33,6 +40,11 @@ impl Mixer {
 					}
 					TrackIndex::Sub(id) => {
 						if let Some(track) = self.sub_tracks.get_mut(&id) {
+							track.add_effect(effect, settings);
+						}
+					}
+					TrackIndex::Send(id) => {
+						if let Some(track) = self.send_tracks.get_mut(&id) {
 							track.add_effect(effect, settings);
 						}
 					}
@@ -55,6 +67,13 @@ impl Mixer {
 							}
 						}
 					}
+					TrackIndex::Send(id) => {
+						if let Some(track) = self.send_tracks.get_mut(&id) {
+							if let Some(effect_slot) = track.effect_mut(effect_id) {
+								effect_slot.enabled = enabled;
+							}
+						}
+					}
 				};
 			}
 			MixerCommand::RemoveEffect(track_index, effect_id) => {
@@ -64,6 +83,11 @@ impl Mixer {
 					}
 					TrackIndex::Sub(id) => {
 						if let Some(track) = self.sub_tracks.get_mut(&id) {
+							track.remove_effect(effect_id);
+						}
+					}
+					TrackIndex::Send(id) => {
+						if let Some(track) = self.send_tracks.get_mut(&id) {
 							track.remove_effect(effect_id);
 						}
 					}
@@ -79,6 +103,11 @@ impl Mixer {
 			}
 			TrackIndex::Sub(id) => {
 				if let Some(track) = self.sub_tracks.get_mut(&id) {
+					track.add_input(input);
+				}
+			}
+			TrackIndex::Send(id) => {
+				if let Some(track) = self.send_tracks.get_mut(&id) {
 					track.add_input(input);
 				}
 			}
@@ -109,6 +138,14 @@ impl Mixer {
 			}
 			TrackIndex::Sub(id) => {
 				if let Some(track) = self.sub_tracks.get_mut(&id) {
+					track.add_input(input);
+					track.process(dt, parameters)
+				} else {
+					Frame::from_mono(0.0)
+				}
+			}
+			TrackIndex::Send(id) => {
+				if let Some(track) = self.send_tracks.get_mut(&id) {
 					track.add_input(input);
 					track.process(dt, parameters)
 				} else {

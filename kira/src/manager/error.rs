@@ -9,7 +9,7 @@ use crate::{
 	command::producer::CommandError,
 	group::GroupId,
 	metronome::MetronomeId,
-	mixer::{SubTrackId, TrackIndex},
+	mixer::{SendTrackId, SubTrackId, TrackIndex},
 	parameter::ParameterId,
 	sequence::error::SequenceError,
 	sound::{error::SoundFromFileError, SoundId},
@@ -213,9 +213,13 @@ pub enum AddTrackError {
 /// audio thread.
 #[derive(Debug, Error)]
 pub enum RemoveTrackError {
-	/// No mixer track with the specified ID exists.
-	#[error("The track with the specified ID does not exist")]
-	NoTrackWithId(SubTrackId),
+	/// No mixer sub-track with the specified ID exists.
+	#[error("The sub-track with the specified ID does not exist")]
+	NoSubTrackWithId(SubTrackId),
+
+	/// No mixer send track with the specified ID exists.
+	#[error("The send track with the specified ID does not exist")]
+	NoSendTrackWithId(SendTrackId),
 
 	/// A command could not be sent to the audio thread.
 	#[error("Could not send the command to the audio thread.")]
