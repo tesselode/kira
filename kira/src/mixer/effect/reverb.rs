@@ -1,112 +1,42 @@
-use std::ops::Range;
+use crate::Frame;
 
-use crate::{util::lerp, Frame};
+use super::Effect;
 
-use super::{
-	delay::{Delay, DelaySettings},
-	filter::{FilterMode, FilterSettings},
-	Effect,
-};
+#[derive(Debug)]
+struct AllPassFilter {
+	buffer: Vec<Frame>,
+}
+
+impl AllPassFilter {
+	pub fn new(samples: usize) -> Self {
+		Self {
+			buffer: vec![Frame::from_mono(0.0); samples],
+		}
+	}
+
+	pub fn process(&mut self, input: Frame, gain: f32) -> Frame {
+		let output = self.buffer.pop().unwrap() + input * -gain;
+		self.buffer.insert(0, input + output * gain);
+		output
+	}
+}
 
 #[derive(Debug)]
 pub struct Reverb {
-	delays: Vec<Delay>,
+	filters: Vec<AllPassFilter>,
 }
 
 impl Reverb {
 	pub fn new() -> Self {
 		Self {
-			delays: vec![
-				Delay::new(
-					DelaySettings::new()
-						.delay_time(0.02)
-						.feedback(-0.5)
-						.filter_settings(
-							FilterSettings::new()
-								.mode(FilterMode::BandPass)
-								.cutoff(4000.0),
-						),
-				),
-				Delay::new(
-					DelaySettings::new()
-						.delay_time(0.03)
-						.feedback(-0.5)
-						.filter_settings(
-							FilterSettings::new()
-								.mode(FilterMode::BandPass)
-								.cutoff(4000.0),
-						),
-				),
-				Delay::new(
-					DelaySettings::new()
-						.delay_time(0.05)
-						.feedback(-0.5)
-						.filter_settings(
-							FilterSettings::new()
-								.mode(FilterMode::BandPass)
-								.cutoff(4000.0),
-						),
-				),
-				Delay::new(
-					DelaySettings::new()
-						.delay_time(0.07)
-						.feedback(-0.5)
-						.filter_settings(
-							FilterSettings::new()
-								.mode(FilterMode::BandPass)
-								.cutoff(4000.0),
-						),
-				),
-				Delay::new(
-					DelaySettings::new()
-						.delay_time(0.011)
-						.feedback(-0.5)
-						.filter_settings(
-							FilterSettings::new()
-								.mode(FilterMode::BandPass)
-								.cutoff(4000.0),
-						),
-				),
-				Delay::new(
-					DelaySettings::new()
-						.delay_time(0.013)
-						.feedback(-0.5)
-						.filter_settings(
-							FilterSettings::new()
-								.mode(FilterMode::BandPass)
-								.cutoff(4000.0),
-						),
-				),
-				Delay::new(
-					DelaySettings::new()
-						.delay_time(0.017)
-						.feedback(-0.5)
-						.filter_settings(
-							FilterSettings::new()
-								.mode(FilterMode::BandPass)
-								.cutoff(4000.0),
-						),
-				),
-				Delay::new(
-					DelaySettings::new()
-						.delay_time(0.023)
-						.feedback(-0.5)
-						.filter_settings(
-							FilterSettings::new()
-								.mode(FilterMode::BandPass)
-								.cutoff(4000.0),
-						),
-				),
-				Delay::new(
-					DelaySettings::new()
-						.delay_time(0.029)
-						.feedback(-0.5)
-						.filter_settings(
-							FilterSettings::new()
-								.mode(FilterMode::BandPass)
-								.cutoff(4000.0),
-						),
-				),
+			filters: vec![
+				AllPassFilter::new(97),
+				AllPassFilter::new(151),
+				AllPassFilter::new(251),
+				AllPassFilter::new(349),
+				AllPassFilter::new(547),
+				AllPassFilter::new(653),
+				AllPassFilter::new(853),
 			],
 		}
 	}
@@ -116,12 +46,12 @@ impl Effect for Reverb {
 	fn process(
 		&mut self,
 		dt: f64,
-		input: crate::Frame,
+		input: Frame,
 		parameters: &crate::parameter::Parameters,
-	) -> crate::Frame {
-		let mut output = Frame::from_mono(0.0);
-		for delay in &mut self.delays {
-			output += delay.process(dt, input, parameters);
+	) -> Frame {
+		let mut output = input;
+		for filter in &mut self.filters {
+			output = filter.process(output, 0.95);
 		}
 		output
 	}
