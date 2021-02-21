@@ -14,6 +14,12 @@ const GAIN: f32 = 0.015;
 const STEREO_SPREAD: usize = 23;
 
 /// Settings for a `Reverb`.
+#[derive(Debug, Copy, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(default)
+)]
 pub struct ReverbSettings {
 	/// The size of the simulated room.
 	room_size: Value<f64>,
