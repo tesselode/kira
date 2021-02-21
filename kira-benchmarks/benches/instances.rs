@@ -53,11 +53,14 @@ fn instances_benchmark(c: &mut Criterion) {
 		"instances",
 		vec![
 			Fun::new("no pitch change", |b, _| {
-				let (_, mut backend, _) = create_manager_with_instances(NUM_INSTANCES);
+				let (audio_manager, mut backend, instance_handles) = create_manager_with_instances(NUM_INSTANCES);
 				b.iter(|| backend.process());
+				drop(instance_handles);
+				drop(backend);
+				drop(audio_manager);
 			}),
 			Fun::new("with pitch change", |b, _| {
-				let (_, mut backend, mut instance_handles) =
+				let (audio_manager, mut backend, mut instance_handles) =
 					create_manager_with_instances(NUM_INSTANCES);
 				let mut instance_to_update = 0;
 				b.iter(|| {
@@ -68,6 +71,9 @@ fn instances_benchmark(c: &mut Criterion) {
 					instance_to_update %= NUM_INSTANCES;
 					backend.process();
 				});
+				drop(instance_handles);
+				drop(backend);
+				drop(audio_manager);
 			}),
 		],
 		(),
