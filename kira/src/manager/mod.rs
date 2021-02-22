@@ -17,10 +17,10 @@ use backend::Backend;
 pub use backend::Backend;
 use basedrop::{Collector, Owned};
 use error::{
-	AddArrangementError, AddGroupError, AddMetronomeError, AddParameterError, AddSoundError,
-	AddStreamError, AddTrackError, RemoveArrangementError, RemoveGroupError, RemoveMetronomeError,
-	RemoveParameterError, RemoveSoundError, RemoveStreamError, RemoveTrackError, SetupError,
-	StartSequenceError,
+	AddArrangementError, AddGroupError, AddMetronomeError, AddParameterError, AddSendTrackError,
+	AddSoundError, AddStreamError, AddSubTrackError, RemoveArrangementError, RemoveGroupError,
+	RemoveMetronomeError, RemoveParameterError, RemoveSendTrackError, RemoveSoundError,
+	RemoveStreamError, RemoveSubTrackError, SetupError, StartSequenceError,
 };
 use ringbuf::{Consumer, Producer, RingBuffer};
 
@@ -419,10 +419,10 @@ impl AudioManager {
 	pub fn add_sub_track(
 		&mut self,
 		settings: SubTrackSettings,
-	) -> Result<SubTrackHandle, AddTrackError> {
+	) -> Result<SubTrackHandle, AddSubTrackError> {
 		if let TrackIndex::Sub(id) = settings.parent_track {
 			if !self.active_ids.active_sub_track_ids.contains(&id) {
-				return Err(AddTrackError::NonexistentParentTrack(id));
+				return Err(AddSubTrackError::NonexistentParentTrack(id));
 			}
 		}
 		for (send_track_id, _) in settings.sends.iter() {
@@ -431,7 +431,7 @@ impl AudioManager {
 				.active_send_track_ids
 				.contains(send_track_id)
 			{
-				return Err(AddTrackError::NonexistentSendTrack(*send_track_id));
+				return Err(AddSubTrackError::NonexistentSendTrack(*send_track_id));
 			}
 		}
 		self.active_ids.add_sub_track_id(settings.id)?;
@@ -451,7 +451,10 @@ impl AudioManager {
 	}
 
 	/// Removes a sub-track from the mixer.
-	pub fn remove_sub_track(&mut self, id: impl Into<SubTrackId>) -> Result<(), RemoveTrackError> {
+	pub fn remove_sub_track(
+		&mut self,
+		id: impl Into<SubTrackId>,
+	) -> Result<(), RemoveSubTrackError> {
 		let id = id.into();
 		self.active_ids.remove_sub_track_id(id)?;
 		self.command_producer
@@ -463,7 +466,7 @@ impl AudioManager {
 	pub fn add_send_track(
 		&mut self,
 		settings: SendTrackSettings,
-	) -> Result<SendTrackHandle, AddTrackError> {
+	) -> Result<SendTrackHandle, AddSendTrackError> {
 		self.active_ids.add_send_track_id(settings.id)?;
 		let handle = SendTrackHandle::new(
 			settings.id,
@@ -484,7 +487,7 @@ impl AudioManager {
 	pub fn remove_send_track(
 		&mut self,
 		id: impl Into<SendTrackId>,
-	) -> Result<(), RemoveTrackError> {
+	) -> Result<(), RemoveSendTrackError> {
 		let id = id.into();
 		self.active_ids.remove_send_track_id(id)?;
 		self.command_producer

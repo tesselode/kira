@@ -12,10 +12,10 @@ use indexmap::IndexSet;
 
 use super::{
 	error::{
-		AddArrangementError, AddGroupError, AddMetronomeError, AddParameterError, AddSoundError,
-		AddStreamError, AddTrackError, RemoveArrangementError, RemoveGroupError,
-		RemoveMetronomeError, RemoveParameterError, RemoveSoundError, RemoveStreamError,
-		RemoveTrackError,
+		AddArrangementError, AddGroupError, AddMetronomeError, AddParameterError,
+		AddSendTrackError, AddSoundError, AddStreamError, AddSubTrackError, RemoveArrangementError,
+		RemoveGroupError, RemoveMetronomeError, RemoveParameterError, RemoveSendTrackError,
+		RemoveSoundError, RemoveStreamError, RemoveSubTrackError,
 	},
 	AudioManagerSettings,
 };
@@ -93,32 +93,32 @@ impl ActiveIds {
 		Ok(())
 	}
 
-	pub fn add_sub_track_id(&mut self, id: SubTrackId) -> Result<(), AddTrackError> {
+	pub fn add_sub_track_id(&mut self, id: SubTrackId) -> Result<(), AddSubTrackError> {
 		if self.active_sub_track_ids.len() >= self.active_sub_track_ids.capacity() {
-			return Err(AddTrackError::TrackLimitReached);
+			return Err(AddSubTrackError::TrackLimitReached);
 		}
 		self.active_sub_track_ids.insert(id);
 		Ok(())
 	}
 
-	pub fn remove_sub_track_id(&mut self, id: SubTrackId) -> Result<(), RemoveTrackError> {
+	pub fn remove_sub_track_id(&mut self, id: SubTrackId) -> Result<(), RemoveSubTrackError> {
 		if !self.active_sub_track_ids.remove(&id) {
-			return Err(RemoveTrackError::NoSubTrackWithId(id));
+			return Err(RemoveSubTrackError::NoSubTrackWithId(id));
 		}
 		Ok(())
 	}
 
-	pub fn add_send_track_id(&mut self, id: SendTrackId) -> Result<(), AddTrackError> {
+	pub fn add_send_track_id(&mut self, id: SendTrackId) -> Result<(), AddSendTrackError> {
 		if self.active_send_track_ids.len() >= self.active_send_track_ids.capacity() {
-			return Err(AddTrackError::TrackLimitReached);
+			return Err(AddSendTrackError::TrackLimitReached);
 		}
 		self.active_send_track_ids.insert(id);
 		Ok(())
 	}
 
-	pub fn remove_send_track_id(&mut self, id: SendTrackId) -> Result<(), RemoveTrackError> {
+	pub fn remove_send_track_id(&mut self, id: SendTrackId) -> Result<(), RemoveSendTrackError> {
 		if !self.active_send_track_ids.remove(&id) {
-			return Err(RemoveTrackError::NoSendTrackWithId(id));
+			return Err(RemoveSendTrackError::NoSendTrackWithId(id));
 		}
 		Ok(())
 	}

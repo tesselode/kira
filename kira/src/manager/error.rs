@@ -193,9 +193,9 @@ pub enum RemoveParameterError {
 	CommandProducerError(#[from] CommandError),
 }
 
-/// Things that can go wrong when adding a mixer track to the audio thread.
+/// Things that can go wrong when adding a mixer sub-track to the audio thread.
 #[derive(Debug, Error)]
-pub enum AddTrackError {
+pub enum AddSubTrackError {
 	/// The maximum track limit has been reached.
 	#[error("Cannot add an track because the max number of tracks has been reached")]
 	TrackLimitReached,
@@ -213,14 +213,35 @@ pub enum AddTrackError {
 	CommandProducerError(#[from] CommandError),
 }
 
-/// Things that can go wrong when removing a mixer track from the
+/// Things that can go wrong when adding a mixer send track to the audio thread.
+#[derive(Debug, Error)]
+pub enum AddSendTrackError {
+	/// The maximum track limit has been reached.
+	#[error("Cannot add an track because the max number of tracks has been reached")]
+	TrackLimitReached,
+
+	/// A command could not be sent to the audio thread.
+	#[error("Could not send the command to the audio thread.")]
+	CommandProducerError(#[from] CommandError),
+}
+
+/// Things that can go wrong when removing a mixer sub-track from the
 /// audio thread.
 #[derive(Debug, Error)]
-pub enum RemoveTrackError {
+pub enum RemoveSubTrackError {
 	/// No mixer sub-track with the specified ID exists.
 	#[error("The sub-track with the specified ID does not exist")]
 	NoSubTrackWithId(SubTrackId),
 
+	/// A command could not be sent to the audio thread.
+	#[error("Could not send the command to the audio thread.")]
+	CommandProducerError(#[from] CommandError),
+}
+
+/// Things that can go wrong when removing a mixer send track from the
+/// audio thread.
+#[derive(Debug, Error)]
+pub enum RemoveSendTrackError {
 	/// No mixer send track with the specified ID exists.
 	#[error("The send track with the specified ID does not exist")]
 	NoSendTrackWithId(SendTrackId),
