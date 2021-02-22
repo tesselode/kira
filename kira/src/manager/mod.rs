@@ -440,7 +440,7 @@ impl AudioManager {
 	}
 
 	/// Removes a sub-track from the mixer.
-	pub fn remove_sub_track(&mut self, id: SubTrackId) -> Result<(), RemoveTrackError> {
+	pub fn remove_sub_track(&mut self, id: impl Into<SubTrackId>) -> Result<(), RemoveTrackError> {
 		let id = id.into();
 		self.active_ids.remove_sub_track_id(id)?;
 		self.command_producer
@@ -470,7 +470,10 @@ impl AudioManager {
 	}
 
 	/// Removes a send track from the mixer.
-	pub fn remove_send_track(&mut self, id: SendTrackId) -> Result<(), RemoveTrackError> {
+	pub fn remove_send_track(
+		&mut self,
+		id: impl Into<SendTrackId>,
+	) -> Result<(), RemoveTrackError> {
 		let id = id.into();
 		self.active_ids.remove_send_track_id(id)?;
 		self.command_producer
