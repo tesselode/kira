@@ -202,7 +202,11 @@ pub enum AddTrackError {
 
 	/// The track's parent track does not exist.
 	#[error("The track's parent track does not exist")]
-	NoTrackWithIndex(TrackIndex),
+	NonexistentParentTrack(SubTrackId),
+
+	/// One of the track's send tracks does not exist.
+	#[error("One of the track's send tracks does not exist")]
+	NonexistentSendTrack(SendTrackId),
 
 	/// A command could not be sent to the audio thread.
 	#[error("Could not send the command to the audio thread.")]

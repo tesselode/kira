@@ -420,8 +420,19 @@ impl AudioManager {
 		&mut self,
 		settings: SubTrackSettings,
 	) -> Result<SubTrackHandle, AddTrackError> {
-		if !self.does_track_exist(settings.parent_track) {
-			return Err(AddTrackError::NoTrackWithIndex(settings.parent_track));
+		if let TrackIndex::Sub(id) = settings.parent_track {
+			if !self.active_ids.active_sub_track_ids.contains(&id) {
+				return Err(AddTrackError::NonexistentParentTrack(id));
+			}
+		}
+		for (send_track_id, _) in settings.sends.iter() {
+			if !self
+				.active_ids
+				.active_send_track_ids
+				.contains(send_track_id)
+			{
+				return Err(AddTrackError::NonexistentSendTrack(*send_track_id));
+			}
 		}
 		self.active_ids.add_sub_track_id(settings.id)?;
 		let handle = SubTrackHandle::new(
