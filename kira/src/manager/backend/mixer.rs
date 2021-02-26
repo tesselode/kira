@@ -10,6 +10,7 @@ use crate::{
 
 pub(crate) struct Mixer {
 	main_track: Track,
+	// TODO: use StaticIndexMaps here
 	sub_tracks: IndexMap<SubTrackId, Owned<Track>>,
 	send_tracks: IndexMap<SendTrackId, Owned<Track>>,
 }
@@ -122,9 +123,9 @@ impl Mixer {
 		// process all children of this sub-track and accumulate their outputs
 		let mut children_input = Frame::from_mono(0.0);
 		for i in 0..self.sub_tracks.len() {
-			let (child_id, track) = self.sub_tracks.get_index(i).unwrap();
+			let (child_id, child_track) = self.sub_tracks.get_index(i).unwrap();
 			let child_id = *child_id;
-			if track.parent_track() == child_id.into() {
+			if child_track.parent_track() == id.into() {
 				children_input += self.process_sub_track(child_id, dt, parameters);
 			}
 		}
