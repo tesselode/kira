@@ -3,6 +3,8 @@
 mod active_ids;
 mod backend;
 pub mod error;
+#[cfg(test)]
+mod tests;
 
 use std::{
 	hash::Hash,
@@ -221,7 +223,7 @@ impl AudioManager {
 		Ok(stream)
 	}
 
-	#[cfg(feature = "benchmarking")]
+	#[cfg(any(feature = "benchmarking", test))]
 	/// Creates an [`AudioManager`] and [`Backend`] without sending
 	/// the backend to another thread.
 	///
@@ -554,6 +556,7 @@ impl AudioManager {
 	}
 }
 
+#[cfg(not(test))]
 impl Drop for AudioManager {
 	fn drop(&mut self) {
 		// TODO: add proper error handling here without breaking benchmarks

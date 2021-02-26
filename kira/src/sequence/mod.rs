@@ -161,6 +161,8 @@
 pub mod error;
 pub mod handle;
 mod instance;
+#[cfg(test)]
+mod tests;
 
 use error::SequenceError;
 use handle::SequenceInstanceHandle;
