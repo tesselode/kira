@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 use basedrop::Owned;
 use indexmap::IndexMap;
 
