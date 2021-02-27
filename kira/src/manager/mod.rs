@@ -110,12 +110,12 @@ The audio manager is responsible for all communication between the gameplay thre
 and the audio thread.
 */
 pub struct AudioManager {
-	// TODO: don't compile quit_signal_producer on wasm
-	quit_signal_producer: Producer<bool>,
 	command_producer: CommandProducer,
 	resource_collector: Option<Collector>,
 	active_ids: ActiveIds,
 
+	#[cfg(not(target_arch = "wasm32"))]
+	quit_signal_producer: Producer<bool>,
 	// on wasm, holds the stream (as it has been created on the main thread)
 	// so it can live for as long as the audio manager
 	// in all cases, in benchmarking mode, we do not want an
@@ -177,12 +177,10 @@ impl AudioManager {
 	#[cfg(target_arch = "wasm32")]
 	pub fn new(settings: AudioManagerSettings) -> Result<Self, SetupError> {
 		let active_ids = ActiveIds::new(&settings);
-		let (quit_signal_producer, _) = RingBuffer::new(1).split();
 		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
 		let resource_collector = Collector::new();
 		let _stream = Self::setup_stream(settings, command_consumer)?;
 		Ok(Self {
-			quit_signal_producer,
 			command_producer: CommandProducer::new(command_producer),
 			active_ids,
 			resource_collector: Some(resource_collector),
@@ -557,6 +555,7 @@ impl AudioManager {
 #[cfg(not(test))]
 impl Drop for AudioManager {
 	fn drop(&mut self) {
+		#[cfg(not(target_arch = "wasm32"))]
 		self.quit_signal_producer.push(true).ok();
 
 		// cleanup all unused resources. if we can't get everything to successfully
