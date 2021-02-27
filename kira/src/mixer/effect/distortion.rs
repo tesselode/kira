@@ -1,3 +1,5 @@
+//! Makes a sound harsher and noisier.
+
 use crate::{parameter::Parameters, CachedValue, Frame, Value};
 
 use super::Effect;

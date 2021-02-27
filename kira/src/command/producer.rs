@@ -5,8 +5,8 @@ use thiserror::Error;
 
 use super::Command;
 
-/// Something that can go wrong when using a [`CommandProducer`]
-/// to send a command to the audio thread.
+/// Something that can go wrong when sending a command to the
+/// audio thread.
 #[derive(Debug, Error)]
 pub enum CommandError {
 	/// The command queue is full.

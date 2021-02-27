@@ -1,3 +1,5 @@
+//! Adds reverberations to a sound.
+
 use all_pass::AllPassFilter;
 use comb::CombFilter;
 

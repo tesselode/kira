@@ -1,3 +1,5 @@
+//! Adds echoes to a sound.
+
 use crate::{parameter::Parameters, util, CachedValue, Frame, Value};
 
 use super::{
