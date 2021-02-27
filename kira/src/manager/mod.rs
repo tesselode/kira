@@ -9,7 +9,6 @@ mod tests;
 use std::{
 	hash::Hash,
 	io::{stderr, Write},
-	time::Instant,
 };
 
 use active_ids::ActiveIds;
@@ -47,6 +46,7 @@ use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	Stream,
 };
+use instant::Instant;
 
 const DROP_CLEANUP_TIMEOUT_MILLIS: u64 = 1000;
 
