@@ -157,8 +157,6 @@ impl AudioManager {
 		});
 		// wait for the audio thread to report back a result
 		loop {
-			// TODO: figure out if we need to handle
-			// TryRecvError::Disconnected
 			if let Some(result) = setup_result_consumer.pop() {
 				match result {
 					Ok(_) => break,
@@ -559,7 +557,6 @@ impl AudioManager {
 #[cfg(not(test))]
 impl Drop for AudioManager {
 	fn drop(&mut self) {
-		// TODO: add proper error handling here without breaking benchmarks
 		self.quit_signal_producer.push(true).ok();
 
 		// cleanup all unused resources. if we can't get everything to successfully
