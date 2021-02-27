@@ -27,7 +27,6 @@ pub enum PopMetronomeEventError {
 #[derive(Clone)]
 /// Allows you to control a metronome.
 
-// TODO: add a manual impl of Debug
 pub struct MetronomeHandle {
 	id: MetronomeId,
 	command_producer: CommandProducer,
@@ -84,5 +83,18 @@ impl MetronomeHandle {
 			.lock()
 			.map_err(|_| PopMetronomeEventError::MutexPoisoned)?
 			.pop())
+	}
+}
+
+impl std::fmt::Debug for MetronomeHandle {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		#[derive(Debug)]
+		struct EventConsumer;
+
+		f.debug_struct("MetronomeHandle")
+			.field("id", &self.id)
+			.field("command_producer", &self.command_producer)
+			.field("event_consumer", &EventConsumer)
+			.finish()
 	}
 }

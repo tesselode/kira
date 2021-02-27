@@ -40,7 +40,6 @@ impl From<&MetronomeHandle> for MetronomeId {
 	}
 }
 
-// TODO: add a manual impl of Debug
 pub(crate) struct Metronome {
 	tempo: CachedValue<Tempo>,
 	interval_events_to_emit: Vec<f64>,

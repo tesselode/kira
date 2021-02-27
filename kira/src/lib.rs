@@ -104,9 +104,6 @@
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 
-// TODO: find a way to compile-time check that i'm not
-// accidentally allocating memory on the audio thread
-
 #![warn(missing_docs)]
 
 pub mod arrangement;

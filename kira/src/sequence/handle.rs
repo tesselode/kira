@@ -28,7 +28,6 @@ pub enum PopSequenceInstanceEventError {
 
 /// Allows you to control an instance of a sequence.
 
-// TODO: add a manual impl of Debug
 #[derive(Clone)]
 pub struct SequenceInstanceHandle<CustomEvent> {
 	id: SequenceInstanceId,
