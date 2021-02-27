@@ -1,26 +1,25 @@
 use basedrop::Owned;
-use indexmap::IndexMap;
 
 use crate::{
 	command::MixerCommand,
 	frame::Frame,
 	mixer::{SendTrackId, SubTrackId, SubTrackSettings, Track, TrackIndex, TrackKind},
 	parameter::Parameters,
+	static_container::index_map::StaticIndexMap,
 };
 
 pub(crate) struct Mixer {
 	main_track: Track,
-	// TODO: use StaticIndexMaps here
-	sub_tracks: IndexMap<SubTrackId, Owned<Track>>,
-	send_tracks: IndexMap<SendTrackId, Owned<Track>>,
+	sub_tracks: StaticIndexMap<SubTrackId, Owned<Track>>,
+	send_tracks: StaticIndexMap<SendTrackId, Owned<Track>>,
 }
 
 impl Mixer {
-	pub fn new() -> Self {
+	pub fn new(sub_track_capacity: usize, send_track_capacity: usize) -> Self {
 		Self {
 			main_track: Track::new_normal_track(SubTrackSettings::default()),
-			sub_tracks: IndexMap::new(),
-			send_tracks: IndexMap::new(),
+			sub_tracks: StaticIndexMap::new(sub_track_capacity),
+			send_tracks: StaticIndexMap::new(send_track_capacity),
 		}
 	}
 
@@ -28,10 +27,10 @@ impl Mixer {
 		match command {
 			MixerCommand::AddTrack(track) => match track.kind() {
 				TrackKind::Normal { id, .. } => {
-					self.sub_tracks.insert(*id, track);
+					self.sub_tracks.try_insert(*id, track).ok();
 				}
 				TrackKind::Send { id } => {
-					self.send_tracks.insert(*id, track);
+					self.send_tracks.try_insert(*id, track).ok();
 				}
 			},
 			MixerCommand::AddEffect(index, effect, settings) => {

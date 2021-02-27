@@ -45,7 +45,7 @@ impl Backend {
 			metronomes: Metronomes::new(settings.num_metronomes),
 			instances: Instances::new(settings.num_instances),
 			sequences: Sequences::new(settings.num_sequences, settings.num_commands),
-			mixer: Mixer::new(),
+			mixer: Mixer::new(settings.num_sub_tracks, settings.num_send_tracks),
 			groups: Groups::new(settings.num_groups),
 			streams: Streams::new(settings.num_streams),
 		}

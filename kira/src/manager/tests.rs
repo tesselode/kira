@@ -3,7 +3,7 @@ use crate::{arrangement::Arrangement, sound::Sound};
 use super::{
 	error::{
 		AddArrangementError, AddGroupError, AddMetronomeError, AddParameterError,
-		AddSendTrackError, AddSoundError, AddStreamError, AddSubTrackError, SetupError,
+		AddSendTrackError, AddSoundError, AddSubTrackError,
 	},
 	AudioManager, AudioManagerSettings,
 };
