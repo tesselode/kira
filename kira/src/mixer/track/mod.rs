@@ -123,9 +123,9 @@ impl From<&SendTrackHandle> for TrackIndex {
 	}
 }
 
-// TODO: add a separate variant for the main track
 pub(crate) enum TrackKind {
-	Normal {
+	Main,
+	Sub {
 		id: SubTrackId,
 		parent_track: TrackIndex,
 		sends: TrackSends,
@@ -143,9 +143,18 @@ pub(crate) struct Track {
 }
 
 impl Track {
-	pub fn new_normal_track(settings: SubTrackSettings) -> Self {
+	pub fn new_main_track() -> Self {
 		Self {
-			kind: TrackKind::Normal {
+			kind: TrackKind::Main,
+			volume: 1.0,
+			effect_slots: StaticIndexMap::new(0),
+			input: Frame::from_mono(0.0),
+		}
+	}
+
+	pub fn new_sub_track(settings: SubTrackSettings) -> Self {
+		Self {
+			kind: TrackKind::Sub {
 				id: settings.id,
 				parent_track: settings.parent_track,
 				sends: settings.sends,
@@ -165,10 +174,11 @@ impl Track {
 		}
 	}
 
-	pub fn parent_track(&self) -> TrackIndex {
+	pub fn parent_track(&self) -> Option<TrackIndex> {
 		match &self.kind {
-			TrackKind::Normal { parent_track, .. } => *parent_track,
-			TrackKind::Send { .. } => TrackIndex::Main,
+			TrackKind::Main => None,
+			TrackKind::Sub { parent_track, .. } => Some(*parent_track),
+			TrackKind::Send { .. } => Some(TrackIndex::Main),
 		}
 	}
 
@@ -195,7 +205,7 @@ impl Track {
 	}
 
 	pub fn process(&mut self, dt: f64, parameters: &Parameters) -> Frame {
-		if let TrackKind::Normal { sends, .. } = &mut self.kind {
+		if let TrackKind::Sub { sends, .. } = &mut self.kind {
 			sends.update(parameters);
 		}
 		let mut input = self.input;

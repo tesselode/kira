@@ -443,7 +443,7 @@ impl AudioManager {
 		);
 		let track = Owned::new(
 			&self.resource_collector().handle(),
-			Track::new_normal_track(settings),
+			Track::new_sub_track(settings),
 		);
 		self.command_producer
 			.push(MixerCommand::AddTrack(track).into())?;
