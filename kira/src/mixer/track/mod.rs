@@ -123,6 +123,7 @@ impl From<&SendTrackHandle> for TrackIndex {
 	}
 }
 
+// TODO: add a separate variant for the main track
 pub(crate) enum TrackKind {
 	Normal {
 		id: SubTrackId,
