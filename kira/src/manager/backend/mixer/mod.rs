@@ -1,9 +1,12 @@
+#[cfg(test)]
+mod tests;
+
 use basedrop::Owned;
 
 use crate::{
 	command::MixerCommand,
 	frame::Frame,
-	mixer::{SendTrackId, SubTrackId, Track, TrackIndex, TrackKind},
+	mixer::{effect::Effect, SendTrackId, SubTrackId, Track, TrackIndex, TrackKind},
 	parameter::Parameters,
 	static_container::index_map::StaticIndexMap,
 };
@@ -25,81 +28,119 @@ impl Mixer {
 
 	pub fn run_command(&mut self, command: MixerCommand) {
 		match command {
-			MixerCommand::AddTrack(track) => match track.kind() {
-				TrackKind::Main => {
-					panic!("No part of the public API should be adding a main track")
-				}
-				TrackKind::Sub { id, .. } => {
-					self.sub_tracks.try_insert(*id, track).ok();
-				}
-				TrackKind::Send { id } => {
-					self.send_tracks.try_insert(*id, track).ok();
-				}
-			},
+			MixerCommand::AddTrack(track) => self.add_track(track),
 			MixerCommand::AddEffect(index, effect, settings) => {
-				match index {
-					TrackIndex::Main => {
-						self.main_track.add_effect(effect, settings);
-					}
-					TrackIndex::Sub(id) => {
-						if let Some(track) = self.sub_tracks.get_mut(&id) {
-							track.add_effect(effect, settings);
-						}
-					}
-					TrackIndex::Send(id) => {
-						if let Some(track) = self.send_tracks.get_mut(&id) {
-							track.add_effect(effect, settings);
-						}
-					}
-				};
+				self.add_effect(index, effect, settings);
 			}
 			MixerCommand::RemoveSubTrack(id) => {
-				self.sub_tracks.remove(&id);
+				self.remove_sub_track(id);
 			}
 			MixerCommand::RemoveSendTrack(id) => {
-				self.send_tracks.remove(&id);
+				self.remove_send_track(id);
 			}
 			MixerCommand::SetEffectEnabled(track_index, effect_id, enabled) => {
-				match track_index {
-					TrackIndex::Main => {
-						if let Some(effect_slot) = self.main_track.effect_mut(effect_id) {
-							effect_slot.enabled = enabled;
-						}
-					}
-					TrackIndex::Sub(id) => {
-						if let Some(track) = self.sub_tracks.get_mut(&id) {
-							if let Some(effect_slot) = track.effect_mut(effect_id) {
-								effect_slot.enabled = enabled;
-							}
-						}
-					}
-					TrackIndex::Send(id) => {
-						if let Some(track) = self.send_tracks.get_mut(&id) {
-							if let Some(effect_slot) = track.effect_mut(effect_id) {
-								effect_slot.enabled = enabled;
-							}
-						}
-					}
-				};
+				self.set_effect_enabled(track_index, effect_id, enabled);
 			}
 			MixerCommand::RemoveEffect(track_index, effect_id) => {
-				match track_index {
-					TrackIndex::Main => {
-						self.main_track.remove_effect(effect_id);
-					}
-					TrackIndex::Sub(id) => {
-						if let Some(track) = self.sub_tracks.get_mut(&id) {
-							track.remove_effect(effect_id);
-						}
-					}
-					TrackIndex::Send(id) => {
-						if let Some(track) = self.send_tracks.get_mut(&id) {
-							track.remove_effect(effect_id);
-						}
-					}
-				};
+				self.remove_effect(track_index, effect_id);
 			}
 		}
+	}
+
+	pub fn add_track(&mut self, track: Owned<Track>) {
+		match track.kind() {
+			TrackKind::Main => {
+				panic!("No part of the public API should be adding a main track")
+			}
+			TrackKind::Sub { id, .. } => {
+				self.sub_tracks.try_insert(*id, track).ok();
+			}
+			TrackKind::Send { id } => {
+				self.send_tracks.try_insert(*id, track).ok();
+			}
+		}
+	}
+
+	pub fn add_effect(
+		&mut self,
+		index: TrackIndex,
+		effect: Owned<Box<dyn Effect>>,
+		settings: crate::mixer::effect::EffectSettings,
+	) {
+		match index {
+			TrackIndex::Main => {
+				self.main_track.add_effect(effect, settings);
+			}
+			TrackIndex::Sub(id) => {
+				if let Some(track) = self.sub_tracks.get_mut(&id) {
+					track.add_effect(effect, settings);
+				}
+			}
+			TrackIndex::Send(id) => {
+				if let Some(track) = self.send_tracks.get_mut(&id) {
+					track.add_effect(effect, settings);
+				}
+			}
+		};
+	}
+
+	pub fn remove_sub_track(&mut self, id: SubTrackId) {
+		self.sub_tracks.remove(&id);
+	}
+
+	pub fn remove_send_track(&mut self, id: SendTrackId) {
+		self.send_tracks.remove(&id);
+	}
+
+	pub fn set_effect_enabled(
+		&mut self,
+		track_index: TrackIndex,
+		effect_id: crate::mixer::effect::EffectId,
+		enabled: bool,
+	) {
+		match track_index {
+			TrackIndex::Main => {
+				if let Some(effect_slot) = self.main_track.effect_mut(effect_id) {
+					effect_slot.enabled = enabled;
+				}
+			}
+			TrackIndex::Sub(id) => {
+				if let Some(track) = self.sub_tracks.get_mut(&id) {
+					if let Some(effect_slot) = track.effect_mut(effect_id) {
+						effect_slot.enabled = enabled;
+					}
+				}
+			}
+			TrackIndex::Send(id) => {
+				if let Some(track) = self.send_tracks.get_mut(&id) {
+					if let Some(effect_slot) = track.effect_mut(effect_id) {
+						effect_slot.enabled = enabled;
+					}
+				}
+			}
+		};
+	}
+
+	pub fn remove_effect(
+		&mut self,
+		track_index: TrackIndex,
+		effect_id: crate::mixer::effect::EffectId,
+	) {
+		match track_index {
+			TrackIndex::Main => {
+				self.main_track.remove_effect(effect_id);
+			}
+			TrackIndex::Sub(id) => {
+				if let Some(track) = self.sub_tracks.get_mut(&id) {
+					track.remove_effect(effect_id);
+				}
+			}
+			TrackIndex::Send(id) => {
+				if let Some(track) = self.send_tracks.get_mut(&id) {
+					track.remove_effect(effect_id);
+				}
+			}
+		};
 	}
 
 	pub fn add_input(&mut self, index: TrackIndex, input: Frame) {
