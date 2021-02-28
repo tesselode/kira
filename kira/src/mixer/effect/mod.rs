@@ -1,7 +1,5 @@
 //! Modifies audio in real time.
 
-// TODO: make delay and reverb adapt to the current sample rate
-
 pub mod delay;
 pub mod distortion;
 pub mod filter;

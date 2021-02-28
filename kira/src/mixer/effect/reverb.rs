@@ -74,6 +74,15 @@ impl Default for ReverbSettings {
 	}
 }
 
+#[derive(Debug)]
+enum ReverbState {
+	Uninitialized,
+	Initialized {
+		comb_filters: [(CombFilter, CombFilter); NUM_COMB_FILTERS],
+		all_pass_filters: [(AllPassFilter, AllPassFilter); NUM_ALL_PASS_FILTERS],
+	},
+}
+
 /// A reverb effect. Useul for simulating room tones.
 // This code is based on Freeverb by Jezar at Dreampoint, found here:
 // http://blog.bjornroche.com/2012/06/freeverb-original-public-domain-code-by.html
@@ -82,9 +91,7 @@ pub struct Reverb {
 	room_size: CachedValue<f64>,
 	damping: CachedValue<f64>,
 	stereo_width: CachedValue<f64>,
-
-	comb_filters: [(CombFilter, CombFilter); NUM_COMB_FILTERS],
-	all_pass_filters: [(AllPassFilter, AllPassFilter); NUM_ALL_PASS_FILTERS],
+	state: ReverbState,
 }
 
 impl Reverb {
@@ -94,70 +101,119 @@ impl Reverb {
 			room_size: CachedValue::new(settings.room_size, 0.9),
 			damping: CachedValue::new(settings.damping, 0.1),
 			stereo_width: CachedValue::new(settings.stereo_width, 1.0),
-			comb_filters: [
-				(CombFilter::new(1116), CombFilter::new(1116 + STEREO_SPREAD)),
-				(CombFilter::new(1188), CombFilter::new(1188 + STEREO_SPREAD)),
-				(CombFilter::new(1277), CombFilter::new(1277 + STEREO_SPREAD)),
-				(CombFilter::new(1356), CombFilter::new(1356 + STEREO_SPREAD)),
-				(CombFilter::new(1422), CombFilter::new(1422 + STEREO_SPREAD)),
-				(CombFilter::new(1491), CombFilter::new(1491 + STEREO_SPREAD)),
-				(CombFilter::new(1557), CombFilter::new(1557 + STEREO_SPREAD)),
-				(CombFilter::new(1617), CombFilter::new(1617 + STEREO_SPREAD)),
-			],
-			all_pass_filters: [
-				(
-					AllPassFilter::new(556),
-					AllPassFilter::new(556 + STEREO_SPREAD),
-				),
-				(
-					AllPassFilter::new(441),
-					AllPassFilter::new(441 + STEREO_SPREAD),
-				),
-				(
-					AllPassFilter::new(341),
-					AllPassFilter::new(341 + STEREO_SPREAD),
-				),
-				(
-					AllPassFilter::new(225),
-					AllPassFilter::new(225 + STEREO_SPREAD),
-				),
-			],
+			state: ReverbState::Uninitialized,
 		}
 	}
 }
 
 impl Effect for Reverb {
+	fn init(&mut self, sample_rate: u32) {
+		if let ReverbState::Uninitialized = &self.state {
+			const REFERENCE_SAMPLE_RATE: u32 = 44100;
+
+			let adjust_buffer_size = |buffer_size: usize| -> usize {
+				let sample_rate_factor = (sample_rate as f64) / (REFERENCE_SAMPLE_RATE as f64);
+				((buffer_size as f64) * sample_rate_factor) as usize
+			};
+
+			self.state = ReverbState::Initialized {
+				comb_filters: [
+					(
+						CombFilter::new(adjust_buffer_size(1116)),
+						CombFilter::new(adjust_buffer_size(1116 + STEREO_SPREAD)),
+					),
+					(
+						CombFilter::new(adjust_buffer_size(1188)),
+						CombFilter::new(adjust_buffer_size(1188 + STEREO_SPREAD)),
+					),
+					(
+						CombFilter::new(adjust_buffer_size(1277)),
+						CombFilter::new(adjust_buffer_size(1277 + STEREO_SPREAD)),
+					),
+					(
+						CombFilter::new(adjust_buffer_size(1356)),
+						CombFilter::new(adjust_buffer_size(1356 + STEREO_SPREAD)),
+					),
+					(
+						CombFilter::new(adjust_buffer_size(1422)),
+						CombFilter::new(adjust_buffer_size(1422 + STEREO_SPREAD)),
+					),
+					(
+						CombFilter::new(adjust_buffer_size(1491)),
+						CombFilter::new(adjust_buffer_size(1491 + STEREO_SPREAD)),
+					),
+					(
+						CombFilter::new(adjust_buffer_size(1557)),
+						CombFilter::new(adjust_buffer_size(1557 + STEREO_SPREAD)),
+					),
+					(
+						CombFilter::new(adjust_buffer_size(1617)),
+						CombFilter::new(adjust_buffer_size(1617 + STEREO_SPREAD)),
+					),
+				],
+				all_pass_filters: [
+					(
+						AllPassFilter::new(adjust_buffer_size(556)),
+						AllPassFilter::new(adjust_buffer_size(556 + STEREO_SPREAD)),
+					),
+					(
+						AllPassFilter::new(adjust_buffer_size(441)),
+						AllPassFilter::new(adjust_buffer_size(441 + STEREO_SPREAD)),
+					),
+					(
+						AllPassFilter::new(adjust_buffer_size(341)),
+						AllPassFilter::new(adjust_buffer_size(341 + STEREO_SPREAD)),
+					),
+					(
+						AllPassFilter::new(adjust_buffer_size(225)),
+						AllPassFilter::new(adjust_buffer_size(225 + STEREO_SPREAD)),
+					),
+				],
+			}
+		} else {
+			panic!("Reverb should be in the uninitialized state before init");
+		}
+	}
+
 	fn process(
 		&mut self,
 		_dt: f64,
 		input: crate::Frame,
 		parameters: &crate::parameter::Parameters,
 	) -> crate::Frame {
-		self.room_size.update(parameters);
-		self.damping.update(parameters);
-		self.stereo_width.update(parameters);
+		if let ReverbState::Initialized {
+			comb_filters,
+			all_pass_filters,
+		} = &mut self.state
+		{
+			self.room_size.update(parameters);
+			self.damping.update(parameters);
+			self.stereo_width.update(parameters);
 
-		let room_size = self.room_size.value() as f32;
-		let damping = self.damping.value() as f32;
-		let stereo_width = self.stereo_width.value() as f32;
+			let room_size = self.room_size.value() as f32;
+			let damping = self.damping.value() as f32;
+			let stereo_width = self.stereo_width.value() as f32;
 
-		let mut output = Frame::from_mono(0.0);
-		let input = (input.left + input.right) * GAIN;
-		// accumulate comb filters in parallel
-		for comb_filter in &mut self.comb_filters {
-			output.left += comb_filter.0.process(input, room_size, damping);
-			output.right += comb_filter.1.process(input, room_size, damping);
+			let mut output = Frame::from_mono(0.0);
+			let input = (input.left + input.right) * GAIN;
+			// accumulate comb filters in parallel
+			for comb_filter in comb_filters {
+				output.left += comb_filter.0.process(input, room_size, damping);
+				output.right += comb_filter.1.process(input, room_size, damping);
+			}
+			// feed through all-pass filters in series
+			for all_pass_filter in all_pass_filters {
+				output.left = all_pass_filter.0.process(output.left);
+				output.right = all_pass_filter.1.process(output.right);
+			}
+			let wet_1 = stereo_width / 2.0 + 0.5;
+			let wet_2 = (1.0 - stereo_width) / 2.0;
+			Frame::new(
+				output.left * wet_1 + output.right * wet_2,
+				output.right * wet_1 + output.left * wet_2,
+			)
+		} else {
+			panic!("Reverb should be initialized before the first process call")
 		}
-		// feed through all-pass filters in series
-		for all_pass_filter in &mut self.all_pass_filters {
-			output.left = all_pass_filter.0.process(output.left);
-			output.right = all_pass_filter.1.process(output.right);
-		}
-		let wet_1 = stereo_width / 2.0 + 0.5;
-		let wet_2 = (1.0 - stereo_width) / 2.0;
-		Frame::new(
-			output.left * wet_1 + output.right * wet_2,
-			output.right * wet_1 + output.left * wet_2,
-		)
 	}
 }
