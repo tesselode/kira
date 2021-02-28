@@ -1,7 +1,5 @@
 //! Modifies audio in real time.
 
-// TODO: clamp effect parameter values to valid ranges
-
 pub mod delay;
 pub mod distortion;
 pub mod filter;

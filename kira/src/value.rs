@@ -50,15 +50,11 @@ impl<T: From<f64> + Into<f64> + Copy> From<Range<T>> for Value<T> {
 pub struct CachedValue<T: From<f64> + Into<f64> + Copy> {
 	value: Value<T>,
 	last_value: T,
+	min: Option<T>,
+	max: Option<T>,
 }
 
 impl<T: From<f64> + Into<f64> + Copy> CachedValue<T> {
-	fn pick_random(lower: T, upper: T) -> T {
-		let lower: f64 = lower.into();
-		let upper: f64 = upper.into();
-		thread_rng().gen_range(lower..upper).into()
-	}
-
 	/// Creates a `CachedValue` with an initial value setting
 	/// and a default raw value to fall back on.
 	pub fn new(value: Value<T>, default_value: T) -> Self {
@@ -69,7 +65,40 @@ impl<T: From<f64> + Into<f64> + Copy> CachedValue<T> {
 				Value::Parameter(_, _) => default_value,
 				Value::Random(lower, upper) => Self::pick_random(lower, upper),
 			},
+			min: None,
+			max: None,
 		}
+	}
+
+	/// Sets the minimum valid value of this `CachedValue`.
+	pub fn with_min(self, min: T) -> Self {
+		Self {
+			min: Some(min),
+			..self
+		}
+	}
+
+	/// Sets the maximum valid value of this `CachedValue`.
+	pub fn with_max(self, max: T) -> Self {
+		Self {
+			max: Some(max),
+			..self
+		}
+	}
+
+	/// Sets the min and max valid values of this `CachedValue`.
+	pub fn with_valid_range(self, range: Range<T>) -> Self {
+		Self {
+			min: Some(range.start),
+			max: Some(range.end),
+			..self
+		}
+	}
+
+	fn pick_random(lower: T, upper: T) -> T {
+		let lower: f64 = lower.into();
+		let upper: f64 = upper.into();
+		thread_rng().gen_range(lower..upper).into()
 	}
 
 	/// Sets the value.
@@ -101,6 +130,13 @@ impl<T: From<f64> + Into<f64> + Copy> CachedValue<T> {
 
 	/// Gets the last valid raw value.
 	pub fn value(&self) -> T {
-		self.last_value
+		let mut value: f64 = self.last_value.into();
+		if let Some(min) = self.min {
+			value = value.max(min.into());
+		}
+		if let Some(max) = self.max {
+			value = value.min(max.into());
+		}
+		value.into()
 	}
 }

@@ -52,7 +52,7 @@ pub(crate) struct Metronome {
 impl Metronome {
 	pub fn new(settings: MetronomeSettings, event_producer: Producer<f64>) -> Self {
 		Self {
-			tempo: CachedValue::new(settings.tempo, Tempo(120.0)),
+			tempo: CachedValue::new(settings.tempo, Tempo(120.0)).with_min(Tempo(0.0)),
 			interval_events_to_emit: settings.interval_events_to_emit,
 			ticking: false,
 			time: 0.0,

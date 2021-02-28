@@ -15,7 +15,7 @@ impl EffectSlot {
 		Self {
 			effect,
 			enabled: settings.enabled,
-			mix: CachedValue::new(settings.mix, 1.0),
+			mix: CachedValue::new(settings.mix, 1.0).with_valid_range(0.0..1.0),
 		}
 	}
 

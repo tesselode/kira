@@ -103,8 +103,8 @@ impl Delay {
 	/// Creates a new delay effect.
 	pub fn new(settings: DelaySettings) -> Self {
 		Self {
-			delay_time: CachedValue::new(settings.delay_time, 0.5),
-			feedback: CachedValue::new(settings.feedback, 0.5),
+			delay_time: CachedValue::new(settings.delay_time, 0.5).with_min(0.0),
+			feedback: CachedValue::new(settings.feedback, 0.5).with_valid_range(-1.0..1.0),
 			state: DelayState::Uninitialized {
 				buffer_length: settings.buffer_length,
 			},

@@ -164,7 +164,7 @@ impl Instance {
 			track_index: settings.track,
 			volume: CachedValue::new(settings.volume, 1.0),
 			pitch: CachedValue::new(settings.pitch, 1.0),
-			panning: CachedValue::new(settings.panning, 0.5),
+			panning: CachedValue::new(settings.panning, 0.5).with_valid_range(0.0..1.0),
 			reverse: settings.reverse,
 			loop_start: settings.loop_start,
 			state: InstanceState::Playing,

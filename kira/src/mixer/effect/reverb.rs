@@ -102,9 +102,9 @@ impl Reverb {
 	/// Creates a new `Reverb` effect.
 	pub fn new(settings: ReverbSettings) -> Self {
 		Self {
-			feedback: CachedValue::new(settings.feedback, 0.9),
-			damping: CachedValue::new(settings.damping, 0.1),
-			stereo_width: CachedValue::new(settings.stereo_width, 1.0),
+			feedback: CachedValue::new(settings.feedback, 0.9).with_valid_range(-1.0..1.0),
+			damping: CachedValue::new(settings.damping, 0.1).with_valid_range(0.0..1.0),
+			stereo_width: CachedValue::new(settings.stereo_width, 1.0).with_valid_range(0.0..1.0),
 			state: ReverbState::Uninitialized,
 		}
 	}

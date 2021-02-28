@@ -102,8 +102,8 @@ impl Filter {
 	pub fn new(settings: FilterSettings) -> Self {
 		Self {
 			mode: settings.mode,
-			cutoff: CachedValue::new(settings.cutoff, 10000.0),
-			resonance: CachedValue::new(settings.resonance, 0.0),
+			cutoff: CachedValue::new(settings.cutoff, 10000.0).with_valid_range(20.0..20000.0),
+			resonance: CachedValue::new(settings.resonance, 0.0).with_valid_range(0.0..1.0),
 			ic1eq: Frame::from_mono(0.0),
 			ic2eq: Frame::from_mono(0.0),
 		}
