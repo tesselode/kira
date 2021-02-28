@@ -113,6 +113,7 @@ pub struct AudioManager {
 	command_producer: CommandProducer,
 	resource_collector: Option<Collector>,
 	active_ids: ActiveIds,
+	sample_rate: u32,
 
 	#[cfg(not(target_arch = "wasm32"))]
 	quit_signal_producer: Producer<bool>,
@@ -140,8 +141,8 @@ impl AudioManager {
 		// but that causes issues with LÖVE.
 		std::thread::spawn(move || {
 			match Self::setup_stream(settings, command_consumer) {
-				Ok(_stream) => {
-					setup_result_producer.push(Ok(())).unwrap();
+				Ok((_stream, sample_rate)) => {
+					setup_result_producer.push(Ok(sample_rate)).unwrap();
 					// wait for a quit message before ending the thread and dropping
 					// the stream
 					while quit_signal_consumer.pop().is_none() {
@@ -156,19 +157,20 @@ impl AudioManager {
 			}
 		});
 		// wait for the audio thread to report back a result
-		loop {
+		let sample_rate = loop {
 			if let Some(result) = setup_result_consumer.pop() {
 				match result {
-					Ok(_) => break,
+					Ok(sample_rate) => break sample_rate,
 					Err(error) => return Err(error),
 				}
 			}
-		}
+		};
 
 		Ok(Self {
 			quit_signal_producer,
 			command_producer: CommandProducer::new(command_producer),
 			active_ids,
+			sample_rate,
 			resource_collector: Some(resource_collector),
 		})
 	}
@@ -179,11 +181,12 @@ impl AudioManager {
 		let active_ids = ActiveIds::new(&settings);
 		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
 		let resource_collector = Collector::new();
-		let _stream = Self::setup_stream(settings, command_consumer)?;
+		let (_stream, sample_rate) = Self::setup_stream(settings, command_consumer)?;
 		Ok(Self {
 			command_producer: CommandProducer::new(command_producer),
 			active_ids,
 			resource_collector: Some(resource_collector),
+			sample_rate,
 			_stream,
 		})
 	}
@@ -191,7 +194,7 @@ impl AudioManager {
 	fn setup_stream(
 		settings: AudioManagerSettings,
 		command_consumer: Consumer<Command>,
-	) -> Result<Stream, SetupError> {
+	) -> Result<(Stream, u32), SetupError> {
 		let host = cpal::default_host();
 		let device = host
 			.default_output_device()
@@ -216,7 +219,7 @@ impl AudioManager {
 			move |_| {},
 		)?;
 		stream.play()?;
-		Ok(stream)
+		Ok((stream, sample_rate))
 	}
 
 	#[cfg(any(feature = "benchmarking", test))]
@@ -234,6 +237,7 @@ impl AudioManager {
 			quit_signal_producer,
 			command_producer: CommandProducer::new(command_producer),
 			active_ids: ActiveIds::new(&settings),
+			sample_rate: SAMPLE_RATE,
 			resource_collector: Some(resource_collector),
 		};
 		let backend = Backend::new(SAMPLE_RATE, settings, command_consumer);
@@ -437,6 +441,7 @@ impl AudioManager {
 			settings.id,
 			&settings,
 			self.command_producer.clone(),
+			self.sample_rate,
 			self.resource_collector().handle(),
 		);
 		let track = Owned::new(
@@ -470,6 +475,7 @@ impl AudioManager {
 			settings.id,
 			&settings,
 			self.command_producer.clone(),
+			self.sample_rate,
 			self.resource_collector().handle(),
 		);
 		let track = Owned::new(

@@ -48,6 +48,7 @@ pub struct SubTrackHandle {
 	id: SubTrackId,
 	command_producer: CommandProducer,
 	active_effect_ids: IndexSet<EffectId>,
+	sample_rate: u32,
 	resource_collector_handle: basedrop::Handle,
 }
 
@@ -56,12 +57,14 @@ impl SubTrackHandle {
 		id: SubTrackId,
 		settings: &SubTrackSettings,
 		command_producer: CommandProducer,
+		sample_rate: u32,
 		resource_collector_handle: basedrop::Handle,
 	) -> Self {
 		Self {
 			id,
 			command_producer,
 			active_effect_ids: IndexSet::with_capacity(settings.num_effects),
+			sample_rate,
 			resource_collector_handle,
 		}
 	}
@@ -74,7 +77,7 @@ impl SubTrackHandle {
 	/// Adds an effect to the track.
 	pub fn add_effect(
 		&mut self,
-		effect: impl Effect + 'static,
+		mut effect: impl Effect + 'static,
 		settings: EffectSettings,
 	) -> Result<EffectHandle, AddEffectError> {
 		if self.active_effect_ids.len() >= self.active_effect_ids.capacity() {
@@ -82,6 +85,7 @@ impl SubTrackHandle {
 		}
 		let id = settings.id;
 		let handle = EffectHandle::new(self.id.into(), &settings, self.command_producer.clone());
+		effect.init(self.sample_rate);
 		self.command_producer.push(
 			MixerCommand::AddEffect(
 				self.id.into(),
@@ -111,6 +115,7 @@ pub struct SendTrackHandle {
 	id: SendTrackId,
 	command_producer: CommandProducer,
 	active_effect_ids: IndexSet<EffectId>,
+	sample_rate: u32,
 	resource_collector_handle: basedrop::Handle,
 }
 
@@ -119,12 +124,14 @@ impl SendTrackHandle {
 		id: SendTrackId,
 		settings: &SendTrackSettings,
 		command_producer: CommandProducer,
+		sample_rate: u32,
 		resource_collector_handle: basedrop::Handle,
 	) -> Self {
 		Self {
 			id,
 			command_producer,
 			active_effect_ids: IndexSet::with_capacity(settings.num_effects),
+			sample_rate,
 			resource_collector_handle,
 		}
 	}
@@ -137,7 +144,7 @@ impl SendTrackHandle {
 	/// Adds an effect to the track.
 	pub fn add_effect(
 		&mut self,
-		effect: impl Effect + 'static,
+		mut effect: impl Effect + 'static,
 		settings: EffectSettings,
 	) -> Result<EffectHandle, AddEffectError> {
 		if self.active_effect_ids.len() >= self.active_effect_ids.capacity() {
@@ -145,6 +152,7 @@ impl SendTrackHandle {
 		}
 		let id = settings.id;
 		let handle = EffectHandle::new(self.id.into(), &settings, self.command_producer.clone());
+		effect.init(self.sample_rate);
 		self.command_producer.push(
 			MixerCommand::AddEffect(
 				self.id.into(),

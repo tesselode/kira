@@ -99,9 +99,15 @@ impl Default for EffectSettings {
 	}
 }
 
+#[allow(unused_variables)]
 /// Receives input audio from a mixer track and outputs modified audio.
 pub trait Effect: Send + Debug {
-	/// Modifies an input frame.
+	/// Performs any required setup for the effect.
+	///
+	/// This is called once when the effect is first added to a track.
+	fn init(&mut self, sample_rate: u32) {}
+
+	/// Transforms an input frame.
 	/// - `dt` is the time that's elapsed since the previous frame (in seconds)
 	/// - `input` is the input audio
 	/// - `parameters` is a set of all parameter IDs and their corresponding values.
