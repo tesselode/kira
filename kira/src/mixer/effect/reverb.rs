@@ -23,8 +23,10 @@ const STEREO_SPREAD: usize = 23;
 	serde(default)
 )]
 pub struct ReverbSettings {
-	/// The size of the simulated room.
-	room_size: Value<f64>,
+	/// How much the room reverberates. A higher value will
+	/// result in a bigger sounding room. 1.0 gives an infinitely
+	/// reverberating room.
+	feedback: Value<f64>,
 	/// How quickly high frequencies disappear from the reverberation.
 	damping: Value<f64>,
 	/// The stereo width of the reverb effect (0.0 being fully mono,
@@ -38,10 +40,12 @@ impl ReverbSettings {
 		Self::default()
 	}
 
-	/// Sets the size of the simulated room.
-	pub fn room_size(self, room_size: impl Into<Value<f64>>) -> Self {
+	/// Sets how much the room reverberates. A higher value will
+	/// result in a bigger sounding room. 1.0 gives an infinitely
+	/// reverberating room.
+	pub fn feedback(self, feedback: impl Into<Value<f64>>) -> Self {
 		Self {
-			room_size: room_size.into(),
+			feedback: feedback.into(),
 			..self
 		}
 	}
@@ -67,7 +71,7 @@ impl ReverbSettings {
 impl Default for ReverbSettings {
 	fn default() -> Self {
 		Self {
-			room_size: Value::Fixed(0.9),
+			feedback: Value::Fixed(0.9),
 			damping: Value::Fixed(0.1),
 			stereo_width: Value::Fixed(1.0),
 		}
@@ -88,7 +92,7 @@ enum ReverbState {
 // http://blog.bjornroche.com/2012/06/freeverb-original-public-domain-code-by.html
 #[derive(Debug)]
 pub struct Reverb {
-	room_size: CachedValue<f64>,
+	feedback: CachedValue<f64>,
 	damping: CachedValue<f64>,
 	stereo_width: CachedValue<f64>,
 	state: ReverbState,
@@ -98,7 +102,7 @@ impl Reverb {
 	/// Creates a new `Reverb` effect.
 	pub fn new(settings: ReverbSettings) -> Self {
 		Self {
-			room_size: CachedValue::new(settings.room_size, 0.9),
+			feedback: CachedValue::new(settings.feedback, 0.9),
 			damping: CachedValue::new(settings.damping, 0.1),
 			stereo_width: CachedValue::new(settings.stereo_width, 1.0),
 			state: ReverbState::Uninitialized,
@@ -186,11 +190,11 @@ impl Effect for Reverb {
 			all_pass_filters,
 		} = &mut self.state
 		{
-			self.room_size.update(parameters);
+			self.feedback.update(parameters);
 			self.damping.update(parameters);
 			self.stereo_width.update(parameters);
 
-			let room_size = self.room_size.value() as f32;
+			let feedback = self.feedback.value() as f32;
 			let damping = self.damping.value() as f32;
 			let stereo_width = self.stereo_width.value() as f32;
 
@@ -198,8 +202,8 @@ impl Effect for Reverb {
 			let input = (input.left + input.right) * GAIN;
 			// accumulate comb filters in parallel
 			for comb_filter in comb_filters {
-				output.left += comb_filter.0.process(input, room_size, damping);
-				output.right += comb_filter.1.process(input, room_size, damping);
+				output.left += comb_filter.0.process(input, feedback, damping);
+				output.right += comb_filter.1.process(input, feedback, damping);
 			}
 			// feed through all-pass filters in series
 			for all_pass_filter in all_pass_filters {

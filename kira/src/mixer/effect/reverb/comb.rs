@@ -14,10 +14,10 @@ impl CombFilter {
 		}
 	}
 
-	pub fn process(&mut self, input: f32, room_size: f32, damp: f32) -> f32 {
+	pub fn process(&mut self, input: f32, feedback: f32, damp: f32) -> f32 {
 		let output = self.buffer[self.current_index];
 		self.filter_store = output * (1.0 - damp) + self.filter_store * damp;
-		self.buffer[self.current_index] = input + self.filter_store * room_size;
+		self.buffer[self.current_index] = input + self.filter_store * feedback;
 		self.current_index += 1;
 		self.current_index %= self.buffer.len();
 		output
