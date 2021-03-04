@@ -23,7 +23,7 @@ default = ["mp3", "ogg", "flac", "wav"]
 
 [dependencies]
 atomic = "0.5.0"
-basedrop = "0.1.0"
+basedrop = "0.1.1"
 claxon = { version = "0.4.3", optional = true }
 cpal = { version = "0.13.1", features = ["wasm-bindgen"] }
 hound = { version = "3.4.0", optional = true }
