@@ -40,7 +40,7 @@ impl Sound {
 	pub fn from_frames(sample_rate: u32, frames: Vec<Frame>, settings: SoundSettings) -> Self {
 		let duration = frames.len() as f64 / sample_rate as f64;
 		Self {
-			id: settings.id,
+			id: settings.id.unwrap_or(SoundId::new()),
 			sample_rate,
 			frames,
 			duration,

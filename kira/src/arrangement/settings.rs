@@ -11,7 +11,7 @@ use super::ArrangementId;
 )]
 pub struct ArrangementSettings {
 	/// The unique identifier for this arrangement.
-	pub id: ArrangementId,
+	pub id: Option<ArrangementId>,
 	/// The track instances of this arrangement will play on by default.
 	pub default_track: TrackIndex,
 	/// Whether the arrangement should have a "cool off" period after playing
@@ -50,7 +50,7 @@ impl ArrangementSettings {
 	/// Sets the unique identifier for the arrangement.
 	pub fn id(self, id: impl Into<ArrangementId>) -> Self {
 		Self {
-			id: id.into(),
+			id: Some(id.into()),
 			..self
 		}
 	}
@@ -99,7 +99,7 @@ impl ArrangementSettings {
 impl Default for ArrangementSettings {
 	fn default() -> Self {
 		Self {
-			id: ArrangementId::new(),
+			id: None,
 			default_track: TrackIndex::Main,
 			cooldown: Some(0.0001),
 			semantic_duration: None,
@@ -118,7 +118,7 @@ impl Default for ArrangementSettings {
 )]
 pub struct LoopArrangementSettings {
 	/// The unique identifier for this arrangement.
-	pub id: ArrangementId,
+	pub id: Option<ArrangementId>,
 	/// The track instances of this arrangement will play on by default.
 	pub default_track: TrackIndex,
 	/// Whether the arrangement should have a "cool off" period after playing
@@ -153,7 +153,7 @@ impl LoopArrangementSettings {
 	/// Sets the unique identifier for the arrangement.
 	pub fn id(self, id: impl Into<ArrangementId>) -> Self {
 		Self {
-			id: id.into(),
+			id: Some(id.into()),
 			..self
 		}
 	}
@@ -194,7 +194,7 @@ impl LoopArrangementSettings {
 impl Default for LoopArrangementSettings {
 	fn default() -> Self {
 		Self {
-			id: ArrangementId::new(),
+			id: None,
 			default_track: TrackIndex::Main,
 			cooldown: Some(0.0001),
 			semantic_duration: None,

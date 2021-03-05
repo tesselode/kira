@@ -165,7 +165,7 @@ impl Arrangement {
 	/// Creates a new, empty arrangement.
 	pub fn new(settings: ArrangementSettings) -> Self {
 		Self {
-			id: settings.id,
+			id: settings.id.unwrap_or(ArrangementId::new()),
 			clips: vec![],
 			duration: 0.0,
 			default_track: settings.default_track,

@@ -11,7 +11,7 @@ use super::SoundId;
 )]
 pub struct SoundSettings {
 	/// The unique identifier for the sound.
-	pub id: SoundId,
+	pub id: Option<SoundId>,
 	/// The track instances of this sound will play on by default.
 	pub default_track: TrackIndex,
 	/// Whether the sound should have a "cool off" period after playing
@@ -50,7 +50,7 @@ impl SoundSettings {
 	/// Sets the unique identifier for the sound.
 	pub fn id(self, id: impl Into<SoundId>) -> Self {
 		Self {
-			id: id.into(),
+			id: Some(id.into()),
 			..self
 		}
 	}
@@ -99,7 +99,7 @@ impl SoundSettings {
 impl Default for SoundSettings {
 	fn default() -> Self {
 		Self {
-			id: SoundId::new(),
+			id: None,
 			default_track: TrackIndex::Main,
 			cooldown: Some(0.0001),
 			semantic_duration: None,
