@@ -83,18 +83,24 @@ impl SubTrackHandle {
 		if self.active_effect_ids.len() >= self.active_effect_ids.capacity() {
 			return Err(AddEffectError::EffectLimitReached);
 		}
-		let id = settings.id;
-		let handle = EffectHandle::new(self.id.into(), &settings, self.command_producer.clone());
+		let effect_id = settings.id.unwrap_or(EffectId::new());
+		let handle = EffectHandle::new(
+			effect_id,
+			self.id.into(),
+			&settings,
+			self.command_producer.clone(),
+		);
 		effect.init(self.sample_rate);
 		self.command_producer.push(
 			MixerCommand::AddEffect(
 				self.id.into(),
+				effect_id,
 				Owned::new(&self.resource_collector_handle, Box::new(effect)),
 				settings,
 			)
 			.into(),
 		)?;
-		self.active_effect_ids.insert(id);
+		self.active_effect_ids.insert(effect_id);
 		Ok(handle)
 	}
 
@@ -150,18 +156,24 @@ impl SendTrackHandle {
 		if self.active_effect_ids.len() >= self.active_effect_ids.capacity() {
 			return Err(AddEffectError::EffectLimitReached);
 		}
-		let id = settings.id;
-		let handle = EffectHandle::new(self.id.into(), &settings, self.command_producer.clone());
+		let effect_id = settings.id.unwrap_or(EffectId::new());
+		let handle = EffectHandle::new(
+			effect_id,
+			self.id.into(),
+			&settings,
+			self.command_producer.clone(),
+		);
 		effect.init(self.sample_rate);
 		self.command_producer.push(
 			MixerCommand::AddEffect(
 				self.id.into(),
+				effect_id,
 				Owned::new(&self.resource_collector_handle, Box::new(effect)),
 				settings,
 			)
 			.into(),
 		)?;
-		self.active_effect_ids.insert(id);
+		self.active_effect_ids.insert(effect_id);
 		Ok(handle)
 	}
 

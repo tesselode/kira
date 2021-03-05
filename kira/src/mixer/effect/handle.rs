@@ -21,14 +21,15 @@ pub struct EffectHandle {
 
 impl EffectHandle {
 	pub(crate) fn new(
+		id: EffectId,
 		track_index: TrackIndex,
 		settings: &EffectSettings,
 		command_producer: CommandProducer,
 	) -> Self {
 		Self {
-			id: settings.id,
-			enabled: settings.enabled,
+			id,
 			track_index,
+			enabled: settings.enabled,
 			command_producer,
 		}
 	}

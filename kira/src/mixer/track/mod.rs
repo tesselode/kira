@@ -186,8 +186,12 @@ impl Track {
 		&self.kind
 	}
 
-	pub fn add_effect(&mut self, effect: Owned<Box<dyn Effect>>, settings: EffectSettings) {
-		let id = settings.id;
+	pub fn add_effect(
+		&mut self,
+		id: EffectId,
+		effect: Owned<Box<dyn Effect>>,
+		settings: EffectSettings,
+	) {
 		let effect_slot = EffectSlot::new(effect, settings);
 		self.effect_slots.try_insert(id, effect_slot).ok();
 	}

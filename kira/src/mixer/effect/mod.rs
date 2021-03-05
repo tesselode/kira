@@ -48,7 +48,7 @@ impl From<&EffectHandle> for EffectId {
 )]
 pub struct EffectSettings {
 	/// The unique identifier for the effect.
-	pub id: EffectId,
+	pub id: Option<EffectId>,
 	/// Whether the effect is initially enabled.
 	pub enabled: bool,
 	/// The balance between dry (unaffected) signal and wet
@@ -66,7 +66,7 @@ impl EffectSettings {
 	/// Sets the unique identifier for the effect.
 	pub fn id(self, id: impl Into<EffectId>) -> Self {
 		Self {
-			id: id.into(),
+			id: Some(id.into()),
 			..self
 		}
 	}
@@ -90,7 +90,7 @@ impl EffectSettings {
 impl Default for EffectSettings {
 	fn default() -> Self {
 		Self {
-			id: EffectId::new(),
+			id: None,
 			enabled: true,
 			mix: Value::Fixed(1.0),
 		}

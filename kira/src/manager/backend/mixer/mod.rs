@@ -6,7 +6,10 @@ use basedrop::Owned;
 use crate::{
 	command::MixerCommand,
 	frame::Frame,
-	mixer::{effect::Effect, SendTrackId, SubTrackId, Track, TrackIndex, TrackKind},
+	mixer::{
+		effect::{Effect, EffectId},
+		SendTrackId, SubTrackId, Track, TrackIndex, TrackKind,
+	},
 	parameter::Parameters,
 	static_container::index_map::StaticIndexMap,
 };
@@ -29,8 +32,8 @@ impl Mixer {
 	pub fn run_command(&mut self, command: MixerCommand) {
 		match command {
 			MixerCommand::AddTrack(track) => self.add_track(track),
-			MixerCommand::AddEffect(index, effect, settings) => {
-				self.add_effect(index, effect, settings);
+			MixerCommand::AddEffect(index, id, effect, settings) => {
+				self.add_effect(index, id, effect, settings);
 			}
 			MixerCommand::RemoveSubTrack(id) => {
 				self.remove_sub_track(id);
@@ -64,21 +67,22 @@ impl Mixer {
 	pub fn add_effect(
 		&mut self,
 		index: TrackIndex,
+		effect_id: EffectId,
 		effect: Owned<Box<dyn Effect>>,
 		settings: crate::mixer::effect::EffectSettings,
 	) {
 		match index {
 			TrackIndex::Main => {
-				self.main_track.add_effect(effect, settings);
+				self.main_track.add_effect(effect_id, effect, settings);
 			}
-			TrackIndex::Sub(id) => {
-				if let Some(track) = self.sub_tracks.get_mut(&id) {
-					track.add_effect(effect, settings);
+			TrackIndex::Sub(sub_track_id) => {
+				if let Some(track) = self.sub_tracks.get_mut(&sub_track_id) {
+					track.add_effect(effect_id, effect, settings);
 				}
 			}
-			TrackIndex::Send(id) => {
-				if let Some(track) = self.send_tracks.get_mut(&id) {
-					track.add_effect(effect, settings);
+			TrackIndex::Send(send_track_id) => {
+				if let Some(track) = self.send_tracks.get_mut(&send_track_id) {
+					track.add_effect(effect_id, effect, settings);
 				}
 			}
 		};

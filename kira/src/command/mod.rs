@@ -77,7 +77,7 @@ pub(crate) enum MixerCommand {
 	AddTrack(Owned<Track>),
 	RemoveSubTrack(SubTrackId),
 	RemoveSendTrack(SendTrackId),
-	AddEffect(TrackIndex, Owned<Box<dyn Effect>>, EffectSettings),
+	AddEffect(TrackIndex, EffectId, Owned<Box<dyn Effect>>, EffectSettings),
 	SetEffectEnabled(TrackIndex, EffectId, bool),
 	RemoveEffect(TrackIndex, EffectId),
 }
