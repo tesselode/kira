@@ -11,7 +11,7 @@ use super::MetronomeId;
 )]
 pub struct MetronomeSettings {
 	/// The unique identifier for the metronome.
-	pub id: MetronomeId,
+	pub id: Option<MetronomeId>,
 	/// The tempo of the metronome (in beats per minute).
 	pub tempo: Value<Tempo>,
 	/// Which intervals (in beats) the metronome should emit events for.
@@ -33,7 +33,7 @@ impl MetronomeSettings {
 	/// Sets the ID of the metronome.
 	pub fn id(self, id: impl Into<MetronomeId>) -> Self {
 		Self {
-			id: id.into(),
+			id: Some(id.into()),
 			..self
 		}
 	}
@@ -66,7 +66,7 @@ impl MetronomeSettings {
 impl Default for MetronomeSettings {
 	fn default() -> Self {
 		Self {
-			id: MetronomeId::new(),
+			id: None,
 			tempo: Tempo(120.0).into(),
 			interval_events_to_emit: vec![],
 			event_queue_capacity: 10,

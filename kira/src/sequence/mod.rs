@@ -196,7 +196,7 @@ use crate::{
 )]
 pub struct SequenceInstanceSettings {
 	/// The ID of the sequence instance.
-	pub id: SequenceInstanceId,
+	pub id: Option<SequenceInstanceId>,
 	/// The metronome this sequence should sync to.
 	pub metronome: Option<MetronomeId>,
 	/// How many events can be queued at a time.
@@ -212,7 +212,7 @@ impl SequenceInstanceSettings {
 	/// Sets the ID of the sequence instance.
 	pub fn id(self, id: impl Into<SequenceInstanceId>) -> Self {
 		Self {
-			id: id.into(),
+			id: Some(id.into()),
 			..self
 		}
 	}
@@ -237,7 +237,7 @@ impl SequenceInstanceSettings {
 impl Default for SequenceInstanceSettings {
 	fn default() -> Self {
 		Self {
-			id: SequenceInstanceId::new(),
+			id: None,
 			metronome: None,
 			event_queue_capacity: 10,
 		}
@@ -641,6 +641,7 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 
 	pub(crate) fn create_instance(
 		&self,
+		id: SequenceInstanceId,
 		settings: SequenceInstanceSettings,
 		command_producer: CommandProducer,
 	) -> (SequenceInstance, SequenceInstanceHandle<CustomEvent>) {
@@ -649,7 +650,7 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 			RingBuffer::new(settings.event_queue_capacity).split();
 		let instance = SequenceInstance::new(raw_sequence, event_producer, settings.metronome);
 		let handle = SequenceInstanceHandle::new(
-			settings.id,
+			id,
 			instance.public_state(),
 			command_producer,
 			event_consumer,

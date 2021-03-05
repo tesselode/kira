@@ -36,7 +36,7 @@ impl From<&ParameterHandle> for ParameterId {
 )]
 pub struct ParameterSettings {
 	/// The unique identifier for the parameter.
-	pub id: ParameterId,
+	pub id: Option<ParameterId>,
 	/// The volume of the parameter.
 	pub value: f64,
 }
@@ -50,7 +50,7 @@ impl ParameterSettings {
 	/// Sets the unique identifier for the parameter.
 	pub fn id(self, id: impl Into<ParameterId>) -> Self {
 		Self {
-			id: id.into(),
+			id: Some(id.into()),
 			..self
 		}
 	}
@@ -67,7 +67,7 @@ impl ParameterSettings {
 impl Default for ParameterSettings {
 	fn default() -> Self {
 		Self {
-			id: ParameterId::new(),
+			id: None,
 			value: 1.0,
 		}
 	}

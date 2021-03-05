@@ -39,7 +39,9 @@ use crate::{
 		SubTrackSettings, Track, TrackIndex,
 	},
 	parameter::{handle::ParameterHandle, ParameterId, ParameterSettings},
-	sequence::{handle::SequenceInstanceHandle, Sequence, SequenceInstanceSettings},
+	sequence::{
+		handle::SequenceInstanceHandle, Sequence, SequenceInstanceId, SequenceInstanceSettings,
+	},
 	sound::{handle::SoundHandle, Sound, SoundId},
 };
 use cpal::{
@@ -344,7 +346,7 @@ impl AudioManager {
 		&mut self,
 		settings: MetronomeSettings,
 	) -> Result<MetronomeHandle, AddMetronomeError> {
-		let id = settings.id;
+		let id = settings.id.unwrap_or(MetronomeId::new());
 		self.active_ids.add_metronome_id(id)?;
 		let (event_producer, event_consumer) =
 			RingBuffer::new(settings.event_queue_capacity).split();
@@ -384,10 +386,12 @@ impl AudioManager {
 			return Err(StartSequenceError::NoGroupWithId(group));
 		}
 		sequence.validate()?;
-		let (instance, handle) = sequence.create_instance(settings, self.command_producer.clone());
+		let id = settings.id.unwrap_or(SequenceInstanceId::new());
+		let (instance, handle) =
+			sequence.create_instance(id, settings, self.command_producer.clone());
 		let instance = Owned::new(&self.resource_collector().handle(), instance);
 		self.command_producer
-			.push(SequenceCommand::StartSequenceInstance(settings.id, instance).into())?;
+			.push(SequenceCommand::StartSequenceInstance(id, instance).into())?;
 		Ok(handle)
 	}
 
@@ -396,13 +400,11 @@ impl AudioManager {
 		&mut self,
 		settings: ParameterSettings,
 	) -> Result<ParameterHandle, AddParameterError> {
-		self.active_ids.add_parameter_id(settings.id)?;
+		let id = settings.id.unwrap_or(ParameterId::new());
+		self.active_ids.add_parameter_id(id)?;
 		self.command_producer
-			.push(ParameterCommand::AddParameter(settings.id, settings.value).into())?;
-		Ok(ParameterHandle::new(
-			settings.id,
-			self.command_producer.clone(),
-		))
+			.push(ParameterCommand::AddParameter(id, settings.value).into())?;
+		Ok(ParameterHandle::new(id, self.command_producer.clone()))
 	}
 
 	/// Removes a parameter from the audio thread.
