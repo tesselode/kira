@@ -52,7 +52,7 @@ impl From<&GroupHandle> for GroupId {
 )]
 pub struct GroupSettings {
 	/// The unique identifier for the group.
-	pub id: GroupId,
+	pub id: Option<GroupId>,
 	/// The groups this group belongs to.
 	pub groups: GroupSet,
 }
@@ -66,7 +66,7 @@ impl GroupSettings {
 	/// Sets the unique identifier for the group.
 	pub fn id(self, id: impl Into<GroupId>) -> Self {
 		Self {
-			id: id.into(),
+			id: Some(id.into()),
 			..Default::default()
 		}
 	}
@@ -83,7 +83,7 @@ impl GroupSettings {
 impl Default for GroupSettings {
 	fn default() -> Self {
 		Self {
-			id: GroupId::new(),
+			id: None,
 			groups: GroupSet::new(),
 		}
 	}

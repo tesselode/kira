@@ -6,7 +6,7 @@ use crate::{
 		InstanceCommand,
 	},
 	instance::{
-		handle::InstanceHandle, Instance, InstanceSettings, PauseInstanceSettings,
+		handle::InstanceHandle, Instance, InstanceId, InstanceSettings, PauseInstanceSettings,
 		ResumeInstanceSettings, StopInstanceSettings,
 	},
 	mixer::TrackIndex,
@@ -68,7 +68,7 @@ impl SoundHandle {
 
 	/// Plays the sound.
 	pub fn play(&mut self, settings: InstanceSettings) -> Result<InstanceHandle, CommandError> {
-		let id = settings.id;
+		let id = settings.id.unwrap_or(InstanceId::new());
 		let instance = Instance::new(
 			self.id.into(),
 			self.duration,

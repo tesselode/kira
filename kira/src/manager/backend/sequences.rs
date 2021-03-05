@@ -103,9 +103,8 @@ impl Sequences {
 			// by the backend
 			for command in self.sequence_output_command_queue.drain(..) {
 				match command {
-					SequenceOutputCommand::PlaySound(playable_id, settings) => {
+					SequenceOutputCommand::PlaySound(playable_id, instance_id, settings) => {
 						if let Some(playable) = playables.playable(playable_id) {
-							let instance_id = settings.id;
 							self.output_command_queue
 								.try_push(Command::Instance(InstanceCommand::Play(
 									instance_id,

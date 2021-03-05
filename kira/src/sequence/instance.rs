@@ -175,12 +175,13 @@ impl SequenceInstance {
 								}
 								self.start_step(self.position + 1);
 							}
-							SequenceStep::PlayRandom(choices, settings) => {
+							SequenceStep::PlayRandom(choices, id, settings) => {
 								if !self.muted {
 									let choice_index = thread_rng().gen_range(0..choices.len());
 									output_command_queue
 										.try_push(SequenceOutputCommand::PlaySound(
 											choices[choice_index],
+											*id,
 											*settings,
 										))
 										.ok();

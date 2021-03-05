@@ -82,7 +82,7 @@ impl From<Option<f64>> for InstanceLoopStart {
 )]
 pub struct InstanceSettings {
 	/// The unique identifier for the instance.
-	pub id: InstanceId,
+	pub id: Option<InstanceId>,
 	/// The volume of the instance.
 	pub volume: Value<f64>,
 	/// The pitch of the instance, as a factor of the original pitch.
@@ -112,7 +112,7 @@ impl InstanceSettings {
 	/// Sets the unique identifier for the instance.
 	pub fn id(self, id: impl Into<InstanceId>) -> Self {
 		Self {
-			id: id.into(),
+			id: Some(id.into()),
 			..self
 		}
 	}
@@ -188,7 +188,6 @@ impl InstanceSettings {
 		default_track: TrackIndex,
 	) -> InternalInstanceSettings {
 		InternalInstanceSettings {
-			id: self.id,
 			volume: self.volume,
 			pitch: self.pitch,
 			panning: self.panning,
@@ -215,7 +214,7 @@ impl InstanceSettings {
 impl Default for InstanceSettings {
 	fn default() -> Self {
 		Self {
-			id: InstanceId::new(),
+			id: None,
 			volume: Value::Fixed(1.0),
 			pitch: Value::Fixed(1.0),
 			panning: Value::Fixed(0.5),
@@ -229,7 +228,6 @@ impl Default for InstanceSettings {
 }
 
 pub(crate) struct InternalInstanceSettings {
-	pub id: InstanceId,
 	pub volume: Value<f64>,
 	pub pitch: Value<f64>,
 	pub panning: Value<f64>,

@@ -504,7 +504,7 @@ impl AudioManager {
 		if let Some(group) = self.first_missing_group_in_set(&settings.groups) {
 			return Err(AddGroupError::NoGroupWithId(group));
 		}
-		let id = settings.id;
+		let id = settings.id.unwrap_or(GroupId::new());
 		self.active_ids.add_group_id(id)?;
 		let group = Owned::new(&self.resource_collector().handle(), Group::new(settings));
 		self.command_producer

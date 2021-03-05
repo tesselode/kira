@@ -250,7 +250,7 @@ impl Default for SequenceInstanceSettings {
 	derive(serde::Serialize, serde::Deserialize)
 )]
 pub(crate) enum SequenceOutputCommand {
-	PlaySound(PlayableId, InstanceSettings),
+	PlaySound(PlayableId, InstanceId, InstanceSettings),
 	SetInstanceVolume(InstanceId, Value<f64>),
 	SetInstancePitch(InstanceId, Value<f64>),
 	SetInstancePanning(InstanceId, Value<f64>),
@@ -286,7 +286,7 @@ pub(crate) enum SequenceStep<CustomEvent: Clone + Eq + Hash> {
 	Wait(Duration),
 	WaitForInterval(f64),
 	RunCommand(SequenceOutputCommand),
-	PlayRandom(Vec<PlayableId>, InstanceSettings),
+	PlayRandom(Vec<PlayableId>, InstanceId, InstanceSettings),
 	EmitCustomEvent(CustomEvent),
 }
 
@@ -399,9 +399,10 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 		playable: P,
 		settings: InstanceSettings,
 	) -> InstanceId {
+		let id = settings.id.unwrap_or(InstanceId::new());
 		self.steps
-			.push(SequenceOutputCommand::PlaySound(playable.into(), settings).into());
-		settings.id
+			.push(SequenceOutputCommand::PlaySound(playable.into(), id, settings).into());
+		id
 	}
 
 	/// Adds a step to play a random sound or arrangement from a
@@ -411,9 +412,10 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 		choices: Vec<PlayableId>,
 		settings: InstanceSettings,
 	) -> InstanceId {
+		let id = settings.id.unwrap_or(InstanceId::new());
 		self.steps
-			.push(SequenceStep::PlayRandom(choices, settings).into());
-		settings.id
+			.push(SequenceStep::PlayRandom(choices, id, settings).into());
+		id
 	}
 
 	/// Adds a step to set the volume of an instance.
@@ -623,8 +625,8 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 				SequenceStep::Wait(duration) => SequenceStep::Wait(*duration),
 				SequenceStep::WaitForInterval(interval) => SequenceStep::WaitForInterval(*interval),
 				SequenceStep::RunCommand(command) => SequenceStep::RunCommand(*command),
-				SequenceStep::PlayRandom(choices, settings) => {
-					SequenceStep::PlayRandom(choices.clone(), *settings)
+				SequenceStep::PlayRandom(choices, id, settings) => {
+					SequenceStep::PlayRandom(choices.clone(), *id, *settings)
 				}
 				SequenceStep::EmitCustomEvent(event) => {
 					SequenceStep::EmitCustomEvent(events.get_index_of(event).unwrap())
@@ -679,9 +681,9 @@ impl RawSequence {
 		for step in steps {
 			match step {
 				SequenceStep::RunCommand(command) => match command {
-					SequenceOutputCommand::PlaySound(_, settings) => {
-						if settings.id == old_id {
-							settings.id = new_id;
+					SequenceOutputCommand::PlaySound(_, id, _) => {
+						if *id == old_id {
+							*id = new_id;
 						}
 					}
 					SequenceOutputCommand::SetInstanceVolume(id, _) => {
@@ -716,9 +718,9 @@ impl RawSequence {
 					}
 					_ => {}
 				},
-				SequenceStep::PlayRandom(_, settings) => {
-					if settings.id == old_id {
-						settings.id = new_id;
+				SequenceStep::PlayRandom(_, id, _) => {
+					if *id == old_id {
+						*id = new_id;
 					}
 				}
 				_ => {}
@@ -735,14 +737,14 @@ impl RawSequence {
 		for i in 0..self.steps.len() {
 			match &self.steps[i] {
 				SequenceStep::RunCommand(command) => match command {
-					SequenceOutputCommand::PlaySound(_, settings) => {
-						let old_id = settings.id;
+					SequenceOutputCommand::PlaySound(_, id, _) => {
+						let old_id = *id;
 						Self::convert_ids(&mut self.steps, old_id, InstanceId::new());
 					}
 					_ => {}
 				},
-				SequenceStep::PlayRandom(_, settings) => {
-					let old_id = settings.id;
+				SequenceStep::PlayRandom(_, id, _) => {
+					let old_id = *id;
 					Self::convert_ids(&mut self.steps, old_id, InstanceId::new());
 				}
 				_ => {}
