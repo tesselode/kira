@@ -9,7 +9,7 @@ use super::{sends::TrackSends, SendTrackId, SubTrackId, TrackIndex};
 )]
 pub struct SubTrackSettings {
 	/// The unique identifier for the track.
-	pub id: SubTrackId,
+	pub id: Option<SubTrackId>,
 	/// The track that this track's output will be routed to.
 	pub parent_track: TrackIndex,
 	/// The send tracks that this track will be routed to (in
@@ -30,7 +30,7 @@ impl SubTrackSettings {
 	/// Sets the unique identifier for the track.
 	pub fn id(self, id: impl Into<SubTrackId>) -> Self {
 		Self {
-			id: id.into(),
+			id: Some(id.into()),
 			..self
 		}
 	}
@@ -69,7 +69,7 @@ impl SubTrackSettings {
 impl Default for SubTrackSettings {
 	fn default() -> Self {
 		Self {
-			id: SubTrackId::new(),
+			id: None,
 			parent_track: TrackIndex::Main,
 			sends: TrackSends::new(),
 			volume: 1.0,
@@ -87,7 +87,7 @@ impl Default for SubTrackSettings {
 )]
 pub struct SendTrackSettings {
 	/// The unique identifier for the track.
-	pub id: SendTrackId,
+	pub id: Option<SendTrackId>,
 	/// The volume of the track.
 	pub volume: f64,
 	/// The maximum number of effects this track can hold.
@@ -103,7 +103,7 @@ impl SendTrackSettings {
 	/// Sets the unique identifier for the track.
 	pub fn id(self, id: impl Into<SendTrackId>) -> Self {
 		Self {
-			id: id.into(),
+			id: Some(id.into()),
 			..self
 		}
 	}
@@ -128,7 +128,7 @@ impl SendTrackSettings {
 impl Default for SendTrackSettings {
 	fn default() -> Self {
 		Self {
-			id: SendTrackId::new(),
+			id: None,
 			volume: 1.0,
 			num_effects: 10,
 		}

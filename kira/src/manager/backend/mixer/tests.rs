@@ -1,7 +1,7 @@
 use basedrop::{Collector, Owned};
 
 use crate::{
-	mixer::{SendTrackSettings, SubTrackSettings, Track, TrackSends},
+	mixer::{SendTrackId, SendTrackSettings, SubTrackId, SubTrackSettings, Track, TrackSends},
 	parameter::Parameters,
 	Frame,
 };
@@ -16,39 +16,39 @@ fn routes_audio_to_parent_tracks() {
 	// parent track has a volume of 50%
 	let parent_track_id = {
 		let settings = SubTrackSettings::new().volume(0.5);
-		let id = settings.id;
+		let id = settings.id.unwrap_or(SubTrackId::new());
 		mixer.add_track(Owned::new(
 			&collector.handle(),
-			Track::new_sub_track(settings),
+			Track::new_sub_track(id, settings),
 		));
 		id
 	};
 	// sub tracks 1 and 2 are routed into the parent track
 	let sub_track_1_id = {
 		let settings = SubTrackSettings::new().parent_track(parent_track_id);
-		let id = settings.id;
+		let id = settings.id.unwrap_or(SubTrackId::new());
 		mixer.add_track(Owned::new(
 			&collector.handle(),
-			Track::new_sub_track(settings),
+			Track::new_sub_track(id, settings),
 		));
 		id
 	};
 	let sub_track_2_id = {
 		let settings = SubTrackSettings::new().parent_track(parent_track_id);
-		let id = settings.id;
+		let id = settings.id.unwrap_or(SubTrackId::new());
 		mixer.add_track(Owned::new(
 			&collector.handle(),
-			Track::new_sub_track(settings),
+			Track::new_sub_track(id, settings),
 		));
 		id
 	};
 	// sub track 3 is routed directly to main
 	let sub_track_3_id = {
 		let settings = SubTrackSettings::new();
-		let id = settings.id;
+		let id = settings.id.unwrap_or(SubTrackId::new());
 		mixer.add_track(Owned::new(
 			&collector.handle(),
-			Track::new_sub_track(settings),
+			Track::new_sub_track(id, settings),
 		));
 		id
 	};
@@ -69,19 +69,19 @@ fn routes_audio_to_send_tracks() {
 	let mut mixer = Mixer::new(100, 100);
 	let send_track_1_id = {
 		let settings = SendTrackSettings::new();
-		let id = settings.id;
+		let id = settings.id.unwrap_or(SendTrackId::new());
 		mixer.add_track(Owned::new(
 			&collector.handle(),
-			Track::new_send_track(settings),
+			Track::new_send_track(id, settings),
 		));
 		id
 	};
 	let send_track_2_id = {
 		let settings = SendTrackSettings::new();
-		let id = settings.id;
+		let id = settings.id.unwrap_or(SendTrackId::new());
 		mixer.add_track(Owned::new(
 			&collector.handle(),
-			Track::new_send_track(settings),
+			Track::new_send_track(id, settings),
 		));
 		id
 	};
@@ -91,10 +91,10 @@ fn routes_audio_to_send_tracks() {
 				.add(send_track_1_id, 0.1)
 				.add(send_track_2_id, 0.01),
 		);
-		let id = settings.id;
+		let id = settings.id.unwrap_or(SubTrackId::new());
 		mixer.add_track(Owned::new(
 			&collector.handle(),
-			Track::new_sub_track(settings),
+			Track::new_sub_track(id, settings),
 		));
 		id
 	};

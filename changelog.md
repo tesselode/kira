@@ -7,6 +7,7 @@
   - `TrackHandleError` was split into `AddEffectError` and `RemoveEffectError`
 - `MetronomeHandle.event_iter` has been replaced with `MetronomeHandle.pop_event`,
 which works the same way as `SequenceInstanceHandle.pop_event`
+- For settings structs that had an `id` field, the ID is now `Option<Id>`
 
 # v0.4.1 - January 23, 2021
 Added serde support for `Arrangement`s and `SoundClip`s

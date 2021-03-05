@@ -438,9 +438,10 @@ impl AudioManager {
 				return Err(AddSubTrackError::NonexistentSendTrack(*send_track_id));
 			}
 		}
-		self.active_ids.add_sub_track_id(settings.id)?;
+		let id = settings.id.unwrap_or(SubTrackId::new());
+		self.active_ids.add_sub_track_id(id)?;
 		let handle = SubTrackHandle::new(
-			settings.id,
+			id,
 			&settings,
 			self.command_producer.clone(),
 			self.sample_rate,
@@ -448,7 +449,7 @@ impl AudioManager {
 		);
 		let track = Owned::new(
 			&self.resource_collector().handle(),
-			Track::new_sub_track(settings),
+			Track::new_sub_track(id, settings),
 		);
 		self.command_producer
 			.push(MixerCommand::AddTrack(track).into())?;
@@ -472,9 +473,10 @@ impl AudioManager {
 		&mut self,
 		settings: SendTrackSettings,
 	) -> Result<SendTrackHandle, AddSendTrackError> {
-		self.active_ids.add_send_track_id(settings.id)?;
+		let id = settings.id.unwrap_or(SendTrackId::new());
+		self.active_ids.add_send_track_id(id)?;
 		let handle = SendTrackHandle::new(
-			settings.id,
+			id,
 			&settings,
 			self.command_producer.clone(),
 			self.sample_rate,
@@ -482,7 +484,7 @@ impl AudioManager {
 		);
 		let track = Owned::new(
 			&self.resource_collector().handle(),
-			Track::new_send_track(settings),
+			Track::new_send_track(id, settings),
 		);
 		self.command_producer
 			.push(MixerCommand::AddTrack(track).into())?;

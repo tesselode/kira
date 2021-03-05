@@ -152,10 +152,10 @@ impl Track {
 		}
 	}
 
-	pub fn new_sub_track(settings: SubTrackSettings) -> Self {
+	pub fn new_sub_track(id: SubTrackId, settings: SubTrackSettings) -> Self {
 		Self {
 			kind: TrackKind::Sub {
-				id: settings.id,
+				id,
 				parent_track: settings.parent_track,
 				sends: settings.sends,
 			},
@@ -165,9 +165,9 @@ impl Track {
 		}
 	}
 
-	pub fn new_send_track(settings: SendTrackSettings) -> Self {
+	pub fn new_send_track(id: SendTrackId, settings: SendTrackSettings) -> Self {
 		Self {
-			kind: TrackKind::Send { id: settings.id },
+			kind: TrackKind::Send { id },
 			volume: settings.volume,
 			effect_slots: StaticIndexMap::new(settings.num_effects),
 			input: Frame::from_mono(0.0),
