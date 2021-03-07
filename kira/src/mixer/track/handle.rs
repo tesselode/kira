@@ -10,6 +10,7 @@ use crate::{
 		MixerCommand,
 	},
 	mixer::effect::{handle::EffectHandle, Effect, EffectId, EffectSettings},
+	Value,
 };
 
 use super::{
@@ -66,6 +67,14 @@ impl MainTrackHandle {
 			sample_rate,
 			resource_collector_handle,
 		}
+	}
+
+	/// Sets the volume of the main track.
+	///
+	/// This acts as a "master volume" control for all sounds.
+	pub fn set_volume(&mut self, volume: impl Into<Value<f64>>) -> Result<(), CommandError> {
+		self.command_producer
+			.push(MixerCommand::SetTrackVolume(TrackIndex::Main, volume.into()).into())
 	}
 
 	/// Adds an effect to the track.
@@ -141,6 +150,12 @@ impl SubTrackHandle {
 		self.id
 	}
 
+	/// Sets the volume of the track.
+	pub fn set_volume(&mut self, volume: impl Into<Value<f64>>) -> Result<(), CommandError> {
+		self.command_producer
+			.push(MixerCommand::SetTrackVolume(self.id.into(), volume.into()).into())
+	}
+
 	/// Adds an effect to the track.
 	pub fn add_effect(
 		&mut self,
@@ -212,6 +227,12 @@ impl SendTrackHandle {
 	/// Gets the track that this handle controls.
 	pub fn id(&self) -> SendTrackId {
 		self.id
+	}
+
+	/// Sets the volume of the track.
+	pub fn set_volume(&mut self, volume: impl Into<Value<f64>>) -> Result<(), CommandError> {
+		self.command_producer
+			.push(MixerCommand::SetTrackVolume(self.id.into(), volume.into()).into())
 	}
 
 	/// Adds an effect to the track.

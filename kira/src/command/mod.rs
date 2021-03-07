@@ -75,6 +75,7 @@ pub(crate) enum SequenceCommand {
 
 pub(crate) enum MixerCommand {
 	AddTrack(Owned<Track>),
+	SetTrackVolume(TrackIndex, Value<f64>),
 	RemoveSubTrack(SubTrackId),
 	RemoveSendTrack(SendTrackId),
 	AddEffect(TrackIndex, EffectId, Owned<Box<dyn Effect>>, EffectSettings),

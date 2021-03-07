@@ -12,6 +12,7 @@ use crate::{
 	},
 	parameter::Parameters,
 	static_container::index_map::StaticIndexMap,
+	Value,
 };
 
 pub(crate) struct Mixer {
@@ -32,6 +33,9 @@ impl Mixer {
 	pub fn run_command(&mut self, command: MixerCommand) {
 		match command {
 			MixerCommand::AddTrack(track) => self.add_track(track),
+			MixerCommand::SetTrackVolume(index, volume) => {
+				self.set_track_volume(index, volume);
+			}
 			MixerCommand::AddEffect(index, id, effect, settings) => {
 				self.add_effect(index, id, effect, settings);
 			}
@@ -60,6 +64,24 @@ impl Mixer {
 			}
 			TrackKind::Send { id } => {
 				self.send_tracks.try_insert(*id, track).ok();
+			}
+		}
+	}
+
+	pub fn set_track_volume(&mut self, index: TrackIndex, volume: Value<f64>) {
+		match index {
+			TrackIndex::Main => {
+				self.main_track.set_volume(volume);
+			}
+			TrackIndex::Sub(id) => {
+				if let Some(track) = self.sub_tracks.get_mut(&id) {
+					track.set_volume(volume);
+				}
+			}
+			TrackIndex::Send(id) => {
+				if let Some(track) = self.send_tracks.get_mut(&id) {
+					track.set_volume(volume);
+				}
 			}
 		}
 	}

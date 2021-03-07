@@ -9,7 +9,10 @@ use handle::{SendTrackHandle, SubTrackHandle};
 use sends::TrackSends;
 use uuid::Uuid;
 
-use crate::{frame::Frame, parameter::Parameters, static_container::index_map::StaticIndexMap};
+use crate::{
+	frame::Frame, parameter::Parameters, static_container::index_map::StaticIndexMap, CachedValue,
+	Value,
+};
 
 use super::{
 	effect::{Effect, EffectId, EffectSettings},
@@ -139,7 +142,7 @@ pub(crate) enum TrackKind {
 
 pub(crate) struct Track {
 	kind: TrackKind,
-	volume: f64,
+	volume: CachedValue<f64>,
 	effect_slots: StaticIndexMap<EffectId, EffectSlot>,
 	input: Frame,
 }
@@ -148,7 +151,7 @@ impl Track {
 	pub fn new_main_track() -> Self {
 		Self {
 			kind: TrackKind::Main,
-			volume: 1.0,
+			volume: CachedValue::new(Value::Fixed(1.0), 1.0),
 			effect_slots: StaticIndexMap::new(MAIN_TRACK_NUM_EFFECTS),
 			input: Frame::from_mono(0.0),
 		}
@@ -161,7 +164,7 @@ impl Track {
 				parent_track: settings.parent_track,
 				sends: settings.sends,
 			},
-			volume: settings.volume,
+			volume: CachedValue::new(settings.volume, 1.0),
 			effect_slots: StaticIndexMap::new(settings.num_effects),
 			input: Frame::from_mono(0.0),
 		}
@@ -170,7 +173,7 @@ impl Track {
 	pub fn new_send_track(id: SendTrackId, settings: SendTrackSettings) -> Self {
 		Self {
 			kind: TrackKind::Send { id },
-			volume: settings.volume,
+			volume: CachedValue::new(settings.volume, 1.0),
 			effect_slots: StaticIndexMap::new(settings.num_effects),
 			input: Frame::from_mono(0.0),
 		}
@@ -186,6 +189,10 @@ impl Track {
 
 	pub fn kind(&self) -> &TrackKind {
 		&self.kind
+	}
+
+	pub fn set_volume(&mut self, volume: Value<f64>) {
+		self.volume.set(volume);
 	}
 
 	pub fn add_effect(
@@ -211,6 +218,7 @@ impl Track {
 	}
 
 	pub fn process(&mut self, dt: f64, parameters: &Parameters) -> Frame {
+		self.volume.update(parameters);
 		if let TrackKind::Sub { sends, .. } = &mut self.kind {
 			sends.update(parameters);
 		}
@@ -219,6 +227,6 @@ impl Track {
 		for (_, effect_slot) in &mut self.effect_slots {
 			input = effect_slot.process(dt, input, parameters);
 		}
-		input * (self.volume as f32)
+		input * (self.volume.value() as f32)
 	}
 }

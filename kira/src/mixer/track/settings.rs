@@ -1,3 +1,5 @@
+use crate::Value;
+
 use super::{sends::TrackSends, SendTrackId, SubTrackId, TrackIndex};
 
 /// Settings for a mixer sub-track.
@@ -16,7 +18,7 @@ pub struct SubTrackSettings {
 	/// addition to the parent track).
 	pub sends: TrackSends,
 	/// The volume of the track.
-	pub volume: f64,
+	pub volume: Value<f64>,
 	/// The maximum number of effects this track can hold.
 	pub num_effects: usize,
 }
@@ -50,7 +52,7 @@ impl SubTrackSettings {
 	}
 
 	/// Sets the volume of the track.
-	pub fn volume(self, volume: impl Into<f64>) -> Self {
+	pub fn volume(self, volume: impl Into<Value<f64>>) -> Self {
 		Self {
 			volume: volume.into(),
 			..self
@@ -72,7 +74,7 @@ impl Default for SubTrackSettings {
 			id: None,
 			parent_track: TrackIndex::Main,
 			sends: TrackSends::new(),
-			volume: 1.0,
+			volume: Value::Fixed(1.0),
 			num_effects: 10,
 		}
 	}
@@ -89,7 +91,7 @@ pub struct SendTrackSettings {
 	/// The unique identifier for the track.
 	pub id: Option<SendTrackId>,
 	/// The volume of the track.
-	pub volume: f64,
+	pub volume: Value<f64>,
 	/// The maximum number of effects this track can hold.
 	pub num_effects: usize,
 }
@@ -109,7 +111,7 @@ impl SendTrackSettings {
 	}
 
 	/// Sets the volume of the track.
-	pub fn volume(self, volume: impl Into<f64>) -> Self {
+	pub fn volume(self, volume: impl Into<Value<f64>>) -> Self {
 		Self {
 			volume: volume.into(),
 			..self
@@ -129,7 +131,7 @@ impl Default for SendTrackSettings {
 	fn default() -> Self {
 		Self {
 			id: None,
-			volume: 1.0,
+			volume: Value::Fixed(1.0),
 			num_effects: 10,
 		}
 	}
