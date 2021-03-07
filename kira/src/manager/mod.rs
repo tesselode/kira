@@ -35,8 +35,8 @@ use crate::{
 	group::{handle::GroupHandle, Group, GroupId, GroupSet, GroupSettings},
 	metronome::{handle::MetronomeHandle, Metronome, MetronomeId, MetronomeSettings},
 	mixer::{
-		SendTrackHandle, SendTrackId, SendTrackSettings, SubTrackHandle, SubTrackId,
-		SubTrackSettings, Track, TrackIndex,
+		MainTrackHandle, SendTrackHandle, SendTrackId, SendTrackSettings, SubTrackHandle,
+		SubTrackId, SubTrackSettings, Track, TrackIndex,
 	},
 	parameter::{handle::ParameterHandle, ParameterId, ParameterSettings},
 	sequence::{
@@ -417,6 +417,15 @@ impl AudioManager {
 		self.command_producer
 			.push(ParameterCommand::RemoveParameter(id).into())?;
 		Ok(())
+	}
+
+	/// Returns a handle to the main mixer track.
+	pub fn main_track(&mut self) -> MainTrackHandle {
+		MainTrackHandle::new(
+			self.command_producer.clone(),
+			self.sample_rate,
+			self.resource_collector().handle(),
+		)
 	}
 
 	/// Creates a mixer sub-track.

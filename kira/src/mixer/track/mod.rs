@@ -16,6 +16,8 @@ use super::{
 	effect_slot::EffectSlot,
 };
 
+pub(crate) const MAIN_TRACK_NUM_EFFECTS: usize = 8;
+
 /// A unique identifier for a sub-track.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(
@@ -147,7 +149,7 @@ impl Track {
 		Self {
 			kind: TrackKind::Main,
 			volume: 1.0,
-			effect_slots: StaticIndexMap::new(0),
+			effect_slots: StaticIndexMap::new(MAIN_TRACK_NUM_EFFECTS),
 			input: Frame::from_mono(0.0),
 		}
 	}
