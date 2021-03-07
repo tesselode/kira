@@ -152,7 +152,7 @@
 //! # sequence.emit(CustomEvent::Beat);
 //! # sequence.wait(Duration::Beats(1.0));
 //! # let mut sequence_instance_handle = audio_manager.start_sequence(sequence, SequenceInstanceSettings::default())?;
-//! while let Some(event) = sequence_instance_handle.pop_event() {
+//! while let Some(event) = sequence_instance_handle.pop_event()? {
 //! 	println!("{:?}", event);
 //! }
 //! # Ok::<(), Box<dyn std::error::Error>>(())

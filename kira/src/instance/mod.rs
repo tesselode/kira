@@ -24,7 +24,7 @@
 //! ```no_run
 //! # use std::error::Error;
 //! #
-//! # use kira::{manager::AudioManager, sound::Sound, parameter::Tween, instance::StopInstanceSettings};
+//! # use kira::{manager::AudioManager, sound::Sound, parameter::tween::Tween, instance::StopInstanceSettings};
 //! #
 //! # let mut audio_manager = AudioManager::new(Default::default())?;
 //! # let mut sound = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
