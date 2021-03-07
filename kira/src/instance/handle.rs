@@ -61,10 +61,13 @@ impl InstanceHandle {
 			.push(InstanceCommand::SetInstanceVolume(self.id, volume.into()).into())
 	}
 
-	/// Sets the pitch of the instance.
-	pub fn set_pitch(&mut self, pitch: impl Into<Value<f64>>) -> Result<(), CommandError> {
+	/// Sets the playback rate of the instance.
+	pub fn set_playback_rate(
+		&mut self,
+		playback_rate: impl Into<Value<f64>>,
+	) -> Result<(), CommandError> {
 		self.command_producer
-			.push(InstanceCommand::SetInstancePitch(self.id, pitch.into()).into())
+			.push(InstanceCommand::SetInstancePlaybackRate(self.id, playback_rate.into()).into())
 	}
 
 	/// Sets the panning of the instance.

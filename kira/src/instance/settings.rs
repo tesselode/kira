@@ -85,8 +85,9 @@ pub struct InstanceSettings {
 	pub id: Option<InstanceId>,
 	/// The volume of the instance.
 	pub volume: Value<f64>,
-	/// The pitch of the instance, as a factor of the original pitch.
-	pub pitch: Value<f64>,
+	/// The playback rate of the instance, as a factor of the original
+	/// playback rate.
+	pub playback_rate: Value<f64>,
 	/// The panning of the instance (0 = hard left, 1 = hard right).
 	pub panning: Value<f64>,
 	/// The position to start playing the instance at (in seconds).
@@ -125,10 +126,10 @@ impl InstanceSettings {
 		}
 	}
 
-	/// Sets the pitch of the instance.
-	pub fn pitch<P: Into<Value<f64>>>(self, pitch: P) -> Self {
+	/// Sets the playback rate of the instance.
+	pub fn playback_rate<P: Into<Value<f64>>>(self, playback_rate: P) -> Self {
 		Self {
-			pitch: pitch.into(),
+			playback_rate: playback_rate.into(),
 			..self
 		}
 	}
@@ -189,7 +190,7 @@ impl InstanceSettings {
 	) -> InternalInstanceSettings {
 		InternalInstanceSettings {
 			volume: self.volume,
-			pitch: self.pitch,
+			playback_rate: self.playback_rate,
 			panning: self.panning,
 			start_position: if self.reverse {
 				duration - self.start_position
@@ -216,7 +217,7 @@ impl Default for InstanceSettings {
 		Self {
 			id: None,
 			volume: Value::Fixed(1.0),
-			pitch: Value::Fixed(1.0),
+			playback_rate: Value::Fixed(1.0),
 			panning: Value::Fixed(0.5),
 			start_position: 0.0,
 			reverse: false,
@@ -229,7 +230,7 @@ impl Default for InstanceSettings {
 
 pub(crate) struct InternalInstanceSettings {
 	pub volume: Value<f64>,
-	pub pitch: Value<f64>,
+	pub playback_rate: Value<f64>,
 	pub panning: Value<f64>,
 	pub start_position: f64,
 	pub reverse: bool,

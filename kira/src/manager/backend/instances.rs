@@ -55,9 +55,9 @@ impl Instances {
 					instance.set_volume(value);
 				}
 			}
-			InstanceCommand::SetInstancePitch(id, value) => {
+			InstanceCommand::SetInstancePlaybackRate(id, value) => {
 				if let Some(instance) = self.instances.get_mut(&id) {
-					instance.set_pitch(value);
+					instance.set_playback_rate(value);
 				}
 			}
 			InstanceCommand::SetInstancePanning(id, value) => {

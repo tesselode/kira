@@ -34,7 +34,7 @@ pub(crate) enum ResourceCommand {
 pub(crate) enum InstanceCommand {
 	Play(InstanceId, Instance),
 	SetInstanceVolume(InstanceId, Value<f64>),
-	SetInstancePitch(InstanceId, Value<f64>),
+	SetInstancePlaybackRate(InstanceId, Value<f64>),
 	SetInstancePanning(InstanceId, Value<f64>),
 	SeekInstance(InstanceId, f64),
 	SeekInstanceTo(InstanceId, f64),

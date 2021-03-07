@@ -52,7 +52,7 @@ impl SoundClip {
 		self
 	}
 
-	/// Sets the duration of the clip, preserving the pitch
+	/// Sets the duration of the clip, preserving the playback rate
 	/// of the sound.
 	pub fn trim(mut self, duration: f64) -> Self {
 		let new_duration_factor = duration / self.duration();

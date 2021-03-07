@@ -1,12 +1,12 @@
 //! Individual occurrences of [`Sound`](crate::sound::Sound)s
 //! and [`Arrangement`](crate::arrangement::Arrangement)s.
 //!
-//! You can control the volume and pitch of individual instances as well as
+//! You can control the volume and playback rate of individual instances as well as
 //! pausing, resuming, and stopping them.
 //!
 //! ## Examples
 //!
-//! ### Playing a sound at a lower pitch than normal
+//! ### Playing a sound at a lower playback rate than normal
 //!
 //! ```no_run
 //! # use std::error::Error;
@@ -15,7 +15,7 @@
 //! #
 //! # let mut audio_manager = AudioManager::new(Default::default())?;
 //! # let mut sound = audio_manager.add_sound(Sound::from_file("loop.ogg", Default::default())?)?;
-//! let instance_handle = sound.play(InstanceSettings::new().pitch(0.5))?;
+//! let instance_handle = sound.play(InstanceSettings::new().playback_rate(0.5))?;
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!
@@ -37,20 +37,21 @@
 //!
 //! There are two ways to enable reverse playback:
 //! - Enabling the reverse setting
-//! - Setting the pitch of the instance to a negative number
+//! - Setting the playback rate of the instance to a negative
+//! number
 //!
 //! Enabling the reverse setting also adjusts the instance's
 //! starting position to be relative to the end of the sound,
-//! while setting the pitch to a negative number doesn't. In
-//! 99% of cases, if you want an instance to play backwards,
+//! while setting the playback rate to a negative number doesn't.
+//! In 99% of cases, if you want an instance to play backwards,
 //! you should use the reverse flag.
 //!
-//! You can get some interesting effects by tweening a pitch
+//! You can get some interesting effects by tweening a playback rate
 //! from a positive to a negative number and vice versa, so
-//! there's still some value to using negative pitches.
+//! there's still some value to using negative playback rates.
 //!
-//! If you have the reverse playback enabled *and* the pitch
-//! is negative, you will end up with forward playback.
+//! If you have the reverse playback enabled *and* the playback
+//! rate is negative, you will end up with forward playback.
 //!
 //! If the instance has a loop start point and it's playing
 //! backward, when the playback position is earlier than the
@@ -132,7 +133,7 @@ pub(crate) struct Instance {
 	sequence_id: Option<SequenceInstanceId>,
 	track_index: TrackIndex,
 	volume: CachedValue<f64>,
-	pitch: CachedValue<f64>,
+	playback_rate: CachedValue<f64>,
 	panning: CachedValue<f64>,
 	reverse: bool,
 	loop_start: Option<f64>,
@@ -163,7 +164,7 @@ impl Instance {
 			sequence_id,
 			track_index: settings.track,
 			volume: CachedValue::new(settings.volume, 1.0),
-			pitch: CachedValue::new(settings.pitch, 1.0),
+			playback_rate: CachedValue::new(settings.playback_rate, 1.0),
 			panning: CachedValue::new(settings.panning, 0.5).with_valid_range(0.0..1.0),
 			reverse: settings.reverse,
 			loop_start: settings.loop_start,
@@ -217,8 +218,8 @@ impl Instance {
 		self.volume.set(volume);
 	}
 
-	pub fn set_pitch(&mut self, pitch: Value<f64>) {
-		self.pitch.set(pitch);
+	pub fn set_playback_rate(&mut self, playback_rate: Value<f64>) {
+		self.playback_rate.set(playback_rate);
 	}
 
 	pub fn set_panning(&mut self, panning: Value<f64>) {
@@ -272,14 +273,14 @@ impl Instance {
 	pub fn update(&mut self, dt: f64, parameters: &Parameters) {
 		if self.playing() {
 			self.volume.update(parameters);
-			self.pitch.update(parameters);
+			self.playback_rate.update(parameters);
 			self.panning.update(parameters);
-			let mut pitch = self.pitch.value();
+			let mut playback_rate = self.playback_rate.value();
 			if self.reverse {
-				pitch *= -1.0;
+				playback_rate *= -1.0;
 			}
-			self.position += pitch * dt;
-			if pitch < 0.0 {
+			self.position += playback_rate * dt;
+			if playback_rate < 0.0 {
 				if let Some(loop_start) = self.loop_start {
 					while self.position < loop_start {
 						self.position += self.duration - loop_start;

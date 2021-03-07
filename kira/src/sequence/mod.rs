@@ -252,7 +252,7 @@ impl Default for SequenceInstanceSettings {
 pub(crate) enum SequenceOutputCommand {
 	PlaySound(PlayableId, InstanceId, InstanceSettings),
 	SetInstanceVolume(InstanceId, Value<f64>),
-	SetInstancePitch(InstanceId, Value<f64>),
+	SetInstancePlaybackRate(InstanceId, Value<f64>),
 	SetInstancePanning(InstanceId, Value<f64>),
 	PauseInstance(InstanceId, PauseInstanceSettings),
 	ResumeInstance(InstanceId, ResumeInstanceSettings),
@@ -424,10 +424,14 @@ impl<CustomEvent: Clone + Eq + Hash> Sequence<CustomEvent> {
 			.push(SequenceOutputCommand::SetInstanceVolume(id.into(), volume).into());
 	}
 
-	/// Adds a step to set the pitch of an instance.
-	pub fn set_instance_pitch(&mut self, id: impl Into<InstanceId>, pitch: Value<f64>) {
+	/// Adds a step to set the playback rate of an instance.
+	pub fn set_instance_playback_rate(
+		&mut self,
+		id: impl Into<InstanceId>,
+		playback_rate: Value<f64>,
+	) {
 		self.steps
-			.push(SequenceOutputCommand::SetInstancePitch(id.into(), pitch).into());
+			.push(SequenceOutputCommand::SetInstancePlaybackRate(id.into(), playback_rate).into());
 	}
 
 	/// Adds a step to set the panning of an instance.
@@ -692,7 +696,7 @@ impl RawSequence {
 							*id = new_id;
 						}
 					}
-					SequenceOutputCommand::SetInstancePitch(id, _) => {
+					SequenceOutputCommand::SetInstancePlaybackRate(id, _) => {
 						if *id == old_id {
 							*id = new_id;
 						}

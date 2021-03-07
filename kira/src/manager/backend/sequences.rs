@@ -129,10 +129,11 @@ impl Sequences {
 							)))
 							.ok();
 					}
-					SequenceOutputCommand::SetInstancePitch(id, pitch) => {
+					SequenceOutputCommand::SetInstancePlaybackRate(id, playback_rate) => {
 						self.output_command_queue
-							.try_push(Command::Instance(InstanceCommand::SetInstancePitch(
-								id, pitch,
+							.try_push(Command::Instance(InstanceCommand::SetInstancePlaybackRate(
+								id,
+								playback_rate,
 							)))
 							.ok();
 					}

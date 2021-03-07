@@ -37,7 +37,7 @@
 //! There's a couple possible solutions:
 //! - Use a [`Sequence`](crate::sequence) to play separate
 //!   intro and loop sounds at the right time. This works, but you
-//!   can't reverse or change the pitch of a sequence, which you may
+//!   can't reverse or change the playback rate of a sequence, which you may
 //!   want in some circumstances.
 //! - You can edit your intro and loop audio in a specific way to create a
 //!   larger piece that will seamlessly loop. This is tedious, and you have

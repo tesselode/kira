@@ -52,20 +52,21 @@ fn instances_benchmark(c: &mut Criterion) {
 	c.bench_functions(
 		"instances",
 		vec![
-			Fun::new("no pitch change", |b, _| {
-				let (audio_manager, mut backend, instance_handles) = create_manager_with_instances(NUM_INSTANCES);
+			Fun::new("no playback rate change", |b, _| {
+				let (audio_manager, mut backend, instance_handles) =
+					create_manager_with_instances(NUM_INSTANCES);
 				b.iter(|| backend.process());
 				drop(instance_handles);
 				drop(backend);
 				drop(audio_manager);
 			}),
-			Fun::new("with pitch change", |b, _| {
+			Fun::new("with playback rate change", |b, _| {
 				let (audio_manager, mut backend, mut instance_handles) =
 					create_manager_with_instances(NUM_INSTANCES);
 				let mut instance_to_update = 0;
 				b.iter(|| {
 					instance_handles[instance_to_update]
-						.set_pitch(0.5..1.5)
+						.set_playback_rate(0.5..1.5)
 						.unwrap();
 					instance_to_update += 1;
 					instance_to_update %= NUM_INSTANCES;
