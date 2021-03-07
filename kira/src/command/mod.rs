@@ -80,6 +80,7 @@ pub(crate) enum MixerCommand {
 	RemoveSendTrack(SendTrackId),
 	AddEffect(TrackIndex, EffectId, Owned<Box<dyn Effect>>, EffectSettings),
 	SetEffectEnabled(TrackIndex, EffectId, bool),
+	SetEffectMix(TrackIndex, EffectId, Value<f64>),
 	RemoveEffect(TrackIndex, EffectId),
 }
 

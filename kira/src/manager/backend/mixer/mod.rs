@@ -48,6 +48,9 @@ impl Mixer {
 			MixerCommand::SetEffectEnabled(track_index, effect_id, enabled) => {
 				self.set_effect_enabled(track_index, effect_id, enabled);
 			}
+			MixerCommand::SetEffectMix(track_index, effect_id, mix) => {
+				self.set_effect_mix(track_index, effect_id, mix);
+			}
 			MixerCommand::RemoveEffect(track_index, effect_id) => {
 				self.remove_effect(track_index, effect_id);
 			}
@@ -141,6 +144,35 @@ impl Mixer {
 				if let Some(track) = self.send_tracks.get_mut(&id) {
 					if let Some(effect_slot) = track.effect_mut(effect_id) {
 						effect_slot.enabled = enabled;
+					}
+				}
+			}
+		};
+	}
+
+	pub fn set_effect_mix(
+		&mut self,
+		track_index: TrackIndex,
+		effect_id: crate::mixer::effect::EffectId,
+		mix: Value<f64>,
+	) {
+		match track_index {
+			TrackIndex::Main => {
+				if let Some(effect_slot) = self.main_track.effect_mut(effect_id) {
+					effect_slot.mix.set(mix);
+				}
+			}
+			TrackIndex::Sub(id) => {
+				if let Some(track) = self.sub_tracks.get_mut(&id) {
+					if let Some(effect_slot) = track.effect_mut(effect_id) {
+						effect_slot.mix.set(mix);
+					}
+				}
+			}
+			TrackIndex::Send(id) => {
+				if let Some(track) = self.send_tracks.get_mut(&id) {
+					if let Some(effect_slot) = track.effect_mut(effect_id) {
+						effect_slot.mix.set(mix);
 					}
 				}
 			}

@@ -6,6 +6,7 @@ use crate::{
 		MixerCommand,
 	},
 	mixer::TrackIndex,
+	Value,
 };
 
 use super::{EffectId, EffectSettings};
@@ -54,5 +55,12 @@ impl EffectHandle {
 		self.enabled = enabled;
 		self.command_producer
 			.push(MixerCommand::SetEffectEnabled(self.track_index, self.id, enabled).into())
+	}
+
+	/// Sets the balance between dry (unaffected) signal and wet
+	/// (affected) signal to output. 0.0 is fully dry, 1.0 is fully wet.
+	pub fn set_mix(&mut self, mix: impl Into<Value<f64>>) -> Result<(), CommandError> {
+		self.command_producer
+			.push(MixerCommand::SetEffectMix(self.track_index, self.id, mix.into()).into())
 	}
 }
