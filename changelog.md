@@ -1,4 +1,31 @@
-# Unreleased
+# v0.5.0
+
+## Additions
+- Added send tracks, which you can route sub-tracks to in
+addition to their parent track. This is useful for sharing
+effects between multiple sub-tracks.
+- Made the `volume` setting for `Track`s a `Value<f64>`,
+which means you can link it to a parameter
+- Added `Main`/`Sub`/`SendTrackHandle::set_volume`
+- Added an `init` callback to the `Effect` trait
+- Added new effects: `Distortion`, `Delay`, and `Reverb`
+- Added a `mix` setting for effects, which lets you blend
+dry and wet signal
+- Added `InstanceHandle::position`, which gets the current
+playback position of the instance
+- Added `CachedValue::with_valid_range` for clamping values
+- Changed all occurrences of the term "pitch" to "playback speed"
+
+## Bugfixes
+- The default filter cutoff is no longer outside of the range
+of human hearing
+
+## Other changes
+- Changed settings structs with an `id` field to use `Option<Id>`.
+This eliminates a confusing situation where cloning the same
+settings struct and passing it to multiple objects results
+in each object overwriting the previous one since it has the same
+ID.
 - Changes to errors related to sending commands to the audio thread:
   - Command-sending related errors are now listed in the `CommandError` enum
   - `BackendDisconnected` is no longer included in error enums
@@ -7,7 +34,6 @@
   - `TrackHandleError` was split into `AddEffectError` and `RemoveEffectError`
 - `MetronomeHandle.event_iter` has been replaced with `MetronomeHandle.pop_event`,
 which works the same way as `SequenceInstanceHandle.pop_event`
-- For settings structs that had an `id` field, the ID is now `Option<Id>`
 
 # v0.4.1 - January 23, 2021
 Added serde support for `Arrangement`s and `SoundClip`s
