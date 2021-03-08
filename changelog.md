@@ -14,7 +14,6 @@ dry and wet signal
 - Added `InstanceHandle::position`, which gets the current
 playback position of the instance
 - Added `CachedValue::with_valid_range` for clamping values
-- Changed all occurrences of the term "pitch" to "playback speed"
 
 ## Bugfixes
 - The default filter cutoff is no longer outside of the range
@@ -34,6 +33,7 @@ ID.
   - `TrackHandleError` was split into `AddEffectError` and `RemoveEffectError`
 - `MetronomeHandle.event_iter` has been replaced with `MetronomeHandle.pop_event`,
 which works the same way as `SequenceInstanceHandle.pop_event`
+- Changed all occurrences of the term "pitch" to "playback speed"
 
 # v0.4.1 - January 23, 2021
 Added serde support for `Arrangement`s and `SoundClip`s
