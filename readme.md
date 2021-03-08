@@ -66,9 +66,9 @@ Windows, Linux, and WASM have been tested.
 
 Kira is in early development, and is not production ready.
 Here are some features that I'd like the library to have:
-- More mixer effects (delay, reverb, EQ, etc.)
-- Send tracks
+- More mixer effects (EQ, compressor, better reverb, etc.)
 - C API
+- Streaming sounds
 - 3d audio (maybe!)
 
 ## Contributing
