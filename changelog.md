@@ -33,7 +33,7 @@ ID.
   - `TrackHandleError` was split into `AddEffectError` and `RemoveEffectError`
 - `MetronomeHandle.event_iter` has been replaced with `MetronomeHandle.pop_event`,
 which works the same way as `SequenceInstanceHandle.pop_event`
-- Changed all occurrences of the term "pitch" to "playback speed"
+- Changed all occurrences of the term "pitch" to "playback rate"
 
 # v0.4.1 - January 23, 2021
 Added serde support for `Arrangement`s and `SoundClip`s
