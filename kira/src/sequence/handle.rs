@@ -1,6 +1,9 @@
 //! An interface for controlling sequence instances.
 
-use std::sync::{Arc, Mutex};
+use std::{
+	fmt::Debug,
+	sync::{Arc, Mutex},
+};
 
 use atomic::{Atomic, Ordering};
 use indexmap::IndexSet;
@@ -149,5 +152,23 @@ impl<CustomEvent> SequenceInstanceHandle<CustomEvent> {
 		} else {
 			Ok(None)
 		}
+	}
+}
+
+impl<T: Debug> Debug for SequenceInstanceHandle<T> {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		#[derive(Debug)]
+		pub struct CommandProducer;
+
+		#[derive(Debug)]
+		pub struct EventConsumer;
+
+		f.debug_struct("SequenceInstanceHandle")
+			.field("id", &self.id)
+			.field("state", &self.state)
+			.field("command_producer", &CommandProducer)
+			.field("raw_event_consumer", &EventConsumer)
+			.field("events", &self.events)
+			.finish()
 	}
 }
