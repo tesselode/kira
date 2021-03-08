@@ -1,4 +1,4 @@
-# v0.5.0
+# v0.5.0 - March 7, 2021
 
 ## Additions
 - Added send tracks, which you can route sub-tracks to in
