@@ -6,6 +6,11 @@ use super::SendTrackId;
 
 /// A mapping of send tracks to volume levels.
 #[derive(Debug, Clone)]
+#[cfg_attr(
+	feature = "serde_support",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(default)
+)]
 pub struct TrackSends {
 	sends: IndexMap<SendTrackId, Value<f64>>,
 }
