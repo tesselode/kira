@@ -42,3 +42,9 @@ impl TrackSends {
 		}
 	}
 }
+
+impl Default for TrackSends {
+	fn default() -> Self {
+		Self::new()
+	}
+}
