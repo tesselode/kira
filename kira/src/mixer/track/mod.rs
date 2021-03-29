@@ -2,6 +2,7 @@ pub mod handle;
 pub mod sends;
 pub mod settings;
 
+use indexmap::IndexMap;
 pub use settings::*;
 
 use basedrop::Owned;
@@ -133,7 +134,7 @@ pub(crate) enum TrackKind {
 	Sub {
 		id: SubTrackId,
 		parent_track: TrackIndex,
-		sends: TrackSends,
+		sends: IndexMap<SendTrackId, CachedValue<f64>>,
 	},
 	Send {
 		id: SendTrackId,
@@ -162,7 +163,7 @@ impl Track {
 			kind: TrackKind::Sub {
 				id,
 				parent_track: settings.parent_track,
-				sends: settings.sends,
+				sends: settings.sends.to_map(),
 			},
 			volume: CachedValue::new(settings.volume, 1.0),
 			effect_slots: StaticIndexMap::new(settings.num_effects),
@@ -220,7 +221,9 @@ impl Track {
 	pub fn process(&mut self, dt: f64, parameters: &Parameters) -> Frame {
 		self.volume.update(parameters);
 		if let TrackKind::Sub { sends, .. } = &mut self.kind {
-			sends.update(parameters);
+			for (_, volume) in sends {
+				volume.update(parameters);
+			}
 		}
 		let mut input = self.input;
 		self.input = Frame::from_mono(0.0);

@@ -7,7 +7,7 @@ use super::SendTrackId;
 /// A mapping of send tracks to volume levels.
 #[derive(Debug, Clone)]
 pub struct TrackSends {
-	sends: IndexMap<SendTrackId, CachedValue<f64>>,
+	sends: IndexMap<SendTrackId, Value<f64>>,
 }
 
 impl TrackSends {
@@ -20,7 +20,7 @@ impl TrackSends {
 
 	/// Returns an iterator over the pairs of `SendTrackId`s and volume levels
 	/// in the map.
-	pub fn iter(&self) -> indexmap::map::Iter<SendTrackId, CachedValue<f64>> {
+	pub fn iter(&self) -> indexmap::map::Iter<SendTrackId, Value<f64>> {
 		self.sends.iter()
 	}
 
@@ -31,15 +31,16 @@ impl TrackSends {
 		send_track: impl Into<SendTrackId>,
 		volume: impl Into<Value<f64>>,
 	) -> Self {
-		self.sends
-			.insert(send_track.into(), CachedValue::new(volume.into(), 1.0));
+		self.sends.insert(send_track.into(), volume.into());
 		self
 	}
 
-	pub(crate) fn update(&mut self, parameters: &Parameters) {
-		for (_, volume) in &mut self.sends {
-			volume.update(parameters);
+	pub(crate) fn to_map(&self) -> IndexMap<SendTrackId, CachedValue<f64>> {
+		let mut map = IndexMap::new();
+		for (id, volume) in self.iter() {
+			map.insert(*id, CachedValue::new(*volume, 1.0));
 		}
+		map
 	}
 }
 
