@@ -1,3 +1,8 @@
+# v0.5.1 - March 28, 2021
+- Added a `Default` implementation for `TrackSends`
+- Fixed a compile error when building Kira with the `serde_support`
+feature enabled
+
 # v0.5.0 - March 7, 2021
 
 ## Additions
