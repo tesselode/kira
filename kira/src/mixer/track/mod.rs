@@ -7,7 +7,6 @@ pub use settings::*;
 
 use basedrop::Owned;
 use handle::{SendTrackHandle, SubTrackHandle};
-use sends::TrackSends;
 use uuid::Uuid;
 
 use crate::{
