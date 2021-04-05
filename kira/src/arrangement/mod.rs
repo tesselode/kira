@@ -50,7 +50,7 @@
 //! ### Setting up a simple loop
 //!
 //! Let's say we have a short drum loop with a cymbal swell at the end
-//! that will seamless lead back to the beginning of the loop.
+//! that will act as a transition as we go back to the beginning of the loop.
 //!
 //! ![arrangements 2](https://i.imgur.com/TOpa9Zq.png)
 //!
