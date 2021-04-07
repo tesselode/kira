@@ -1,6 +1,6 @@
 use std::{f32::consts::PI, vec};
 
-use criterion::{criterion_group, criterion_main, Criterion, Fun};
+use criterion::{criterion_group, criterion_main, Criterion};
 use kira::{
 	instance::handle::InstanceHandle,
 	manager::{AudioManager, AudioManagerSettings, Backend},
@@ -49,36 +49,31 @@ fn create_manager_with_instances(
 
 fn instances_benchmark(c: &mut Criterion) {
 	const NUM_INSTANCES: usize = 100_000;
-	c.bench_functions(
-		"instances",
-		vec![
-			Fun::new("no playback rate change", |b, _| {
-				let (audio_manager, mut backend, instance_handles) =
-					create_manager_with_instances(NUM_INSTANCES);
-				b.iter(|| backend.process());
-				drop(instance_handles);
-				drop(backend);
-				drop(audio_manager);
-			}),
-			Fun::new("with playback rate change", |b, _| {
-				let (audio_manager, mut backend, mut instance_handles) =
-					create_manager_with_instances(NUM_INSTANCES);
-				let mut instance_to_update = 0;
-				b.iter(|| {
-					instance_handles[instance_to_update]
-						.set_playback_rate(0.5..1.5)
-						.unwrap();
-					instance_to_update += 1;
-					instance_to_update %= NUM_INSTANCES;
-					backend.process();
-				});
-				drop(instance_handles);
-				drop(backend);
-				drop(audio_manager);
-			}),
-		],
-		(),
-	);
+	let mut benchmark_group = c.benchmark_group("instances");
+	benchmark_group.bench_function("no playback rate change", |b| {
+		let (audio_manager, mut backend, instance_handles) =
+			create_manager_with_instances(NUM_INSTANCES);
+		b.iter(|| backend.process());
+		drop(instance_handles);
+		drop(backend);
+		drop(audio_manager);
+	});
+	benchmark_group.bench_function("with playback rate change", |b| {
+		let (audio_manager, mut backend, mut instance_handles) =
+			create_manager_with_instances(NUM_INSTANCES);
+		let mut instance_to_update = 0;
+		b.iter(|| {
+			instance_handles[instance_to_update]
+				.set_playback_rate(0.5..1.5)
+				.unwrap();
+			instance_to_update += 1;
+			instance_to_update %= NUM_INSTANCES;
+			backend.process();
+		});
+		drop(instance_handles);
+		drop(backend);
+		drop(audio_manager);
+	});
 }
 
 criterion_group!(benches, instances_benchmark);
