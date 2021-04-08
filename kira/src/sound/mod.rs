@@ -15,7 +15,10 @@ use crate::{
 	util,
 };
 
-use std::fmt::{Debug, Formatter};
+use std::{
+	fmt::{Debug, Formatter},
+	io::{Read, Seek},
+};
 
 #[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
 use std::{fs::File, path::Path};
@@ -53,16 +56,16 @@ impl Sound {
 		}
 	}
 
-	/// Decodes a sound from an mp3 file.
+	/// Decodes a sound from an mp3 reader.
 	#[cfg(feature = "mp3")]
-	pub fn from_mp3_file<P>(
-		path: P,
+	pub fn from_mp3_reader<R>(
+		reader: R,
 		settings: SoundSettings,
 	) -> Result<Self, error::SoundFromFileError>
 	where
-		P: AsRef<Path>,
+		R: Read,
 	{
-		let mut decoder = minimp3::Decoder::new(File::open(path)?);
+		let mut decoder = minimp3::Decoder::new(reader);
 		let mut sample_rate = None;
 		let mut stereo_samples = vec![];
 		loop {
@@ -116,18 +119,29 @@ impl Sound {
 			settings,
 		))
 	}
-
-	/// Decodes a sound from an ogg file.
-	#[cfg(feature = "ogg")]
-	pub fn from_ogg_file<P>(
+	/// Decodes a sound from an mp3 file.
+	#[cfg(feature = "mp3")]
+	pub fn from_mp3_file<P>(
 		path: P,
 		settings: SoundSettings,
 	) -> Result<Self, error::SoundFromFileError>
 	where
 		P: AsRef<Path>,
 	{
+		Self::from_mp3_reader(File::open(path)?, settings)
+	}
+
+	/// Decodes a sound from an ogg reader.
+	#[cfg(feature = "ogg")]
+	pub fn from_ogg_reader<R>(
+		reader: R,
+		settings: SoundSettings,
+	) -> Result<Self, error::SoundFromFileError>
+	where
+		R: Read + Seek,
+	{
 		use lewton::{inside_ogg::OggStreamReader, samples::Samples};
-		let mut reader = OggStreamReader::new(File::open(path)?)?;
+		let mut reader = OggStreamReader::new(reader)?;
 		let mut stereo_samples = vec![];
 		while let Some(packet) = reader.read_dec_packet_generic::<Vec<Vec<f32>>>()? {
 			let num_channels = packet.len();
@@ -153,16 +167,28 @@ impl Sound {
 		))
 	}
 
-	/// Decodes a sound from a flac file.
-	#[cfg(feature = "flac")]
-	pub fn from_flac_file<P>(
+	/// Decodes a sound from an ogg file.
+	#[cfg(feature = "ogg")]
+	pub fn from_ogg_file<P>(
 		path: P,
 		settings: SoundSettings,
 	) -> Result<Self, error::SoundFromFileError>
 	where
 		P: AsRef<Path>,
 	{
-		let mut reader = claxon::FlacReader::open(path)?;
+		Self::from_ogg_reader(File::open(path)?, settings)
+	}
+
+	/// Decodes a sound from a flac file.
+	#[cfg(feature = "flac")]
+	pub fn from_flac_reader<R>(
+		reader: R,
+		settings: SoundSettings,
+	) -> Result<Self, error::SoundFromFileError>
+	where
+		R: Read,
+	{
+		let mut reader = claxon::FlacReader::new(reader)?;
 		let streaminfo = reader.streaminfo();
 		let mut stereo_samples = vec![];
 		match reader.streaminfo().channels {
@@ -191,16 +217,28 @@ impl Sound {
 		))
 	}
 
-	/// Decodes a sound from a wav file.
-	#[cfg(feature = "wav")]
-	pub fn from_wav_file<P>(
+	/// Decodes sound from a flac reader.
+	#[cfg(feature = "flac")]
+	pub fn from_flac_file<P>(
 		path: P,
 		settings: SoundSettings,
 	) -> Result<Self, error::SoundFromFileError>
 	where
 		P: AsRef<Path>,
 	{
-		let mut reader = hound::WavReader::open(path)?;
+		Self::from_flac_reader(File::open(path)?, settings)
+	}
+
+	/// Decodes sound from a wav reader.
+	#[cfg(feature = "wav")]
+	pub fn from_wav_reader<R>(
+		reader: R,
+		settings: SoundSettings,
+	) -> Result<Self, error::SoundFromFileError>
+	where
+		R: Read,
+	{
+		let mut reader = hound::WavReader::new(reader)?;
 		let spec = reader.spec();
 		let mut stereo_samples = vec![];
 		match reader.spec().channels {
@@ -246,6 +284,18 @@ impl Sound {
 			stereo_samples,
 			settings,
 		))
+	}
+
+	/// Decodes a sound from a wav file.
+	#[cfg(feature = "wav")]
+	pub fn from_wav_file<P>(
+		path: P,
+		settings: SoundSettings,
+	) -> Result<Self, error::SoundFromFileError>
+	where
+		P: AsRef<Path>,
+	{
+		Self::from_wav_reader(File::open(path)?, settings)
 	}
 
 	/// Decodes a sound from a file.
