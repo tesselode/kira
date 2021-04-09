@@ -31,12 +31,9 @@ impl Backend {
 	pub fn process(&mut self) -> Frame {
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
-				Command::PlaySound {
-					sound,
-					command_consumer,
-				} => {
+				Command::PlaySound { instance } => {
 					if self.instances.len() < self.instances.capacity() {
-						self.instances.push(Instance::new(sound, command_consumer));
+						self.instances.push(instance);
 					}
 				}
 			}

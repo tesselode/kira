@@ -13,7 +13,7 @@ use ringbuf::{Producer, RingBuffer};
 use crate::{
 	error::CommandQueueFullError,
 	sound::{
-		instance::{handle::InstanceHandle, COMMAND_QUEUE_CAPACITY},
+		instance::{handle::InstanceHandle, Instance, COMMAND_QUEUE_CAPACITY},
 		Sound,
 	},
 };
@@ -77,12 +77,13 @@ impl AudioManager {
 	pub fn play(&mut self, sound: Arc<Sound>) -> Result<InstanceHandle, CommandQueueFullError> {
 		let (instance_command_producer, instance_command_consumer) =
 			RingBuffer::new(COMMAND_QUEUE_CAPACITY).split();
-		let instance_handle = InstanceHandle::new(instance_command_producer);
+		let instance = Instance::new(sound, instance_command_consumer);
+		let instance_handle = InstanceHandle::new(
+			instance.public_playback_position(),
+			instance_command_producer,
+		);
 		self.command_producer
-			.push(Command::PlaySound {
-				sound,
-				command_consumer: instance_command_consumer,
-			})
+			.push(Command::PlaySound { instance })
 			.map_err(|_| CommandQueueFullError)?;
 		Ok(instance_handle)
 	}

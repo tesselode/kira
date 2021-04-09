@@ -2,6 +2,7 @@ pub mod handle;
 
 use std::sync::Arc;
 
+use atomic::{Atomic, Ordering};
 use ringbuf::Consumer;
 
 use crate::Frame;
@@ -28,6 +29,7 @@ pub(crate) struct Instance {
 	sound: Arc<Sound>,
 	state: InstanceState,
 	playback_position: f64,
+	public_playback_position: Arc<Atomic<f64>>,
 	command_consumer: Consumer<Command>,
 }
 
@@ -37,12 +39,21 @@ impl Instance {
 			sound,
 			state: InstanceState::Playing,
 			playback_position: 0.0,
+			public_playback_position: Arc::new(Atomic::new(0.0)),
 			command_consumer,
 		}
 	}
 
 	pub fn state(&self) -> InstanceState {
 		self.state
+	}
+
+	pub fn playback_position(&self) -> f64 {
+		self.playback_position
+	}
+
+	pub fn public_playback_position(&self) -> Arc<Atomic<f64>> {
+		self.public_playback_position.clone()
 	}
 
 	pub fn pause(&mut self) {
@@ -69,6 +80,8 @@ impl Instance {
 			InstanceState::Playing => {
 				let output = self.sound.get_frame_at_position(self.playback_position);
 				self.playback_position += dt;
+				self.public_playback_position
+					.store(self.playback_position, Ordering::Relaxed);
 				if self.playback_position > self.sound.duration() {
 					self.state = InstanceState::Stopped;
 				}
