@@ -10,13 +10,15 @@ use cpal::{
 };
 use ringbuf::{Producer, RingBuffer};
 
-use crate::sound::Sound;
-
-use self::{
-	backend::Backend,
-	command::Command,
-	error::{CommandQueueFullError, SetupError},
+use crate::{
+	error::CommandQueueFullError,
+	sound::{
+		instance::{handle::InstanceHandle, COMMAND_QUEUE_CAPACITY},
+		Sound,
+	},
 };
+
+use self::{backend::Backend, command::Command, error::SetupError};
 
 pub struct AudioManagerSettings {
 	num_commands: usize,
@@ -72,9 +74,16 @@ impl AudioManager {
 		})
 	}
 
-	pub fn play(&mut self, sound: Arc<Sound>) -> Result<(), CommandQueueFullError> {
+	pub fn play(&mut self, sound: Arc<Sound>) -> Result<InstanceHandle, CommandQueueFullError> {
+		let (instance_command_producer, instance_command_consumer) =
+			RingBuffer::new(COMMAND_QUEUE_CAPACITY).split();
+		let instance_handle = InstanceHandle::new(instance_command_producer);
 		self.command_producer
-			.push(Command::PlaySound { sound })
-			.map_err(|_| CommandQueueFullError)
+			.push(Command::PlaySound {
+				sound,
+				command_consumer: instance_command_consumer,
+			})
+			.map_err(|_| CommandQueueFullError)?;
+		Ok(instance_handle)
 	}
 }

@@ -1,7 +1,12 @@
 use std::sync::Arc;
 
-use crate::sound::Sound;
+use ringbuf::Consumer;
 
-pub enum Command {
-	PlaySound { sound: Arc<Sound> },
+use crate::sound::{instance, Sound};
+
+pub(crate) enum Command {
+	PlaySound {
+		sound: Arc<Sound>,
+		command_consumer: Consumer<instance::Command>,
+	},
 }

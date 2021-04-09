@@ -15,7 +15,7 @@ pub struct Backend {
 }
 
 impl Backend {
-	pub fn new(
+	pub(crate) fn new(
 		sample_rate: u32,
 		command_consumer: Consumer<Command>,
 		settings: AudioManagerSettings,
@@ -31,9 +31,12 @@ impl Backend {
 	pub fn process(&mut self) -> Frame {
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
-				Command::PlaySound { sound } => {
+				Command::PlaySound {
+					sound,
+					command_consumer,
+				} => {
 					if self.instances.len() < self.instances.capacity() {
-						self.instances.push(Instance::new(sound));
+						self.instances.push(Instance::new(sound, command_consumer));
 					}
 				}
 			}
