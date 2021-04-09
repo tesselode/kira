@@ -1,6 +1,7 @@
 mod duration;
 mod frame;
 pub mod manager;
+pub mod sound;
 mod tempo;
 mod util;
 
