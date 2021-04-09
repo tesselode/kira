@@ -1,6 +1,7 @@
 //! A chunk of audio data.
 
 pub mod error;
+pub mod instance;
 
 use std::{
 	fs::File,
@@ -257,6 +258,11 @@ impl Sound {
 			}
 		}
 		Err(error::SoundFromFileError::UnsupportedAudioFileFormat)
+	}
+
+	/// Gets the duration of the sound (in seconds).
+	pub fn duration(&self) -> f64 {
+		self.duration
 	}
 
 	/// Gets the frame of this sound at an arbitrary time

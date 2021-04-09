@@ -1,25 +1,53 @@
-use std::f64::consts::TAU;
+use ringbuf::Consumer;
 
-use crate::Frame;
+use crate::{
+	sound::instance::{Instance, InstanceState},
+	Frame,
+};
+
+use super::{command::Command, AudioManagerSettings};
 
 pub struct Backend {
 	sample_rate: u32,
 	dt: f64,
-	phase: f64,
+	command_consumer: Consumer<Command>,
+	instances: Vec<Instance>,
 }
 
 impl Backend {
-	pub fn new(sample_rate: u32) -> Self {
+	pub fn new(
+		sample_rate: u32,
+		command_consumer: Consumer<Command>,
+		settings: AudioManagerSettings,
+	) -> Self {
 		Self {
 			sample_rate,
 			dt: 1.0 / sample_rate as f64,
-			phase: 0.0,
+			command_consumer,
+			instances: Vec::with_capacity(settings.num_instances),
 		}
 	}
 
 	pub fn process(&mut self) -> Frame {
-		self.phase += 440.0 * self.dt;
-		self.phase %= 1.0;
-		Frame::from_mono((0.25 * (self.phase * TAU).sin()) as f32)
+		while let Some(command) = self.command_consumer.pop() {
+			match command {
+				Command::PlaySound { sound } => {
+					if self.instances.len() < self.instances.capacity() {
+						self.instances.push(Instance::new(sound));
+					}
+				}
+			}
+		}
+
+		let dt = self.dt;
+		let output = self
+			.instances
+			.iter_mut()
+			.fold(Frame::from_mono(0.0), |previous, instance| {
+				previous + instance.process(dt)
+			});
+		self.instances
+			.retain(|instance| instance.state() != InstanceState::Stopped);
+		output
 	}
 }
