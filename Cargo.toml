@@ -1,8 +1,5 @@
 [workspace]
-members = [
-	"kira",
-	"kira-benchmarks"
-]
+members = ["kira"]
 
 [profile.dev]
 opt-level = 3
