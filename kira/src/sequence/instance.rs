@@ -1,3 +1,5 @@
+pub mod handle;
+
 use std::vec::Drain;
 
 use basedrop::{Handle, Shared};
@@ -136,6 +138,10 @@ impl SequenceInstance {
 						controller.reset();
 						let instance = Instance::new(sound.clone(), controller);
 						self.instance_queue.push(instance);
+						self.start_step(self.position + 1);
+					}
+					SequenceStep::Emit(event) => {
+						self.event_producer.push(*event).ok();
 						self.start_step(self.position + 1);
 					}
 					_ => {

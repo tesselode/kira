@@ -2,7 +2,7 @@ mod backend;
 pub(crate) mod command;
 pub mod error;
 
-use std::sync::Arc;
+use std::{hash::Hash, sync::Arc};
 
 use basedrop::{Collector, Handle, Shared};
 use cpal::{
@@ -14,7 +14,10 @@ use ringbuf::{Producer, RingBuffer};
 use crate::{
 	error::CommandQueueFullError,
 	metronome::{handle::MetronomeHandle, settings::MetronomeSettings, Metronome, MetronomeState},
-	sequence::{instance::SequenceInstance, Sequence},
+	sequence::{
+		instance::{handle::SequenceInstanceHandle, SequenceInstance},
+		Sequence,
+	},
 	sound::{
 		instance::{handle::InstanceHandle, Instance, InstanceController},
 		Sound,
@@ -116,21 +119,23 @@ impl AudioManager {
 		Ok(handle)
 	}
 
-	pub fn start_sequence<'a>(
+	pub fn start_sequence<'a, Event: Clone + Eq + Hash>(
 		&mut self,
-		sequence: Sequence<usize>,
+		sequence: Sequence<Event>,
 		metronome: impl Into<Option<&'a MetronomeHandle>>,
-	) -> Result<(), CommandQueueFullError> {
-		let (event_producer, event_consumer) = RingBuffer::new(1).split();
+	) -> Result<SequenceInstanceHandle<Event>, CommandQueueFullError> {
+		let (raw_sequence, events) = sequence.create_raw_sequence();
+		let (event_producer, event_consumer) = RingBuffer::new(events.len()).split();
 		let instance = SequenceInstance::new(
-			sequence,
+			raw_sequence,
 			metronome.into().map(|handle| handle.state()),
 			&self.collector_handle,
 			event_producer,
 		);
+		let handle = SequenceInstanceHandle::new(events, event_consumer);
 		self.command_producer
 			.push(Command::StartSequenceInstance(instance))
 			.map_err(|_| CommandQueueFullError)?;
-		Ok(())
+		Ok(handle)
 	}
 }

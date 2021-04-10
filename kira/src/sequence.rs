@@ -1,7 +1,11 @@
 pub mod error;
 pub(crate) mod instance;
 
-use std::sync::Arc;
+use std::{
+	collections::{HashMap, HashSet},
+	hash::Hash,
+	sync::Arc,
+};
 
 use crate::{sound::Sound, Duration};
 
@@ -10,7 +14,7 @@ use self::error::SequenceError;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SequenceLocalInstanceId(usize);
 
-enum SequenceStep<Event> {
+enum SequenceStep<Event: Clone + Eq + Hash> {
 	Wait(Duration),
 	WaitForInterval(f64),
 	PlaySound(SequenceLocalInstanceId, Arc<Sound>),
@@ -20,13 +24,13 @@ enum SequenceStep<Event> {
 	Emit(Event),
 }
 
-pub struct Sequence<Event> {
+pub struct Sequence<Event: Clone + Eq + Hash> {
 	steps: Vec<SequenceStep<Event>>,
 	loop_point: Option<usize>,
 	next_instance_id: usize,
 }
 
-impl<Event> Sequence<Event> {
+impl<Event: Clone + Eq + Hash> Sequence<Event> {
 	pub fn new() -> Self {
 		Self {
 			steps: vec![],
@@ -112,6 +116,40 @@ impl<Event> Sequence<Event> {
 				}
 			})
 			.count()
+	}
+
+	pub(crate) fn create_raw_sequence(&self) -> (RawSequence, Vec<Event>) {
+		let mut events = HashSet::new();
+		for step in &self.steps {
+			if let SequenceStep::Emit(event) = step {
+				events.insert(event.clone());
+			}
+		}
+		let events: Vec<Event> = events.drain().collect();
+		let event_indices: HashMap<Event, usize> = events
+			.iter()
+			.enumerate()
+			.map(|(i, event)| (event.clone(), i))
+			.collect();
+		let raw_steps: Vec<SequenceStep<usize>> = self
+			.steps
+			.iter()
+			.map(|step| match step {
+				SequenceStep::Wait(duration) => SequenceStep::Wait(*duration),
+				SequenceStep::WaitForInterval(interval) => SequenceStep::WaitForInterval(*interval),
+				SequenceStep::PlaySound(id, sound) => SequenceStep::PlaySound(*id, sound.clone()),
+				SequenceStep::PauseInstance(id) => SequenceStep::PauseInstance(*id),
+				SequenceStep::ResumeInstance(id) => SequenceStep::ResumeInstance(*id),
+				SequenceStep::StopInstance(id) => SequenceStep::StopInstance(*id),
+				SequenceStep::Emit(event) => SequenceStep::Emit(event_indices[event]),
+			})
+			.collect();
+		let raw_sequence = Sequence {
+			steps: raw_steps,
+			loop_point: self.loop_point,
+			next_instance_id: self.next_instance_id,
+		};
+		(raw_sequence, events)
 	}
 }
 
