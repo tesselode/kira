@@ -1,18 +1,13 @@
-use std::sync::Arc;
-
 use basedrop::{Handle, Shared};
 use ringbuf::Producer;
 
 use crate::{
 	manager::command::Command,
-	sound::{
-		instance::{Instance, InstanceController},
-		Sound,
-	},
+	sound::instance::{Instance, InstanceController},
 	tempo::Tempo,
 };
 
-use super::{RawSequence, SequenceLocalInstanceId, SequenceStep};
+use super::{RawSequence, SequenceStep};
 
 /// The playback state of an instance of a sequence.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -119,11 +114,9 @@ impl SequenceInstance {
 						}
 					}
 					SequenceStep::PlaySound(instance_id, sound) => {
-						println!("PlaySound");
-						let instance = Instance::new(
-							sound.clone(),
-							self.instance_controllers[instance_id.0].clone(),
-						);
+						let controller = self.instance_controllers[instance_id.0].clone();
+						controller.reset();
+						let instance = Instance::new(sound.clone(), controller);
 						command_queue.push(Command::StartInstance { instance });
 						self.start_step(self.position + 1);
 					}

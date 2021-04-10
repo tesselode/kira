@@ -27,7 +27,7 @@ pub(crate) struct InstanceController {
 	/// The controller might be repurposed for another instance later,
 	/// so this is used to make sure the instance doesn't listen to
 	/// commands meant for another instance.
-	pub instance_id: InstanceId,
+	pub instance_id: Atomic<InstanceId>,
 	/// The desired playback state of the instance. The instance
 	/// will check for changes to this state.
 	pub playback_state: Atomic<InstancePlaybackState>,
@@ -40,10 +40,17 @@ pub(crate) struct InstanceController {
 impl InstanceController {
 	pub fn new() -> Self {
 		Self {
-			instance_id: InstanceId::new(),
+			instance_id: Atomic::new(InstanceId::new()),
 			playback_state: Atomic::new(InstancePlaybackState::Playing),
 			playback_position: Atomic::new(0.0),
 		}
+	}
+
+	pub fn reset(&self) {
+		self.instance_id.store(InstanceId::new(), Ordering::Relaxed);
+		self.playback_state
+			.store(InstancePlaybackState::Playing, Ordering::Relaxed);
+		self.playback_position.store(0.0, Ordering::Relaxed);
 	}
 
 	pub fn pause(&self) {
@@ -79,10 +86,11 @@ pub(crate) struct Instance {
 
 impl Instance {
 	pub fn new(sound: Arc<Sound>, controller: Shared<InstanceController>) -> Self {
+		let id = controller.instance_id.load(Ordering::Relaxed);
 		let playback_state = controller.playback_state.load(Ordering::Relaxed);
 		let playback_position = controller.playback_position.load(Ordering::Relaxed);
 		Self {
-			id: controller.instance_id,
+			id,
 			sound,
 			controller,
 			playback_state,
@@ -99,7 +107,7 @@ impl Instance {
 	}
 
 	fn controller(&self) -> Option<&InstanceController> {
-		if self.controller.instance_id == self.id {
+		if self.controller.instance_id.load(Ordering::Relaxed) == self.id {
 			Some(&self.controller)
 		} else {
 			None
