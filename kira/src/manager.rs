@@ -13,6 +13,7 @@ use ringbuf::{Producer, RingBuffer};
 
 use crate::{
 	error::CommandQueueFullError,
+	metronome::{handle::MetronomeHandle, settings::MetronomeSettings, Metronome, MetronomeState},
 	sequence::{instance::SequenceInstance, Sequence},
 	sound::{
 		instance::{handle::InstanceHandle, Instance, InstanceController},
@@ -25,6 +26,7 @@ use self::{backend::Backend, command::Command, error::SetupError};
 pub struct AudioManagerSettings {
 	num_commands: usize,
 	num_instances: usize,
+	num_metronomes: usize,
 	num_sequences: usize,
 }
 
@@ -33,6 +35,7 @@ impl Default for AudioManagerSettings {
 		Self {
 			num_commands: 100,
 			num_instances: 100,
+			num_metronomes: 10,
 			num_sequences: 25,
 		}
 	}
@@ -90,6 +93,25 @@ impl AudioManager {
 		let handle = InstanceHandle::new(controller.clone());
 		self.command_producer
 			.push(Command::StartInstance { instance })
+			.map_err(|_| CommandQueueFullError)?;
+		Ok(handle)
+	}
+
+	pub fn add_metronome(
+		&mut self,
+		settings: MetronomeSettings,
+	) -> Result<MetronomeHandle, CommandQueueFullError> {
+		let (interval_event_producer, interval_event_consumer) =
+			RingBuffer::new(settings.interval_events_to_emit.len()).split();
+		let state = Shared::new(&self.collector_handle, MetronomeState::new(settings.tempo));
+		let metronome = Metronome::new(
+			state.clone(),
+			settings.interval_events_to_emit,
+			interval_event_producer,
+		);
+		let handle = MetronomeHandle::new(state.clone(), interval_event_consumer);
+		self.command_producer
+			.push(Command::AddMetronome(metronome))
 			.map_err(|_| CommandQueueFullError)?;
 		Ok(handle)
 	}

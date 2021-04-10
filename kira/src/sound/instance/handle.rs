@@ -1,7 +1,7 @@
 use atomic::Ordering;
 use basedrop::Shared;
 
-use super::{InstanceController, InstancePlaybackState};
+use super::InstanceController;
 
 pub struct InstanceHandle {
 	controller: Shared<InstanceController>,
@@ -16,15 +16,15 @@ impl InstanceHandle {
 		self.controller.playback_position.load(Ordering::Relaxed)
 	}
 
-	pub fn pause(&mut self) {
+	pub fn pause(&self) {
 		self.controller.pause();
 	}
 
-	pub fn resume(&mut self) {
+	pub fn resume(&self) {
 		self.controller.resume();
 	}
 
-	pub fn stop(&mut self) {
+	pub fn stop(&self) {
 		self.controller.stop();
 	}
 }
