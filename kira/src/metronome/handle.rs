@@ -6,7 +6,7 @@ use crate::Tempo;
 use super::MetronomeState;
 
 pub struct MetronomeHandle {
-	metronome_state: Shared<MetronomeState>,
+	state: Shared<MetronomeState>,
 	interval_event_consumer: Consumer<f64>,
 }
 
@@ -16,37 +16,41 @@ impl MetronomeHandle {
 		interval_event_consumer: Consumer<f64>,
 	) -> Self {
 		Self {
-			metronome_state,
+			state: metronome_state,
 			interval_event_consumer,
 		}
 	}
 
+	pub(crate) fn state(&self) -> Shared<MetronomeState> {
+		self.state.clone()
+	}
+
 	pub fn tempo(&self) -> Tempo {
-		self.metronome_state.tempo()
+		self.state.tempo()
 	}
 
 	pub fn ticking(&self) -> bool {
-		self.metronome_state.ticking()
+		self.state.ticking()
 	}
 
 	pub fn time(&self) -> f64 {
-		self.metronome_state.time()
+		self.state.time()
 	}
 
 	pub fn set_tempo(&self, tempo: Tempo) {
-		self.metronome_state.set_tempo(tempo);
+		self.state.set_tempo(tempo);
 	}
 
 	pub fn start(&self) {
-		self.metronome_state.start();
+		self.state.start();
 	}
 
 	pub fn pause(&self) {
-		self.metronome_state.pause();
+		self.state.pause();
 	}
 
 	pub fn stop(&self) {
-		self.metronome_state.stop();
+		self.state.stop();
 	}
 
 	pub fn pop_event(&mut self) -> Option<f64> {

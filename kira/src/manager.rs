@@ -116,12 +116,18 @@ impl AudioManager {
 		Ok(handle)
 	}
 
-	pub fn start_sequence(
+	pub fn start_sequence<'a>(
 		&mut self,
 		sequence: Sequence<usize>,
+		metronome: impl Into<Option<&'a MetronomeHandle>>,
 	) -> Result<(), CommandQueueFullError> {
 		let (event_producer, event_consumer) = RingBuffer::new(1).split();
-		let instance = SequenceInstance::new(sequence, &self.collector_handle, event_producer);
+		let instance = SequenceInstance::new(
+			sequence,
+			metronome.into().map(|handle| handle.state()),
+			&self.collector_handle,
+			event_producer,
+		);
 		self.command_producer
 			.push(Command::StartSequenceInstance(instance))
 			.map_err(|_| CommandQueueFullError)?;

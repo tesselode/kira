@@ -30,6 +30,14 @@ impl MetronomeState {
 		self.tempo.load(Ordering::Relaxed)
 	}
 
+	pub fn effective_tempo(&self) -> Tempo {
+		if self.ticking() {
+			self.tempo()			
+		} else {
+			Tempo(0.0)
+		}
+	}
+
 	pub fn ticking(&self) -> bool {
 		self.ticking.load(Ordering::Relaxed)
 	}

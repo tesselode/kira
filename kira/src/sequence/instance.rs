@@ -4,6 +4,7 @@ use basedrop::{Handle, Shared};
 use ringbuf::Producer;
 
 use crate::{
+	metronome::MetronomeState,
 	sound::instance::{Instance, InstanceController},
 	tempo::Tempo,
 };
@@ -26,6 +27,7 @@ pub enum SequenceInstanceState {
 
 pub struct SequenceInstance {
 	sequence: RawSequence,
+	metronome_state: Option<Shared<MetronomeState>>,
 	instance_controllers: Vec<Shared<InstanceController>>,
 	state: SequenceInstanceState,
 	position: usize,
@@ -37,6 +39,7 @@ pub struct SequenceInstance {
 impl SequenceInstance {
 	pub(crate) fn new(
 		sequence: RawSequence,
+		metronome_state: Option<Shared<MetronomeState>>,
 		collector_handle: &Handle,
 		event_producer: Producer<usize>,
 	) -> Self {
@@ -50,6 +53,7 @@ impl SequenceInstance {
 		};
 		Self {
 			sequence,
+			metronome_state,
 			instance_controllers,
 			state: SequenceInstanceState::Playing,
 			position: 0,
@@ -106,13 +110,26 @@ impl SequenceInstance {
 				match step {
 					SequenceStep::Wait(duration) => {
 						if let Some(time) = self.wait_timer.as_mut() {
-							let duration = duration.in_seconds(Tempo(0.0));
+							let duration = duration.in_seconds(
+								self.metronome_state
+									.as_ref()
+									.map(|state| state.effective_tempo())
+									.unwrap_or(Tempo(0.0)),
+							);
 							*time -= dt / duration;
 							if *time <= 0.0 {
 								self.start_step(self.position + 1);
 							}
 							break;
 						}
+					}
+					SequenceStep::WaitForInterval(interval) => {
+						if let Some(metronome_state) = &self.metronome_state {
+							if metronome_state.interval_passed(*interval) {
+								self.start_step(self.position + 1);
+							}
+						}
+						break;
 					}
 					SequenceStep::PlaySound(instance_id, sound) => {
 						let controller = self.instance_controllers[instance_id.0].clone();
