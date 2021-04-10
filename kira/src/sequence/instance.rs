@@ -1,8 +1,9 @@
+use std::vec::Drain;
+
 use basedrop::{Handle, Shared};
 use ringbuf::Producer;
 
 use crate::{
-	manager::command::Command,
 	sound::instance::{Instance, InstanceController},
 	tempo::Tempo,
 };
@@ -93,7 +94,7 @@ impl SequenceInstance {
 		self.set_state(SequenceInstanceState::Finished);
 	}
 
-	pub(crate) fn update(&mut self, dt: f64, command_queue: &mut Vec<Command>) {
+	pub(crate) fn update(&mut self, dt: f64) {
 		match self.state {
 			SequenceInstanceState::Paused | SequenceInstanceState::Finished => {
 				return;
@@ -117,7 +118,7 @@ impl SequenceInstance {
 						let controller = self.instance_controllers[instance_id.0].clone();
 						controller.reset();
 						let instance = Instance::new(sound.clone(), controller);
-						command_queue.push(Command::StartInstance { instance });
+						self.instance_queue.push(instance);
 						self.start_step(self.position + 1);
 					}
 					_ => {
@@ -134,5 +135,9 @@ impl SequenceInstance {
 		} else {
 			false
 		}
+	}
+
+	pub(crate) fn drain_instance_queue(&mut self) -> Drain<Instance> {
+		self.instance_queue.drain(..)
 	}
 }
