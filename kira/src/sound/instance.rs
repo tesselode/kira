@@ -1,89 +1,130 @@
 pub mod handle;
 
-use std::sync::Arc;
+use std::sync::{atomic::AtomicUsize, Arc};
 
 use atomic::{Atomic, Ordering};
-use ringbuf::Consumer;
+use basedrop::Shared;
 
 use crate::Frame;
 
 use super::Sound;
 
-pub(crate) const COMMAND_QUEUE_CAPACITY: usize = 10;
+static NEXT_INSTANCE_ID: AtomicUsize = AtomicUsize::new(0);
 
-#[derive(Debug, Clone, Copy)]
-pub(crate) enum Command {
-	Pause,
-	Resume,
-	Stop,
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct InstanceId(usize);
+
+impl InstanceId {
+	pub(crate) fn new() -> Self {
+		Self(NEXT_INSTANCE_ID.fetch_add(1, Ordering::Relaxed))
+	}
+}
+
+/// Enables two-way communication between an instance and the
+/// outside world.
+pub(crate) struct InstanceController {
+	/// The ID of the instance this controller is meant to control.
+	/// The controller might be repurposed for another instance later,
+	/// so this is used to make sure the instance doesn't listen to
+	/// commands meant for another instance.
+	pub instance_id: InstanceId,
+	/// The desired playback state of the instance. The instance
+	/// will check for changes to this state.
+	pub playback_state: Atomic<InstancePlaybackState>,
+	/// The playback position of the instance. The instance will update
+	/// this so `InstanceHandle`s can report the playback position
+	/// back to the user.
+	pub playback_position: Atomic<f64>,
+}
+
+impl InstanceController {
+	pub fn new() -> Self {
+		Self {
+			instance_id: InstanceId::new(),
+			playback_state: Atomic::new(InstancePlaybackState::Playing),
+			playback_position: Atomic::new(0.0),
+		}
+	}
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum InstanceState {
+pub enum InstancePlaybackState {
 	Playing,
 	Paused,
 	Stopped,
 }
 
 pub(crate) struct Instance {
+	id: InstanceId,
 	sound: Arc<Sound>,
-	state: InstanceState,
+	controller: Shared<InstanceController>,
+	playback_state: InstancePlaybackState,
 	playback_position: f64,
-	public_playback_position: Arc<Atomic<f64>>,
-	command_consumer: Consumer<Command>,
 }
 
 impl Instance {
-	pub fn new(sound: Arc<Sound>, command_consumer: Consumer<Command>) -> Self {
+	pub fn new(sound: Arc<Sound>, controller: Shared<InstanceController>) -> Self {
+		let playback_state = controller.playback_state.load(Ordering::Relaxed);
+		let playback_position = controller.playback_position.load(Ordering::Relaxed);
 		Self {
+			id: controller.instance_id,
 			sound,
-			state: InstanceState::Playing,
-			playback_position: 0.0,
-			public_playback_position: Arc::new(Atomic::new(0.0)),
-			command_consumer,
+			controller,
+			playback_state,
+			playback_position,
 		}
 	}
 
-	pub fn state(&self) -> InstanceState {
-		self.state
+	pub fn state(&self) -> InstancePlaybackState {
+		self.playback_state
 	}
 
 	pub fn playback_position(&self) -> f64 {
 		self.playback_position
 	}
 
-	pub fn public_playback_position(&self) -> Arc<Atomic<f64>> {
-		self.public_playback_position.clone()
+	fn controller(&self) -> Option<&InstanceController> {
+		if self.controller.instance_id == self.id {
+			Some(&self.controller)
+		} else {
+			None
+		}
+	}
+
+	fn set_playback_state(&mut self, state: InstancePlaybackState) {
+		self.playback_state = state;
+		if let Some(controller) = self.controller() {
+			controller.playback_state.store(state, Ordering::Relaxed);
+		}
 	}
 
 	pub fn pause(&mut self) {
-		self.state = InstanceState::Paused;
+		self.set_playback_state(InstancePlaybackState::Paused);
 	}
 
 	pub fn resume(&mut self) {
-		self.state = InstanceState::Playing;
+		self.set_playback_state(InstancePlaybackState::Playing);
 	}
 
 	pub fn stop(&mut self) {
-		self.state = InstanceState::Stopped;
+		self.set_playback_state(InstancePlaybackState::Stopped);
 	}
 
 	pub fn process(&mut self, dt: f64) -> Frame {
-		while let Some(command) = self.command_consumer.pop() {
-			match command {
-				Command::Pause => self.pause(),
-				Command::Resume => self.resume(),
-				Command::Stop => self.stop(),
-			}
+		if let Some(controller) = self.controller() {
+			self.playback_state = controller.playback_state.load(Ordering::Relaxed);
 		}
-		match self.state {
-			InstanceState::Playing => {
+		match self.playback_state {
+			InstancePlaybackState::Playing => {
 				let output = self.sound.get_frame_at_position(self.playback_position);
 				self.playback_position += dt;
-				self.public_playback_position
-					.store(self.playback_position, Ordering::Relaxed);
+				if let Some(controller) = self.controller() {
+					controller
+						.playback_position
+						.store(self.playback_position, Ordering::Relaxed);
+				}
 				if self.playback_position > self.sound.duration() {
-					self.state = InstanceState::Stopped;
+					self.stop();
 				}
 				output
 			}

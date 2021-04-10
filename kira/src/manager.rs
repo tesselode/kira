@@ -4,6 +4,7 @@ pub mod error;
 
 use std::sync::Arc;
 
+use basedrop::{Collector, Handle, Shared};
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	Stream,
@@ -13,7 +14,7 @@ use ringbuf::{Producer, RingBuffer};
 use crate::{
 	error::CommandQueueFullError,
 	sound::{
-		instance::{handle::InstanceHandle, Instance, COMMAND_QUEUE_CAPACITY},
+		instance::{handle::InstanceHandle, Instance, InstanceController},
 		Sound,
 	},
 };
@@ -35,15 +36,18 @@ impl Default for AudioManagerSettings {
 }
 
 pub struct AudioManager {
-	command_producer: Producer<Command>,
 	_stream: Stream,
+	command_producer: Producer<Command>,
+	collector: Collector,
+	collector_handle: Handle,
 }
 
 impl AudioManager {
 	pub fn new(settings: AudioManagerSettings) -> Result<Self, SetupError> {
 		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
+		let collector = Collector::new();
+		let collector_handle = collector.handle();
 		Ok(Self {
-			command_producer,
 			_stream: {
 				let host = cpal::default_host();
 				let device = host
@@ -71,20 +75,19 @@ impl AudioManager {
 				stream.play()?;
 				stream
 			},
+			command_producer,
+			collector,
+			collector_handle,
 		})
 	}
 
 	pub fn play(&mut self, sound: Arc<Sound>) -> Result<InstanceHandle, CommandQueueFullError> {
-		let (instance_command_producer, instance_command_consumer) =
-			RingBuffer::new(COMMAND_QUEUE_CAPACITY).split();
-		let instance = Instance::new(sound, instance_command_consumer);
-		let instance_handle = InstanceHandle::new(
-			instance.public_playback_position(),
-			instance_command_producer,
-		);
+		let controller = Shared::new(&self.collector_handle, InstanceController::new());
+		let instance = Instance::new(sound, controller.clone());
+		let handle = InstanceHandle::new(controller.clone());
 		self.command_producer
 			.push(Command::PlaySound { instance })
 			.map_err(|_| CommandQueueFullError)?;
-		Ok(instance_handle)
+		Ok(handle)
 	}
 }

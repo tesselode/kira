@@ -1,7 +1,7 @@
 use ringbuf::Consumer;
 
 use crate::{
-	sound::instance::{Instance, InstanceState},
+	sound::instance::{Instance, InstancePlaybackState},
 	Frame,
 };
 
@@ -47,7 +47,7 @@ impl Backend {
 				previous + instance.process(dt)
 			});
 		self.instances
-			.retain(|instance| instance.state() != InstanceState::Stopped);
+			.retain(|instance| instance.state() != InstancePlaybackState::Stopped);
 		output
 	}
 }

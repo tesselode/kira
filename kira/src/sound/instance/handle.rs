@@ -1,47 +1,36 @@
-use std::sync::Arc;
+use atomic::Ordering;
+use basedrop::Shared;
 
-use atomic::{Atomic, Ordering};
-use ringbuf::Producer;
-
-use crate::error::CommandQueueFullError;
-
-use super::Command;
+use super::{InstanceController, InstancePlaybackState};
 
 pub struct InstanceHandle {
-	public_playback_position: Arc<Atomic<f64>>,
-	command_producer: Producer<Command>,
+	controller: Shared<InstanceController>,
 }
 
 impl InstanceHandle {
-	pub(crate) fn new(
-		public_playback_position: Arc<Atomic<f64>>,
-		command_producer: Producer<Command>,
-	) -> Self {
-		Self {
-			public_playback_position,
-			command_producer,
-		}
+	pub(crate) fn new(controller: Shared<InstanceController>) -> Self {
+		Self { controller }
 	}
 
 	pub fn playback_position(&self) -> f64 {
-		self.public_playback_position.load(Ordering::Relaxed)
+		self.controller.playback_position.load(Ordering::Relaxed)
 	}
 
-	pub fn pause(&mut self) -> Result<(), CommandQueueFullError> {
-		self.command_producer
-			.push(Command::Pause)
-			.map_err(|_| CommandQueueFullError)
+	pub fn pause(&mut self) {
+		self.controller
+			.playback_state
+			.store(InstancePlaybackState::Paused, Ordering::Relaxed);
 	}
 
-	pub fn resume(&mut self) -> Result<(), CommandQueueFullError> {
-		self.command_producer
-			.push(Command::Resume)
-			.map_err(|_| CommandQueueFullError)
+	pub fn resume(&mut self) {
+		self.controller
+			.playback_state
+			.store(InstancePlaybackState::Playing, Ordering::Relaxed);
 	}
 
-	pub fn stop(&mut self) -> Result<(), CommandQueueFullError> {
-		self.command_producer
-			.push(Command::Stop)
-			.map_err(|_| CommandQueueFullError)
+	pub fn stop(&mut self) {
+		self.controller
+			.playback_state
+			.store(InstancePlaybackState::Stopped, Ordering::Relaxed);
 	}
 }
