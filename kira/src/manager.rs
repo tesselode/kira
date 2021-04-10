@@ -1,5 +1,5 @@
 mod backend;
-mod command;
+pub(crate) mod command;
 pub mod error;
 
 use std::sync::Arc;
@@ -13,6 +13,7 @@ use ringbuf::{Producer, RingBuffer};
 
 use crate::{
 	error::CommandQueueFullError,
+	sequence::{instance::SequenceInstance, Sequence},
 	sound::{
 		instance::{handle::InstanceHandle, Instance, InstanceController},
 		Sound,
@@ -24,6 +25,7 @@ use self::{backend::Backend, command::Command, error::SetupError};
 pub struct AudioManagerSettings {
 	num_commands: usize,
 	num_instances: usize,
+	num_sequences: usize,
 }
 
 impl Default for AudioManagerSettings {
@@ -31,6 +33,7 @@ impl Default for AudioManagerSettings {
 		Self {
 			num_commands: 100,
 			num_instances: 100,
+			num_sequences: 25,
 		}
 	}
 }
@@ -86,8 +89,20 @@ impl AudioManager {
 		let instance = Instance::new(sound, controller.clone());
 		let handle = InstanceHandle::new(controller.clone());
 		self.command_producer
-			.push(Command::PlaySound { instance })
+			.push(Command::StartInstance { instance })
 			.map_err(|_| CommandQueueFullError)?;
 		Ok(handle)
+	}
+
+	pub fn start_sequence(
+		&mut self,
+		sequence: Sequence<usize>,
+	) -> Result<(), CommandQueueFullError> {
+		let (event_producer, event_consumer) = RingBuffer::new(1).split();
+		let instance = SequenceInstance::new(sequence, &self.collector_handle, event_producer);
+		self.command_producer
+			.push(Command::StartSequenceInstance(instance))
+			.map_err(|_| CommandQueueFullError)?;
+		Ok(())
 	}
 }

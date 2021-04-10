@@ -1,4 +1,5 @@
 pub mod error;
+pub(crate) mod instance;
 
 use std::sync::Arc;
 
@@ -7,15 +8,15 @@ use crate::{sound::Sound, Duration};
 use self::error::SequenceError;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct InstanceId(usize);
+pub struct SequenceLocalInstanceId(usize);
 
 enum SequenceStep<Event> {
 	Wait(Duration),
 	WaitForInterval(f64),
-	PlaySound(InstanceId, Arc<Sound>),
-	PauseInstance(InstanceId),
-	ResumeInstance(InstanceId),
-	StopInstance(InstanceId),
+	PlaySound(SequenceLocalInstanceId, Arc<Sound>),
+	PauseInstance(SequenceLocalInstanceId),
+	ResumeInstance(SequenceLocalInstanceId),
+	StopInstance(SequenceLocalInstanceId),
 	Emit(Event),
 }
 
@@ -52,22 +53,22 @@ impl<Event> Sequence<Event> {
 		self.loop_point = Some(self.steps.len())
 	}
 
-	pub fn play(&mut self, sound: Arc<Sound>) -> InstanceId {
-		let id = InstanceId(self.next_instance_id);
+	pub fn play(&mut self, sound: Arc<Sound>) -> SequenceLocalInstanceId {
+		let id = SequenceLocalInstanceId(self.next_instance_id);
 		self.next_instance_id += 1;
 		self.steps.push(SequenceStep::PlaySound(id, sound));
 		id
 	}
 
-	pub fn pause_instance(&mut self, instance: InstanceId) {
+	pub fn pause_instance(&mut self, instance: SequenceLocalInstanceId) {
 		self.steps.push(SequenceStep::PauseInstance(instance));
 	}
 
-	pub fn resume_instance(&mut self, instance: InstanceId) {
+	pub fn resume_instance(&mut self, instance: SequenceLocalInstanceId) {
 		self.steps.push(SequenceStep::ResumeInstance(instance));
 	}
 
-	pub fn stop_instance(&mut self, instance: InstanceId) {
+	pub fn stop_instance(&mut self, instance: SequenceLocalInstanceId) {
 		self.steps.push(SequenceStep::StopInstance(instance));
 	}
 
@@ -95,6 +96,22 @@ impl<Event> Sequence<Event> {
 		} else {
 			Ok(())
 		}
+	}
+
+	/// Returns the number of instances this sequence will create
+	/// in one loop. This is used by sequence instances to determine
+	/// how many `InstanceController`s need to be allocated.
+	pub(crate) fn num_instances(&self) -> usize {
+		self.steps
+			.iter()
+			.filter(|step| {
+				if let SequenceStep::PlaySound(..) = step {
+					true
+				} else {
+					false
+				}
+			})
+			.count()
 	}
 }
 

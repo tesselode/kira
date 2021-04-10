@@ -45,6 +45,21 @@ impl InstanceController {
 			playback_position: Atomic::new(0.0),
 		}
 	}
+
+	pub fn pause(&self) {
+		self.playback_state
+			.store(InstancePlaybackState::Paused, Ordering::Relaxed);
+	}
+
+	pub fn resume(&self) {
+		self.playback_state
+			.store(InstancePlaybackState::Playing, Ordering::Relaxed);
+	}
+
+	pub fn stop(&self) {
+		self.playback_state
+			.store(InstancePlaybackState::Stopped, Ordering::Relaxed);
+	}
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

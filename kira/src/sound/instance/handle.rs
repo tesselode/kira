@@ -17,20 +17,14 @@ impl InstanceHandle {
 	}
 
 	pub fn pause(&mut self) {
-		self.controller
-			.playback_state
-			.store(InstancePlaybackState::Paused, Ordering::Relaxed);
+		self.controller.pause();
 	}
 
 	pub fn resume(&mut self) {
-		self.controller
-			.playback_state
-			.store(InstancePlaybackState::Playing, Ordering::Relaxed);
+		self.controller.resume();
 	}
 
 	pub fn stop(&mut self) {
-		self.controller
-			.playback_state
-			.store(InstancePlaybackState::Stopped, Ordering::Relaxed);
+		self.controller.stop();
 	}
 }

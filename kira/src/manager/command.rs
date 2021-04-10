@@ -1,7 +1,6 @@
-use ringbuf::Consumer;
-
-use crate::sound::instance::{self, Instance};
+use crate::{sequence::instance::SequenceInstance, sound::instance::Instance};
 
 pub(crate) enum Command {
-	PlaySound { instance: Instance },
+	StartInstance { instance: Instance },
+	StartSequenceInstance(SequenceInstance),
 }
