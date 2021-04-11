@@ -11,14 +11,14 @@ use sealed::AsValue;
 #[derive(Clone)]
 pub enum Value<T: AsValue> {
 	Fixed(T),
-	Parameter(Parameter<T>),
+	Parameter(Parameter),
 }
 
 impl<T: AsValue> Value<T> {
 	pub(crate) fn get(&self) -> T {
 		match self {
 			Value::Fixed(value) => *value,
-			Value::Parameter(parameter) => parameter.get(),
+			Value::Parameter(parameter) => parameter.get().into(),
 		}
 	}
 }
@@ -29,8 +29,8 @@ impl<T: AsValue> From<T> for Value<T> {
 	}
 }
 
-impl<T: AsValue> From<Parameter<T>> for Value<T> {
-	fn from(parameter: Parameter<T>) -> Self {
+impl<T: AsValue> From<Parameter> for Value<T> {
+	fn from(parameter: Parameter) -> Self {
 		Self::Parameter(parameter)
 	}
 }

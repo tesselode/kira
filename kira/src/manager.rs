@@ -23,7 +23,6 @@ use crate::{
 		instance::{handle::InstanceHandle, Instance, InstanceController},
 		Sound,
 	},
-	value::sealed::AsValue,
 };
 
 use self::{backend::Backend, command::Command, error::SetupError};
@@ -33,6 +32,7 @@ pub struct AudioManagerSettings {
 	num_instances: usize,
 	num_metronomes: usize,
 	num_sequences: usize,
+	num_parameters: usize,
 }
 
 impl Default for AudioManagerSettings {
@@ -42,6 +42,7 @@ impl Default for AudioManagerSettings {
 			num_instances: 100,
 			num_metronomes: 10,
 			num_sequences: 25,
+			num_parameters: 100,
 		}
 	}
 }
@@ -141,7 +142,11 @@ impl AudioManager {
 		Ok(handle)
 	}
 
-	pub fn add_parameter<T: AsValue>(&self, value: T) -> Parameter<T> {
-		Parameter::new(value, &self.collector_handle)
+	pub fn add_parameter(&mut self, value: f64) -> Result<Parameter, CommandQueueFullError> {
+		let parameter = Parameter::new(value, &self.collector_handle);
+		self.command_producer
+			.push(Command::AddParameter(parameter.clone()))
+			.map_err(|_| CommandQueueFullError)?;
+		Ok(parameter)
 	}
 }

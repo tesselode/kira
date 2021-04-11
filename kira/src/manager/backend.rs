@@ -2,6 +2,7 @@ use ringbuf::Consumer;
 
 use crate::{
 	metronome::Metronome,
+	parameter::Parameter,
 	sequence::instance::SequenceInstance,
 	sound::instance::{Instance, InstancePlaybackState},
 	Frame,
@@ -16,6 +17,7 @@ pub struct Backend {
 	instances: Vec<Instance>,
 	metronomes: Vec<Metronome>,
 	sequence_instances: Vec<SequenceInstance>,
+	parameters: Vec<Parameter>,
 }
 
 impl Backend {
@@ -31,6 +33,13 @@ impl Backend {
 			instances: Vec::with_capacity(settings.num_instances),
 			metronomes: Vec::with_capacity(settings.num_metronomes),
 			sequence_instances: Vec::with_capacity(settings.num_sequences),
+			parameters: Vec::with_capacity(settings.num_parameters),
+		}
+	}
+
+	fn update_parameters(&mut self) {
+		for parameter in &mut self.parameters {
+			parameter.update(self.dt);
 		}
 	}
 
@@ -83,9 +92,13 @@ impl Backend {
 				Command::AddMetronome(metronome) => {
 					self.metronomes.push(metronome);
 				}
+				Command::AddParameter(parameter) => {
+					self.parameters.push(parameter);
+				}
 			}
 		}
 
+		self.update_parameters();
 		self.update_metronomes();
 		self.update_sequence_instances();
 		self.process_instances()
