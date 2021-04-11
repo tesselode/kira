@@ -37,10 +37,6 @@ impl MetronomeHandle {
 		self.state.time()
 	}
 
-	pub fn set_tempo(&self, tempo: Tempo) {
-		self.state.set_tempo(tempo);
-	}
-
 	pub fn start(&self) {
 		self.state.start();
 	}

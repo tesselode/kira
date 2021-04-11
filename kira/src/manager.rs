@@ -14,6 +14,7 @@ use ringbuf::{Producer, RingBuffer};
 use crate::{
 	error::CommandQueueFullError,
 	metronome::{handle::MetronomeHandle, settings::MetronomeSettings, Metronome, MetronomeState},
+	parameter::Parameter,
 	sequence::{
 		instance::{handle::SequenceInstanceHandle, SequenceInstance},
 		Sequence,
@@ -22,6 +23,7 @@ use crate::{
 		instance::{handle::InstanceHandle, Instance, InstanceController},
 		Sound,
 	},
+	value::sealed::AsValue,
 };
 
 use self::{backend::Backend, command::Command, error::SetupError};
@@ -137,5 +139,9 @@ impl AudioManager {
 			.push(Command::StartSequenceInstance(instance))
 			.map_err(|_| CommandQueueFullError)?;
 		Ok(handle)
+	}
+
+	pub fn add_parameter<T: AsValue>(&self, value: T) -> Parameter<T> {
+		Parameter::new(value, &self.collector_handle)
 	}
 }

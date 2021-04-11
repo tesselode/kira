@@ -7,19 +7,19 @@ use atomig::{Atomic, Ordering};
 use basedrop::Shared;
 use ringbuf::Producer;
 
-use crate::Tempo;
+use crate::{value::Value, Tempo};
 
 pub(crate) struct MetronomeState {
-	tempo: Atomic<Tempo>,
+	tempo: Value<Tempo>,
 	ticking: AtomicBool,
 	time: Atomic<f64>,
 	previous_time: Atomic<f64>,
 }
 
 impl MetronomeState {
-	pub fn new(tempo: Tempo) -> Self {
+	pub fn new(tempo: Value<Tempo>) -> Self {
 		Self {
-			tempo: Atomic::new(tempo),
+			tempo,
 			ticking: AtomicBool::new(false),
 			time: Atomic::new(0.0),
 			previous_time: Atomic::new(0.0),
@@ -27,7 +27,7 @@ impl MetronomeState {
 	}
 
 	pub fn tempo(&self) -> Tempo {
-		self.tempo.load(Ordering::Relaxed)
+		self.tempo.get()
 	}
 
 	pub fn effective_tempo(&self) -> Tempo {
@@ -70,10 +70,6 @@ impl MetronomeState {
 		self.ticking.store(false, Ordering::Relaxed);
 		self.time.store(0.0, Ordering::Relaxed);
 		self.previous_time.store(0.0, Ordering::Relaxed);
-	}
-
-	pub fn set_tempo(&self, tempo: Tempo) {
-		self.tempo.store(tempo, Ordering::Relaxed);
 	}
 }
 

@@ -1,10 +1,10 @@
-use crate::Tempo;
+use crate::{value::Value, Tempo};
 
 /// Settings for the metronome.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct MetronomeSettings {
 	/// The tempo of the metronome (in beats per minute).
-	pub tempo: Tempo,
+	pub tempo: Value<Tempo>,
 	/// Which intervals (in beats) the metronome should emit events for.
 	///
 	/// For example, if this is set to `vec![0.25, 0.5, 1.0]`, then
@@ -20,7 +20,7 @@ impl MetronomeSettings {
 	}
 
 	/// Sets the tempo of the metronome.
-	pub fn tempo(self, tempo: impl Into<Tempo>) -> Self {
+	pub fn tempo(self, tempo: impl Into<Value<Tempo>>) -> Self {
 		Self {
 			tempo: tempo.into(),
 			..self
