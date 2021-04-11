@@ -3,7 +3,7 @@ pub mod settings;
 
 use std::sync::atomic::AtomicBool;
 
-use atomic::{Atomic, Ordering};
+use atomig::{Atomic, Ordering};
 use basedrop::Shared;
 use ringbuf::Producer;
 
@@ -32,7 +32,7 @@ impl MetronomeState {
 
 	pub fn effective_tempo(&self) -> Tempo {
 		if self.ticking() {
-			self.tempo()			
+			self.tempo()
 		} else {
 			Tempo(0.0)
 		}

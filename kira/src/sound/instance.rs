@@ -2,7 +2,7 @@ pub mod handle;
 
 use std::sync::{atomic::AtomicUsize, Arc};
 
-use atomic::{Atomic, Ordering};
+use atomig::{Atom, Atomic, Ordering};
 use basedrop::Shared;
 
 use crate::Frame;
@@ -11,7 +11,7 @@ use super::Sound;
 
 static NEXT_INSTANCE_ID: AtomicUsize = AtomicUsize::new(0);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Atom)]
 pub struct InstanceId(usize);
 
 impl InstanceId {
@@ -69,7 +69,8 @@ impl InstanceController {
 	}
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Atom)]
+#[repr(u8)]
 pub enum InstancePlaybackState {
 	Playing,
 	Paused,

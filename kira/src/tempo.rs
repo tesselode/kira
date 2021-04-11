@@ -1,10 +1,20 @@
+use atomig::Atom;
+
 /// A tempo, or speed, of some music (in beats per minute).
 #[derive(Debug, Copy, Clone, PartialEq)]
-#[cfg_attr(
-	feature = "serde_support",
-	derive(serde::Serialize, serde::Deserialize)
-)]
 pub struct Tempo(pub f64);
+
+impl Atom for Tempo {
+	type Repr = u64;
+
+	fn pack(self) -> Self::Repr {
+		self.0.to_bits()
+	}
+
+	fn unpack(src: Self::Repr) -> Self {
+		Tempo(f64::from_bits(src))
+	}
+}
 
 impl Tempo {
 	/// Converts a number of beats at this tempo to a length

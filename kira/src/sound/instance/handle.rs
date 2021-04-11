@@ -1,4 +1,4 @@
-use atomic::Ordering;
+use atomig::Ordering;
 use basedrop::Shared;
 
 use super::InstanceController;
