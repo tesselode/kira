@@ -39,18 +39,18 @@ impl MetronomeState {
 	}
 
 	pub fn ticking(&self) -> bool {
-		self.ticking.load(Ordering::Relaxed)
+		self.ticking.load(Ordering::SeqCst)
 	}
 
 	pub fn time(&self) -> f64 {
-		self.time.load(Ordering::Relaxed)
+		self.time.load(Ordering::SeqCst)
 	}
 
 	pub fn interval_passed(&self, interval: f64) -> bool {
 		if !self.ticking() {
 			return false;
 		}
-		let previous_time = self.previous_time.load(Ordering::Relaxed);
+		let previous_time = self.previous_time.load(Ordering::SeqCst);
 		let time = self.time();
 		if previous_time == 0.0 {
 			return true;
@@ -59,17 +59,17 @@ impl MetronomeState {
 	}
 
 	pub fn start(&self) {
-		self.ticking.store(true, Ordering::Relaxed);
+		self.ticking.store(true, Ordering::SeqCst);
 	}
 
 	pub fn pause(&self) {
-		self.ticking.store(false, Ordering::Relaxed);
+		self.ticking.store(false, Ordering::SeqCst);
 	}
 
 	pub fn stop(&self) {
-		self.ticking.store(false, Ordering::Relaxed);
-		self.time.store(0.0, Ordering::Relaxed);
-		self.previous_time.store(0.0, Ordering::Relaxed);
+		self.ticking.store(false, Ordering::SeqCst);
+		self.time.store(0.0, Ordering::SeqCst);
+		self.previous_time.store(0.0, Ordering::SeqCst);
 	}
 }
 
@@ -95,10 +95,10 @@ impl Metronome {
 	pub fn update(&mut self, dt: f64) {
 		let time = self.state.time();
 		let tempo = self.state.tempo();
-		self.state.previous_time.store(time, Ordering::Relaxed);
+		self.state.previous_time.store(time, Ordering::SeqCst);
 		self.state
 			.time
-			.store(time + tempo.0 / 60.0 * dt, Ordering::Relaxed);
+			.store(time + tempo.0 / 60.0 * dt, Ordering::SeqCst);
 		for interval in &self.interval_events_to_emit {
 			if self.state.interval_passed(*interval) {
 				self.interval_event_producer.push(*interval).ok();

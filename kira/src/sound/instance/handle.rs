@@ -13,7 +13,7 @@ impl InstanceHandle {
 	}
 
 	pub fn playback_position(&self) -> f64 {
-		self.controller.playback_position.load(Ordering::Relaxed)
+		self.controller.playback_position.load(Ordering::SeqCst)
 	}
 
 	pub fn pause(&self) {

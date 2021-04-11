@@ -16,7 +16,7 @@ pub struct InstanceId(usize);
 
 impl InstanceId {
 	pub(crate) fn new() -> Self {
-		Self(NEXT_INSTANCE_ID.fetch_add(1, Ordering::Relaxed))
+		Self(NEXT_INSTANCE_ID.fetch_add(1, Ordering::SeqCst))
 	}
 }
 
@@ -47,25 +47,25 @@ impl InstanceController {
 	}
 
 	pub fn reset(&self) {
-		self.instance_id.store(InstanceId::new(), Ordering::Relaxed);
+		self.instance_id.store(InstanceId::new(), Ordering::SeqCst);
 		self.playback_state
-			.store(InstancePlaybackState::Playing, Ordering::Relaxed);
-		self.playback_position.store(0.0, Ordering::Relaxed);
+			.store(InstancePlaybackState::Playing, Ordering::SeqCst);
+		self.playback_position.store(0.0, Ordering::SeqCst);
 	}
 
 	pub fn pause(&self) {
 		self.playback_state
-			.store(InstancePlaybackState::Paused, Ordering::Relaxed);
+			.store(InstancePlaybackState::Paused, Ordering::SeqCst);
 	}
 
 	pub fn resume(&self) {
 		self.playback_state
-			.store(InstancePlaybackState::Playing, Ordering::Relaxed);
+			.store(InstancePlaybackState::Playing, Ordering::SeqCst);
 	}
 
 	pub fn stop(&self) {
 		self.playback_state
-			.store(InstancePlaybackState::Stopped, Ordering::Relaxed);
+			.store(InstancePlaybackState::Stopped, Ordering::SeqCst);
 	}
 }
 
@@ -87,9 +87,9 @@ pub(crate) struct Instance {
 
 impl Instance {
 	pub fn new(sound: Arc<Sound>, controller: Shared<InstanceController>) -> Self {
-		let id = controller.instance_id.load(Ordering::Relaxed);
-		let playback_state = controller.playback_state.load(Ordering::Relaxed);
-		let playback_position = controller.playback_position.load(Ordering::Relaxed);
+		let id = controller.instance_id.load(Ordering::SeqCst);
+		let playback_state = controller.playback_state.load(Ordering::SeqCst);
+		let playback_position = controller.playback_position.load(Ordering::SeqCst);
 		Self {
 			id,
 			sound,
@@ -108,7 +108,7 @@ impl Instance {
 	}
 
 	fn controller(&self) -> Option<&InstanceController> {
-		if self.controller.instance_id.load(Ordering::Relaxed) == self.id {
+		if self.controller.instance_id.load(Ordering::SeqCst) == self.id {
 			Some(&self.controller)
 		} else {
 			None
@@ -118,7 +118,7 @@ impl Instance {
 	fn set_playback_state(&mut self, state: InstancePlaybackState) {
 		self.playback_state = state;
 		if let Some(controller) = self.controller() {
-			controller.playback_state.store(state, Ordering::Relaxed);
+			controller.playback_state.store(state, Ordering::SeqCst);
 		}
 	}
 
@@ -136,7 +136,7 @@ impl Instance {
 
 	pub fn process(&mut self, dt: f64) -> Frame {
 		if let Some(controller) = self.controller() {
-			self.playback_state = controller.playback_state.load(Ordering::Relaxed);
+			self.playback_state = controller.playback_state.load(Ordering::SeqCst);
 		}
 		match self.playback_state {
 			InstancePlaybackState::Playing => {
@@ -145,7 +145,7 @@ impl Instance {
 				if let Some(controller) = self.controller() {
 					controller
 						.playback_position
-						.store(self.playback_position, Ordering::Relaxed);
+						.store(self.playback_position, Ordering::SeqCst);
 				}
 				if self.playback_position > self.sound.duration() {
 					self.stop();
