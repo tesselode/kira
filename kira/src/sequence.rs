@@ -7,7 +7,11 @@ use std::{
 	sync::Arc,
 };
 
-use crate::{sound::Sound, Duration};
+use crate::{
+	mixer::track::TrackInput,
+	sound::{instance::settings::InstanceSettings, Sound},
+	Duration,
+};
 
 use self::error::SequenceError;
 
@@ -17,7 +21,11 @@ pub struct SequenceLocalInstanceId(usize);
 enum SequenceStep<Event: Clone + Eq + Hash> {
 	Wait(Duration),
 	WaitForInterval(f64),
-	PlaySound(SequenceLocalInstanceId, Arc<Sound>),
+	PlaySound {
+		id: SequenceLocalInstanceId,
+		sound: Arc<Sound>,
+		settings: InstanceSettings,
+	},
 	PauseInstance(SequenceLocalInstanceId),
 	ResumeInstance(SequenceLocalInstanceId),
 	StopInstance(SequenceLocalInstanceId),
@@ -57,10 +65,18 @@ impl<Event: Clone + Eq + Hash> Sequence<Event> {
 		self.loop_point = Some(self.steps.len())
 	}
 
-	pub fn play(&mut self, sound: Arc<Sound>) -> SequenceLocalInstanceId {
+	pub fn play(
+		&mut self,
+		sound: Arc<Sound>,
+		settings: InstanceSettings,
+	) -> SequenceLocalInstanceId {
 		let id = SequenceLocalInstanceId(self.next_instance_id);
 		self.next_instance_id += 1;
-		self.steps.push(SequenceStep::PlaySound(id, sound));
+		self.steps.push(SequenceStep::PlaySound {
+			id,
+			sound,
+			settings,
+		});
 		id
 	}
 
@@ -109,7 +125,7 @@ impl<Event: Clone + Eq + Hash> Sequence<Event> {
 		self.steps
 			.iter()
 			.filter(|step| {
-				if let SequenceStep::PlaySound(..) = step {
+				if let SequenceStep::PlaySound { .. } = step {
 					true
 				} else {
 					false
@@ -137,7 +153,15 @@ impl<Event: Clone + Eq + Hash> Sequence<Event> {
 			.map(|step| match step {
 				SequenceStep::Wait(duration) => SequenceStep::Wait(*duration),
 				SequenceStep::WaitForInterval(interval) => SequenceStep::WaitForInterval(*interval),
-				SequenceStep::PlaySound(id, sound) => SequenceStep::PlaySound(*id, sound.clone()),
+				SequenceStep::PlaySound {
+					id,
+					sound,
+					settings,
+				} => SequenceStep::PlaySound {
+					id: *id,
+					sound: sound.clone(),
+					settings: settings.clone(),
+				},
 				SequenceStep::PauseInstance(id) => SequenceStep::PauseInstance(*id),
 				SequenceStep::ResumeInstance(id) => SequenceStep::ResumeInstance(*id),
 				SequenceStep::StopInstance(id) => SequenceStep::StopInstance(*id),

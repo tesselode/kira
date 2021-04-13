@@ -1,5 +1,7 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
+use atomig::Atom;
+
 /// An audio sample with a left and right channel.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Frame {
@@ -7,6 +9,25 @@ pub struct Frame {
 	pub left: f32,
 	/// The sample for the right channel.
 	pub right: f32,
+}
+
+impl Atom for Frame {
+	type Repr = u64;
+
+	fn pack(self) -> Self::Repr {
+		let left_bits = self.left.to_bits() as u64;
+		let right_bits = self.right.to_bits() as u64;
+		left_bits << 32 | right_bits
+	}
+
+	fn unpack(src: Self::Repr) -> Self {
+		let left_bits = (src >> 32) as u32;
+		let right_bits = src as u32;
+		Self {
+			left: f32::from_bits(left_bits),
+			right: f32::from_bits(right_bits),
+		}
+	}
 }
 
 impl Frame {

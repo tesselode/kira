@@ -1,11 +1,12 @@
 pub mod handle;
+pub mod settings;
 
 use std::sync::{atomic::AtomicUsize, Arc};
 
 use atomig::{Atom, Atomic, Ordering};
 use basedrop::Shared;
 
-use crate::Frame;
+use crate::{mixer::track::TrackInput, Frame};
 
 use super::Sound;
 
@@ -83,10 +84,15 @@ pub(crate) struct Instance {
 	controller: Shared<InstanceController>,
 	playback_state: InstancePlaybackState,
 	playback_position: f64,
+	output_dest: TrackInput,
 }
 
 impl Instance {
-	pub fn new(sound: Arc<Sound>, controller: Shared<InstanceController>) -> Self {
+	pub fn new(
+		sound: Arc<Sound>,
+		controller: Shared<InstanceController>,
+		output_dest: TrackInput,
+	) -> Self {
 		let id = controller.instance_id.load(Ordering::SeqCst);
 		let playback_state = controller.playback_state.load(Ordering::SeqCst);
 		let playback_position = controller.playback_position.load(Ordering::SeqCst);
@@ -96,6 +102,7 @@ impl Instance {
 			controller,
 			playback_state,
 			playback_position,
+			output_dest,
 		}
 	}
 
@@ -134,25 +141,22 @@ impl Instance {
 		self.set_playback_state(InstancePlaybackState::Stopped);
 	}
 
-	pub fn process(&mut self, dt: f64) -> Frame {
+	pub fn process(&mut self, dt: f64) {
 		if let Some(controller) = self.controller() {
 			self.playback_state = controller.playback_state.load(Ordering::SeqCst);
 		}
-		match self.playback_state {
-			InstancePlaybackState::Playing => {
-				let output = self.sound.get_frame_at_position(self.playback_position);
-				self.playback_position += dt;
-				if let Some(controller) = self.controller() {
-					controller
-						.playback_position
-						.store(self.playback_position, Ordering::SeqCst);
-				}
-				if self.playback_position > self.sound.duration() {
-					self.stop();
-				}
-				output
+		if let InstancePlaybackState::Playing = self.playback_state {
+			let output = self.sound.get_frame_at_position(self.playback_position);
+			self.playback_position += dt;
+			if let Some(controller) = self.controller() {
+				controller
+					.playback_position
+					.store(self.playback_position, Ordering::SeqCst);
 			}
-			_ => Frame::from_mono(0.0),
+			if self.playback_position > self.sound.duration() {
+				self.stop();
+			}
+			self.output_dest.add(output);
 		}
 	}
 }

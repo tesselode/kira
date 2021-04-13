@@ -7,6 +7,7 @@ use ringbuf::Producer;
 
 use crate::{
 	metronome::MetronomeState,
+	mixer::track::TrackInput,
 	sound::instance::{Instance, InstanceController},
 	tempo::Tempo,
 };
@@ -100,7 +101,7 @@ impl SequenceInstance {
 		self.set_state(SequenceInstanceState::Finished);
 	}
 
-	pub(crate) fn update(&mut self, dt: f64) {
+	pub(crate) fn update(&mut self, dt: f64, main_track_input: TrackInput) {
 		match self.state {
 			SequenceInstanceState::Paused | SequenceInstanceState::Finished => {
 				return;
@@ -133,10 +134,22 @@ impl SequenceInstance {
 						}
 						break;
 					}
-					SequenceStep::PlaySound(instance_id, sound) => {
+					SequenceStep::PlaySound {
+						id: instance_id,
+						sound,
+						settings,
+					} => {
 						let controller = self.instance_controllers[instance_id.0].clone();
 						controller.reset();
-						let instance = Instance::new(sound.clone(), controller);
+						let instance = Instance::new(
+							sound.clone(),
+							controller,
+							if let Some(track) = &settings.track {
+								track.clone()
+							} else {
+								main_track_input.clone()
+							},
+						);
 						self.instance_queue.push(instance);
 						self.start_step(self.position + 1);
 					}

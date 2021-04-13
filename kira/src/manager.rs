@@ -14,13 +14,16 @@ use ringbuf::{Producer, RingBuffer};
 use crate::{
 	error::CommandQueueFullError,
 	metronome::{handle::MetronomeHandle, settings::MetronomeSettings, Metronome, MetronomeState},
+	mixer::track::{handle::TrackHandle, settings::SubTrackSettings, SubTrack, TrackInput},
 	parameter::Parameter,
 	sequence::{
 		instance::{handle::SequenceInstanceHandle, SequenceInstance},
 		Sequence,
 	},
 	sound::{
-		instance::{handle::InstanceHandle, Instance, InstanceController},
+		instance::{
+			handle::InstanceHandle, settings::InstanceSettings, Instance, InstanceController,
+		},
 		Sound,
 	},
 };
@@ -33,6 +36,7 @@ pub struct AudioManagerSettings {
 	num_metronomes: usize,
 	num_sequences: usize,
 	num_parameters: usize,
+	num_sub_tracks: usize,
 }
 
 impl Default for AudioManagerSettings {
@@ -43,6 +47,7 @@ impl Default for AudioManagerSettings {
 			num_metronomes: 10,
 			num_sequences: 25,
 			num_parameters: 100,
+			num_sub_tracks: 25,
 		}
 	}
 }
@@ -52,6 +57,7 @@ pub struct AudioManager {
 	command_producer: Producer<Command>,
 	collector: Collector,
 	collector_handle: Handle,
+	main_track_input: TrackInput,
 }
 
 impl AudioManager {
@@ -59,16 +65,17 @@ impl AudioManager {
 		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
 		let collector = Collector::new();
 		let collector_handle = collector.handle();
+		let host = cpal::default_host();
+		let device = host
+			.default_output_device()
+			.ok_or(SetupError::NoDefaultOutputDevice)?;
+		let config = device.default_output_config()?.config();
+		let sample_rate = config.sample_rate.0;
+		let channels = config.channels;
+		let mut backend = Backend::new(sample_rate, command_consumer, &collector_handle, settings);
+		let main_track_input = backend.main_track_input();
 		Ok(Self {
 			_stream: {
-				let host = cpal::default_host();
-				let device = host
-					.default_output_device()
-					.ok_or(SetupError::NoDefaultOutputDevice)?;
-				let config = device.default_output_config()?.config();
-				let sample_rate = config.sample_rate.0;
-				let channels = config.channels;
-				let mut backend = Backend::new(sample_rate, command_consumer, settings);
 				let stream = device.build_output_stream(
 					&config,
 					move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
@@ -90,12 +97,21 @@ impl AudioManager {
 			command_producer,
 			collector,
 			collector_handle,
+			main_track_input,
 		})
 	}
 
-	pub fn play(&mut self, sound: Arc<Sound>) -> Result<InstanceHandle, CommandQueueFullError> {
+	pub fn play(
+		&mut self,
+		sound: Arc<Sound>,
+		settings: InstanceSettings,
+	) -> Result<InstanceHandle, CommandQueueFullError> {
 		let controller = Shared::new(&self.collector_handle, InstanceController::new());
-		let instance = Instance::new(sound, controller.clone());
+		let instance = Instance::new(
+			sound,
+			controller.clone(),
+			settings.track.unwrap_or(self.main_track_input.clone()),
+		);
 		let handle = InstanceHandle::new(controller.clone());
 		self.command_producer
 			.push(Command::StartInstance { instance })
@@ -148,5 +164,21 @@ impl AudioManager {
 			.push(Command::AddParameter(parameter.clone()))
 			.map_err(|_| CommandQueueFullError)?;
 		Ok(parameter)
+	}
+
+	pub fn add_sub_track(
+		&mut self,
+		settings: SubTrackSettings,
+	) -> Result<TrackHandle, CommandQueueFullError> {
+		let sub_track = SubTrack::new(
+			&self.collector_handle,
+			settings.parent.unwrap_or(self.main_track_input.clone()),
+			settings.volume,
+		);
+		let handle = TrackHandle::new(sub_track.input().clone());
+		self.command_producer
+			.push(Command::AddSubTrack(sub_track))
+			.map_err(|_| CommandQueueFullError)?;
+		Ok(handle)
 	}
 }

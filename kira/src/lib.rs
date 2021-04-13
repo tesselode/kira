@@ -3,6 +3,7 @@ pub mod error;
 mod frame;
 pub mod manager;
 pub mod metronome;
+pub mod mixer;
 pub mod parameter;
 pub mod sequence;
 pub mod sound;
