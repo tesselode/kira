@@ -1,9 +1,8 @@
 use std::{f32::consts::PI, vec};
 
-use criterion::{criterion_group, criterion_main, Criterion, Fun};
+use criterion::{criterion_group, criterion_main, Criterion};
 use kira::{
-	instance::handle::InstanceHandle,
-	manager::{AudioManager, AudioManagerSettings, Backend},
+	manager::{AudioManager, AudioManagerSettings},
 	sound::{Sound, SoundSettings},
 	Frame,
 };
@@ -27,58 +26,29 @@ fn create_test_sound(num_samples: usize) -> Sound {
 	)
 }
 
-fn create_manager_with_instances(
-	num_instances: usize,
-) -> (AudioManager, Backend, Vec<InstanceHandle>) {
-	let (mut audio_manager, mut backend) =
-		AudioManager::new_without_audio_thread(AudioManagerSettings {
-			num_instances: num_instances,
-			num_commands: num_instances,
-			..Default::default()
-		});
-	// add a test sound
-	let mut sound_handle = audio_manager.add_sound(create_test_sound(48000)).unwrap();
-	backend.process();
-	// start a bunch of instances
-	let instance_handles = (0..num_instances)
-		.map(|_| sound_handle.play(Default::default()).unwrap())
-		.collect();
-	backend.process();
-	(audio_manager, backend, instance_handles)
-}
-
 fn instances_benchmark(c: &mut Criterion) {
-	const NUM_INSTANCES: usize = 100_000;
-	c.bench_functions(
-		"instances",
-		vec![
-			Fun::new("no playback rate change", |b, _| {
-				let (audio_manager, mut backend, instance_handles) =
-					create_manager_with_instances(NUM_INSTANCES);
-				b.iter(|| backend.process());
-				drop(instance_handles);
-				drop(backend);
-				drop(audio_manager);
-			}),
-			Fun::new("with playback rate change", |b, _| {
-				let (audio_manager, mut backend, mut instance_handles) =
-					create_manager_with_instances(NUM_INSTANCES);
-				let mut instance_to_update = 0;
-				b.iter(|| {
-					instance_handles[instance_to_update]
-						.set_playback_rate(0.5..1.5)
-						.unwrap();
-					instance_to_update += 1;
-					instance_to_update %= NUM_INSTANCES;
-					backend.process();
-				});
-				drop(instance_handles);
-				drop(backend);
-				drop(audio_manager);
-			}),
-		],
-		(),
-	);
+	let mut benchmark_group = c.benchmark_group("instances");
+
+	benchmark_group.bench_function("one sound", |b| {
+		const NUM_INSTANCES: usize = 100_000;
+		let (mut audio_manager, mut backend) =
+			AudioManager::new_without_audio_thread(AudioManagerSettings {
+				num_instances: NUM_INSTANCES,
+				num_commands: NUM_INSTANCES,
+				..Default::default()
+			});
+		// add a test sound
+		let mut sound_handle = audio_manager.add_sound(create_test_sound(48000)).unwrap();
+		backend.process();
+		// start a bunch of instances
+		for _ in 0..NUM_INSTANCES {
+			sound_handle.play(Default::default()).unwrap();
+		}
+		backend.process();
+		b.iter(|| backend.process());
+		drop(backend);
+		drop(audio_manager);
+	});
 }
 
 criterion_group!(benches, instances_benchmark);
