@@ -2,9 +2,12 @@ pub mod handle;
 pub mod settings;
 
 use atomig::{Atomic, Ordering};
-use basedrop::{Handle, Shared};
+use basedrop::{Handle, Owned, Shared};
+use ringbuf::Consumer;
 
 use crate::{value::Value, Frame};
+
+use super::effect_slot::EffectSlot;
 
 #[derive(Clone)]
 pub(crate) struct TrackInput(Shared<Atomic<Frame>>);
@@ -31,6 +34,8 @@ pub(crate) struct Track {
 	input: TrackInput,
 	output_dest: Option<TrackInput>,
 	volume: Value<f64>,
+	effect_slots: Vec<EffectSlot>,
+	effect_slot_consumer: Owned<Consumer<EffectSlot>>,
 }
 
 impl Track {
@@ -38,11 +43,15 @@ impl Track {
 		collector_handle: &Handle,
 		output_dest: Option<TrackInput>,
 		volume: Value<f64>,
+		effect_capacity: usize,
+		effect_slot_consumer: Owned<Consumer<EffectSlot>>,
 	) -> Self {
 		Self {
 			input: TrackInput::new(collector_handle),
 			output_dest,
 			volume,
+			effect_slots: Vec::with_capacity(effect_capacity),
+			effect_slot_consumer,
 		}
 	}
 
@@ -50,8 +59,17 @@ impl Track {
 		&self.input
 	}
 
-	pub fn process(&self) -> Frame {
-		let out = self.input.take() * self.volume.get() as f32;
+	pub fn process(&mut self, dt: f64) -> Frame {
+		while let Some(effect_slot) = self.effect_slot_consumer.pop() {
+			if self.effect_slots.len() < self.effect_slots.capacity() {
+				self.effect_slots.push(effect_slot);
+			}
+		}
+
+		let mut out = self.input.take() * self.volume.get() as f32;
+		for effect_slot in &mut self.effect_slots {
+			out = effect_slot.process(out, dt);
+		}
 		if let Some(output_dest) = &self.output_dest {
 			output_dest.add(out);
 		}

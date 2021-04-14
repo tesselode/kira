@@ -109,6 +109,6 @@ impl Backend {
 		self.update_metronomes();
 		self.update_sequence_instances();
 		self.process_instances();
-		self.mixer.process()
+		self.mixer.process(self.dt)
 	}
 }

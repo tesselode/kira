@@ -6,6 +6,7 @@ use super::{handle::TrackHandle, TrackInput};
 pub struct SubTrackSettings {
 	pub(crate) volume: Value<f64>,
 	pub(crate) parent: Option<TrackInput>,
+	pub(crate) num_effects: usize,
 }
 
 impl SubTrackSettings {
@@ -13,6 +14,7 @@ impl SubTrackSettings {
 		Self {
 			volume: Value::Fixed(1.0),
 			parent: None,
+			num_effects: 10,
 		}
 	}
 
@@ -26,6 +28,13 @@ impl SubTrackSettings {
 	pub fn parent(self, parent: &TrackHandle) -> Self {
 		Self {
 			parent: Some(parent.input()),
+			..self
+		}
+	}
+
+	pub fn num_effects(self, num_effects: usize) -> Self {
+		Self {
+			num_effects,
 			..self
 		}
 	}

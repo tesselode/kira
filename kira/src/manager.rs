@@ -4,7 +4,7 @@ pub mod error;
 
 use std::{hash::Hash, sync::Arc};
 
-use basedrop::{Collector, Handle, Shared};
+use basedrop::{Collector, Handle, Owned, Shared};
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	Stream,
@@ -59,6 +59,7 @@ impl Default for AudioManagerSettings {
 
 pub struct AudioManager {
 	_stream: Option<Stream>,
+	sample_rate: u32,
 	command_producer: Producer<Command>,
 	collector: Collector,
 	collector_handle: Handle,
@@ -99,6 +100,7 @@ impl AudioManager {
 				stream.play()?;
 				stream
 			}),
+			sample_rate,
 			command_producer,
 			collector,
 			collector_handle,
@@ -121,6 +123,7 @@ impl AudioManager {
 		let main_track_input = backend.main_track_input();
 		let audio_manager = Self {
 			_stream: None,
+			sample_rate: SAMPLE_RATE,
 			command_producer,
 			collector,
 			collector_handle,
@@ -198,12 +201,21 @@ impl AudioManager {
 		&mut self,
 		settings: SubTrackSettings,
 	) -> Result<TrackHandle, CommandQueueFullError> {
+		let (effect_slot_producer, effect_slot_consumer) =
+			RingBuffer::new(settings.num_effects).split();
 		let sub_track = Track::new(
 			&self.collector_handle,
 			Some(settings.parent.unwrap_or(self.main_track_input.clone())),
 			settings.volume,
+			settings.num_effects,
+			Owned::new(&self.collector_handle, effect_slot_consumer),
 		);
-		let handle = TrackHandle::new(sub_track.input().clone());
+		let handle = TrackHandle::new(
+			sub_track.input().clone(),
+			effect_slot_producer,
+			self.collector.handle(),
+			self.sample_rate,
+		);
 		self.command_producer
 			.push(Command::AddSubTrack(sub_track))
 			.map_err(|_| CommandQueueFullError)?;
