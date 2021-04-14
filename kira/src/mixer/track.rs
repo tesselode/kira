@@ -27,36 +27,18 @@ impl TrackInput {
 	}
 }
 
-pub(crate) struct MainTrack {
+pub(crate) struct Track {
 	input: TrackInput,
+	output_dest: Option<TrackInput>,
 	volume: Value<f64>,
 }
 
-impl MainTrack {
-	pub fn new(collector_handle: &Handle) -> Self {
-		Self {
-			input: TrackInput::new(collector_handle),
-			volume: Value::Fixed(1.0),
-		}
-	}
-
-	pub fn input(&self) -> &TrackInput {
-		&self.input
-	}
-
-	pub fn process(&self) -> Frame {
-		self.input.take() * self.volume.get() as f32
-	}
-}
-
-pub(crate) struct SubTrack {
-	input: TrackInput,
-	output_dest: TrackInput,
-	volume: Value<f64>,
-}
-
-impl SubTrack {
-	pub fn new(collector_handle: &Handle, output_dest: TrackInput, volume: Value<f64>) -> Self {
+impl Track {
+	pub fn new(
+		collector_handle: &Handle,
+		output_dest: Option<TrackInput>,
+		volume: Value<f64>,
+	) -> Self {
 		Self {
 			input: TrackInput::new(collector_handle),
 			output_dest,
@@ -68,8 +50,11 @@ impl SubTrack {
 		&self.input
 	}
 
-	pub fn process(&self) {
+	pub fn process(&self) -> Frame {
 		let out = self.input.take() * self.volume.get() as f32;
-		self.output_dest.add(out);
+		if let Some(output_dest) = &self.output_dest {
+			output_dest.add(out);
+		}
+		out
 	}
 }

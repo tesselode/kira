@@ -1,29 +1,29 @@
 use basedrop::Handle;
 
-use crate::Frame;
+use crate::{value::Value, Frame};
 
-use self::track::{MainTrack, SubTrack};
+use self::track::Track;
 
 pub mod track;
 
 pub(crate) struct Mixer {
-	main_track: MainTrack,
-	sub_tracks: Vec<SubTrack>,
+	main_track: Track,
+	sub_tracks: Vec<Track>,
 }
 
 impl Mixer {
 	pub fn new(collector_handle: &Handle, sub_track_capacity: usize) -> Self {
 		Self {
-			main_track: MainTrack::new(collector_handle),
+			main_track: Track::new(collector_handle, None, Value::Fixed(1.0)),
 			sub_tracks: Vec::with_capacity(sub_track_capacity),
 		}
 	}
 
-	pub fn main_track(&self) -> &MainTrack {
+	pub fn main_track(&self) -> &Track {
 		&self.main_track
 	}
 
-	pub fn add_sub_track(&mut self, track: SubTrack) {
+	pub fn add_sub_track(&mut self, track: Track) {
 		self.sub_tracks.push(track);
 	}
 

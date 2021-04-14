@@ -14,7 +14,7 @@ use ringbuf::{Producer, RingBuffer};
 use crate::{
 	error::CommandQueueFullError,
 	metronome::{handle::MetronomeHandle, settings::MetronomeSettings, Metronome, MetronomeState},
-	mixer::track::{handle::TrackHandle, settings::SubTrackSettings, SubTrack, TrackInput},
+	mixer::track::{handle::TrackHandle, settings::SubTrackSettings, Track, TrackInput},
 	parameter::Parameter,
 	sequence::{
 		instance::{handle::SequenceInstanceHandle, SequenceInstance},
@@ -170,9 +170,9 @@ impl AudioManager {
 		&mut self,
 		settings: SubTrackSettings,
 	) -> Result<TrackHandle, CommandQueueFullError> {
-		let sub_track = SubTrack::new(
+		let sub_track = Track::new(
 			&self.collector_handle,
-			settings.parent.unwrap_or(self.main_track_input.clone()),
+			Some(settings.parent.unwrap_or(self.main_track_input.clone())),
 			settings.volume,
 		);
 		let handle = TrackHandle::new(sub_track.input().clone());
