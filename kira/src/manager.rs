@@ -28,15 +28,20 @@ use crate::{
 	},
 };
 
-use self::{backend::Backend, command::Command, error::SetupError};
+#[cfg(not(feature = "benchmarking"))]
+use backend::Backend;
+#[cfg(feature = "benchmarking")]
+pub use backend::Backend;
+
+use self::{command::Command, error::SetupError};
 
 pub struct AudioManagerSettings {
-	num_commands: usize,
-	num_instances: usize,
-	num_metronomes: usize,
-	num_sequences: usize,
-	num_parameters: usize,
-	num_sub_tracks: usize,
+	pub num_commands: usize,
+	pub num_instances: usize,
+	pub num_metronomes: usize,
+	pub num_sequences: usize,
+	pub num_parameters: usize,
+	pub num_sub_tracks: usize,
 }
 
 impl Default for AudioManagerSettings {
@@ -53,7 +58,7 @@ impl Default for AudioManagerSettings {
 }
 
 pub struct AudioManager {
-	_stream: Stream,
+	_stream: Option<Stream>,
 	command_producer: Producer<Command>,
 	collector: Collector,
 	collector_handle: Handle,
@@ -75,7 +80,7 @@ impl AudioManager {
 		let mut backend = Backend::new(sample_rate, command_consumer, &collector_handle, settings);
 		let main_track_input = backend.main_track_input();
 		Ok(Self {
-			_stream: {
+			_stream: Some({
 				let stream = device.build_output_stream(
 					&config,
 					move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
@@ -93,12 +98,35 @@ impl AudioManager {
 				)?;
 				stream.play()?;
 				stream
-			},
+			}),
 			command_producer,
 			collector,
 			collector_handle,
 			main_track_input,
 		})
+	}
+
+	#[cfg(any(feature = "benchmarking", test))]
+	/// Creates an [`AudioManager`] and [`Backend`] without sending
+	/// the backend to another thread.
+	///
+	/// This is useful for updating the backend manually for
+	/// benchmarking.
+	pub fn new_without_audio_thread(settings: AudioManagerSettings) -> (Self, Backend) {
+		const SAMPLE_RATE: u32 = 48000;
+		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
+		let collector = Collector::new();
+		let collector_handle = collector.handle();
+		let backend = Backend::new(SAMPLE_RATE, command_consumer, &collector_handle, settings);
+		let main_track_input = backend.main_track_input();
+		let audio_manager = Self {
+			_stream: None,
+			command_producer,
+			collector,
+			collector_handle,
+			main_track_input,
+		};
+		(audio_manager, backend)
 	}
 
 	pub fn play(
