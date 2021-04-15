@@ -5,7 +5,7 @@ use thiserror::Error;
 /// Something that can go wrong when loading a sound
 /// from a file.
 #[derive(Debug, Error)]
-pub enum SoundFromFileError {
+pub enum StaticSoundDataFromFileError {
 	/// The sound has more than two channels.
 	#[error("Only mono and stereo audio is supported")]
 	UnsupportedChannelConfiguration,

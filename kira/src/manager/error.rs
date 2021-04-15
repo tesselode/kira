@@ -1,6 +1,8 @@
 use cpal::{BuildStreamError, DefaultStreamConfigError, PlayStreamError};
 use thiserror::Error;
 
+use crate::sound::data::static_sound::error::StaticSoundDataFromFileError;
+
 /// Things that can go wrong when creating an `AudioManager`.
 #[derive(Debug, Error)]
 pub enum SetupError {
@@ -19,4 +21,16 @@ pub enum SetupError {
 	/// An error occured when starting the audio stream.
 	#[error("{0}")]
 	PlayStreamError(#[from] PlayStreamError),
+}
+
+/// Things that can go wrong when loading a sound from a file.
+#[derive(Debug, Error)]
+pub enum LoadSoundError {
+	/// An error occurred while loading the sound data.
+	#[error("{0}")]
+	StaticSoundDataFromFileError(#[from] StaticSoundDataFromFileError),
+
+	/// The command queue is full, so commands cannot be sent to the audio thread.
+	#[error("The command queue is full, so commands cannot be sent to the audio thread")]
+	CommandQueueFullError,
 }

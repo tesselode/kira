@@ -2,7 +2,7 @@ mod backend;
 pub(crate) mod command;
 pub mod error;
 
-use std::{hash::Hash, sync::Arc};
+use std::{hash::Hash, path::Path, sync::Arc};
 
 use basedrop::{Collector, Handle, Owned, Shared};
 use cpal::{
@@ -21,7 +21,7 @@ use crate::{
 		Sequence,
 	},
 	sound::{
-		data::SoundData,
+		data::{static_sound::StaticSoundData, SoundData},
 		handle::SoundHandle,
 		instance::{
 			handle::InstanceHandle, settings::InstanceSettings, Instance, InstanceController,
@@ -35,7 +35,10 @@ use backend::Backend;
 #[cfg(feature = "benchmarking")]
 pub use backend::Backend;
 
-use self::{command::Command, error::SetupError};
+use self::{
+	command::Command,
+	error::{LoadSoundError, SetupError},
+};
 
 pub struct AudioManagerSettings {
 	pub num_commands: usize,
@@ -145,6 +148,15 @@ impl AudioManager {
 		self.command_producer
 			.push(Command::AddSound(sound))
 			.map_err(|_| CommandQueueFullError)?;
+		Ok(handle)
+	}
+
+	#[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
+	pub fn load_sound(&mut self, path: impl AsRef<Path>) -> Result<SoundHandle, LoadSoundError> {
+		let data = StaticSoundData::from_file(path)?;
+		let handle = self
+			.add_sound(data)
+			.map_err(|_| LoadSoundError::CommandQueueFullError)?;
 		Ok(handle)
 	}
 
