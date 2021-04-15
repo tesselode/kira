@@ -3,7 +3,7 @@ pub mod routes;
 pub mod settings;
 
 use atomig::{Atomic, Ordering};
-use basedrop::{Handle, Owned, Shared};
+use basedrop::{Handle, Shared};
 use ringbuf::Consumer;
 
 use crate::{value::Value, Frame};

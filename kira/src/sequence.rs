@@ -4,13 +4,11 @@ pub(crate) mod instance;
 use std::{
 	collections::{HashMap, HashSet},
 	hash::Hash,
-	sync::Arc,
 };
 
 use basedrop::Shared;
 
 use crate::{
-	mixer::track::TrackInput,
 	sound::{handle::SoundHandle, instance::settings::InstanceSettings, Sound},
 	Duration,
 };

@@ -1,7 +1,7 @@
 pub mod handle;
 pub mod settings;
 
-use std::sync::{atomic::AtomicUsize, Arc};
+use std::sync::atomic::AtomicUsize;
 
 use atomig::{Atom, Atomic, Ordering};
 use basedrop::Shared;

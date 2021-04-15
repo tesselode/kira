@@ -2,7 +2,7 @@ mod backend;
 pub(crate) mod command;
 pub mod error;
 
-use std::{hash::Hash, path::Path, sync::Arc};
+use std::{hash::Hash, path::Path};
 
 use basedrop::{Collector, Handle, Owned, Shared};
 use cpal::{
