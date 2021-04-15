@@ -37,7 +37,7 @@ pub use backend::Backend;
 
 use self::{
 	command::Command,
-	error::{LoadSoundError, SetupError},
+	error::{LoadSoundError, SetupError, StartSequenceError},
 };
 
 pub struct AudioManagerSettings {
@@ -201,7 +201,8 @@ impl AudioManager {
 		&mut self,
 		sequence: Sequence<Event>,
 		metronome: impl Into<Option<&'a MetronomeHandle>>,
-	) -> Result<SequenceInstanceHandle<Event>, CommandQueueFullError> {
+	) -> Result<SequenceInstanceHandle<Event>, StartSequenceError> {
+		sequence.validate()?;
 		let (raw_sequence, events) = sequence.create_raw_sequence();
 		let (event_producer, event_consumer) = RingBuffer::new(events.len()).split();
 		let instance = SequenceInstance::new(
@@ -213,7 +214,7 @@ impl AudioManager {
 		let handle = SequenceInstanceHandle::new(events, event_consumer);
 		self.command_producer
 			.push(Command::StartSequenceInstance(instance))
-			.map_err(|_| CommandQueueFullError)?;
+			.map_err(|_| StartSequenceError::CommandQueueFullError)?;
 		Ok(handle)
 	}
 
