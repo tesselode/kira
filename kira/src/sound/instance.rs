@@ -6,7 +6,7 @@ use std::sync::{atomic::AtomicUsize, Arc};
 use atomig::{Atom, Atomic, Ordering};
 use basedrop::Shared;
 
-use crate::{mixer::track::TrackInput, Frame};
+use crate::mixer::track::TrackInput;
 
 use super::Sound;
 
@@ -80,7 +80,7 @@ pub enum InstancePlaybackState {
 
 pub(crate) struct Instance {
 	id: InstanceId,
-	sound: Arc<Sound>,
+	sound: Shared<Sound>,
 	controller: Shared<InstanceController>,
 	playback_state: InstancePlaybackState,
 	playback_position: f64,
@@ -89,7 +89,7 @@ pub(crate) struct Instance {
 
 impl Instance {
 	pub fn new(
-		sound: Arc<Sound>,
+		sound: Shared<Sound>,
 		controller: Shared<InstanceController>,
 		output_dest: TrackInput,
 	) -> Self {
@@ -146,7 +146,7 @@ impl Instance {
 			self.playback_state = controller.playback_state.load(Ordering::SeqCst);
 		}
 		if let InstancePlaybackState::Playing = self.playback_state {
-			let output = self.sound.get_frame_at_position(self.playback_position);
+			let output = self.sound.frame_at_position(self.playback_position);
 			self.playback_position += dt;
 			if let Some(controller) = self.controller() {
 				controller

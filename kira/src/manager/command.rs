@@ -1,11 +1,15 @@
-use basedrop::Owned;
+use basedrop::{Owned, Shared};
 
 use crate::{
-	metronome::Metronome, mixer::track::Track, parameter::Parameter,
-	sequence::instance::SequenceInstance, sound::instance::Instance,
+	metronome::Metronome,
+	mixer::track::Track,
+	parameter::Parameter,
+	sequence::instance::SequenceInstance,
+	sound::{instance::Instance, Sound},
 };
 
 pub(crate) enum Command {
+	AddSound(Shared<Sound>),
 	StartInstance { instance: Instance },
 	StartSequenceInstance(SequenceInstance),
 	AddMetronome(Metronome),

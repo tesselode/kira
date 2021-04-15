@@ -21,6 +21,8 @@ use crate::{
 		Sequence,
 	},
 	sound::{
+		data::SoundData,
+		handle::SoundHandle,
 		instance::{
 			handle::InstanceHandle, settings::InstanceSettings, Instance, InstanceController,
 		},
@@ -37,6 +39,7 @@ use self::{command::Command, error::SetupError};
 
 pub struct AudioManagerSettings {
 	pub num_commands: usize,
+	pub num_sounds: usize,
 	pub num_instances: usize,
 	pub num_metronomes: usize,
 	pub num_sequences: usize,
@@ -48,6 +51,7 @@ impl Default for AudioManagerSettings {
 	fn default() -> Self {
 		Self {
 			num_commands: 100,
+			num_sounds: 100,
 			num_instances: 100,
 			num_metronomes: 10,
 			num_sequences: 25,
@@ -132,14 +136,26 @@ impl AudioManager {
 		(audio_manager, backend)
 	}
 
+	pub fn add_sound(
+		&mut self,
+		data: impl SoundData + 'static,
+	) -> Result<SoundHandle, CommandQueueFullError> {
+		let sound = Shared::new(&self.collector_handle, Sound::new(data));
+		let handle = SoundHandle::new(sound.clone());
+		self.command_producer
+			.push(Command::AddSound(sound))
+			.map_err(|_| CommandQueueFullError)?;
+		Ok(handle)
+	}
+
 	pub fn play(
 		&mut self,
-		sound: Arc<Sound>,
+		sound: &SoundHandle,
 		settings: InstanceSettings,
 	) -> Result<InstanceHandle, CommandQueueFullError> {
 		let controller = Shared::new(&self.collector_handle, InstanceController::new());
 		let instance = Instance::new(
-			sound,
+			sound.sound().clone(),
 			controller.clone(),
 			settings.track.unwrap_or(self.main_track_input.clone()),
 		);

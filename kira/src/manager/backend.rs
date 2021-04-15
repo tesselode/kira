@@ -1,4 +1,4 @@
-use basedrop::Handle;
+use basedrop::{Handle, Shared};
 use ringbuf::Consumer;
 
 use crate::{
@@ -6,7 +6,10 @@ use crate::{
 	mixer::{track::TrackInput, Mixer},
 	parameter::Parameter,
 	sequence::instance::SequenceInstance,
-	sound::instance::{Instance, InstancePlaybackState},
+	sound::{
+		instance::{Instance, InstancePlaybackState},
+		Sound,
+	},
 	Frame,
 };
 
@@ -16,6 +19,7 @@ pub struct Backend {
 	sample_rate: u32,
 	dt: f64,
 	command_consumer: Consumer<Command>,
+	sounds: Vec<Shared<Sound>>,
 	instances: Vec<Instance>,
 	metronomes: Vec<Metronome>,
 	sequence_instances: Vec<SequenceInstance>,
@@ -34,6 +38,7 @@ impl Backend {
 			sample_rate,
 			dt: 1.0 / sample_rate as f64,
 			command_consumer,
+			sounds: Vec::with_capacity(settings.num_sounds),
 			instances: Vec::with_capacity(settings.num_instances),
 			metronomes: Vec::with_capacity(settings.num_metronomes),
 			sequence_instances: Vec::with_capacity(settings.num_sequences),
@@ -84,6 +89,11 @@ impl Backend {
 	pub fn process(&mut self) -> Frame {
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
+				Command::AddSound(sound) => {
+					if self.sounds.len() < self.sounds.capacity() {
+						self.sounds.push(sound);
+					}
+				}
 				Command::StartInstance { instance } => {
 					if self.instances.len() < self.instances.capacity() {
 						self.instances.push(instance);
@@ -96,10 +106,14 @@ impl Backend {
 					}
 				}
 				Command::AddMetronome(metronome) => {
-					self.metronomes.push(metronome);
+					if self.metronomes.len() < self.metronomes.capacity() {
+						self.metronomes.push(metronome);
+					}
 				}
 				Command::AddParameter(parameter) => {
-					self.parameters.push(parameter);
+					if self.parameters.len() < self.parameters.capacity() {
+						self.parameters.push(parameter);
+					}
 				}
 				Command::AddSubTrack(sub_track) => self.mixer.add_sub_track(sub_track),
 			}

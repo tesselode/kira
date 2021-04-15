@@ -7,9 +7,11 @@ use std::{
 	sync::Arc,
 };
 
+use basedrop::Shared;
+
 use crate::{
 	mixer::track::TrackInput,
-	sound::{instance::settings::InstanceSettings, Sound},
+	sound::{handle::SoundHandle, instance::settings::InstanceSettings, Sound},
 	Duration,
 };
 
@@ -23,7 +25,7 @@ enum SequenceStep<Event: Clone + Eq + Hash> {
 	WaitForInterval(f64),
 	PlaySound {
 		id: SequenceLocalInstanceId,
-		sound: Arc<Sound>,
+		sound: Shared<Sound>,
 		settings: InstanceSettings,
 	},
 	PauseInstance(SequenceLocalInstanceId),
@@ -67,14 +69,14 @@ impl<Event: Clone + Eq + Hash> Sequence<Event> {
 
 	pub fn play(
 		&mut self,
-		sound: Arc<Sound>,
+		sound: &SoundHandle,
 		settings: InstanceSettings,
 	) -> SequenceLocalInstanceId {
 		let id = SequenceLocalInstanceId(self.next_instance_id);
 		self.next_instance_id += 1;
 		self.steps.push(SequenceStep::PlaySound {
 			id,
-			sound,
+			sound: sound.sound().clone(),
 			settings,
 		});
 		id
