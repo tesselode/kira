@@ -205,10 +205,10 @@ impl AudioManager {
 			RingBuffer::new(settings.num_effects).split();
 		let sub_track = Track::new(
 			&self.collector_handle,
-			Some(settings.parent.unwrap_or(self.main_track_input.clone())),
+			settings.routes.to_vec(self.main_track_input.clone()),
 			settings.volume,
 			settings.num_effects,
-			Owned::new(&self.collector_handle, effect_slot_consumer),
+			effect_slot_consumer,
 		);
 		let handle = TrackHandle::new(
 			sub_track.input().clone(),
@@ -217,7 +217,10 @@ impl AudioManager {
 			self.sample_rate,
 		);
 		self.command_producer
-			.push(Command::AddSubTrack(sub_track))
+			.push(Command::AddSubTrack(Owned::new(
+				&self.collector_handle,
+				sub_track,
+			)))
 			.map_err(|_| CommandQueueFullError)?;
 		Ok(handle)
 	}

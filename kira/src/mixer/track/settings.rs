@@ -1,11 +1,11 @@
 use crate::value::Value;
 
-use super::{handle::TrackHandle, TrackInput};
+use super::{handle::TrackHandle, routes::TrackRoutes, TrackInput};
 
 #[derive(Clone)]
 pub struct SubTrackSettings {
 	pub(crate) volume: Value<f64>,
-	pub(crate) parent: Option<TrackInput>,
+	pub(crate) routes: TrackRoutes,
 	pub(crate) num_effects: usize,
 }
 
@@ -13,7 +13,7 @@ impl SubTrackSettings {
 	pub fn new() -> Self {
 		Self {
 			volume: Value::Fixed(1.0),
-			parent: None,
+			routes: TrackRoutes::default(),
 			num_effects: 10,
 		}
 	}
@@ -25,11 +25,8 @@ impl SubTrackSettings {
 		}
 	}
 
-	pub fn parent(self, parent: &TrackHandle) -> Self {
-		Self {
-			parent: Some(parent.input()),
-			..self
-		}
+	pub fn routes(self, routes: TrackRoutes) -> Self {
+		Self { routes, ..self }
 	}
 
 	pub fn num_effects(self, num_effects: usize) -> Self {

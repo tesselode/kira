@@ -11,7 +11,7 @@ use self::track::Track;
 
 pub(crate) struct Mixer {
 	main_track: Track,
-	sub_tracks: Vec<Track>,
+	sub_tracks: Vec<Owned<Track>>,
 }
 
 impl Mixer {
@@ -21,10 +21,10 @@ impl Mixer {
 		Self {
 			main_track: Track::new(
 				collector_handle,
-				None,
+				vec![],
 				Value::Fixed(1.0),
 				0,
-				Owned::new(collector_handle, effect_slot_consumer),
+				effect_slot_consumer,
 			),
 			sub_tracks: Vec::with_capacity(sub_track_capacity),
 		}
@@ -34,7 +34,7 @@ impl Mixer {
 		&self.main_track
 	}
 
-	pub fn add_sub_track(&mut self, track: Track) {
+	pub fn add_sub_track(&mut self, track: Owned<Track>) {
 		self.sub_tracks.push(track);
 	}
 

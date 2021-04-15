@@ -1,4 +1,5 @@
 pub mod handle;
+pub mod routes;
 pub mod settings;
 
 use atomig::{Atomic, Ordering};
@@ -32,23 +33,23 @@ impl TrackInput {
 
 pub(crate) struct Track {
 	input: TrackInput,
-	output_dest: Option<TrackInput>,
+	routes: Vec<(TrackInput, f64)>,
 	volume: Value<f64>,
 	effect_slots: Vec<EffectSlot>,
-	effect_slot_consumer: Owned<Consumer<EffectSlot>>,
+	effect_slot_consumer: Consumer<EffectSlot>,
 }
 
 impl Track {
 	pub fn new(
 		collector_handle: &Handle,
-		output_dest: Option<TrackInput>,
+		routes: Vec<(TrackInput, f64)>,
 		volume: Value<f64>,
 		effect_capacity: usize,
-		effect_slot_consumer: Owned<Consumer<EffectSlot>>,
+		effect_slot_consumer: Consumer<EffectSlot>,
 	) -> Self {
 		Self {
 			input: TrackInput::new(collector_handle),
-			output_dest,
+			routes,
 			volume,
 			effect_slots: Vec::with_capacity(effect_capacity),
 			effect_slot_consumer,
@@ -70,8 +71,8 @@ impl Track {
 		for effect_slot in &mut self.effect_slots {
 			out = effect_slot.process(out, dt);
 		}
-		if let Some(output_dest) = &self.output_dest {
-			output_dest.add(out);
+		for (input, level) in &self.routes {
+			input.add(out * *level as f32);
 		}
 		out
 	}
