@@ -23,9 +23,7 @@ use crate::{
 	sound::{
 		data::{static_sound::StaticSoundData, SoundData},
 		handle::SoundHandle,
-		instance::{
-			handle::InstanceHandle, settings::InstanceSettings, Instance, InstanceController,
-		},
+		instance::{handle::InstanceHandle, settings::InstanceSettings, Instance},
 		Sound,
 	},
 };
@@ -85,7 +83,7 @@ impl AudioManager {
 		let config = device.default_output_config()?.config();
 		let sample_rate = config.sample_rate.0;
 		let channels = config.channels;
-		let mut backend = Backend::new(sample_rate, command_consumer, &collector_handle, settings);
+		let mut backend = Backend::new(sample_rate, command_consumer, collector.handle(), settings);
 		let main_track_input = backend.main_track_input();
 		Ok(Self {
 			_stream: Some({
@@ -126,7 +124,7 @@ impl AudioManager {
 		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
 		let collector = Collector::new();
 		let collector_handle = collector.handle();
-		let backend = Backend::new(SAMPLE_RATE, command_consumer, &collector_handle, settings);
+		let backend = Backend::new(SAMPLE_RATE, command_consumer, collector.handle(), settings);
 		let main_track_input = backend.main_track_input();
 		let audio_manager = Self {
 			_stream: None,
@@ -165,15 +163,16 @@ impl AudioManager {
 		sound: &SoundHandle,
 		settings: InstanceSettings,
 	) -> Result<InstanceHandle, CommandQueueFullError> {
-		let controller = Shared::new(&self.collector_handle, InstanceController::new());
-		let instance = Instance::new(
-			sound.sound().clone(),
-			controller.clone(),
-			settings.track.unwrap_or(self.main_track_input.clone()),
+		let instance = Shared::new(
+			&self.collector_handle,
+			Instance::new(
+				sound.sound().clone(),
+				settings.track.unwrap_or(self.main_track_input.clone()),
+			),
 		);
-		let handle = InstanceHandle::new(controller.clone());
+		let handle = InstanceHandle::new(instance.clone());
 		self.command_producer
-			.push(Command::StartInstance { instance })
+			.push(Command::StartInstance(instance))
 			.map_err(|_| CommandQueueFullError)?;
 		Ok(handle)
 	}
@@ -208,7 +207,6 @@ impl AudioManager {
 		let instance = SequenceInstance::new(
 			raw_sequence,
 			metronome.into().map(|handle| handle.state()),
-			&self.collector_handle,
 			event_producer,
 		);
 		let handle = SequenceInstanceHandle::new(events, event_consumer);

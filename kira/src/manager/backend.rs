@@ -19,8 +19,9 @@ pub struct Backend {
 	sample_rate: u32,
 	dt: f64,
 	command_consumer: Consumer<Command>,
+	collector_handle: Handle,
 	sounds: Vec<Shared<Sound>>,
-	instances: Vec<Instance>,
+	instances: Vec<Shared<Instance>>,
 	metronomes: Vec<Metronome>,
 	sequence_instances: Vec<SequenceInstance>,
 	parameters: Vec<Parameter>,
@@ -31,19 +32,21 @@ impl Backend {
 	pub(crate) fn new(
 		sample_rate: u32,
 		command_consumer: Consumer<Command>,
-		collector_handle: &Handle,
+		collector_handle: Handle,
 		settings: AudioManagerSettings,
 	) -> Self {
+		let mixer = Mixer::new(&collector_handle, settings.num_sub_tracks);
 		Self {
 			sample_rate,
 			dt: 1.0 / sample_rate as f64,
 			command_consumer,
+			collector_handle,
 			sounds: Vec::with_capacity(settings.num_sounds),
 			instances: Vec::with_capacity(settings.num_instances),
 			metronomes: Vec::with_capacity(settings.num_metronomes),
 			sequence_instances: Vec::with_capacity(settings.num_sequences),
 			parameters: Vec::with_capacity(settings.num_parameters),
-			mixer: Mixer::new(collector_handle, settings.num_sub_tracks),
+			mixer,
 		}
 	}
 
@@ -66,7 +69,7 @@ impl Backend {
 	fn update_sequence_instances(&mut self) {
 		let main_track_input = self.main_track_input();
 		for sequence_instance in &mut self.sequence_instances {
-			sequence_instance.update(self.dt, main_track_input.clone());
+			sequence_instance.update(self.dt, main_track_input.clone(), &self.collector_handle);
 			for instance in sequence_instance.drain_instance_queue() {
 				if self.instances.len() < self.instances.capacity() {
 					self.instances.push(instance);
@@ -83,7 +86,7 @@ impl Backend {
 			instance.process(dt);
 		}
 		self.instances
-			.retain(|instance| instance.state() != InstancePlaybackState::Stopped);
+			.retain(|instance| instance.playback_state() != InstancePlaybackState::Stopped);
 	}
 
 	pub fn process(&mut self) -> Frame {
@@ -94,7 +97,7 @@ impl Backend {
 						self.sounds.push(sound);
 					}
 				}
-				Command::StartInstance { instance } => {
+				Command::StartInstance(instance) => {
 					if self.instances.len() < self.instances.capacity() {
 						self.instances.push(instance);
 					}

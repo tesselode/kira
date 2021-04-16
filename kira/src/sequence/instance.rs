@@ -6,10 +6,7 @@ use basedrop::{Handle, Shared};
 use ringbuf::Producer;
 
 use crate::{
-	metronome::MetronomeState,
-	mixer::track::TrackInput,
-	sound::instance::{Instance, InstanceController},
-	tempo::Tempo,
+	metronome::MetronomeState, mixer::track::TrackInput, sound::instance::Instance, tempo::Tempo,
 };
 
 use super::{RawSequence, SequenceStep};
@@ -31,11 +28,11 @@ pub enum SequenceInstanceState {
 pub struct SequenceInstance {
 	sequence: RawSequence,
 	metronome_state: Option<Shared<MetronomeState>>,
-	instance_controllers: Vec<Shared<InstanceController>>,
+	instances: Vec<Shared<Instance>>,
 	state: SequenceInstanceState,
 	position: usize,
 	wait_timer: Option<f64>,
-	instance_queue: Vec<Instance>,
+	instance_queue: Vec<Shared<Instance>>,
 	event_producer: Producer<usize>,
 }
 
@@ -43,21 +40,13 @@ impl SequenceInstance {
 	pub(crate) fn new(
 		sequence: RawSequence,
 		metronome_state: Option<Shared<MetronomeState>>,
-		collector_handle: &Handle,
 		event_producer: Producer<usize>,
 	) -> Self {
 		let num_instances = sequence.num_instances();
-		let instance_controllers = {
-			let mut instance_controllers = vec![];
-			for _ in 0..num_instances {
-				instance_controllers.push(Shared::new(collector_handle, InstanceController::new()));
-			}
-			instance_controllers
-		};
 		Self {
 			sequence,
 			metronome_state,
-			instance_controllers,
+			instances: Vec::with_capacity(num_instances),
 			state: SequenceInstanceState::Playing,
 			position: 0,
 			wait_timer: None,
@@ -101,7 +90,12 @@ impl SequenceInstance {
 		self.set_state(SequenceInstanceState::Finished);
 	}
 
-	pub(crate) fn update(&mut self, dt: f64, main_track_input: TrackInput) {
+	pub(crate) fn update(
+		&mut self,
+		dt: f64,
+		main_track_input: TrackInput,
+		collector_handle: &Handle,
+	) {
 		match self.state {
 			SequenceInstanceState::Paused | SequenceInstanceState::Finished => {
 				return;
@@ -139,17 +133,22 @@ impl SequenceInstance {
 						sound,
 						settings,
 					} => {
-						let controller = self.instance_controllers[instance_id.0].clone();
-						controller.reset();
-						let instance = Instance::new(
-							sound.clone(),
-							controller,
-							if let Some(track) = &settings.track {
-								track.clone()
-							} else {
-								main_track_input.clone()
-							},
+						let instance = Shared::new(
+							&collector_handle,
+							Instance::new(
+								sound.clone(),
+								if let Some(track) = &settings.track {
+									track.clone()
+								} else {
+									main_track_input.clone()
+								},
+							),
 						);
+						if self.instances.get(instance_id.0).is_some() {
+							self.instances[instance_id.0] = instance.clone();
+						} else {
+							self.instances.push(instance.clone());
+						}
 						self.instance_queue.push(instance);
 						self.start_step(self.position + 1);
 					}
@@ -173,7 +172,7 @@ impl SequenceInstance {
 		}
 	}
 
-	pub(crate) fn drain_instance_queue(&mut self) -> Drain<Instance> {
+	pub(crate) fn drain_instance_queue(&mut self) -> Drain<Shared<Instance>> {
 		self.instance_queue.drain(..)
 	}
 }

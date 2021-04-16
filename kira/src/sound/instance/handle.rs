@@ -1,30 +1,29 @@
-use atomig::Ordering;
 use basedrop::Shared;
 
-use super::InstanceController;
+use super::Instance;
 
 pub struct InstanceHandle {
-	controller: Shared<InstanceController>,
+	instance: Shared<Instance>,
 }
 
 impl InstanceHandle {
-	pub(crate) fn new(controller: Shared<InstanceController>) -> Self {
-		Self { controller }
+	pub(crate) fn new(instance: Shared<Instance>) -> Self {
+		Self { instance }
 	}
 
 	pub fn playback_position(&self) -> f64 {
-		self.controller.playback_position.load(Ordering::SeqCst)
+		self.instance.playback_position()
 	}
 
 	pub fn pause(&self) {
-		self.controller.pause();
+		self.instance.pause();
 	}
 
 	pub fn resume(&self) {
-		self.controller.resume();
+		self.instance.resume();
 	}
 
 	pub fn stop(&self) {
-		self.controller.stop();
+		self.instance.stop();
 	}
 }

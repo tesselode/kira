@@ -10,7 +10,7 @@ use crate::{
 
 pub(crate) enum Command {
 	AddSound(Shared<Sound>),
-	StartInstance { instance: Instance },
+	StartInstance(Shared<Instance>),
 	StartSequenceInstance(SequenceInstance),
 	AddMetronome(Metronome),
 	AddParameter(Parameter),
