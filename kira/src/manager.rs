@@ -184,10 +184,13 @@ impl AudioManager {
 		let (interval_event_producer, interval_event_consumer) =
 			RingBuffer::new(settings.interval_events_to_emit.len()).split();
 		let state = Shared::new(&self.collector_handle, MetronomeState::new(settings.tempo));
-		let metronome = Metronome::new(
-			state.clone(),
-			settings.interval_events_to_emit,
-			interval_event_producer,
+		let metronome = Owned::new(
+			&self.collector_handle,
+			Metronome::new(
+				state.clone(),
+				settings.interval_events_to_emit,
+				interval_event_producer,
+			),
 		);
 		let handle = MetronomeHandle::new(state.clone(), interval_event_consumer);
 		self.command_producer
@@ -204,10 +207,13 @@ impl AudioManager {
 		sequence.validate()?;
 		let (raw_sequence, events) = sequence.create_raw_sequence();
 		let (event_producer, event_consumer) = RingBuffer::new(events.len()).split();
-		let instance = SequenceInstance::new(
-			raw_sequence,
-			metronome.into().map(|handle| handle.state()),
-			event_producer,
+		let instance = Owned::new(
+			&self.collector_handle,
+			SequenceInstance::new(
+				raw_sequence,
+				metronome.into().map(|handle| handle.state()),
+				event_producer,
+			),
 		);
 		let handle = SequenceInstanceHandle::new(events, event_consumer);
 		self.command_producer

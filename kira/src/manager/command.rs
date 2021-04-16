@@ -11,8 +11,8 @@ use crate::{
 pub(crate) enum Command {
 	AddSound(Shared<Sound>),
 	StartInstance(Shared<Instance>),
-	StartSequenceInstance(SequenceInstance),
-	AddMetronome(Metronome),
+	StartSequenceInstance(Owned<SequenceInstance>),
+	AddMetronome(Owned<Metronome>),
 	AddParameter(Parameter),
 	AddSubTrack(Owned<Track>),
 }

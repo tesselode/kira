@@ -1,4 +1,4 @@
-use basedrop::{Handle, Shared};
+use basedrop::{Handle, Owned, Shared};
 use ringbuf::Consumer;
 
 use crate::{
@@ -22,8 +22,8 @@ pub struct Backend {
 	collector_handle: Handle,
 	sounds: Vec<Shared<Sound>>,
 	instances: Vec<Shared<Instance>>,
-	metronomes: Vec<Metronome>,
-	sequence_instances: Vec<SequenceInstance>,
+	metronomes: Vec<Owned<Metronome>>,
+	sequence_instances: Vec<Owned<SequenceInstance>>,
 	parameters: Vec<Parameter>,
 	mixer: Mixer,
 }
