@@ -1,13 +1,13 @@
-use std::{f32::consts::PI, sync::Arc, vec};
+use std::{f32::consts::PI, vec};
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use kira::{
 	manager::{AudioManager, AudioManagerSettings},
-	sound::{instance::settings::InstanceSettings, Sound},
+	sound::{data::static_sound::StaticSoundData, instance::settings::InstanceSettings},
 	Frame,
 };
 
-fn create_test_sound(num_samples: usize) -> Arc<Sound> {
+fn create_test_sound_data(num_samples: usize) -> StaticSoundData {
 	const SAMPLE_RATE: u32 = 48000;
 	let mut sine_samples = vec![];
 	let mut phase = 0.0;
@@ -15,7 +15,7 @@ fn create_test_sound(num_samples: usize) -> Arc<Sound> {
 		sine_samples.push(Frame::from_mono((phase * 2.0 * PI).sin()));
 		phase += 440.0 / SAMPLE_RATE as f32;
 	}
-	Arc::new(Sound::from_frames(SAMPLE_RATE, sine_samples))
+	StaticSoundData::from_frames(SAMPLE_RATE, sine_samples)
 }
 
 fn instances_benchmark(c: &mut Criterion) {
@@ -23,7 +23,7 @@ fn instances_benchmark(c: &mut Criterion) {
 
 	benchmark_group.bench_function("one sound", |b| {
 		const NUM_INSTANCES: usize = 100_000;
-		let test_sound = create_test_sound(4800000);
+		let sound_data = create_test_sound_data(4800000);
 		let (mut audio_manager, mut backend) =
 			AudioManager::new_without_audio_thread(AudioManagerSettings {
 				num_instances: NUM_INSTANCES,
@@ -31,10 +31,10 @@ fn instances_benchmark(c: &mut Criterion) {
 				..Default::default()
 			});
 		// start a bunch of instances
+		let sound = audio_manager.add_sound(sound_data).unwrap();
+		backend.process();
 		for _ in 0..NUM_INSTANCES {
-			audio_manager
-				.play(test_sound.clone(), InstanceSettings::new())
-				.unwrap();
+			audio_manager.play(&sound, InstanceSettings::new()).unwrap();
 		}
 		backend.process();
 		b.iter(|| backend.process());
