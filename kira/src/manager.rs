@@ -167,6 +167,9 @@ impl AudioManager {
 			&self.collector_handle,
 			Instance::new(
 				sound.sound().clone(),
+				settings.volume,
+				settings.playback_rate,
+				settings.panning,
 				settings.track.unwrap_or(self.main_track_input.clone()),
 			),
 		);

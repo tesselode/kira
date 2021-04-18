@@ -137,6 +137,9 @@ impl SequenceInstance {
 							&collector_handle,
 							Instance::new(
 								sound.clone(),
+								settings.volume.clone(),
+								settings.playback_rate.clone(),
+								settings.panning.clone(),
 								if let Some(track) = &settings.track {
 									track.clone()
 								} else {

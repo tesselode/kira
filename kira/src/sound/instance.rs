@@ -4,7 +4,7 @@ pub mod settings;
 use atomig::{Atom, Atomic, Ordering};
 use basedrop::Shared;
 
-use crate::mixer::track::TrackInput;
+use crate::{mixer::track::TrackInput, value::Value};
 
 use super::Sound;
 
@@ -19,14 +19,26 @@ pub enum InstancePlaybackState {
 pub(crate) struct Instance {
 	pub playback_state: Atomic<InstancePlaybackState>,
 	pub playback_position: Atomic<f64>,
+	volume: Value<f64>,
+	playback_rate: Value<f64>,
+	panning: Value<f64>,
 	sound: Shared<Sound>,
 	output_dest: TrackInput,
 }
 
 impl Instance {
-	pub fn new(sound: Shared<Sound>, output_dest: TrackInput) -> Self {
+	pub fn new(
+		sound: Shared<Sound>,
+		volume: Value<f64>,
+		playback_rate: Value<f64>,
+		panning: Value<f64>,
+		output_dest: TrackInput,
+	) -> Self {
 		Self {
 			sound,
+			volume,
+			playback_rate,
+			panning,
 			playback_state: Atomic::new(InstancePlaybackState::Playing),
 			playback_position: Atomic::new(0.0),
 			output_dest,
@@ -61,13 +73,14 @@ impl Instance {
 		if let InstancePlaybackState::Playing = self.playback_state() {
 			let mut playback_position = self.playback_position();
 			let output = self.sound.frame_at_position(playback_position);
-			playback_position += dt;
+			playback_position += self.playback_rate.get() * dt;
 			self.playback_position
 				.store(playback_position, Ordering::SeqCst);
 			if playback_position > self.sound.duration() {
 				self.stop();
 			}
-			self.output_dest.add(output);
+			self.output_dest
+				.add(output.panned(self.panning.get() as f32) * self.volume.get() as f32);
 		}
 	}
 }
