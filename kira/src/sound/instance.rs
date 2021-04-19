@@ -24,6 +24,7 @@ pub(crate) struct Instance {
 	volume: Value<f64>,
 	playback_rate: Value<f64>,
 	panning: Value<f64>,
+	reverse: bool,
 	loop_start: Option<f64>,
 	sound: Shared<Sound>,
 	output_dest: TrackInput,
@@ -36,9 +37,10 @@ impl Instance {
 			volume: settings.volume,
 			playback_rate: settings.playback_rate,
 			panning: settings.panning,
+			reverse: settings.reverse,
 			loop_start: settings.loop_start,
 			playback_state: Atomic::new(InstancePlaybackState::Playing),
-			playback_position: Atomic::new(0.0),
+			playback_position: Atomic::new(settings.start_position),
 			output_dest: settings.track,
 		}
 	}
@@ -71,11 +73,25 @@ impl Instance {
 		if let InstancePlaybackState::Playing = self.playback_state() {
 			let mut playback_position = self.playback_position();
 			let output = self.sound.frame_at_position(playback_position);
-			playback_position += self.playback_rate.get() * dt;
-			if playback_position > self.sound.duration() {
+			let mut playback_rate = self.playback_rate.get();
+			if self.reverse {
+				playback_rate *= -1.0;
+			}
+			playback_position += playback_rate * dt;
+			if playback_rate < 0.0 {
 				if let Some(loop_start) = self.loop_start {
-					playback_position -= self.sound.duration() - loop_start;
-				} else {
+					while playback_position < loop_start {
+						playback_position += self.sound.duration() - loop_start;
+					}
+				} else if playback_position < 0.0 {
+					self.stop();
+				}
+			} else {
+				if let Some(loop_start) = self.loop_start {
+					while playback_position > self.sound.duration() {
+						playback_position -= self.sound.duration() - loop_start;
+					}
+				} else if playback_position > self.sound.duration() {
 					self.stop();
 				}
 			}
