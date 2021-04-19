@@ -177,11 +177,7 @@ impl AudioManager {
 			&self.collector_handle,
 			Instance::new(
 				sound.sound().clone(),
-				settings.volume,
-				settings.playback_rate,
-				settings.panning,
-				loop_start,
-				settings.track.unwrap_or(self.main_track_input.clone()),
+				settings.into_internal(sound.sound(), self.main_track_input.clone()),
 			),
 		);
 		let handle = InstanceHandle::new(instance.clone());

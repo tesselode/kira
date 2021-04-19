@@ -133,20 +133,11 @@ impl SequenceInstance {
 						sound,
 						settings,
 					} => {
-						let loop_start = settings.loop_start.into_option(sound);
 						let instance = Shared::new(
 							&collector_handle,
 							Instance::new(
 								sound.clone(),
-								settings.volume.clone(),
-								settings.playback_rate.clone(),
-								settings.panning.clone(),
-								loop_start,
-								if let Some(track) = &settings.track {
-									track.clone()
-								} else {
-									main_track_input.clone()
-								},
+								settings.into_internal(sound, main_track_input.clone()),
 							),
 						);
 						if self.instances.get(instance_id.0).is_some() {

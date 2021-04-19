@@ -87,4 +87,31 @@ impl InstanceSettings {
 			..self
 		}
 	}
+
+	pub(crate) fn into_internal(
+		&self,
+		sound: &Sound,
+		main_track_input: TrackInput,
+	) -> InternalInstanceSettings {
+		InternalInstanceSettings {
+			volume: self.volume.clone(),
+			playback_rate: self.playback_rate.clone(),
+			panning: self.panning.clone(),
+			loop_start: self.loop_start.into_option(sound),
+			track: if let Some(track) = &self.track {
+				track.clone()
+			} else {
+				main_track_input.clone()
+			},
+		}
+	}
+}
+
+#[derive(Clone)]
+pub(crate) struct InternalInstanceSettings {
+	pub(crate) volume: Value<f64>,
+	pub(crate) playback_rate: Value<f64>,
+	pub(crate) panning: Value<f64>,
+	pub(crate) loop_start: Option<f64>,
+	pub(crate) track: TrackInput,
 }

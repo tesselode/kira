@@ -6,6 +6,8 @@ use basedrop::Shared;
 
 use crate::{mixer::track::TrackInput, value::Value};
 
+use self::settings::InternalInstanceSettings;
+
 use super::Sound;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Atom)]
@@ -28,23 +30,16 @@ pub(crate) struct Instance {
 }
 
 impl Instance {
-	pub fn new(
-		sound: Shared<Sound>,
-		volume: Value<f64>,
-		playback_rate: Value<f64>,
-		panning: Value<f64>,
-		loop_start: Option<f64>,
-		output_dest: TrackInput,
-	) -> Self {
+	pub fn new(sound: Shared<Sound>, settings: InternalInstanceSettings) -> Self {
 		Self {
 			sound,
-			volume,
-			playback_rate,
-			panning,
-			loop_start,
+			volume: settings.volume,
+			playback_rate: settings.playback_rate,
+			panning: settings.panning,
+			loop_start: settings.loop_start,
 			playback_state: Atomic::new(InstancePlaybackState::Playing),
 			playback_position: Atomic::new(0.0),
-			output_dest,
+			output_dest: settings.track,
 		}
 	}
 
