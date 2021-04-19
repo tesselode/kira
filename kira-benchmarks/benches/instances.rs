@@ -3,7 +3,10 @@ use std::{f32::consts::PI, vec};
 use criterion::{criterion_group, criterion_main, Criterion};
 use kira::{
 	manager::{AudioManager, AudioManagerSettings},
-	sound::{data::static_sound::StaticSoundData, instance::settings::InstanceSettings},
+	sound::{
+		data::static_sound::StaticSoundData, instance::settings::InstanceSettings,
+		settings::SoundSettings,
+	},
 	Frame,
 };
 
@@ -23,7 +26,7 @@ fn instances_benchmark(c: &mut Criterion) {
 
 	benchmark_group.bench_function("one sound", |b| {
 		const NUM_INSTANCES: usize = 100_000;
-		let sound_data = create_test_sound_data(4800000);
+		let sound_data = create_test_sound_data(440);
 		let (mut audio_manager, mut backend) =
 			AudioManager::new_without_audio_thread(AudioManagerSettings {
 				num_instances: NUM_INSTANCES,
@@ -31,7 +34,9 @@ fn instances_benchmark(c: &mut Criterion) {
 				..Default::default()
 			});
 		// start a bunch of instances
-		let sound = audio_manager.add_sound(sound_data).unwrap();
+		let sound = audio_manager
+			.add_sound(sound_data, SoundSettings::new().loop_start(0.0))
+			.unwrap();
 		backend.process();
 		for _ in 0..NUM_INSTANCES {
 			audio_manager.play(&sound, InstanceSettings::new()).unwrap();
