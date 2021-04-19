@@ -24,6 +24,7 @@ use crate::{
 		data::{static_sound::StaticSoundData, SoundData},
 		handle::SoundHandle,
 		instance::{handle::InstanceHandle, settings::InstanceSettings, Instance},
+		settings::SoundSettings,
 		Sound,
 	},
 };
@@ -140,8 +141,12 @@ impl AudioManager {
 	pub fn add_sound(
 		&mut self,
 		data: impl SoundData + 'static,
+		settings: SoundSettings,
 	) -> Result<SoundHandle, CommandQueueFullError> {
-		let sound = Shared::new(&self.collector_handle, Sound::new(data));
+		let sound = Shared::new(
+			&self.collector_handle,
+			Sound::new(data, settings.loop_start, settings.semantic_duration),
+		);
 		let handle = SoundHandle::new(sound.clone());
 		self.command_producer
 			.push(Command::AddSound(sound))
@@ -150,10 +155,14 @@ impl AudioManager {
 	}
 
 	#[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
-	pub fn load_sound(&mut self, path: impl AsRef<Path>) -> Result<SoundHandle, LoadSoundError> {
+	pub fn load_sound(
+		&mut self,
+		path: impl AsRef<Path>,
+		settings: SoundSettings,
+	) -> Result<SoundHandle, LoadSoundError> {
 		let data = StaticSoundData::from_file(path)?;
 		let handle = self
-			.add_sound(data)
+			.add_sound(data, settings)
 			.map_err(|_| LoadSoundError::CommandQueueFullError)?;
 		Ok(handle)
 	}
@@ -163,6 +172,7 @@ impl AudioManager {
 		sound: &SoundHandle,
 		settings: InstanceSettings,
 	) -> Result<InstanceHandle, CommandQueueFullError> {
+		let loop_start = settings.loop_start.into_option(sound.sound());
 		let instance = Shared::new(
 			&self.collector_handle,
 			Instance::new(
@@ -170,6 +180,7 @@ impl AudioManager {
 				settings.volume,
 				settings.playback_rate,
 				settings.panning,
+				loop_start,
 				settings.track.unwrap_or(self.main_track_input.clone()),
 			),
 		);

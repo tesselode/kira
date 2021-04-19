@@ -22,6 +22,7 @@ pub(crate) struct Instance {
 	volume: Value<f64>,
 	playback_rate: Value<f64>,
 	panning: Value<f64>,
+	loop_start: Option<f64>,
 	sound: Shared<Sound>,
 	output_dest: TrackInput,
 }
@@ -32,6 +33,7 @@ impl Instance {
 		volume: Value<f64>,
 		playback_rate: Value<f64>,
 		panning: Value<f64>,
+		loop_start: Option<f64>,
 		output_dest: TrackInput,
 	) -> Self {
 		Self {
@@ -39,6 +41,7 @@ impl Instance {
 			volume,
 			playback_rate,
 			panning,
+			loop_start,
 			playback_state: Atomic::new(InstancePlaybackState::Playing),
 			playback_position: Atomic::new(0.0),
 			output_dest,
@@ -74,11 +77,15 @@ impl Instance {
 			let mut playback_position = self.playback_position();
 			let output = self.sound.frame_at_position(playback_position);
 			playback_position += self.playback_rate.get() * dt;
+			if playback_position > self.sound.duration() {
+				if let Some(loop_start) = self.loop_start {
+					playback_position -= self.sound.duration() - loop_start;
+				} else {
+					self.stop();
+				}
+			}
 			self.playback_position
 				.store(playback_position, Ordering::SeqCst);
-			if playback_position > self.sound.duration() {
-				self.stop();
-			}
 			self.output_dest
 				.add(output.panned(self.panning.get() as f32) * self.volume.get() as f32);
 		}

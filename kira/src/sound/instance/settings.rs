@@ -1,13 +1,44 @@
 use crate::{
 	mixer::track::{handle::TrackHandle, TrackInput},
+	sound::Sound,
 	value::Value,
 };
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum InstanceLoopStart {
+	DefaultForSound,
+	Custom(f64),
+	None,
+}
+
+impl InstanceLoopStart {
+	pub(crate) fn into_option(self, sound: &Sound) -> Option<f64> {
+		match self {
+			InstanceLoopStart::DefaultForSound => sound.loop_start(),
+			InstanceLoopStart::Custom(loop_start) => Some(loop_start),
+			InstanceLoopStart::None => None,
+		}
+	}
+}
+
+impl Default for InstanceLoopStart {
+	fn default() -> Self {
+		Self::DefaultForSound
+	}
+}
+
+impl From<f64> for InstanceLoopStart {
+	fn from(loop_start: f64) -> Self {
+		Self::Custom(loop_start)
+	}
+}
 
 #[derive(Clone)]
 pub struct InstanceSettings {
 	pub(crate) volume: Value<f64>,
 	pub(crate) playback_rate: Value<f64>,
 	pub(crate) panning: Value<f64>,
+	pub(crate) loop_start: InstanceLoopStart,
 	pub(crate) track: Option<TrackInput>,
 }
 
@@ -17,6 +48,7 @@ impl InstanceSettings {
 			volume: Value::Fixed(1.0),
 			playback_rate: Value::Fixed(1.0),
 			panning: Value::Fixed(0.5),
+			loop_start: InstanceLoopStart::default(),
 			track: None,
 		}
 	}
@@ -38,6 +70,13 @@ impl InstanceSettings {
 	pub fn panning(self, panning: impl Into<Value<f64>>) -> Self {
 		Self {
 			panning: panning.into(),
+			..self
+		}
+	}
+
+	pub fn loop_start(self, loop_start: impl Into<InstanceLoopStart>) -> Self {
+		Self {
+			loop_start: loop_start.into(),
 			..self
 		}
 	}
