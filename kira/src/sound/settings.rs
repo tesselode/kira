@@ -1,6 +1,7 @@
 pub struct SoundSettings {
 	pub(crate) loop_start: Option<f64>,
 	pub(crate) semantic_duration: Option<f64>,
+	pub(crate) cooldown: f64,
 }
 
 impl SoundSettings {
@@ -8,6 +9,7 @@ impl SoundSettings {
 		Self {
 			loop_start: None,
 			semantic_duration: None,
+			cooldown: 0.0,
 		}
 	}
 
@@ -21,6 +23,13 @@ impl SoundSettings {
 	pub fn semantic_duration(self, semantic_duration: impl Into<Option<f64>>) -> Self {
 		Self {
 			semantic_duration: semantic_duration.into(),
+			..self
+		}
+	}
+
+	pub fn cooldown(self, cooldown: f64) -> Self {
+		Self {
+			cooldown,
 			..self
 		}
 	}

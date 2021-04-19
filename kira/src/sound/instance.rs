@@ -45,6 +45,10 @@ impl Instance {
 		}
 	}
 
+	pub fn sound(&self) -> &Shared<Sound> {
+		&self.sound
+	}
+
 	pub fn playback_state(&self) -> InstancePlaybackState {
 		self.playback_state.load(Ordering::SeqCst)
 	}

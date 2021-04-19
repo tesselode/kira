@@ -145,7 +145,12 @@ impl AudioManager {
 	) -> Result<SoundHandle, CommandQueueFullError> {
 		let sound = Shared::new(
 			&self.collector_handle,
-			Sound::new(data, settings.loop_start, settings.semantic_duration),
+			Sound::new(
+				data,
+				settings.loop_start,
+				settings.semantic_duration,
+				settings.cooldown,
+			),
 		);
 		let handle = SoundHandle::new(sound.clone());
 		self.command_producer
@@ -172,7 +177,6 @@ impl AudioManager {
 		sound: &SoundHandle,
 		settings: InstanceSettings,
 	) -> Result<InstanceHandle, CommandQueueFullError> {
-		let loop_start = settings.loop_start.into_option(sound.sound());
 		let instance = Shared::new(
 			&self.collector_handle,
 			Instance::new(

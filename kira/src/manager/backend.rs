@@ -54,6 +54,19 @@ impl Backend {
 		self.mixer.main_track().input().clone()
 	}
 
+	fn start_instance(instances: &mut Vec<Shared<Instance>>, instance: Shared<Instance>) {
+		if instances.len() < instances.capacity() && !instance.sound().cooling_down() {
+			instance.sound().start_cooldown();
+			instances.push(instance);
+		}
+	}
+
+	fn update_sounds(&self) {
+		for sound in &self.sounds {
+			sound.update(self.dt);
+		}
+	}
+
 	fn update_parameters(&mut self) {
 		for parameter in &mut self.parameters {
 			parameter.update(self.dt);
@@ -71,9 +84,7 @@ impl Backend {
 		for sequence_instance in &mut self.sequence_instances {
 			sequence_instance.update(self.dt, main_track_input.clone(), &self.collector_handle);
 			for instance in sequence_instance.drain_instance_queue() {
-				if self.instances.len() < self.instances.capacity() {
-					self.instances.push(instance);
-				}
+				Self::start_instance(&mut self.instances, instance);
 			}
 		}
 		self.sequence_instances
@@ -98,9 +109,7 @@ impl Backend {
 					}
 				}
 				Command::StartInstance(instance) => {
-					if self.instances.len() < self.instances.capacity() {
-						self.instances.push(instance);
-					}
+					Self::start_instance(&mut self.instances, instance);
 				}
 				Command::StartSequenceInstance(mut instance) => {
 					if self.sequence_instances.len() < self.sequence_instances.capacity() {
@@ -122,6 +131,7 @@ impl Backend {
 			}
 		}
 
+		self.update_sounds();
 		self.update_parameters();
 		self.update_metronomes();
 		self.update_sequence_instances();
