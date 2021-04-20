@@ -19,8 +19,8 @@ pub enum InstancePlaybackState {
 }
 
 pub(crate) struct Instance {
-	pub playback_state: Atomic<InstancePlaybackState>,
-	pub playback_position: Atomic<f64>,
+	playback_state: Atomic<InstancePlaybackState>,
+	playback_position: Atomic<f64>,
 	volume: Value<f64>,
 	playback_rate: Value<f64>,
 	panning: Value<f64>,
