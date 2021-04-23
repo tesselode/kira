@@ -18,6 +18,7 @@ mp3 = ["minimp3"]
 ogg = ["lewton"]
 flac = ["claxon"]
 wav = ["hound"]
+log_drops = []
 default = ["mp3", "ogg", "flac", "wav"]
 
 [dependencies]

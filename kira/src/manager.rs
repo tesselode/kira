@@ -271,4 +271,8 @@ impl AudioManager {
 			.map_err(|_| CommandQueueFullError)?;
 		Ok(handle)
 	}
+
+	pub fn free_unused_resources(&mut self) {
+		self.collector.collect();
+	}
 }

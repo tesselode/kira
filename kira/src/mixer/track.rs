@@ -77,3 +77,10 @@ impl Track {
 		out
 	}
 }
+
+#[cfg(feature = "log_drops")]
+impl Drop for Track {
+	fn drop(&mut self) {
+		println!("dropped track");
+	}
+}

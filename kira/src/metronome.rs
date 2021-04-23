@@ -106,3 +106,10 @@ impl Metronome {
 		}
 	}
 }
+
+#[cfg(feature = "log_drops")]
+impl Drop for Metronome {
+	fn drop(&mut self) {
+		println!("dropped metronome");
+	}
+}

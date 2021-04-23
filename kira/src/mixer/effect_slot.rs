@@ -43,3 +43,10 @@ impl EffectSlot {
 		}
 	}
 }
+
+#[cfg(feature = "log_drops")]
+impl Drop for EffectSlot {
+	fn drop(&mut self) {
+		println!("dropped effect slot");
+	}
+}

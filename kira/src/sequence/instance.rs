@@ -172,3 +172,10 @@ impl SequenceInstance {
 		self.instance_queue.drain(..)
 	}
 }
+
+#[cfg(feature = "log_drops")]
+impl Drop for SequenceInstance {
+	fn drop(&mut self) {
+		println!("dropped sequence instance");
+	}
+}

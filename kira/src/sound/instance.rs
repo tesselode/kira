@@ -106,3 +106,10 @@ impl Instance {
 		}
 	}
 }
+
+#[cfg(feature = "log_drops")]
+impl Drop for Instance {
+	fn drop(&mut self) {
+		println!("dropped instance");
+	}
+}

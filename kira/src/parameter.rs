@@ -90,3 +90,10 @@ impl Parameter {
 		}
 	}
 }
+
+#[cfg(feature = "log_drops")]
+impl Drop for Parameter {
+	fn drop(&mut self) {
+		println!("dropped parameter");
+	}
+}

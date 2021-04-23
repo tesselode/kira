@@ -66,3 +66,10 @@ impl Sound {
 		self.data.frame_at_position(position)
 	}
 }
+
+#[cfg(feature = "log_drops")]
+impl Drop for Sound {
+	fn drop(&mut self) {
+		println!("dropped sound");
+	}
+}
