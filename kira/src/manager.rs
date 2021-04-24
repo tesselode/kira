@@ -306,6 +306,7 @@ impl AudioManager {
 	}
 }
 
+#[cfg(not(feature = "benchmarking"))]
 impl Drop for AudioManager {
 	fn drop(&mut self) {
 		self.stream.take();
