@@ -2,7 +2,7 @@ pub mod handle;
 
 use std::{sync::Arc, vec::Drain};
 
-use basedrop::{Handle, Owned, Shared};
+use basedrop::{Handle, Owned};
 use ringbuf::Producer;
 
 use crate::{
@@ -27,7 +27,7 @@ pub enum SequenceInstanceState {
 
 pub struct SequenceInstance {
 	sequence: RawSequence,
-	metronome_state: Option<Shared<MetronomeState>>,
+	metronome_state: Option<Arc<MetronomeState>>,
 	instances: Vec<Owned<Arc<Instance>>>,
 	state: SequenceInstanceState,
 	position: usize,
@@ -39,7 +39,7 @@ pub struct SequenceInstance {
 impl SequenceInstance {
 	pub(crate) fn new(
 		sequence: RawSequence,
-		metronome_state: Option<Shared<MetronomeState>>,
+		metronome_state: Option<Arc<MetronomeState>>,
 		event_producer: Producer<usize>,
 	) -> Self {
 		let num_instances = sequence.num_instances();

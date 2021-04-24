@@ -9,7 +9,7 @@ use std::{
 	sync::Arc,
 };
 
-use basedrop::{Collector, Owned, Shared};
+use basedrop::{Collector, Owned};
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	Stream,
@@ -211,10 +211,7 @@ impl AudioManager {
 	) -> Result<MetronomeHandle, CommandQueueFullError> {
 		let (interval_event_producer, interval_event_consumer) =
 			RingBuffer::new(settings.interval_events_to_emit.len()).split();
-		let state = Shared::new(
-			&self.collector().handle(),
-			MetronomeState::new(settings.tempo),
-		);
+		let state = Arc::new(MetronomeState::new(settings.tempo));
 		let metronome = Owned::new(
 			&self.collector().handle(),
 			Metronome::new(

@@ -1,4 +1,5 @@
-use basedrop::Shared;
+use std::sync::Arc;
+
 use ringbuf::Consumer;
 
 use crate::Tempo;
@@ -6,13 +7,13 @@ use crate::Tempo;
 use super::MetronomeState;
 
 pub struct MetronomeHandle {
-	state: Shared<MetronomeState>,
+	state: Arc<MetronomeState>,
 	interval_event_consumer: Consumer<f64>,
 }
 
 impl MetronomeHandle {
 	pub(crate) fn new(
-		metronome_state: Shared<MetronomeState>,
+		metronome_state: Arc<MetronomeState>,
 		interval_event_consumer: Consumer<f64>,
 	) -> Self {
 		Self {
@@ -21,7 +22,7 @@ impl MetronomeHandle {
 		}
 	}
 
-	pub(crate) fn state(&self) -> Shared<MetronomeState> {
+	pub(crate) fn state(&self) -> Arc<MetronomeState> {
 		self.state.clone()
 	}
 

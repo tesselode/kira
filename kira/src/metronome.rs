@@ -1,10 +1,9 @@
 pub mod handle;
 pub mod settings;
 
-use std::sync::atomic::AtomicBool;
+use std::sync::{atomic::AtomicBool, Arc};
 
 use atomig::{Atomic, Ordering};
-use basedrop::Shared;
 use ringbuf::Producer;
 
 use crate::{value::Value, Tempo};
@@ -73,15 +72,22 @@ impl MetronomeState {
 	}
 }
 
+#[cfg(feature = "log_drops")]
+impl Drop for MetronomeState {
+	fn drop(&mut self) {
+		println!("dropped metronome state");
+	}
+}
+
 pub(crate) struct Metronome {
-	state: Shared<MetronomeState>,
+	state: Arc<MetronomeState>,
 	interval_events_to_emit: Vec<f64>,
 	interval_event_producer: Producer<f64>,
 }
 
 impl Metronome {
 	pub fn new(
-		state: Shared<MetronomeState>,
+		state: Arc<MetronomeState>,
 		interval_events_to_emit: Vec<f64>,
 		interval_event_producer: Producer<f64>,
 	) -> Self {
