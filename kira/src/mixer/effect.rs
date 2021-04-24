@@ -32,6 +32,12 @@ impl EffectSettings {
 	}
 }
 
+impl Default for EffectSettings {
+	fn default() -> Self {
+		Self::new()
+	}
+}
+
 #[allow(unused_variables)]
 /// Receives input audio from a mixer track and outputs modified audio.
 pub trait Effect: Send {

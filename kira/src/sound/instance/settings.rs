@@ -129,6 +129,12 @@ impl InstanceSettings {
 	}
 }
 
+impl Default for InstanceSettings {
+	fn default() -> Self {
+		Self::new()
+	}
+}
+
 #[derive(Clone)]
 pub(crate) struct InternalInstanceSettings {
 	pub(crate) volume: Value<f64>,

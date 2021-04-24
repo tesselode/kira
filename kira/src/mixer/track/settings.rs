@@ -36,3 +36,9 @@ impl SubTrackSettings {
 		}
 	}
 }
+
+impl Default for SubTrackSettings {
+	fn default() -> Self {
+		Self::new()
+	}
+}
