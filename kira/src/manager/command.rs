@@ -13,6 +13,6 @@ pub(crate) enum Command {
 	StartInstance(Shared<Instance>),
 	StartSequenceInstance(Owned<SequenceInstance>),
 	AddMetronome(Owned<Metronome>),
-	AddParameter(Parameter),
+	AddParameter(Owned<Parameter>),
 	AddSubTrack(Owned<Track>),
 }

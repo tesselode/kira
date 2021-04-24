@@ -1,9 +1,8 @@
 pub mod tween;
 
-use std::sync::atomic::AtomicBool;
+use std::sync::{atomic::AtomicBool, Arc};
 
 use atomig::{Atomic, Ordering};
-use basedrop::{Handle, Shared};
 
 use crate::util::lerp;
 
@@ -21,24 +20,21 @@ pub(crate) struct ParameterState {
 
 #[derive(Clone)]
 pub struct Parameter {
-	state: Shared<ParameterState>,
+	state: Arc<ParameterState>,
 }
 
 impl Parameter {
-	pub(crate) fn new(value: f64, collector_handle: &Handle) -> Self {
+	pub(crate) fn new(value: f64) -> Self {
 		Self {
-			state: Shared::new(
-				collector_handle,
-				ParameterState {
-					value: Atomic::new(value.into()),
-					tweening: AtomicBool::new(false),
-					tween_start: Atomic::new(0.0),
-					tween_end: Atomic::new(0.0),
-					tween_duration: Atomic::new(0.0),
-					tween_progress: Atomic::new(0.0),
-					tween_easing: Atomic::new(Easing::Linear),
-				},
-			),
+			state: Arc::new(ParameterState {
+				value: Atomic::new(value.into()),
+				tweening: AtomicBool::new(false),
+				tween_start: Atomic::new(0.0),
+				tween_end: Atomic::new(0.0),
+				tween_duration: Atomic::new(0.0),
+				tween_progress: Atomic::new(0.0),
+				tween_easing: Atomic::new(Easing::Linear),
+			}),
 		}
 	}
 

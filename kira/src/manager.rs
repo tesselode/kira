@@ -253,9 +253,12 @@ impl AudioManager {
 	}
 
 	pub fn add_parameter(&mut self, value: f64) -> Result<Parameter, CommandQueueFullError> {
-		let parameter = Parameter::new(value, &self.collector().handle());
+		let parameter = Parameter::new(value);
 		self.command_producer
-			.push(Command::AddParameter(parameter.clone()))
+			.push(Command::AddParameter(Owned::new(
+				&self.collector().handle(),
+				parameter.clone(),
+			)))
 			.map_err(|_| CommandQueueFullError)?;
 		Ok(parameter)
 	}

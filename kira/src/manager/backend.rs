@@ -24,7 +24,7 @@ pub struct Backend {
 	instances: Vec<Shared<Instance>>,
 	metronomes: Vec<Owned<Metronome>>,
 	sequence_instances: Vec<Owned<SequenceInstance>>,
-	parameters: Vec<Parameter>,
+	parameters: Vec<Owned<Parameter>>,
 	mixer: Mixer,
 }
 
