@@ -1,8 +1,8 @@
 pub mod handle;
 
-use std::vec::Drain;
+use std::{sync::Arc, vec::Drain};
 
-use basedrop::{Handle, Shared};
+use basedrop::{Handle, Owned, Shared};
 use ringbuf::Producer;
 
 use crate::{
@@ -28,11 +28,11 @@ pub enum SequenceInstanceState {
 pub struct SequenceInstance {
 	sequence: RawSequence,
 	metronome_state: Option<Shared<MetronomeState>>,
-	instances: Vec<Shared<Instance>>,
+	instances: Vec<Owned<Arc<Instance>>>,
 	state: SequenceInstanceState,
 	position: usize,
 	wait_timer: Option<f64>,
-	instance_queue: Vec<Shared<Instance>>,
+	instance_queue: Vec<Owned<Arc<Instance>>>,
 	event_producer: Producer<usize>,
 }
 
@@ -133,12 +133,12 @@ impl SequenceInstance {
 						sound,
 						settings,
 					} => {
-						let instance = Shared::new(
+						let instance = Owned::new(
 							&collector_handle,
-							Instance::new(
+							Arc::new(Instance::new(
 								sound.clone(),
 								settings.into_internal(sound, main_track_input.clone()),
-							),
+							)),
 						);
 						if self.instances.get(instance_id.0).is_some() {
 							self.instances[instance_id.0] = instance.clone();
@@ -168,7 +168,7 @@ impl SequenceInstance {
 		}
 	}
 
-	pub(crate) fn drain_instance_queue(&mut self) -> Drain<Shared<Instance>> {
+	pub(crate) fn drain_instance_queue(&mut self) -> Drain<Owned<Arc<Instance>>> {
 		self.instance_queue.drain(..)
 	}
 }

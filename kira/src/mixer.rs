@@ -2,7 +2,7 @@ pub mod effect;
 pub mod effect_slot;
 pub mod track;
 
-use basedrop::{Handle, Owned};
+use basedrop::Owned;
 use ringbuf::RingBuffer;
 
 use crate::{value::Value, Frame};
@@ -15,17 +15,11 @@ pub(crate) struct Mixer {
 }
 
 impl Mixer {
-	pub fn new(collector_handle: &Handle, sub_track_capacity: usize) -> Self {
+	pub fn new(sub_track_capacity: usize) -> Self {
 		// TODO: expose a way to add effects to the main track
 		let (effect_slot_producer, effect_slot_consumer) = RingBuffer::new(0).split();
 		Self {
-			main_track: Track::new(
-				collector_handle,
-				vec![],
-				Value::Fixed(1.0),
-				0,
-				effect_slot_consumer,
-			),
+			main_track: Track::new(vec![], Value::Fixed(1.0), 0, effect_slot_consumer),
 			sub_tracks: Vec::with_capacity(sub_track_capacity),
 		}
 	}

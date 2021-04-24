@@ -1,13 +1,13 @@
-use basedrop::Shared;
+use std::sync::Arc;
 
 use super::Instance;
 
 pub struct InstanceHandle {
-	instance: Shared<Instance>,
+	instance: Arc<Instance>,
 }
 
 impl InstanceHandle {
-	pub(crate) fn new(instance: Shared<Instance>) -> Self {
+	pub(crate) fn new(instance: Arc<Instance>) -> Self {
 		Self { instance }
 	}
 

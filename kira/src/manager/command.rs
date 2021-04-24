@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use basedrop::{Owned, Shared};
+use basedrop::Owned;
 
 use crate::{
 	metronome::Metronome,
@@ -12,7 +12,7 @@ use crate::{
 
 pub(crate) enum Command {
 	AddSound(Owned<Arc<Sound>>),
-	StartInstance(Shared<Instance>),
+	StartInstance(Owned<Arc<Instance>>),
 	StartSequenceInstance(Owned<SequenceInstance>),
 	AddMetronome(Owned<Metronome>),
 	AddParameter(Owned<Parameter>),

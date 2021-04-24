@@ -2,8 +2,9 @@ pub mod handle;
 pub mod routes;
 pub mod settings;
 
+use std::sync::Arc;
+
 use atomig::{Atomic, Ordering};
-use basedrop::{Handle, Shared};
 use ringbuf::Consumer;
 
 use crate::{value::Value, Frame};
@@ -11,14 +12,11 @@ use crate::{value::Value, Frame};
 use super::effect_slot::EffectSlot;
 
 #[derive(Clone)]
-pub(crate) struct TrackInput(Shared<Atomic<Frame>>);
+pub(crate) struct TrackInput(Arc<Atomic<Frame>>);
 
 impl TrackInput {
-	fn new(collector_handle: &Handle) -> Self {
-		Self(Shared::new(
-			collector_handle,
-			Atomic::new(Frame::from_mono(0.0)),
-		))
+	fn new() -> Self {
+		Self(Arc::new(Atomic::new(Frame::from_mono(0.0))))
 	}
 
 	pub(crate) fn add(&self, frame: Frame) {
@@ -41,14 +39,13 @@ pub(crate) struct Track {
 
 impl Track {
 	pub fn new(
-		collector_handle: &Handle,
 		routes: Vec<(TrackInput, f64)>,
 		volume: Value<f64>,
 		effect_capacity: usize,
 		effect_slot_consumer: Consumer<EffectSlot>,
 	) -> Self {
 		Self {
-			input: TrackInput::new(collector_handle),
+			input: TrackInput::new(),
 			routes,
 			volume,
 			effect_slots: Vec::with_capacity(effect_capacity),

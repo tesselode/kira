@@ -188,19 +188,19 @@ impl AudioManager {
 		sound: &SoundHandle,
 		settings: InstanceSettings,
 	) -> Result<InstanceHandle, CommandQueueFullError> {
-		let instance = Shared::new(
-			&self.collector().handle(),
-			Instance::new(
-				sound.sound().clone(),
-				settings.into_internal(
-					sound.sound(),
-					self.main_track_input.as_ref().unwrap().clone(),
-				),
+		let instance = Arc::new(Instance::new(
+			sound.sound().clone(),
+			settings.into_internal(
+				sound.sound(),
+				self.main_track_input.as_ref().unwrap().clone(),
 			),
-		);
+		));
 		let handle = InstanceHandle::new(instance.clone());
 		self.command_producer
-			.push(Command::StartInstance(instance))
+			.push(Command::StartInstance(Owned::new(
+				&self.collector().handle(),
+				instance,
+			)))
 			.map_err(|_| CommandQueueFullError)?;
 		Ok(handle)
 	}
@@ -271,7 +271,6 @@ impl AudioManager {
 		let (effect_slot_producer, effect_slot_consumer) =
 			RingBuffer::new(settings.num_effects).split();
 		let sub_track = Track::new(
-			&self.collector().handle(),
 			settings
 				.routes
 				.to_vec(self.main_track_input.as_ref().unwrap().clone()),

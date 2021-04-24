@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use basedrop::{Handle, Owned, Shared};
+use basedrop::{Handle, Owned};
 use ringbuf::Consumer;
 
 use crate::{
@@ -23,7 +23,7 @@ pub struct Backend {
 	command_consumer: Consumer<Command>,
 	collector_handle: Handle,
 	sounds: Vec<Owned<Arc<Sound>>>,
-	instances: Vec<Shared<Instance>>,
+	instances: Vec<Owned<Arc<Instance>>>,
 	metronomes: Vec<Owned<Metronome>>,
 	sequence_instances: Vec<Owned<SequenceInstance>>,
 	parameters: Vec<Owned<Parameter>>,
@@ -37,7 +37,7 @@ impl Backend {
 		collector_handle: Handle,
 		settings: AudioManagerSettings,
 	) -> Self {
-		let mixer = Mixer::new(&collector_handle, settings.num_sub_tracks);
+		let mixer = Mixer::new(settings.num_sub_tracks);
 		Self {
 			sample_rate,
 			dt: 1.0 / sample_rate as f64,
@@ -56,7 +56,7 @@ impl Backend {
 		self.mixer.main_track().input().clone()
 	}
 
-	fn start_instance(instances: &mut Vec<Shared<Instance>>, instance: Shared<Instance>) {
+	fn start_instance(instances: &mut Vec<Owned<Arc<Instance>>>, instance: Owned<Arc<Instance>>) {
 		if instances.len() < instances.capacity() && !instance.sound().cooling_down() {
 			instance.sound().start_cooldown();
 			instances.push(instance);
