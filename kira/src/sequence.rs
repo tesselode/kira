@@ -4,9 +4,8 @@ pub(crate) mod instance;
 use std::{
 	collections::{HashMap, HashSet},
 	hash::Hash,
+	sync::Arc,
 };
-
-use basedrop::Shared;
 
 use crate::{
 	sound::{handle::SoundHandle, instance::settings::InstanceSettings, Sound},
@@ -23,7 +22,7 @@ enum SequenceStep<Event: Clone + Eq + Hash> {
 	WaitForInterval(f64),
 	PlaySound {
 		id: SequenceLocalInstanceId,
-		sound: Shared<Sound>,
+		sound: Arc<Sound>,
 		settings: InstanceSettings,
 	},
 	PauseInstance(SequenceLocalInstanceId),

@@ -6,6 +6,7 @@ use std::{
 	hash::Hash,
 	io::{stderr, Write},
 	path::Path,
+	sync::Arc,
 };
 
 use basedrop::{Collector, Owned, Shared};
@@ -153,18 +154,18 @@ impl AudioManager {
 		data: impl SoundData + 'static,
 		settings: SoundSettings,
 	) -> Result<SoundHandle, CommandQueueFullError> {
-		let sound = Shared::new(
-			&self.collector().handle(),
-			Sound::new(
-				data,
-				settings.loop_start,
-				settings.semantic_duration,
-				settings.cooldown,
-			),
-		);
+		let sound = Arc::new(Sound::new(
+			data,
+			settings.loop_start,
+			settings.semantic_duration,
+			settings.cooldown,
+		));
 		let handle = SoundHandle::new(sound.clone());
 		self.command_producer
-			.push(Command::AddSound(sound))
+			.push(Command::AddSound(Owned::new(
+				&self.collector().handle(),
+				sound,
+			)))
 			.map_err(|_| CommandQueueFullError)?;
 		Ok(handle)
 	}

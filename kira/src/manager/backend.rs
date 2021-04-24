@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use basedrop::{Handle, Owned, Shared};
 use ringbuf::Consumer;
 
@@ -20,7 +22,7 @@ pub struct Backend {
 	dt: f64,
 	command_consumer: Consumer<Command>,
 	collector_handle: Handle,
-	sounds: Vec<Shared<Sound>>,
+	sounds: Vec<Owned<Arc<Sound>>>,
 	instances: Vec<Shared<Instance>>,
 	metronomes: Vec<Owned<Metronome>>,
 	sequence_instances: Vec<Owned<SequenceInstance>>,

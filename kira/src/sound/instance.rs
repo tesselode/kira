@@ -1,8 +1,9 @@
 pub mod handle;
 pub mod settings;
 
+use std::sync::Arc;
+
 use atomig::{Atom, Atomic, Ordering};
-use basedrop::Shared;
 
 use crate::{mixer::track::TrackInput, value::Value};
 
@@ -26,12 +27,12 @@ pub(crate) struct Instance {
 	panning: Value<f64>,
 	reverse: bool,
 	loop_start: Option<f64>,
-	sound: Shared<Sound>,
+	sound: Arc<Sound>,
 	output_dest: TrackInput,
 }
 
 impl Instance {
-	pub fn new(sound: Shared<Sound>, settings: InternalInstanceSettings) -> Self {
+	pub fn new(sound: Arc<Sound>, settings: InternalInstanceSettings) -> Self {
 		Self {
 			sound,
 			volume: settings.volume,
@@ -45,7 +46,7 @@ impl Instance {
 		}
 	}
 
-	pub fn sound(&self) -> &Shared<Sound> {
+	pub fn sound(&self) -> &Arc<Sound> {
 		&self.sound
 	}
 

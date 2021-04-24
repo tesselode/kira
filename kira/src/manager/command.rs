@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use basedrop::{Owned, Shared};
 
 use crate::{
@@ -9,7 +11,7 @@ use crate::{
 };
 
 pub(crate) enum Command {
-	AddSound(Shared<Sound>),
+	AddSound(Owned<Arc<Sound>>),
 	StartInstance(Shared<Instance>),
 	StartSequenceInstance(Owned<SequenceInstance>),
 	AddMetronome(Owned<Metronome>),

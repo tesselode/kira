@@ -1,18 +1,18 @@
-use basedrop::Shared;
+use std::sync::Arc;
 
 use super::Sound;
 
 #[derive(Clone)]
 pub struct SoundHandle {
-	sound: Shared<Sound>,
+	sound: Arc<Sound>,
 }
 
 impl SoundHandle {
-	pub(crate) fn new(sound: Shared<Sound>) -> Self {
+	pub(crate) fn new(sound: Arc<Sound>) -> Self {
 		Self { sound }
 	}
 
-	pub(crate) fn sound(&self) -> &Shared<Sound> {
+	pub(crate) fn sound(&self) -> &Arc<Sound> {
 		&self.sound
 	}
 }
