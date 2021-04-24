@@ -44,6 +44,8 @@ impl Track {
 		effect_capacity: usize,
 		effect_slot_consumer: Consumer<EffectSlot>,
 	) -> Self {
+		#[cfg(feature = "log_drops")]
+		println!("creating Track on thread {:?}", std::thread::current().id());
 		Self {
 			input: TrackInput::new(),
 			routes,
@@ -78,6 +80,6 @@ impl Track {
 #[cfg(feature = "log_drops")]
 impl Drop for Track {
 	fn drop(&mut self) {
-		println!("dropped track");
+		println!("dropped Track on thread {:?}", std::thread::current().id());
 	}
 }

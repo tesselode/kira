@@ -31,6 +31,11 @@ impl EffectSlot {
 		mix: Value<f64>,
 		state: Shared<EffectSlotState>,
 	) -> Self {
+		#[cfg(feature = "log_drops")]
+		println!(
+			"creating EffectSlot on thread {:?}",
+			std::thread::current().id()
+		);
 		Self { effect, mix, state }
 	}
 
@@ -47,6 +52,9 @@ impl EffectSlot {
 #[cfg(feature = "log_drops")]
 impl Drop for EffectSlot {
 	fn drop(&mut self) {
-		println!("dropped effect slot");
+		println!(
+			"dropped EffectSlot on thread {:?}",
+			std::thread::current().id()
+		);
 	}
 }

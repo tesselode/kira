@@ -17,6 +17,11 @@ pub(crate) struct MetronomeState {
 
 impl MetronomeState {
 	pub fn new(tempo: Value<Tempo>) -> Self {
+		#[cfg(feature = "log_drops")]
+		println!(
+			"creating MetronomeState on thread {:?}",
+			std::thread::current().id()
+		);
 		Self {
 			tempo,
 			ticking: AtomicBool::new(false),
@@ -75,7 +80,10 @@ impl MetronomeState {
 #[cfg(feature = "log_drops")]
 impl Drop for MetronomeState {
 	fn drop(&mut self) {
-		println!("dropped metronome state");
+		println!(
+			"dropped MetronomeState on thread {:?}",
+			std::thread::current().id()
+		);
 	}
 }
 
@@ -91,6 +99,11 @@ impl Metronome {
 		interval_events_to_emit: Vec<f64>,
 		interval_event_producer: Producer<f64>,
 	) -> Self {
+		#[cfg(feature = "log_drops")]
+		println!(
+			"creating Metronome on thread {:?}",
+			std::thread::current().id()
+		);
 		Self {
 			state,
 			interval_events_to_emit,
@@ -116,6 +129,9 @@ impl Metronome {
 #[cfg(feature = "log_drops")]
 impl Drop for Metronome {
 	fn drop(&mut self) {
-		println!("dropped metronome");
+		println!(
+			"dropped Metronome on thread {:?}",
+			std::thread::current().id()
+		);
 	}
 }

@@ -33,6 +33,11 @@ pub(crate) struct Instance {
 
 impl Instance {
 	pub fn new(sound: Arc<Sound>, settings: InternalInstanceSettings) -> Self {
+		#[cfg(feature = "log_drops")]
+		println!(
+			"creating Instance on thread {:?}",
+			std::thread::current().id()
+		);
 		Self {
 			sound,
 			volume: settings.volume,
@@ -111,6 +116,9 @@ impl Instance {
 #[cfg(feature = "log_drops")]
 impl Drop for Instance {
 	fn drop(&mut self) {
-		println!("dropped instance");
+		println!(
+			"dropped Instance on thread {:?}",
+			std::thread::current().id()
+		);
 	}
 }

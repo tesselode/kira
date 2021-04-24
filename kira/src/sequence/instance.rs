@@ -42,6 +42,11 @@ impl SequenceInstance {
 		metronome_state: Option<Arc<MetronomeState>>,
 		event_producer: Producer<usize>,
 	) -> Self {
+		#[cfg(feature = "log_drops")]
+		println!(
+			"creating SequenceInstance on thread {:?}",
+			std::thread::current().id()
+		);
 		let num_instances = sequence.num_instances();
 		Self {
 			sequence,
@@ -176,6 +181,9 @@ impl SequenceInstance {
 #[cfg(feature = "log_drops")]
 impl Drop for SequenceInstance {
 	fn drop(&mut self) {
-		println!("dropped sequence instance");
+		println!(
+			"dropped SequenceInstance on thread {:?}",
+			std::thread::current().id()
+		);
 	}
 }

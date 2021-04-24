@@ -70,6 +70,6 @@ impl Sound {
 #[cfg(feature = "log_drops")]
 impl Drop for Sound {
 	fn drop(&mut self) {
-		println!("dropped sound");
+		println!("dropped Sound on thread {:?}", std::thread::current().id());
 	}
 }

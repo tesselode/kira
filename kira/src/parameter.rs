@@ -25,6 +25,11 @@ pub struct Parameter {
 
 impl Parameter {
 	pub(crate) fn new(value: f64) -> Self {
+		#[cfg(feature = "log_drops")]
+		println!(
+			"creating Parameter on thread {:?}",
+			std::thread::current().id()
+		);
 		Self {
 			state: Arc::new(ParameterState {
 				value: Atomic::new(value.into()),
@@ -90,6 +95,9 @@ impl Parameter {
 #[cfg(feature = "log_drops")]
 impl Drop for Parameter {
 	fn drop(&mut self) {
-		println!("dropped parameter");
+		println!(
+			"dropped Parameter on thread {:?}",
+			std::thread::current().id()
+		);
 	}
 }
