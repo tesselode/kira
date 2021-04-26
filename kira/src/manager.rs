@@ -98,6 +98,9 @@ impl AudioManager {
 					&config,
 					move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
 						for frame in data.chunks_exact_mut(channels as usize) {
+							#[cfg(feature = "check_allocations")]
+							let out = assert_no_alloc::assert_no_alloc(|| backend.process());
+							#[cfg(not(feature = "check_allocations"))]
 							let out = backend.process();
 							if channels == 1 {
 								frame[0] = (out.left + out.right) / 2.0;

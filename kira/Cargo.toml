@@ -19,9 +19,11 @@ ogg = ["lewton"]
 flac = ["claxon"]
 wav = ["hound"]
 log_drops = []
+check_allocations = ["assert_no_alloc"]
 default = ["mp3", "ogg", "flac", "wav"]
 
 [dependencies]
+assert_no_alloc = {version = "1.1.0", optional = true}
 atomig = {version = "0.2.0", features = ["derive"]}
 basedrop = "0.1.1"
 claxon = { version = "0.4.3", optional = true }
