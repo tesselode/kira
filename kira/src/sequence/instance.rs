@@ -101,65 +101,57 @@ impl SequenceInstance {
 		main_track_input: TrackInput,
 		collector_handle: &Handle,
 	) {
-		match self.state {
-			SequenceInstanceState::Paused | SequenceInstanceState::Finished => {
-				return;
-			}
-			_ => {}
-		}
-		loop {
-			if let Some(step) = self.sequence.steps.get(self.position) {
-				match step {
-					SequenceStep::Wait(duration) => {
-						if let Some(time) = self.wait_timer.as_mut() {
-							let duration = duration.in_seconds(
-								self.metronome_state
-									.as_ref()
-									.map(|state| state.effective_tempo())
-									.unwrap_or(Tempo(0.0)),
-							);
-							*time -= dt / duration;
-							if *time <= 0.0 {
-								self.start_step(self.position + 1);
-							}
-							break;
-						}
-					}
-					SequenceStep::WaitForInterval(interval) => {
-						if let Some(metronome_state) = &self.metronome_state {
-							if metronome_state.interval_passed(*interval) {
-								self.start_step(self.position + 1);
-							}
+		while let SequenceInstanceState::Playing = self.state {
+			match &self.sequence.steps[self.position] {
+				SequenceStep::Wait(duration) => {
+					if let Some(time) = self.wait_timer.as_mut() {
+						let duration = duration.in_seconds(
+							self.metronome_state
+								.as_ref()
+								.map(|state| state.effective_tempo())
+								.unwrap_or(Tempo(0.0)),
+						);
+						*time -= dt / duration;
+						if *time <= 0.0 {
+							self.start_step(self.position + 1);
 						}
 						break;
 					}
-					SequenceStep::PlaySound {
-						id: instance_id,
-						sound,
-						settings,
-					} => {
-						let instance = Owned::new(
-							&collector_handle,
-							Arc::new(Instance::new(
-								sound.clone(),
-								settings.into_internal(sound, main_track_input.clone()),
-							)),
-						);
-						if self.instances.get(instance_id.0).is_some() {
-							self.instances[instance_id.0] = instance.clone();
-						} else {
-							self.instances.push(instance.clone());
+				}
+				SequenceStep::WaitForInterval(interval) => {
+					if let Some(metronome_state) = &self.metronome_state {
+						if metronome_state.interval_passed(*interval) {
+							self.start_step(self.position + 1);
 						}
-						self.instance_queue.push(instance);
-						self.start_step(self.position + 1);
 					}
-					SequenceStep::Emit(event) => {
-						self.event_producer.push(*event).ok();
-						self.start_step(self.position + 1);
+					break;
+				}
+				SequenceStep::PlaySound {
+					id: instance_id,
+					sound,
+					settings,
+				} => {
+					let instance = Owned::new(
+						&collector_handle,
+						Arc::new(Instance::new(
+							sound.clone(),
+							settings.into_internal(sound, main_track_input.clone()),
+						)),
+					);
+					if self.instances.get(instance_id.0).is_some() {
+						self.instances[instance_id.0] = instance.clone();
+					} else {
+						self.instances.push(instance.clone());
 					}
-					_ => {
-						todo!()
-					}
+					self.instance_queue.push(instance);
+					self.start_step(self.position + 1);
+				}
+				SequenceStep::Emit(event) => {
+					self.event_producer.push(*event).ok();
+					self.start_step(self.position + 1);
+				}
+				_ => {
+					todo!()
 				}
 			}
 		}
