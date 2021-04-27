@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use basedrop::{Handle, Owned};
+use basedrop::Owned;
 use ringbuf::Consumer;
 
 use crate::{
@@ -21,9 +21,8 @@ pub struct Backend {
 	sample_rate: u32,
 	dt: f64,
 	command_consumer: Consumer<Command>,
-	collector_handle: Handle,
 	sounds: Vec<Owned<Arc<Sound>>>,
-	instances: Vec<Owned<Arc<Instance>>>,
+	instances: Vec<Instance>,
 	metronomes: Vec<Owned<Metronome>>,
 	sequence_instances: Vec<Owned<SequenceInstance>>,
 	parameters: Vec<Owned<Parameter>>,
@@ -34,7 +33,6 @@ impl Backend {
 	pub(crate) fn new(
 		sample_rate: u32,
 		command_consumer: Consumer<Command>,
-		collector_handle: Handle,
 		settings: AudioManagerSettings,
 	) -> Self {
 		let mixer = Mixer::new(settings.num_sub_tracks);
@@ -42,7 +40,6 @@ impl Backend {
 			sample_rate,
 			dt: 1.0 / sample_rate as f64,
 			command_consumer,
-			collector_handle,
 			sounds: Vec::with_capacity(settings.num_sounds),
 			instances: Vec::with_capacity(settings.num_instances),
 			metronomes: Vec::with_capacity(settings.num_metronomes),
@@ -56,7 +53,7 @@ impl Backend {
 		self.mixer.main_track().input().clone()
 	}
 
-	fn start_instance(instances: &mut Vec<Owned<Arc<Instance>>>, instance: Owned<Arc<Instance>>) {
+	fn start_instance(instances: &mut Vec<Instance>, instance: Instance) {
 		if instances.len() < instances.capacity() && !instance.sound().cooling_down() {
 			instance.sound().start_cooldown();
 			instances.push(instance);
@@ -84,7 +81,7 @@ impl Backend {
 	fn update_sequence_instances(&mut self) {
 		let main_track_input = self.main_track_input();
 		for sequence_instance in &mut self.sequence_instances {
-			sequence_instance.update(self.dt, main_track_input.clone(), &self.collector_handle);
+			sequence_instance.update(self.dt, main_track_input.clone());
 			for instance in sequence_instance.drain_instance_queue() {
 				Self::start_instance(&mut self.instances, instance);
 			}

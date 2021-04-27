@@ -1,29 +1,29 @@
 use std::sync::Arc;
 
-use super::Instance;
+use super::InstanceController;
 
 pub struct InstanceHandle {
-	instance: Arc<Instance>,
+	controller: Arc<InstanceController>,
 }
 
 impl InstanceHandle {
-	pub(crate) fn new(instance: Arc<Instance>) -> Self {
-		Self { instance }
+	pub(crate) fn new(controller: Arc<InstanceController>) -> Self {
+		Self { controller }
 	}
 
 	pub fn playback_position(&self) -> f64 {
-		self.instance.playback_position()
+		self.controller.playback_position()
 	}
 
 	pub fn pause(&self) {
-		self.instance.pause();
+		self.controller.pause();
 	}
 
 	pub fn resume(&self) {
-		self.instance.resume();
+		self.controller.resume();
 	}
 
 	pub fn stop(&self) {
-		self.instance.stop();
+		self.controller.stop();
 	}
 }

@@ -12,7 +12,7 @@ use crate::{
 
 pub(crate) enum Command {
 	AddSound(Owned<Arc<Sound>>),
-	StartInstance(Owned<Arc<Instance>>),
+	StartInstance(Instance),
 	StartSequenceInstance(Owned<SequenceInstance>),
 	AddMetronome(Owned<Metronome>),
 	AddParameter(Owned<Parameter>),

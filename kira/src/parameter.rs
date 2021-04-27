@@ -18,6 +18,16 @@ pub(crate) struct ParameterState {
 	tween_easing: Atomic<Easing>,
 }
 
+#[cfg(feature = "log_drops")]
+impl Drop for ParameterState {
+	fn drop(&mut self) {
+		println!(
+			"dropped ParameterState on thread {:?}",
+			std::thread::current().id()
+		);
+	}
+}
+
 #[derive(Clone)]
 pub struct Parameter {
 	state: Arc<ParameterState>,
@@ -89,15 +99,5 @@ impl Parameter {
 				);
 			}
 		}
-	}
-}
-
-#[cfg(feature = "log_drops")]
-impl Drop for Parameter {
-	fn drop(&mut self) {
-		println!(
-			"dropped Parameter on thread {:?}",
-			std::thread::current().id()
-		);
 	}
 }
