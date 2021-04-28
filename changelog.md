@@ -1,5 +1,5 @@
 # v0.5.2 - April 27, 2021
-- Added `Sound::from_mp3_reader`, `Sound::from_oggg_reader`,
+- Added `Sound::from_mp3_reader`, `Sound::from_ogg_reader`,
 `Sound::from_flac_reader`, and `Sound::from_wav_reader` (thanks
 @Zicklag!)
 - (Hopefully) fixed an issue where capacities (the maximum number
