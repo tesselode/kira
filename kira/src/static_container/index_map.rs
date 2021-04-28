@@ -10,13 +10,19 @@ use indexmap::IndexMap;
 /// an indefinite amount of time and lead to audio glitches.
 #[derive(Debug, Clone)]
 pub struct StaticIndexMap<K: Eq + Hash, V> {
+	capacity: usize,
 	index_map: IndexMap<K, V>,
 }
 
 impl<K: Eq + Hash, V> StaticIndexMap<K, V> {
 	pub fn new(capacity: usize) -> Self {
 		Self {
-			index_map: IndexMap::with_capacity(capacity),
+			capacity,
+			// The IndexMap is initialized with twice the requested
+			// capacity to make sure the map will never need to allocate
+			// memory to maintain the requested capacity.
+			// See here: https://github.com/rust-lang/hashbrown/pull/255
+			index_map: IndexMap::with_capacity(capacity * 2),
 		}
 	}
 
@@ -25,7 +31,7 @@ impl<K: Eq + Hash, V> StaticIndexMap<K, V> {
 	}
 
 	pub fn capacity(&self) -> usize {
-		self.index_map.capacity()
+		self.capacity
 	}
 
 	pub fn get(&self, key: &K) -> Option<&V> {
