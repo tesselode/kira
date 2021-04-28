@@ -1,3 +1,10 @@
+# v0.5.2 - April 27, 2021
+- Added `Sound::from_mp3_reader`, `Sound::from_oggg_reader`,
+`Sound::from_flac_reader`, and `Sound::from_wav_reader` (thanks
+@Zicklag!)
+- (Hopefully) fixed an issue where capacities (the maximum number
+of instances, sequences, etc.) could decrease over time
+
 # v0.5.1 - March 28, 2021
 - Added a `Default` implementation for `TrackSends`
 - Fixed a compile error when building Kira with the `serde_support`
