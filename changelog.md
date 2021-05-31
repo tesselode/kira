@@ -1,3 +1,7 @@
+# v0.5.3 - May 31, 2021
+- Fix an issue where the `AudioManager` cleanup would fail if
+there are existing track handles
+
 # v0.5.2 - April 27, 2021
 - Added `Sound::from_mp3_reader`, `Sound::from_ogg_reader`,
 `Sound::from_flac_reader`, and `Sound::from_wav_reader` (thanks
