@@ -1,6 +1,8 @@
 //! An interface for controlling mixer tracks.
 
-use basedrop::Owned;
+use std::sync::Weak;
+
+use basedrop::{Handle, Owned};
 use indexmap::IndexSet;
 use thiserror::Error;
 
@@ -52,14 +54,14 @@ pub struct MainTrackHandle {
 	command_producer: CommandProducer,
 	active_effect_ids: IndexSet<EffectId>,
 	sample_rate: u32,
-	resource_collector_handle: basedrop::Handle,
+	resource_collector_handle: Weak<Handle>,
 }
 
 impl MainTrackHandle {
 	pub(crate) fn new(
 		command_producer: CommandProducer,
 		sample_rate: u32,
-		resource_collector_handle: basedrop::Handle,
+		resource_collector_handle: Weak<Handle>,
 	) -> Self {
 		Self {
 			command_producer,
@@ -94,16 +96,18 @@ impl MainTrackHandle {
 			self.command_producer.clone(),
 		);
 		effect.init(self.sample_rate);
-		self.command_producer.push(
-			MixerCommand::AddEffect(
-				TrackIndex::Main,
-				effect_id,
-				Owned::new(&self.resource_collector_handle, Box::new(effect)),
-				settings,
-			)
-			.into(),
-		)?;
-		self.active_effect_ids.insert(effect_id);
+		if let Some(handle) = self.resource_collector_handle.upgrade() {
+			self.command_producer.push(
+				MixerCommand::AddEffect(
+					TrackIndex::Main,
+					effect_id,
+					Owned::new(&handle, Box::new(effect)),
+					settings,
+				)
+				.into(),
+			)?;
+			self.active_effect_ids.insert(effect_id);
+		}
 		Ok(handle)
 	}
 
@@ -125,7 +129,7 @@ pub struct SubTrackHandle {
 	command_producer: CommandProducer,
 	active_effect_ids: IndexSet<EffectId>,
 	sample_rate: u32,
-	resource_collector_handle: basedrop::Handle,
+	resource_collector_handle: Weak<Handle>,
 }
 
 impl SubTrackHandle {
@@ -134,7 +138,7 @@ impl SubTrackHandle {
 		settings: &SubTrackSettings,
 		command_producer: CommandProducer,
 		sample_rate: u32,
-		resource_collector_handle: basedrop::Handle,
+		resource_collector_handle: Weak<Handle>,
 	) -> Self {
 		Self {
 			id,
@@ -173,16 +177,18 @@ impl SubTrackHandle {
 			self.command_producer.clone(),
 		);
 		effect.init(self.sample_rate);
-		self.command_producer.push(
-			MixerCommand::AddEffect(
-				self.id.into(),
-				effect_id,
-				Owned::new(&self.resource_collector_handle, Box::new(effect)),
-				settings,
-			)
-			.into(),
-		)?;
-		self.active_effect_ids.insert(effect_id);
+		if let Some(handle) = self.resource_collector_handle.upgrade() {
+			self.command_producer.push(
+				MixerCommand::AddEffect(
+					self.id.into(),
+					effect_id,
+					Owned::new(&handle, Box::new(effect)),
+					settings,
+				)
+				.into(),
+			)?;
+			self.active_effect_ids.insert(effect_id);
+		}
 		Ok(handle)
 	}
 
@@ -204,7 +210,7 @@ pub struct SendTrackHandle {
 	command_producer: CommandProducer,
 	active_effect_ids: IndexSet<EffectId>,
 	sample_rate: u32,
-	resource_collector_handle: basedrop::Handle,
+	resource_collector_handle: Weak<Handle>,
 }
 
 impl SendTrackHandle {
@@ -213,7 +219,7 @@ impl SendTrackHandle {
 		settings: &SendTrackSettings,
 		command_producer: CommandProducer,
 		sample_rate: u32,
-		resource_collector_handle: basedrop::Handle,
+		resource_collector_handle: Weak<Handle>,
 	) -> Self {
 		Self {
 			id,
@@ -252,16 +258,18 @@ impl SendTrackHandle {
 			self.command_producer.clone(),
 		);
 		effect.init(self.sample_rate);
-		self.command_producer.push(
-			MixerCommand::AddEffect(
-				self.id.into(),
-				effect_id,
-				Owned::new(&self.resource_collector_handle, Box::new(effect)),
-				settings,
-			)
-			.into(),
-		)?;
-		self.active_effect_ids.insert(effect_id);
+		if let Some(handle) = self.resource_collector_handle.upgrade() {
+			self.command_producer.push(
+				MixerCommand::AddEffect(
+					self.id.into(),
+					effect_id,
+					Owned::new(&handle, Box::new(effect)),
+					settings,
+				)
+				.into(),
+			)?;
+			self.active_effect_ids.insert(effect_id);
+		}
 		Ok(handle)
 	}
 

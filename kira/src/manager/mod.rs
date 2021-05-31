@@ -9,6 +9,7 @@ mod tests;
 use std::{
 	hash::Hash,
 	io::{stderr, Write},
+	sync::Arc,
 };
 
 use active_ids::ActiveIds;
@@ -16,7 +17,7 @@ use active_ids::ActiveIds;
 use backend::Backend;
 #[cfg(feature = "benchmarking")]
 pub use backend::Backend;
-use basedrop::{Collector, Owned};
+use basedrop::{Collector, Handle, Owned};
 use error::{
 	AddArrangementError, AddGroupError, AddMetronomeError, AddParameterError, AddSendTrackError,
 	AddSoundError, AddStreamError, AddSubTrackError, RemoveArrangementError, RemoveGroupError,
@@ -114,6 +115,15 @@ and the audio thread.
 pub struct AudioManager {
 	command_producer: CommandProducer,
 	resource_collector: Option<Collector>,
+	// this handle is specifically meant to be shared with
+	// TrackHandles. i want them to have a Weak<Handle>
+	// so that they don't prevent the collector from being
+	// cleaned up. it's ok for things on the audio thread
+	// to own a Handle because the audio thread is stopped
+	// before cleaning up, so nothing on the audio thread
+	// can prevent the resource collector from being
+	// cleaned up.
+	resource_collector_handle: Option<Arc<Handle>>,
 	active_ids: ActiveIds,
 	sample_rate: u32,
 
@@ -135,6 +145,7 @@ impl AudioManager {
 		let (quit_signal_producer, mut quit_signal_consumer) = RingBuffer::new(1).split();
 		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
 		let resource_collector = Collector::new();
+		let resource_collector_handle = resource_collector.handle();
 
 		const WRAPPER_THREAD_SLEEP_DURATION: f64 = 1.0 / 60.0;
 
@@ -174,6 +185,7 @@ impl AudioManager {
 			active_ids,
 			sample_rate,
 			resource_collector: Some(resource_collector),
+			resource_collector_handle: Some(Arc::new(resource_collector_handle)),
 		})
 	}
 
@@ -183,11 +195,13 @@ impl AudioManager {
 		let active_ids = ActiveIds::new(&settings);
 		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
 		let resource_collector = Collector::new();
+		let resource_collector_handle = resource_collector.handle();
 		let (_stream, sample_rate) = Self::setup_stream(settings, command_consumer)?;
 		Ok(Self {
 			command_producer: CommandProducer::new(command_producer),
 			active_ids,
 			resource_collector: Some(resource_collector),
+			resource_collector_handle: Some(Arc::new(resource_collector_handle)),
 			sample_rate,
 			_stream,
 		})
@@ -235,12 +249,14 @@ impl AudioManager {
 		let (quit_signal_producer, _) = RingBuffer::new(1).split();
 		let (command_producer, command_consumer) = RingBuffer::new(settings.num_commands).split();
 		let resource_collector = Collector::new();
+		let resource_collector_handle = resource_collector.handle();
 		let audio_manager = Self {
 			quit_signal_producer,
 			command_producer: CommandProducer::new(command_producer),
 			active_ids: ActiveIds::new(&settings),
 			sample_rate: SAMPLE_RATE,
 			resource_collector: Some(resource_collector),
+			resource_collector_handle: Some(Arc::new(resource_collector_handle)),
 		};
 		let backend = Backend::new(SAMPLE_RATE, settings, command_consumer);
 		(audio_manager, backend)
@@ -424,7 +440,7 @@ impl AudioManager {
 		MainTrackHandle::new(
 			self.command_producer.clone(),
 			self.sample_rate,
-			self.resource_collector().handle(),
+			Arc::downgrade(self.resource_collector_handle.as_ref().unwrap()),
 		)
 	}
 
@@ -454,7 +470,7 @@ impl AudioManager {
 			&settings,
 			self.command_producer.clone(),
 			self.sample_rate,
-			self.resource_collector().handle(),
+			Arc::downgrade(self.resource_collector_handle.as_ref().unwrap()),
 		);
 		let track = Owned::new(
 			&self.resource_collector().handle(),
@@ -489,7 +505,7 @@ impl AudioManager {
 			&settings,
 			self.command_producer.clone(),
 			self.sample_rate,
-			self.resource_collector().handle(),
+			Arc::downgrade(self.resource_collector_handle.as_ref().unwrap()),
 		);
 		let track = Owned::new(
 			&self.resource_collector().handle(),
@@ -574,6 +590,8 @@ impl AudioManager {
 #[cfg(not(test))]
 impl Drop for AudioManager {
 	fn drop(&mut self) {
+		std::mem::drop(self.resource_collector_handle.take());
+
 		#[cfg(not(target_arch = "wasm32"))]
 		self.quit_signal_producer.push(true).ok();
 
