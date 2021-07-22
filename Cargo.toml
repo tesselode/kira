@@ -1,7 +1,6 @@
 [workspace]
 members = [
 	"kira",
-	"kira-benchmarks"
 ]
 
 [profile.dev]
