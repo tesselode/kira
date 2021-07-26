@@ -24,6 +24,6 @@ impl SoundShared {
 }
 
 pub(crate) struct Sound {
-	pub data: Box<dyn SoundData>,
+	pub data: Arc<dyn SoundData>,
 	pub shared: Arc<SoundShared>,
 }

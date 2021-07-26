@@ -8,12 +8,14 @@ use crate::{
 };
 
 use super::{
+	data::SoundData,
 	instance::{Instance, InstanceId},
 	SoundId, SoundShared,
 };
 
 pub struct SoundHandle {
 	pub(crate) id: SoundId,
+	pub(crate) data: Arc<dyn SoundData>,
 	pub(crate) shared: Arc<SoundShared>,
 	pub(crate) instance_controller: Controller,
 	pub(crate) command_producer: CommandProducer,
@@ -22,6 +24,10 @@ pub struct SoundHandle {
 impl SoundHandle {
 	pub fn id(&self) -> SoundId {
 		self.id
+	}
+
+	pub fn data(&self) -> &Arc<dyn SoundData> {
+		&self.data
 	}
 
 	pub fn play(&mut self) -> Result<(), PlaySoundError> {

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use atomic_arena::Index;
 
 use crate::frame::Frame;
@@ -36,7 +38,7 @@ impl Instance {
 		self.state
 	}
 
-	pub fn process(&mut self, dt: f64, sound_data: &Box<dyn SoundData>) -> Frame {
+	pub fn process(&mut self, dt: f64, sound_data: &Arc<dyn SoundData>) -> Frame {
 		if let InstanceState::Playing = self.state {
 			let out = sound_data.frame_at_position(self.position);
 			self.position += dt;

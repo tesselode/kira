@@ -88,13 +88,15 @@ impl AudioManager {
 				.try_reserve()
 				.map_err(|_| AddSoundError::SoundLimitReached)?,
 		);
+		let data: Arc<dyn SoundData> = Arc::new(data);
 		let shared = Arc::new(SoundShared::new());
 		let sound = Sound {
-			data: Box::new(data),
+			data: data.clone(),
 			shared: shared.clone(),
 		};
 		let handle = SoundHandle {
 			id,
+			data,
 			shared,
 			instance_controller: self.resource_controllers.instance_controller.clone(),
 			command_producer: self.command_producer.clone(),
