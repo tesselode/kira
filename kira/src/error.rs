@@ -24,9 +24,25 @@ pub enum SetupError {
 }
 
 #[derive(Debug, Error)]
+pub enum CommandError {
+	#[error("Could not add a sound because the command queue is full.")]
+	CommandQueueFull,
+	#[error("Could not add a sound because a thread panicked while using the command queue.")]
+	MutexPoisoned,
+}
+
+#[derive(Debug, Error)]
 pub enum AddSoundError {
 	#[error("Could not add a sound because the maximum number of sounds has been reached.")]
 	SoundLimitReached,
-	#[error("Could not add a sound because the command queue is full.")]
-	CommandQueueFull,
+	#[error("{0}")]
+	CommandError(#[from] CommandError),
+}
+
+#[derive(Debug, Error)]
+pub enum PlaySoundError {
+	#[error("Could not add an instance because the maximum number of instances has been reached.")]
+	InstanceLimitReached,
+	#[error("{0}")]
+	CommandError(#[from] CommandError),
 }

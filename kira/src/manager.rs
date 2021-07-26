@@ -1,6 +1,5 @@
 mod backend;
-mod command;
-pub mod error;
+pub mod command;
 mod resources;
 
 use std::sync::Arc;
@@ -9,14 +8,16 @@ use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	Stream,
 };
-use ringbuf::{Producer, RingBuffer};
+use ringbuf::RingBuffer;
 
-use crate::sound::{data::SoundData, handle::SoundHandle, Sound, SoundId, SoundShared};
+use crate::{
+	error::{AddSoundError, SetupError},
+	sound::{data::SoundData, handle::SoundHandle, Sound, SoundId, SoundShared},
+};
 
 use self::{
 	backend::Backend,
-	command::{Command, SoundCommand},
-	error::{AddSoundError, SetupError},
+	command::{producer::CommandProducer, Command, SoundCommand},
 	resources::{
 		create_resources, create_unused_resource_channels, ResourceControllers,
 		UnusedResourceConsumers,
@@ -26,10 +27,11 @@ use self::{
 pub struct AudioManagerSettings {
 	pub sound_capacity: usize,
 	pub command_capacity: usize,
+	pub instance_capacity: usize,
 }
 
 pub struct AudioManager {
-	command_producer: Producer<Command>,
+	command_producer: CommandProducer,
 	resource_controllers: ResourceControllers,
 	unused_resource_consumers: UnusedResourceConsumers,
 	_stream: Stream,
@@ -69,7 +71,7 @@ impl AudioManager {
 		)?;
 		stream.play()?;
 		Ok(Self {
-			command_producer,
+			command_producer: CommandProducer::new(command_producer),
 			resource_controllers,
 			unused_resource_consumers,
 			_stream: stream,
@@ -91,16 +93,23 @@ impl AudioManager {
 			data: Box::new(data),
 			shared: shared.clone(),
 		};
-		let handle = SoundHandle { id, shared };
+		let handle = SoundHandle {
+			id,
+			shared,
+			instance_controller: self.resource_controllers.instance_controller.clone(),
+			command_producer: self.command_producer.clone(),
+		};
 		self.command_producer
-			.push(Command::Sound(SoundCommand::Add(id, sound)))
-			.map_err(|_| AddSoundError::CommandQueueFull)?;
+			.push(Command::Sound(SoundCommand::Add(id, sound)))?;
 		Ok(handle)
 	}
 
 	pub fn free_unused_resources(&mut self) {
 		while self.unused_resource_consumers.sound.pop().is_some() {
 			println!("dropped sound");
+		}
+		while self.unused_resource_consumers.instance.pop().is_some() {
+			println!("dropped instance");
 		}
 	}
 }

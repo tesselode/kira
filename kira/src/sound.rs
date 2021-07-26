@@ -1,5 +1,6 @@
 pub mod data;
 pub mod handle;
+pub mod instance;
 
 use std::sync::{atomic::AtomicBool, Arc};
 

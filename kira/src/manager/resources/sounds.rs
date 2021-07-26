@@ -1,6 +1,6 @@
 use std::sync::atomic::Ordering;
 
-use atomic_arena::{Arena, Index};
+use atomic_arena::Arena;
 use ringbuf::Producer;
 
 use crate::{manager::command::SoundCommand, sound::Sound};
