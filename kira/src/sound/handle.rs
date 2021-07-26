@@ -9,7 +9,7 @@ use crate::{
 
 use super::{
 	data::SoundData,
-	instance::{Instance, InstanceId},
+	instance::{settings::InstanceSettings, Instance, InstanceId},
 	SoundId, SoundShared,
 };
 
@@ -30,13 +30,13 @@ impl SoundHandle {
 		&self.data
 	}
 
-	pub fn play(&mut self) -> Result<(), PlaySoundError> {
+	pub fn play(&mut self, settings: InstanceSettings) -> Result<(), PlaySoundError> {
 		let id = InstanceId(
 			self.instance_controller
 				.try_reserve()
 				.map_err(|_| PlaySoundError::InstanceLimitReached)?,
 		);
-		let instance = Instance::new(self.id);
+		let instance = Instance::new(self.id, &self.data, settings);
 		self.command_producer
 			.push(Command::Instance(InstanceCommand::Add(id, instance)))?;
 		Ok(())

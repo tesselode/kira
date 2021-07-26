@@ -1,8 +1,14 @@
+pub mod settings;
+
+use std::sync::Arc;
+
 use atomic_arena::Index;
 
 use crate::{frame::Frame, manager::resources::sounds::Sounds};
 
-use super::SoundId;
+use self::settings::InstanceSettings;
+
+use super::{data::SoundData, SoundId};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct InstanceId(pub(crate) Index);
@@ -15,16 +21,30 @@ pub enum InstanceState {
 
 pub(crate) struct Instance {
 	sound_id: SoundId,
+	playback_rate: f64,
+	reverse: bool,
+	loop_start: Option<f64>,
 	state: InstanceState,
 	position: f64,
 }
 
 impl Instance {
-	pub fn new(sound_id: SoundId) -> Self {
+	pub fn new(
+		sound_id: SoundId,
+		sound_data: &Arc<dyn SoundData>,
+		settings: InstanceSettings,
+	) -> Self {
 		Self {
 			sound_id,
+			playback_rate: settings.playback_rate,
+			reverse: settings.reverse,
+			loop_start: settings.loop_start.as_option(sound_data),
 			state: InstanceState::Playing,
-			position: 0.0,
+			position: if settings.reverse {
+				sound_data.duration() - settings.start_position
+			} else {
+				settings.start_position
+			},
 		}
 	}
 
@@ -39,9 +59,28 @@ impl Instance {
 		};
 		if let InstanceState::Playing = self.state {
 			let out = sound.data.frame_at_position(self.position);
-			self.position += dt;
-			if self.position > sound.data.duration() {
-				self.state = InstanceState::Stopped;
+			let playback_rate = if self.reverse {
+				-self.playback_rate
+			} else {
+				self.playback_rate
+			};
+			self.position += playback_rate * dt;
+			if playback_rate < 0.0 {
+				if let Some(loop_start) = self.loop_start {
+					while self.position < loop_start {
+						self.position += sound.data.duration() - loop_start;
+					}
+				} else if self.position < 0.0 {
+					self.state = InstanceState::Stopped;
+				}
+			} else {
+				if let Some(loop_start) = self.loop_start {
+					while self.position > sound.data.duration() {
+						self.position -= sound.data.duration() - loop_start;
+					}
+				} else if self.position > sound.data.duration() {
+					self.state = InstanceState::Stopped;
+				}
 			}
 			return out;
 		}
