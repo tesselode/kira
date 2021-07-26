@@ -1,23 +1,40 @@
-use std::f32::consts::TAU;
+use ringbuf::Consumer;
 
 use crate::frame::Frame;
 
+use super::{
+	command::Command,
+	resources::{Resources, UnusedResourceProducers},
+};
+
 pub(super) struct Backend {
 	sample_rate: u32,
-	phase: f32,
+	resources: Resources,
+	command_consumer: Consumer<Command>,
 }
 
 impl Backend {
-	pub fn new(sample_rate: u32) -> Self {
+	pub fn new(
+		sample_rate: u32,
+		resources: Resources,
+		command_consumer: Consumer<Command>,
+	) -> Self {
 		Self {
 			sample_rate,
-			phase: 0.0,
+			resources,
+			command_consumer,
+		}
+	}
+
+	pub fn on_start_processing(&mut self) {
+		while let Some(command) = self.command_consumer.pop() {
+			match command {
+				Command::Sound(command) => self.resources.sounds.run_command(command),
+			}
 		}
 	}
 
 	pub fn process(&mut self) -> Frame {
-		self.phase += 440.0 / self.sample_rate as f32;
-		self.phase %= 1.0;
-		Frame::from_mono(0.25 * (self.phase * TAU).sin())
+		Frame::from_mono(0.0)
 	}
 }

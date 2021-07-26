@@ -1,8 +1,13 @@
-use self::data::SoundData;
-
 pub mod data;
 
-pub struct Sound {
+use atomic_arena::Index;
+
+use self::data::SoundData;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct SoundId(pub(crate) Index);
+
+pub(crate) struct Sound {
 	data: Box<dyn SoundData>,
 }
 
