@@ -1,6 +1,7 @@
 pub mod data;
 pub mod handle;
 pub mod instance;
+pub mod metadata;
 
 use std::sync::{
 	atomic::{AtomicBool, Ordering},
