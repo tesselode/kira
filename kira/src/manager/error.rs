@@ -22,3 +22,11 @@ pub enum SetupError {
 	#[error("{0}")]
 	PlayStreamError(#[from] PlayStreamError),
 }
+
+#[derive(Debug, Error)]
+pub enum AddSoundError {
+	#[error("Could not add a sound because the maximum number of sounds has been reached.")]
+	SoundLimitReached,
+	#[error("Could not add a sound because the command queue is full.")]
+	CommandQueueFull,
+}

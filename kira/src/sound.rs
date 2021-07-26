@@ -1,4 +1,7 @@
 pub mod data;
+pub mod handle;
+
+use std::sync::{atomic::AtomicBool, Arc};
 
 use atomic_arena::Index;
 
@@ -7,12 +10,19 @@ use self::data::SoundData;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SoundId(pub(crate) Index);
 
-pub(crate) struct Sound {
-	data: Box<dyn SoundData>,
+pub(crate) struct SoundShared {
+	pub removed: AtomicBool,
 }
 
-impl Sound {
-	pub fn new(data: Box<dyn SoundData>) -> Self {
-		Self { data }
+impl SoundShared {
+	pub(crate) fn new() -> Self {
+		Self {
+			removed: AtomicBool::new(false),
+		}
 	}
+}
+
+pub(crate) struct Sound {
+	pub data: Box<dyn SoundData>,
+	pub shared: Arc<SoundShared>,
 }

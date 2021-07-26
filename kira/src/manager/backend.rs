@@ -27,6 +27,8 @@ impl Backend {
 	}
 
 	pub fn on_start_processing(&mut self) {
+		self.resources.sounds.on_start_processing();
+
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
 				Command::Sound(command) => self.resources.sounds.run_command(command),
