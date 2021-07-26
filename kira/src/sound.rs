@@ -2,7 +2,10 @@ pub mod data;
 pub mod handle;
 pub mod instance;
 
-use std::sync::{atomic::AtomicBool, Arc};
+use std::sync::{
+	atomic::{AtomicBool, Ordering},
+	Arc,
+};
 
 use atomic_arena::Index;
 
@@ -12,14 +15,22 @@ use self::data::SoundData;
 pub struct SoundId(pub(crate) Index);
 
 pub(crate) struct SoundShared {
-	pub removed: AtomicBool,
+	removed: AtomicBool,
 }
 
 impl SoundShared {
-	pub(crate) fn new() -> Self {
+	pub fn new() -> Self {
 		Self {
 			removed: AtomicBool::new(false),
 		}
+	}
+
+	pub fn is_marked_for_removal(&self) -> bool {
+		self.removed.load(Ordering::SeqCst)
+	}
+
+	pub fn mark_for_removal(&self) {
+		self.removed.store(true, Ordering::SeqCst);
 	}
 }
 

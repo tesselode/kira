@@ -1,4 +1,4 @@
-use std::sync::{atomic::Ordering, Arc};
+use std::sync::Arc;
 
 use atomic_arena::Controller;
 
@@ -45,6 +45,6 @@ impl SoundHandle {
 
 impl Drop for SoundHandle {
 	fn drop(&mut self) {
-		self.shared.removed.store(true, Ordering::SeqCst);
+		self.shared.mark_for_removal();
 	}
 }

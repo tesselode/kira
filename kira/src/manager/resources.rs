@@ -1,7 +1,7 @@
 pub mod instances;
 pub mod sounds;
 
-use atomic_arena::{Arena, Controller};
+use atomic_arena::Controller;
 use ringbuf::{Consumer, Producer, RingBuffer};
 
 use crate::sound::{instance::Instance, Sound};
@@ -53,16 +53,13 @@ pub(super) fn create_resources(
 	settings: &AudioManagerSettings,
 	unused_resource_producers: UnusedResourceProducers,
 ) -> (Resources, ResourceControllers) {
-	let sounds = Sounds {
-		sounds: Arena::new(settings.sound_capacity),
-		unused_sound_producer: unused_resource_producers.sound,
-	};
-	let sound_controller = sounds.sounds.controller();
-	let instances = Instances {
-		instances: Arena::new(settings.instance_capacity),
-		unused_instance_producer: unused_resource_producers.instance,
-	};
-	let instance_controller = instances.instances.controller();
+	let sounds = Sounds::new(settings.sound_capacity, unused_resource_producers.sound);
+	let sound_controller = sounds.controller();
+	let instances = Instances::new(
+		settings.instance_capacity,
+		unused_resource_producers.instance,
+	);
+	let instance_controller = instances.controller();
 	(
 		Resources { sounds, instances },
 		ResourceControllers {

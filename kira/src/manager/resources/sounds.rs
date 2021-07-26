@@ -1,23 +1,39 @@
-use std::sync::atomic::Ordering;
-
-use atomic_arena::Arena;
+use atomic_arena::{Arena, Controller};
 use ringbuf::Producer;
 
-use crate::{manager::command::SoundCommand, sound::Sound};
+use crate::{
+	manager::command::SoundCommand,
+	sound::{Sound, SoundId},
+};
 
 pub(crate) struct Sounds {
-	pub sounds: Arena<Sound>,
-	pub unused_sound_producer: Producer<Sound>,
+	sounds: Arena<Sound>,
+	unused_sound_producer: Producer<Sound>,
 }
 
 impl Sounds {
+	pub fn new(capacity: usize, unused_sound_producer: Producer<Sound>) -> Self {
+		Self {
+			sounds: Arena::new(capacity),
+			unused_sound_producer,
+		}
+	}
+
+	pub fn controller(&self) -> Controller {
+		self.sounds.controller()
+	}
+
+	pub fn get(&self, id: SoundId) -> Option<&Sound> {
+		self.sounds.get(id.0)
+	}
+
 	pub fn on_start_processing(&mut self) {
 		if self.unused_sound_producer.is_full() {
 			return;
 		}
 		for (_, sound) in self
 			.sounds
-			.drain_filter(|sound| sound.shared.removed.load(Ordering::SeqCst))
+			.drain_filter(|sound| sound.shared.is_marked_for_removal())
 		{
 			if self.unused_sound_producer.push(sound).is_err() {
 				panic!("Unused sound producer is full")

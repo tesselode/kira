@@ -1,4 +1,4 @@
-use atomic_arena::Arena;
+use atomic_arena::{Arena, Controller};
 use ringbuf::Producer;
 
 use crate::{
@@ -10,11 +10,22 @@ use crate::{
 use super::sounds::Sounds;
 
 pub(crate) struct Instances {
-	pub instances: Arena<Instance>,
-	pub unused_instance_producer: Producer<Instance>,
+	instances: Arena<Instance>,
+	unused_instance_producer: Producer<Instance>,
 }
 
 impl Instances {
+	pub fn new(capacity: usize, unused_instance_producer: Producer<Instance>) -> Self {
+		Self {
+			instances: Arena::new(capacity),
+			unused_instance_producer,
+		}
+	}
+
+	pub fn controller(&self) -> Controller {
+		self.instances.controller()
+	}
+
 	pub fn on_start_processing(&mut self) {
 		if self.unused_instance_producer.is_full() {
 			return;
@@ -45,8 +56,7 @@ impl Instances {
 		self.instances
 			.iter_mut()
 			.fold(Frame::from_mono(0.0), |previous, (_, instance)| {
-				let sound = &sounds.sounds[instance.sound_id().0];
-				previous + instance.process(dt, &sound.data)
+				previous + instance.process(dt, sounds)
 			})
 	}
 }

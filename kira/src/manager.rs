@@ -1,6 +1,6 @@
 mod backend;
 pub mod command;
-mod resources;
+pub(crate) mod resources;
 
 use std::sync::Arc;
 
@@ -28,6 +28,16 @@ pub struct AudioManagerSettings {
 	pub sound_capacity: usize,
 	pub command_capacity: usize,
 	pub instance_capacity: usize,
+}
+
+impl Default for AudioManagerSettings {
+	fn default() -> Self {
+		Self {
+			sound_capacity: 100,
+			command_capacity: 100,
+			instance_capacity: 100,
+		}
+	}
 }
 
 pub struct AudioManager {
