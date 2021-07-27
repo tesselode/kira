@@ -2,6 +2,7 @@ pub mod error;
 
 use crate::{frame::Frame, sound::metadata::SoundMetadata, util};
 
+use std::time::Duration;
 #[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
 use std::{
 	fs::File,
@@ -13,7 +14,7 @@ use super::SoundData;
 
 pub struct StaticSoundData {
 	sample_rate: u32,
-	duration: f64,
+	duration: Duration,
 	frames: Vec<Frame>,
 	metadata: SoundMetadata,
 }
@@ -21,7 +22,7 @@ pub struct StaticSoundData {
 impl StaticSoundData {
 	/// Creates a new sound from raw sample data.
 	pub fn from_frames(sample_rate: u32, frames: Vec<Frame>, metadata: SoundMetadata) -> Self {
-		let duration = frames.len() as f64 / sample_rate as f64;
+		let duration = Duration::from_secs_f64(frames.len() as f64 / sample_rate as f64);
 		Self {
 			sample_rate,
 			frames,
@@ -301,7 +302,7 @@ impl StaticSoundData {
 }
 
 impl SoundData for StaticSoundData {
-	fn duration(&self) -> f64 {
+	fn duration(&self) -> Duration {
 		self.duration
 	}
 

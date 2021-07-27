@@ -48,7 +48,7 @@ impl Instance {
 			loop_start: settings.loop_start.as_option(sound_data),
 			state: InstanceState::Playing,
 			position: if settings.reverse {
-				sound_data.duration() - settings.start_position
+				sound_data.duration().as_secs_f64() - settings.start_position
 			} else {
 				settings.start_position
 			},
@@ -75,20 +75,21 @@ impl Instance {
 				self.playback_rate
 			};
 			self.position += playback_rate * dt;
+			let duration = sound.data.duration().as_secs_f64();
 			if playback_rate < 0.0 {
 				if let Some(loop_start) = self.loop_start {
 					while self.position < loop_start {
-						self.position += sound.data.duration() - loop_start;
+						self.position += duration - loop_start;
 					}
 				} else if self.position < 0.0 {
 					self.state = InstanceState::Stopped;
 				}
 			} else {
 				if let Some(loop_start) = self.loop_start {
-					while self.position > sound.data.duration() {
-						self.position -= sound.data.duration() - loop_start;
+					while self.position > duration {
+						self.position -= duration - loop_start;
 					}
-				} else if self.position > sound.data.duration() {
+				} else if self.position > duration {
 					self.state = InstanceState::Stopped;
 				}
 			}

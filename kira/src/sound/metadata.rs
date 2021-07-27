@@ -1,7 +1,9 @@
+use std::time::Duration;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct SoundMetadata {
 	pub loop_start: Option<f64>,
-	pub semantic_duration: Option<f64>,
+	pub semantic_duration: Option<Duration>,
 }
 
 impl SoundMetadata {
@@ -19,7 +21,7 @@ impl SoundMetadata {
 		}
 	}
 
-	pub fn semantic_duration(self, semantic_duration: impl Into<Option<f64>>) -> Self {
+	pub fn semantic_duration(self, semantic_duration: impl Into<Option<Duration>>) -> Self {
 		Self {
 			semantic_duration: semantic_duration.into(),
 			..self
