@@ -46,3 +46,13 @@ pub enum PlaySoundError {
 	#[error("{0}")]
 	CommandError(#[from] CommandError),
 }
+
+#[derive(Debug, Error)]
+pub enum AddParameterError {
+	#[error(
+		"Could not add a parameter because the maximum number of parameters has been reached."
+	)]
+	ParameterLimitReached,
+	#[error("{0}")]
+	CommandError(#[from] CommandError),
+}

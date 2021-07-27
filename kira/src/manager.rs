@@ -11,13 +11,14 @@ use cpal::{
 use ringbuf::RingBuffer;
 
 use crate::{
-	error::{AddSoundError, SetupError},
+	error::{AddParameterError, AddSoundError, SetupError},
+	parameter::{handle::ParameterHandle, Parameter, ParameterId},
 	sound::{data::SoundData, handle::SoundHandle, Sound, SoundId, SoundShared},
 };
 
 use self::{
 	backend::{context::Context, Backend},
-	command::{producer::CommandProducer, Command, SoundCommand},
+	command::{producer::CommandProducer, Command, ParameterCommand, SoundCommand},
 	resources::{
 		create_resources, create_unused_resource_channels, ResourceControllers,
 		UnusedResourceConsumers,
@@ -28,6 +29,7 @@ pub struct AudioManagerSettings {
 	pub sound_capacity: usize,
 	pub command_capacity: usize,
 	pub instance_capacity: usize,
+	pub parameter_capacity: usize,
 }
 
 impl Default for AudioManagerSettings {
@@ -36,6 +38,7 @@ impl Default for AudioManagerSettings {
 			sound_capacity: 100,
 			command_capacity: 100,
 			instance_capacity: 100,
+			parameter_capacity: 100,
 		}
 	}
 }
@@ -120,12 +123,34 @@ impl AudioManager {
 		Ok(handle)
 	}
 
+	pub fn add_parameter(&mut self, value: f64) -> Result<ParameterHandle, AddParameterError> {
+		let id = ParameterId(
+			self.resource_controllers
+				.parameter_controller
+				.try_reserve()
+				.map_err(|_| AddParameterError::ParameterLimitReached)?,
+		);
+		let parameter = Parameter::new(value);
+		let handle = ParameterHandle {
+			context: self.context.clone(),
+			id,
+			shared: parameter.shared(),
+			command_producer: self.command_producer.clone(),
+		};
+		self.command_producer
+			.push(Command::Parameter(ParameterCommand::Add(id, parameter)))?;
+		Ok(handle)
+	}
+
 	pub fn free_unused_resources(&mut self) {
 		while self.unused_resource_consumers.sound.pop().is_some() {
 			println!("dropped sound");
 		}
 		while self.unused_resource_consumers.instance.pop().is_some() {
 			println!("dropped instance");
+		}
+		while self.unused_resource_consumers.parameter.pop().is_some() {
+			println!("dropped parameter");
 		}
 	}
 }

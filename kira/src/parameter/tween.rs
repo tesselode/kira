@@ -55,7 +55,7 @@ pub struct Tween {
 }
 
 impl Tween {
-	fn value(&self, mut time: f64) -> f64 {
+	pub(super) fn value(&self, mut time: f64) -> f64 {
 		time -= self.delay.as_secs_f64();
 		if time < 0.0 {
 			return 0.0;

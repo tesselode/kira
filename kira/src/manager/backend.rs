@@ -38,16 +38,22 @@ impl Backend {
 
 		self.resources.sounds.on_start_processing();
 		self.resources.instances.on_start_processing();
+		self.resources.parameters.on_start_processing();
 
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
 				Command::Sound(command) => self.resources.sounds.run_command(command),
 				Command::Instance(command) => self.resources.instances.run_command(command),
+				Command::Parameter(command) => self
+					.resources
+					.parameters
+					.run_command(command, &self.context),
 			}
 		}
 	}
 
 	pub fn process(&mut self) -> Frame {
+		self.resources.parameters.update(self.context.dt);
 		let out = self.resources.instances.process(
 			self.sample_count,
 			self.context.dt,
