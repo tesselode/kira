@@ -1,6 +1,6 @@
 pub mod settings;
 
-use std::sync::Arc;
+use std::{sync::Arc, time::Instant};
 
 use atomic_arena::Index;
 
@@ -21,6 +21,7 @@ pub enum InstanceState {
 
 pub(crate) struct Instance {
 	sound_id: SoundId,
+	start_time: Instant,
 	playback_rate: f64,
 	reverse: bool,
 	loop_start: Option<f64>,
@@ -36,6 +37,7 @@ impl Instance {
 	) -> Self {
 		Self {
 			sound_id,
+			start_time: settings.start_time,
 			playback_rate: settings.playback_rate,
 			reverse: settings.reverse,
 			loop_start: settings.loop_start.as_option(sound_data),
@@ -53,6 +55,9 @@ impl Instance {
 	}
 
 	pub fn process(&mut self, dt: f64, sounds: &Sounds) -> Frame {
+		if Instant::now() < self.start_time {
+			return Frame::from_mono(0.0);
+		}
 		let sound = match sounds.get(self.sound_id) {
 			Some(sound) => sound,
 			None => return Frame::from_mono(0.0),
