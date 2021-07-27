@@ -1,5 +1,5 @@
-mod backend;
-pub mod command;
+pub(crate) mod backend;
+pub(crate) mod command;
 pub(crate) mod resources;
 
 use std::sync::Arc;
@@ -16,7 +16,7 @@ use crate::{
 };
 
 use self::{
-	backend::Backend,
+	backend::{context::Context, Backend},
 	command::{producer::CommandProducer, Command, SoundCommand},
 	resources::{
 		create_resources, create_unused_resource_channels, ResourceControllers,
@@ -41,6 +41,7 @@ impl Default for AudioManagerSettings {
 }
 
 pub struct AudioManager {
+	context: Arc<Context>,
 	command_producer: CommandProducer,
 	resource_controllers: ResourceControllers,
 	unused_resource_consumers: UnusedResourceConsumers,
@@ -62,7 +63,8 @@ impl AudioManager {
 			create_resources(&settings, unused_resource_producers);
 		let (command_producer, command_consumer) =
 			RingBuffer::new(settings.command_capacity).split();
-		let mut backend = Backend::new(sample_rate.0, resources, command_consumer);
+		let context = Arc::new(Context::new(sample_rate.0));
+		let mut backend = Backend::new(context.clone(), resources, command_consumer);
 		let stream = device.build_output_stream(
 			&config,
 			move |data: &mut [f32], _| {
@@ -81,6 +83,7 @@ impl AudioManager {
 		)?;
 		stream.play()?;
 		Ok(Self {
+			context,
 			command_producer: CommandProducer::new(command_producer),
 			resource_controllers,
 			unused_resource_consumers,
@@ -105,6 +108,7 @@ impl AudioManager {
 			shared: shared.clone(),
 		};
 		let handle = SoundHandle {
+			context: self.context.clone(),
 			id,
 			data,
 			shared,

@@ -1,10 +1,13 @@
 pub mod settings;
 
-use std::{sync::Arc, time::Instant};
+use std::sync::Arc;
 
 use atomic_arena::Index;
 
-use crate::{frame::Frame, manager::resources::sounds::Sounds};
+use crate::{
+	frame::Frame,
+	manager::{backend::context::Context, resources::sounds::Sounds},
+};
 
 use self::settings::InstanceSettings;
 
@@ -21,7 +24,7 @@ pub enum InstanceState {
 
 pub(crate) struct Instance {
 	sound_id: SoundId,
-	start_time: Instant,
+	start_time: u64,
 	playback_rate: f64,
 	reverse: bool,
 	loop_start: Option<f64>,
@@ -31,13 +34,15 @@ pub(crate) struct Instance {
 
 impl Instance {
 	pub fn new(
+		context: &Arc<Context>,
 		sound_id: SoundId,
 		sound_data: &Arc<dyn SoundData>,
 		settings: InstanceSettings,
 	) -> Self {
 		Self {
 			sound_id,
-			start_time: settings.start_time,
+			start_time: context.sample_count()
+				+ ((settings.delay.as_secs_f64() * context.sample_rate() as f64) as u64),
 			playback_rate: settings.playback_rate,
 			reverse: settings.reverse,
 			loop_start: settings.loop_start.as_option(sound_data),
@@ -54,8 +59,8 @@ impl Instance {
 		self.state
 	}
 
-	pub fn process(&mut self, dt: f64, sounds: &Sounds) -> Frame {
-		if Instant::now() < self.start_time {
+	pub fn process(&mut self, sample_count: u64, dt: f64, sounds: &Sounds) -> Frame {
+		if sample_count < self.start_time {
 			return Frame::from_mono(0.0);
 		}
 		let sound = match sounds.get(self.sound_id) {

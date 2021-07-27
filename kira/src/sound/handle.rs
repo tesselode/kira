@@ -4,7 +4,10 @@ use atomic_arena::Controller;
 
 use crate::{
 	error::PlaySoundError,
-	manager::command::{producer::CommandProducer, Command, InstanceCommand},
+	manager::{
+		backend::context::Context,
+		command::{producer::CommandProducer, Command, InstanceCommand},
+	},
 };
 
 use super::{
@@ -14,6 +17,7 @@ use super::{
 };
 
 pub struct SoundHandle {
+	pub(crate) context: Arc<Context>,
 	pub(crate) id: SoundId,
 	pub(crate) data: Arc<dyn SoundData>,
 	pub(crate) shared: Arc<SoundShared>,
@@ -36,7 +40,7 @@ impl SoundHandle {
 				.try_reserve()
 				.map_err(|_| PlaySoundError::InstanceLimitReached)?,
 		);
-		let instance = Instance::new(self.id, &self.data, settings);
+		let instance = Instance::new(&self.context, self.id, &self.data, settings);
 		self.command_producer
 			.push(Command::Instance(InstanceCommand::Add(id, instance)))?;
 		Ok(())

@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Instant};
+use std::{sync::Arc, time::Duration};
 
 use crate::sound::data::SoundData;
 
@@ -36,7 +36,7 @@ impl Default for InstanceLoopStart {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct InstanceSettings {
-	pub start_time: Instant,
+	pub delay: Duration,
 	pub start_position: f64,
 	pub playback_rate: f64,
 	pub reverse: bool,
@@ -46,7 +46,7 @@ pub struct InstanceSettings {
 impl InstanceSettings {
 	pub fn new() -> Self {
 		Self {
-			start_time: Instant::now(),
+			delay: Duration::default(),
 			start_position: 0.0,
 			playback_rate: 1.0,
 			reverse: false,
@@ -54,8 +54,8 @@ impl InstanceSettings {
 		}
 	}
 
-	pub fn start_time(self, start_time: Instant) -> Self {
-		Self { start_time, ..self }
+	pub fn delay(self, delay: Duration) -> Self {
+		Self { delay, ..self }
 	}
 
 	pub fn start_position(self, start_position: f64) -> Self {
