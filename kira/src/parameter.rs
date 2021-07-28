@@ -73,6 +73,10 @@ impl Parameter {
 		self.shared.clone()
 	}
 
+	pub fn value(&self) -> f64 {
+		self.value
+	}
+
 	pub fn set(&mut self, value: f64) {
 		self.value = value;
 	}

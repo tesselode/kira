@@ -4,3 +4,4 @@ pub mod manager;
 pub mod parameter;
 pub mod sound;
 mod util;
+pub mod value;

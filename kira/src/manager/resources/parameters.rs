@@ -5,7 +5,7 @@ use ringbuf::Producer;
 
 use crate::{
 	manager::{backend::context::Context, command::ParameterCommand},
-	parameter::Parameter,
+	parameter::{Parameter, ParameterId},
 };
 
 pub(crate) struct Parameters {
@@ -23,6 +23,10 @@ impl Parameters {
 
 	pub fn controller(&self) -> Controller {
 		self.parameters.controller()
+	}
+
+	pub fn get(&self, id: ParameterId) -> Option<&Parameter> {
+		self.parameters.get(id.0)
 	}
 
 	fn remove_unused_parameters(&mut self) {
