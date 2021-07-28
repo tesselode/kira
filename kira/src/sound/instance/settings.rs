@@ -4,7 +4,7 @@ use crate::{sound::data::SoundData, value::Value};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum InstanceLoopStart {
-	DefaultForSoundData,
+	FromMetadata,
 	Custom(f64),
 	None,
 }
@@ -12,7 +12,7 @@ pub enum InstanceLoopStart {
 impl InstanceLoopStart {
 	pub(crate) fn as_option(self, data: &Arc<dyn SoundData>) -> Option<f64> {
 		match self {
-			Self::DefaultForSoundData => data.metadata().loop_start,
+			Self::FromMetadata => data.metadata().loop_start,
 			Self::Custom(loop_start) => Some(loop_start),
 			Self::None => None,
 		}
@@ -30,7 +30,7 @@ impl<T: Into<Option<f64>>> From<T> for InstanceLoopStart {
 
 impl Default for InstanceLoopStart {
 	fn default() -> Self {
-		Self::DefaultForSoundData
+		Self::FromMetadata
 	}
 }
 
