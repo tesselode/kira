@@ -61,6 +61,10 @@ impl CachedValue {
 		}
 	}
 
+	pub(crate) fn get(&self) -> f64 {
+		self.raw_value
+	}
+
 	pub(crate) fn set(&mut self, value: Value) {
 		self.value = value;
 		if let Value::Fixed(raw_value) = self.value {

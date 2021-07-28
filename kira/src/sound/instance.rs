@@ -6,7 +6,11 @@ use atomic_arena::Index;
 
 use crate::{
 	frame::Frame,
-	manager::{backend::context::Context, resources::sounds::Sounds},
+	manager::{
+		backend::context::Context,
+		resources::{parameters::Parameters, sounds::Sounds},
+	},
+	value::cached::CachedValue,
 };
 
 use self::settings::InstanceSettings;
@@ -25,7 +29,7 @@ pub enum InstanceState {
 pub(crate) struct Instance {
 	sound_id: SoundId,
 	start_time: u64,
-	playback_rate: f64,
+	playback_rate: CachedValue,
 	reverse: bool,
 	loop_start: Option<f64>,
 	state: InstanceState,
@@ -43,7 +47,7 @@ impl Instance {
 			sound_id,
 			start_time: context.sample_count()
 				+ ((settings.delay.as_secs_f64() * context.sample_rate() as f64) as u64),
-			playback_rate: settings.playback_rate,
+			playback_rate: CachedValue::new(.., settings.playback_rate, 1.0),
 			reverse: settings.reverse,
 			loop_start: settings.loop_start.as_option(sound_data),
 			state: InstanceState::Playing,
@@ -59,7 +63,13 @@ impl Instance {
 		self.state
 	}
 
-	pub fn process(&mut self, sample_count: u64, dt: f64, sounds: &Sounds) -> Frame {
+	pub fn process(
+		&mut self,
+		sample_count: u64,
+		dt: f64,
+		sounds: &Sounds,
+		parameters: &Parameters,
+	) -> Frame {
 		if sample_count < self.start_time {
 			return Frame::from_mono(0.0);
 		}
@@ -68,11 +78,12 @@ impl Instance {
 			None => return Frame::from_mono(0.0),
 		};
 		if let InstanceState::Playing = self.state {
+			self.playback_rate.update(parameters);
 			let out = sound.data.frame_at_position(self.position);
 			let playback_rate = if self.reverse {
-				-self.playback_rate
+				-self.playback_rate.get()
 			} else {
-				self.playback_rate
+				self.playback_rate.get()
 			};
 			self.position += playback_rate * dt;
 			let duration = sound.data.duration().as_secs_f64();

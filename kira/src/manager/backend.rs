@@ -58,6 +58,7 @@ impl Backend {
 			self.sample_count,
 			self.context.dt,
 			&self.resources.sounds,
+			&self.resources.parameters,
 		);
 		self.sample_count += 1;
 		out

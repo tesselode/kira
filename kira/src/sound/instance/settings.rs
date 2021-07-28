@@ -1,6 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
-use crate::sound::data::SoundData;
+use crate::{sound::data::SoundData, value::Value};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum InstanceLoopStart {
@@ -38,7 +38,7 @@ impl Default for InstanceLoopStart {
 pub struct InstanceSettings {
 	pub delay: Duration,
 	pub start_position: f64,
-	pub playback_rate: f64,
+	pub playback_rate: Value,
 	pub reverse: bool,
 	pub loop_start: InstanceLoopStart,
 }
@@ -48,7 +48,7 @@ impl InstanceSettings {
 		Self {
 			delay: Duration::default(),
 			start_position: 0.0,
-			playback_rate: 1.0,
+			playback_rate: Value::Fixed(1.0),
 			reverse: false,
 			loop_start: InstanceLoopStart::default(),
 		}
@@ -65,9 +65,9 @@ impl InstanceSettings {
 		}
 	}
 
-	pub fn playback_rate(self, playback_rate: f64) -> Self {
+	pub fn playback_rate(self, playback_rate: impl Into<Value>) -> Self {
 		Self {
-			playback_rate,
+			playback_rate: playback_rate.into(),
 			..self
 		}
 	}

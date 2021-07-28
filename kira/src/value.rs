@@ -1,7 +1,7 @@
 pub mod cached;
 pub mod mapping;
 
-use crate::parameter::ParameterId;
+use crate::parameter::{ParameterId, handle::ParameterHandle};
 
 use self::mapping::Mapping;
 
@@ -21,6 +21,15 @@ impl From<ParameterId> for Value {
 	fn from(id: ParameterId) -> Self {
 		Self::Parameter {
 			id,
+			mapping: Default::default(),
+		}
+	}
+}
+
+impl From<&ParameterHandle> for Value {
+	fn from(handle: &ParameterHandle) -> Self {
+		Self::Parameter {
+			id: handle.id(),
 			mapping: Default::default(),
 		}
 	}
