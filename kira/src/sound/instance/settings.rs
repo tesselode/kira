@@ -38,7 +38,9 @@ impl Default for InstanceLoopStart {
 pub struct InstanceSettings {
 	pub delay: Duration,
 	pub start_position: f64,
+	pub volume: Value,
 	pub playback_rate: Value,
+	pub panning: Value,
 	pub reverse: bool,
 	pub loop_start: InstanceLoopStart,
 }
@@ -48,7 +50,9 @@ impl InstanceSettings {
 		Self {
 			delay: Duration::default(),
 			start_position: 0.0,
+			volume: Value::Fixed(1.0),
 			playback_rate: Value::Fixed(1.0),
+			panning: Value::Fixed(0.5),
 			reverse: false,
 			loop_start: InstanceLoopStart::default(),
 		}
@@ -65,9 +69,23 @@ impl InstanceSettings {
 		}
 	}
 
+	pub fn volume(self, volume: impl Into<Value>) -> Self {
+		Self {
+			volume: volume.into(),
+			..self
+		}
+	}
+
 	pub fn playback_rate(self, playback_rate: impl Into<Value>) -> Self {
 		Self {
 			playback_rate: playback_rate.into(),
+			..self
+		}
+	}
+
+	pub fn panning(self, panning: impl Into<Value>) -> Self {
+		Self {
+			panning: panning.into(),
 			..self
 		}
 	}

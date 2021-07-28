@@ -10,6 +10,18 @@ pub struct ValidRange {
 	pub upper_bound: Option<f64>,
 }
 
+impl ValidRange {
+	pub(crate) fn clamp(&mut self, mut x: f64) -> f64 {
+		if let Some(lower_bound) = self.lower_bound {
+			x = x.max(lower_bound);
+		}
+		if let Some(upper_bound) = self.upper_bound {
+			x = x.min(upper_bound);
+		}
+		x
+	}
+}
+
 impl From<RangeInclusive<f64>> for ValidRange {
 	fn from(range: RangeInclusive<f64>) -> Self {
 		Self {
@@ -68,14 +80,14 @@ impl CachedValue {
 	pub(crate) fn set(&mut self, value: Value) {
 		self.value = value;
 		if let Value::Fixed(raw_value) = self.value {
-			self.raw_value = raw_value;
+			self.raw_value = self.valid_range.clamp(raw_value);
 		}
 	}
 
 	pub(crate) fn update(&mut self, parameters: &Parameters) {
 		if let Value::Parameter { id, mapping } = self.value {
 			if let Some(parameter) = parameters.get(id) {
-				self.raw_value = mapping.map(parameter.value());
+				self.raw_value = self.valid_range.clamp(mapping.map(parameter.value()));
 			}
 		}
 	}

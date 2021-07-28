@@ -29,7 +29,9 @@ pub enum InstanceState {
 pub(crate) struct Instance {
 	sound_id: SoundId,
 	start_time: u64,
+	volume: CachedValue,
 	playback_rate: CachedValue,
+	panning: CachedValue,
 	reverse: bool,
 	loop_start: Option<f64>,
 	state: InstanceState,
@@ -47,7 +49,9 @@ impl Instance {
 			sound_id,
 			start_time: context.sample_count()
 				+ ((settings.delay.as_secs_f64() * context.sample_rate() as f64) as u64),
+			volume: CachedValue::new(.., settings.volume, 1.0),
 			playback_rate: CachedValue::new(.., settings.playback_rate, 1.0),
+			panning: CachedValue::new(0.0..=1.0, settings.panning, 0.5),
 			reverse: settings.reverse,
 			loop_start: settings.loop_start.as_option(sound_data),
 			state: InstanceState::Playing,
@@ -78,8 +82,17 @@ impl Instance {
 			None => return Frame::from_mono(0.0),
 		};
 		if let InstanceState::Playing = self.state {
+			// update cached values
+			self.volume.update(parameters);
 			self.playback_rate.update(parameters);
-			let out = sound.data.frame_at_position(self.position);
+			self.panning.update(parameters);
+			// get the output for this frame
+			let out = sound
+				.data
+				.frame_at_position(self.position)
+				.panned(self.panning.get() as f32)
+				* self.volume.get() as f32;
+			// increment the position
 			let playback_rate = if self.reverse {
 				-self.playback_rate.get()
 			} else {
