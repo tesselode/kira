@@ -3,7 +3,7 @@ pub mod settings;
 
 use atomic_arena::Index;
 
-use crate::{frame::Frame, value::cached::CachedValue};
+use crate::{frame::Frame, manager::resources::parameters::Parameters, value::cached::CachedValue};
 
 use self::settings::TrackSettings;
 
@@ -37,5 +37,25 @@ impl Track {
 			routes: settings.routes.into_vec(),
 			input: Frame::from_mono(0.0),
 		}
+	}
+
+	pub fn routes_mut(&mut self) -> &mut Vec<(TrackId, CachedValue)> {
+		&mut self.routes
+	}
+
+	pub fn add_input(&mut self, input: Frame) {
+		self.input += input;
+	}
+
+	pub fn process(&mut self, parameters: &Parameters) -> Frame {
+		self.volume.update(parameters);
+		self.panning.update(parameters);
+		for (_, amount) in &mut self.routes {
+			amount.update(parameters);
+		}
+		let mut output = std::mem::replace(&mut self.input, Frame::from_mono(0.0));
+		output *= self.volume.get() as f32;
+		output = output.panned(self.panning.get() as f32);
+		output
 	}
 }

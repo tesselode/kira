@@ -1,4 +1,5 @@
 pub mod instances;
+pub mod mixer;
 pub mod parameters;
 pub mod sounds;
 
