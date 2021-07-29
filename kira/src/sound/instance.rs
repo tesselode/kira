@@ -11,12 +11,13 @@ use crate::{
 		backend::context::Context,
 		resources::{parameters::Parameters, sounds::Sounds},
 	},
+	parameter::{tween::Tween, Parameter},
 	value::{cached::CachedValue, Value},
 };
 
 use self::settings::InstanceSettings;
 
-use super::{data::SoundData, SoundId};
+use super::{data::SoundData, Sound, SoundId};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct InstanceId(pub(crate) Index);
@@ -24,7 +25,19 @@ pub struct InstanceId(pub(crate) Index);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum InstanceState {
 	Playing,
+	Pausing,
+	Paused,
+	Stopping,
 	Stopped,
+}
+
+impl InstanceState {
+	fn is_playing(&self) -> bool {
+		match self {
+			InstanceState::Playing | InstanceState::Pausing | InstanceState::Stopping => true,
+			_ => false,
+		}
+	}
 }
 
 pub(crate) struct Instance {
@@ -37,6 +50,7 @@ pub(crate) struct Instance {
 	loop_start: Option<f64>,
 	state: InstanceState,
 	position: f64,
+	fade_volume: Parameter,
 }
 
 impl Instance {
@@ -61,6 +75,7 @@ impl Instance {
 			} else {
 				settings.start_position
 			},
+			fade_volume: Parameter::new(1.0),
 		}
 	}
 
@@ -80,6 +95,24 @@ impl Instance {
 		self.panning.set(panning);
 	}
 
+	pub fn pause(&mut self, tween: Tween, context: &Arc<Context>, command_sent_time: u64) {
+		self.state = InstanceState::Pausing;
+		self.fade_volume
+			.tween(context, 0.0, tween, command_sent_time);
+	}
+
+	pub fn resume(&mut self, tween: Tween, context: &Arc<Context>, command_sent_time: u64) {
+		self.state = InstanceState::Playing;
+		self.fade_volume
+			.tween(context, 1.0, tween, command_sent_time);
+	}
+
+	pub fn stop(&mut self, tween: Tween, context: &Arc<Context>, command_sent_time: u64) {
+		self.state = InstanceState::Stopping;
+		self.fade_volume
+			.tween(context, 0.0, tween, command_sent_time);
+	}
+
 	pub fn process(
 		&mut self,
 		sample_count: u64,
@@ -94,44 +127,58 @@ impl Instance {
 			Some(sound) => sound,
 			None => return Frame::from_mono(0.0),
 		};
-		if let InstanceState::Playing = self.state {
-			// update cached values
+		if self.state.is_playing() {
 			self.volume.update(parameters);
 			self.playback_rate.update(parameters);
 			self.panning.update(parameters);
-			// get the output for this frame
+			let just_finished_fade = self.fade_volume.update(dt);
 			let out = sound
 				.data
 				.frame_at_position(self.position)
 				.panned(self.panning.get() as f32)
-				* self.volume.get() as f32;
-			// increment the position
-			let playback_rate = if self.reverse {
-				-self.playback_rate.get()
-			} else {
-				self.playback_rate.get()
-			};
-			self.position += playback_rate * dt;
-			let duration = sound.data.duration().as_secs_f64();
-			if playback_rate < 0.0 {
-				if let Some(loop_start) = self.loop_start {
-					while self.position < loop_start {
-						self.position += duration - loop_start;
+				* self.volume.get() as f32
+				* self.fade_volume.value() as f32;
+			self.update_playback_position(dt, sound);
+			if just_finished_fade {
+				match self.state {
+					InstanceState::Pausing => {
+						self.state = InstanceState::Paused;
 					}
-				} else if self.position < 0.0 {
-					self.state = InstanceState::Stopped;
-				}
-			} else {
-				if let Some(loop_start) = self.loop_start {
-					while self.position > duration {
-						self.position -= duration - loop_start;
+					InstanceState::Stopping => {
+						self.state = InstanceState::Stopped;
 					}
-				} else if self.position > duration {
-					self.state = InstanceState::Stopped;
+					_ => {}
 				}
 			}
 			return out;
 		}
 		Frame::from_mono(0.0)
+	}
+
+	fn update_playback_position(&mut self, dt: f64, sound: &Sound) {
+		let playback_rate = if self.reverse {
+			-self.playback_rate.get()
+		} else {
+			self.playback_rate.get()
+		};
+		self.position += playback_rate * dt;
+		let duration = sound.data.duration().as_secs_f64();
+		if playback_rate < 0.0 {
+			if let Some(loop_start) = self.loop_start {
+				while self.position < loop_start {
+					self.position += duration - loop_start;
+				}
+			} else if self.position < 0.0 {
+				self.state = InstanceState::Stopped;
+			}
+		} else {
+			if let Some(loop_start) = self.loop_start {
+				while self.position > duration {
+					self.position -= duration - loop_start;
+				}
+			} else if self.position > duration {
+				self.state = InstanceState::Stopped;
+			}
+		}
 	}
 }

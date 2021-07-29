@@ -43,6 +43,7 @@ impl SoundHandle {
 		let instance = Instance::new(&self.context, self.id, &self.data, settings);
 		let handle = InstanceHandle {
 			id,
+			context: self.context.clone(),
 			command_producer: self.command_producer.clone(),
 		};
 		self.command_producer

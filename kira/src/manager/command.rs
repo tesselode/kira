@@ -1,9 +1,13 @@
 pub mod producer;
 
-use crate::{parameter::{tween::Tween, Parameter, ParameterId}, sound::{
+use crate::{
+	parameter::{tween::Tween, Parameter, ParameterId},
+	sound::{
 		instance::{Instance, InstanceId},
 		Sound, SoundId,
-	}, value::Value};
+	},
+	value::Value,
+};
 
 pub(crate) enum SoundCommand {
 	Add(SoundId, Sound),
@@ -14,6 +18,21 @@ pub(crate) enum InstanceCommand {
 	SetVolume(InstanceId, Value),
 	SetPlaybackRate(InstanceId, Value),
 	SetPanning(InstanceId, Value),
+	Pause {
+		id: InstanceId,
+		tween: Tween,
+		command_sent_time: u64,
+	},
+	Resume {
+		id: InstanceId,
+		tween: Tween,
+		command_sent_time: u64,
+	},
+	Stop {
+		id: InstanceId,
+		tween: Tween,
+		command_sent_time: u64,
+	},
 }
 
 pub(crate) enum ParameterCommand {

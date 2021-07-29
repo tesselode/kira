@@ -16,6 +16,8 @@ use crate::manager::backend::context::Context;
 
 use self::tween::Tween;
 
+type JustFinishedTween = bool;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ParameterId(pub(crate) Index);
 
@@ -105,7 +107,7 @@ impl Parameter {
 			.store(self.value.to_bits(), Ordering::SeqCst);
 	}
 
-	pub fn update(&mut self, dt: f64) {
+	pub fn update(&mut self, dt: f64) -> JustFinishedTween {
 		if let ParameterState::Tweening {
 			values,
 			time,
@@ -116,9 +118,11 @@ impl Parameter {
 			if *time >= tween.duration.as_secs_f64() + tween.delay.as_secs_f64() {
 				self.value = *values.end();
 				self.state = ParameterState::Idle;
+				return true;
 			} else {
 				self.value = values.start() + (values.end() - values.start()) * tween.value(*time);
 			}
 		}
+		false
 	}
 }

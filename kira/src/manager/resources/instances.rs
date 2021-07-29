@@ -1,9 +1,11 @@
+use std::sync::Arc;
+
 use atomic_arena::{Arena, Controller};
 use ringbuf::Producer;
 
 use crate::{
 	frame::Frame,
-	manager::command::InstanceCommand,
+	manager::{backend::context::Context, command::InstanceCommand},
 	sound::instance::{Instance, InstanceState},
 };
 
@@ -43,7 +45,7 @@ impl Instances {
 		}
 	}
 
-	pub fn run_command(&mut self, command: InstanceCommand) {
+	pub fn run_command(&mut self, command: InstanceCommand, context: &Arc<Context>) {
 		match command {
 			InstanceCommand::Add(id, instance) => self
 				.instances
@@ -62,6 +64,33 @@ impl Instances {
 			InstanceCommand::SetPanning(id, panning) => {
 				if let Some(instance) = self.instances.get_mut(id.0) {
 					instance.set_panning(panning);
+				}
+			}
+			InstanceCommand::Pause {
+				id,
+				tween,
+				command_sent_time,
+			} => {
+				if let Some(instance) = self.instances.get_mut(id.0) {
+					instance.pause(tween, context, command_sent_time);
+				}
+			}
+			InstanceCommand::Resume {
+				id,
+				tween,
+				command_sent_time,
+			} => {
+				if let Some(instance) = self.instances.get_mut(id.0) {
+					instance.resume(tween, context, command_sent_time);
+				}
+			}
+			InstanceCommand::Stop {
+				id,
+				tween,
+				command_sent_time,
+			} => {
+				if let Some(instance) = self.instances.get_mut(id.0) {
+					instance.stop(tween, context, command_sent_time);
 				}
 			}
 		}

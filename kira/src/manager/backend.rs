@@ -43,7 +43,9 @@ impl Backend {
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
 				Command::Sound(command) => self.resources.sounds.run_command(command),
-				Command::Instance(command) => self.resources.instances.run_command(command),
+				Command::Instance(command) => {
+					self.resources.instances.run_command(command, &self.context)
+				}
 				Command::Parameter(command) => self
 					.resources
 					.parameters
