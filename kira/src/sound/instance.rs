@@ -71,7 +71,7 @@ impl InstanceShared {
 
 pub(crate) struct Instance {
 	sound_id: SoundId,
-	start_time: u64,
+	time_until_start: f64,
 	volume: CachedValue,
 	playback_rate: CachedValue,
 	panning: CachedValue,
@@ -85,7 +85,6 @@ pub(crate) struct Instance {
 
 impl Instance {
 	pub fn new(
-		context: &Arc<Context>,
 		sound_id: SoundId,
 		sound_data: &Arc<dyn SoundData>,
 		settings: InstanceSettings,
@@ -97,8 +96,7 @@ impl Instance {
 		};
 		Self {
 			sound_id,
-			start_time: context.sample_count()
-				+ ((settings.delay.as_secs_f64() * context.sample_rate() as f64) as u64),
+			time_until_start: settings.delay.as_secs_f64(),
 			volume: CachedValue::new(.., settings.volume, 1.0),
 			playback_rate: CachedValue::new(.., settings.playback_rate, 1.0),
 			panning: CachedValue::new(0.0..=1.0, settings.panning, 0.5),
@@ -112,6 +110,10 @@ impl Instance {
 				position: AtomicU64::new(position.to_bits()),
 			}),
 		}
+	}
+
+	pub fn reduce_delay_time(&mut self, time: f64) {
+		self.time_until_start -= time;
 	}
 
 	pub fn shared(&self) -> Arc<InstanceShared> {
@@ -135,6 +137,10 @@ impl Instance {
 	}
 
 	pub fn pause(&mut self, tween: Tween, context: &Arc<Context>, command_sent_time: u64) {
+		if self.time_until_start > 0.0 {
+			self.state = InstanceState::Paused;
+			return;
+		}
 		self.state = InstanceState::Pausing;
 		self.fade_volume
 			.tween(context, 0.0, tween, command_sent_time);
@@ -147,6 +153,10 @@ impl Instance {
 	}
 
 	pub fn stop(&mut self, tween: Tween, context: &Arc<Context>, command_sent_time: u64) {
+		if self.time_until_start > 0.0 {
+			self.state = InstanceState::Stopped;
+			return;
+		}
 		self.state = InstanceState::Stopping;
 		self.fade_volume
 			.tween(context, 0.0, tween, command_sent_time);
@@ -159,21 +169,16 @@ impl Instance {
 			.store(self.position.to_bits(), Ordering::SeqCst);
 	}
 
-	pub fn process(
-		&mut self,
-		sample_count: u64,
-		dt: f64,
-		sounds: &Sounds,
-		parameters: &Parameters,
-	) -> Frame {
-		if sample_count < self.start_time {
-			return Frame::from_mono(0.0);
-		}
+	pub fn process(&mut self, dt: f64, sounds: &Sounds, parameters: &Parameters) -> Frame {
 		let sound = match sounds.get(self.sound_id) {
 			Some(sound) => sound,
 			None => return Frame::from_mono(0.0),
 		};
 		if self.state.is_playing() {
+			if self.time_until_start > 0.0 {
+				self.time_until_start -= dt;
+				return Frame::from_mono(0.0);
+			}
 			self.volume.update(parameters);
 			self.playback_rate.update(parameters);
 			self.panning.update(parameters);

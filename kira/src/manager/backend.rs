@@ -57,7 +57,6 @@ impl Backend {
 	pub fn process(&mut self) -> Frame {
 		self.resources.parameters.update(self.context.dt);
 		let out = self.resources.instances.process(
-			self.sample_count,
 			self.context.dt,
 			&self.resources.sounds,
 			&self.resources.parameters,

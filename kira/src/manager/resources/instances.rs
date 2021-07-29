@@ -54,10 +54,19 @@ impl Instances {
 
 	pub fn run_command(&mut self, command: InstanceCommand, context: &Arc<Context>) {
 		match command {
-			InstanceCommand::Add(id, instance) => self
-				.instances
-				.insert_with_index(id.0, instance)
-				.expect("Instance arena is full"),
+			InstanceCommand::Add {
+				id,
+				mut instance,
+				command_sent_time,
+			} => {
+				instance.reduce_delay_time(
+					(context.sample_count() - command_sent_time) as f64
+						/ context.sample_rate() as f64,
+				);
+				self.instances
+					.insert_with_index(id.0, instance)
+					.expect("Instance arena is full");
+			}
 			InstanceCommand::SetVolume(id, volume) => {
 				if let Some(instance) = self.instances.get_mut(id.0) {
 					instance.set_volume(volume);
@@ -103,17 +112,11 @@ impl Instances {
 		}
 	}
 
-	pub fn process(
-		&mut self,
-		sample_count: u64,
-		dt: f64,
-		sounds: &Sounds,
-		parameters: &Parameters,
-	) -> Frame {
+	pub fn process(&mut self, dt: f64, sounds: &Sounds, parameters: &Parameters) -> Frame {
 		self.instances
 			.iter_mut()
 			.fold(Frame::from_mono(0.0), |previous, (_, instance)| {
-				previous + instance.process(sample_count, dt, sounds, parameters)
+				previous + instance.process(dt, sounds, parameters)
 			})
 	}
 }

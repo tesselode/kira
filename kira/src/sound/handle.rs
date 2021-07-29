@@ -40,7 +40,7 @@ impl SoundHandle {
 				.try_reserve()
 				.map_err(|_| PlaySoundError::InstanceLimitReached)?,
 		);
-		let instance = Instance::new(&self.context, self.id, &self.data, settings);
+		let instance = Instance::new(self.id, &self.data, settings);
 		let handle = InstanceHandle {
 			id,
 			context: self.context.clone(),
@@ -48,7 +48,11 @@ impl SoundHandle {
 			command_producer: self.command_producer.clone(),
 		};
 		self.command_producer
-			.push(Command::Instance(InstanceCommand::Add(id, instance)))?;
+			.push(Command::Instance(InstanceCommand::Add {
+				id,
+				instance,
+				command_sent_time: self.context.sample_count(),
+			}))?;
 		Ok(handle)
 	}
 }

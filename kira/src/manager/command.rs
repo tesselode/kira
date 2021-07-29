@@ -14,7 +14,11 @@ pub(crate) enum SoundCommand {
 }
 
 pub(crate) enum InstanceCommand {
-	Add(InstanceId, Instance),
+	Add {
+		id: InstanceId,
+		instance: Instance,
+		command_sent_time: u64,
+	},
 	SetVolume(InstanceId, Value),
 	SetPlaybackRate(InstanceId, Value),
 	SetPanning(InstanceId, Value),
