@@ -5,3 +5,4 @@ pub mod parameter;
 pub mod sound;
 mod util;
 pub mod value;
+pub mod mixer;
