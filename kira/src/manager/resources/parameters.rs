@@ -59,19 +59,14 @@ impl Parameters {
 				.parameters
 				.insert_with_index(id.0, parameter)
 				.expect("Parameter arena is full"),
-			ParameterCommand::Set(id, value) => {
-				if let Some(parameter) = self.parameters.get_mut(id.0) {
-					parameter.set(value);
-				}
-			}
-			ParameterCommand::Tween {
+			ParameterCommand::Set {
 				id,
 				target,
 				tween,
 				command_sent_time,
 			} => {
 				if let Some(parameter) = self.parameters.get_mut(id.0) {
-					parameter.tween(context, target, tween, command_sent_time)
+					parameter.set(context, target, tween, command_sent_time)
 				}
 			}
 		}

@@ -26,14 +26,9 @@ impl ParameterHandle {
 		self.shared.value()
 	}
 
-	pub fn set(&mut self, value: f64) -> Result<(), CommandError> {
+	pub fn set(&mut self, target: f64, tween: Tween) -> Result<(), CommandError> {
 		self.command_producer
-			.push(Command::Parameter(ParameterCommand::Set(self.id, value)))
-	}
-
-	pub fn tween(&mut self, target: f64, tween: Tween) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::Parameter(ParameterCommand::Tween {
+			.push(Command::Parameter(ParameterCommand::Set {
 				id: self.id,
 				target,
 				tween,

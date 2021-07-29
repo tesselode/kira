@@ -47,7 +47,7 @@ impl Default for Easing {
 	}
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Tween {
 	pub delay: Duration,
 	pub duration: Duration,
@@ -61,5 +61,15 @@ impl Tween {
 			return 0.0;
 		}
 		self.easing.apply(time / self.duration.as_secs_f64())
+	}
+}
+
+impl Default for Tween {
+	fn default() -> Self {
+		Self {
+			delay: Duration::ZERO,
+			duration: Duration::from_millis(10),
+			easing: Easing::Linear,
+		}
 	}
 }

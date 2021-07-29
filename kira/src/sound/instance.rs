@@ -142,14 +142,12 @@ impl Instance {
 			return;
 		}
 		self.state = InstanceState::Pausing;
-		self.fade_volume
-			.tween(context, 0.0, tween, command_sent_time);
+		self.fade_volume.set(context, 0.0, tween, command_sent_time);
 	}
 
 	pub fn resume(&mut self, tween: Tween, context: &Arc<Context>, command_sent_time: u64) {
 		self.state = InstanceState::Playing;
-		self.fade_volume
-			.tween(context, 1.0, tween, command_sent_time);
+		self.fade_volume.set(context, 1.0, tween, command_sent_time);
 	}
 
 	pub fn stop(&mut self, tween: Tween, context: &Arc<Context>, command_sent_time: u64) {
@@ -158,8 +156,7 @@ impl Instance {
 			return;
 		}
 		self.state = InstanceState::Stopping;
-		self.fade_volume
-			.tween(context, 0.0, tween, command_sent_time);
+		self.fade_volume.set(context, 0.0, tween, command_sent_time);
 	}
 
 	pub fn on_start_processing(&self) {

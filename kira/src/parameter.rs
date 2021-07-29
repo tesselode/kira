@@ -79,11 +79,7 @@ impl Parameter {
 		self.value
 	}
 
-	pub fn set(&mut self, value: f64) {
-		self.value = value;
-	}
-
-	pub fn tween(
+	pub fn set(
 		&mut self,
 		context: &Arc<Context>,
 		target: f64,

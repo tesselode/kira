@@ -41,8 +41,7 @@ pub(crate) enum InstanceCommand {
 
 pub(crate) enum ParameterCommand {
 	Add(ParameterId, Parameter),
-	Set(ParameterId, f64),
-	Tween {
+	Set {
 		id: ParameterId,
 		target: f64,
 		tween: Tween,
