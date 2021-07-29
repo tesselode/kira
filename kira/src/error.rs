@@ -56,3 +56,11 @@ pub enum AddParameterError {
 	#[error("{0}")]
 	CommandError(#[from] CommandError),
 }
+
+#[derive(Debug, Error)]
+pub enum InstanceError {
+	#[error("Cannot modify an instance that has finished playing")]
+	InstanceStopped,
+	#[error("{0}")]
+	CommandError(#[from] CommandError),
+}

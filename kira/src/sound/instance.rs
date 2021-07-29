@@ -124,6 +124,11 @@ impl Instance {
 		self.state
 	}
 
+	fn set_state(&mut self, state: InstanceState) {
+		self.state = state;
+		self.shared.state.store(state as u8, Ordering::SeqCst);
+	}
+
 	pub fn set_volume(&mut self, volume: Value) {
 		self.volume.set(volume);
 	}
@@ -138,29 +143,28 @@ impl Instance {
 
 	pub fn pause(&mut self, tween: Tween, context: &Arc<Context>, command_sent_time: u64) {
 		if self.time_until_start > 0.0 {
-			self.state = InstanceState::Paused;
+			self.set_state(InstanceState::Paused);
 			return;
 		}
-		self.state = InstanceState::Pausing;
+		self.set_state(InstanceState::Pausing);
 		self.fade_volume.set(context, 0.0, tween, command_sent_time);
 	}
 
 	pub fn resume(&mut self, tween: Tween, context: &Arc<Context>, command_sent_time: u64) {
-		self.state = InstanceState::Playing;
+		self.set_state(InstanceState::Playing);
 		self.fade_volume.set(context, 1.0, tween, command_sent_time);
 	}
 
 	pub fn stop(&mut self, tween: Tween, context: &Arc<Context>, command_sent_time: u64) {
 		if self.time_until_start > 0.0 {
-			self.state = InstanceState::Stopped;
+			self.set_state(InstanceState::Stopped);
 			return;
 		}
-		self.state = InstanceState::Stopping;
+		self.set_state(InstanceState::Stopping);
 		self.fade_volume.set(context, 0.0, tween, command_sent_time);
 	}
 
 	pub fn on_start_processing(&self) {
-		self.shared.state.store(self.state as u8, Ordering::SeqCst);
 		self.shared
 			.position
 			.store(self.position.to_bits(), Ordering::SeqCst);
@@ -190,10 +194,10 @@ impl Instance {
 			if just_finished_fade {
 				match self.state {
 					InstanceState::Pausing => {
-						self.state = InstanceState::Paused;
+						self.set_state(InstanceState::Paused);
 					}
 					InstanceState::Stopping => {
-						self.state = InstanceState::Stopped;
+						self.set_state(InstanceState::Stopped);
 					}
 					_ => {}
 				}
@@ -217,7 +221,7 @@ impl Instance {
 					self.position += duration - loop_start;
 				}
 			} else if self.position < 0.0 {
-				self.state = InstanceState::Stopped;
+				self.set_state(InstanceState::Stopped);
 			}
 		} else {
 			if let Some(loop_start) = self.loop_start {
@@ -225,7 +229,7 @@ impl Instance {
 					self.position -= duration - loop_start;
 				}
 			} else if self.position > duration {
-				self.state = InstanceState::Stopped;
+				self.set_state(InstanceState::Stopped);
 			}
 		}
 	}
