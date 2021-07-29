@@ -49,6 +49,21 @@ impl Instances {
 				.instances
 				.insert_with_index(id.0, instance)
 				.expect("Instance arena is full"),
+			InstanceCommand::SetVolume(id, volume) => {
+				if let Some(instance) = self.instances.get_mut(id.0) {
+					instance.set_volume(volume);
+				}
+			}
+			InstanceCommand::SetPlaybackRate(id, playback_rate) => {
+				if let Some(instance) = self.instances.get_mut(id.0) {
+					instance.set_playback_rate(playback_rate);
+				}
+			}
+			InstanceCommand::SetPanning(id, panning) => {
+				if let Some(instance) = self.instances.get_mut(id.0) {
+					instance.set_panning(panning);
+				}
+			}
 		}
 	}
 

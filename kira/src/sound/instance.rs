@@ -1,3 +1,4 @@
+pub mod handle;
 pub mod settings;
 
 use std::sync::Arc;
@@ -10,7 +11,7 @@ use crate::{
 		backend::context::Context,
 		resources::{parameters::Parameters, sounds::Sounds},
 	},
-	value::cached::CachedValue,
+	value::{cached::CachedValue, Value},
 };
 
 use self::settings::InstanceSettings;
@@ -65,6 +66,18 @@ impl Instance {
 
 	pub fn state(&self) -> InstanceState {
 		self.state
+	}
+
+	pub fn set_volume(&mut self, volume: Value) {
+		self.volume.set(volume);
+	}
+
+	pub fn set_playback_rate(&mut self, playback_rate: Value) {
+		self.playback_rate.set(playback_rate);
+	}
+
+	pub fn set_panning(&mut self, panning: Value) {
+		self.panning.set(panning);
 	}
 
 	pub fn process(
