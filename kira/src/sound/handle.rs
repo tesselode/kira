@@ -44,6 +44,7 @@ impl SoundHandle {
 		let handle = InstanceHandle {
 			id,
 			context: self.context.clone(),
+			shared: instance.shared(),
 			command_producer: self.command_producer.clone(),
 		};
 		self.command_producer

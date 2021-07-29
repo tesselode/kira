@@ -10,17 +10,26 @@ use crate::{
 	value::Value,
 };
 
-use super::InstanceId;
+use super::{InstanceId, InstanceShared, InstanceState};
 
 pub struct InstanceHandle {
 	pub(crate) context: Arc<Context>,
 	pub(crate) id: InstanceId,
+	pub(crate) shared: Arc<InstanceShared>,
 	pub(crate) command_producer: CommandProducer,
 }
 
 impl InstanceHandle {
 	pub fn id(&self) -> InstanceId {
 		self.id
+	}
+
+	pub fn state(&self) -> InstanceState {
+		self.shared.state()
+	}
+
+	pub fn position(&self) -> f64 {
+		self.shared.position()
 	}
 
 	pub fn set_volume(&mut self, volume: impl Into<Value>) -> Result<(), CommandError> {

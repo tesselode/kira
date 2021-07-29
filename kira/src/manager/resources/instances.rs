@@ -29,6 +29,13 @@ impl Instances {
 	}
 
 	pub fn on_start_processing(&mut self) {
+		self.remove_unused_instances();
+		for (_, instance) in &mut self.instances {
+			instance.on_start_processing();
+		}
+	}
+
+	fn remove_unused_instances(&mut self) {
 		if self.unused_instance_producer.is_full() {
 			return;
 		}

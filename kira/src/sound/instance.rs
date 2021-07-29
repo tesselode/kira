@@ -1,7 +1,10 @@
 pub mod handle;
 pub mod settings;
 
-use std::sync::Arc;
+use std::sync::{
+	atomic::{AtomicU64, AtomicU8, Ordering},
+	Arc,
+};
 
 use atomic_arena::Index;
 
@@ -32,11 +35,37 @@ pub enum InstanceState {
 }
 
 impl InstanceState {
+	fn from_u8(value: u8) -> Self {
+		match value {
+			0 => Self::Playing,
+			1 => Self::Pausing,
+			2 => Self::Paused,
+			3 => Self::Stopping,
+			4 => Self::Stopped,
+			_ => panic!("{} is not a valid InstanceState", value),
+		}
+	}
+
 	fn is_playing(&self) -> bool {
 		match self {
 			InstanceState::Playing | InstanceState::Pausing | InstanceState::Stopping => true,
 			_ => false,
 		}
+	}
+}
+
+pub(crate) struct InstanceShared {
+	state: AtomicU8,
+	position: AtomicU64,
+}
+
+impl InstanceShared {
+	pub fn state(&self) -> InstanceState {
+		InstanceState::from_u8(self.state.load(Ordering::SeqCst))
+	}
+
+	pub fn position(&self) -> f64 {
+		f64::from_bits(self.position.load(Ordering::SeqCst))
 	}
 }
 
@@ -51,6 +80,7 @@ pub(crate) struct Instance {
 	state: InstanceState,
 	position: f64,
 	fade_volume: Parameter,
+	shared: Arc<InstanceShared>,
 }
 
 impl Instance {
@@ -60,6 +90,11 @@ impl Instance {
 		sound_data: &Arc<dyn SoundData>,
 		settings: InstanceSettings,
 	) -> Self {
+		let position = if settings.reverse {
+			sound_data.duration().as_secs_f64() - settings.start_position
+		} else {
+			settings.start_position
+		};
 		Self {
 			sound_id,
 			start_time: context.sample_count()
@@ -70,13 +105,17 @@ impl Instance {
 			reverse: settings.reverse,
 			loop_start: settings.loop_start.as_option(sound_data),
 			state: InstanceState::Playing,
-			position: if settings.reverse {
-				sound_data.duration().as_secs_f64() - settings.start_position
-			} else {
-				settings.start_position
-			},
+			position,
 			fade_volume: Parameter::new(1.0),
+			shared: Arc::new(InstanceShared {
+				state: AtomicU8::new(InstanceState::Playing as u8),
+				position: AtomicU64::new(position.to_bits()),
+			}),
 		}
+	}
+
+	pub fn shared(&self) -> Arc<InstanceShared> {
+		self.shared.clone()
 	}
 
 	pub fn state(&self) -> InstanceState {
@@ -111,6 +150,13 @@ impl Instance {
 		self.state = InstanceState::Stopping;
 		self.fade_volume
 			.tween(context, 0.0, tween, command_sent_time);
+	}
+
+	pub fn on_start_processing(&self) {
+		self.shared.state.store(self.state as u8, Ordering::SeqCst);
+		self.shared
+			.position
+			.store(self.position.to_bits(), Ordering::SeqCst);
 	}
 
 	pub fn process(
