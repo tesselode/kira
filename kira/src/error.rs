@@ -39,6 +39,15 @@ pub enum AddSoundError {
 	CommandError(#[from] CommandError),
 }
 
+#[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
+#[derive(Debug, Error)]
+pub enum LoadSoundError {
+	#[error("{0}")]
+	FromFileError(#[from] crate::sound::data::static_sound::error::FromFileError),
+	#[error("{0}")]
+	AddSoundError(#[from] AddSoundError),
+}
+
 #[derive(Debug, Error)]
 pub enum PlaySoundError {
 	#[error("Could not add an instance because the maximum number of instances has been reached.")]

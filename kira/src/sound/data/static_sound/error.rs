@@ -4,8 +4,9 @@ use thiserror::Error;
 
 /// Something that can go wrong when loading
 /// [`StaticSoundData`](super::StaticSoundData) from a file.
+#[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
 #[derive(Debug, Error)]
-pub enum SoundFromFileError {
+pub enum FromFileError {
 	/// The sound has more than two channels.
 	#[error("Only mono and stereo audio is supported")]
 	UnsupportedChannelConfiguration,

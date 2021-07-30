@@ -2,7 +2,7 @@ pub(crate) mod backend;
 pub(crate) mod command;
 pub(crate) mod resources;
 
-use std::sync::Arc;
+use std::{path::Path, sync::Arc};
 
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
@@ -13,7 +13,14 @@ use ringbuf::RingBuffer;
 use crate::{
 	error::{AddParameterError, AddSoundError, AddSubTrackError, SetupError},
 	parameter::{handle::ParameterHandle, Parameter, ParameterId},
-	sound::{data::SoundData, handle::SoundHandle, Sound, SoundId, SoundShared},
+	sound::{
+		data::{
+			static_sound::{settings::StaticSoundDataSettings, StaticSoundData},
+			SoundData,
+		},
+		handle::SoundHandle,
+		Sound, SoundId, SoundShared,
+	},
 	track::{handle::TrackHandle, settings::TrackSettings, SubTrackId, Track, TrackId},
 };
 
@@ -123,6 +130,17 @@ impl AudioManager {
 		};
 		self.command_producer
 			.push(Command::Sound(SoundCommand::Add(id, sound)))?;
+		Ok(handle)
+	}
+
+	#[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
+	pub fn load_sound(
+		&mut self,
+		path: impl AsRef<Path>,
+		settings: StaticSoundDataSettings,
+	) -> Result<SoundHandle, crate::error::LoadSoundError> {
+		let data = StaticSoundData::from_file(path, settings)?;
+		let handle = self.add_sound(data)?;
 		Ok(handle)
 	}
 

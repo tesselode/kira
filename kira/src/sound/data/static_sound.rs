@@ -4,12 +4,6 @@ pub mod settings;
 use crate::{frame::Frame, util};
 
 use std::time::Duration;
-#[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
-use std::{
-	fs::File,
-	io::{Read, Seek},
-	path::Path,
-};
 
 use self::settings::StaticSoundDataSettings;
 
@@ -43,9 +37,9 @@ impl StaticSoundData {
 	pub fn from_mp3_reader<R>(
 		reader: R,
 		settings: StaticSoundDataSettings,
-	) -> Result<Self, error::SoundFromFileError>
+	) -> Result<Self, error::FromFileError>
 	where
-		R: Read,
+		R: std::io::Read,
 	{
 		let mut decoder = minimp3::Decoder::new(reader);
 		let mut sample_rate = None;
@@ -55,7 +49,7 @@ impl StaticSoundData {
 				Ok(frame) => {
 					if let Some(sample_rate) = sample_rate {
 						if sample_rate != frame.sample_rate {
-							return Err(error::SoundFromFileError::VariableMp3SampleRate);
+							return Err(error::FromFileError::VariableMp3SampleRate);
 						}
 					} else {
 						sample_rate = Some(frame.sample_rate);
@@ -80,9 +74,7 @@ impl StaticSoundData {
 								))
 							}
 						}
-						_ => {
-							return Err(error::SoundFromFileError::UnsupportedChannelConfiguration)
-						}
+						_ => return Err(error::FromFileError::UnsupportedChannelConfiguration),
 					}
 				}
 				Err(error) => match error {
@@ -93,7 +85,7 @@ impl StaticSoundData {
 		}
 		let sample_rate = match sample_rate {
 			Some(sample_rate) => sample_rate,
-			None => return Err(error::SoundFromFileError::UnknownMp3SampleRate),
+			None => return Err(error::FromFileError::UnknownMp3SampleRate),
 		};
 		Ok(Self::from_frames(
 			sample_rate as u32,
@@ -107,11 +99,11 @@ impl StaticSoundData {
 	pub fn from_mp3_file<P>(
 		path: P,
 		settings: StaticSoundDataSettings,
-	) -> Result<Self, error::SoundFromFileError>
+	) -> Result<Self, error::FromFileError>
 	where
-		P: AsRef<Path>,
+		P: AsRef<std::path::Path>,
 	{
-		Self::from_mp3_reader(File::open(path)?, settings)
+		Self::from_mp3_reader(std::fs::File::open(path)?, settings)
 	}
 
 	/// Decodes a sound from an ogg reader.
@@ -119,9 +111,9 @@ impl StaticSoundData {
 	pub fn from_ogg_reader<R>(
 		reader: R,
 		settings: StaticSoundDataSettings,
-	) -> Result<Self, error::SoundFromFileError>
+	) -> Result<Self, error::FromFileError>
 	where
-		R: Read + Seek,
+		R: std::io::Read + std::io::Seek,
 	{
 		use lewton::{inside_ogg::OggStreamReader, samples::Samples};
 		let mut reader = OggStreamReader::new(reader)?;
@@ -140,7 +132,7 @@ impl StaticSoundData {
 						stereo_samples.push(Frame::new(packet[0][i], packet[1][i]));
 					}
 				}
-				_ => return Err(error::SoundFromFileError::UnsupportedChannelConfiguration),
+				_ => return Err(error::FromFileError::UnsupportedChannelConfiguration),
 			}
 		}
 		Ok(Self::from_frames(
@@ -155,11 +147,11 @@ impl StaticSoundData {
 	pub fn from_ogg_file<P>(
 		path: P,
 		settings: StaticSoundDataSettings,
-	) -> Result<Self, error::SoundFromFileError>
+	) -> Result<Self, error::FromFileError>
 	where
-		P: AsRef<Path>,
+		P: AsRef<std::path::Path>,
 	{
-		Self::from_ogg_reader(File::open(path)?, settings)
+		Self::from_ogg_reader(std::fs::File::open(path)?, settings)
 	}
 
 	/// Decodes a sound from a flac file.
@@ -167,9 +159,9 @@ impl StaticSoundData {
 	pub fn from_flac_reader<R>(
 		reader: R,
 		settings: StaticSoundDataSettings,
-	) -> Result<Self, error::SoundFromFileError>
+	) -> Result<Self, error::FromFileError>
 	where
-		R: Read,
+		R: std::io::Read,
 	{
 		let mut reader = claxon::FlacReader::new(reader)?;
 		let streaminfo = reader.streaminfo();
@@ -191,7 +183,7 @@ impl StaticSoundData {
 					stereo_samples.push(Frame::from_i32(left?, right?, streaminfo.bits_per_sample));
 				}
 			}
-			_ => return Err(error::SoundFromFileError::UnsupportedChannelConfiguration),
+			_ => return Err(error::FromFileError::UnsupportedChannelConfiguration),
 		}
 		Ok(Self::from_frames(
 			streaminfo.sample_rate,
@@ -205,11 +197,11 @@ impl StaticSoundData {
 	pub fn from_flac_file<P>(
 		path: P,
 		settings: StaticSoundDataSettings,
-	) -> Result<Self, error::SoundFromFileError>
+	) -> Result<Self, error::FromFileError>
 	where
-		P: AsRef<Path>,
+		P: AsRef<std::path::Path>,
 	{
-		Self::from_flac_reader(File::open(path)?, settings)
+		Self::from_flac_reader(std::fs::File::open(path)?, settings)
 	}
 
 	/// Decodes sound from a wav reader.
@@ -217,9 +209,9 @@ impl StaticSoundData {
 	pub fn from_wav_reader<R>(
 		reader: R,
 		settings: StaticSoundDataSettings,
-	) -> Result<Self, error::SoundFromFileError>
+	) -> Result<Self, error::FromFileError>
 	where
-		R: Read,
+		R: std::io::Read,
 	{
 		let mut reader = hound::WavReader::new(reader)?;
 		let spec = reader.spec();
@@ -260,7 +252,7 @@ impl StaticSoundData {
 					}
 				}
 			},
-			_ => return Err(error::SoundFromFileError::UnsupportedChannelConfiguration),
+			_ => return Err(error::FromFileError::UnsupportedChannelConfiguration),
 		}
 		Ok(Self::from_frames(
 			reader.spec().sample_rate,
@@ -274,11 +266,11 @@ impl StaticSoundData {
 	pub fn from_wav_file<P>(
 		path: P,
 		settings: StaticSoundDataSettings,
-	) -> Result<Self, error::SoundFromFileError>
+	) -> Result<Self, error::FromFileError>
 	where
-		P: AsRef<Path>,
+		P: AsRef<std::path::Path>,
 	{
-		Self::from_wav_reader(File::open(path)?, settings)
+		Self::from_wav_reader(std::fs::File::open(path)?, settings)
 	}
 
 	/// Decodes a sound from a file.
@@ -288,9 +280,9 @@ impl StaticSoundData {
 	pub fn from_file<P>(
 		path: P,
 		settings: StaticSoundDataSettings,
-	) -> Result<Self, error::SoundFromFileError>
+	) -> Result<Self, error::FromFileError>
 	where
-		P: AsRef<Path>,
+		P: AsRef<std::path::Path>,
 	{
 		if let Some(extension) = path.as_ref().extension() {
 			if let Some(extension_str) = extension.to_str() {
@@ -307,7 +299,7 @@ impl StaticSoundData {
 				}
 			}
 		}
-		Err(error::SoundFromFileError::UnsupportedAudioFileFormat)
+		Err(error::FromFileError::UnsupportedAudioFileFormat)
 	}
 }
 
