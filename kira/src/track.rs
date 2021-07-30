@@ -11,7 +11,7 @@ use atomic_arena::Index;
 
 use crate::{frame::Frame, manager::resources::parameters::Parameters, value::cached::CachedValue};
 
-use self::settings::TrackSettings;
+use self::{handle::TrackHandle, settings::TrackSettings};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SubTrackId(pub(crate) Index);
@@ -25,6 +25,12 @@ pub enum TrackId {
 impl From<SubTrackId> for TrackId {
 	fn from(id: SubTrackId) -> Self {
 		Self::Sub(id)
+	}
+}
+
+impl From<&TrackHandle> for TrackId {
+	fn from(handle: &TrackHandle) -> Self {
+		handle.id()
 	}
 }
 

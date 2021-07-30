@@ -33,7 +33,7 @@ impl Mixer {
 		self.sub_tracks.controller()
 	}
 
-	pub fn get_mut(&mut self, id: TrackId) -> Option<&mut Track> {
+	pub fn track_mut(&mut self, id: TrackId) -> Option<&mut Track> {
 		match id {
 			TrackId::Main => Some(&mut self.main_track),
 			TrackId::Sub(id) => self.sub_tracks.get_mut(id.0),
@@ -90,12 +90,12 @@ impl Mixer {
 			std::mem::swap(track.routes_mut(), &mut self.dummy_routes);
 			// send the output to the destination tracks
 			for (id, amount) in &self.dummy_routes {
-				let send_track = match id {
+				let destination_track = match id {
 					TrackId::Main => Some(&mut self.main_track),
 					TrackId::Sub(id) => self.sub_tracks.get_mut(id.0),
 				};
-				if let Some(send_track) = send_track {
-					send_track.add_input(output * amount.get() as f32);
+				if let Some(destination_track) = destination_track {
+					destination_track.add_input(output * amount.get() as f32);
 				}
 			}
 			// borrow the track again and give it back its routes

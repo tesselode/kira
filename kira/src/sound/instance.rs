@@ -12,9 +12,10 @@ use crate::{
 	frame::Frame,
 	manager::{
 		backend::context::Context,
-		resources::{parameters::Parameters, sounds::Sounds},
+		resources::{mixer::Mixer, parameters::Parameters, sounds::Sounds},
 	},
 	parameter::{tween::Tween, Parameter},
+	track::TrackId,
 	value::{cached::CachedValue, Value},
 };
 
@@ -71,6 +72,7 @@ impl InstanceShared {
 
 pub(crate) struct Instance {
 	sound_id: SoundId,
+	track: TrackId,
 	time_until_start: f64,
 	volume: CachedValue,
 	playback_rate: CachedValue,
@@ -96,6 +98,7 @@ impl Instance {
 		};
 		Self {
 			sound_id,
+			track: settings.track,
 			time_until_start: settings.delay.as_secs_f64(),
 			volume: CachedValue::new(.., settings.volume, 1.0),
 			playback_rate: CachedValue::new(.., settings.playback_rate, 1.0),
@@ -170,7 +173,19 @@ impl Instance {
 			.store(self.position.to_bits(), Ordering::SeqCst);
 	}
 
-	pub fn process(&mut self, dt: f64, sounds: &Sounds, parameters: &Parameters) -> Frame {
+	pub fn process(
+		&mut self,
+		dt: f64,
+		sounds: &Sounds,
+		parameters: &Parameters,
+		mixer: &mut Mixer,
+	) {
+		if let Some(track) = mixer.track_mut(self.track) {
+			track.add_input(self.get_output(dt, sounds, parameters));
+		}
+	}
+
+	fn get_output(&mut self, dt: f64, sounds: &Sounds, parameters: &Parameters) -> Frame {
 		let sound = match sounds.get(self.sound_id) {
 			Some(sound) => sound,
 			None => return Frame::from_mono(0.0),

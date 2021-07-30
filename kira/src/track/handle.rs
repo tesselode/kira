@@ -7,6 +7,12 @@ pub struct TrackHandle {
 	pub(crate) shared: Arc<TrackShared>,
 }
 
+impl TrackHandle {
+	pub fn id(&self) -> TrackId {
+		self.id
+	}
+}
+
 impl Drop for TrackHandle {
 	fn drop(&mut self) {
 		self.shared.mark_for_removal();

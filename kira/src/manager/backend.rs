@@ -58,11 +58,13 @@ impl Backend {
 
 	pub fn process(&mut self) -> Frame {
 		self.resources.parameters.update(self.context.dt);
-		let out = self.resources.instances.process(
+		self.resources.instances.process(
 			self.context.dt,
 			&self.resources.sounds,
 			&self.resources.parameters,
+			&mut self.resources.mixer,
 		);
+		let out = self.resources.mixer.process(&self.resources.parameters);
 		self.sample_count += 1;
 		out
 	}

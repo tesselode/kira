@@ -4,12 +4,11 @@ use atomic_arena::{Arena, Controller};
 use ringbuf::Producer;
 
 use crate::{
-	frame::Frame,
 	manager::{backend::context::Context, command::InstanceCommand},
 	sound::instance::{Instance, InstanceState},
 };
 
-use super::{parameters::Parameters, sounds::Sounds};
+use super::{mixer::Mixer, parameters::Parameters, sounds::Sounds};
 
 pub(crate) struct Instances {
 	instances: Arena<Instance>,
@@ -112,11 +111,15 @@ impl Instances {
 		}
 	}
 
-	pub fn process(&mut self, dt: f64, sounds: &Sounds, parameters: &Parameters) -> Frame {
-		self.instances
-			.iter_mut()
-			.fold(Frame::from_mono(0.0), |previous, (_, instance)| {
-				previous + instance.process(dt, sounds, parameters)
-			})
+	pub fn process(
+		&mut self,
+		dt: f64,
+		sounds: &Sounds,
+		parameters: &Parameters,
+		mixer: &mut Mixer,
+	) {
+		for (_, instance) in &mut self.instances {
+			instance.process(dt, sounds, parameters, mixer);
+		}
 	}
 }

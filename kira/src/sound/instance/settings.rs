@@ -1,6 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
-use crate::{sound::data::SoundData, value::Value};
+use crate::{sound::data::SoundData, track::TrackId, value::Value};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum InstanceLoopStart {
@@ -43,6 +43,7 @@ pub struct InstanceSettings {
 	pub panning: Value,
 	pub reverse: bool,
 	pub loop_start: InstanceLoopStart,
+	pub track: TrackId,
 }
 
 impl InstanceSettings {
@@ -55,6 +56,7 @@ impl InstanceSettings {
 			panning: Value::Fixed(0.5),
 			reverse: false,
 			loop_start: InstanceLoopStart::default(),
+			track: TrackId::Main,
 		}
 	}
 
@@ -100,6 +102,13 @@ impl InstanceSettings {
 	pub fn loop_start(self, loop_start: impl Into<InstanceLoopStart>) -> Self {
 		Self {
 			loop_start: loop_start.into(),
+			..self
+		}
+	}
+
+	pub fn track(self, track: impl Into<TrackId>) -> Self {
+		Self {
+			track: track.into(),
 			..self
 		}
 	}

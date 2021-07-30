@@ -69,7 +69,10 @@ impl CachedValue {
 		Self {
 			valid_range: valid_range.into(),
 			value,
-			raw_value: default,
+			raw_value: match value {
+				Value::Fixed(value) => value,
+				Value::Parameter { .. } => default,
+			},
 		}
 	}
 
