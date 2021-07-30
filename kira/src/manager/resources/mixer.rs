@@ -3,7 +3,7 @@ use ringbuf::Producer;
 
 use crate::{
 	frame::Frame,
-	mixer::{SubTrackId, Track, TrackId},
+	track::{SubTrackId, Track, TrackId},
 	value::cached::CachedValue,
 };
 
