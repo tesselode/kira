@@ -1,5 +1,11 @@
+pub mod handle;
 pub mod routes;
 pub mod settings;
+
+use std::sync::{
+	atomic::{AtomicBool, Ordering},
+	Arc,
+};
 
 use atomic_arena::Index;
 
@@ -22,7 +28,28 @@ impl From<SubTrackId> for TrackId {
 	}
 }
 
+pub(crate) struct TrackShared {
+	removed: AtomicBool,
+}
+
+impl TrackShared {
+	pub fn new() -> Self {
+		Self {
+			removed: AtomicBool::new(false),
+		}
+	}
+
+	pub fn is_marked_for_removal(&self) -> bool {
+		self.removed.load(Ordering::SeqCst)
+	}
+
+	pub fn mark_for_removal(&self) {
+		self.removed.store(true, Ordering::SeqCst);
+	}
+}
+
 pub(crate) struct Track {
+	shared: Arc<TrackShared>,
 	volume: CachedValue,
 	panning: CachedValue,
 	routes: Vec<(TrackId, CachedValue)>,
@@ -32,11 +59,16 @@ pub(crate) struct Track {
 impl Track {
 	pub fn new(settings: TrackSettings) -> Self {
 		Self {
+			shared: Arc::new(TrackShared::new()),
 			volume: CachedValue::new(.., settings.volume, 1.0),
 			panning: CachedValue::new(0.0..=1.0, settings.panning, 0.5),
 			routes: settings.routes.into_vec(),
 			input: Frame::from_mono(0.0),
 		}
+	}
+
+	pub fn shared(&self) -> Arc<TrackShared> {
+		self.shared.clone()
 	}
 
 	pub fn routes_mut(&mut self) -> &mut Vec<(TrackId, CachedValue)> {

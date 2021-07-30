@@ -11,14 +11,15 @@ use cpal::{
 use ringbuf::RingBuffer;
 
 use crate::{
-	error::{AddParameterError, AddSoundError, SetupError},
+	error::{AddParameterError, AddSoundError, AddSubTrackError, SetupError},
 	parameter::{handle::ParameterHandle, Parameter, ParameterId},
 	sound::{data::SoundData, handle::SoundHandle, Sound, SoundId, SoundShared},
+	track::{handle::TrackHandle, settings::TrackSettings, SubTrackId, Track, TrackId},
 };
 
 use self::{
 	backend::{context::Context, Backend},
-	command::{producer::CommandProducer, Command, ParameterCommand, SoundCommand},
+	command::{producer::CommandProducer, Command, MixerCommand, ParameterCommand, SoundCommand},
 	resources::{
 		create_resources, create_unused_resource_channels, ResourceControllers,
 		UnusedResourceConsumers,
@@ -30,6 +31,7 @@ pub struct AudioManagerSettings {
 	pub command_capacity: usize,
 	pub instance_capacity: usize,
 	pub parameter_capacity: usize,
+	pub sub_track_capacity: usize,
 }
 
 impl Default for AudioManagerSettings {
@@ -39,6 +41,7 @@ impl Default for AudioManagerSettings {
 			command_capacity: 100,
 			instance_capacity: 100,
 			parameter_capacity: 100,
+			sub_track_capacity: 100,
 		}
 	}
 }
@@ -142,6 +145,26 @@ impl AudioManager {
 		Ok(handle)
 	}
 
+	pub fn add_sub_track(
+		&mut self,
+		settings: TrackSettings,
+	) -> Result<TrackHandle, AddSubTrackError> {
+		let id = SubTrackId(
+			self.resource_controllers
+				.sub_track_controller
+				.try_reserve()
+				.map_err(|_| AddSubTrackError::SubTrackLimitReached)?,
+		);
+		let sub_track = Track::new(settings);
+		let handle = TrackHandle {
+			id: TrackId::Sub(id),
+			shared: sub_track.shared(),
+		};
+		self.command_producer
+			.push(Command::Mixer(MixerCommand::AddSubTrack(id, sub_track)))?;
+		Ok(handle)
+	}
+
 	pub fn free_unused_resources(&mut self) {
 		while self.unused_resource_consumers.sound.pop().is_some() {
 			println!("dropped sound");
@@ -151,6 +174,9 @@ impl AudioManager {
 		}
 		while self.unused_resource_consumers.parameter.pop().is_some() {
 			println!("dropped parameter");
+		}
+		while self.unused_resource_consumers.sub_track.pop().is_some() {
+			println!("dropped sub-track");
 		}
 	}
 }

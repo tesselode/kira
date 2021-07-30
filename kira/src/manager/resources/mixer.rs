@@ -3,6 +3,7 @@ use ringbuf::Producer;
 
 use crate::{
 	frame::Frame,
+	manager::command::MixerCommand,
 	track::{SubTrackId, Track, TrackId},
 	value::cached::CachedValue,
 };
@@ -18,18 +19,60 @@ pub(crate) struct Mixer {
 }
 
 impl Mixer {
-	pub fn new(sub_track_capacity: usize, unused_track_producer: Producer<Track>) -> Self {
+	pub fn new(sub_track_capacity: usize, unused_sub_track_producer: Producer<Track>) -> Self {
 		Self {
 			main_track: Track::new(Default::default()),
 			sub_tracks: Arena::new(sub_track_capacity),
 			sub_track_ids: Vec::with_capacity(sub_track_capacity),
 			dummy_routes: vec![],
-			unused_track_producer,
+			unused_track_producer: unused_sub_track_producer,
 		}
 	}
 
-	pub fn sub_tracks_controller(&self) -> Controller {
+	pub fn sub_track_controller(&self) -> Controller {
 		self.sub_tracks.controller()
+	}
+
+	pub fn get_mut(&mut self, id: TrackId) -> Option<&mut Track> {
+		match id {
+			TrackId::Main => Some(&mut self.main_track),
+			TrackId::Sub(id) => self.sub_tracks.get_mut(id.0),
+		}
+	}
+
+	pub fn run_command(&mut self, command: MixerCommand) {
+		match command {
+			MixerCommand::AddSubTrack(id, track) => {
+				self.sub_tracks
+					.insert_with_index(id.0, track)
+					.expect("Sub-track arena is full");
+				self.sub_track_ids.push(id);
+			}
+		}
+	}
+
+	pub fn on_start_processing(&mut self) {
+		let mut i = 0;
+		while i < self.sub_track_ids.len() && !self.unused_track_producer.is_full() {
+			let id = self.sub_track_ids[i];
+			let track = &mut self.sub_tracks[id.0];
+			if track.shared().is_marked_for_removal() {
+				if self
+					.unused_track_producer
+					.push(
+						self.sub_tracks
+							.remove(id.0)
+							.expect(&format!("Sub track with ID {:?} does not exist", id)),
+					)
+					.is_err()
+				{
+					panic!("Unused track producer is full")
+				}
+				self.sub_track_ids.remove(i);
+			} else {
+				i += 1;
+			}
+		}
 	}
 
 	pub fn process(&mut self, parameters: &Parameters) -> Frame {

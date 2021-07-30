@@ -39,6 +39,7 @@ impl Backend {
 		self.resources.sounds.on_start_processing();
 		self.resources.instances.on_start_processing();
 		self.resources.parameters.on_start_processing();
+		self.resources.mixer.on_start_processing();
 
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
@@ -50,6 +51,7 @@ impl Backend {
 					.resources
 					.parameters
 					.run_command(command, &self.context),
+				Command::Mixer(command) => self.resources.mixer.run_command(command),
 			}
 		}
 	}

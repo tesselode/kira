@@ -58,6 +58,16 @@ pub enum AddParameterError {
 }
 
 #[derive(Debug, Error)]
+pub enum AddSubTrackError {
+	#[error(
+		"Could not add a sub-track because the maximum number of sub-tracks has been reached."
+	)]
+	SubTrackLimitReached,
+	#[error("{0}")]
+	CommandError(#[from] CommandError),
+}
+
+#[derive(Debug, Error)]
 pub enum InstanceError {
 	#[error("Cannot modify an instance that has finished playing")]
 	InstanceStopped,
