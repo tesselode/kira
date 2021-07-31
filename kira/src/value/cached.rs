@@ -76,7 +76,7 @@ impl CachedValue {
 		}
 	}
 
-	pub(crate) fn get(&self) -> f64 {
+	pub fn get(&self) -> f64 {
 		self.raw_value
 	}
 
@@ -87,7 +87,7 @@ impl CachedValue {
 		}
 	}
 
-	pub(crate) fn update(&mut self, parameters: &Parameters) {
+	pub fn update(&mut self, parameters: &Parameters) {
 		if let Value::Parameter { id, mapping } = self.value {
 			if let Some(parameter) = parameters.get(id) {
 				self.raw_value = self.valid_range.clamp(mapping.map(parameter.value()));

@@ -64,7 +64,10 @@ impl Renderer {
 			&self.resources.parameters,
 			&mut self.resources.mixer,
 		);
-		let out = self.resources.mixer.process(&self.resources.parameters);
+		let out = self
+			.resources
+			.mixer
+			.process(self.context.dt, &self.resources.parameters);
 		self.sample_count += 1;
 		out
 	}

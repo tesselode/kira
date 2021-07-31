@@ -1,11 +1,12 @@
 use crate::value::Value;
 
-use super::routes::TrackRoutes;
+use super::{effect::Effect, routes::TrackRoutes};
 
 pub struct TrackSettings {
 	pub volume: Value,
 	pub panning: Value,
 	pub routes: TrackRoutes,
+	pub effects: Vec<Box<dyn Effect>>,
 }
 
 impl TrackSettings {
@@ -14,6 +15,7 @@ impl TrackSettings {
 			volume: Value::Fixed(1.0),
 			panning: Value::Fixed(0.5),
 			routes: TrackRoutes::new(),
+			effects: vec![],
 		}
 	}
 
@@ -33,6 +35,11 @@ impl TrackSettings {
 
 	pub fn routes(self, routes: TrackRoutes) -> Self {
 		Self { routes, ..self }
+	}
+
+	pub fn with_effect(mut self, effect: impl Effect + 'static) -> Self {
+		self.effects.push(Box::new(effect));
+		self
 	}
 }
 

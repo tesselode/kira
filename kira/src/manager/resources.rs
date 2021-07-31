@@ -3,6 +3,8 @@ pub mod mixer;
 pub mod parameters;
 pub mod sounds;
 
+use std::sync::Arc;
+
 use atomic_arena::Controller;
 use ringbuf::{Consumer, Producer, RingBuffer};
 
@@ -14,7 +16,7 @@ use crate::{
 
 use self::{instances::Instances, mixer::Mixer, parameters::Parameters, sounds::Sounds};
 
-use super::AudioManagerSettings;
+use super::{renderer::context::Context, AudioManagerSettings};
 
 pub(super) struct UnusedResourceProducers {
 	pub sound: Producer<Sound>,
@@ -91,6 +93,7 @@ pub(super) struct ResourceControllers {
 pub(super) fn create_resources(
 	settings: &AudioManagerSettings,
 	unused_resource_producers: UnusedResourceProducers,
+	context: &Arc<Context>,
 ) -> (Resources, ResourceControllers) {
 	let sounds = Sounds::new(settings.sound_capacity, unused_resource_producers.sound);
 	let sound_controller = sounds.controller();
@@ -107,6 +110,7 @@ pub(super) fn create_resources(
 	let mixer = Mixer::new(
 		settings.sub_track_capacity,
 		unused_resource_producers.sub_track,
+		context,
 	);
 	let sub_track_controller = mixer.sub_track_controller();
 	(

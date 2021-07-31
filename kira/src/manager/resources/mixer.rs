@@ -1,9 +1,11 @@
+use std::sync::Arc;
+
 use atomic_arena::{Arena, Controller};
 use ringbuf::Producer;
 
 use crate::{
 	frame::Frame,
-	manager::command::MixerCommand,
+	manager::{command::MixerCommand, renderer::context::Context},
 	track::{SubTrackId, Track, TrackId},
 	value::cached::CachedValue,
 };
@@ -19,9 +21,13 @@ pub(crate) struct Mixer {
 }
 
 impl Mixer {
-	pub fn new(sub_track_capacity: usize, unused_sub_track_producer: Producer<Track>) -> Self {
+	pub fn new(
+		sub_track_capacity: usize,
+		unused_sub_track_producer: Producer<Track>,
+		context: &Arc<Context>,
+	) -> Self {
 		Self {
-			main_track: Track::new(Default::default()),
+			main_track: Track::new(Default::default(), context),
 			sub_tracks: Arena::new(sub_track_capacity),
 			sub_track_ids: Vec::with_capacity(sub_track_capacity),
 			dummy_routes: vec![],
@@ -85,7 +91,7 @@ impl Mixer {
 		}
 	}
 
-	pub fn process(&mut self, parameters: &Parameters) -> Frame {
+	pub fn process(&mut self, dt: f64, parameters: &Parameters) -> Frame {
 		// iterate through the sub-tracks newest to oldest
 		for id in self.sub_track_ids.iter().rev() {
 			// process the track and get its output
@@ -93,7 +99,7 @@ impl Mixer {
 				.sub_tracks
 				.get_mut(id.0)
 				.expect("sub track IDs and sub tracks are out of sync");
-			let output = track.process(parameters);
+			let output = track.process(dt, parameters);
 			// temporarily take ownership of its routes. we can't just
 			// borrow the routes because then we can't get mutable
 			// references to the other tracks
@@ -115,6 +121,6 @@ impl Mixer {
 				.expect("sub track IDs and sub tracks are out of sync");
 			std::mem::swap(track.routes_mut(), &mut self.dummy_routes);
 		}
-		self.main_track.process(parameters)
+		self.main_track.process(dt, parameters)
 	}
 }

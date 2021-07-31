@@ -58,13 +58,13 @@ pub struct AudioManager<B: Backend> {
 impl<B: Backend> AudioManager<B> {
 	pub fn new(settings: AudioManagerSettings, mut backend: B) -> Result<Self, B::InitError> {
 		let sample_rate = backend.sample_rate();
+		let context = Arc::new(Context::new(sample_rate));
 		let (unused_resource_producers, unused_resource_collector) =
 			create_unused_resource_channels(&settings);
 		let (resources, resource_controllers) =
-			create_resources(&settings, unused_resource_producers);
+			create_resources(&settings, unused_resource_producers, &context);
 		let (command_producer, command_consumer) =
 			RingBuffer::new(settings.command_capacity).split();
-		let context = Arc::new(Context::new(sample_rate));
 		let renderer = Renderer::new(context.clone(), resources, command_consumer);
 		backend.init(renderer, unused_resource_collector)?;
 		Ok(Self {
@@ -148,7 +148,7 @@ impl<B: Backend> AudioManager<B> {
 				.try_reserve()
 				.map_err(|_| AddSubTrackError::SubTrackLimitReached)?,
 		);
-		let sub_track = Track::new(settings);
+		let sub_track = Track::new(settings, &self.context);
 		let handle = TrackHandle {
 			id: TrackId::Sub(id),
 			shared: sub_track.shared(),

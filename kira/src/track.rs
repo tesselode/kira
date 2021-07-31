@@ -1,3 +1,4 @@
+pub mod effect;
 pub mod handle;
 pub mod routes;
 pub mod settings;
@@ -11,11 +12,11 @@ use atomic_arena::Index;
 
 use crate::{
 	frame::Frame,
-	manager::resources::parameters::Parameters,
+	manager::{renderer::context::Context, resources::parameters::Parameters},
 	value::{cached::CachedValue, Value},
 };
 
-use self::{handle::TrackHandle, settings::TrackSettings};
+use self::{effect::Effect, handle::TrackHandle, settings::TrackSettings};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SubTrackId(pub(crate) Index);
@@ -63,16 +64,21 @@ pub(crate) struct Track {
 	volume: CachedValue,
 	panning: CachedValue,
 	routes: Vec<(TrackId, CachedValue)>,
+	effects: Vec<Box<dyn Effect>>,
 	input: Frame,
 }
 
 impl Track {
-	pub fn new(settings: TrackSettings) -> Self {
+	pub fn new(mut settings: TrackSettings, context: &Arc<Context>) -> Self {
+		for effect in &mut settings.effects {
+			effect.init(context.sample_rate());
+		}
 		Self {
 			shared: Arc::new(TrackShared::new()),
 			volume: CachedValue::new(.., settings.volume, 1.0),
 			panning: CachedValue::new(0.0..=1.0, settings.panning, 0.5),
 			routes: settings.routes.into_vec(),
+			effects: settings.effects,
 			input: Frame::from_mono(0.0),
 		}
 	}
@@ -97,13 +103,16 @@ impl Track {
 		self.input += input;
 	}
 
-	pub fn process(&mut self, parameters: &Parameters) -> Frame {
+	pub fn process(&mut self, dt: f64, parameters: &Parameters) -> Frame {
 		self.volume.update(parameters);
 		self.panning.update(parameters);
 		for (_, amount) in &mut self.routes {
 			amount.update(parameters);
 		}
 		let mut output = std::mem::replace(&mut self.input, Frame::from_mono(0.0));
+		for effect in &mut self.effects {
+			output = effect.process(output, dt, parameters);
+		}
 		output *= self.volume.get() as f32;
 		output = output.panned(self.panning.get() as f32);
 		output

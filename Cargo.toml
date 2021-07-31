@@ -2,6 +2,7 @@
 members = [
 	"kira",
 	"kira-cpal",
+	"kira-effects",
 ]
 
 [profile.dev]

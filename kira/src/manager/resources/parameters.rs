@@ -4,28 +4,28 @@ use atomic_arena::{Arena, Controller};
 use ringbuf::Producer;
 
 use crate::{
-	manager::{renderer::context::Context, command::ParameterCommand},
+	manager::{command::ParameterCommand, renderer::context::Context},
 	parameter::{Parameter, ParameterId},
 };
 
-pub(crate) struct Parameters {
+pub struct Parameters {
 	parameters: Arena<Parameter>,
 	unused_parameter_producer: Producer<Parameter>,
 }
 
 impl Parameters {
-	pub fn new(capacity: usize, unused_parameter_producer: Producer<Parameter>) -> Self {
+	pub(crate) fn new(capacity: usize, unused_parameter_producer: Producer<Parameter>) -> Self {
 		Self {
 			parameters: Arena::new(capacity),
 			unused_parameter_producer,
 		}
 	}
 
-	pub fn controller(&self) -> Controller {
+	pub(crate) fn controller(&self) -> Controller {
 		self.parameters.controller()
 	}
 
-	pub fn get(&self, id: ParameterId) -> Option<&Parameter> {
+	pub(crate) fn get(&self, id: ParameterId) -> Option<&Parameter> {
 		self.parameters.get(id.0)
 	}
 
@@ -46,14 +46,14 @@ impl Parameters {
 		}
 	}
 
-	pub fn on_start_processing(&mut self) {
+	pub(crate) fn on_start_processing(&mut self) {
 		self.remove_unused_parameters();
 		for (_, parameter) in &self.parameters {
 			parameter.on_start_processing();
 		}
 	}
 
-	pub fn run_command(&mut self, command: ParameterCommand, context: &Arc<Context>) {
+	pub(crate) fn run_command(&mut self, command: ParameterCommand, context: &Arc<Context>) {
 		match command {
 			ParameterCommand::Add(id, parameter) => self
 				.parameters
@@ -72,7 +72,7 @@ impl Parameters {
 		}
 	}
 
-	pub fn update(&mut self, dt: f64) {
+	pub(crate) fn update(&mut self, dt: f64) {
 		for (_, parameter) in &mut self.parameters {
 			parameter.update(dt);
 		}
