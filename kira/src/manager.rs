@@ -1,7 +1,7 @@
 pub mod backend;
 pub(crate) mod command;
 pub mod renderer;
-pub(crate) mod resources;
+pub mod resources;
 
 use std::{path::Path, sync::Arc};
 
@@ -25,10 +25,7 @@ use self::{
 	backend::Backend,
 	command::{producer::CommandProducer, Command, MixerCommand, ParameterCommand, SoundCommand},
 	renderer::{context::Context, Renderer},
-	resources::{
-		create_resources, create_unused_resource_channels, ResourceControllers,
-		UnusedResourceConsumers,
-	},
+	resources::{create_resources, create_unused_resource_channels, ResourceControllers},
 };
 
 pub struct AudioManagerSettings {
@@ -56,13 +53,12 @@ pub struct AudioManager<B: Backend> {
 	context: Arc<Context>,
 	command_producer: CommandProducer,
 	resource_controllers: ResourceControllers,
-	unused_resource_consumers: UnusedResourceConsumers,
 }
 
 impl<B: Backend> AudioManager<B> {
 	pub fn new(settings: AudioManagerSettings, mut backend: B) -> Result<Self, B::InitError> {
 		let sample_rate = backend.sample_rate();
-		let (unused_resource_producers, unused_resource_consumers) =
+		let (unused_resource_producers, unused_resource_collector) =
 			create_unused_resource_channels(&settings);
 		let (resources, resource_controllers) =
 			create_resources(&settings, unused_resource_producers);
@@ -70,13 +66,12 @@ impl<B: Backend> AudioManager<B> {
 			RingBuffer::new(settings.command_capacity).split();
 		let context = Arc::new(Context::new(sample_rate));
 		let renderer = Renderer::new(context.clone(), resources, command_consumer);
-		backend.init(renderer)?;
+		backend.init(renderer, unused_resource_collector)?;
 		Ok(Self {
 			backend,
 			context,
 			command_producer: CommandProducer::new(command_producer),
 			resource_controllers,
-			unused_resource_consumers,
 		})
 	}
 
@@ -162,20 +157,5 @@ impl<B: Backend> AudioManager<B> {
 		self.command_producer
 			.push(Command::Mixer(MixerCommand::AddSubTrack(id, sub_track)))?;
 		Ok(handle)
-	}
-
-	pub fn free_unused_resources(&mut self) {
-		while self.unused_resource_consumers.sound.pop().is_some() {
-			println!("dropped sound");
-		}
-		while self.unused_resource_consumers.instance.pop().is_some() {
-			println!("dropped instance");
-		}
-		while self.unused_resource_consumers.parameter.pop().is_some() {
-			println!("dropped parameter");
-		}
-		while self.unused_resource_consumers.sub_track.pop().is_some() {
-			println!("dropped sub-track");
-		}
 	}
 }

@@ -23,16 +23,33 @@ pub(super) struct UnusedResourceProducers {
 	pub sub_track: Producer<Track>,
 }
 
-pub(super) struct UnusedResourceConsumers {
-	pub sound: Consumer<Sound>,
-	pub instance: Consumer<Instance>,
-	pub parameter: Consumer<Parameter>,
-	pub sub_track: Consumer<Track>,
+pub struct UnusedResourceCollector {
+	unused_sound_consumer: Consumer<Sound>,
+	unused_instance_consumer: Consumer<Instance>,
+	unused_parameter_consumer: Consumer<Parameter>,
+	unused_sub_track_consumer: Consumer<Track>,
+}
+
+impl UnusedResourceCollector {
+	pub fn drain(&mut self) {
+		while self.unused_sound_consumer.pop().is_some() {
+			println!("dropped sound");
+		}
+		while self.unused_instance_consumer.pop().is_some() {
+			println!("dropped instance");
+		}
+		while self.unused_parameter_consumer.pop().is_some() {
+			println!("dropped parameter");
+		}
+		while self.unused_sub_track_consumer.pop().is_some() {
+			println!("dropped sub-track");
+		}
+	}
 }
 
 pub(super) fn create_unused_resource_channels(
 	settings: &AudioManagerSettings,
-) -> (UnusedResourceProducers, UnusedResourceConsumers) {
+) -> (UnusedResourceProducers, UnusedResourceCollector) {
 	let (unused_sound_producer, unused_sound_consumer) =
 		RingBuffer::new(settings.sound_capacity).split();
 	let (unused_instance_producer, unused_instance_consumer) =
@@ -48,11 +65,11 @@ pub(super) fn create_unused_resource_channels(
 			parameter: unused_parameter_producer,
 			sub_track: unused_sub_track_producer,
 		},
-		UnusedResourceConsumers {
-			sound: unused_sound_consumer,
-			instance: unused_instance_consumer,
-			parameter: unused_parameter_consumer,
-			sub_track: unused_sub_track_consumer,
+		UnusedResourceCollector {
+			unused_sound_consumer,
+			unused_instance_consumer,
+			unused_parameter_consumer,
+			unused_sub_track_consumer,
 		},
 	)
 }

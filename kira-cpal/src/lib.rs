@@ -2,7 +2,7 @@ use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	BuildStreamError, DefaultStreamConfigError, Device, PlayStreamError, Stream, StreamConfig,
 };
-use kira::manager::{backend::Backend, renderer::Renderer};
+use kira::manager::{backend::Backend, renderer::Renderer, resources::UnusedResourceCollector};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -34,6 +34,7 @@ enum State {
 	},
 	Initialized {
 		_stream: Stream,
+		unused_resource_collector: UnusedResourceCollector,
 	},
 }
 
@@ -52,6 +53,20 @@ impl CpalBackend {
 			state: State::Uninitialized { device, config },
 		})
 	}
+
+	pub fn free_unused_resources(&mut self) {
+		match &mut self.state {
+			State::Uninitialized { .. } => {
+				panic!("Cannot free resources on an uninitialized backend")
+			}
+			State::Initialized {
+				unused_resource_collector,
+				..
+			} => {
+				unused_resource_collector.drain();
+			}
+		}
+	}
 }
 
 impl Backend for CpalBackend {
@@ -64,7 +79,11 @@ impl Backend for CpalBackend {
 		}
 	}
 
-	fn init(&mut self, mut renderer: Renderer) -> Result<(), Self::InitError> {
+	fn init(
+		&mut self,
+		mut renderer: Renderer,
+		unused_resource_collector: UnusedResourceCollector,
+	) -> Result<(), Self::InitError> {
 		match &mut self.state {
 			State::Uninitialized { device, config } => {
 				let channels = config.channels;
@@ -85,10 +104,13 @@ impl Backend for CpalBackend {
 					move |_| {},
 				)?;
 				stream.play()?;
-				self.state = State::Initialized { _stream: stream };
+				self.state = State::Initialized {
+					_stream: stream,
+					unused_resource_collector,
+				};
 				Ok(())
 			}
-			State::Initialized { .. } => unreachable!(),
+			State::Initialized { .. } => panic!("Cannot initialize an already-initialized backend"),
 		}
 	}
 }
