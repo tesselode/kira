@@ -1,6 +1,7 @@
 [workspace]
 members = [
 	"kira",
+	"kira-cpal",
 ]
 
 [profile.dev]

@@ -10,7 +10,7 @@ use self::context::Context;
 
 use super::{command::Command, resources::Resources};
 
-pub(super) struct Renderer {
+pub struct Renderer {
 	context: Arc<Context>,
 	sample_count: u64,
 	resources: Resources,
@@ -18,7 +18,7 @@ pub(super) struct Renderer {
 }
 
 impl Renderer {
-	pub fn new(
+	pub(super) fn new(
 		context: Arc<Context>,
 		resources: Resources,
 		command_consumer: Consumer<Command>,

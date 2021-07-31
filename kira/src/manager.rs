@@ -1,17 +1,14 @@
+pub mod backend;
 pub(crate) mod command;
-pub(crate) mod renderer;
+pub mod renderer;
 pub(crate) mod resources;
 
 use std::{path::Path, sync::Arc};
 
-use cpal::{
-	traits::{DeviceTrait, HostTrait, StreamTrait},
-	Stream,
-};
 use ringbuf::RingBuffer;
 
 use crate::{
-	error::{AddParameterError, AddSoundError, AddSubTrackError, SetupError},
+	error::{AddParameterError, AddSoundError, AddSubTrackError},
 	parameter::{handle::ParameterHandle, Parameter, ParameterId},
 	sound::{
 		data::{
@@ -25,6 +22,7 @@ use crate::{
 };
 
 use self::{
+	backend::Backend,
 	command::{producer::CommandProducer, Command, MixerCommand, ParameterCommand, SoundCommand},
 	renderer::{context::Context, Renderer},
 	resources::{
@@ -53,55 +51,37 @@ impl Default for AudioManagerSettings {
 	}
 }
 
-pub struct AudioManager {
+pub struct AudioManager<B: Backend> {
+	backend: B,
 	context: Arc<Context>,
 	command_producer: CommandProducer,
 	resource_controllers: ResourceControllers,
 	unused_resource_consumers: UnusedResourceConsumers,
-	_stream: Stream,
 }
 
-impl AudioManager {
-	pub fn new(settings: AudioManagerSettings) -> Result<Self, SetupError> {
-		let host = cpal::default_host();
-		let device = host
-			.default_output_device()
-			.ok_or(SetupError::NoDefaultOutputDevice)?;
-		let config = device.default_output_config()?.config();
-		let sample_rate = config.sample_rate;
-		let channels = config.channels;
+impl<B: Backend> AudioManager<B> {
+	pub fn new(settings: AudioManagerSettings, mut backend: B) -> Result<Self, B::InitError> {
+		let sample_rate = backend.sample_rate();
 		let (unused_resource_producers, unused_resource_consumers) =
 			create_unused_resource_channels(&settings);
 		let (resources, resource_controllers) =
 			create_resources(&settings, unused_resource_producers);
 		let (command_producer, command_consumer) =
 			RingBuffer::new(settings.command_capacity).split();
-		let context = Arc::new(Context::new(sample_rate.0));
-		let mut renderer = Renderer::new(context.clone(), resources, command_consumer);
-		let stream = device.build_output_stream(
-			&config,
-			move |data: &mut [f32], _| {
-				renderer.on_start_processing();
-				for frame in data.chunks_exact_mut(channels as usize) {
-					let out = renderer.process();
-					if channels == 1 {
-						frame[0] = (out.left + out.right) / 2.0;
-					} else {
-						frame[0] = out.left;
-						frame[1] = out.right;
-					}
-				}
-			},
-			move |_| {},
-		)?;
-		stream.play()?;
+		let context = Arc::new(Context::new(sample_rate));
+		let renderer = Renderer::new(context.clone(), resources, command_consumer);
+		backend.init(renderer)?;
 		Ok(Self {
+			backend,
 			context,
 			command_producer: CommandProducer::new(command_producer),
 			resource_controllers,
 			unused_resource_consumers,
-			_stream: stream,
 		})
+	}
+
+	pub fn backend_mut(&mut self) -> &mut B {
+		&mut self.backend
 	}
 
 	pub fn add_sound(
