@@ -62,3 +62,9 @@ impl Drop for SoundHandle {
 		self.shared.mark_for_removal();
 	}
 }
+
+impl From<&SoundHandle> for Arc<dyn SoundData> {
+	fn from(handle: &SoundHandle) -> Self {
+		handle.data.clone()
+	}
+}

@@ -1,3 +1,4 @@
+pub mod seamless_loop;
 pub mod static_sound;
 
 use std::time::Duration;
