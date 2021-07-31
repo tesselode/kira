@@ -10,14 +10,14 @@ use self::context::Context;
 
 use super::{command::Command, resources::Resources};
 
-pub(super) struct Backend {
+pub(super) struct Renderer {
 	context: Arc<Context>,
 	sample_count: u64,
 	resources: Resources,
 	command_consumer: Consumer<Command>,
 }
 
-impl Backend {
+impl Renderer {
 	pub fn new(
 		context: Arc<Context>,
 		resources: Resources,

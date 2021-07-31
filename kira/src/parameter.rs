@@ -12,7 +12,7 @@ use std::{
 
 use atomic_arena::Index;
 
-use crate::manager::backend::context::Context;
+use crate::manager::renderer::context::Context;
 
 use self::tween::Tween;
 

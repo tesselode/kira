@@ -11,7 +11,7 @@ use atomic_arena::Index;
 use crate::{
 	frame::Frame,
 	manager::{
-		backend::context::Context,
+		renderer::context::Context,
 		resources::{mixer::Mixer, parameters::Parameters, sounds::Sounds},
 	},
 	parameter::{tween::Tween, Parameter},

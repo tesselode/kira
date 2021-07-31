@@ -4,7 +4,7 @@ use atomic_arena::{Arena, Controller};
 use ringbuf::Producer;
 
 use crate::{
-	manager::{backend::context::Context, command::InstanceCommand},
+	manager::{command::InstanceCommand, renderer::context::Context},
 	sound::instance::{Instance, InstanceState},
 };
 

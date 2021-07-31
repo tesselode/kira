@@ -1,5 +1,5 @@
-pub(crate) mod backend;
 pub(crate) mod command;
+pub(crate) mod renderer;
 pub(crate) mod resources;
 
 use std::{path::Path, sync::Arc};
@@ -25,8 +25,8 @@ use crate::{
 };
 
 use self::{
-	backend::{context::Context, Backend},
 	command::{producer::CommandProducer, Command, MixerCommand, ParameterCommand, SoundCommand},
+	renderer::{context::Context, Renderer},
 	resources::{
 		create_resources, create_unused_resource_channels, ResourceControllers,
 		UnusedResourceConsumers,
@@ -77,13 +77,13 @@ impl AudioManager {
 		let (command_producer, command_consumer) =
 			RingBuffer::new(settings.command_capacity).split();
 		let context = Arc::new(Context::new(sample_rate.0));
-		let mut backend = Backend::new(context.clone(), resources, command_consumer);
+		let mut renderer = Renderer::new(context.clone(), resources, command_consumer);
 		let stream = device.build_output_stream(
 			&config,
 			move |data: &mut [f32], _| {
-				backend.on_start_processing();
+				renderer.on_start_processing();
 				for frame in data.chunks_exact_mut(channels as usize) {
-					let out = backend.process();
+					let out = renderer.process();
 					if channels == 1 {
 						frame[0] = (out.left + out.right) / 2.0;
 					} else {

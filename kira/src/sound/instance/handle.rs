@@ -3,8 +3,8 @@ use std::sync::Arc;
 use crate::{
 	error::InstanceError,
 	manager::{
-		backend::context::Context,
 		command::{producer::CommandProducer, Command, InstanceCommand},
+		renderer::context::Context,
 	},
 	parameter::tween::Tween,
 	value::Value,

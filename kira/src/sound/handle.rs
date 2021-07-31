@@ -5,8 +5,8 @@ use atomic_arena::Controller;
 use crate::{
 	error::PlaySoundError,
 	manager::{
-		backend::context::Context,
 		command::{producer::CommandProducer, Command, InstanceCommand},
+		renderer::context::Context,
 	},
 };
 
