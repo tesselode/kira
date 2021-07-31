@@ -6,7 +6,7 @@ use crate::{
 		instance::{Instance, InstanceId},
 		Sound, SoundId,
 	},
-	track::{SubTrackId, Track},
+	track::{SubTrackId, Track, TrackId},
 	value::Value,
 };
 
@@ -52,6 +52,8 @@ pub(crate) enum ParameterCommand {
 
 pub(crate) enum MixerCommand {
 	AddSubTrack(SubTrackId, Track),
+	SetTrackVolume(TrackId, Value),
+	SetTrackPanning(TrackId, Value),
 }
 
 pub(crate) enum Command {

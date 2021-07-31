@@ -9,7 +9,11 @@ use std::sync::{
 
 use atomic_arena::Index;
 
-use crate::{frame::Frame, manager::resources::parameters::Parameters, value::cached::CachedValue};
+use crate::{
+	frame::Frame,
+	manager::resources::parameters::Parameters,
+	value::{cached::CachedValue, Value},
+};
 
 use self::{handle::TrackHandle, settings::TrackSettings};
 
@@ -79,6 +83,14 @@ impl Track {
 
 	pub fn routes_mut(&mut self) -> &mut Vec<(TrackId, CachedValue)> {
 		&mut self.routes
+	}
+
+	pub fn set_volume(&mut self, volume: Value) {
+		self.volume.set(volume);
+	}
+
+	pub fn set_panning(&mut self, panning: Value) {
+		self.panning.set(panning);
 	}
 
 	pub fn add_input(&mut self, input: Frame) {

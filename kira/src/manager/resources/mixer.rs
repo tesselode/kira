@@ -48,6 +48,16 @@ impl Mixer {
 					.expect("Sub-track arena is full");
 				self.sub_track_ids.push(id);
 			}
+			MixerCommand::SetTrackVolume(id, volume) => {
+				if let Some(track) = self.track_mut(id) {
+					track.set_volume(volume);
+				}
+			}
+			MixerCommand::SetTrackPanning(id, panning) => {
+				if let Some(track) = self.track_mut(id) {
+					track.set_panning(panning);
+				}
+			}
 		}
 	}
 

@@ -177,6 +177,7 @@ impl AudioManager {
 		let handle = TrackHandle {
 			id: TrackId::Sub(id),
 			shared: sub_track.shared(),
+			command_producer: self.command_producer.clone(),
 		};
 		self.command_producer
 			.push(Command::Mixer(MixerCommand::AddSubTrack(id, sub_track)))?;
