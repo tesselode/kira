@@ -1,9 +1,14 @@
+use std::time::Duration;
+
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	BuildStreamError, DefaultStreamConfigError, Device, PlayStreamError, Stream, StreamConfig,
 };
 use kira::manager::{backend::Backend, renderer::Renderer, resources::UnusedResourceCollector};
+use ringbuf::{Producer, RingBuffer};
 use thiserror::Error;
+
+const UNUSED_RESOURCE_COLLECTION_INTERVAL: Duration = Duration::from_millis(100);
 
 #[derive(Debug, Error)]
 pub enum DeviceSetupError {
@@ -34,7 +39,7 @@ enum State {
 	},
 	Initialized {
 		_stream: Stream,
-		unused_resource_collector: UnusedResourceCollector,
+		quit_signal_producer: Producer<()>,
 	},
 }
 
@@ -53,20 +58,6 @@ impl CpalBackend {
 			state: State::Uninitialized { device, config },
 		})
 	}
-
-	pub fn free_unused_resources(&mut self) {
-		match &mut self.state {
-			State::Uninitialized { .. } => {
-				panic!("Cannot free resources on an uninitialized backend")
-			}
-			State::Initialized {
-				unused_resource_collector,
-				..
-			} => {
-				unused_resource_collector.drain();
-			}
-		}
-	}
 }
 
 impl Backend for CpalBackend {
@@ -81,36 +72,74 @@ impl Backend for CpalBackend {
 
 	fn init(
 		&mut self,
-		mut renderer: Renderer,
+		renderer: Renderer,
 		unused_resource_collector: UnusedResourceCollector,
 	) -> Result<(), Self::InitError> {
 		match &mut self.state {
 			State::Uninitialized { device, config } => {
-				let channels = config.channels;
-				let stream = device.build_output_stream(
-					&config,
-					move |data: &mut [f32], _| {
-						renderer.on_start_processing();
-						for frame in data.chunks_exact_mut(channels as usize) {
-							let out = renderer.process();
-							if channels == 1 {
-								frame[0] = (out.left + out.right) / 2.0;
-							} else {
-								frame[0] = out.left;
-								frame[1] = out.right;
-							}
-						}
-					},
-					move |_| {},
-				)?;
-				stream.play()?;
+				let stream = setup_stream(config, device, renderer)?;
+				let quit_signal_producer =
+					start_resource_collection_thread(unused_resource_collector);
 				self.state = State::Initialized {
 					_stream: stream,
-					unused_resource_collector,
+					quit_signal_producer,
 				};
 				Ok(())
 			}
 			State::Initialized { .. } => panic!("Cannot initialize an already-initialized backend"),
 		}
 	}
+}
+
+impl Drop for CpalBackend {
+	fn drop(&mut self) {
+		if let State::Initialized {
+			quit_signal_producer,
+			..
+		} = &mut self.state
+		{
+			if quit_signal_producer.push(()).is_err() {
+				panic!("Could not send the quit signal to end the resource collection thread");
+			}
+		}
+	}
+}
+
+fn setup_stream(
+	config: &mut StreamConfig,
+	device: &mut Device,
+	mut renderer: Renderer,
+) -> Result<Stream, InitError> {
+	let channels = config.channels;
+	let stream = device.build_output_stream(
+		&config,
+		move |data: &mut [f32], _| {
+			renderer.on_start_processing();
+			for frame in data.chunks_exact_mut(channels as usize) {
+				let out = renderer.process();
+				if channels == 1 {
+					frame[0] = (out.left + out.right) / 2.0;
+				} else {
+					frame[0] = out.left;
+					frame[1] = out.right;
+				}
+			}
+		},
+		move |_| {},
+	)?;
+	stream.play()?;
+	Ok(stream)
+}
+
+fn start_resource_collection_thread(
+	mut unused_resource_collector: UnusedResourceCollector,
+) -> Producer<()> {
+	let (quit_signal_producer, mut quit_signal_consumer) = RingBuffer::new(1).split();
+	std::thread::spawn(move || {
+		while quit_signal_consumer.pop().is_none() {
+			std::thread::sleep(UNUSED_RESOURCE_COLLECTION_INTERVAL);
+			unused_resource_collector.drain();
+		}
+	});
+	quit_signal_producer
 }
