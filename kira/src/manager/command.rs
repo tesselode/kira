@@ -56,4 +56,6 @@ pub(crate) enum Command {
 	Parameter(ParameterCommand),
 	Mixer(MixerCommand),
 	Clock(ClockCommand),
+	Pause(Tween),
+	Resume(Tween),
 }

@@ -67,38 +67,38 @@ impl InstanceHandle {
 		Ok(())
 	}
 
-	pub fn pause(&mut self, tween: Tween) -> Result<(), InstanceError> {
+	pub fn pause(&mut self, fade_out_tween: Tween) -> Result<(), InstanceError> {
 		if self.state() == InstanceState::Stopped {
 			return Err(InstanceError::InstanceStopped);
 		}
 		self.command_producer
 			.push(Command::Instance(InstanceCommand::Pause {
 				id: self.id,
-				tween,
+				tween: fade_out_tween,
 			}))?;
 		Ok(())
 	}
 
-	pub fn resume(&mut self, tween: Tween) -> Result<(), InstanceError> {
+	pub fn resume(&mut self, fade_in_tween: Tween) -> Result<(), InstanceError> {
 		if self.state() == InstanceState::Stopped {
 			return Err(InstanceError::InstanceStopped);
 		}
 		self.command_producer
 			.push(Command::Instance(InstanceCommand::Resume {
 				id: self.id,
-				tween,
+				tween: fade_in_tween,
 			}))?;
 		Ok(())
 	}
 
-	pub fn stop(&mut self, tween: Tween) -> Result<(), InstanceError> {
+	pub fn stop(&mut self, fade_out_tween: Tween) -> Result<(), InstanceError> {
 		if self.state() == InstanceState::Stopped {
 			return Err(InstanceError::InstanceStopped);
 		}
 		self.command_producer
 			.push(Command::Instance(InstanceCommand::Stop {
 				id: self.id,
-				tween,
+				tween: fade_out_tween,
 			}))?;
 		Ok(())
 	}

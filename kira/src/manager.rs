@@ -9,8 +9,8 @@ use ringbuf::RingBuffer;
 
 use crate::{
 	clock::{handle::ClockHandle, Clock, ClockId},
-	error::{AddClockError, AddParameterError, AddSoundError, AddSubTrackError},
-	parameter::{handle::ParameterHandle, Parameter, ParameterId},
+	error::{AddClockError, AddParameterError, AddSoundError, AddSubTrackError, CommandError},
+	parameter::{handle::ParameterHandle, tween::Tween, Parameter, ParameterId},
 	sound::{
 		data::{
 			static_sound::{settings::StaticSoundDataSettings, StaticSoundData},
@@ -29,7 +29,7 @@ use self::{
 		producer::CommandProducer, ClockCommand, Command, MixerCommand, ParameterCommand,
 		SoundCommand,
 	},
-	renderer::{context::Context, Renderer},
+	renderer::{context::Context, Renderer, RendererState},
 	resources::{create_resources, create_unused_resource_channels, ResourceControllers},
 };
 
@@ -84,6 +84,10 @@ impl<B: Backend> AudioManager<B> {
 
 	pub fn backend_mut(&mut self) -> &mut B {
 		&mut self.backend
+	}
+
+	pub fn state(&self) -> RendererState {
+		self.context.state()
 	}
 
 	pub fn add_sound(
@@ -180,5 +184,13 @@ impl<B: Backend> AudioManager<B> {
 		self.command_producer
 			.push(Command::Clock(ClockCommand::Add(id, clock)))?;
 		Ok(handle)
+	}
+
+	pub fn pause(&mut self, fade_out_tween: Tween) -> Result<(), CommandError> {
+		self.command_producer.push(Command::Pause(fade_out_tween))
+	}
+
+	pub fn resume(&mut self, fade_out_tween: Tween) -> Result<(), CommandError> {
+		self.command_producer.push(Command::Resume(fade_out_tween))
 	}
 }

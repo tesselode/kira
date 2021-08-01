@@ -144,27 +144,27 @@ impl Instance {
 		self.panning.set(panning);
 	}
 
-	pub fn pause(&mut self, tween: Tween) {
+	pub fn pause(&mut self, fade_out_tween: Tween) {
 		if self.waiting_to_start {
 			self.set_state(InstanceState::Paused);
 			return;
 		}
 		self.set_state(InstanceState::Pausing);
-		self.fade_volume.set(0.0, tween);
+		self.fade_volume.set(0.0, fade_out_tween);
 	}
 
-	pub fn resume(&mut self, tween: Tween) {
+	pub fn resume(&mut self, fade_in_tween: Tween) {
 		self.set_state(InstanceState::Playing);
-		self.fade_volume.set(1.0, tween);
+		self.fade_volume.set(1.0, fade_in_tween);
 	}
 
-	pub fn stop(&mut self, tween: Tween) {
+	pub fn stop(&mut self, fade_out_tween: Tween) {
 		if self.waiting_to_start {
 			self.set_state(InstanceState::Stopped);
 			return;
 		}
 		self.set_state(InstanceState::Stopping);
-		self.fade_volume.set(0.0, tween);
+		self.fade_volume.set(0.0, fade_out_tween);
 	}
 
 	pub fn on_start_processing(&self) {
