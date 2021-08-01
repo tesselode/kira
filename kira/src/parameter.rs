@@ -22,6 +22,7 @@ pub struct ParameterId(pub(crate) Index);
 
 pub(crate) struct ParameterShared {
 	value: AtomicU64,
+	paused: AtomicBool,
 	removed: AtomicBool,
 }
 
@@ -29,12 +30,17 @@ impl ParameterShared {
 	pub fn new(value: f64) -> Self {
 		Self {
 			value: AtomicU64::new(value.to_bits()),
+			paused: AtomicBool::new(false),
 			removed: AtomicBool::new(false),
 		}
 	}
 
 	pub fn value(&self) -> f64 {
 		f64::from_bits(self.value.load(Ordering::SeqCst))
+	}
+
+	pub fn paused(&self) -> bool {
+		self.paused.load(Ordering::SeqCst)
 	}
 
 	pub fn is_marked_for_removal(&self) -> bool {
@@ -58,6 +64,7 @@ enum ParameterState {
 
 pub(crate) struct Parameter {
 	state: ParameterState,
+	paused: bool,
 	value: f64,
 	shared: Arc<ParameterShared>,
 }
@@ -66,6 +73,7 @@ impl Parameter {
 	pub fn new(value: f64) -> Self {
 		Self {
 			state: ParameterState::Idle,
+			paused: false,
 			value,
 			shared: Arc::new(ParameterShared::new(value)),
 		}
@@ -77,6 +85,16 @@ impl Parameter {
 
 	pub fn value(&self) -> f64 {
 		self.value
+	}
+
+	pub fn pause(&mut self) {
+		self.paused = true;
+		self.shared.paused.store(true, Ordering::SeqCst);
+	}
+
+	pub fn resume(&mut self) {
+		self.paused = false;
+		self.shared.paused.store(false, Ordering::SeqCst);
 	}
 
 	pub fn set(&mut self, target: f64, tween: Tween) {
@@ -99,6 +117,9 @@ impl Parameter {
 	}
 
 	pub fn update(&mut self, dt: f64, clocks: &Clocks) -> JustFinishedTween {
+		if self.paused {
+			return false;
+		}
 		if let ParameterState::Tweening {
 			values,
 			time,

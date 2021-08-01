@@ -32,6 +32,8 @@ pub(crate) enum ParameterCommand {
 		target: f64,
 		tween: Tween,
 	},
+	Pause(ParameterId),
+	Resume(ParameterId),
 }
 
 pub(crate) enum MixerCommand {

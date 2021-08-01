@@ -22,6 +22,20 @@ impl ParameterHandle {
 		self.shared.value()
 	}
 
+	pub fn paused(&self) -> bool {
+		self.shared.paused()
+	}
+
+	pub fn pause(&mut self) -> Result<(), CommandError> {
+		self.command_producer
+			.push(Command::Parameter(ParameterCommand::Pause(self.id)))
+	}
+
+	pub fn resume(&mut self) -> Result<(), CommandError> {
+		self.command_producer
+			.push(Command::Parameter(ParameterCommand::Resume(self.id)))
+	}
+
 	pub fn set(&mut self, target: f64, tween: Tween) -> Result<(), CommandError> {
 		self.command_producer
 			.push(Command::Parameter(ParameterCommand::Set {

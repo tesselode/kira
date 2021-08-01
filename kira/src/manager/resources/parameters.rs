@@ -64,6 +64,16 @@ impl Parameters {
 					parameter.set(target, tween)
 				}
 			}
+			ParameterCommand::Pause(id) => {
+				if let Some(parameter) = self.parameters.get_mut(id.0) {
+					parameter.pause();
+				}
+			}
+			ParameterCommand::Resume(id) => {
+				if let Some(parameter) = self.parameters.get_mut(id.0) {
+					parameter.resume();
+				}
+			}
 		}
 	}
 
