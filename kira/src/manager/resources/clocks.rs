@@ -1,7 +1,10 @@
 use atomic_arena::{Arena, Controller};
 use ringbuf::Producer;
 
-use crate::{clock::Clock, manager::command::ClockCommand};
+use crate::{
+	clock::{Clock, ClockId},
+	manager::command::ClockCommand,
+};
 
 use super::parameters::Parameters;
 
@@ -20,6 +23,10 @@ impl Clocks {
 
 	pub(crate) fn controller(&self) -> Controller {
 		self.clocks.controller()
+	}
+
+	pub(crate) fn get(&self, id: ClockId) -> Option<&Clock> {
+		self.clocks.get(id.0)
 	}
 
 	pub(crate) fn on_start_processing(&mut self) {

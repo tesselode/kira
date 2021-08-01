@@ -11,6 +11,8 @@ use std::{
 
 use atomic_arena::Index;
 
+use crate::{manager::resources::clocks::Clocks, start_time::StartTime};
+
 use self::tween::Tween;
 
 type JustFinishedTween = bool;
@@ -50,6 +52,7 @@ enum ParameterState {
 		values: RangeInclusive<f64>,
 		time: f64,
 		tween: Tween,
+		waiting_to_start: bool,
 	},
 }
 
@@ -81,6 +84,11 @@ impl Parameter {
 			values: self.value..=target,
 			time: 0.0,
 			tween,
+			waiting_to_start: if let StartTime::ClockTime(..) = tween.start_time {
+				true
+			} else {
+				false
+			},
 		};
 	}
 
@@ -90,15 +98,32 @@ impl Parameter {
 			.store(self.value.to_bits(), Ordering::SeqCst);
 	}
 
-	pub fn update(&mut self, dt: f64) -> JustFinishedTween {
+	pub fn update(&mut self, dt: f64, clocks: &Clocks) -> JustFinishedTween {
 		if let ParameterState::Tweening {
 			values,
 			time,
 			tween,
+			waiting_to_start,
 		} = &mut self.state
 		{
+			if *waiting_to_start {
+				if let StartTime::ClockTime(id, start_time) = tween.start_time {
+					if let Some(clock) = clocks.get(id) {
+						if clock.ticking() && clock.time() >= start_time {
+							*waiting_to_start = false;
+						}
+					}
+				} else {
+					panic!(
+						"waiting_to_start should always be false if the start_time is Immediate"
+					);
+				}
+			}
+			if *waiting_to_start {
+				return false;
+			}
 			*time += dt;
-			if *time >= tween.duration.as_secs_f64() + tween.delay.as_secs_f64() {
+			if *time >= tween.duration.as_secs_f64() {
 				self.value = *values.end();
 				self.state = ParameterState::Idle;
 				return true;

@@ -6,6 +6,8 @@ use crate::{
 	parameter::{Parameter, ParameterId},
 };
 
+use super::clocks::Clocks;
+
 pub struct Parameters {
 	parameters: Arena<Parameter>,
 	unused_parameter_producer: Producer<Parameter>,
@@ -65,9 +67,9 @@ impl Parameters {
 		}
 	}
 
-	pub(crate) fn update(&mut self, dt: f64) {
+	pub(crate) fn update(&mut self, dt: f64, clocks: &Clocks) {
 		for (_, parameter) in &mut self.parameters {
-			parameter.update(dt);
+			parameter.update(dt, clocks);
 		}
 	}
 }

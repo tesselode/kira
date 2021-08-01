@@ -56,3 +56,9 @@ impl Drop for ClockHandle {
 		self.shared.mark_for_removal();
 	}
 }
+
+impl From<&ClockHandle> for ClockId {
+	fn from(handle: &ClockHandle) -> Self {
+		handle.id()
+	}
+}

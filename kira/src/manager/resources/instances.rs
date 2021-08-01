@@ -6,7 +6,7 @@ use crate::{
 	sound::instance::{Instance, InstanceState},
 };
 
-use super::{mixer::Mixer, parameters::Parameters, sounds::Sounds};
+use super::{clocks::Clocks, mixer::Mixer, parameters::Parameters, sounds::Sounds};
 
 pub(crate) struct Instances {
 	instances: Arena<Instance>,
@@ -94,10 +94,11 @@ impl Instances {
 		dt: f64,
 		sounds: &Sounds,
 		parameters: &Parameters,
+		clocks: &Clocks,
 		mixer: &mut Mixer,
 	) {
 		for (_, instance) in &mut self.instances {
-			instance.process(dt, sounds, parameters, mixer);
+			instance.process(dt, sounds, parameters, clocks, mixer);
 		}
 	}
 }

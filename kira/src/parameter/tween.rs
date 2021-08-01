@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+use crate::start_time::StartTime;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Easing {
 	Linear,
@@ -49,17 +51,13 @@ impl Default for Easing {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Tween {
-	pub delay: Duration,
+	pub start_time: StartTime,
 	pub duration: Duration,
 	pub easing: Easing,
 }
 
 impl Tween {
-	pub(super) fn value(&self, mut time: f64) -> f64 {
-		time -= self.delay.as_secs_f64();
-		if time < 0.0 {
-			return 0.0;
-		}
+	pub(super) fn value(&self, time: f64) -> f64 {
 		self.easing.apply(time / self.duration.as_secs_f64())
 	}
 }
@@ -67,7 +65,7 @@ impl Tween {
 impl Default for Tween {
 	fn default() -> Self {
 		Self {
-			delay: Duration::ZERO,
+			start_time: StartTime::default(),
 			duration: Duration::from_millis(10),
 			easing: Easing::Linear,
 		}

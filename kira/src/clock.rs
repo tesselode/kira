@@ -70,6 +70,14 @@ impl Clock {
 		self.shared.clone()
 	}
 
+	pub fn ticking(&self) -> bool {
+		self.ticking
+	}
+
+	pub fn time(&self) -> u64 {
+		self.time
+	}
+
 	pub fn set_interval(&mut self, interval: Value) {
 		self.interval.set(interval);
 	}

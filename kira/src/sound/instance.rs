@@ -10,8 +10,9 @@ use atomic_arena::Index;
 
 use crate::{
 	frame::Frame,
-	manager::resources::{mixer::Mixer, parameters::Parameters, sounds::Sounds},
+	manager::resources::{clocks::Clocks, mixer::Mixer, parameters::Parameters, sounds::Sounds},
 	parameter::{tween::Tween, Parameter},
+	start_time::StartTime,
 	track::TrackId,
 	value::{cached::CachedValue, Value},
 };
@@ -70,7 +71,8 @@ impl InstanceShared {
 pub(crate) struct Instance {
 	sound_id: SoundId,
 	track: TrackId,
-	time_until_start: f64,
+	start_time: StartTime,
+	waiting_to_start: bool,
 	volume: CachedValue,
 	playback_rate: CachedValue,
 	panning: CachedValue,
@@ -96,7 +98,12 @@ impl Instance {
 		Self {
 			sound_id,
 			track: settings.track,
-			time_until_start: settings.delay.as_secs_f64(),
+			start_time: settings.start_time,
+			waiting_to_start: if let StartTime::ClockTime(..) = settings.start_time {
+				true
+			} else {
+				false
+			},
 			volume: CachedValue::new(.., settings.volume, 1.0),
 			playback_rate: CachedValue::new(.., settings.playback_rate, 1.0),
 			panning: CachedValue::new(0.0..=1.0, settings.panning, 0.5),
@@ -138,7 +145,7 @@ impl Instance {
 	}
 
 	pub fn pause(&mut self, tween: Tween) {
-		if self.time_until_start > 0.0 {
+		if self.waiting_to_start {
 			self.set_state(InstanceState::Paused);
 			return;
 		}
@@ -152,7 +159,7 @@ impl Instance {
 	}
 
 	pub fn stop(&mut self, tween: Tween) {
-		if self.time_until_start > 0.0 {
+		if self.waiting_to_start {
 			self.set_state(InstanceState::Stopped);
 			return;
 		}
@@ -171,27 +178,44 @@ impl Instance {
 		dt: f64,
 		sounds: &Sounds,
 		parameters: &Parameters,
+		clocks: &Clocks,
 		mixer: &mut Mixer,
 	) {
+		if self.waiting_to_start {
+			if let StartTime::ClockTime(id, time) = self.start_time {
+				if let Some(clock) = clocks.get(id) {
+					if clock.ticking() && clock.time() >= time {
+						self.waiting_to_start = false;
+					}
+				}
+			} else {
+				panic!("waiting_to_start should always be false if the start_time is Immediate");
+			}
+		}
+		if self.waiting_to_start {
+			return;
+		}
 		if let Some(track) = mixer.track_mut(self.track) {
-			track.add_input(self.get_output(dt, sounds, parameters));
+			track.add_input(self.get_output(dt, sounds, parameters, clocks));
 		}
 	}
 
-	fn get_output(&mut self, dt: f64, sounds: &Sounds, parameters: &Parameters) -> Frame {
+	fn get_output(
+		&mut self,
+		dt: f64,
+		sounds: &Sounds,
+		parameters: &Parameters,
+		clocks: &Clocks,
+	) -> Frame {
 		let sound = match sounds.get(self.sound_id) {
 			Some(sound) => sound,
 			None => return Frame::from_mono(0.0),
 		};
 		if self.state.is_playing() {
-			if self.time_until_start > 0.0 {
-				self.time_until_start -= dt;
-				return Frame::from_mono(0.0);
-			}
 			self.volume.update(parameters);
 			self.playback_rate.update(parameters);
 			self.panning.update(parameters);
-			let just_finished_fade = self.fade_volume.update(dt);
+			let just_finished_fade = self.fade_volume.update(dt, clocks);
 			let out = sound
 				.data
 				.frame_at_position(self.position)

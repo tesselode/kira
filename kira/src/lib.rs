@@ -4,6 +4,7 @@ pub mod frame;
 pub mod manager;
 pub mod parameter;
 pub mod sound;
+pub mod start_time;
 pub mod track;
 pub mod util;
 pub mod value;

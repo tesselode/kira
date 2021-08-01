@@ -51,11 +51,14 @@ impl Renderer {
 		self.resources
 			.clocks
 			.update(self.context.dt, &self.resources.parameters);
-		self.resources.parameters.update(self.context.dt);
+		self.resources
+			.parameters
+			.update(self.context.dt, &self.resources.clocks);
 		self.resources.instances.process(
 			self.context.dt,
 			&self.resources.sounds,
 			&self.resources.parameters,
+			&self.resources.clocks,
 			&mut self.resources.mixer,
 		);
 		let out = self
