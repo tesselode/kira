@@ -10,10 +10,7 @@ use atomic_arena::Index;
 
 use crate::{
 	frame::Frame,
-	manager::{
-		renderer::context::Context,
-		resources::{mixer::Mixer, parameters::Parameters, sounds::Sounds},
-	},
+	manager::resources::{mixer::Mixer, parameters::Parameters, sounds::Sounds},
 	parameter::{tween::Tween, Parameter},
 	track::TrackId,
 	value::{cached::CachedValue, Value},
@@ -115,10 +112,6 @@ impl Instance {
 		}
 	}
 
-	pub fn reduce_delay_time(&mut self, time: f64) {
-		self.time_until_start -= time;
-	}
-
 	pub fn shared(&self) -> Arc<InstanceShared> {
 		self.shared.clone()
 	}
@@ -144,27 +137,27 @@ impl Instance {
 		self.panning.set(panning);
 	}
 
-	pub fn pause(&mut self, tween: Tween, context: &Arc<Context>, command_sent_time: u64) {
+	pub fn pause(&mut self, tween: Tween) {
 		if self.time_until_start > 0.0 {
 			self.set_state(InstanceState::Paused);
 			return;
 		}
 		self.set_state(InstanceState::Pausing);
-		self.fade_volume.set(context, 0.0, tween, command_sent_time);
+		self.fade_volume.set(0.0, tween);
 	}
 
-	pub fn resume(&mut self, tween: Tween, context: &Arc<Context>, command_sent_time: u64) {
+	pub fn resume(&mut self, tween: Tween) {
 		self.set_state(InstanceState::Playing);
-		self.fade_volume.set(context, 1.0, tween, command_sent_time);
+		self.fade_volume.set(1.0, tween);
 	}
 
-	pub fn stop(&mut self, tween: Tween, context: &Arc<Context>, command_sent_time: u64) {
+	pub fn stop(&mut self, tween: Tween) {
 		if self.time_until_start > 0.0 {
 			self.set_state(InstanceState::Stopped);
 			return;
 		}
 		self.set_state(InstanceState::Stopping);
-		self.fade_volume.set(context, 0.0, tween, command_sent_time);
+		self.fade_volume.set(0.0, tween);
 	}
 
 	pub fn on_start_processing(&self) {

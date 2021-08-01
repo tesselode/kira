@@ -4,10 +4,7 @@ use atomic_arena::Controller;
 
 use crate::{
 	error::PlaySoundError,
-	manager::{
-		command::{producer::CommandProducer, Command, InstanceCommand},
-		renderer::context::Context,
-	},
+	manager::command::{producer::CommandProducer, Command, InstanceCommand},
 };
 
 use super::{
@@ -17,7 +14,6 @@ use super::{
 };
 
 pub struct SoundHandle {
-	pub(crate) context: Arc<Context>,
 	pub(crate) id: SoundId,
 	pub(crate) data: Arc<dyn SoundData>,
 	pub(crate) shared: Arc<SoundShared>,
@@ -43,16 +39,11 @@ impl SoundHandle {
 		let instance = Instance::new(self.id, &self.data, settings);
 		let handle = InstanceHandle {
 			id,
-			context: self.context.clone(),
 			shared: instance.shared(),
 			command_producer: self.command_producer.clone(),
 		};
 		self.command_producer
-			.push(Command::Instance(InstanceCommand::Add {
-				id,
-				instance,
-				command_sent_time: self.context.sample_count(),
-			}))?;
+			.push(Command::Instance(InstanceCommand::Add(id, instance)))?;
 		Ok(handle)
 	}
 }

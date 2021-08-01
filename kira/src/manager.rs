@@ -96,7 +96,6 @@ impl<B: Backend> AudioManager<B> {
 			shared: shared.clone(),
 		};
 		let handle = SoundHandle {
-			context: self.context.clone(),
 			id,
 			data,
 			shared,
@@ -128,7 +127,6 @@ impl<B: Backend> AudioManager<B> {
 		);
 		let parameter = Parameter::new(value);
 		let handle = ParameterHandle {
-			context: self.context.clone(),
 			id,
 			shared: parameter.shared(),
 			command_producer: self.command_producer.clone(),

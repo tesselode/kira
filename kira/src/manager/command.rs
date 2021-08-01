@@ -15,29 +15,13 @@ pub(crate) enum SoundCommand {
 }
 
 pub(crate) enum InstanceCommand {
-	Add {
-		id: InstanceId,
-		instance: Instance,
-		command_sent_time: u64,
-	},
+	Add(InstanceId, Instance),
 	SetVolume(InstanceId, Value),
 	SetPlaybackRate(InstanceId, Value),
 	SetPanning(InstanceId, Value),
-	Pause {
-		id: InstanceId,
-		tween: Tween,
-		command_sent_time: u64,
-	},
-	Resume {
-		id: InstanceId,
-		tween: Tween,
-		command_sent_time: u64,
-	},
-	Stop {
-		id: InstanceId,
-		tween: Tween,
-		command_sent_time: u64,
-	},
+	Pause { id: InstanceId, tween: Tween },
+	Resume { id: InstanceId, tween: Tween },
+	Stop { id: InstanceId, tween: Tween },
 }
 
 pub(crate) enum ParameterCommand {
@@ -46,7 +30,6 @@ pub(crate) enum ParameterCommand {
 		id: ParameterId,
 		target: f64,
 		tween: Tween,
-		command_sent_time: u64,
 	},
 }
 

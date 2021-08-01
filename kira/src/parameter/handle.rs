@@ -2,16 +2,12 @@ use std::sync::Arc;
 
 use crate::{
 	error::CommandError,
-	manager::{
-		command::{producer::CommandProducer, Command, ParameterCommand},
-		renderer::context::Context,
-	},
+	manager::command::{producer::CommandProducer, Command, ParameterCommand},
 };
 
 use super::{tween::Tween, ParameterId, ParameterShared};
 
 pub struct ParameterHandle {
-	pub(crate) context: Arc<Context>,
 	pub(crate) id: ParameterId,
 	pub(crate) shared: Arc<ParameterShared>,
 	pub(crate) command_producer: CommandProducer,
@@ -32,7 +28,6 @@ impl ParameterHandle {
 				id: self.id,
 				target,
 				tween,
-				command_sent_time: self.context.sample_count(),
 			}))
 	}
 }

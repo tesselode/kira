@@ -1,10 +1,8 @@
-use std::sync::Arc;
-
 use atomic_arena::{Arena, Controller};
 use ringbuf::Producer;
 
 use crate::{
-	manager::{command::ParameterCommand, renderer::context::Context},
+	manager::command::ParameterCommand,
 	parameter::{Parameter, ParameterId},
 };
 
@@ -53,20 +51,15 @@ impl Parameters {
 		}
 	}
 
-	pub(crate) fn run_command(&mut self, command: ParameterCommand, context: &Arc<Context>) {
+	pub(crate) fn run_command(&mut self, command: ParameterCommand) {
 		match command {
 			ParameterCommand::Add(id, parameter) => self
 				.parameters
 				.insert_with_index(id.0, parameter)
 				.expect("Parameter arena is full"),
-			ParameterCommand::Set {
-				id,
-				target,
-				tween,
-				command_sent_time,
-			} => {
+			ParameterCommand::Set { id, target, tween } => {
 				if let Some(parameter) = self.parameters.get_mut(id.0) {
-					parameter.set(context, target, tween, command_sent_time)
+					parameter.set(target, tween)
 				}
 			}
 		}

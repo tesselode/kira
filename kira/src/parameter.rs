@@ -7,12 +7,9 @@ use std::{
 		atomic::{AtomicBool, AtomicU64, Ordering},
 		Arc,
 	},
-	time::Duration,
 };
 
 use atomic_arena::Index;
-
-use crate::manager::renderer::context::Context;
 
 use self::tween::Tween;
 
@@ -79,17 +76,7 @@ impl Parameter {
 		self.value
 	}
 
-	pub fn set(
-		&mut self,
-		context: &Arc<Context>,
-		target: f64,
-		mut tween: Tween,
-		command_sent_time: u64,
-	) {
-		let time_since_command_sent_samples = context.sample_count() - command_sent_time;
-		tween.delay = tween.delay.saturating_sub(Duration::from_secs_f64(
-			time_since_command_sent_samples as f64 / context.sample_rate() as f64,
-		));
+	pub fn set(&mut self, target: f64, tween: Tween) {
 		self.state = ParameterState::Tweening {
 			values: self.value..=target,
 			time: 0.0,

@@ -1,10 +1,8 @@
-use std::sync::Arc;
-
 use atomic_arena::{Arena, Controller};
 use ringbuf::Producer;
 
 use crate::{
-	manager::{command::InstanceCommand, renderer::context::Context},
+	manager::command::InstanceCommand,
 	sound::instance::{Instance, InstanceState},
 };
 
@@ -51,17 +49,9 @@ impl Instances {
 		}
 	}
 
-	pub fn run_command(&mut self, command: InstanceCommand, context: &Arc<Context>) {
+	pub fn run_command(&mut self, command: InstanceCommand) {
 		match command {
-			InstanceCommand::Add {
-				id,
-				mut instance,
-				command_sent_time,
-			} => {
-				instance.reduce_delay_time(
-					(context.sample_count() - command_sent_time) as f64
-						/ context.sample_rate() as f64,
-				);
+			InstanceCommand::Add(id, instance) => {
 				self.instances
 					.insert_with_index(id.0, instance)
 					.expect("Instance arena is full");
@@ -81,31 +71,19 @@ impl Instances {
 					instance.set_panning(panning);
 				}
 			}
-			InstanceCommand::Pause {
-				id,
-				tween,
-				command_sent_time,
-			} => {
+			InstanceCommand::Pause { id, tween } => {
 				if let Some(instance) = self.instances.get_mut(id.0) {
-					instance.pause(tween, context, command_sent_time);
+					instance.pause(tween);
 				}
 			}
-			InstanceCommand::Resume {
-				id,
-				tween,
-				command_sent_time,
-			} => {
+			InstanceCommand::Resume { id, tween } => {
 				if let Some(instance) = self.instances.get_mut(id.0) {
-					instance.resume(tween, context, command_sent_time);
+					instance.resume(tween);
 				}
 			}
-			InstanceCommand::Stop {
-				id,
-				tween,
-				command_sent_time,
-			} => {
+			InstanceCommand::Stop { id, tween } => {
 				if let Some(instance) = self.instances.get_mut(id.0) {
-					instance.stop(tween, context, command_sent_time);
+					instance.stop(tween);
 				}
 			}
 		}

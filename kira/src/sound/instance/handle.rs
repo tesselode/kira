@@ -2,10 +2,7 @@ use std::sync::Arc;
 
 use crate::{
 	error::InstanceError,
-	manager::{
-		command::{producer::CommandProducer, Command, InstanceCommand},
-		renderer::context::Context,
-	},
+	manager::command::{producer::CommandProducer, Command, InstanceCommand},
 	parameter::tween::Tween,
 	value::Value,
 };
@@ -13,7 +10,6 @@ use crate::{
 use super::{InstanceId, InstanceShared, InstanceState};
 
 pub struct InstanceHandle {
-	pub(crate) context: Arc<Context>,
 	pub(crate) id: InstanceId,
 	pub(crate) shared: Arc<InstanceShared>,
 	pub(crate) command_producer: CommandProducer,
@@ -79,7 +75,6 @@ impl InstanceHandle {
 			.push(Command::Instance(InstanceCommand::Pause {
 				id: self.id,
 				tween,
-				command_sent_time: self.context.sample_count(),
 			}))?;
 		Ok(())
 	}
@@ -92,7 +87,6 @@ impl InstanceHandle {
 			.push(Command::Instance(InstanceCommand::Resume {
 				id: self.id,
 				tween,
-				command_sent_time: self.context.sample_count(),
 			}))?;
 		Ok(())
 	}
@@ -105,7 +99,6 @@ impl InstanceHandle {
 			.push(Command::Instance(InstanceCommand::Stop {
 				id: self.id,
 				tween,
-				command_sent_time: self.context.sample_count(),
 			}))?;
 		Ok(())
 	}

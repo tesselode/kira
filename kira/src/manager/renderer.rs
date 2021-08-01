@@ -1,6 +1,6 @@
 pub mod context;
 
-use std::sync::{atomic::Ordering, Arc};
+use std::sync::Arc;
 
 use ringbuf::Consumer;
 
@@ -12,7 +12,6 @@ use super::{command::Command, resources::Resources};
 
 pub struct Renderer {
 	context: Arc<Context>,
-	sample_count: u64,
 	resources: Resources,
 	command_consumer: Consumer<Command>,
 }
@@ -25,17 +24,12 @@ impl Renderer {
 	) -> Self {
 		Self {
 			context,
-			sample_count: 0,
 			resources,
 			command_consumer,
 		}
 	}
 
 	pub fn on_start_processing(&mut self) {
-		self.context
-			.sample_count
-			.store(self.sample_count, Ordering::SeqCst);
-
 		self.resources.sounds.on_start_processing();
 		self.resources.instances.on_start_processing();
 		self.resources.parameters.on_start_processing();
@@ -44,13 +38,8 @@ impl Renderer {
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
 				Command::Sound(command) => self.resources.sounds.run_command(command),
-				Command::Instance(command) => {
-					self.resources.instances.run_command(command, &self.context)
-				}
-				Command::Parameter(command) => self
-					.resources
-					.parameters
-					.run_command(command, &self.context),
+				Command::Instance(command) => self.resources.instances.run_command(command),
+				Command::Parameter(command) => self.resources.parameters.run_command(command),
 				Command::Mixer(command) => self.resources.mixer.run_command(command),
 			}
 		}
@@ -68,7 +57,6 @@ impl Renderer {
 			.resources
 			.mixer
 			.process(self.context.dt, &self.resources.parameters);
-		self.sample_count += 1;
 		out
 	}
 }
