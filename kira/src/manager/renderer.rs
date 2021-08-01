@@ -34,6 +34,7 @@ impl Renderer {
 		self.resources.instances.on_start_processing();
 		self.resources.parameters.on_start_processing();
 		self.resources.mixer.on_start_processing();
+		self.resources.clocks.on_start_processing();
 
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
@@ -41,11 +42,15 @@ impl Renderer {
 				Command::Instance(command) => self.resources.instances.run_command(command),
 				Command::Parameter(command) => self.resources.parameters.run_command(command),
 				Command::Mixer(command) => self.resources.mixer.run_command(command),
+				Command::Clock(command) => self.resources.clocks.run_command(command),
 			}
 		}
 	}
 
 	pub fn process(&mut self) -> Frame {
+		self.resources
+			.clocks
+			.update(self.context.dt, &self.resources.parameters);
 		self.resources.parameters.update(self.context.dt);
 		self.resources.instances.process(
 			self.context.dt,

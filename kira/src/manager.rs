@@ -8,7 +8,8 @@ use std::{path::Path, sync::Arc};
 use ringbuf::RingBuffer;
 
 use crate::{
-	error::{AddParameterError, AddSoundError, AddSubTrackError},
+	clock::{handle::ClockHandle, Clock, ClockId},
+	error::{AddClockError, AddParameterError, AddSoundError, AddSubTrackError},
 	parameter::{handle::ParameterHandle, Parameter, ParameterId},
 	sound::{
 		data::{
@@ -19,11 +20,15 @@ use crate::{
 		Sound, SoundId, SoundShared,
 	},
 	track::{handle::TrackHandle, settings::TrackSettings, SubTrackId, Track, TrackId},
+	value::Value,
 };
 
 use self::{
 	backend::Backend,
-	command::{producer::CommandProducer, Command, MixerCommand, ParameterCommand, SoundCommand},
+	command::{
+		producer::CommandProducer, ClockCommand, Command, MixerCommand, ParameterCommand,
+		SoundCommand,
+	},
 	renderer::{context::Context, Renderer},
 	resources::{create_resources, create_unused_resource_channels, ResourceControllers},
 };
@@ -34,6 +39,7 @@ pub struct AudioManagerSettings {
 	pub instance_capacity: usize,
 	pub parameter_capacity: usize,
 	pub sub_track_capacity: usize,
+	pub clock_capacity: usize,
 }
 
 impl Default for AudioManagerSettings {
@@ -44,6 +50,7 @@ impl Default for AudioManagerSettings {
 			instance_capacity: 100,
 			parameter_capacity: 100,
 			sub_track_capacity: 100,
+			clock_capacity: 1,
 		}
 	}
 }
@@ -154,6 +161,24 @@ impl<B: Backend> AudioManager<B> {
 		};
 		self.command_producer
 			.push(Command::Mixer(MixerCommand::AddSubTrack(id, sub_track)))?;
+		Ok(handle)
+	}
+
+	pub fn add_clock(&mut self, interval: impl Into<Value>) -> Result<ClockHandle, AddClockError> {
+		let id = ClockId(
+			self.resource_controllers
+				.clock_controller
+				.try_reserve()
+				.map_err(|_| AddClockError::ClockLimitReached)?,
+		);
+		let clock = Clock::new(interval.into());
+		let handle = ClockHandle {
+			id,
+			shared: clock.shared(),
+			command_producer: self.command_producer.clone(),
+		};
+		self.command_producer
+			.push(Command::Clock(ClockCommand::Add(id, clock)))?;
 		Ok(handle)
 	}
 }

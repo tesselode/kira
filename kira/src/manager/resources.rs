@@ -1,3 +1,4 @@
+pub mod clocks;
 pub mod instances;
 pub mod mixer;
 pub mod parameters;
@@ -9,12 +10,15 @@ use atomic_arena::Controller;
 use ringbuf::{Consumer, Producer, RingBuffer};
 
 use crate::{
+	clock::Clock,
 	parameter::Parameter,
 	sound::{instance::Instance, Sound},
 	track::Track,
 };
 
-use self::{instances::Instances, mixer::Mixer, parameters::Parameters, sounds::Sounds};
+use self::{
+	clocks::Clocks, instances::Instances, mixer::Mixer, parameters::Parameters, sounds::Sounds,
+};
 
 use super::{renderer::context::Context, AudioManagerSettings};
 
@@ -23,6 +27,7 @@ pub(super) struct UnusedResourceProducers {
 	pub instance: Producer<Instance>,
 	pub parameter: Producer<Parameter>,
 	pub sub_track: Producer<Track>,
+	pub clock: Producer<Clock>,
 }
 
 pub struct UnusedResourceCollector {
@@ -30,6 +35,7 @@ pub struct UnusedResourceCollector {
 	unused_instance_consumer: Consumer<Instance>,
 	unused_parameter_consumer: Consumer<Parameter>,
 	unused_sub_track_consumer: Consumer<Track>,
+	unused_clock_consumer: Consumer<Clock>,
 }
 
 impl UnusedResourceCollector {
@@ -46,6 +52,9 @@ impl UnusedResourceCollector {
 		while self.unused_sub_track_consumer.pop().is_some() {
 			println!("dropped sub-track");
 		}
+		while self.unused_clock_consumer.pop().is_some() {
+			println!("dropped clock");
+		}
 	}
 }
 
@@ -60,18 +69,22 @@ pub(super) fn create_unused_resource_channels(
 		RingBuffer::new(settings.parameter_capacity).split();
 	let (unused_sub_track_producer, unused_sub_track_consumer) =
 		RingBuffer::new(settings.sub_track_capacity).split();
+	let (unused_clock_producer, unused_clock_consumer) =
+		RingBuffer::new(settings.clock_capacity).split();
 	(
 		UnusedResourceProducers {
 			sound: unused_sound_producer,
 			instance: unused_instance_producer,
 			parameter: unused_parameter_producer,
 			sub_track: unused_sub_track_producer,
+			clock: unused_clock_producer,
 		},
 		UnusedResourceCollector {
 			unused_sound_consumer,
 			unused_instance_consumer,
 			unused_parameter_consumer,
 			unused_sub_track_consumer,
+			unused_clock_consumer,
 		},
 	)
 }
@@ -81,6 +94,7 @@ pub(super) struct Resources {
 	pub instances: Instances,
 	pub parameters: Parameters,
 	pub mixer: Mixer,
+	pub clocks: Clocks,
 }
 
 pub(super) struct ResourceControllers {
@@ -88,6 +102,7 @@ pub(super) struct ResourceControllers {
 	pub instance_controller: Controller,
 	pub parameter_controller: Controller,
 	pub sub_track_controller: Controller,
+	pub clock_controller: Controller,
 }
 
 pub(super) fn create_resources(
@@ -113,18 +128,22 @@ pub(super) fn create_resources(
 		context,
 	);
 	let sub_track_controller = mixer.sub_track_controller();
+	let clocks = Clocks::new(settings.clock_capacity, unused_resource_producers.clock);
+	let clock_controller = clocks.controller();
 	(
 		Resources {
 			sounds,
 			instances,
 			parameters,
 			mixer,
+			clocks,
 		},
 		ResourceControllers {
 			sound_controller,
 			instance_controller,
 			parameter_controller,
 			sub_track_controller,
+			clock_controller,
 		},
 	)
 }

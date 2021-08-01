@@ -56,6 +56,14 @@ pub enum AddSubTrackError {
 }
 
 #[derive(Debug, Error)]
+pub enum AddClockError {
+	#[error("Could not add a clock because the maximum number of clocks has been reached.")]
+	ClockLimitReached,
+	#[error("{0}")]
+	CommandError(#[from] CommandError),
+}
+
+#[derive(Debug, Error)]
 pub enum InstanceError {
 	#[error("Cannot modify an instance that has finished playing")]
 	InstanceStopped,

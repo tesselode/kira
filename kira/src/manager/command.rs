@@ -1,6 +1,7 @@
 pub mod producer;
 
 use crate::{
+	clock::{Clock, ClockId},
 	parameter::{tween::Tween, Parameter, ParameterId},
 	sound::{
 		instance::{Instance, InstanceId},
@@ -39,9 +40,18 @@ pub(crate) enum MixerCommand {
 	SetTrackPanning(TrackId, Value),
 }
 
+pub(crate) enum ClockCommand {
+	Add(ClockId, Clock),
+	SetInterval(ClockId, Value),
+	Start(ClockId),
+	Pause(ClockId),
+	Stop(ClockId),
+}
+
 pub(crate) enum Command {
 	Sound(SoundCommand),
 	Instance(InstanceCommand),
 	Parameter(ParameterCommand),
 	Mixer(MixerCommand),
+	Clock(ClockCommand),
 }
