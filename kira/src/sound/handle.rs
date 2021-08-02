@@ -3,11 +3,14 @@ use std::sync::Arc;
 use atomic_arena::Controller;
 use thiserror::Error;
 
-use crate::{error::CommandError, manager::command::{producer::CommandProducer, Command, InstanceCommand}};
+use crate::{
+	error::CommandError,
+	manager::command::{producer::CommandProducer, Command, InstanceCommand},
+};
 
 use super::{
 	data::SoundData,
-	instance::{handle::InstanceHandle, settings::InstanceSettings, Instance, InstanceId},
+	instance::{Instance, InstanceHandle, InstanceId, InstanceSettings},
 	SoundId, SoundShared,
 };
 

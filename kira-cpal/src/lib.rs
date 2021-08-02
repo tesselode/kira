@@ -4,7 +4,7 @@ use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	BuildStreamError, DefaultStreamConfigError, Device, PlayStreamError, Stream, StreamConfig,
 };
-use kira::manager::{backend::Backend, renderer::Renderer, resources::UnusedResourceCollector};
+use kira::manager::{renderer::Renderer, resources::UnusedResourceCollector, Backend};
 use ringbuf::{Producer, RingBuffer};
 use thiserror::Error;
 

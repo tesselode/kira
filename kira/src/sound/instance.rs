@@ -1,5 +1,8 @@
-pub mod handle;
-pub mod settings;
+mod handle;
+mod settings;
+
+pub use handle::*;
+pub use settings::*;
 
 use std::sync::{
 	atomic::{AtomicU64, AtomicU8, Ordering},
@@ -10,14 +13,12 @@ use atomic_arena::Index;
 
 use crate::{
 	frame::Frame,
-	manager::resources::{clocks::Clocks, mixer::Mixer, parameters::Parameters, sounds::Sounds},
-	parameter::{tween::Tween, Parameter},
+	manager::resources::{clocks::Clocks, mixer::Mixer, sounds::Sounds, Parameters},
+	parameter::{Parameter, Tween},
 	start_time::StartTime,
 	track::TrackId,
 	value::{cached::CachedValue, Value},
 };
-
-use self::settings::InstanceSettings;
 
 use super::{data::SoundData, Sound, SoundId};
 

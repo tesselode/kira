@@ -1,9 +1,9 @@
 pub mod cached;
-pub mod mapping;
+mod mapping;
 
-use crate::parameter::{ParameterId, handle::ParameterHandle};
+use crate::parameter::{ParameterHandle, ParameterId};
 
-use self::mapping::Mapping;
+pub use mapping::*;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Value {

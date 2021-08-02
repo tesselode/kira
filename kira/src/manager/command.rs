@@ -2,7 +2,7 @@ pub mod producer;
 
 use crate::{
 	clock::{Clock, ClockId},
-	parameter::{tween::Tween, Parameter, ParameterId},
+	parameter::{Parameter, ParameterId, Tween},
 	sound::{
 		instance::{Instance, InstanceId},
 		Sound, SoundId,

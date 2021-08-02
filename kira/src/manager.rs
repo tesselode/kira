@@ -1,31 +1,31 @@
-pub mod backend;
+mod backend;
 pub(crate) mod command;
 pub mod error;
 pub mod renderer;
 pub mod resources;
+
+pub use backend::*;
 
 use std::{path::Path, sync::Arc};
 
 use ringbuf::RingBuffer;
 
 use crate::{
-	clock::{handle::ClockHandle, Clock, ClockId},
+	clock::{Clock, ClockHandle, ClockId},
 	error::CommandError,
-	parameter::{handle::ParameterHandle, tween::Tween, Parameter, ParameterId},
+	parameter::{Parameter, ParameterHandle, ParameterId, Tween},
 	sound::{
 		data::{
-			static_sound::{settings::StaticSoundDataSettings, StaticSoundData},
+			static_sound::{StaticSoundData, StaticSoundDataSettings},
 			SoundData,
 		},
-		handle::SoundHandle,
-		Sound, SoundId, SoundShared,
+		Sound, SoundHandle, SoundId, SoundShared,
 	},
-	track::{handle::TrackHandle, settings::TrackSettings, SubTrackId, Track, TrackId},
+	track::{SubTrackId, Track, TrackHandle, TrackId, TrackSettings},
 	value::Value,
 };
 
 use self::{
-	backend::Backend,
 	command::{
 		producer::CommandProducer, ClockCommand, Command, MixerCommand, ParameterCommand,
 		SoundCommand,

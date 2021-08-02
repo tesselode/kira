@@ -1,5 +1,7 @@
-pub mod seamless_loop;
+mod seamless_loop;
 pub mod static_sound;
+
+pub use seamless_loop::*;
 
 use std::time::Duration;
 

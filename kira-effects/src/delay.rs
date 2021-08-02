@@ -1,11 +1,11 @@
 //! Adds echoes to a sound.
 
 use kira::{
-	frame::Frame,
-	manager::resources::parameters::Parameters,
-	track::effect::Effect,
+	manager::resources::Parameters,
+	track::Effect,
 	util,
 	value::{cached::CachedValue, Value},
+	Frame,
 };
 
 use super::filter::{Filter, FilterSettings};

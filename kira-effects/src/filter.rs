@@ -3,10 +3,10 @@
 use std::f64::consts::PI;
 
 use kira::{
-	frame::Frame,
-	manager::resources::parameters::Parameters,
-	track::effect::Effect,
+	manager::resources::Parameters,
+	track::Effect,
 	value::{cached::CachedValue, Value},
+	Frame,
 };
 
 // This filter code is based on the filter code from baseplug:

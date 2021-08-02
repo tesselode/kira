@@ -6,7 +6,7 @@ use crate::{
 	sound::instance::{Instance, InstanceState},
 };
 
-use super::{clocks::Clocks, mixer::Mixer, parameters::Parameters, sounds::Sounds};
+use super::{clocks::Clocks, mixer::Mixer, Parameters, sounds::Sounds};
 
 pub(crate) struct Instances {
 	instances: Arena<Instance>,

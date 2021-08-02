@@ -1,8 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
-	parameter::tween::Tween, sound::data::SoundData, start_time::StartTime, track::TrackId,
-	value::Value,
+	parameter::Tween, sound::data::SoundData, start_time::StartTime, track::TrackId, value::Value,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq)]

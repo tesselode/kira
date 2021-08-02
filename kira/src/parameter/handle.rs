@@ -5,7 +5,7 @@ use crate::{
 	manager::command::{producer::CommandProducer, Command, ParameterCommand},
 };
 
-use super::{tween::Tween, ParameterId, ParameterShared};
+use super::{ParameterId, ParameterShared, Tween};
 
 pub struct ParameterHandle {
 	pub(crate) id: ParameterId,

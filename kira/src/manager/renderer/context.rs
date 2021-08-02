@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicU8, Ordering};
 
 use super::RendererState;
 
-pub struct Context {
+pub(crate) struct Context {
 	pub(super) sample_rate: u32,
 	pub(super) dt: f64,
 	pub(super) state: AtomicU8,

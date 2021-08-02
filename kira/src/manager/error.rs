@@ -14,7 +14,7 @@ pub enum AddSoundError {
 #[derive(Debug, Error)]
 pub enum LoadSoundError {
 	#[error("{0}")]
-	FromFileError(#[from] crate::sound::data::static_sound::error::FromFileError),
+	FromFileError(#[from] crate::sound::data::static_sound::FromFileError),
 	#[error("{0}")]
 	AddSoundError(#[from] AddSoundError),
 }

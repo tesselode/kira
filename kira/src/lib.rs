@@ -1,10 +1,14 @@
 pub mod clock;
-pub mod error;
-pub mod frame;
+mod error;
+mod frame;
 pub mod manager;
 pub mod parameter;
 pub mod sound;
-pub mod start_time;
+mod start_time;
 pub mod track;
 pub mod util;
 pub mod value;
+
+pub use error::*;
+pub use frame::*;
+pub use start_time::*;

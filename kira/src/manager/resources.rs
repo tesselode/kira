@@ -1,8 +1,10 @@
-pub mod clocks;
-pub mod instances;
-pub mod mixer;
-pub mod parameters;
-pub mod sounds;
+pub(crate) mod clocks;
+pub(crate) mod instances;
+pub(crate) mod mixer;
+mod parameters;
+pub(crate) mod sounds;
+
+pub use parameters::*;
 
 use std::sync::Arc;
 
@@ -16,9 +18,7 @@ use crate::{
 	track::Track,
 };
 
-use self::{
-	clocks::Clocks, instances::Instances, mixer::Mixer, parameters::Parameters, sounds::Sounds,
-};
+use self::{clocks::Clocks, instances::Instances, mixer::Mixer, sounds::Sounds};
 
 use super::{renderer::context::Context, AudioManagerSettings};
 

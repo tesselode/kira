@@ -6,30 +6,30 @@ use crate::{
 	manager::command::ClockCommand,
 };
 
-use super::parameters::Parameters;
+use super::Parameters;
 
-pub struct Clocks {
+pub(crate) struct Clocks {
 	clocks: Arena<Clock>,
 	unused_clock_producer: Producer<Clock>,
 }
 
 impl Clocks {
-	pub(crate) fn new(capacity: usize, unused_clock_producer: Producer<Clock>) -> Self {
+	pub fn new(capacity: usize, unused_clock_producer: Producer<Clock>) -> Self {
 		Self {
 			clocks: Arena::new(capacity),
 			unused_clock_producer,
 		}
 	}
 
-	pub(crate) fn controller(&self) -> Controller {
+	pub fn controller(&self) -> Controller {
 		self.clocks.controller()
 	}
 
-	pub(crate) fn get(&self, id: ClockId) -> Option<&Clock> {
+	pub fn get(&self, id: ClockId) -> Option<&Clock> {
 		self.clocks.get(id.0)
 	}
 
-	pub(crate) fn on_start_processing(&mut self) {
+	pub fn on_start_processing(&mut self) {
 		if self.unused_clock_producer.is_full() {
 			return;
 		}
@@ -46,7 +46,7 @@ impl Clocks {
 		}
 	}
 
-	pub(crate) fn run_command(&mut self, command: ClockCommand) {
+	pub fn run_command(&mut self, command: ClockCommand) {
 		match command {
 			ClockCommand::Add(id, clock) => self
 				.clocks
@@ -75,7 +75,7 @@ impl Clocks {
 		}
 	}
 
-	pub(crate) fn update(&mut self, dt: f64, parameters: &Parameters) {
+	pub fn update(&mut self, dt: f64, parameters: &Parameters) {
 		for (_, clock) in &mut self.clocks {
 			clock.update(dt, parameters);
 		}

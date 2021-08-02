@@ -1,4 +1,4 @@
-pub mod context;
+pub(crate) mod context;
 
 use std::sync::{atomic::Ordering, Arc};
 

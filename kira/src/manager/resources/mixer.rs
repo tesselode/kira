@@ -10,7 +10,7 @@ use crate::{
 	value::cached::CachedValue,
 };
 
-use super::parameters::Parameters;
+use super::Parameters;
 
 pub(crate) struct Mixer {
 	main_track: Track,

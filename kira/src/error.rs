@@ -1,5 +1,3 @@
-//! Things that can go wrong when using an [`AudioManager`](super::AudioManager).
-
 use thiserror::Error;
 
 #[derive(Debug, Error)]

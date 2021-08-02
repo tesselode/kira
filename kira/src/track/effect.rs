@@ -1,4 +1,4 @@
-use crate::{frame::Frame, manager::resources::parameters::Parameters};
+use crate::{frame::Frame, manager::resources::Parameters};
 
 #[allow(unused_variables)]
 pub trait Effect: Send + Sync {

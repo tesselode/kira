@@ -1,5 +1,5 @@
-pub mod handle;
-pub mod tween;
+mod handle;
+mod tween;
 
 use std::{
 	ops::RangeInclusive,
@@ -13,7 +13,8 @@ use atomic_arena::Index;
 
 use crate::{manager::resources::clocks::Clocks, start_time::StartTime};
 
-use self::tween::Tween;
+pub use handle::*;
+pub use tween::*;
 
 type JustFinishedTween = bool;
 

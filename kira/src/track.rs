@@ -1,7 +1,12 @@
-pub mod effect;
-pub mod handle;
-pub mod routes;
-pub mod settings;
+mod effect;
+mod handle;
+mod routes;
+mod settings;
+
+pub use effect::*;
+pub use handle::*;
+pub use routes::*;
+pub use settings::*;
 
 use std::sync::{
 	atomic::{AtomicBool, Ordering},
@@ -12,11 +17,9 @@ use atomic_arena::Index;
 
 use crate::{
 	frame::Frame,
-	manager::{renderer::context::Context, resources::parameters::Parameters},
+	manager::{renderer::context::Context, resources::Parameters},
 	value::{cached::CachedValue, Value},
 };
-
-use self::{effect::Effect, handle::TrackHandle, settings::TrackSettings};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SubTrackId(pub(crate) Index);

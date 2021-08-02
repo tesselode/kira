@@ -1,4 +1,6 @@
-pub mod handle;
+mod handle;
+
+pub use handle::*;
 
 use std::sync::{
 	atomic::{AtomicBool, AtomicU64, Ordering},
@@ -8,7 +10,7 @@ use std::sync::{
 use atomic_arena::Index;
 
 use crate::{
-	manager::resources::parameters::Parameters,
+	manager::resources::Parameters,
 	value::{cached::CachedValue, Value},
 };
 

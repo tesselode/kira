@@ -1,6 +1,6 @@
 use std::ops::{RangeFrom, RangeFull, RangeInclusive, RangeToInclusive};
 
-use crate::manager::resources::parameters::Parameters;
+use crate::manager::resources::Parameters;
 
 use super::Value;
 

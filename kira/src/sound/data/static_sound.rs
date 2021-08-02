@@ -1,11 +1,12 @@
-pub mod error;
-pub mod settings;
+mod error;
+mod settings;
+
+pub use error::*;
+pub use settings::*;
 
 use crate::{frame::Frame, util};
 
 use std::time::Duration;
-
-use self::settings::StaticSoundDataSettings;
 
 use super::SoundData;
 

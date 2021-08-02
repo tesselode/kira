@@ -1,6 +1,6 @@
 use crate::value::Value;
 
-use super::{effect::Effect, routes::TrackRoutes};
+use super::{routes::TrackRoutes, Effect};
 
 pub struct TrackSettings {
 	pub volume: Value,

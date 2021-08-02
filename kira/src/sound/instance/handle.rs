@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::{
 	error::CommandError,
 	manager::command::{producer::CommandProducer, Command, InstanceCommand},
-	parameter::tween::Tween,
+	parameter::Tween,
 	value::Value,
 };
 
