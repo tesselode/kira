@@ -11,14 +11,21 @@ use thiserror::Error;
 
 use super::{InstanceId, InstanceShared, InstanceState};
 
+/// An error that can occur when modifying an instance.
 #[derive(Debug, Error)]
 pub enum InstanceHandleError {
+	/// Cannot modify an instance that has finished playing.
 	#[error("Cannot modify an instance that has finished playing")]
 	InstanceStopped,
+	/// An error occured when sending a command to the renderer.
 	#[error("{0}")]
 	CommandError(#[from] CommandError),
 }
 
+/// Controls an instance of a sound.
+///
+/// Unlike other handles, dropping an [`InstanceHandle`] does **not**
+/// cause the corresponding instance to be removed.
 pub struct InstanceHandle {
 	pub(crate) id: InstanceId,
 	pub(crate) shared: Arc<InstanceShared>,
@@ -26,18 +33,22 @@ pub struct InstanceHandle {
 }
 
 impl InstanceHandle {
+	/// Returns the unique identifier for the instance.
 	pub fn id(&self) -> InstanceId {
 		self.id
 	}
 
+	/// Returns the current playback state of the instance.
 	pub fn state(&self) -> InstanceState {
 		self.shared.state()
 	}
 
+	/// Returns the current playback position of the instance.
 	pub fn position(&self) -> f64 {
 		self.shared.position()
 	}
 
+	/// Sets the volume of the instance.
 	pub fn set_volume(&mut self, volume: impl Into<Value>) -> Result<(), InstanceHandleError> {
 		if self.state() == InstanceState::Stopped {
 			return Err(InstanceHandleError::InstanceStopped);
@@ -50,6 +61,11 @@ impl InstanceHandle {
 		Ok(())
 	}
 
+	/// Sets the playback rate of the instance, as a factor of the
+	/// normal playback rate.
+	///
+	/// Changing the playback rate will change both the speed
+	/// and the pitch of the sound.
 	pub fn set_playback_rate(
 		&mut self,
 		playback_rate: impl Into<Value>,
@@ -65,6 +81,8 @@ impl InstanceHandle {
 		Ok(())
 	}
 
+	/// Sets the panning of the instance, where 0 is hard left
+	/// and 1 is hard right.
 	pub fn set_panning(&mut self, panning: impl Into<Value>) -> Result<(), InstanceHandleError> {
 		if self.state() == InstanceState::Stopped {
 			return Err(InstanceHandleError::InstanceStopped);
@@ -77,6 +95,8 @@ impl InstanceHandle {
 		Ok(())
 	}
 
+	/// Fades out the instance with the specified tween and then
+	/// pauses playback.
 	pub fn pause(&mut self, fade_out_tween: Tween) -> Result<(), InstanceHandleError> {
 		if self.state() == InstanceState::Stopped {
 			return Err(InstanceHandleError::InstanceStopped);
@@ -89,6 +109,8 @@ impl InstanceHandle {
 		Ok(())
 	}
 
+	/// Resume playback of the instance, fading in the audio
+	/// with the specified tween.
 	pub fn resume(&mut self, fade_in_tween: Tween) -> Result<(), InstanceHandleError> {
 		if self.state() == InstanceState::Stopped {
 			return Err(InstanceHandleError::InstanceStopped);
@@ -101,6 +123,11 @@ impl InstanceHandle {
 		Ok(())
 	}
 
+	/// Fades out the instance with the specified tween and then
+	/// stops playback.
+	///
+	/// Once the instance has stopped, it can no longer be
+	/// interacted with.
 	pub fn stop(&mut self, fade_out_tween: Tween) -> Result<(), InstanceHandleError> {
 		if self.state() == InstanceState::Stopped {
 			return Err(InstanceHandleError::InstanceStopped);

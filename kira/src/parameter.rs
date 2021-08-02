@@ -18,6 +18,7 @@ pub use tween::*;
 
 type JustFinishedTween = bool;
 
+/// A unique identifier for a parameter.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ParameterId(pub(crate) Index);
 

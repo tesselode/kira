@@ -22,6 +22,7 @@ use crate::{
 
 use super::{data::SoundData, Sound, SoundId};
 
+/// A unique identifier for an instance of a sound.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct InstanceId(pub(crate) Index);
 

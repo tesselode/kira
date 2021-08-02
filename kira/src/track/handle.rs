@@ -8,6 +8,10 @@ use crate::{
 
 use super::{TrackId, TrackShared};
 
+/// Controls a mixer track.
+///
+/// When a [`TrackHandle`] is dropped, the corresponding mixer
+/// track will be removed.
 pub struct TrackHandle {
 	pub(crate) id: TrackId,
 	pub(crate) shared: Arc<TrackShared>,

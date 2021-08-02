@@ -13,6 +13,7 @@ use atomic_arena::Index;
 
 use self::data::SoundData;
 
+/// A unique identifier for a sound.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SoundId(pub(crate) Index);
 

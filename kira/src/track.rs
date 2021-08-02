@@ -21,12 +21,16 @@ use crate::{
 	value::{cached::CachedValue, Value},
 };
 
+/// A unique identifier for a mixer sub-track.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SubTrackId(pub(crate) Index);
 
+/// A unique identifier for a track.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TrackId {
+	/// The main mixer track.
 	Main,
+	/// A sub-track.
 	Sub(SubTrackId),
 }
 

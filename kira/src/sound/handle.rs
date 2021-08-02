@@ -14,14 +14,21 @@ use super::{
 	SoundId, SoundShared,
 };
 
+/// An error that can occur when playing a sound.
 #[derive(Debug, Error)]
 pub enum PlaySoundError {
+	/// Could not add an instance because the maximum number of instances has been reached.
 	#[error("Could not add an instance because the maximum number of instances has been reached.")]
 	InstanceLimitReached,
+	/// An error occured when sending a command to the renderer.
 	#[error("{0}")]
 	CommandError(#[from] CommandError),
 }
 
+/// Controls a sound.
+///
+/// When a [`SoundHandle`] is dropped, the corresponding sound
+/// will be removed.
 pub struct SoundHandle {
 	pub(crate) id: SoundId,
 	pub(crate) data: Arc<dyn SoundData>,

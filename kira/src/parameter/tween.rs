@@ -49,10 +49,14 @@ impl Default for Easing {
 	}
 }
 
+/// A movement of one value to another over time.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Tween {
+	/// When the motion starts.
 	pub start_time: StartTime,
+	/// The duration of the motion.
 	pub duration: Duration,
+	/// The curve of the motion.
 	pub easing: Easing,
 }
 

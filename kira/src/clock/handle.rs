@@ -8,6 +8,10 @@ use crate::{
 
 use super::{ClockId, ClockShared};
 
+/// Controls a clock.
+///
+/// When a [`ClockHandle`] is dropped, the corresponding clock
+/// will be removed.
 pub struct ClockHandle {
 	pub(crate) id: ClockId,
 	pub(crate) shared: Arc<ClockShared>,
@@ -15,18 +19,23 @@ pub struct ClockHandle {
 }
 
 impl ClockHandle {
+	/// Returns the unique identifier for the clock.
 	pub fn id(&self) -> ClockId {
 		self.id
 	}
 
+	/// Returns `true` if the clock is currently ticking
+	/// and `false` if not.
 	pub fn ticking(&self) -> bool {
 		self.shared.ticking()
 	}
 
+	/// Returns the number of times the clock has ticked.
 	pub fn time(&self) -> u64 {
 		self.shared.time()
 	}
 
+	/// Sets the duration of time between each tick (in seconds).
 	pub fn set_interval(&mut self, interval: impl Into<Value>) -> Result<(), CommandError> {
 		self.command_producer
 			.push(Command::Clock(ClockCommand::SetInterval(
@@ -35,16 +44,19 @@ impl ClockHandle {
 			)))
 	}
 
+	/// Starts or resumes the clock.
 	pub fn start(&mut self) -> Result<(), CommandError> {
 		self.command_producer
 			.push(Command::Clock(ClockCommand::Start(self.id)))
 	}
 
+	/// Pauses the clock.
 	pub fn pause(&mut self) -> Result<(), CommandError> {
 		self.command_producer
 			.push(Command::Clock(ClockCommand::Pause(self.id)))
 	}
 
+	/// Stops and resets the clock.
 	pub fn stop(&mut self) -> Result<(), CommandError> {
 		self.command_producer
 			.push(Command::Clock(ClockCommand::Stop(self.id)))

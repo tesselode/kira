@@ -1,3 +1,7 @@
+//! # Kira
+
+#![warn(missing_docs)]
+
 pub mod clock;
 mod error;
 mod frame;

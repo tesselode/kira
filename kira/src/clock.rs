@@ -14,6 +14,7 @@ use crate::{
 	value::{cached::CachedValue, Value},
 };
 
+/// A unique identifier for a clock.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ClockId(pub(crate) Index);
 
