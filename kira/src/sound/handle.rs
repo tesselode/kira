@@ -1,17 +1,23 @@
 use std::sync::Arc;
 
 use atomic_arena::Controller;
+use thiserror::Error;
 
-use crate::{
-	error::PlaySoundError,
-	manager::command::{producer::CommandProducer, Command, InstanceCommand},
-};
+use crate::{error::CommandError, manager::command::{producer::CommandProducer, Command, InstanceCommand}};
 
 use super::{
 	data::SoundData,
 	instance::{handle::InstanceHandle, settings::InstanceSettings, Instance, InstanceId},
 	SoundId, SoundShared,
 };
+
+#[derive(Debug, Error)]
+pub enum PlaySoundError {
+	#[error("Could not add an instance because the maximum number of instances has been reached.")]
+	InstanceLimitReached,
+	#[error("{0}")]
+	CommandError(#[from] CommandError),
+}
 
 pub struct SoundHandle {
 	pub(crate) id: SoundId,

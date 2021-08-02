@@ -1,13 +1,23 @@
 use std::sync::Arc;
 
 use crate::{
-	error::InstanceError,
+	error::CommandError,
 	manager::command::{producer::CommandProducer, Command, InstanceCommand},
 	parameter::tween::Tween,
 	value::Value,
 };
 
+use thiserror::Error;
+
 use super::{InstanceId, InstanceShared, InstanceState};
+
+#[derive(Debug, Error)]
+pub enum InstanceHandleError {
+	#[error("Cannot modify an instance that has finished playing")]
+	InstanceStopped,
+	#[error("{0}")]
+	CommandError(#[from] CommandError),
+}
 
 pub struct InstanceHandle {
 	pub(crate) id: InstanceId,
@@ -28,9 +38,9 @@ impl InstanceHandle {
 		self.shared.position()
 	}
 
-	pub fn set_volume(&mut self, volume: impl Into<Value>) -> Result<(), InstanceError> {
+	pub fn set_volume(&mut self, volume: impl Into<Value>) -> Result<(), InstanceHandleError> {
 		if self.state() == InstanceState::Stopped {
-			return Err(InstanceError::InstanceStopped);
+			return Err(InstanceHandleError::InstanceStopped);
 		}
 		self.command_producer
 			.push(Command::Instance(InstanceCommand::SetVolume(
@@ -43,9 +53,9 @@ impl InstanceHandle {
 	pub fn set_playback_rate(
 		&mut self,
 		playback_rate: impl Into<Value>,
-	) -> Result<(), InstanceError> {
+	) -> Result<(), InstanceHandleError> {
 		if self.state() == InstanceState::Stopped {
-			return Err(InstanceError::InstanceStopped);
+			return Err(InstanceHandleError::InstanceStopped);
 		}
 		self.command_producer
 			.push(Command::Instance(InstanceCommand::SetPlaybackRate(
@@ -55,9 +65,9 @@ impl InstanceHandle {
 		Ok(())
 	}
 
-	pub fn set_panning(&mut self, panning: impl Into<Value>) -> Result<(), InstanceError> {
+	pub fn set_panning(&mut self, panning: impl Into<Value>) -> Result<(), InstanceHandleError> {
 		if self.state() == InstanceState::Stopped {
-			return Err(InstanceError::InstanceStopped);
+			return Err(InstanceHandleError::InstanceStopped);
 		}
 		self.command_producer
 			.push(Command::Instance(InstanceCommand::SetPanning(
@@ -67,9 +77,9 @@ impl InstanceHandle {
 		Ok(())
 	}
 
-	pub fn pause(&mut self, fade_out_tween: Tween) -> Result<(), InstanceError> {
+	pub fn pause(&mut self, fade_out_tween: Tween) -> Result<(), InstanceHandleError> {
 		if self.state() == InstanceState::Stopped {
-			return Err(InstanceError::InstanceStopped);
+			return Err(InstanceHandleError::InstanceStopped);
 		}
 		self.command_producer
 			.push(Command::Instance(InstanceCommand::Pause {
@@ -79,9 +89,9 @@ impl InstanceHandle {
 		Ok(())
 	}
 
-	pub fn resume(&mut self, fade_in_tween: Tween) -> Result<(), InstanceError> {
+	pub fn resume(&mut self, fade_in_tween: Tween) -> Result<(), InstanceHandleError> {
 		if self.state() == InstanceState::Stopped {
-			return Err(InstanceError::InstanceStopped);
+			return Err(InstanceHandleError::InstanceStopped);
 		}
 		self.command_producer
 			.push(Command::Instance(InstanceCommand::Resume {
@@ -91,9 +101,9 @@ impl InstanceHandle {
 		Ok(())
 	}
 
-	pub fn stop(&mut self, fade_out_tween: Tween) -> Result<(), InstanceError> {
+	pub fn stop(&mut self, fade_out_tween: Tween) -> Result<(), InstanceHandleError> {
 		if self.state() == InstanceState::Stopped {
-			return Err(InstanceError::InstanceStopped);
+			return Err(InstanceHandleError::InstanceStopped);
 		}
 		self.command_producer
 			.push(Command::Instance(InstanceCommand::Stop {

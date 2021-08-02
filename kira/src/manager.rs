@@ -1,5 +1,6 @@
 pub mod backend;
 pub(crate) mod command;
+pub mod error;
 pub mod renderer;
 pub mod resources;
 
@@ -9,7 +10,7 @@ use ringbuf::RingBuffer;
 
 use crate::{
 	clock::{handle::ClockHandle, Clock, ClockId},
-	error::{AddClockError, AddParameterError, AddSoundError, AddSubTrackError, CommandError},
+	error::CommandError,
 	parameter::{handle::ParameterHandle, tween::Tween, Parameter, ParameterId},
 	sound::{
 		data::{
@@ -29,6 +30,7 @@ use self::{
 		producer::CommandProducer, ClockCommand, Command, MixerCommand, ParameterCommand,
 		SoundCommand,
 	},
+	error::{AddClockError, AddParameterError, AddSoundError, AddSubTrackError},
 	renderer::{context::Context, Renderer, RendererState},
 	resources::{create_resources, create_unused_resource_channels, ResourceControllers},
 };
@@ -123,7 +125,7 @@ impl<B: Backend> AudioManager<B> {
 		&mut self,
 		path: impl AsRef<Path>,
 		settings: StaticSoundDataSettings,
-	) -> Result<SoundHandle, crate::error::LoadSoundError> {
+	) -> Result<SoundHandle, error::LoadSoundError> {
 		let data = StaticSoundData::from_file(path, settings)?;
 		let handle = self.add_sound(data)?;
 		Ok(handle)
