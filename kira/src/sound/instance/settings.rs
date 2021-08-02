@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use crate::{sound::data::SoundData, start_time::StartTime, track::TrackId, value::Value};
+use crate::{
+	parameter::tween::Tween, sound::data::SoundData, start_time::StartTime, track::TrackId,
+	value::Value,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum InstanceLoopStart {
@@ -44,6 +47,7 @@ pub struct InstanceSettings {
 	pub reverse: bool,
 	pub loop_start: InstanceLoopStart,
 	pub track: TrackId,
+	pub fade_in_tween: Option<Tween>,
 }
 
 impl InstanceSettings {
@@ -57,6 +61,7 @@ impl InstanceSettings {
 			reverse: false,
 			loop_start: InstanceLoopStart::default(),
 			track: TrackId::Main,
+			fade_in_tween: None,
 		}
 	}
 
@@ -109,6 +114,13 @@ impl InstanceSettings {
 	pub fn track(self, track: impl Into<TrackId>) -> Self {
 		Self {
 			track: track.into(),
+			..self
+		}
+	}
+
+	pub fn fade_in_tween(self, fade_in_tween: impl Into<Option<Tween>>) -> Self {
+		Self {
+			fade_in_tween: fade_in_tween.into(),
 			..self
 		}
 	}

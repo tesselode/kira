@@ -111,7 +111,13 @@ impl Instance {
 			loop_start: settings.loop_start.as_option(sound_data),
 			state: InstanceState::Playing,
 			position,
-			fade_volume: Parameter::new(1.0),
+			fade_volume: if let Some(tween) = settings.fade_in_tween {
+				let mut parameter = Parameter::new(0.0);
+				parameter.set(1.0, tween);
+				parameter
+			} else {
+				Parameter::new(1.0)
+			},
 			shared: Arc::new(InstanceShared {
 				state: AtomicU8::new(InstanceState::Playing as u8),
 				position: AtomicU64::new(position.to_bits()),
