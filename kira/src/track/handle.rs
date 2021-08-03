@@ -19,10 +19,12 @@ pub struct TrackHandle {
 }
 
 impl TrackHandle {
+	/// Returns the unique identifier for the mixer track.
 	pub fn id(&self) -> TrackId {
 		self.id
 	}
 
+	/// Sets the (post-effects) volume of the mixer track.
 	pub fn set_volume(&mut self, volume: impl Into<Value>) -> Result<(), CommandError> {
 		self.command_producer
 			.push(Command::Mixer(MixerCommand::SetTrackVolume(
@@ -31,6 +33,8 @@ impl TrackHandle {
 			)))
 	}
 
+	/// Sets the (post-effects) panning of the mixer track, where
+	/// 0.0 is hard left and 1.0 is hard right.
 	pub fn set_panning(&mut self, panning: impl Into<Value>) -> Result<(), CommandError> {
 		self.command_producer
 			.push(Command::Mixer(MixerCommand::SetTrackPanning(

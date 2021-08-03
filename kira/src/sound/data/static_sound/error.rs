@@ -1,9 +1,7 @@
-//! Things that can go wrong with [`StaticSoundData`](super::StaticSoundData).
-
 use thiserror::Error;
 
-/// Something that can go wrong when loading
-/// [`StaticSoundData`](super::StaticSoundData) from a file.
+/// Errors that can occur when loading [`StaticSoundData`](super::StaticSoundData)
+/// from a file.
 #[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
 #[derive(Debug, Error)]
 pub enum FromFileError {

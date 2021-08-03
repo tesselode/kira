@@ -26,12 +26,21 @@ use super::{data::SoundData, Sound, SoundId};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct InstanceId(pub(crate) Index);
 
+/// The playback state of an instance of a sound.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum InstanceState {
+	/// The instance is playing.
 	Playing,
+	/// The instance is fading out, and when the fade-out
+	/// is finished, the instance will pause playback.
 	Pausing,
+	/// The instance is paused.
 	Paused,
+	/// The instance is fading out, and when the fade-out
+	/// is finished, the instance will stop.
 	Stopping,
+	/// The instance is stopped and cannot be interacted with
+	/// further.
 	Stopped,
 }
 

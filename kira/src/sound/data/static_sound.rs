@@ -10,6 +10,7 @@ use std::time::Duration;
 
 use super::SoundData;
 
+/// A chunk of audio data loaded into memory all at once.
 pub struct StaticSoundData {
 	sample_rate: u32,
 	duration: Duration,
@@ -18,7 +19,7 @@ pub struct StaticSoundData {
 }
 
 impl StaticSoundData {
-	/// Creates a new sound from raw sample data.
+	/// Creates a new [`StaticSoundData`] from raw sample data.
 	pub fn from_frames(
 		sample_rate: u32,
 		frames: Vec<Frame>,
@@ -33,7 +34,7 @@ impl StaticSoundData {
 		}
 	}
 
-	/// Decodes a sound from an mp3 reader.
+	/// Decodes a [`StaticSoundData`] from an mp3 reader.
 	#[cfg(feature = "mp3")]
 	pub fn from_mp3_reader<R>(
 		reader: R,
@@ -95,7 +96,7 @@ impl StaticSoundData {
 		))
 	}
 
-	/// Decodes a sound from an mp3 file.
+	/// Decodes a [`StaticSoundData`] from an mp3 file.
 	#[cfg(feature = "mp3")]
 	pub fn from_mp3_file<P>(
 		path: P,
@@ -107,7 +108,7 @@ impl StaticSoundData {
 		Self::from_mp3_reader(std::fs::File::open(path)?, settings)
 	}
 
-	/// Decodes a sound from an ogg reader.
+	/// Decodes a [`StaticSoundData`] from an ogg reader.
 	#[cfg(feature = "ogg")]
 	pub fn from_ogg_reader<R>(
 		reader: R,
@@ -143,7 +144,7 @@ impl StaticSoundData {
 		))
 	}
 
-	/// Decodes a sound from an ogg file.
+	/// Decodes a [`StaticSoundData`] from an ogg file.
 	#[cfg(feature = "ogg")]
 	pub fn from_ogg_file<P>(
 		path: P,
@@ -155,7 +156,7 @@ impl StaticSoundData {
 		Self::from_ogg_reader(std::fs::File::open(path)?, settings)
 	}
 
-	/// Decodes a sound from a flac file.
+	/// Decodes a [`StaticSoundData`] from a flac file.
 	#[cfg(feature = "flac")]
 	pub fn from_flac_reader<R>(
 		reader: R,
@@ -193,7 +194,7 @@ impl StaticSoundData {
 		))
 	}
 
-	/// Decodes sound from a flac reader.
+	/// Decodes [`StaticSoundData`] from a flac reader.
 	#[cfg(feature = "flac")]
 	pub fn from_flac_file<P>(
 		path: P,
@@ -205,7 +206,7 @@ impl StaticSoundData {
 		Self::from_flac_reader(std::fs::File::open(path)?, settings)
 	}
 
-	/// Decodes sound from a wav reader.
+	/// Decodes [`StaticSoundData`] from a wav reader.
 	#[cfg(feature = "wav")]
 	pub fn from_wav_reader<R>(
 		reader: R,
@@ -262,7 +263,7 @@ impl StaticSoundData {
 		))
 	}
 
-	/// Decodes a sound from a wav file.
+	/// Decodes a [`StaticSoundData`] from a wav file.
 	#[cfg(feature = "wav")]
 	pub fn from_wav_file<P>(
 		path: P,
@@ -274,7 +275,7 @@ impl StaticSoundData {
 		Self::from_wav_reader(std::fs::File::open(path)?, settings)
 	}
 
-	/// Decodes a sound from a file.
+	/// Decodes a [`StaticSoundData`] from a file.
 	///
 	/// The audio format will be automatically determined from the file extension.
 	#[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
