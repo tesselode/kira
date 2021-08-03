@@ -1,7 +1,6 @@
 //! # Kira
 
-#![warn(missing_docs)]
-
+pub mod audio_stream;
 pub mod clock;
 mod error;
 mod frame;

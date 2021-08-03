@@ -64,3 +64,14 @@ pub enum AddClockError {
 	#[error("{0}")]
 	CommandError(#[from] CommandError),
 }
+
+/// Errors that can occur when creating a audio stream.
+#[derive(Debug, Error)]
+pub enum AddAudioStreamError {
+	/// Could not add a audio stream because the maximum number of audio streams has been reached.
+	#[error("Could not add a audio stream because the maximum number of audio streams has been reached.")]
+	AudioStreamLimitReached,
+	/// An error occured when sending a command to the renderer.
+	#[error("{0}")]
+	CommandError(#[from] CommandError),
+}

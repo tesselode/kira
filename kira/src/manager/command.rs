@@ -1,6 +1,7 @@
 pub mod producer;
 
 use crate::{
+	audio_stream::{AudioStreamId, AudioStreamWrapper},
 	clock::{Clock, ClockId},
 	parameter::{Parameter, ParameterId, Tween},
 	sound::{
@@ -50,12 +51,17 @@ pub(crate) enum ClockCommand {
 	Stop(ClockId),
 }
 
+pub(crate) enum AudioStreamCommand {
+	Add(AudioStreamId, AudioStreamWrapper),
+}
+
 pub(crate) enum Command {
 	Sound(SoundCommand),
 	Instance(InstanceCommand),
 	Parameter(ParameterCommand),
 	Mixer(MixerCommand),
 	Clock(ClockCommand),
+	AudioStream(AudioStreamCommand),
 	Pause(Tween),
 	Resume(Tween),
 }

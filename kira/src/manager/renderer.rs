@@ -57,6 +57,7 @@ impl Renderer {
 		self.resources.parameters.on_start_processing();
 		self.resources.mixer.on_start_processing();
 		self.resources.clocks.on_start_processing();
+		self.resources.audio_streams.on_start_processing();
 
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
@@ -65,6 +66,7 @@ impl Renderer {
 				Command::Parameter(command) => self.resources.parameters.run_command(command),
 				Command::Mixer(command) => self.resources.mixer.run_command(command),
 				Command::Clock(command) => self.resources.clocks.run_command(command),
+				Command::AudioStream(command) => self.resources.audio_streams.run_command(command),
 				Command::Pause(fade_out_tween) => {
 					self.state = RendererState::Pausing;
 					self.context
@@ -109,6 +111,11 @@ impl Renderer {
 			&self.resources.sounds,
 			&self.resources.parameters,
 			&self.resources.clocks,
+			&mut self.resources.mixer,
+		);
+		self.resources.audio_streams.process(
+			self.context.dt,
+			&self.resources.parameters,
 			&mut self.resources.mixer,
 		);
 		let out = self
