@@ -6,7 +6,7 @@ pub mod resources;
 
 pub use backend::*;
 
-use std::{path::Path, sync::Arc};
+use std::sync::Arc;
 
 use ringbuf::RingBuffer;
 
@@ -15,13 +15,7 @@ use crate::{
 	clock::{Clock, ClockHandle, ClockId},
 	error::CommandError,
 	parameter::{Parameter, ParameterHandle, ParameterId, Tween},
-	sound::{
-		data::{
-			static_sound::{StaticSoundData, StaticSoundDataSettings},
-			SoundData,
-		},
-		Sound, SoundHandle, SoundId, SoundShared,
-	},
+	sound::{data::SoundData, Sound, SoundHandle, SoundId, SoundShared},
 	track::{SubTrackId, Track, TrackHandle, TrackId, TrackSettings},
 	value::Value,
 };
@@ -136,18 +130,6 @@ impl<B: Backend> AudioManager<B> {
 		};
 		self.command_producer
 			.push(Command::Sound(SoundCommand::Add(id, sound)))?;
-		Ok(handle)
-	}
-
-	/// Loads a sound from a file and returns a handle to the sound.
-	#[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
-	pub fn load_sound(
-		&mut self,
-		path: impl AsRef<Path>,
-		settings: StaticSoundDataSettings,
-	) -> Result<SoundHandle, error::LoadSoundError> {
-		let data = StaticSoundData::from_file(path, settings)?;
-		let handle = self.add_sound(data)?;
 		Ok(handle)
 	}
 

@@ -15,19 +15,6 @@ pub enum AddSoundError {
 	CommandError(#[from] CommandError),
 }
 
-/// Errors that can occur when loading a sound from a file
-/// and sending it to the renderer.
-#[cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"))]
-#[derive(Debug, Error)]
-pub enum LoadSoundError {
-	/// An error occurred when loading a sound from a file.
-	#[error("{0}")]
-	FromFileError(#[from] crate::sound::data::static_sound::FromFileError),
-	/// An error occurred when sending the sound to the renderer.
-	#[error("{0}")]
-	AddSoundError(#[from] AddSoundError),
-}
-
 /// Errors that can occur when creating a parameter.
 #[derive(Debug, Error)]
 pub enum AddParameterError {

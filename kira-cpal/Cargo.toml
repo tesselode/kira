@@ -7,6 +7,6 @@ edition = "2018"
 
 [dependencies]
 cpal = "0.13.3"
-kira = { path = "../kira", default-features = false }
+kira = { path = "../kira" }
 ringbuf = "0.2.3"
 thiserror = "1.0.23"
