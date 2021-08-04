@@ -1,3 +1,5 @@
+pub mod mock;
+
 use super::{renderer::Renderer, resources::UnusedResourceCollector};
 
 pub trait Backend {
