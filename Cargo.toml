@@ -3,6 +3,8 @@ members = [
 	"kira",
 	"kira-cpal",
 	"kira-effects",
+	"kira-mp3",
+	"kira-ogg",
 	"kira-benchmarks",
 ]
 
