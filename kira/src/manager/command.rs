@@ -24,6 +24,8 @@ pub(crate) enum InstanceCommand {
 	Pause { id: InstanceId, tween: Tween },
 	Resume { id: InstanceId, tween: Tween },
 	Stop { id: InstanceId, tween: Tween },
+	SeekTo(InstanceId, f64),
+	SeekBy(InstanceId, f64),
 }
 
 pub(crate) enum ParameterCommand {

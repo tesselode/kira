@@ -6,7 +6,7 @@ use crate::{
 	sound::instance::{Instance, InstanceState},
 };
 
-use super::{clocks::Clocks, mixer::Mixer, Parameters, sounds::Sounds};
+use super::{clocks::Clocks, mixer::Mixer, sounds::Sounds, Parameters};
 
 pub(crate) struct Instances {
 	instances: Arena<Instance>,
@@ -84,6 +84,16 @@ impl Instances {
 			InstanceCommand::Stop { id, tween } => {
 				if let Some(instance) = self.instances.get_mut(id.0) {
 					instance.stop(tween);
+				}
+			}
+			InstanceCommand::SeekTo(id, position) => {
+				if let Some(instance) = self.instances.get_mut(id.0) {
+					instance.seek_to(position);
+				}
+			}
+			InstanceCommand::SeekBy(id, amount) => {
+				if let Some(instance) = self.instances.get_mut(id.0) {
+					instance.seek_by(amount);
 				}
 			}
 		}

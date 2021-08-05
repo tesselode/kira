@@ -161,4 +161,24 @@ impl InstanceHandle {
 			}))?;
 		Ok(())
 	}
+
+	pub fn seek_to(&mut self, position: f64) -> Result<(), InstanceHandleError> {
+		if self.state() == InstanceState::Stopped {
+			return Err(InstanceHandleError::InstanceStopped);
+		}
+		self.command_producer
+			.push(Command::Instance(InstanceCommand::SeekTo(
+				self.id, position,
+			)))?;
+		Ok(())
+	}
+
+	pub fn seek_by(&mut self, amount: f64) -> Result<(), InstanceHandleError> {
+		if self.state() == InstanceState::Stopped {
+			return Err(InstanceHandleError::InstanceStopped);
+		}
+		self.command_producer
+			.push(Command::Instance(InstanceCommand::SeekBy(self.id, amount)))?;
+		Ok(())
+	}
 }

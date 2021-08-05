@@ -184,6 +184,14 @@ impl Instance {
 		self.fade_volume.set(0.0, fade_out_tween);
 	}
 
+	pub fn seek_to(&mut self, position: f64) {
+		self.position = position;
+	}
+
+	pub fn seek_by(&mut self, amount: f64) {
+		self.position += amount;
+	}
+
 	pub fn on_start_processing(&self) {
 		self.shared
 			.position
