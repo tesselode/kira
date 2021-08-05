@@ -11,7 +11,7 @@ use std::sync::Arc;
 use ringbuf::RingBuffer;
 
 use crate::{
-	audio_stream::{handle::AudioStreamHandle, AudioStream, AudioStreamId, AudioStreamWrapper},
+	audio_stream::{AudioStream, AudioStreamHandle, AudioStreamId, AudioStreamWrapper},
 	clock::{Clock, ClockHandle, ClockId},
 	error::CommandError,
 	parameter::{Parameter, ParameterHandle, ParameterId, Tween},

@@ -1,3 +1,5 @@
+//! Individual occurrences of sounds.
+
 mod handle;
 mod settings;
 

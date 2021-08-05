@@ -1,3 +1,5 @@
+//! Audio data loaded into memory all at once.
+
 mod settings;
 
 pub use settings::*;

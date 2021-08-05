@@ -1,3 +1,5 @@
+//! Pieces of audio that can be played multiple times.
+
 mod handle;
 pub mod instance;
 mod seamless_loop;

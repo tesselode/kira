@@ -1,4 +1,8 @@
-pub mod handle;
+//! Continuous, infinite streams of audio.
+
+mod handle;
+
+pub use handle::*;
 
 use std::sync::{
 	atomic::{AtomicBool, Ordering},
@@ -20,10 +24,14 @@ use crate::{
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct AudioStreamId(pub(crate) Index);
 
+/// Produces a continuous stream of audio data.
 #[allow(unused_variables)]
 pub trait AudioStream: Send + Sync {
+	/// Called when the [`AudioStream`] is first sent to the renderer.
 	fn init(&mut self, sample_rate: u32) {}
 
+	/// Called when the [`AudioStream`] should produce a new [`Frame`]
+	/// of audio.
 	fn process(&mut self, dt: f64, parameters: &Parameters) -> Frame;
 }
 
