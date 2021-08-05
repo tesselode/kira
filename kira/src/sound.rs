@@ -13,7 +13,7 @@ use std::time::Duration;
 
 use atomic_arena::Index;
 
-use crate::Frame;
+use crate::{loop_behavior::LoopBehavior, Frame};
 
 /// A unique identifier for a sound.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -28,7 +28,9 @@ pub trait Sound: Send + Sync {
 	/// at a given playback position.
 	fn frame_at_position(&self, position: f64) -> Frame;
 
-	fn default_loop_start(&self) -> Option<f64> {
+	/// Returns the suggested [`LoopBehavior`] of the sound,
+	/// if any.
+	fn default_loop_behavior(&self) -> Option<LoopBehavior> {
 		None
 	}
 }

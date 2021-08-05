@@ -15,6 +15,7 @@ use atomic_arena::Index;
 
 use crate::{
 	frame::Frame,
+	loop_behavior::LoopBehavior,
 	manager::resources::{clocks::Clocks, mixer::Mixer, sounds::Sounds, Parameters},
 	parameter::{Parameter, Tween},
 	start_time::StartTime,
@@ -90,7 +91,7 @@ pub(crate) struct Instance {
 	playback_rate: CachedValue,
 	panning: CachedValue,
 	reverse: bool,
-	loop_start: Option<f64>,
+	loop_behavior: Option<LoopBehavior>,
 	state: InstanceState,
 	position: f64,
 	fade_volume: Parameter,
@@ -117,7 +118,7 @@ impl Instance {
 			playback_rate: CachedValue::new(.., settings.playback_rate, 1.0),
 			panning: CachedValue::new(0.0..=1.0, settings.panning, 0.5),
 			reverse: settings.reverse,
-			loop_start: settings.loop_start.as_option(sound_data),
+			loop_behavior: settings.loop_behavior.as_option(sound_data),
 			state: InstanceState::Playing,
 			position,
 			fade_volume: if let Some(tween) = settings.fade_in_tween {
@@ -271,17 +272,17 @@ impl Instance {
 		self.position += playback_rate * dt;
 		let duration = sound.sound.duration().as_secs_f64();
 		if playback_rate < 0.0 {
-			if let Some(loop_start) = self.loop_start {
-				while self.position < loop_start {
-					self.position += duration - loop_start;
+			if let Some(loop_behavior) = self.loop_behavior {
+				while self.position < loop_behavior.start_position {
+					self.position += duration - loop_behavior.start_position;
 				}
 			} else if self.position < 0.0 {
 				self.set_state(InstanceState::Stopped);
 			}
 		} else {
-			if let Some(loop_start) = self.loop_start {
+			if let Some(loop_behavior) = self.loop_behavior {
 				while self.position > duration {
-					self.position -= duration - loop_start;
+					self.position -= duration - loop_behavior.start_position;
 				}
 			} else if self.position > duration {
 				self.set_state(InstanceState::Stopped);

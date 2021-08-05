@@ -4,7 +4,7 @@ mod settings;
 
 pub use settings::*;
 
-use crate::{frame::Frame, util};
+use crate::{frame::Frame, loop_behavior::LoopBehavior, util};
 
 use std::time::Duration;
 
@@ -15,7 +15,7 @@ pub struct StaticSound {
 	sample_rate: u32,
 	duration: Duration,
 	frames: Vec<Frame>,
-	default_loop_start: Option<f64>,
+	default_loop_behavior: Option<LoopBehavior>,
 }
 
 impl StaticSound {
@@ -30,7 +30,7 @@ impl StaticSound {
 			sample_rate,
 			frames,
 			duration,
-			default_loop_start: settings.default_loop_start,
+			default_loop_behavior: settings.default_loop_behavior,
 		}
 	}
 }
@@ -67,7 +67,7 @@ impl Sound for StaticSound {
 		util::interpolate_frame(previous, current, next_1, next_2, fraction)
 	}
 
-	fn default_loop_start(&self) -> Option<f64> {
-		self.default_loop_start
+	fn default_loop_behavior(&self) -> Option<LoopBehavior> {
+		self.default_loop_behavior
 	}
 }

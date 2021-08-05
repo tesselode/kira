@@ -7,7 +7,7 @@ use kira::{
 		instance::InstanceSettings,
 		static_sound::{StaticSound, StaticSoundSettings},
 	},
-	Frame,
+	Frame, LoopBehavior,
 };
 
 fn create_test_sound(num_frames: usize) -> StaticSound {
@@ -21,7 +21,9 @@ fn create_test_sound(num_frames: usize) -> StaticSound {
 	StaticSound::from_frames(
 		SAMPLE_RATE,
 		frames,
-		StaticSoundSettings::new().default_loop_start(0.0),
+		StaticSoundSettings::new().default_loop_behavior(LoopBehavior {
+			start_position: 0.0,
+		}),
 	)
 }
 

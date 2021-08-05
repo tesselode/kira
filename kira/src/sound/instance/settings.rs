@@ -1,34 +1,37 @@
 use std::sync::Arc;
 
-use crate::{parameter::Tween, sound::Sound, start_time::StartTime, track::TrackId, value::Value};
+use crate::{
+	loop_behavior::LoopBehavior, parameter::Tween, sound::Sound, start_time::StartTime,
+	track::TrackId, value::Value,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum InstanceLoopStart {
+pub enum InstanceLoopBehavior {
 	DefaultForSoundData,
-	Custom(f64),
+	Custom(LoopBehavior),
 	None,
 }
 
-impl InstanceLoopStart {
-	pub(crate) fn as_option(self, data: &Arc<dyn Sound>) -> Option<f64> {
+impl InstanceLoopBehavior {
+	pub(crate) fn as_option(self, sound: &Arc<dyn Sound>) -> Option<LoopBehavior> {
 		match self {
-			Self::DefaultForSoundData => data.default_loop_start(),
-			Self::Custom(loop_start) => Some(loop_start),
+			Self::DefaultForSoundData => sound.default_loop_behavior(),
+			Self::Custom(loop_behavior) => Some(loop_behavior),
 			Self::None => None,
 		}
 	}
 }
 
-impl<T: Into<Option<f64>>> From<T> for InstanceLoopStart {
-	fn from(loop_start: T) -> Self {
-		match loop_start.into() {
-			Some(loop_start) => Self::Custom(loop_start),
+impl<T: Into<Option<LoopBehavior>>> From<T> for InstanceLoopBehavior {
+	fn from(loop_behavior: T) -> Self {
+		match loop_behavior.into() {
+			Some(loop_behavior) => Self::Custom(loop_behavior),
 			None => Self::None,
 		}
 	}
 }
 
-impl Default for InstanceLoopStart {
+impl Default for InstanceLoopBehavior {
 	fn default() -> Self {
 		Self::DefaultForSoundData
 	}
@@ -58,7 +61,7 @@ pub struct InstanceSettings {
 	/// to the end of the sound.
 	pub reverse: bool,
 	/// The looping behavior of the instance.
-	pub loop_start: InstanceLoopStart,
+	pub loop_behavior: InstanceLoopBehavior,
 	/// The mixer track this instance should play on.
 	pub track: TrackId,
 	/// An optional fade-in from silence.
@@ -75,7 +78,7 @@ impl InstanceSettings {
 			playback_rate: Value::Fixed(1.0),
 			panning: Value::Fixed(0.5),
 			reverse: false,
-			loop_start: InstanceLoopStart::default(),
+			loop_behavior: InstanceLoopBehavior::default(),
 			track: TrackId::Main,
 			fade_in_tween: None,
 		}
@@ -132,9 +135,9 @@ impl InstanceSettings {
 	}
 
 	/// Sets the looping behavior of the instance.
-	pub fn loop_start(self, loop_start: impl Into<InstanceLoopStart>) -> Self {
+	pub fn loop_behavior(self, loop_behavior: impl Into<InstanceLoopBehavior>) -> Self {
 		Self {
-			loop_start: loop_start.into(),
+			loop_behavior: loop_behavior.into(),
 			..self
 		}
 	}

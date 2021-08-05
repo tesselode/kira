@@ -1,6 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
-use crate::frame::Frame;
+use crate::{frame::Frame, loop_behavior::LoopBehavior};
 
 use super::Sound;
 
@@ -71,11 +71,15 @@ impl Sound for SeamlessLoop {
 		out
 	}
 
-	fn default_loop_start(&self) -> Option<f64> {
+	fn default_loop_behavior(&self) -> Option<LoopBehavior> {
 		Some(if let Some(intro) = &self.intro {
-			intro.loop_end + self.main.loop_end
+			LoopBehavior {
+				start_position: intro.loop_end + self.main.loop_end,
+			}
 		} else {
-			self.main.loop_end
+			LoopBehavior {
+				start_position: self.main.loop_end,
+			}
 		})
 	}
 }
