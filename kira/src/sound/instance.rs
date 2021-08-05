@@ -99,9 +99,9 @@ pub(crate) struct Instance {
 }
 
 impl Instance {
-	pub fn new(sound_id: SoundId, sound_data: &Arc<dyn Sound>, settings: InstanceSettings) -> Self {
+	pub fn new(sound_id: SoundId, sound: &Arc<dyn Sound>, settings: InstanceSettings) -> Self {
 		let position = if settings.reverse {
-			sound_data.duration().as_secs_f64() - settings.start_position
+			sound.duration().as_secs_f64() - settings.start_position
 		} else {
 			settings.start_position
 		};
@@ -118,7 +118,7 @@ impl Instance {
 			playback_rate: CachedValue::new(.., settings.playback_rate, 1.0),
 			panning: CachedValue::new(0.0..=1.0, settings.panning, 0.5),
 			reverse: settings.reverse,
-			loop_behavior: settings.loop_behavior.as_option(sound_data),
+			loop_behavior: settings.loop_behavior.as_option(sound),
 			state: InstanceState::Playing,
 			position,
 			fade_volume: if let Some(tween) = settings.fade_in_tween {

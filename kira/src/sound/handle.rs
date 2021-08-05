@@ -56,19 +56,20 @@ impl From<CommandError> for PlaySoundError {
 /// will be removed.
 pub struct SoundHandle {
 	pub(crate) id: SoundId,
-	pub(crate) data: Arc<dyn Sound>,
+	pub(crate) sound: Arc<dyn Sound>,
 	pub(crate) shared: Arc<SoundWrapperShared>,
 	pub(crate) instance_controller: Controller,
 	pub(crate) command_producer: CommandProducer,
 }
 
 impl SoundHandle {
+	/// Returns the unique identifier for the sound.
 	pub fn id(&self) -> SoundId {
 		self.id
 	}
 
-	pub fn data(&self) -> &Arc<dyn Sound> {
-		&self.data
+	pub fn sound(&self) -> &Arc<dyn Sound> {
+		&self.sound
 	}
 
 	pub fn play(&mut self, settings: InstanceSettings) -> Result<InstanceHandle, PlaySoundError> {
@@ -77,7 +78,7 @@ impl SoundHandle {
 				.try_reserve()
 				.map_err(|_| PlaySoundError::InstanceLimitReached)?,
 		);
-		let instance = Instance::new(self.id, &self.data, settings);
+		let instance = Instance::new(self.id, &self.sound, settings);
 		let handle = InstanceHandle {
 			id,
 			shared: instance.shared(),
@@ -97,6 +98,6 @@ impl Drop for SoundHandle {
 
 impl From<&SoundHandle> for Arc<dyn Sound> {
 	fn from(handle: &SoundHandle) -> Self {
-		handle.data.clone()
+		handle.sound.clone()
 	}
 }

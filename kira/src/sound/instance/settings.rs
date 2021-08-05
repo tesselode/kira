@@ -7,7 +7,7 @@ use crate::{
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum InstanceLoopBehavior {
-	DefaultForSoundData,
+	DefaultForSound,
 	Custom(LoopBehavior),
 	None,
 }
@@ -15,7 +15,7 @@ pub enum InstanceLoopBehavior {
 impl InstanceLoopBehavior {
 	pub(crate) fn as_option(self, sound: &Arc<dyn Sound>) -> Option<LoopBehavior> {
 		match self {
-			Self::DefaultForSoundData => sound.default_loop_behavior(),
+			Self::DefaultForSound => sound.default_loop_behavior(),
 			Self::Custom(loop_behavior) => Some(loop_behavior),
 			Self::None => None,
 		}
@@ -33,7 +33,7 @@ impl<T: Into<Option<LoopBehavior>>> From<T> for InstanceLoopBehavior {
 
 impl Default for InstanceLoopBehavior {
 	fn default() -> Self {
-		Self::DefaultForSoundData
+		Self::DefaultForSound
 	}
 }
 

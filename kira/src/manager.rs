@@ -108,28 +108,28 @@ impl<B: Backend> AudioManager<B> {
 	}
 
 	/// Sends a sound to the renderer and returns a handle to the sound.
-	pub fn add_sound(&mut self, data: impl Sound + 'static) -> Result<SoundHandle, AddSoundError> {
+	pub fn add_sound(&mut self, sound: impl Sound + 'static) -> Result<SoundHandle, AddSoundError> {
 		let id = SoundId(
 			self.resource_controllers
 				.sound_controller
 				.try_reserve()
 				.map_err(|_| AddSoundError::SoundLimitReached)?,
 		);
-		let data: Arc<dyn Sound> = Arc::new(data);
+		let sound: Arc<dyn Sound> = Arc::new(sound);
 		let shared = Arc::new(SoundWrapperShared::new());
-		let sound = SoundWrapper {
-			sound: data.clone(),
+		let sound_wrapper = SoundWrapper {
+			sound: sound.clone(),
 			shared: shared.clone(),
 		};
 		let handle = SoundHandle {
 			id,
-			data,
+			sound,
 			shared,
 			instance_controller: self.resource_controllers.instance_controller.clone(),
 			command_producer: self.command_producer.clone(),
 		};
 		self.command_producer
-			.push(Command::Sound(SoundCommand::Add(id, sound)))?;
+			.push(Command::Sound(SoundCommand::Add(id, sound_wrapper)))?;
 		Ok(handle)
 	}
 
