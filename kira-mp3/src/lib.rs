@@ -1,6 +1,7 @@
 use std::{
 	error::Error,
 	fmt::{Display, Formatter},
+	io::Read,
 };
 
 use kira::{
@@ -9,38 +10,40 @@ use kira::{
 };
 
 #[derive(Debug)]
-pub enum Mp3Error {
+pub enum FromReaderError {
 	UnsupportedChannelConfiguration,
 	VariableSampleRate,
 	UnknownSampleRate,
 	Mp3Error(minimp3::Error),
 }
 
-impl Display for Mp3Error {
+impl Display for FromReaderError {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		match self {
-			Mp3Error::UnsupportedChannelConfiguration => {
+			FromReaderError::UnsupportedChannelConfiguration => {
 				f.write_str("Only mono and stereo audio is supported")
 			}
-			Mp3Error::VariableSampleRate => {
+			FromReaderError::VariableSampleRate => {
 				f.write_str("mp3s with variable sample rates are not supported")
 			}
-			Mp3Error::UnknownSampleRate => f.write_str("Could not get the sample rate of the mp3"),
-			Mp3Error::Mp3Error(error) => error.fmt(f),
+			FromReaderError::UnknownSampleRate => {
+				f.write_str("Could not get the sample rate of the mp3")
+			}
+			FromReaderError::Mp3Error(error) => error.fmt(f),
 		}
 	}
 }
 
-impl Error for Mp3Error {
+impl Error for FromReaderError {
 	fn source(&self) -> Option<&(dyn Error + 'static)> {
 		match self {
-			Mp3Error::Mp3Error(error) => Some(error),
+			FromReaderError::Mp3Error(error) => Some(error),
 			_ => None,
 		}
 	}
 }
 
-impl From<minimp3::Error> for Mp3Error {
+impl From<minimp3::Error> for FromReaderError {
 	fn from(v: minimp3::Error) -> Self {
 		Self::Mp3Error(v)
 	}
@@ -49,14 +52,14 @@ impl From<minimp3::Error> for Mp3Error {
 #[derive(Debug)]
 pub enum FromFileError {
 	IoError(std::io::Error),
-	Mp3Error(Mp3Error),
+	FromReaderError(FromReaderError),
 }
 
 impl Display for FromFileError {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		match self {
 			FromFileError::IoError(error) => error.fmt(f),
-			FromFileError::Mp3Error(error) => error.fmt(f),
+			FromFileError::FromReaderError(error) => error.fmt(f),
 		}
 	}
 }
@@ -65,7 +68,7 @@ impl Error for FromFileError {
 	fn source(&self) -> Option<&(dyn Error + 'static)> {
 		match self {
 			FromFileError::IoError(error) => Some(error),
-			FromFileError::Mp3Error(error) => Some(error),
+			FromFileError::FromReaderError(error) => Some(error),
 		}
 	}
 }
@@ -76,19 +79,19 @@ impl From<std::io::Error> for FromFileError {
 	}
 }
 
-impl From<Mp3Error> for FromFileError {
-	fn from(v: Mp3Error) -> Self {
-		Self::Mp3Error(v)
+impl From<FromReaderError> for FromFileError {
+	fn from(v: FromReaderError) -> Self {
+		Self::FromReaderError(v)
 	}
 }
 
 /// Decodes a [`StaticSoundData`] from an mp3 reader.
-pub fn from_mp3_reader<R>(
+pub fn from_reader<R>(
 	reader: R,
 	settings: StaticSoundDataSettings,
-) -> Result<StaticSoundData, Mp3Error>
+) -> Result<StaticSoundData, FromReaderError>
 where
-	R: std::io::Read,
+	R: Read,
 {
 	let mut decoder = minimp3::Decoder::new(reader);
 	let mut sample_rate = None;
@@ -98,7 +101,7 @@ where
 			Ok(frame) => {
 				if let Some(sample_rate) = sample_rate {
 					if sample_rate != frame.sample_rate {
-						return Err(Mp3Error::VariableSampleRate);
+						return Err(FromReaderError::VariableSampleRate);
 					}
 				} else {
 					sample_rate = Some(frame.sample_rate);
@@ -119,7 +122,7 @@ where
 							))
 						}
 					}
-					_ => return Err(Mp3Error::UnsupportedChannelConfiguration),
+					_ => return Err(FromReaderError::UnsupportedChannelConfiguration),
 				}
 			}
 			Err(error) => match error {
@@ -130,7 +133,7 @@ where
 	}
 	let sample_rate = match sample_rate {
 		Some(sample_rate) => sample_rate,
-		None => return Err(Mp3Error::UnknownSampleRate),
+		None => return Err(FromReaderError::UnknownSampleRate),
 	};
 	Ok(StaticSoundData::from_frames(
 		sample_rate as u32,
@@ -140,12 +143,12 @@ where
 }
 
 /// Decodes a [`StaticSoundData`] from an mp3 file.
-pub fn from_mp3_file<P>(
+pub fn from_file<P>(
 	path: P,
 	settings: StaticSoundDataSettings,
 ) -> Result<StaticSoundData, FromFileError>
 where
 	P: AsRef<std::path::Path>,
 {
-	Ok(from_mp3_reader(std::fs::File::open(path)?, settings)?)
+	Ok(from_reader(std::fs::File::open(path)?, settings)?)
 }

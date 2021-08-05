@@ -5,6 +5,8 @@ members = [
 	"kira-effects",
 	"kira-mp3",
 	"kira-ogg",
+	"kira-flac",
+	"kira-wav",
 	"kira-benchmarks",
 ]
 

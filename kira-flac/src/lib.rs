@@ -1,7 +1,7 @@
 use std::{
 	error::Error,
 	fmt::{Display, Formatter},
-	io::{Read, Seek},
+	io::Read,
 };
 
 use kira::{
@@ -12,7 +12,7 @@ use kira::{
 #[derive(Debug)]
 pub enum FromReaderError {
 	UnsupportedChannelConfiguration,
-	VorbisError(lewton::VorbisError),
+	FlacError(claxon::Error),
 }
 
 impl Display for FromReaderError {
@@ -21,7 +21,7 @@ impl Display for FromReaderError {
 			FromReaderError::UnsupportedChannelConfiguration => {
 				f.write_str("Only mono and stereo audio is supported")
 			}
-			FromReaderError::VorbisError(error) => error.fmt(f),
+			FromReaderError::FlacError(error) => error.fmt(f),
 		}
 	}
 }
@@ -29,15 +29,15 @@ impl Display for FromReaderError {
 impl Error for FromReaderError {
 	fn source(&self) -> Option<&(dyn Error + 'static)> {
 		match self {
-			FromReaderError::VorbisError(error) => Some(error),
+			FromReaderError::FlacError(error) => Some(error),
 			_ => None,
 		}
 	}
 }
 
-impl From<lewton::VorbisError> for FromReaderError {
-	fn from(v: lewton::VorbisError) -> Self {
-		Self::VorbisError(v)
+impl From<claxon::Error> for FromReaderError {
+	fn from(v: claxon::Error) -> Self {
+		Self::FlacError(v)
 	}
 }
 
@@ -77,42 +77,40 @@ impl From<FromReaderError> for FromFileError {
 	}
 }
 
-/// Decodes a [`StaticSoundData`] from an ogg reader.
+/// Decodes a [`StaticSoundData`] from a flac file.
 pub fn from_reader<R>(
 	reader: R,
 	settings: StaticSoundDataSettings,
 ) -> Result<StaticSoundData, FromReaderError>
 where
-	R: Read + Seek,
+	R: Read,
 {
-	use lewton::{inside_ogg::OggStreamReader, samples::Samples};
-	let mut reader = OggStreamReader::new(reader)?;
+	let mut reader = claxon::FlacReader::new(reader)?;
+	let streaminfo = reader.streaminfo();
 	let mut stereo_samples = vec![];
-	while let Some(packet) = reader.read_dec_packet_generic::<Vec<Vec<f32>>>()? {
-		let num_channels = packet.len();
-		let num_samples = packet.num_samples();
-		match num_channels {
-			1 => {
-				for i in 0..num_samples {
-					stereo_samples.push(Frame::from_mono(packet[0][i]));
-				}
+	match reader.streaminfo().channels {
+		1 => {
+			for sample in reader.samples() {
+				let sample = sample?;
+				stereo_samples.push(Frame::from_i32(sample, sample, streaminfo.bits_per_sample));
 			}
-			2 => {
-				for i in 0..num_samples {
-					stereo_samples.push(Frame::new(packet[0][i], packet[1][i]));
-				}
-			}
-			_ => return Err(FromReaderError::UnsupportedChannelConfiguration),
 		}
+		2 => {
+			let mut iter = reader.samples();
+			while let (Some(left), Some(right)) = (iter.next(), iter.next()) {
+				stereo_samples.push(Frame::from_i32(left?, right?, streaminfo.bits_per_sample));
+			}
+		}
+		_ => return Err(FromReaderError::UnsupportedChannelConfiguration),
 	}
 	Ok(StaticSoundData::from_frames(
-		reader.ident_hdr.audio_sample_rate,
+		streaminfo.sample_rate,
 		stereo_samples,
 		settings,
 	))
 }
 
-/// Decodes a [`StaticSoundData`] from an ogg file.
+/// Decodes [`StaticSoundData`] from a flac reader.
 pub fn from_file<P>(
 	path: P,
 	settings: StaticSoundDataSettings,
