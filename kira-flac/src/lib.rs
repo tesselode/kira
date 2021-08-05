@@ -5,7 +5,7 @@ use std::{
 };
 
 use kira::{
-	sound::data::static_sound::{StaticSoundData, StaticSoundDataSettings},
+	sound::static_sound::{StaticSound, StaticSoundSettings},
 	Frame,
 };
 
@@ -77,11 +77,11 @@ impl From<FromReaderError> for FromFileError {
 	}
 }
 
-/// Decodes a [`StaticSoundData`] from a flac file.
+/// Decodes a [`StaticSound`] from a flac file.
 pub fn from_reader<R>(
 	reader: R,
-	settings: StaticSoundDataSettings,
-) -> Result<StaticSoundData, FromReaderError>
+	settings: StaticSoundSettings,
+) -> Result<StaticSound, FromReaderError>
 where
 	R: Read,
 {
@@ -103,18 +103,15 @@ where
 		}
 		_ => return Err(FromReaderError::UnsupportedChannelConfiguration),
 	}
-	Ok(StaticSoundData::from_frames(
+	Ok(StaticSound::from_frames(
 		streaminfo.sample_rate,
 		stereo_samples,
 		settings,
 	))
 }
 
-/// Decodes [`StaticSoundData`] from a flac reader.
-pub fn from_file<P>(
-	path: P,
-	settings: StaticSoundDataSettings,
-) -> Result<StaticSoundData, FromFileError>
+/// Decodes [`StaticSound`] from a flac reader.
+pub fn from_file<P>(path: P, settings: StaticSoundSettings) -> Result<StaticSound, FromFileError>
 where
 	P: AsRef<std::path::Path>,
 {

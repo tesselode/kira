@@ -16,7 +16,7 @@ use crate::{
 	audio_stream::AudioStreamWrapper,
 	clock::Clock,
 	parameter::Parameter,
-	sound::{instance::Instance, Sound},
+	sound::{instance::Instance, wrapper::SoundWrapper},
 	track::Track,
 };
 
@@ -27,7 +27,7 @@ use self::{
 use super::{renderer::context::Context, AudioManagerSettings};
 
 pub(super) struct UnusedResourceProducers {
-	pub sound: Producer<Sound>,
+	pub sound: Producer<SoundWrapper>,
 	pub instance: Producer<Instance>,
 	pub parameter: Producer<Parameter>,
 	pub sub_track: Producer<Track>,
@@ -36,7 +36,7 @@ pub(super) struct UnusedResourceProducers {
 }
 
 pub struct UnusedResourceCollector {
-	unused_sound_consumer: Consumer<Sound>,
+	unused_sound_consumer: Consumer<SoundWrapper>,
 	unused_instance_consumer: Consumer<Instance>,
 	unused_parameter_consumer: Consumer<Parameter>,
 	unused_sub_track_consumer: Consumer<Track>,

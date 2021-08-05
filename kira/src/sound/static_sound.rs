@@ -6,22 +6,22 @@ use crate::{frame::Frame, util};
 
 use std::time::Duration;
 
-use super::SoundData;
+use super::Sound;
 
 /// A chunk of audio data loaded into memory all at once.
-pub struct StaticSoundData {
+pub struct StaticSound {
 	sample_rate: u32,
 	duration: Duration,
 	frames: Vec<Frame>,
 	default_loop_start: Option<f64>,
 }
 
-impl StaticSoundData {
-	/// Creates a new [`StaticSoundData`] from raw sample data.
+impl StaticSound {
+	/// Creates a new [`StaticSound`] from raw sample data.
 	pub fn from_frames(
 		sample_rate: u32,
 		frames: Vec<Frame>,
-		settings: StaticSoundDataSettings,
+		settings: StaticSoundSettings,
 	) -> Self {
 		let duration = Duration::from_secs_f64(frames.len() as f64 / sample_rate as f64);
 		Self {
@@ -33,7 +33,7 @@ impl StaticSoundData {
 	}
 }
 
-impl SoundData for StaticSoundData {
+impl Sound for StaticSound {
 	fn duration(&self) -> Duration {
 		self.duration
 	}

@@ -6,14 +6,15 @@ use crate::{
 	parameter::{Parameter, ParameterId, Tween},
 	sound::{
 		instance::{Instance, InstanceId},
-		Sound, SoundId,
+		wrapper::SoundWrapper,
+		SoundId,
 	},
 	track::{SubTrackId, Track, TrackId},
 	value::Value,
 };
 
 pub(crate) enum SoundCommand {
-	Add(SoundId, Sound),
+	Add(SoundId, SoundWrapper),
 }
 
 pub(crate) enum InstanceCommand {

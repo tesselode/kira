@@ -15,7 +15,10 @@ use crate::{
 	clock::{Clock, ClockHandle, ClockId},
 	error::CommandError,
 	parameter::{Parameter, ParameterHandle, ParameterId, Tween},
-	sound::{data::SoundData, Sound, SoundHandle, SoundId, SoundShared},
+	sound::{
+		wrapper::{SoundWrapper, SoundWrapperShared},
+		Sound, SoundHandle, SoundId,
+	},
 	track::{SubTrackId, Track, TrackHandle, TrackId, TrackSettings},
 	value::Value,
 };
@@ -105,20 +108,17 @@ impl<B: Backend> AudioManager<B> {
 	}
 
 	/// Sends a sound to the renderer and returns a handle to the sound.
-	pub fn add_sound(
-		&mut self,
-		data: impl SoundData + 'static,
-	) -> Result<SoundHandle, AddSoundError> {
+	pub fn add_sound(&mut self, data: impl Sound + 'static) -> Result<SoundHandle, AddSoundError> {
 		let id = SoundId(
 			self.resource_controllers
 				.sound_controller
 				.try_reserve()
 				.map_err(|_| AddSoundError::SoundLimitReached)?,
 		);
-		let data: Arc<dyn SoundData> = Arc::new(data);
-		let shared = Arc::new(SoundShared::new());
-		let sound = Sound {
-			data: data.clone(),
+		let data: Arc<dyn Sound> = Arc::new(data);
+		let shared = Arc::new(SoundWrapperShared::new());
+		let sound = SoundWrapper {
+			sound: data.clone(),
 			shared: shared.clone(),
 		};
 		let handle = SoundHandle {

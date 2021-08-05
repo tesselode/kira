@@ -12,9 +12,9 @@ use crate::{
 };
 
 use super::{
-	data::SoundData,
 	instance::{Instance, InstanceHandle, InstanceId, InstanceSettings},
-	SoundId, SoundShared,
+	wrapper::SoundWrapperShared,
+	Sound, SoundId,
 };
 
 /// An error that can occur when playing a sound.
@@ -56,8 +56,8 @@ impl From<CommandError> for PlaySoundError {
 /// will be removed.
 pub struct SoundHandle {
 	pub(crate) id: SoundId,
-	pub(crate) data: Arc<dyn SoundData>,
-	pub(crate) shared: Arc<SoundShared>,
+	pub(crate) data: Arc<dyn Sound>,
+	pub(crate) shared: Arc<SoundWrapperShared>,
 	pub(crate) instance_controller: Controller,
 	pub(crate) command_producer: CommandProducer,
 }
@@ -67,7 +67,7 @@ impl SoundHandle {
 		self.id
 	}
 
-	pub fn data(&self) -> &Arc<dyn SoundData> {
+	pub fn data(&self) -> &Arc<dyn Sound> {
 		&self.data
 	}
 
@@ -95,7 +95,7 @@ impl Drop for SoundHandle {
 	}
 }
 
-impl From<&SoundHandle> for Arc<dyn SoundData> {
+impl From<&SoundHandle> for Arc<dyn Sound> {
 	fn from(handle: &SoundHandle) -> Self {
 		handle.data.clone()
 	}

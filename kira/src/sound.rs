@@ -1,43 +1,32 @@
-pub mod data;
 mod handle;
 pub mod instance;
+mod seamless_loop;
+pub mod static_sound;
+pub(crate) mod wrapper;
 
 pub use handle::*;
+pub use seamless_loop::*;
 
-use std::sync::{
-	atomic::{AtomicBool, Ordering},
-	Arc,
-};
+use std::time::Duration;
 
 use atomic_arena::Index;
 
-use self::data::SoundData;
+use crate::Frame;
 
 /// A unique identifier for a sound.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SoundId(pub(crate) Index);
 
-pub(crate) struct SoundShared {
-	removed: AtomicBool,
-}
+/// Represents a finite piece of audio.
+pub trait Sound: Send + Sync {
+	/// Returns the duration of the sound.
+	fn duration(&self) -> Duration;
 
-impl SoundShared {
-	pub fn new() -> Self {
-		Self {
-			removed: AtomicBool::new(false),
-		}
+	/// Returns the [`Frame`] that the sound should output
+	/// at a given playback position.
+	fn frame_at_position(&self, position: f64) -> Frame;
+
+	fn default_loop_start(&self) -> Option<f64> {
+		None
 	}
-
-	pub fn is_marked_for_removal(&self) -> bool {
-		self.removed.load(Ordering::SeqCst)
-	}
-
-	pub fn mark_for_removal(&self) {
-		self.removed.store(true, Ordering::SeqCst);
-	}
-}
-
-pub(crate) struct Sound {
-	pub data: Arc<dyn SoundData>,
-	pub shared: Arc<SoundShared>,
 }

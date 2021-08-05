@@ -4,13 +4,13 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use kira::{
 	manager::{mock::MockBackend, AudioManager, AudioManagerSettings},
 	sound::{
-		data::static_sound::{StaticSoundData, StaticSoundDataSettings},
 		instance::InstanceSettings,
+		static_sound::{StaticSound, StaticSoundSettings},
 	},
 	Frame,
 };
 
-fn create_test_sound(num_frames: usize) -> StaticSoundData {
+fn create_test_sound(num_frames: usize) -> StaticSound {
 	const SAMPLE_RATE: u32 = 48_000;
 	let mut frames = vec![];
 	let mut phase = 0.0;
@@ -18,10 +18,10 @@ fn create_test_sound(num_frames: usize) -> StaticSoundData {
 		frames.push(Frame::from_mono((phase * TAU).sin()));
 		phase += 440.0 / SAMPLE_RATE as f32;
 	}
-	StaticSoundData::from_frames(
+	StaticSound::from_frames(
 		SAMPLE_RATE,
 		frames,
-		StaticSoundDataSettings::new().default_loop_start(0.0),
+		StaticSoundSettings::new().default_loop_start(0.0),
 	)
 }
 

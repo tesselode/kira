@@ -20,7 +20,7 @@ use crate::{
 	value::{cached::CachedValue, Value},
 };
 
-use super::{data::SoundData, Sound, SoundId};
+use super::{wrapper::SoundWrapper, Sound, SoundId};
 
 /// A unique identifier for an instance of a sound.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -96,11 +96,7 @@ pub(crate) struct Instance {
 }
 
 impl Instance {
-	pub fn new(
-		sound_id: SoundId,
-		sound_data: &Arc<dyn SoundData>,
-		settings: InstanceSettings,
-	) -> Self {
+	pub fn new(sound_id: SoundId, sound_data: &Arc<dyn Sound>, settings: InstanceSettings) -> Self {
 		let position = if settings.reverse {
 			sound_data.duration().as_secs_f64() - settings.start_position
 		} else {
@@ -242,7 +238,7 @@ impl Instance {
 			self.panning.update(parameters);
 			let just_finished_fade = self.fade_volume.update(dt, clocks);
 			let out = sound
-				.data
+				.sound
 				.frame_at_position(self.position)
 				.panned(self.panning.get() as f32)
 				* self.volume.get() as f32
@@ -264,14 +260,14 @@ impl Instance {
 		Frame::from_mono(0.0)
 	}
 
-	fn update_playback_position(&mut self, dt: f64, sound: &Sound) {
+	fn update_playback_position(&mut self, dt: f64, sound: &SoundWrapper) {
 		let playback_rate = if self.reverse {
 			-self.playback_rate.get()
 		} else {
 			self.playback_rate.get()
 		};
 		self.position += playback_rate * dt;
-		let duration = sound.data.duration().as_secs_f64();
+		let duration = sound.sound.duration().as_secs_f64();
 		if playback_rate < 0.0 {
 			if let Some(loop_start) = self.loop_start {
 				while self.position < loop_start {

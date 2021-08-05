@@ -1,10 +1,10 @@
-/// Settings for [`StaticSoundData`](super::StaticSoundData).
-pub struct StaticSoundDataSettings {
+/// Settings for [`StaticSound`](super::StaticSound).
+pub struct StaticSoundSettings {
 	pub default_loop_start: Option<f64>,
 }
 
-impl StaticSoundDataSettings {
-	/// Creates a new [`StaticSoundDataSettings`] with the default settings.
+impl StaticSoundSettings {
+	/// Creates a new [`StaticSoundSettings`] with the default settings.
 	pub fn new() -> Self {
 		Self {
 			default_loop_start: None,
@@ -19,7 +19,7 @@ impl StaticSoundDataSettings {
 	}
 }
 
-impl Default for StaticSoundDataSettings {
+impl Default for StaticSoundSettings {
 	fn default() -> Self {
 		Self::new()
 	}

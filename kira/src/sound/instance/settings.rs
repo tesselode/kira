@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
-use crate::{
-	parameter::Tween, sound::data::SoundData, start_time::StartTime, track::TrackId, value::Value,
-};
+use crate::{parameter::Tween, sound::Sound, start_time::StartTime, track::TrackId, value::Value};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum InstanceLoopStart {
@@ -12,7 +10,7 @@ pub enum InstanceLoopStart {
 }
 
 impl InstanceLoopStart {
-	pub(crate) fn as_option(self, data: &Arc<dyn SoundData>) -> Option<f64> {
+	pub(crate) fn as_option(self, data: &Arc<dyn Sound>) -> Option<f64> {
 		match self {
 			Self::DefaultForSoundData => data.default_loop_start(),
 			Self::Custom(loop_start) => Some(loop_start),

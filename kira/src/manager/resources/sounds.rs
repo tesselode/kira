@@ -3,16 +3,16 @@ use ringbuf::Producer;
 
 use crate::{
 	manager::command::SoundCommand,
-	sound::{Sound, SoundId},
+	sound::{wrapper::SoundWrapper, SoundId},
 };
 
 pub(crate) struct Sounds {
-	sounds: Arena<Sound>,
-	unused_sound_producer: Producer<Sound>,
+	sounds: Arena<SoundWrapper>,
+	unused_sound_producer: Producer<SoundWrapper>,
 }
 
 impl Sounds {
-	pub fn new(capacity: usize, unused_sound_producer: Producer<Sound>) -> Self {
+	pub fn new(capacity: usize, unused_sound_producer: Producer<SoundWrapper>) -> Self {
 		Self {
 			sounds: Arena::new(capacity),
 			unused_sound_producer,
@@ -23,7 +23,7 @@ impl Sounds {
 		self.sounds.controller()
 	}
 
-	pub fn get(&self, id: SoundId) -> Option<&Sound> {
+	pub fn get(&self, id: SoundId) -> Option<&SoundWrapper> {
 		self.sounds.get(id.0)
 	}
 

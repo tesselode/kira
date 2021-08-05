@@ -2,12 +2,12 @@ use std::{sync::Arc, time::Duration};
 
 use crate::frame::Frame;
 
-use super::SoundData;
+use super::Sound;
 
 // TODO: explain how this works
 
 struct Section {
-	sound: Arc<dyn SoundData>,
+	sound: Arc<dyn Sound>,
 	loop_end: f64,
 }
 
@@ -17,7 +17,7 @@ pub struct SeamlessLoop {
 }
 
 impl SeamlessLoop {
-	pub fn new(sound: impl Into<Arc<dyn SoundData>>, loop_end: f64) -> Self {
+	pub fn new(sound: impl Into<Arc<dyn Sound>>, loop_end: f64) -> Self {
 		Self {
 			main: Section {
 				sound: sound.into(),
@@ -28,9 +28,9 @@ impl SeamlessLoop {
 	}
 
 	pub fn with_intro(
-		intro_sound: impl Into<Arc<dyn SoundData>>,
+		intro_sound: impl Into<Arc<dyn Sound>>,
 		intro_loop_end: f64,
-		main_sound: impl Into<Arc<dyn SoundData>>,
+		main_sound: impl Into<Arc<dyn Sound>>,
 		main_loop_end: f64,
 	) -> Self {
 		Self {
@@ -46,7 +46,7 @@ impl SeamlessLoop {
 	}
 }
 
-impl SoundData for SeamlessLoop {
+impl Sound for SeamlessLoop {
 	fn duration(&self) -> Duration {
 		Duration::from_secs_f64(if let Some(intro) = &self.intro {
 			intro.loop_end + self.main.loop_end * 2.0
