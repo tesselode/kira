@@ -1,7 +1,10 @@
-use std::sync::Arc;
+use std::{
+	error::Error,
+	fmt::{Display, Formatter},
+	sync::Arc,
+};
 
 use atomic_arena::Controller;
-use thiserror::Error;
 
 use crate::{
 	error::CommandError,
@@ -15,14 +18,36 @@ use super::{
 };
 
 /// An error that can occur when playing a sound.
-#[derive(Debug, Error)]
+#[derive(Debug)]
 pub enum PlaySoundError {
 	/// Could not add an instance because the maximum number of instances has been reached.
-	#[error("Could not add an instance because the maximum number of instances has been reached.")]
 	InstanceLimitReached,
 	/// An error occured when sending a command to the renderer.
-	#[error("{0}")]
-	CommandError(#[from] CommandError),
+	CommandError(CommandError),
+}
+
+impl Display for PlaySoundError {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		match self {
+            PlaySoundError::InstanceLimitReached => f.write_str("Could not add an instance because the maximum number of instances has been reached."),
+            PlaySoundError::CommandError(error) => error.fmt(f),
+        }
+	}
+}
+
+impl Error for PlaySoundError {
+	fn source(&self) -> Option<&(dyn Error + 'static)> {
+		match self {
+			PlaySoundError::CommandError(error) => Some(error),
+			_ => None,
+		}
+	}
+}
+
+impl From<CommandError> for PlaySoundError {
+	fn from(v: CommandError) -> Self {
+		Self::CommandError(v)
+	}
 }
 
 /// Controls a sound.

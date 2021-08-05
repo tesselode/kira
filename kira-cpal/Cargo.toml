@@ -9,4 +9,3 @@ edition = "2018"
 cpal = "0.13.3"
 kira = { path = "../kira" }
 ringbuf = "0.2.3"
-thiserror = "1.0.23"

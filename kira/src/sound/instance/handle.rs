@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{error::Error, fmt::Display, sync::Arc};
 
 use crate::{
 	error::CommandError,
@@ -7,19 +7,41 @@ use crate::{
 	value::Value,
 };
 
-use thiserror::Error;
-
 use super::{InstanceId, InstanceShared, InstanceState};
 
 /// An error that can occur when modifying an instance.
-#[derive(Debug, Error)]
+#[derive(Debug)]
 pub enum InstanceHandleError {
 	/// Cannot modify an instance that has finished playing.
-	#[error("Cannot modify an instance that has finished playing")]
 	InstanceStopped,
 	/// An error occured when sending a command to the renderer.
-	#[error("{0}")]
-	CommandError(#[from] CommandError),
+	CommandError(CommandError),
+}
+
+impl Display for InstanceHandleError {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		match self {
+			InstanceHandleError::InstanceStopped => {
+				f.write_str("Cannot modify an instance that has finished playing")
+			}
+			InstanceHandleError::CommandError(error) => error.fmt(f),
+		}
+	}
+}
+
+impl Error for InstanceHandleError {
+	fn source(&self) -> Option<&(dyn Error + 'static)> {
+		match self {
+			InstanceHandleError::CommandError(error) => Some(error),
+			_ => None,
+		}
+	}
+}
+
+impl From<CommandError> for InstanceHandleError {
+	fn from(v: CommandError) -> Self {
+		Self::CommandError(v)
+	}
 }
 
 /// Controls an instance of a sound.

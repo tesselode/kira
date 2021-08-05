@@ -1,4 +1,8 @@
-use std::time::Duration;
+use std::{
+	error::Error,
+	fmt::{Display, Formatter},
+	time::Duration,
+};
 
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
@@ -6,30 +10,79 @@ use cpal::{
 };
 use kira::manager::{renderer::Renderer, resources::UnusedResourceCollector, Backend};
 use ringbuf::{Producer, RingBuffer};
-use thiserror::Error;
 
 const UNUSED_RESOURCE_COLLECTION_INTERVAL: Duration = Duration::from_millis(100);
 
-#[derive(Debug, Error)]
+#[derive(Debug)]
 pub enum DeviceSetupError {
 	/// A default audio output device could not be determined.
-	#[error("Cannot find the default audio output device")]
 	NoDefaultOutputDevice,
-
 	/// An error occurred when getting the default output configuration.
-	#[error("{0}")]
-	DefaultStreamConfigError(#[from] DefaultStreamConfigError),
+	DefaultStreamConfigError(DefaultStreamConfigError),
 }
 
-#[derive(Debug, Error)]
+impl Display for DeviceSetupError {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		match self {
+			DeviceSetupError::NoDefaultOutputDevice => {
+				f.write_str("Cannot find the default audio output device")
+			}
+			DeviceSetupError::DefaultStreamConfigError(error) => error.fmt(f),
+		}
+	}
+}
+
+impl Error for DeviceSetupError {
+	fn source(&self) -> Option<&(dyn Error + 'static)> {
+		match self {
+			DeviceSetupError::DefaultStreamConfigError(error) => Some(error),
+			_ => None,
+		}
+	}
+}
+
+impl From<DefaultStreamConfigError> for DeviceSetupError {
+	fn from(v: DefaultStreamConfigError) -> Self {
+		Self::DefaultStreamConfigError(v)
+	}
+}
+
+#[derive(Debug)]
 pub enum InitError {
 	/// An error occured when building the audio stream.
-	#[error("{0}")]
-	BuildStreamError(#[from] BuildStreamError),
-
+	BuildStreamError(BuildStreamError),
 	/// An error occured when starting the audio stream.
-	#[error("{0}")]
-	PlayStreamError(#[from] PlayStreamError),
+	PlayStreamError(PlayStreamError),
+}
+
+impl Display for InitError {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		match self {
+			InitError::BuildStreamError(error) => error.fmt(f),
+			InitError::PlayStreamError(error) => error.fmt(f),
+		}
+	}
+}
+
+impl Error for InitError {
+	fn source(&self) -> Option<&(dyn Error + 'static)> {
+		match self {
+			InitError::BuildStreamError(error) => Some(error),
+			InitError::PlayStreamError(error) => Some(error),
+		}
+	}
+}
+
+impl From<BuildStreamError> for InitError {
+	fn from(v: BuildStreamError) -> Self {
+		Self::BuildStreamError(v)
+	}
+}
+
+impl From<PlayStreamError> for InitError {
+	fn from(v: PlayStreamError) -> Self {
+		Self::PlayStreamError(v)
+	}
 }
 
 enum State {

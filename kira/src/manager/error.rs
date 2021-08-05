@@ -1,64 +1,177 @@
 //! Errors that can occur when using an [`AudioManager`](super::AudioManager).
 
-use thiserror::Error;
+use std::{
+	error::Error,
+	fmt::{Display, Formatter},
+};
 
 use crate::error::CommandError;
 
 /// Errors that can occur when adding a sound to the renderer.
-#[derive(Debug, Error)]
+#[derive(Debug)]
 pub enum AddSoundError {
 	/// Could not add a sound because the maximum number of sounds has been reached.
-	#[error("Could not add a sound because the maximum number of sounds has been reached.")]
 	SoundLimitReached,
 	/// An error occured when sending a command to the renderer.
-	#[error("{0}")]
-	CommandError(#[from] CommandError),
+	CommandError(CommandError),
+}
+
+impl Display for AddSoundError {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		match self {
+			AddSoundError::SoundLimitReached => f.write_str(
+				"Could not add a sound because the maximum number of sounds has been reached.",
+			),
+			AddSoundError::CommandError(error) => error.fmt(f),
+		}
+	}
+}
+
+impl Error for AddSoundError {
+	fn source(&self) -> Option<&(dyn Error + 'static)> {
+		match self {
+			AddSoundError::CommandError(error) => Some(error),
+			_ => None,
+		}
+	}
+}
+
+impl From<CommandError> for AddSoundError {
+	fn from(v: CommandError) -> Self {
+		Self::CommandError(v)
+	}
 }
 
 /// Errors that can occur when creating a parameter.
-#[derive(Debug, Error)]
+#[derive(Debug)]
 pub enum AddParameterError {
 	/// Could not add a parameter because the maximum number of parameters has been reached.
-	#[error(
-		"Could not add a parameter because the maximum number of parameters has been reached."
-	)]
 	ParameterLimitReached,
 	/// An error occured when sending a command to the renderer.
-	#[error("{0}")]
-	CommandError(#[from] CommandError),
+	CommandError(CommandError),
+}
+
+impl Display for AddParameterError {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		match self {
+            AddParameterError::ParameterLimitReached => f.write_str("Could not add a parameter because the maximum number of parameters has been reached."),
+            AddParameterError::CommandError(error) => error.fmt(f),
+        }
+	}
+}
+
+impl Error for AddParameterError {
+	fn source(&self) -> Option<&(dyn Error + 'static)> {
+		match self {
+			AddParameterError::CommandError(error) => Some(error),
+			_ => None,
+		}
+	}
+}
+
+impl From<CommandError> for AddParameterError {
+	fn from(v: CommandError) -> Self {
+		Self::CommandError(v)
+	}
 }
 
 /// Errors that can occur when creating a mixer sub-track.
-#[derive(Debug, Error)]
+#[derive(Debug)]
 pub enum AddSubTrackError {
 	/// Could not add a sub-track because the maximum number of sub-tracks has been reached.
-	#[error(
-		"Could not add a sub-track because the maximum number of sub-tracks has been reached."
-	)]
 	SubTrackLimitReached,
 	/// An error occured when sending a command to the renderer.
-	#[error("{0}")]
-	CommandError(#[from] CommandError),
+	CommandError(CommandError),
+}
+
+impl Display for AddSubTrackError {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		match self {
+			AddSubTrackError::SubTrackLimitReached => f.write_str("Could not add a sub-track because the maximum number of sub-tracks has been reached."),
+			AddSubTrackError::CommandError(error) => error.fmt(f),
+		}
+	}
+}
+
+impl Error for AddSubTrackError {
+	fn source(&self) -> Option<&(dyn Error + 'static)> {
+		match self {
+			AddSubTrackError::CommandError(error) => Some(error),
+			_ => None,
+		}
+	}
+}
+
+impl From<CommandError> for AddSubTrackError {
+	fn from(v: CommandError) -> Self {
+		Self::CommandError(v)
+	}
 }
 
 /// Errors that can occur when creating a clock.
-#[derive(Debug, Error)]
+#[derive(Debug)]
 pub enum AddClockError {
 	/// Could not add a clock because the maximum number of clocks has been reached.
-	#[error("Could not add a clock because the maximum number of clocks has been reached.")]
 	ClockLimitReached,
 	/// An error occured when sending a command to the renderer.
-	#[error("{0}")]
-	CommandError(#[from] CommandError),
+	CommandError(CommandError),
+}
+
+impl Display for AddClockError {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		match self {
+			AddClockError::ClockLimitReached => f.write_str(
+				"Could not add a clock because the maximum number of clocks has been reached.",
+			),
+			AddClockError::CommandError(error) => error.fmt(f),
+		}
+	}
+}
+
+impl Error for AddClockError {
+	fn source(&self) -> Option<&(dyn Error + 'static)> {
+		match self {
+			AddClockError::CommandError(error) => Some(error),
+			_ => None,
+		}
+	}
+}
+
+impl From<CommandError> for AddClockError {
+	fn from(v: CommandError) -> Self {
+		Self::CommandError(v)
+	}
 }
 
 /// Errors that can occur when creating a audio stream.
-#[derive(Debug, Error)]
+#[derive(Debug)]
 pub enum AddAudioStreamError {
 	/// Could not add a audio stream because the maximum number of audio streams has been reached.
-	#[error("Could not add a audio stream because the maximum number of audio streams has been reached.")]
 	AudioStreamLimitReached,
 	/// An error occured when sending a command to the renderer.
-	#[error("{0}")]
-	CommandError(#[from] CommandError),
+	CommandError(CommandError),
+}
+
+impl Display for AddAudioStreamError {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		match self {
+			AddAudioStreamError::AudioStreamLimitReached => f.write_str("Could not add a audio stream because the maximum number of audio streams has been reached."),
+			AddAudioStreamError::CommandError(error) => error.fmt(f),
+		}
+	}
+}
+
+impl Error for AddAudioStreamError {
+	fn source(&self) -> Option<&(dyn Error + 'static)> {
+		match self {
+			AddAudioStreamError::CommandError(error) => Some(error),
+			_ => None,
+		}
+	}
+}
+
+impl From<CommandError> for AddAudioStreamError {
+	fn from(v: CommandError) -> Self {
+		Self::CommandError(v)
+	}
 }
