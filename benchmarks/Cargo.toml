@@ -1,5 +1,5 @@
 [package]
-name = "kira-benchmarks"
+name = "benchmarks"
 version = "0.1.0"
 authors = ["Andrew Minnich <aminnich3@gmail.com>"]
 edition = "2018"

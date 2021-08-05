@@ -7,7 +7,7 @@ members = [
 	"kira-ogg",
 	"kira-flac",
 	"kira-wav",
-	"kira-benchmarks",
+	"benchmarks",
 ]
 
 [profile.dev]
