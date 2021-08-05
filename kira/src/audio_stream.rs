@@ -13,7 +13,7 @@ use atomic_arena::Index;
 
 use crate::{
 	manager::{
-		renderer::context::Context,
+		context::Context,
 		resources::{mixer::Mixer, Parameters},
 	},
 	track::TrackId,
@@ -32,6 +32,11 @@ pub trait AudioStream: Send + Sync {
 
 	/// Called when the [`AudioStream`] should produce a new [`Frame`]
 	/// of audio.
+	/// - `dt` is the time that's elapsed since the previous round of
+	/// processing (in seconds)
+	/// - `parameters` contains information about the current value of
+	/// parameters. This is an opaque type that's only useful for updating
+	/// `CachedValue`s.
 	fn process(&mut self, dt: f64, parameters: &Parameters) -> Frame;
 }
 

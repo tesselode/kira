@@ -24,7 +24,7 @@ use self::{
 	audio_streams::AudioStreams, clocks::Clocks, instances::Instances, mixer::Mixer, sounds::Sounds,
 };
 
-use super::{renderer::context::Context, AudioManagerSettings};
+use super::{context::Context, AudioManagerSettings};
 
 pub(super) struct UnusedResourceProducers {
 	pub sound: Producer<SoundWrapper>,
@@ -35,6 +35,9 @@ pub(super) struct UnusedResourceProducers {
 	pub audio_stream: Producer<AudioStreamWrapper>,
 }
 
+/// Collects resources that have been discarded by
+/// a [`Renderer`](super::Renderer) to be
+/// deallocated at an appropriate time.
 pub struct UnusedResourceCollector {
 	unused_sound_consumer: Consumer<SoundWrapper>,
 	unused_instance_consumer: Consumer<Instance>,
@@ -45,6 +48,7 @@ pub struct UnusedResourceCollector {
 }
 
 impl UnusedResourceCollector {
+	/// Deallocates all unused resources that have been collected.
 	pub fn drain(&mut self) {
 		while self.unused_sound_consumer.pop().is_some() {
 			println!("dropped sound");

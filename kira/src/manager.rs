@@ -1,10 +1,13 @@
+//! The main entrypoint for controlling audio from gameplay code.
+
 mod backend;
 pub(crate) mod command;
 pub mod error;
-pub mod renderer;
+mod renderer;
 pub mod resources;
 
 pub use backend::*;
+pub use renderer::*;
 
 use std::sync::Arc;
 
@@ -31,7 +34,7 @@ use self::{
 	error::{
 		AddAudioStreamError, AddClockError, AddParameterError, AddSoundError, AddSubTrackError,
 	},
-	renderer::{context::Context, Renderer, RendererState},
+	renderer::context::Context,
 	resources::{create_resources, create_unused_resource_channels, ResourceControllers},
 };
 

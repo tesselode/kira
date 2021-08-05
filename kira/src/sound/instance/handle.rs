@@ -162,6 +162,7 @@ impl InstanceHandle {
 		Ok(())
 	}
 
+	/// Sets the playback position of the instance to the specified value.
 	pub fn seek_to(&mut self, position: f64) -> Result<(), InstanceHandleError> {
 		if self.state() == InstanceState::Stopped {
 			return Err(InstanceHandleError::InstanceStopped);
@@ -173,6 +174,7 @@ impl InstanceHandle {
 		Ok(())
 	}
 
+	/// Adjusts the playback position of the instance by the specified amount.
 	pub fn seek_by(&mut self, amount: f64) -> Result<(), InstanceHandleError> {
 		if self.state() == InstanceState::Stopped {
 			return Err(InstanceHandleError::InstanceStopped);

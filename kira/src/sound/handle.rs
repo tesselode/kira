@@ -68,10 +68,12 @@ impl SoundHandle {
 		self.id
 	}
 
+	/// Returns a reference to the underlying sound.
 	pub fn sound(&self) -> &Arc<dyn Sound> {
 		&self.sound
 	}
 
+	/// Plays the sound.
 	pub fn play(&mut self, settings: InstanceSettings) -> Result<InstanceHandle, PlaySoundError> {
 		let id = InstanceId(
 			self.instance_controller

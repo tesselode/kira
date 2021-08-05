@@ -2,7 +2,7 @@ use std::f32::consts::TAU;
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use kira::{
-	manager::{mock::MockBackend, AudioManager, AudioManagerSettings},
+	manager::{AudioManager, AudioManagerSettings, MockBackend},
 	sound::{
 		instance::InstanceSettings,
 		static_sound::{StaticSound, StaticSoundSettings},

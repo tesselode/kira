@@ -1,5 +1,5 @@
 use crate::{
-	manager::{renderer::Renderer, resources::UnusedResourceCollector},
+	manager::{resources::UnusedResourceCollector, Renderer},
 	Frame,
 };
 
@@ -17,17 +17,25 @@ enum State {
 	},
 }
 
+/// A backend that does not connect to any lower-level
+/// audio APIs, but allows manually calling
+/// [`Renderer::on_start_processing`] and [`Renderer::process`].
+///
+/// This is useful for testing and benchmarking.
 pub struct MockBackend {
 	state: State,
 }
 
 impl MockBackend {
+	/// Creates a new [`MockBackend`].
 	pub fn new() -> Self {
 		Self {
 			state: State::Uninitialized,
 		}
 	}
 
+	/// Calls the [`on_start_processing`](Renderer::on_start_processing)
+	/// callback of the [`Renderer`].
 	pub fn on_start_processing(&mut self) {
 		if let State::Initialized { renderer, .. } = &mut self.state {
 			renderer.on_start_processing();
@@ -36,6 +44,7 @@ impl MockBackend {
 		}
 	}
 
+	/// Calls the [`process`](Renderer::process) callback of the [`Renderer`].
 	pub fn process(&mut self) -> Frame {
 		if let State::Initialized {
 			renderer,
@@ -54,6 +63,7 @@ impl MockBackend {
 		}
 	}
 
+	/// Deallocates resources discarded by the [`Renderer`].
 	pub fn collect_unused_resources(&mut self) {
 		if let State::Initialized {
 			unused_resource_collector,

@@ -5,7 +5,7 @@ use ringbuf::Producer;
 
 use crate::{
 	frame::Frame,
-	manager::{command::MixerCommand, renderer::context::Context},
+	manager::{command::MixerCommand, context::Context},
 	track::{SubTrackId, Track, TrackId},
 	value::cached::CachedValue,
 };

@@ -9,6 +9,8 @@ pub struct TrackSettings {
 	/// The panning of the track, where 0 is hard left
 	/// and 1 is hard right.
 	pub panning: Value,
+	/// How the output of this track should be routed
+	/// to other mixer tracks.
 	pub routes: TrackRoutes,
 	/// The effects that should be applied to the input audio
 	/// for this track.
@@ -43,6 +45,8 @@ impl TrackSettings {
 		}
 	}
 
+	/// Sets how the output of this track should be routed
+	/// to other mixer tracks.
 	pub fn routes(self, routes: TrackRoutes) -> Self {
 		Self { routes, ..self }
 	}

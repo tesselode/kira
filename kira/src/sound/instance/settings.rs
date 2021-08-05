@@ -5,10 +5,14 @@ use crate::{
 	track::TrackId, value::Value,
 };
 
+/// The loop behavior for an instance.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum InstanceLoopBehavior {
+	/// Use the default loop behavior defined by the sound.
 	DefaultForSound,
+	/// Use a custom loop behavior.
 	Custom(LoopBehavior),
+	/// Do not loop.
 	None,
 }
 

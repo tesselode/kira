@@ -10,10 +10,16 @@ use self::context::Context;
 
 use super::{command::Command, resources::Resources};
 
+/// The playback state of a [`Renderer`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RendererState {
+	/// The [`Renderer`] is outputting audio.
 	Playing,
+	/// The [`Renderer`] is fading out, and when the
+	/// fade-out is finished, the [`Renderer`] will
+	/// pause processing.
 	Pausing,
+	/// The [`Renderer`] is paused and outputting silence.
 	Paused,
 }
 
@@ -28,6 +34,8 @@ impl RendererState {
 	}
 }
 
+/// Produces [`Frame`]s of audio data to be consumed by a
+/// low-level audio API.
 pub struct Renderer {
 	context: Arc<Context>,
 	resources: Resources,
@@ -51,6 +59,8 @@ impl Renderer {
 		}
 	}
 
+	/// Called by the backend when it's time to process
+	/// a new batch of samples.
 	pub fn on_start_processing(&mut self) {
 		self.resources.sounds.on_start_processing();
 		self.resources.instances.on_start_processing();
@@ -85,6 +95,7 @@ impl Renderer {
 		}
 	}
 
+	/// Produces the next [`Frame`] of audio.
 	pub fn process(&mut self) -> Frame {
 		if self
 			.fade_volume

@@ -17,7 +17,7 @@ use atomic_arena::Index;
 
 use crate::{
 	frame::Frame,
-	manager::{renderer::context::Context, resources::Parameters},
+	manager::{context::Context, resources::Parameters},
 	value::{cached::CachedValue, Value},
 };
 

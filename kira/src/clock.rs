@@ -1,3 +1,5 @@
+//! A user-controllable timing source for instances and tweens.
+
 mod handle;
 
 pub use handle::*;
