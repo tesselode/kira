@@ -54,24 +54,12 @@ pub struct UnusedResourceCollector {
 impl UnusedResourceCollector {
 	/// Deallocates all unused resources that have been collected.
 	pub fn drain(&mut self) {
-		while self.unused_sound_consumer.pop().is_some() {
-			println!("dropped sound");
-		}
-		while self.unused_instance_consumer.pop().is_some() {
-			println!("dropped instance");
-		}
-		while self.unused_parameter_consumer.pop().is_some() {
-			println!("dropped parameter");
-		}
-		while self.unused_sub_track_consumer.pop().is_some() {
-			println!("dropped sub-track");
-		}
-		while self.unused_clock_consumer.pop().is_some() {
-			println!("dropped clock");
-		}
-		while self.unused_audio_stream_consumer.pop().is_some() {
-			println!("dropped audio stream");
-		}
+		while self.unused_sound_consumer.pop().is_some() {}
+		while self.unused_instance_consumer.pop().is_some() {}
+		while self.unused_parameter_consumer.pop().is_some() {}
+		while self.unused_sub_track_consumer.pop().is_some() {}
+		while self.unused_clock_consumer.pop().is_some() {}
+		while self.unused_audio_stream_consumer.pop().is_some() {}
 	}
 }
 
