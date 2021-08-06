@@ -1,3 +1,6 @@
+//! Useful functions for writing [`Effect`s](crate::track::Effect)
+//! and [`AudioStream`s](crate::audio_stream::AudioStream).
+
 use crate::frame::Frame;
 
 /// Given a previous frame, a current frame, the two next frames,

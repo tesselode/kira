@@ -1,3 +1,7 @@
+//! Structs that are useful for writing [`Effect`s](crate::track::Effect),
+//! [`AudioStream`s](crate::audio_stream::AudioStream), and
+//! [`Backend`s](crate::manager::Backend).
+
 pub(crate) mod audio_streams;
 pub(crate) mod clocks;
 pub(crate) mod instances;

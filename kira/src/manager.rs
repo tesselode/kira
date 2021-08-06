@@ -73,6 +73,7 @@ impl Default for AudioManagerSettings {
 	}
 }
 
+/// Controls audio from gameplay code.
 pub struct AudioManager<B: Backend> {
 	backend: B,
 	context: Arc<Context>,
@@ -106,6 +107,7 @@ impl<B: Backend> AudioManager<B> {
 		&mut self.backend
 	}
 
+	/// Returns the current playback state of the [`Renderer`].
 	pub fn state(&self) -> RendererState {
 		self.context.state()
 	}
@@ -223,10 +225,12 @@ impl<B: Backend> AudioManager<B> {
 		Ok(handle)
 	}
 
+	/// Fades out and pauses the [`Renderer`].
 	pub fn pause(&mut self, fade_out_tween: Tween) -> Result<(), CommandError> {
 		self.command_producer.push(Command::Pause(fade_out_tween))
 	}
 
+	/// Resumes the [`Renderer`] and fades in the audio.
 	pub fn resume(&mut self, fade_out_tween: Tween) -> Result<(), CommandError> {
 		self.command_producer.push(Command::Resume(fade_out_tween))
 	}
