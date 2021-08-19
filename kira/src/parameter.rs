@@ -132,7 +132,7 @@ impl Parameter {
 			if *waiting_to_start {
 				if let StartTime::ClockTime(id, start_time) = tween.start_time {
 					if let Some(clock) = clocks.get(id) {
-						if clock.ticking() && clock.time() >= start_time {
+						if clock.ticking() && clock.ticks() >= start_time {
 							*waiting_to_start = false;
 						}
 					}

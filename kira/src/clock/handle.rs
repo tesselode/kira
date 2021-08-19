@@ -32,7 +32,7 @@ impl ClockHandle {
 
 	/// Returns the number of times the clock has ticked.
 	pub fn time(&self) -> u64 {
-		self.shared.time()
+		self.shared.ticks()
 	}
 
 	/// Sets the duration of time between each tick (in seconds).

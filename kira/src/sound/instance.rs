@@ -208,7 +208,7 @@ impl Instance {
 		if self.waiting_to_start {
 			if let StartTime::ClockTime(id, time) = self.start_time {
 				if let Some(clock) = clocks.get(id) {
-					if clock.ticking() && clock.time() >= time {
+					if clock.ticking() && clock.ticks() >= time {
 						self.waiting_to_start = false;
 					}
 				}

@@ -22,7 +22,7 @@ pub struct ClockId(pub(crate) Index);
 
 pub(crate) struct ClockShared {
 	ticking: AtomicBool,
-	time: AtomicU64,
+	ticks: AtomicU64,
 	removed: AtomicBool,
 }
 
@@ -30,7 +30,7 @@ impl ClockShared {
 	pub fn new() -> Self {
 		Self {
 			ticking: AtomicBool::new(false),
-			time: AtomicU64::new(0),
+			ticks: AtomicU64::new(0),
 			removed: AtomicBool::new(false),
 		}
 	}
@@ -39,8 +39,8 @@ impl ClockShared {
 		self.ticking.load(Ordering::SeqCst)
 	}
 
-	pub fn time(&self) -> u64 {
-		self.time.load(Ordering::SeqCst)
+	pub fn ticks(&self) -> u64 {
+		self.ticks.load(Ordering::SeqCst)
 	}
 
 	pub fn is_marked_for_removal(&self) -> bool {
@@ -56,7 +56,7 @@ pub(crate) struct Clock {
 	shared: Arc<ClockShared>,
 	ticking: bool,
 	interval: CachedValue,
-	time: u64,
+	ticks: u64,
 	tick_timer: f64,
 }
 
@@ -66,7 +66,7 @@ impl Clock {
 			shared: Arc::new(ClockShared::new()),
 			ticking: false,
 			interval: CachedValue::new(0.0.., interval, 1.0),
-			time: 0,
+			ticks: 0,
 			tick_timer: 1.0,
 		}
 	}
@@ -79,8 +79,8 @@ impl Clock {
 		self.ticking
 	}
 
-	pub fn time(&self) -> u64 {
-		self.time
+	pub fn ticks(&self) -> u64 {
+		self.ticks
 	}
 
 	pub fn set_interval(&mut self, interval: Value) {
@@ -99,8 +99,8 @@ impl Clock {
 
 	pub fn stop(&mut self) {
 		self.pause();
-		self.time = 0;
-		self.shared.time.store(0, Ordering::SeqCst);
+		self.ticks = 0;
+		self.shared.ticks.store(0, Ordering::SeqCst);
 	}
 
 	pub fn update(&mut self, dt: f64, parameters: &Parameters) {
@@ -109,8 +109,8 @@ impl Clock {
 			self.tick_timer -= dt / self.interval.get();
 			while self.tick_timer <= 0.0 {
 				self.tick_timer += 1.0;
-				self.time += 1;
-				self.shared.time.fetch_add(1, Ordering::SeqCst);
+				self.ticks += 1;
+				self.shared.ticks.fetch_add(1, Ordering::SeqCst);
 			}
 		}
 	}
