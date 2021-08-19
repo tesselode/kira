@@ -97,3 +97,9 @@ impl Backend for MockBackend {
 		Ok(())
 	}
 }
+
+impl Default for MockBackend {
+	fn default() -> Self {
+		Self::new()
+	}
+}

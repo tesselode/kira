@@ -61,10 +61,10 @@ impl InstanceState {
 	}
 
 	fn is_playing(&self) -> bool {
-		match self {
-			InstanceState::Playing | InstanceState::Pausing | InstanceState::Stopping => true,
-			_ => false,
-		}
+		matches!(
+			self,
+			InstanceState::Playing | InstanceState::Pausing | InstanceState::Stopping
+		)
 	}
 }
 
@@ -110,11 +110,7 @@ impl Instance {
 			sound_id,
 			track: settings.track,
 			start_time: settings.start_time,
-			waiting_to_start: if let StartTime::ClockTime(..) = settings.start_time {
-				true
-			} else {
-				false
-			},
+			waiting_to_start: matches!(settings.start_time, StartTime::ClockTime(..)),
 			volume: CachedValue::new(.., settings.volume, 1.0),
 			playback_rate: CachedValue::new(.., settings.playback_rate, 1.0),
 			panning: CachedValue::new(0.0..=1.0, settings.panning, 0.5),

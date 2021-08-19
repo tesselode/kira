@@ -1,6 +1,9 @@
 //! # Kira
 
 /* #![warn(missing_docs)] */
+#![allow(clippy::collapsible_if)]
+#![allow(clippy::collapsible_else_if)]
+#![allow(clippy::large_enum_variant)]
 
 pub mod audio_stream;
 pub mod clock;

@@ -105,9 +105,7 @@ impl Delay {
 			state: DelayState::Uninitialized {
 				buffer_length: settings.buffer_length,
 			},
-			filter: settings
-				.filter_settings
-				.map(|settings| Filter::new(settings)),
+			filter: settings.filter_settings.map(Filter::new),
 		}
 	}
 }

@@ -18,7 +18,6 @@ impl StaticSoundSettings {
 	pub fn default_loop_behavior(self, loop_behavior: impl Into<Option<LoopBehavior>>) -> Self {
 		Self {
 			default_loop_behavior: loop_behavior.into(),
-			..self
 		}
 	}
 }

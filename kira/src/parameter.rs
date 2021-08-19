@@ -104,11 +104,7 @@ impl Parameter {
 			values: self.value..=target,
 			time: 0.0,
 			tween,
-			waiting_to_start: if let StartTime::ClockTime(..) = tween.start_time {
-				true
-			} else {
-				false
-			},
+			waiting_to_start: matches!(tween.start_time, StartTime::ClockTime(..)),
 		};
 	}
 

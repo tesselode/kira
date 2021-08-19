@@ -78,7 +78,7 @@ impl Mixer {
 					.push(
 						self.sub_tracks
 							.remove(id.0)
-							.expect(&format!("Sub track with ID {:?} does not exist", id)),
+							.unwrap_or_else(|| panic!("Sub track with ID {:?} does not exist", id)),
 					)
 					.is_err()
 				{
