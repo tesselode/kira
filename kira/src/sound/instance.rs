@@ -14,6 +14,7 @@ use std::sync::{
 use atomic_arena::Index;
 
 use crate::{
+	clock::ClockTime,
 	frame::Frame,
 	loop_behavior::LoopBehavior,
 	manager::resources::{clocks::Clocks, mixer::Mixer, sounds::Sounds, Parameters},
@@ -206,9 +207,9 @@ impl Instance {
 		mixer: &mut Mixer,
 	) {
 		if self.waiting_to_start {
-			if let StartTime::ClockTime(id, time) = self.start_time {
-				if let Some(clock) = clocks.get(id) {
-					if clock.ticking() && clock.ticks() >= time {
+			if let StartTime::ClockTime(ClockTime { clock, ticks }) = self.start_time {
+				if let Some(clock) = clocks.get(clock) {
+					if clock.ticking() && clock.ticks() >= ticks {
 						self.waiting_to_start = false;
 					}
 				}

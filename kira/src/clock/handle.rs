@@ -6,7 +6,7 @@ use crate::{
 	value::Value,
 };
 
-use super::{ClockId, ClockShared};
+use super::{ClockId, ClockShared, ClockTime};
 
 /// Controls a clock.
 ///
@@ -30,9 +30,21 @@ impl ClockHandle {
 		self.shared.ticking()
 	}
 
-	/// Returns the number of times the clock has ticked.
-	pub fn time(&self) -> u64 {
-		self.shared.ticks()
+	/// Returns the current time of the clock.
+	pub fn now(&self) -> ClockTime {
+		ClockTime {
+			clock: self.id,
+			ticks: self.shared.ticks(),
+		}
+	}
+
+	/// Returns the time of the clock the specified number
+	/// of ticks from now.
+	pub fn later(&self, num_ticks: u64) -> ClockTime {
+		ClockTime {
+			clock: self.id,
+			ticks: self.shared.ticks() + num_ticks,
+		}
 	}
 
 	/// Sets the duration of time between each tick (in seconds).

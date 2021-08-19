@@ -20,6 +20,12 @@ use crate::{
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ClockId(pub(crate) Index);
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ClockTime {
+	pub clock: ClockId,
+	pub ticks: u64,
+}
+
 pub(crate) struct ClockShared {
 	ticking: AtomicBool,
 	ticks: AtomicU64,

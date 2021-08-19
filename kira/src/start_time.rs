@@ -1,4 +1,4 @@
-use crate::clock::ClockId;
+use crate::clock::ClockTime;
 
 /// Describes when an action should occur.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -7,13 +7,12 @@ pub enum StartTime {
 	Immediate,
 	/// The action should occur when a clock reaches a
 	/// specific time.
-	ClockTime(ClockId, u64),
+	ClockTime(ClockTime),
 }
 
-impl StartTime {
-	/// A helper for creating [`StartTime::ClockTime`]s.
-	pub fn clock_time(clock: impl Into<ClockId>, time: u64) -> Self {
-		Self::ClockTime(clock.into(), time)
+impl From<ClockTime> for StartTime {
+	fn from(v: ClockTime) -> Self {
+		Self::ClockTime(v)
 	}
 }
 

@@ -89,8 +89,11 @@ impl InstanceSettings {
 	}
 
 	/// Sets when the instance should start playing.
-	pub fn start_time(self, start_time: StartTime) -> Self {
-		Self { start_time, ..self }
+	pub fn start_time(self, start_time: impl Into<StartTime>) -> Self {
+		Self {
+			start_time: start_time.into(),
+			..self
+		}
 	}
 
 	/// Sets the initial playback position of the instance (in seconds).

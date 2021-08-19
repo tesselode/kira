@@ -11,7 +11,7 @@ use std::{
 
 use atomic_arena::Index;
 
-use crate::{manager::resources::clocks::Clocks, start_time::StartTime};
+use crate::{clock::ClockTime, manager::resources::clocks::Clocks, start_time::StartTime};
 
 pub use handle::*;
 pub use tween::*;
@@ -130,9 +130,9 @@ impl Parameter {
 		} = &mut self.state
 		{
 			if *waiting_to_start {
-				if let StartTime::ClockTime(id, start_time) = tween.start_time {
-					if let Some(clock) = clocks.get(id) {
-						if clock.ticking() && clock.ticks() >= start_time {
+				if let StartTime::ClockTime(ClockTime { clock, ticks }) = tween.start_time {
+					if let Some(clock) = clocks.get(clock) {
+						if clock.ticking() && clock.ticks() >= ticks {
 							*waiting_to_start = false;
 						}
 					}
