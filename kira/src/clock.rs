@@ -1,8 +1,10 @@
 //! A user-controllable timing source for instances and tweens.
 
 mod handle;
+mod time;
 
 pub use handle::*;
+pub use time::*;
 
 use std::sync::{
 	atomic::{AtomicBool, AtomicU64, Ordering},
@@ -19,12 +21,6 @@ use crate::{
 /// A unique identifier for a clock.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ClockId(pub(crate) Index);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ClockTime {
-	pub clock: ClockId,
-	pub ticks: u64,
-}
 
 pub(crate) struct ClockShared {
 	ticking: AtomicBool,

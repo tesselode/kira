@@ -31,19 +31,10 @@ impl ClockHandle {
 	}
 
 	/// Returns the current time of the clock.
-	pub fn now(&self) -> ClockTime {
+	pub fn time(&self) -> ClockTime {
 		ClockTime {
 			clock: self.id,
 			ticks: self.shared.ticks(),
-		}
-	}
-
-	/// Returns the time of the clock the specified number
-	/// of ticks from now.
-	pub fn later(&self, num_ticks: u64) -> ClockTime {
-		ClockTime {
-			clock: self.id,
-			ticks: self.shared.ticks() + num_ticks,
 		}
 	}
 
