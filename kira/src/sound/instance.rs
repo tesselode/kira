@@ -158,7 +158,7 @@ impl Instance {
 	}
 
 	pub fn pause(&mut self, fade_out_tween: Tween) {
-		if self.waiting_to_start {
+		if self.waiting_to_start && matches!(fade_out_tween.start_time, StartTime::Immediate) {
 			self.set_state(InstanceState::Paused);
 			return;
 		}
@@ -172,7 +172,7 @@ impl Instance {
 	}
 
 	pub fn stop(&mut self, fade_out_tween: Tween) {
-		if self.waiting_to_start {
+		if self.waiting_to_start && matches!(fade_out_tween.start_time, StartTime::Immediate) {
 			self.set_state(InstanceState::Stopped);
 			return;
 		}
