@@ -2,14 +2,42 @@ use std::time::Duration;
 
 use crate::start_time::StartTime;
 
+/// Curves the motion of a [`Tween`].
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Easing {
+	/// Maintains a constant speed for the duration of the [`Tween`].
 	Linear,
+	/// Causes the [`Tween`] to start slow and speed up. A higher
+	/// value causes the [`Tween`] to speed up more dramatically.
 	InPowi(i32),
+	/// Causes the [`Tween`] to start fast and slow down. A higher
+	/// value causes the [`Tween`] to slow down more dramatically.
 	OutPowi(i32),
+	/// Causes the [`Tween`] to start slow, speed up, and then slow
+	/// back down. A higher values causes the [`Tween`] to have more
+	/// dramatic speed changes.
 	InOutPowi(i32),
+	/// Causes the [`Tween`] to start slow and speed up. A higher
+	/// value causes the [`Tween`] to speed up more dramatically.
+	///
+	/// This is similar to [`InPowi`](Easing::InPowi), but allows
+	/// for float intensity values at the cost of being more
+	/// CPU intensive.
 	InPowf(f64),
+	/// Causes the [`Tween`] to start fast and slow down. A higher
+	/// value causes the [`Tween`] to slow down more dramatically.
+	///
+	/// This is similar to [`OutPowi`](Easing::InPowi), but allows
+	/// for float intensity values at the cost of being more
+	/// CPU intensive.
 	OutPowf(f64),
+	/// Causes the [`Tween`] to start slow, speed up, and then slow
+	/// back down. A higher values causes the [`Tween`] to have more
+	/// dramatic speed changes.
+	///
+	/// This is similar to [`InOutPowi`](Easing::InPowi), but allows
+	/// for float intensity values at the cost of being more
+	/// CPU intensive.
 	InOutPowf(f64),
 }
 

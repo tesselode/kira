@@ -1,12 +1,21 @@
+//! Saves the last valid raw value of a [`Value`]. Useful for writing
+//! [`Effect`](crate::track::effect::Effect)s and
+//! [`AudioStream`](crate::audio_stream::AudioStream)s.
+
 use std::ops::{RangeFrom, RangeFull, RangeInclusive, RangeToInclusive};
 
 use crate::manager::resources::Parameters;
 
 use super::Value;
 
+/// The valid range of raw values for a [`CachedValue`].
+///
+/// Both bounds are always inclusive.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ValidRange {
+	/// The lower bound of the range.
 	pub lower_bound: Option<f64>,
+	/// The upper bound of the range.
 	pub upper_bound: Option<f64>,
 }
 
@@ -58,6 +67,7 @@ impl From<RangeFull> for ValidRange {
 	}
 }
 
+/// Holds a [`Value`] and remembers the last valid raw value.
 pub struct CachedValue {
 	valid_range: ValidRange,
 	value: Value,
@@ -65,6 +75,7 @@ pub struct CachedValue {
 }
 
 impl CachedValue {
+	/// Creates a new [`CachedValue`].
 	pub fn new(valid_range: impl Into<ValidRange>, value: Value, default: f64) -> Self {
 		Self {
 			valid_range: valid_range.into(),
@@ -76,6 +87,7 @@ impl CachedValue {
 		}
 	}
 
+	/// Gets the last valid raw value.
 	pub fn get(&self) -> f64 {
 		self.raw_value
 	}
@@ -87,6 +99,7 @@ impl CachedValue {
 		}
 	}
 
+	/// Updates the [`CachedValue`] with the current values of parameters.
 	pub fn update(&mut self, parameters: &Parameters) {
 		if let Value::Parameter { id, mapping } = self.value {
 			if let Some(parameter) = parameters.get(id) {

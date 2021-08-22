@@ -1,3 +1,5 @@
+//! Organizes and applies effects to audio.
+
 mod effect;
 mod handle;
 mod routes;

@@ -36,6 +36,9 @@ impl RendererState {
 
 /// Produces [`Frame`]s of audio data to be consumed by a
 /// low-level audio API.
+///
+/// You will probably not need to interact with [`Renderer`]s
+/// directly unless you're writing a [`Backend`](super::Backend).
 pub struct Renderer {
 	context: Arc<Context>,
 	resources: Resources,

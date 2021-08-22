@@ -1,3 +1,5 @@
+//! Tweenable values for controlling settings.
+
 mod handle;
 mod tween;
 

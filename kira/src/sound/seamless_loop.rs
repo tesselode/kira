@@ -11,12 +11,15 @@ struct Section {
 	loop_end: f64,
 }
 
+/// Wraps sounds to create seamless loops that preserve leftover
+/// audio after the loop point.
 pub struct SeamlessLoop {
 	main: Section,
 	intro: Option<Section>,
 }
 
 impl SeamlessLoop {
+	/// Creates a new [`SeamlessLoop`] that loops one sound.
 	pub fn new(sound: impl Into<Arc<dyn Sound>>, loop_end: f64) -> Self {
 		Self {
 			main: Section {
@@ -27,6 +30,8 @@ impl SeamlessLoop {
 		}
 	}
 
+	/// Creates a new [`SeamlessLoop`] with an intro section and a looping
+	/// section.
 	pub fn with_intro(
 		intro_sound: impl Into<Arc<dyn Sound>>,
 		intro_loop_end: f64,

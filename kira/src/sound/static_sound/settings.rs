@@ -1,6 +1,6 @@
 use crate::loop_behavior::LoopBehavior;
 
-/// Settings for [`StaticSound`](super::StaticSound).
+/// Settings for a [`StaticSound`](super::StaticSound).
 pub struct StaticSoundSettings {
 	/// The default loop behavior for the sound, if any.
 	pub default_loop_behavior: Option<LoopBehavior>,

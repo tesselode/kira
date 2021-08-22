@@ -10,7 +10,7 @@ use super::clocks::Clocks;
 
 /// Contains the values of each parameter.
 ///
-/// This is only useful for passing to
+/// This is an opaque type that's only useful for passing to
 /// [`CachedValue::update`](crate::value::cached::CachedValue::update).
 pub struct Parameters {
 	parameters: Arena<Parameter>,
