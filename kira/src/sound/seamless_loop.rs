@@ -61,7 +61,7 @@ impl Sound for SeamlessLoop {
 	}
 
 	fn frame_at_position(&self, mut position: f64) -> Frame {
-		let mut out = Frame::from_mono(0.0);
+		let mut out = Frame::ZERO;
 		if let Some(intro) = &self.intro {
 			out += intro.sound.frame_at_position(position);
 			position -= intro.loop_end;

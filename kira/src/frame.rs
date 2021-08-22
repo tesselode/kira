@@ -10,6 +10,13 @@ pub struct Frame {
 }
 
 impl Frame {
+	/// A [`Frame`] with both the left and right samples
+	/// set to `0.0`.
+	pub const ZERO: Frame = Frame {
+		left: 0.0,
+		right: 0.0,
+	};
+
 	/// Creates a frame with the given left and right values.
 	pub fn new(left: f32, right: f32) -> Self {
 		Self { left, right }

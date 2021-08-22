@@ -189,7 +189,7 @@ impl Effect for Reverb {
 			let damping = self.damping.get() as f32;
 			let stereo_width = self.stereo_width.get() as f32;
 
-			let mut output = Frame::from_mono(0.0);
+			let mut output = Frame::ZERO;
 			let input = (input.left + input.right) * GAIN;
 			// accumulate comb filters in parallel
 			for comb_filter in comb_filters {

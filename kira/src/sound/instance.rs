@@ -230,7 +230,7 @@ impl Instance {
 	) -> Frame {
 		let sound = match sounds.get(self.sound_id) {
 			Some(sound) => sound,
-			None => return Frame::from_mono(0.0),
+			None => return Frame::ZERO,
 		};
 		if self.state.is_playing() {
 			self.volume.update(parameters);
@@ -257,7 +257,7 @@ impl Instance {
 			}
 			return out;
 		}
-		Frame::from_mono(0.0)
+		Frame::ZERO
 	}
 
 	fn update_playback_position(&mut self, dt: f64, sound: &SoundWrapper) {

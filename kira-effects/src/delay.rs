@@ -114,7 +114,7 @@ impl Effect for Delay {
 	fn init(&mut self, sample_rate: u32) {
 		if let DelayState::Uninitialized { buffer_length } = &self.state {
 			self.state = DelayState::Initialized {
-				buffer: vec![Frame::from_mono(0.0); (buffer_length * sample_rate as f64) as usize],
+				buffer: vec![Frame::ZERO; (buffer_length * sample_rate as f64) as usize],
 				write_position: 0,
 			}
 		} else {

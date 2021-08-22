@@ -110,7 +110,7 @@ impl Renderer {
 		}
 
 		if self.state == RendererState::Paused {
-			return Frame::from_mono(0.0);
+			return Frame::ZERO;
 		}
 		if self.state == RendererState::Playing {
 			self.resources

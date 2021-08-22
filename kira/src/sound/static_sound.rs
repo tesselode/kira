@@ -45,25 +45,25 @@ impl Sound for StaticSound {
 		let fraction = (sample_position % 1.0) as f32;
 		let current_sample_index = sample_position as usize;
 		let previous = if current_sample_index == 0 {
-			Frame::from_mono(0.0)
+			Frame::ZERO
 		} else {
 			*self
 				.frames
 				.get(current_sample_index - 1)
-				.unwrap_or(&Frame::from_mono(0.0))
+				.unwrap_or(&Frame::ZERO)
 		};
 		let current = *self
 			.frames
 			.get(current_sample_index)
-			.unwrap_or(&Frame::from_mono(0.0));
+			.unwrap_or(&Frame::ZERO);
 		let next_1 = *self
 			.frames
 			.get(current_sample_index + 1)
-			.unwrap_or(&Frame::from_mono(0.0));
+			.unwrap_or(&Frame::ZERO);
 		let next_2 = *self
 			.frames
 			.get(current_sample_index + 2)
-			.unwrap_or(&Frame::from_mono(0.0));
+			.unwrap_or(&Frame::ZERO);
 		util::interpolate_frame(previous, current, next_1, next_2, fraction)
 	}
 

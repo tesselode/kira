@@ -88,7 +88,7 @@ impl Track {
 			panning: CachedValue::new(0.0..=1.0, settings.panning, 0.5),
 			routes: settings.routes.into_vec(),
 			effects: settings.effects,
-			input: Frame::from_mono(0.0),
+			input: Frame::ZERO,
 		}
 	}
 
@@ -118,7 +118,7 @@ impl Track {
 		for (_, amount) in &mut self.routes {
 			amount.update(parameters);
 		}
-		let mut output = std::mem::replace(&mut self.input, Frame::from_mono(0.0));
+		let mut output = std::mem::replace(&mut self.input, Frame::ZERO);
 		for effect in &mut self.effects {
 			output = effect.process(output, dt, parameters);
 		}

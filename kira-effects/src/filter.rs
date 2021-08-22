@@ -93,8 +93,8 @@ impl Filter {
 			mode: settings.mode,
 			cutoff: CachedValue::new(20.0..=20000.0, settings.cutoff, 10000.0),
 			resonance: CachedValue::new(0.0..=1.0, settings.resonance, 0.0),
-			ic1eq: Frame::from_mono(0.0),
-			ic2eq: Frame::from_mono(0.0),
+			ic1eq: Frame::ZERO,
+			ic2eq: Frame::ZERO,
 		}
 	}
 }
