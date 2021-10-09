@@ -2,6 +2,7 @@ use std::{
 	error::Error,
 	fmt::{Display, Formatter},
 	sync::Arc,
+	time::Duration,
 };
 
 use atomic_arena::Controller;
@@ -9,12 +10,13 @@ use atomic_arena::Controller;
 use crate::{
 	error::CommandError,
 	manager::command::{producer::CommandProducer, Command, InstanceCommand},
+	LoopBehavior,
 };
 
 use super::{
 	instance::{Instance, InstanceHandle, InstanceId, InstanceSettings},
 	wrapper::SoundWrapperShared,
-	Sound, SoundId,
+	SoundId,
 };
 
 /// An error that can occur when playing a sound.
@@ -56,7 +58,8 @@ impl From<CommandError> for PlaySoundError {
 /// will be removed.
 pub struct SoundHandle {
 	pub(crate) id: SoundId,
-	pub(crate) sound: Arc<dyn Sound>,
+	pub(crate) duration: Duration,
+	pub(crate) default_loop_behavior: Option<LoopBehavior>,
 	pub(crate) shared: Arc<SoundWrapperShared>,
 	pub(crate) instance_controller: Controller,
 	pub(crate) command_producer: CommandProducer,
@@ -68,9 +71,14 @@ impl SoundHandle {
 		self.id
 	}
 
-	/// Returns a reference to the underlying sound.
-	pub fn sound(&self) -> &Arc<dyn Sound> {
-		&self.sound
+	/// Returns the duration for the sound.
+	pub fn duration(&self) -> Duration {
+		self.duration
+	}
+
+	/// Returns the default looping behavior for the sound.
+	pub fn default_loop_behavior(&self) -> Option<LoopBehavior> {
+		self.default_loop_behavior
 	}
 
 	/// Plays the sound.
@@ -80,12 +88,7 @@ impl SoundHandle {
 				.try_reserve()
 				.map_err(|_| PlaySoundError::InstanceLimitReached)?,
 		);
-		let instance = Instance::new(
-			self.id,
-			self.sound.duration(),
-			self.sound.default_loop_behavior(),
-			settings,
-		);
+		let instance = Instance::new(self.id, self.duration, self.default_loop_behavior, settings);
 		let handle = InstanceHandle {
 			id,
 			shared: instance.shared(),
@@ -100,11 +103,5 @@ impl SoundHandle {
 impl Drop for SoundHandle {
 	fn drop(&mut self) {
 		self.shared.mark_for_removal();
-	}
-}
-
-impl From<&SoundHandle> for Arc<dyn Sound> {
-	fn from(handle: &SoundHandle) -> Self {
-		handle.sound.clone()
 	}
 }

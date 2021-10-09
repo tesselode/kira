@@ -26,6 +26,6 @@ impl SoundWrapperShared {
 }
 
 pub(crate) struct SoundWrapper {
-	pub sound: Arc<dyn Sound>,
+	pub sound: Box<dyn Sound>,
 	pub shared: Arc<SoundWrapperShared>,
 }

@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration};
+use std::{time::Duration};
 
 use crate::{frame::Frame, loop_behavior::LoopBehavior};
 
@@ -7,7 +7,7 @@ use super::Sound;
 // TODO: explain how this works
 
 struct Section {
-	sound: Arc<dyn Sound>,
+	sound: Box<dyn Sound>,
 	loop_end: f64,
 }
 
@@ -20,10 +20,10 @@ pub struct SeamlessLoop {
 
 impl SeamlessLoop {
 	/// Creates a new [`SeamlessLoop`] that loops one sound.
-	pub fn new(sound: impl Into<Arc<dyn Sound>>, loop_end: f64) -> Self {
+	pub fn new(sound: impl Sound + 'static, loop_end: f64) -> Self {
 		Self {
 			main: Section {
-				sound: sound.into(),
+				sound: Box::new(sound),
 				loop_end,
 			},
 			intro: None,
@@ -33,18 +33,18 @@ impl SeamlessLoop {
 	/// Creates a new [`SeamlessLoop`] with an intro section and a looping
 	/// section.
 	pub fn with_intro(
-		intro_sound: impl Into<Arc<dyn Sound>>,
+		intro_sound: impl Sound + 'static,
 		intro_loop_end: f64,
-		main_sound: impl Into<Arc<dyn Sound>>,
+		main_sound: impl Sound + 'static,
 		main_loop_end: f64,
 	) -> Self {
 		Self {
 			main: Section {
-				sound: main_sound.into(),
+				sound: Box::new(main_sound),
 				loop_end: main_loop_end,
 			},
 			intro: Some(Section {
-				sound: intro_sound.into(),
+				sound: Box::new(intro_sound),
 				loop_end: intro_loop_end,
 			}),
 		}

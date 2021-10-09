@@ -120,19 +120,17 @@ impl<B: Backend> AudioManager<B> {
 				.try_reserve()
 				.map_err(|_| AddSoundError::SoundLimitReached)?,
 		);
-		let sound: Arc<dyn Sound> = Arc::new(sound);
+		let sound = Box::new(sound);
 		let shared = Arc::new(SoundWrapperShared::new());
-		let sound_wrapper = SoundWrapper {
-			sound: sound.clone(),
-			shared: shared.clone(),
-		};
 		let handle = SoundHandle {
 			id,
-			sound,
-			shared,
+			duration: sound.duration(),
+			default_loop_behavior: sound.default_loop_behavior(),
+			shared: shared.clone(),
 			instance_controller: self.resource_controllers.instance_controller.clone(),
 			command_producer: self.command_producer.clone(),
 		};
+		let sound_wrapper = SoundWrapper { sound, shared };
 		self.command_producer
 			.push(Command::Sound(SoundCommand::Add(id, sound_wrapper)))?;
 		Ok(handle)
