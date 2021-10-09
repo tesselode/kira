@@ -1,7 +1,5 @@
-use std::sync::Arc;
-
 use crate::{
-	loop_behavior::LoopBehavior, parameter::Tween, sound::Sound, start_time::StartTime,
+	loop_behavior::LoopBehavior, parameter::Tween, start_time::StartTime,
 	track::TrackId, value::Value,
 };
 
@@ -17,9 +15,9 @@ pub enum InstanceLoopBehavior {
 }
 
 impl InstanceLoopBehavior {
-	pub(crate) fn as_option(self, sound: &Arc<dyn Sound>) -> Option<LoopBehavior> {
+	pub(crate) fn as_option(self, default: Option<LoopBehavior>) -> Option<LoopBehavior> {
 		match self {
-			Self::DefaultForSound => sound.default_loop_behavior(),
+			Self::DefaultForSound => default,
 			Self::Custom(loop_behavior) => Some(loop_behavior),
 			Self::None => None,
 		}

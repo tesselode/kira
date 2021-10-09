@@ -80,7 +80,12 @@ impl SoundHandle {
 				.try_reserve()
 				.map_err(|_| PlaySoundError::InstanceLimitReached)?,
 		);
-		let instance = Instance::new(self.id, &self.sound, settings);
+		let instance = Instance::new(
+			self.id,
+			self.sound.duration(),
+			self.sound.default_loop_behavior(),
+			settings,
+		);
 		let handle = InstanceHandle {
 			id,
 			shared: instance.shared(),

@@ -6,9 +6,12 @@ mod settings;
 pub use handle::*;
 pub use settings::*;
 
-use std::sync::{
-	atomic::{AtomicU64, AtomicU8, Ordering},
-	Arc,
+use std::{
+	sync::{
+		atomic::{AtomicU64, AtomicU8, Ordering},
+		Arc,
+	},
+	time::Duration,
 };
 
 use atomic_arena::Index;
@@ -24,7 +27,7 @@ use crate::{
 	value::{cached::CachedValue, Value},
 };
 
-use super::{wrapper::SoundWrapper, Sound, SoundId};
+use super::{wrapper::SoundWrapper, SoundId};
 
 /// A unique identifier for an instance of a sound.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -100,9 +103,14 @@ pub(crate) struct Instance {
 }
 
 impl Instance {
-	pub fn new(sound_id: SoundId, sound: &Arc<dyn Sound>, settings: InstanceSettings) -> Self {
+	pub fn new(
+		sound_id: SoundId,
+		sound_duration: Duration,
+		sound_default_loop_behavior: Option<LoopBehavior>,
+		settings: InstanceSettings,
+	) -> Self {
 		let position = if settings.reverse {
-			sound.duration().as_secs_f64() - settings.start_position
+			sound_duration.as_secs_f64() - settings.start_position
 		} else {
 			settings.start_position
 		};
@@ -115,7 +123,9 @@ impl Instance {
 			playback_rate: CachedValue::new(.., settings.playback_rate, 1.0),
 			panning: CachedValue::new(0.0..=1.0, settings.panning, 0.5),
 			reverse: settings.reverse,
-			loop_behavior: settings.loop_behavior.as_option(sound),
+			loop_behavior: settings
+				.loop_behavior
+				.as_option(sound_default_loop_behavior),
 			state: InstanceState::Playing,
 			position,
 			fade_volume: if let Some(tween) = settings.fade_in_tween {
