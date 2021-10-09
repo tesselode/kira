@@ -122,7 +122,7 @@ impl Renderer {
 		}
 		self.resources.instances.process(
 			self.context.dt,
-			&self.resources.sounds,
+			&mut self.resources.sounds,
 			&self.resources.parameters,
 			&self.resources.clocks,
 			&mut self.resources.mixer,

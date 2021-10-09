@@ -23,8 +23,8 @@ impl Sounds {
 		self.sounds.controller()
 	}
 
-	pub fn get(&self, id: SoundId) -> Option<&SoundWrapper> {
-		self.sounds.get(id.0)
+	pub fn get_mut(&mut self, id: SoundId) -> Option<&mut SoundWrapper> {
+		self.sounds.get_mut(id.0)
 	}
 
 	pub fn on_start_processing(&mut self) {

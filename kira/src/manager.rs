@@ -120,7 +120,7 @@ impl<B: Backend> AudioManager<B> {
 				.try_reserve()
 				.map_err(|_| AddSoundError::SoundLimitReached)?,
 		);
-		let sound = Box::new(sound);
+		let mut sound = Box::new(sound);
 		let shared = Arc::new(SoundWrapperShared::new());
 		let handle = SoundHandle {
 			id,

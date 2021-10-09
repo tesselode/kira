@@ -207,7 +207,7 @@ impl Instance {
 	pub fn process(
 		&mut self,
 		dt: f64,
-		sounds: &Sounds,
+		sounds: &mut Sounds,
 		parameters: &Parameters,
 		clocks: &Clocks,
 		mixer: &mut Mixer,
@@ -234,11 +234,11 @@ impl Instance {
 	fn get_output(
 		&mut self,
 		dt: f64,
-		sounds: &Sounds,
+		sounds: &mut Sounds,
 		parameters: &Parameters,
 		clocks: &Clocks,
 	) -> Frame {
-		let sound = match sounds.get(self.sound_id) {
+		let sound = match sounds.get_mut(self.sound_id) {
 			Some(sound) => sound,
 			None => return Frame::ZERO,
 		};
@@ -270,7 +270,7 @@ impl Instance {
 		Frame::ZERO
 	}
 
-	fn update_playback_position(&mut self, dt: f64, sound: &SoundWrapper) {
+	fn update_playback_position(&mut self, dt: f64, sound: &mut SoundWrapper) {
 		let playback_rate = if self.reverse {
 			-self.playback_rate.get()
 		} else {

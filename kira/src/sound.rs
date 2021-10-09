@@ -22,15 +22,15 @@ pub struct SoundId(pub(crate) Index);
 /// Represents a finite piece of audio.
 pub trait Sound: Send + Sync {
 	/// Returns the duration of the sound.
-	fn duration(&self) -> Duration;
+	fn duration(&mut self) -> Duration;
 
 	/// Returns the [`Frame`] that the sound should output
 	/// at a given playback position.
-	fn frame_at_position(&self, position: f64) -> Frame;
+	fn frame_at_position(&mut self, position: f64) -> Frame;
 
 	/// Returns the suggested [`LoopBehavior`] of the sound,
 	/// if any.
-	fn default_loop_behavior(&self) -> Option<LoopBehavior> {
+	fn default_loop_behavior(&mut self) -> Option<LoopBehavior> {
 		None
 	}
 }

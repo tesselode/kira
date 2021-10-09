@@ -1,4 +1,4 @@
-use std::{time::Duration};
+use std::time::Duration;
 
 use crate::{frame::Frame, loop_behavior::LoopBehavior};
 
@@ -52,7 +52,7 @@ impl SeamlessLoop {
 }
 
 impl Sound for SeamlessLoop {
-	fn duration(&self) -> Duration {
+	fn duration(&mut self) -> Duration {
 		Duration::from_secs_f64(if let Some(intro) = &self.intro {
 			intro.loop_end + self.main.loop_end * 2.0
 		} else {
@@ -60,9 +60,9 @@ impl Sound for SeamlessLoop {
 		})
 	}
 
-	fn frame_at_position(&self, mut position: f64) -> Frame {
+	fn frame_at_position(&mut self, mut position: f64) -> Frame {
 		let mut out = Frame::ZERO;
-		if let Some(intro) = &self.intro {
+		if let Some(intro) = &mut self.intro {
 			out += intro.sound.frame_at_position(position);
 			position -= intro.loop_end;
 		}
@@ -76,7 +76,7 @@ impl Sound for SeamlessLoop {
 		out
 	}
 
-	fn default_loop_behavior(&self) -> Option<LoopBehavior> {
+	fn default_loop_behavior(&mut self) -> Option<LoopBehavior> {
 		Some(if let Some(intro) = &self.intro {
 			LoopBehavior {
 				start_position: intro.loop_end + self.main.loop_end,

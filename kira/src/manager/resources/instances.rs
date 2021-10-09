@@ -102,7 +102,7 @@ impl Instances {
 	pub fn process(
 		&mut self,
 		dt: f64,
-		sounds: &Sounds,
+		sounds: &mut Sounds,
 		parameters: &Parameters,
 		clocks: &Clocks,
 		mixer: &mut Mixer,

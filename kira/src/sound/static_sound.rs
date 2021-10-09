@@ -36,11 +36,11 @@ impl StaticSound {
 }
 
 impl Sound for StaticSound {
-	fn duration(&self) -> Duration {
+	fn duration(&mut self) -> Duration {
 		self.duration
 	}
 
-	fn frame_at_position(&self, position: f64) -> Frame {
+	fn frame_at_position(&mut self, position: f64) -> Frame {
 		let sample_position = self.sample_rate as f64 * position;
 		let fraction = (sample_position % 1.0) as f32;
 		let current_sample_index = sample_position as usize;
@@ -67,7 +67,7 @@ impl Sound for StaticSound {
 		util::interpolate_frame(previous, current, next_1, next_2, fraction)
 	}
 
-	fn default_loop_behavior(&self) -> Option<LoopBehavior> {
+	fn default_loop_behavior(&mut self) -> Option<LoopBehavior> {
 		self.default_loop_behavior
 	}
 }
