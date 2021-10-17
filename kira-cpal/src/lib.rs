@@ -210,8 +210,14 @@ fn setup_stream(config: StreamConfig, mut renderer: Renderer) -> Result<Stream, 
 	let stream = device.build_output_stream(
 		&config,
 		move |data: &mut [f32], _| {
+			#[cfg(feature = "assert_no_alloc")]
+			assert_no_alloc::assert_no_alloc(|| renderer.on_start_processing());
+			#[cfg(not(feature = "assert_no_alloc"))]
 			renderer.on_start_processing();
 			for frame in data.chunks_exact_mut(channels as usize) {
+				#[cfg(feature = "assert_no_alloc")]
+				let out = assert_no_alloc::assert_no_alloc(|| renderer.process());
+				#[cfg(not(feature = "assert_no_alloc"))]
 				let out = renderer.process();
 				if channels == 1 {
 					frame[0] = (out.left + out.right) / 2.0;
