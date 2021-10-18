@@ -4,6 +4,9 @@ mod settings;
 
 pub use settings::*;
 
+#[cfg(test)]
+mod test;
+
 use crate::{frame::Frame, loop_behavior::LoopBehavior, util};
 
 use std::time::Duration;
