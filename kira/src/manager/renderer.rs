@@ -66,7 +66,9 @@ impl Renderer {
 	/// a new batch of samples.
 	pub fn on_start_processing(&mut self) {
 		self.resources.sounds.on_start_processing();
-		self.resources.instances.on_start_processing();
+		self.resources
+			.instances
+			.on_start_processing(&mut self.resources.sounds);
 		self.resources.parameters.on_start_processing();
 		self.resources.mixer.on_start_processing();
 		self.resources.clocks.on_start_processing();

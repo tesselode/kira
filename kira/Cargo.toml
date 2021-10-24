@@ -8,3 +8,4 @@ edition = "2018"
 [dependencies]
 atomic-arena = { git = "https://github.com/tesselode/atomic-arena", rev = "4b467577" }
 ringbuf = "0.2.3"
+triple_buffer = "5.0.6"

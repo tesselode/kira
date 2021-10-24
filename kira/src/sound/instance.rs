@@ -27,7 +27,7 @@ use crate::{
 	value::{cached::CachedValue, Value},
 };
 
-use super::{wrapper::SoundWrapper, SoundId};
+use super::{wrapper::SoundWrapper, PlaybackInfo, SoundId};
 
 /// A unique identifier for an instance of a sound.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -198,10 +198,16 @@ impl Instance {
 		self.position += amount;
 	}
 
-	pub fn on_start_processing(&self) {
+	pub fn on_start_processing(&self, sounds: &mut Sounds) {
 		self.shared
 			.position
 			.store(self.position.to_bits(), Ordering::SeqCst);
+		if let Some(sound) = sounds.get_mut(self.sound_id) {
+			sound.sound.report_playback_info(PlaybackInfo {
+				position: self.position,
+				playback_rate: self.playback_rate(),
+			});
+		}
 	}
 
 	pub fn process(
@@ -271,11 +277,7 @@ impl Instance {
 	}
 
 	fn update_playback_position(&mut self, dt: f64, sound: &mut SoundWrapper) {
-		let playback_rate = if self.reverse {
-			-self.playback_rate.get()
-		} else {
-			self.playback_rate.get()
-		};
+		let playback_rate = self.playback_rate();
 		self.position += playback_rate * dt;
 		let duration = sound.sound.duration().as_secs_f64();
 		if playback_rate < 0.0 {
@@ -295,5 +297,14 @@ impl Instance {
 				self.set_state(InstanceState::Stopped);
 			}
 		}
+	}
+
+	fn playback_rate(&self) -> f64 {
+		let playback_rate = if self.reverse {
+			-self.playback_rate.get()
+		} else {
+			self.playback_rate.get()
+		};
+		playback_rate
 	}
 }

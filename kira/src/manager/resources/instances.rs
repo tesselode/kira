@@ -25,10 +25,10 @@ impl Instances {
 		self.instances.controller()
 	}
 
-	pub fn on_start_processing(&mut self) {
+	pub fn on_start_processing(&mut self, sounds: &mut Sounds) {
 		self.remove_unused_instances();
 		for (_, instance) in &mut self.instances {
-			instance.on_start_processing();
+			instance.on_start_processing(sounds);
 		}
 	}
 
