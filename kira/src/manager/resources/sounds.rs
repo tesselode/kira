@@ -27,7 +27,7 @@ impl Sounds {
 		self.sounds.get_mut(id.0)
 	}
 
-	pub fn on_start_processing(&mut self) {
+	pub fn on_start_processing(&mut self, dt: f64) {
 		if self.unused_sound_producer.is_full() {
 			return;
 		}
@@ -41,6 +41,9 @@ impl Sounds {
 			if self.unused_sound_producer.is_full() {
 				return;
 			}
+		}
+		for (_, sound) in &mut self.sounds {
+			sound.sound.on_start_processing(dt);
 		}
 	}
 

@@ -42,11 +42,11 @@ fn instances_benchmark(c: &mut Criterion) {
 		)
 		.unwrap();
 		let mut sound = manager.add_sound(create_test_sound(48_000)).unwrap();
-		manager.backend_mut().on_start_processing();
+		manager.backend_mut().on_start_processing(0.0);
 		for _ in 0..NUM_INSTANCES {
 			sound.play(Default::default()).unwrap();
 		}
-		manager.backend_mut().on_start_processing();
+		manager.backend_mut().on_start_processing(0.0);
 		b.iter(|| manager.backend_mut().process());
 	});
 
@@ -65,7 +65,7 @@ fn instances_benchmark(c: &mut Criterion) {
 		let parameter_1 = manager.add_parameter(1.0).unwrap();
 		let parameter_2 = manager.add_parameter(1.0).unwrap();
 		let parameter_3 = manager.add_parameter(1.0).unwrap();
-		manager.backend_mut().on_start_processing();
+		manager.backend_mut().on_start_processing(0.0);
 		for _ in 0..NUM_INSTANCES {
 			sound
 				.play(
@@ -76,7 +76,7 @@ fn instances_benchmark(c: &mut Criterion) {
 				)
 				.unwrap();
 		}
-		manager.backend_mut().on_start_processing();
+		manager.backend_mut().on_start_processing(0.0);
 		b.iter(|| manager.backend_mut().process());
 	});
 }

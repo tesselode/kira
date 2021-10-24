@@ -43,4 +43,6 @@ pub trait Sound: Send + Sync {
 	}
 
 	fn report_playback_info(&mut self, playback_info: PlaybackInfo) {}
+
+	fn on_start_processing(&mut self, dt: f64) {}
 }

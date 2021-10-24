@@ -36,9 +36,9 @@ impl MockBackend {
 
 	/// Calls the [`on_start_processing`](Renderer::on_start_processing)
 	/// callback of the [`Renderer`].
-	pub fn on_start_processing(&mut self) {
+	pub fn on_start_processing(&mut self, dt: f64) {
 		if let State::Initialized { renderer, .. } = &mut self.state {
-			renderer.on_start_processing();
+			renderer.on_start_processing(dt);
 		} else {
 			panic!("backend is not initialized")
 		}
@@ -54,7 +54,7 @@ impl MockBackend {
 		{
 			*buffer_start_timer -= 1;
 			if *buffer_start_timer == 0 {
-				renderer.on_start_processing();
+				renderer.on_start_processing(BUFFER_LENGTH as f64 / SAMPLE_RATE as f64);
 				*buffer_start_timer += BUFFER_LENGTH;
 			}
 			renderer.process()

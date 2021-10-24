@@ -15,6 +15,7 @@ use super::{PlaybackInfo, Sound};
 
 const BLOCK_SIZE: usize = 16384;
 const DECODER_THREAD_SLEEP_DURATION: Duration = Duration::from_millis(10);
+const STALE_BLOCK_THRESHOLD: f64 = 5.0;
 
 pub trait Decoder: Send + Sync {
 	fn sample_rate(&mut self) -> u32;
@@ -29,6 +30,7 @@ pub struct StreamingSound {
 	sample_rate: u32,
 	blocks_needed: Arc<Vec<AtomicBool>>,
 	block_consumers: Vec<Consumer<Vec<Frame>>>,
+	stale_block_timers: Vec<f64>,
 	stale_block_producers: Vec<Producer<Vec<Frame>>>,
 	dropped: Arc<AtomicBool>,
 }
@@ -71,6 +73,7 @@ impl StreamingSound {
 			sample_rate,
 			blocks_needed,
 			block_consumers,
+			stale_block_timers: vec![0.0; num_blocks],
 			stale_block_producers,
 			dropped,
 		}
@@ -86,8 +89,10 @@ impl StreamingSound {
 		std::thread::spawn(move || {
 			loop {
 				std::thread::sleep(DECODER_THREAD_SLEEP_DURATION);
-				for stale_block_consumer in &mut stale_block_consumers {
-					stale_block_consumer.pop();
+				for (i, stale_block_consumer) in stale_block_consumers.iter_mut().enumerate() {
+					if stale_block_consumer.pop().is_some() {
+						println!("discarded block {}", i);
+					}
 				}
 				for (i, block_producer) in block_producers.iter_mut().enumerate() {
 					if block_producer.is_empty() && blocks_needed[i].load(Ordering::SeqCst) {
@@ -148,14 +153,30 @@ impl Sound for StreamingSound {
 		let current_block_index = block_index_at_position(position, self.sample_rate);
 		if let Some(needed) = self.blocks_needed.get(current_block_index) {
 			needed.store(true, Ordering::SeqCst);
+			self.stale_block_timers[current_block_index] = STALE_BLOCK_THRESHOLD;
 		}
 		if current_block_index > 0 {
 			if let Some(needed) = self.blocks_needed.get(current_block_index - 1) {
 				needed.store(true, Ordering::SeqCst);
+				self.stale_block_timers[current_block_index - 1] = STALE_BLOCK_THRESHOLD;
 			}
 		}
 		if let Some(needed) = self.blocks_needed.get(current_block_index + 1) {
 			needed.store(true, Ordering::SeqCst);
+			self.stale_block_timers[current_block_index + 1] = STALE_BLOCK_THRESHOLD;
+		}
+	}
+
+	fn on_start_processing(&mut self, dt: f64) {
+		for (i, timer) in self.stale_block_timers.iter_mut().enumerate() {
+			if *timer > 0.0 {
+				*timer -= dt;
+				if *timer <= 0.0 {
+					*timer = 0.0;
+					self.stale_block_producers[i].move_from(&mut self.block_consumers[i], None);
+					self.blocks_needed[i].store(false, Ordering::SeqCst);
+				}
+			}
 		}
 	}
 }

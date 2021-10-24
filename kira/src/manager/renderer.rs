@@ -64,8 +64,8 @@ impl Renderer {
 
 	/// Called by the backend when it's time to process
 	/// a new batch of samples.
-	pub fn on_start_processing(&mut self) {
-		self.resources.sounds.on_start_processing();
+	pub fn on_start_processing(&mut self, dt: f64) {
+		self.resources.sounds.on_start_processing(dt);
 		self.resources
 			.instances
 			.on_start_processing(&mut self.resources.sounds);
