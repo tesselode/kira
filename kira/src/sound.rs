@@ -34,7 +34,7 @@ pub trait Sound: Send + Sync {
 
 	/// Returns the [`Frame`] that the sound should output
 	/// at a given playback position.
-	fn frame_at_position(&mut self, position: f64) -> Frame;
+	fn frame_at_position(&mut self, position: f64) -> Option<Frame>;
 
 	/// Returns the suggested [`LoopBehavior`] of the sound,
 	/// if any.

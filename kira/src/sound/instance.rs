@@ -248,30 +248,29 @@ impl Instance {
 			Some(sound) => sound,
 			None => return Frame::ZERO,
 		};
-		if self.state.is_playing() {
-			self.volume.update(parameters);
-			self.playback_rate.update(parameters);
-			self.panning.update(parameters);
-			let just_finished_fade = self.fade_volume.update(dt, clocks);
-			let out = sound
-				.sound
-				.frame_at_position(self.position)
-				.panned(self.panning.get() as f32)
-				* self.volume.get() as f32
-				* self.fade_volume.value() as f32;
-			self.update_playback_position(dt, sound);
-			if just_finished_fade {
-				match self.state {
-					InstanceState::Pausing => {
-						self.set_state(InstanceState::Paused);
+		if let Some(frame) = sound.sound.frame_at_position(self.position) {
+			if self.state.is_playing() {
+				self.volume.update(parameters);
+				self.playback_rate.update(parameters);
+				self.panning.update(parameters);
+				let just_finished_fade = self.fade_volume.update(dt, clocks);
+				let out = frame.panned(self.panning.get() as f32)
+					* self.volume.get() as f32
+					* self.fade_volume.value() as f32;
+				self.update_playback_position(dt, sound);
+				if just_finished_fade {
+					match self.state {
+						InstanceState::Pausing => {
+							self.set_state(InstanceState::Paused);
+						}
+						InstanceState::Stopping => {
+							self.set_state(InstanceState::Stopped);
+						}
+						_ => {}
 					}
-					InstanceState::Stopping => {
-						self.set_state(InstanceState::Stopped);
-					}
-					_ => {}
 				}
+				return out;
 			}
-			return out;
 		}
 		Frame::ZERO
 	}
@@ -300,11 +299,10 @@ impl Instance {
 	}
 
 	fn playback_rate(&self) -> f64 {
-		let playback_rate = if self.reverse {
+		if self.reverse {
 			-self.playback_rate.get()
 		} else {
 			self.playback_rate.get()
-		};
-		playback_rate
+		}
 	}
 }

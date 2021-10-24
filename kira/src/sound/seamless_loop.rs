@@ -60,20 +60,20 @@ impl Sound for SeamlessLoop {
 		})
 	}
 
-	fn frame_at_position(&mut self, mut position: f64) -> Frame {
+	fn frame_at_position(&mut self, mut position: f64) -> Option<Frame> {
 		let mut out = Frame::ZERO;
 		if let Some(intro) = &mut self.intro {
-			out += intro.sound.frame_at_position(position);
+			out += intro.sound.frame_at_position(position)?;
 			position -= intro.loop_end;
 		}
 		if position >= 0.0 {
-			out += self.main.sound.frame_at_position(position);
+			out += self.main.sound.frame_at_position(position)?;
 			position -= self.main.loop_end;
 		}
 		if position >= 0.0 {
-			out += self.main.sound.frame_at_position(position);
+			out += self.main.sound.frame_at_position(position)?;
 		}
-		out
+		Some(out)
 	}
 
 	fn default_loop_behavior(&mut self) -> Option<LoopBehavior> {

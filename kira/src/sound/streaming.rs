@@ -114,14 +114,14 @@ impl StreamingSound {
 		}
 	}
 
-	fn frame_at_index(&mut self, index: usize) -> Frame {
+	fn frame_at_index(&mut self, index: usize) -> Option<Frame> {
 		let block_index = index / BLOCK_SIZE;
 		let relative_index = index % BLOCK_SIZE;
-		self.decoded_frames_outputs
-			.get_mut(block_index)
-			.map(|output| output.read().as_ref().map(|frames| frames[relative_index]))
-			.flatten()
-			.unwrap_or(Frame::ZERO)
+		if let Some(output) = self.decoded_frames_outputs.get_mut(block_index) {
+			output.read().as_ref().map(|frames| frames[relative_index])
+		} else {
+			Some(Frame::ZERO)
+		}
 	}
 }
 
@@ -130,19 +130,21 @@ impl Sound for StreamingSound {
 		self.duration
 	}
 
-	fn frame_at_position(&mut self, position: f64) -> Frame {
+	fn frame_at_position(&mut self, position: f64) -> Option<Frame> {
 		let sample_position = self.sample_rate as f64 * position;
 		let fraction = (sample_position % 1.0) as f32;
 		let current_sample_index = sample_position as usize;
 		let previous = if current_sample_index == 0 {
 			Frame::ZERO
 		} else {
-			self.frame_at_index(current_sample_index - 1)
+			self.frame_at_index(current_sample_index - 1)?
 		};
-		let current = self.frame_at_index(current_sample_index);
-		let next_1 = self.frame_at_index(current_sample_index + 1);
-		let next_2 = self.frame_at_index(current_sample_index + 2);
-		util::interpolate_frame(previous, current, next_1, next_2, fraction)
+		let current = self.frame_at_index(current_sample_index)?;
+		let next_1 = self.frame_at_index(current_sample_index + 1)?;
+		let next_2 = self.frame_at_index(current_sample_index + 2)?;
+		Some(util::interpolate_frame(
+			previous, current, next_1, next_2, fraction,
+		))
 	}
 
 	fn report_playback_info(&mut self, playback_info: PlaybackInfo) {

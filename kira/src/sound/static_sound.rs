@@ -43,7 +43,7 @@ impl Sound for StaticSound {
 		self.duration
 	}
 
-	fn frame_at_position(&mut self, position: f64) -> Frame {
+	fn frame_at_position(&mut self, position: f64) -> Option<Frame> {
 		let sample_position = self.sample_rate as f64 * position;
 		let fraction = (sample_position % 1.0) as f32;
 		let current_sample_index = sample_position as usize;
@@ -67,7 +67,7 @@ impl Sound for StaticSound {
 			.frames
 			.get(current_sample_index + 2)
 			.unwrap_or(&Frame::ZERO);
-		util::interpolate_frame(previous, current, next_1, next_2, fraction)
+		Some(util::interpolate_frame(previous, current, next_1, next_2, fraction))
 	}
 
 	fn default_loop_behavior(&mut self) -> Option<LoopBehavior> {
