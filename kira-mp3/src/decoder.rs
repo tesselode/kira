@@ -2,6 +2,7 @@ use std::{
 	error::Error,
 	fmt::{Display, Formatter},
 	fs::File,
+	io::Seek,
 	ops::Range,
 	path::Path,
 };
@@ -65,7 +66,7 @@ struct CurrentPacket {
 pub struct Decoder {
 	sample_rate: u32,
 	frame_count: usize,
-	decoder: minimp3::Decoder<File>,
+	decoder: Option<minimp3::Decoder<File>>,
 	frame_index: usize,
 	current_packet: Option<CurrentPacket>,
 }
@@ -98,14 +99,20 @@ impl Decoder {
 			frame_count += packet.data.len() / packet.channels;
 		}
 		let sample_rate = sample_rate.ok_or(DecoderError::UnknownSampleRate)?;
-		let decoder = minimp3::Decoder::new(decoder.into_inner());
+		let mut file = decoder.into_inner();
+		file.rewind()?;
+		let decoder = minimp3::Decoder::new(file);
 		Ok(Self {
 			sample_rate,
 			frame_count,
-			decoder,
+			decoder: Some(decoder),
 			frame_index: 0,
 			current_packet: None,
 		})
+	}
+
+	fn decoder(&mut self) -> &mut minimp3::Decoder<File> {
+		self.decoder.as_mut().unwrap()
 	}
 
 	fn ensure_packet(&mut self) -> Result<(), minimp3::Error> {
@@ -113,7 +120,7 @@ impl Decoder {
 			return Ok(());
 		}
 		loop {
-			match self.decoder.next_frame() {
+			match self.decoder().next_frame() {
 				Ok(packet) => {
 					self.current_packet = Some(CurrentPacket {
 						packet,
@@ -130,7 +137,11 @@ impl Decoder {
 	}
 
 	fn reset(&mut self) {
-		todo!()
+		let decoder = self.decoder.take().unwrap();
+		let mut file = decoder.into_inner();
+		file.rewind().unwrap();
+		self.decoder = Some(minimp3::Decoder::new(file));
+		self.frame_index = 0;
 	}
 }
 
@@ -154,7 +165,7 @@ impl kira::sound::streaming::Decoder for Decoder {
 				"ensure_packet should have either set self.current_packet to Some or returned an error"
 			);
 			if frame_indices.contains(&self.frame_index) {
-				// push a frame
+				frames.push(frame_from_packet(packet, *relative_frame_index));
 			}
 			*relative_frame_index += 1;
 			if *relative_frame_index >= packet.data.len() / packet.channels {
@@ -166,5 +177,22 @@ impl kira::sound::streaming::Decoder for Decoder {
 			}
 		}
 		frames
+	}
+}
+
+fn frame_from_packet(packet: &minimp3::Frame, relative_index: usize) -> Frame {
+	match packet.channels {
+		1 => {
+			let sample = packet.data[relative_index];
+			Frame::from_i32(sample.into(), sample.into(), 16)
+		}
+		2 => {
+			let left = packet.data[relative_index * 2];
+			let right = packet.data[relative_index * 2 + 1];
+			Frame::from_i32(left.into(), right.into(), 16)
+		}
+		_ => {
+			panic!("Unsupported channel configuration - Decoder::new should have returned an error")
+		}
 	}
 }

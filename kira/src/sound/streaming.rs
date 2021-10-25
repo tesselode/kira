@@ -96,11 +96,12 @@ impl StreamingSound {
 				}
 				for (i, block_producer) in block_producers.iter_mut().enumerate() {
 					if block_producer.is_empty() && blocks_needed[i].load(Ordering::SeqCst) {
-						let frame_indices = (i * BLOCK_SIZE)..((i + 1) * BLOCK_SIZE);
+						let start_frame = i * BLOCK_SIZE;
+						let end_frame = ((i + 1) * BLOCK_SIZE).min(decoder.frame_count());
 						block_producer
-							.push(decoder.decode(frame_indices.clone()))
+							.push(decoder.decode(start_frame..end_frame))
 							.expect("Block ringbuffer is already full");
-						println!("decoded block {} ({:?})", i, frame_indices);
+						println!("decoded block {} ({:?})", i, start_frame..end_frame);
 					}
 				}
 				if dropped.load(Ordering::SeqCst) {
