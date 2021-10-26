@@ -15,10 +15,10 @@ use super::Sound;
 
 /// A chunk of audio data loaded into memory all at once.
 pub struct StaticSound {
-	sample_rate: u32,
-	duration: Duration,
-	frames: Vec<Frame>,
-	default_loop_behavior: Option<LoopBehavior>,
+	pub sample_rate: u32,
+	pub duration: Duration,
+	pub frames: Vec<Frame>,
+	pub default_loop_behavior: Option<LoopBehavior>,
 }
 
 impl StaticSound {
@@ -67,7 +67,9 @@ impl Sound for StaticSound {
 			.frames
 			.get(current_sample_index + 2)
 			.unwrap_or(&Frame::ZERO);
-		Some(util::interpolate_frame(previous, current, next_1, next_2, fraction))
+		Some(util::interpolate_frame(
+			previous, current, next_1, next_2, fraction,
+		))
 	}
 
 	fn default_loop_behavior(&mut self) -> Option<LoopBehavior> {
