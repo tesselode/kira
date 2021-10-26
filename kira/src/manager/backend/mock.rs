@@ -5,15 +5,11 @@ use crate::{
 
 use super::Backend;
 
-const SAMPLE_RATE: u32 = 48_000;
-const BUFFER_LENGTH: usize = 512;
-
 enum State {
 	Uninitialized,
 	Initialized {
 		renderer: Renderer,
 		unused_resource_collector: UnusedResourceCollector,
-		buffer_start_timer: usize,
 	},
 }
 
@@ -23,13 +19,15 @@ enum State {
 ///
 /// This is useful for testing and benchmarking.
 pub struct MockBackend {
+	sample_rate: u32,
 	state: State,
 }
 
 impl MockBackend {
 	/// Creates a new [`MockBackend`].
-	pub fn new() -> Self {
+	pub fn new(sample_rate: u32) -> Self {
 		Self {
+			sample_rate,
 			state: State::Uninitialized,
 		}
 	}
@@ -46,17 +44,7 @@ impl MockBackend {
 
 	/// Calls the [`process`](Renderer::process) callback of the [`Renderer`].
 	pub fn process(&mut self) -> Frame {
-		if let State::Initialized {
-			renderer,
-			buffer_start_timer,
-			..
-		} = &mut self.state
-		{
-			*buffer_start_timer -= 1;
-			if *buffer_start_timer == 0 {
-				renderer.on_start_processing(BUFFER_LENGTH as f64 / SAMPLE_RATE as f64);
-				*buffer_start_timer += BUFFER_LENGTH;
-			}
+		if let State::Initialized { renderer, .. } = &mut self.state {
 			renderer.process()
 		} else {
 			panic!("backend is not initialized")
@@ -81,7 +69,7 @@ impl Backend for MockBackend {
 	type InitError = ();
 
 	fn sample_rate(&mut self) -> u32 {
-		SAMPLE_RATE
+		self.sample_rate
 	}
 
 	fn init(
@@ -92,14 +80,7 @@ impl Backend for MockBackend {
 		self.state = State::Initialized {
 			renderer,
 			unused_resource_collector,
-			buffer_start_timer: 1,
 		};
 		Ok(())
-	}
-}
-
-impl Default for MockBackend {
-	fn default() -> Self {
-		Self::new()
 	}
 }

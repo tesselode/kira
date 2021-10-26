@@ -38,7 +38,7 @@ fn instances_benchmark(c: &mut Criterion) {
 				instance_capacity: NUM_INSTANCES,
 				..Default::default()
 			},
-			MockBackend::new(),
+			MockBackend::new(48_000),
 		)
 		.unwrap();
 		let mut sound = manager.add_sound(create_test_sound(48_000)).unwrap();
@@ -58,7 +58,7 @@ fn instances_benchmark(c: &mut Criterion) {
 				instance_capacity: NUM_INSTANCES,
 				..Default::default()
 			},
-			MockBackend::new(),
+			MockBackend::new(48_000),
 		)
 		.unwrap();
 		let mut sound = manager.add_sound(create_test_sound(48_000)).unwrap();
