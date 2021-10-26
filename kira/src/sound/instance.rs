@@ -206,6 +206,7 @@ impl Instance {
 			sound.sound.report_playback_info(PlaybackInfo {
 				position: self.position,
 				playback_rate: self.playback_rate(),
+				loop_behavior: self.loop_behavior,
 			});
 		}
 	}

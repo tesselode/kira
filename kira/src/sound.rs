@@ -24,6 +24,7 @@ pub struct SoundId(pub(crate) Index);
 pub struct PlaybackInfo {
 	pub position: f64,
 	pub playback_rate: f64,
+	pub loop_behavior: Option<LoopBehavior>,
 }
 
 /// Represents a finite piece of audio.

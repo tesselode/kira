@@ -9,7 +9,7 @@ use std::{
 
 use ringbuf::{Consumer, Producer, RingBuffer};
 
-use crate::{util, Frame};
+use crate::{util, Frame, LoopBehavior};
 
 use super::{PlaybackInfo, Sound};
 
@@ -28,6 +28,7 @@ pub trait Decoder: Send + Sync {
 pub struct StreamingSound {
 	duration: Duration,
 	sample_rate: u32,
+	num_blocks: usize,
 	blocks_needed: Arc<Vec<AtomicBool>>,
 	block_consumers: Vec<Consumer<Vec<Frame>>>,
 	stale_block_timers: Vec<f64>,
@@ -71,6 +72,7 @@ impl StreamingSound {
 		Self {
 			duration,
 			sample_rate,
+			num_blocks,
 			blocks_needed,
 			block_consumers,
 			stale_block_timers: vec![0.0; num_blocks],
@@ -112,6 +114,13 @@ impl StreamingSound {
 		});
 	}
 
+	fn refresh_block(&mut self, index: usize) {
+		if let Some(needed) = self.blocks_needed.get(index) {
+			needed.store(true, Ordering::SeqCst);
+			self.stale_block_timers[index] = STALE_BLOCK_THRESHOLD;
+		}
+	}
+
 	fn frame_at_index(&mut self, index: usize) -> Option<Frame> {
 		let block_index = index / BLOCK_SIZE;
 		let relative_index = index % BLOCK_SIZE;
@@ -150,21 +159,33 @@ impl Sound for StreamingSound {
 		))
 	}
 
-	fn report_playback_info(&mut self, PlaybackInfo { position, .. }: PlaybackInfo) {
+	fn report_playback_info(
+		&mut self,
+		PlaybackInfo {
+			position,
+			loop_behavior,
+			..
+		}: PlaybackInfo,
+	) {
 		let current_block_index = block_index_at_position(position, self.sample_rate);
-		if let Some(needed) = self.blocks_needed.get(current_block_index) {
-			needed.store(true, Ordering::SeqCst);
-			self.stale_block_timers[current_block_index] = STALE_BLOCK_THRESHOLD;
-		}
+		self.refresh_block(current_block_index);
 		if current_block_index > 0 {
-			if let Some(needed) = self.blocks_needed.get(current_block_index - 1) {
-				needed.store(true, Ordering::SeqCst);
-				self.stale_block_timers[current_block_index - 1] = STALE_BLOCK_THRESHOLD;
-			}
+			self.refresh_block(current_block_index - 1);
 		}
-		if let Some(needed) = self.blocks_needed.get(current_block_index + 1) {
-			needed.store(true, Ordering::SeqCst);
-			self.stale_block_timers[current_block_index + 1] = STALE_BLOCK_THRESHOLD;
+		self.refresh_block(current_block_index + 1);
+		// if we're on the second-last block or the last block and the instance
+		// is looping, start loading the blocks at and before the loop start position.
+		// we start loading at the second-last block just in case the last block
+		// is very short
+		if self.num_blocks - current_block_index <= 2 {
+			if let Some(LoopBehavior { start_position }) = loop_behavior {
+				let loop_start_block_index =
+					block_index_at_position(start_position, self.sample_rate);
+				self.refresh_block(loop_start_block_index);
+				if loop_start_block_index > 0 {
+					self.refresh_block(loop_start_block_index - 1);
+				}
+			}
 		}
 	}
 
