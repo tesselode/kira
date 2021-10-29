@@ -132,9 +132,9 @@ impl InstanceSettings {
 	}
 
 	/// Sets whether the instance should play in reverse.
-	pub fn reverse(self) -> Self {
+	pub fn reverse(self, reverse: bool) -> Self {
 		Self {
-			reverse: true,
+			reverse,
 			..self
 		}
 	}
