@@ -62,13 +62,13 @@ pub struct AudioManagerSettings {
 impl Default for AudioManagerSettings {
 	fn default() -> Self {
 		Self {
-			sound_capacity: 100,
-			command_capacity: 100,
-			instance_capacity: 100,
-			parameter_capacity: 100,
-			sub_track_capacity: 100,
+			sound_capacity: 128,
+			command_capacity: 128,
+			instance_capacity: 128,
+			parameter_capacity: 128,
+			sub_track_capacity: 128,
 			clock_capacity: 1,
-			audio_stream_capacity: 25,
+			audio_stream_capacity: 32,
 		}
 	}
 }
