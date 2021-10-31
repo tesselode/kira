@@ -50,7 +50,7 @@ impl Mixer {
 		match command {
 			MixerCommand::AddSubTrack(id, track) => {
 				self.sub_tracks
-					.insert_with_index(id.0, track)
+					.insert_with_key(id.0, track)
 					.expect("Sub-track arena is full");
 				self.sub_track_ids.push(id);
 			}

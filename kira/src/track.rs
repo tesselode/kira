@@ -15,7 +15,7 @@ use std::sync::{
 	Arc,
 };
 
-use atomic_arena::Index;
+use atomic_arena::Key;
 
 use crate::{
 	frame::Frame,
@@ -25,7 +25,7 @@ use crate::{
 
 /// A unique identifier for a mixer sub-track.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct SubTrackId(pub(crate) Index);
+pub struct SubTrackId(pub(crate) Key);
 
 /// A unique identifier for a track.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

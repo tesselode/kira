@@ -9,7 +9,7 @@ use std::sync::{
 	Arc,
 };
 
-use atomic_arena::Index;
+use atomic_arena::Key;
 
 use crate::{
 	manager::{
@@ -22,7 +22,7 @@ use crate::{
 
 /// A unique identifier for an audio stream.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct AudioStreamId(pub(crate) Index);
+pub struct AudioStreamId(pub(crate) Key);
 
 /// Produces a continuous stream of audio data.
 #[allow(unused_variables)]

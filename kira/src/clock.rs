@@ -11,7 +11,7 @@ use std::sync::{
 	Arc,
 };
 
-use atomic_arena::Index;
+use atomic_arena::Key;
 
 use crate::{
 	manager::resources::Parameters,
@@ -20,7 +20,7 @@ use crate::{
 
 /// A unique identifier for a clock.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ClockId(pub(crate) Index);
+pub struct ClockId(pub(crate) Key);
 
 pub(crate) struct ClockShared {
 	ticking: AtomicBool,

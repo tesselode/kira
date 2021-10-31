@@ -53,7 +53,7 @@ impl Instances {
 		match command {
 			InstanceCommand::Add(id, instance) => {
 				self.instances
-					.insert_with_index(id.0, instance)
+					.insert_with_key(id.0, instance)
 					.expect("Instance arena is full");
 			}
 			InstanceCommand::SetVolume(id, volume) => {

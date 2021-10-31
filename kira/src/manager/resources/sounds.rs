@@ -51,7 +51,7 @@ impl Sounds {
 		match command {
 			SoundCommand::Add(id, sound) => self
 				.sounds
-				.insert_with_index(id.0, sound)
+				.insert_with_key(id.0, sound)
 				.expect("Sound arena is full"),
 		}
 	}

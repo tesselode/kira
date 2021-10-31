@@ -50,7 +50,7 @@ impl Clocks {
 		match command {
 			ClockCommand::Add(id, clock) => self
 				.clocks
-				.insert_with_index(id.0, clock)
+				.insert_with_key(id.0, clock)
 				.expect("Clock arena is full"),
 			ClockCommand::SetInterval(id, interval) => {
 				if let Some(clock) = self.clocks.get_mut(id.0) {

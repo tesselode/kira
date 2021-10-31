@@ -61,7 +61,7 @@ impl Parameters {
 		match command {
 			ParameterCommand::Add(id, parameter) => self
 				.parameters
-				.insert_with_index(id.0, parameter)
+				.insert_with_key(id.0, parameter)
 				.expect("Parameter arena is full"),
 			ParameterCommand::Set { id, target, tween } => {
 				if let Some(parameter) = self.parameters.get_mut(id.0) {

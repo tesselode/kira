@@ -50,7 +50,7 @@ impl AudioStreams {
 		match command {
 			AudioStreamCommand::Add(id, audio_stream) => self
 				.audio_streams
-				.insert_with_index(id.0, audio_stream)
+				.insert_with_key(id.0, audio_stream)
 				.expect("AudioStream arena is full"),
 		}
 	}

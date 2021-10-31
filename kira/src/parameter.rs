@@ -11,7 +11,7 @@ use std::{
 	},
 };
 
-use atomic_arena::Index;
+use atomic_arena::Key;
 
 use crate::{clock::ClockTime, manager::resources::clocks::Clocks, start_time::StartTime};
 
@@ -22,7 +22,7 @@ type JustFinishedTween = bool;
 
 /// A unique identifier for a parameter.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ParameterId(pub(crate) Index);
+pub struct ParameterId(pub(crate) Key);
 
 pub(crate) struct ParameterShared {
 	value: AtomicU64,

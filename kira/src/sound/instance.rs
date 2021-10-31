@@ -14,7 +14,7 @@ use std::{
 	time::Duration,
 };
 
-use atomic_arena::Index;
+use atomic_arena::Key;
 
 use crate::{
 	clock::ClockTime,
@@ -31,7 +31,7 @@ use super::{wrapper::SoundWrapper, PlaybackInfo, SoundId};
 
 /// A unique identifier for an instance of a sound.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct InstanceId(pub(crate) Index);
+pub struct InstanceId(pub(crate) Key);
 
 /// The playback state of an instance of a sound.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

@@ -12,13 +12,13 @@ pub use seamless_loop::*;
 
 use std::time::Duration;
 
-use atomic_arena::Index;
+use atomic_arena::Key;
 
 use crate::{loop_behavior::LoopBehavior, Frame};
 
 /// A unique identifier for a sound.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct SoundId(pub(crate) Index);
+pub struct SoundId(pub(crate) Key);
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PlaybackInfo {
