@@ -1,4 +1,7 @@
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use std::{
+	f32::consts::SQRT_2,
+	ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
+};
 
 /// A stereo audio sample.
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -40,7 +43,7 @@ impl Frame {
 	/// An `x` of 0 represents a hard left panning, an `x` of 1
 	/// represents a hard right panning.
 	pub fn panned(self, x: f32) -> Self {
-		Self::new(self.left * (1.0 - x).sqrt(), self.right * x.sqrt())
+		Self::new(self.left * (1.0 - x).sqrt(), self.right * x.sqrt()) * SQRT_2
 	}
 }
 

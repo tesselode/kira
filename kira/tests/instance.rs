@@ -10,6 +10,13 @@ use kira::{
 	Frame, LoopBehavior,
 };
 
+fn assert_frame_approximate_eq(a: Frame, b: Frame) {
+	const ERROR_THRESHOLD: f32 = 1.0e-6;
+	if (a.left - b.left).abs() > ERROR_THRESHOLD || (a.right - b.right).abs() > ERROR_THRESHOLD {
+		assert_eq!(a, b);
+	}
+}
+
 #[test]
 fn plays_all_samples_of_a_sound() -> Result<(), Box<dyn Error>> {
 	let mut manager = AudioManager::new(Default::default(), MockBackend::new(1)).unwrap();
@@ -24,19 +31,10 @@ fn plays_all_samples_of_a_sound() -> Result<(), Box<dyn Error>> {
 	))?;
 	sound.play(Default::default())?;
 	manager.backend_mut().on_start_processing(0.0);
-	assert_eq!(
-		manager.backend_mut().process(),
-		Frame::from_mono(1.0).panned(0.5).panned(0.5)
-	);
-	assert_eq!(
-		manager.backend_mut().process(),
-		Frame::from_mono(2.0).panned(0.5).panned(0.5)
-	);
-	assert_eq!(
-		manager.backend_mut().process(),
-		Frame::from_mono(3.0).panned(0.5).panned(0.5)
-	);
-	assert_eq!(manager.backend_mut().process(), Frame::from_mono(0.0));
+	assert_frame_approximate_eq(manager.backend_mut().process(), Frame::from_mono(1.0));
+	assert_frame_approximate_eq(manager.backend_mut().process(), Frame::from_mono(2.0));
+	assert_frame_approximate_eq(manager.backend_mut().process(), Frame::from_mono(3.0));
+	assert_frame_approximate_eq(manager.backend_mut().process(), Frame::from_mono(0.0));
 	Ok(())
 }
 
@@ -205,10 +203,7 @@ fn stops_with_fade_out() -> Result<(), Box<dyn Error>> {
 	))?;
 	let mut instance = sound.play(Default::default())?;
 	manager.backend_mut().on_start_processing(0.0);
-	assert_eq!(
-		manager.backend_mut().process(),
-		Frame::from_mono(4.0).panned(0.5).panned(0.5)
-	);
+	assert_frame_approximate_eq(manager.backend_mut().process(), Frame::from_mono(4.0));
 	assert_eq!(instance.state(), InstanceState::Playing);
 	instance.stop(Tween {
 		duration: Duration::from_secs(4),
@@ -216,16 +211,10 @@ fn stops_with_fade_out() -> Result<(), Box<dyn Error>> {
 	})?;
 	manager.backend_mut().on_start_processing(0.0);
 	for i in (1..=3).rev() {
-		assert_eq!(
-			manager.backend_mut().process(),
-			Frame::from_mono(i as f32).panned(0.5).panned(0.5)
-		);
+		assert_frame_approximate_eq(manager.backend_mut().process(), Frame::from_mono(i as f32));
 		assert_eq!(instance.state(), InstanceState::Stopping);
 	}
-	assert_eq!(
-		manager.backend_mut().process(),
-		Frame::from_mono(0.0).panned(0.5).panned(0.5)
-	);
+	assert_frame_approximate_eq(manager.backend_mut().process(), Frame::from_mono(0.0));
 	assert_eq!(instance.state(), InstanceState::Stopped);
 	Ok(())
 }
@@ -243,10 +232,7 @@ fn pauses_and_resumes_with_fade() -> Result<(), Box<dyn Error>> {
 	manager.backend_mut().on_start_processing(0.0);
 
 	// make sure playback is happening normally
-	assert_eq!(
-		manager.backend_mut().process(),
-		Frame::from_mono(4.0).panned(0.5).panned(0.5)
-	);
+	assert_frame_approximate_eq(manager.backend_mut().process(), Frame::from_mono(4.0));
 	manager.backend_mut().on_start_processing(0.0);
 	assert_eq!(instance.position(), 1.0);
 	assert_eq!(instance.state(), InstanceState::Playing);
@@ -257,41 +243,26 @@ fn pauses_and_resumes_with_fade() -> Result<(), Box<dyn Error>> {
 		..Default::default()
 	})?;
 	manager.backend_mut().on_start_processing(0.0);
-	assert_eq!(
-		manager.backend_mut().process(),
-		Frame::from_mono(3.0).panned(0.5).panned(0.5)
-	);
+	assert_frame_approximate_eq(manager.backend_mut().process(), Frame::from_mono(3.0));
 	manager.backend_mut().on_start_processing(0.0);
 	assert_eq!(instance.position(), 2.0);
 	assert_eq!(instance.state(), InstanceState::Pausing);
-	assert_eq!(
-		manager.backend_mut().process(),
-		Frame::from_mono(2.0).panned(0.5).panned(0.5)
-	);
+	assert_frame_approximate_eq(manager.backend_mut().process(), Frame::from_mono(2.0));
 	manager.backend_mut().on_start_processing(0.0);
 	assert_eq!(instance.position(), 3.0);
 	assert_eq!(instance.state(), InstanceState::Pausing);
-	assert_eq!(
-		manager.backend_mut().process(),
-		Frame::from_mono(1.0).panned(0.5).panned(0.5)
-	);
+	assert_frame_approximate_eq(manager.backend_mut().process(), Frame::from_mono(1.0));
 	manager.backend_mut().on_start_processing(0.0);
 	assert_eq!(instance.position(), 4.0);
 	assert_eq!(instance.state(), InstanceState::Pausing);
-	assert_eq!(
-		manager.backend_mut().process(),
-		Frame::from_mono(0.0).panned(0.5).panned(0.5)
-	);
+	assert_frame_approximate_eq(manager.backend_mut().process(), Frame::from_mono(0.0));
 	manager.backend_mut().on_start_processing(0.0);
 	assert_eq!(instance.position(), 5.0);
 	assert_eq!(instance.state(), InstanceState::Paused);
 
 	// make sure the instance position doesn't change
 	for _ in 0..3 {
-		assert_eq!(
-			manager.backend_mut().process(),
-			Frame::from_mono(0.0).panned(0.5).panned(0.5)
-		);
+		assert_frame_approximate_eq(manager.backend_mut().process(), Frame::from_mono(0.0));
 		manager.backend_mut().on_start_processing(0.0);
 		assert_eq!(instance.position(), 5.0);
 		assert_eq!(instance.state(), InstanceState::Paused);
@@ -303,38 +274,23 @@ fn pauses_and_resumes_with_fade() -> Result<(), Box<dyn Error>> {
 		..Default::default()
 	})?;
 	manager.backend_mut().on_start_processing(0.0);
-	assert_eq!(
-		manager.backend_mut().process(),
-		Frame::from_mono(1.0).panned(0.5).panned(0.5)
-	);
+	assert_frame_approximate_eq(manager.backend_mut().process(), Frame::from_mono(1.0));
 	manager.backend_mut().on_start_processing(0.0);
 	assert_eq!(instance.position(), 6.0);
 	assert_eq!(instance.state(), InstanceState::Playing);
-	assert_eq!(
-		manager.backend_mut().process(),
-		Frame::from_mono(2.0).panned(0.5).panned(0.5)
-	);
+	assert_frame_approximate_eq(manager.backend_mut().process(), Frame::from_mono(2.0));
 	manager.backend_mut().on_start_processing(0.0);
 	assert_eq!(instance.position(), 7.0);
 	assert_eq!(instance.state(), InstanceState::Playing);
-	assert_eq!(
-		manager.backend_mut().process(),
-		Frame::from_mono(3.0).panned(0.5).panned(0.5)
-	);
+	assert_frame_approximate_eq(manager.backend_mut().process(), Frame::from_mono(3.0));
 	manager.backend_mut().on_start_processing(0.0);
 	assert_eq!(instance.position(), 8.0);
 	assert_eq!(instance.state(), InstanceState::Playing);
-	assert_eq!(
-		manager.backend_mut().process(),
-		Frame::from_mono(4.0).panned(0.5).panned(0.5)
-	);
+	assert_frame_approximate_eq(manager.backend_mut().process(), Frame::from_mono(4.0));
 	manager.backend_mut().on_start_processing(0.0);
 	assert_eq!(instance.position(), 9.0);
 	assert_eq!(instance.state(), InstanceState::Playing);
-	assert_eq!(
-		manager.backend_mut().process(),
-		Frame::from_mono(4.0).panned(0.5).panned(0.5)
-	);
+	assert_frame_approximate_eq(manager.backend_mut().process(), Frame::from_mono(4.0));
 	manager.backend_mut().on_start_processing(0.0);
 	assert_eq!(instance.position(), 10.0);
 	assert_eq!(instance.state(), InstanceState::Playing);
