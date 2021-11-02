@@ -64,11 +64,7 @@ impl Renderer {
 
 	/// Called by the backend when it's time to process
 	/// a new batch of samples.
-	pub fn on_start_processing(&mut self, dt: f64) {
-		self.resources.sounds.on_start_processing(dt);
-		self.resources
-			.instances
-			.on_start_processing(&mut self.resources.sounds);
+	pub fn on_start_processing(&mut self) {
 		self.resources.parameters.on_start_processing();
 		self.resources.mixer.on_start_processing();
 		self.resources.clocks.on_start_processing();
@@ -76,8 +72,6 @@ impl Renderer {
 
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
-				Command::Sound(command) => self.resources.sounds.run_command(command),
-				Command::Instance(command) => self.resources.instances.run_command(command),
 				Command::Parameter(command) => self.resources.parameters.run_command(command),
 				Command::Mixer(command) => self.resources.mixer.run_command(command),
 				Command::Clock(command) => self.resources.clocks.run_command(command),
@@ -122,13 +116,6 @@ impl Renderer {
 				.parameters
 				.update(self.context.dt, &self.resources.clocks);
 		}
-		self.resources.instances.process(
-			self.context.dt,
-			&mut self.resources.sounds,
-			&self.resources.parameters,
-			&self.resources.clocks,
-			&mut self.resources.mixer,
-		);
 		self.resources.audio_streams.process(
 			self.context.dt,
 			&self.resources.parameters,

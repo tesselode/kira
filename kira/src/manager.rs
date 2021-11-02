@@ -18,10 +18,6 @@ use crate::{
 	clock::{Clock, ClockHandle, ClockId},
 	error::CommandError,
 	parameter::{Parameter, ParameterHandle, ParameterId, Tween},
-	sound::{
-		wrapper::{SoundWrapper, SoundWrapperShared},
-		Sound, SoundHandle, SoundId,
-	},
 	track::{SubTrackId, Track, TrackHandle, TrackId, TrackSettings},
 	value::Value,
 };
@@ -29,11 +25,9 @@ use crate::{
 use self::{
 	command::{
 		producer::CommandProducer, AudioStreamCommand, ClockCommand, Command, MixerCommand,
-		ParameterCommand, SoundCommand,
+		ParameterCommand,
 	},
-	error::{
-		AddAudioStreamError, AddClockError, AddParameterError, AddSoundError, AddSubTrackError,
-	},
+	error::{AddAudioStreamError, AddClockError, AddParameterError, AddSubTrackError},
 	renderer::context::Context,
 	resources::{create_resources, create_unused_resource_channels, ResourceControllers},
 };
@@ -45,10 +39,6 @@ pub struct AudioManagerSettings {
 	/// Each action you take, like playing a sound or pausing a parameter,
 	/// queues up one command.
 	pub command_capacity: usize,
-	/// The maximum number of sounds that can be loaded at a time.
-	pub sound_capacity: usize,
-	/// The maximum number of instances of sounds that can be playing at a time.
-	pub instance_capacity: usize,
 	/// The maximum number of parameters that can exist at a time.
 	pub parameter_capacity: usize,
 	/// The maximum number of mixer sub-tracks that can exist at a time.
@@ -62,9 +52,7 @@ pub struct AudioManagerSettings {
 impl Default for AudioManagerSettings {
 	fn default() -> Self {
 		Self {
-			sound_capacity: 128,
 			command_capacity: 128,
-			instance_capacity: 128,
 			parameter_capacity: 128,
 			sub_track_capacity: 128,
 			clock_capacity: 1,
@@ -110,30 +98,6 @@ impl<B: Backend> AudioManager<B> {
 	/// Returns the current playback state of the [`Renderer`].
 	pub fn state(&self) -> RendererState {
 		self.context.state()
-	}
-
-	/// Sends a sound to the renderer and returns a handle to the sound.
-	pub fn add_sound(&mut self, sound: impl Sound + 'static) -> Result<SoundHandle, AddSoundError> {
-		let id = SoundId(
-			self.resource_controllers
-				.sound_controller
-				.try_reserve()
-				.map_err(|_| AddSoundError::SoundLimitReached)?,
-		);
-		let mut sound = Box::new(sound);
-		let shared = Arc::new(SoundWrapperShared::new());
-		let handle = SoundHandle {
-			id,
-			duration: sound.duration(),
-			default_loop_behavior: sound.default_loop_behavior(),
-			shared: shared.clone(),
-			instance_controller: self.resource_controllers.instance_controller.clone(),
-			command_producer: self.command_producer.clone(),
-		};
-		let sound_wrapper = SoundWrapper { sound, shared };
-		self.command_producer
-			.push(Command::Sound(SoundCommand::Add(id, sound_wrapper)))?;
-		Ok(handle)
 	}
 
 	/// Creates a parameter with the specified starting value.

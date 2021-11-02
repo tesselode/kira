@@ -7,41 +7,6 @@ use std::{
 
 use crate::error::CommandError;
 
-/// Errors that can occur when adding a sound to the renderer.
-#[derive(Debug)]
-pub enum AddSoundError {
-	/// Could not add a sound because the maximum number of sounds has been reached.
-	SoundLimitReached,
-	/// An error occured when sending a command to the renderer.
-	CommandError(CommandError),
-}
-
-impl Display for AddSoundError {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		match self {
-			AddSoundError::SoundLimitReached => f.write_str(
-				"Could not add a sound because the maximum number of sounds has been reached.",
-			),
-			AddSoundError::CommandError(error) => error.fmt(f),
-		}
-	}
-}
-
-impl Error for AddSoundError {
-	fn source(&self) -> Option<&(dyn Error + 'static)> {
-		match self {
-			AddSoundError::CommandError(error) => Some(error),
-			_ => None,
-		}
-	}
-}
-
-impl From<CommandError> for AddSoundError {
-	fn from(v: CommandError) -> Self {
-		Self::CommandError(v)
-	}
-}
-
 /// Errors that can occur when creating a parameter.
 #[derive(Debug)]
 pub enum AddParameterError {

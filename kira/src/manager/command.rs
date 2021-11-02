@@ -4,30 +4,9 @@ use crate::{
 	audio_stream::{AudioStreamId, AudioStreamWrapper},
 	clock::{Clock, ClockId},
 	parameter::{Parameter, ParameterId, Tween},
-	sound::{
-		instance::{Instance, InstanceId},
-		wrapper::SoundWrapper,
-		SoundId,
-	},
 	track::{SubTrackId, Track, TrackId},
 	value::Value,
 };
-
-pub(crate) enum SoundCommand {
-	Add(SoundId, SoundWrapper),
-}
-
-pub(crate) enum InstanceCommand {
-	Add(InstanceId, Instance),
-	SetVolume(InstanceId, Value),
-	SetPlaybackRate(InstanceId, Value),
-	SetPanning(InstanceId, Value),
-	Pause { id: InstanceId, tween: Tween },
-	Resume { id: InstanceId, tween: Tween },
-	Stop { id: InstanceId, tween: Tween },
-	SeekTo(InstanceId, f64),
-	SeekBy(InstanceId, f64),
-}
 
 pub(crate) enum ParameterCommand {
 	Add(ParameterId, Parameter),
@@ -59,8 +38,6 @@ pub(crate) enum AudioStreamCommand {
 }
 
 pub(crate) enum Command {
-	Sound(SoundCommand),
-	Instance(InstanceCommand),
 	Parameter(ParameterCommand),
 	Mixer(MixerCommand),
 	Clock(ClockCommand),

@@ -207,17 +207,13 @@ fn setup_stream(config: StreamConfig, mut renderer: Renderer) -> Result<Stream, 
 		.default_output_device()
 		.ok_or(InitError::NoDefaultOutputDevice)?;
 	let channels = config.channels;
-	let sample_rate = config.sample_rate.0;
-	let mut frames_since_last_batch = 0;
 	let stream = device.build_output_stream(
 		&config,
 		move |data: &mut [f32], _| {
-			let dt = frames_since_last_batch as f64 / sample_rate as f64;
 			#[cfg(feature = "assert_no_alloc")]
 			assert_no_alloc::assert_no_alloc(|| renderer.on_start_processing(dt));
 			#[cfg(not(feature = "assert_no_alloc"))]
-			renderer.on_start_processing(dt);
-			frames_since_last_batch = 0;
+			renderer.on_start_processing();
 			for frame in data.chunks_exact_mut(channels as usize) {
 				#[cfg(feature = "assert_no_alloc")]
 				let out = assert_no_alloc::assert_no_alloc(|| renderer.process());
@@ -229,7 +225,6 @@ fn setup_stream(config: StreamConfig, mut renderer: Renderer) -> Result<Stream, 
 					frame[0] = out.left;
 					frame[1] = out.right;
 				}
-				frames_since_last_batch += 1;
 			}
 		},
 		move |_| {},
