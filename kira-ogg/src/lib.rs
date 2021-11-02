@@ -1,3 +1,7 @@
+mod decoder;
+
+pub use decoder::*;
+
 use std::{
 	error::Error,
 	fmt::{Display, Formatter},
