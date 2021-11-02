@@ -4,7 +4,7 @@ use std::{
 		atomic::{AtomicBool, Ordering},
 		Arc,
 	},
-	time::Duration,
+	time::{Duration, Instant},
 };
 
 use ringbuf::{Consumer, Producer, RingBuffer};
@@ -100,10 +100,19 @@ impl StreamingSound {
 					if block_producer.is_empty() && blocks_needed[i].load(Ordering::SeqCst) {
 						let start_frame = i * BLOCK_SIZE;
 						let end_frame = ((i + 1) * BLOCK_SIZE).min(decoder.frame_count());
+						let start_time = Instant::now();
+						let block = decoder.decode(start_frame..end_frame);
+						let end_time = Instant::now();
+						let duration = end_time - start_time;
 						block_producer
-							.push(decoder.decode(start_frame..end_frame))
+							.push(block)
 							.expect("Block ringbuffer is already full");
-						println!("decoded block {} ({:?})", i, start_frame..end_frame);
+						println!(
+							"decoded block {} ({:?}) in {} ms",
+							i,
+							start_frame..end_frame,
+							duration.as_millis()
+						);
 					}
 				}
 				if dropped.load(Ordering::SeqCst) {
