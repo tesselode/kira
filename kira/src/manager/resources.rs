@@ -3,10 +3,11 @@
 //! [`Backend`s](crate::manager::Backend).
 
 pub(crate) mod audio_streams;
-pub(crate) mod clocks;
+mod clocks;
 pub(crate) mod mixer;
 mod parameters;
 
+pub use clocks::*;
 pub use parameters::*;
 
 use std::sync::Arc;
@@ -16,7 +17,7 @@ use ringbuf::{Consumer, Producer, RingBuffer};
 
 use crate::{audio_stream::AudioStreamWrapper, clock::Clock, parameter::Parameter, track::Track};
 
-use self::{audio_streams::AudioStreams, clocks::Clocks, mixer::Mixer};
+use self::{audio_streams::AudioStreams, mixer::Mixer};
 
 use super::{context::Context, AudioManagerSettings};
 

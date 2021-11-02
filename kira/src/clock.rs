@@ -54,7 +54,7 @@ impl ClockShared {
 	}
 }
 
-pub(crate) struct Clock {
+pub struct Clock {
 	shared: Arc<ClockShared>,
 	ticking: bool,
 	interval: CachedValue,
@@ -63,7 +63,7 @@ pub(crate) struct Clock {
 }
 
 impl Clock {
-	pub fn new(interval: Value) -> Self {
+	pub(crate) fn new(interval: Value) -> Self {
 		Self {
 			shared: Arc::new(ClockShared::new()),
 			ticking: false,
@@ -73,7 +73,7 @@ impl Clock {
 		}
 	}
 
-	pub fn shared(&self) -> Arc<ClockShared> {
+	pub(crate) fn shared(&self) -> Arc<ClockShared> {
 		self.shared.clone()
 	}
 
@@ -85,27 +85,27 @@ impl Clock {
 		self.ticks
 	}
 
-	pub fn set_interval(&mut self, interval: Value) {
+	pub(crate) fn set_interval(&mut self, interval: Value) {
 		self.interval.set(interval);
 	}
 
-	pub fn start(&mut self) {
+	pub(crate) fn start(&mut self) {
 		self.ticking = true;
 		self.shared.ticking.store(true, Ordering::SeqCst);
 	}
 
-	pub fn pause(&mut self) {
+	pub(crate) fn pause(&mut self) {
 		self.ticking = false;
 		self.shared.ticking.store(false, Ordering::SeqCst);
 	}
 
-	pub fn stop(&mut self) {
+	pub(crate) fn stop(&mut self) {
 		self.pause();
 		self.ticks = 0;
 		self.shared.ticks.store(0, Ordering::SeqCst);
 	}
 
-	pub fn update(&mut self, dt: f64, parameters: &Parameters) {
+	pub(crate) fn update(&mut self, dt: f64, parameters: &Parameters) {
 		self.interval.update(parameters);
 		if self.ticking {
 			self.tick_timer -= dt / self.interval.get();

@@ -13,7 +13,7 @@ use std::{
 
 use atomic_arena::Key;
 
-use crate::{clock::ClockTime, manager::resources::clocks::Clocks, start_time::StartTime};
+use crate::{clock::ClockTime, manager::resources::Clocks, start_time::StartTime};
 
 pub use handle::*;
 pub use tween::*;
