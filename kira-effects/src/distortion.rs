@@ -1,10 +1,10 @@
 //! Makes a sound harsher and noisier.
 
 use kira::{
+	dsp::Frame,
 	manager::resources::Parameters,
 	track::Effect,
 	value::{cached::CachedValue, Value},
-	Frame,
 };
 
 /// Different types of distortion effect.

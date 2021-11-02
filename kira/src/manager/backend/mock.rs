@@ -1,6 +1,6 @@
 use crate::{
+	dsp::Frame,
 	manager::{resources::UnusedResourceCollector, Renderer},
-	Frame,
 };
 
 use super::Backend;

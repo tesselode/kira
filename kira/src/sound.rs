@@ -1,7 +1,7 @@
 use crate::{
+	dsp::Frame,
 	manager::resources::{Clocks, Parameters},
 	track::TrackId,
-	Frame,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq)]

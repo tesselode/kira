@@ -1,7 +1,7 @@
 //! Useful functions for writing [`Effect`s](crate::track::Effect)
 //! and [`AudioStream`s](crate::audio_stream::AudioStream).
 
-use crate::frame::Frame;
+use crate::dsp::Frame;
 
 /// Given a previous frame, a current frame, the two next frames,
 /// and a position `x` from 0.0 to 1.0 between the current frame

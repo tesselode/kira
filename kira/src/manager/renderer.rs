@@ -4,7 +4,7 @@ use std::sync::{atomic::Ordering, Arc};
 
 use ringbuf::Consumer;
 
-use crate::{frame::Frame, parameter::Parameter};
+use crate::{dsp::Frame, parameter::Parameter};
 
 use self::context::Context;
 

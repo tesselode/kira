@@ -12,12 +12,12 @@ use std::sync::{
 use atomic_arena::Key;
 
 use crate::{
+	dsp::Frame,
 	manager::{
 		context::Context,
 		resources::{mixer::Mixer, Parameters},
 	},
 	track::TrackId,
-	Frame,
 };
 
 /// A unique identifier for an audio stream.

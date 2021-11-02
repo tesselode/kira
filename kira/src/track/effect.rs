@@ -1,4 +1,4 @@
-use crate::{frame::Frame, manager::resources::Parameters};
+use crate::{dsp::Frame, manager::resources::Parameters};
 
 /// Receives input audio from a mixer track and outputs modified audio.
 #[allow(unused_variables)]

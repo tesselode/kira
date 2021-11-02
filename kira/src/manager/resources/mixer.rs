@@ -4,7 +4,7 @@ use atomic_arena::{Arena, Controller};
 use ringbuf::Producer;
 
 use crate::{
-	frame::Frame,
+	dsp::Frame,
 	manager::{command::MixerCommand, context::Context},
 	track::{SubTrackId, Track, TrackId},
 	value::cached::CachedValue,

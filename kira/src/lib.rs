@@ -6,8 +6,8 @@
 
 pub mod audio_stream;
 pub mod clock;
+pub mod dsp;
 mod error;
-mod frame;
 mod loop_behavior;
 pub mod manager;
 pub mod parameter;
@@ -18,6 +18,5 @@ pub mod util;
 pub mod value;
 
 pub use error::*;
-pub use frame::*;
 pub use loop_behavior::*;
 pub use start_time::*;

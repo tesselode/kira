@@ -18,7 +18,7 @@ use std::sync::{
 use atomic_arena::Key;
 
 use crate::{
-	frame::Frame,
+	dsp::Frame,
 	manager::{context::Context, resources::Parameters},
 	value::{cached::CachedValue, Value},
 };

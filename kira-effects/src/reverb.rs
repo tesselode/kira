@@ -3,10 +3,10 @@
 use all_pass::AllPassFilter;
 use comb::CombFilter;
 use kira::{
+	dsp::Frame,
 	manager::resources::Parameters,
 	track::Effect,
 	value::{cached::CachedValue, Value},
-	Frame,
 };
 
 mod all_pass;
