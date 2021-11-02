@@ -1,3 +1,5 @@
+pub mod static_sound;
+
 use crate::{
 	dsp::Frame,
 	manager::resources::{Clocks, Parameters},
@@ -17,7 +19,7 @@ pub trait Sound: Send + Sync {
 
 	fn on_start_processing(&mut self) {}
 
-	fn process(&mut self, parameters: &Parameters, clocks: &Clocks) -> ProcessResult;
+	fn process(&mut self, dt: f64, parameters: &Parameters, clocks: &Clocks) -> ProcessResult;
 
 	fn finished(&mut self) -> bool;
 }

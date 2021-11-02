@@ -3,6 +3,8 @@ use std::{
 	ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
+use super::sample::Sample;
+
 /// A stereo audio sample.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Frame {
@@ -29,13 +31,6 @@ impl Frame {
 	/// to the same value.
 	pub fn from_mono(value: f32) -> Self {
 		Self::new(value, value)
-	}
-
-	/// Creates a frame from `i32`s with the given bit depth.
-	pub fn from_i32(left: i32, right: i32, bit_depth: u32) -> Self {
-		let max_int = (1 << bit_depth) / 2;
-		let scale = 1.0 / max_int as f32;
-		Self::new(left as f32 * scale, right as f32 * scale)
 	}
 
 	/// Pans a frame to the left or right.
@@ -112,5 +107,17 @@ impl Neg for Frame {
 
 	fn neg(self) -> Self::Output {
 		Self::new(-self.left, -self.right)
+	}
+}
+
+impl<S: Sample> From<S> for Frame {
+	fn from(sample: S) -> Self {
+		Self::from_mono(sample.into_f32())
+	}
+}
+
+impl<S: Sample> From<[S; 2]> for Frame {
+	fn from(samples: [S; 2]) -> Self {
+		Self::new(samples[0].into_f32(), samples[1].into_f32())
 	}
 }
