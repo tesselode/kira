@@ -2,6 +2,7 @@
 members = [
 	"kira",
 	"kira-cpal",
+	"kira-ogg",
 	"kira-effects",
 ]
 

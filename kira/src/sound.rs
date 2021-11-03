@@ -6,12 +6,6 @@ use crate::{
 	track::TrackId,
 };
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum ProcessResult {
-	Loaded(Frame),
-	Waiting,
-}
-
 pub trait Sound: Send + Sync {
 	fn sample_rate(&mut self) -> u32;
 
@@ -19,7 +13,7 @@ pub trait Sound: Send + Sync {
 
 	fn on_start_processing(&mut self) {}
 
-	fn process(&mut self, dt: f64, parameters: &Parameters, clocks: &Clocks) -> ProcessResult;
+	fn process(&mut self, dt: f64, parameters: &Parameters, clocks: &Clocks) -> Frame;
 
 	fn finished(&mut self) -> bool;
 }

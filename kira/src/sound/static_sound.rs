@@ -7,7 +7,26 @@ use crate::{
 	util,
 };
 
-use super::{ProcessResult, Sound};
+use super::Sound;
+
+#[derive(Clone)]
+pub enum Samples {
+	I16Mono(Vec<i16>),
+	I16Stereo(Vec<[i16; 2]>),
+	F32Mono(Vec<f32>),
+	F32Stereo(Vec<[f32; 2]>),
+}
+
+impl Samples {
+	fn len(&self) -> usize {
+		match self {
+			Samples::I16Mono(samples) => samples.len(),
+			Samples::I16Stereo(samples) => samples.len(),
+			Samples::F32Mono(samples) => samples.len(),
+			Samples::F32Stereo(samples) => samples.len(),
+		}
+	}
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PlaybackState {
@@ -16,16 +35,16 @@ pub enum PlaybackState {
 	Stopped,
 }
 
-#[derive(Debug, Clone)]
-pub struct StaticSound<S: Into<Frame> + Send + Sync + Copy> {
+#[derive(Clone)]
+pub struct StaticSound {
 	sample_rate: u32,
-	samples: Arc<Vec<S>>,
+	samples: Arc<Samples>,
 	state: PlaybackState,
 	position: f64,
 }
 
-impl<S: Into<Frame> + Send + Sync + Copy> StaticSound<S> {
-	pub fn new(sample_rate: u32, samples: Vec<S>) -> Self {
+impl StaticSound {
+	pub fn new(sample_rate: u32, samples: Samples) -> Self {
 		Self {
 			sample_rate,
 			samples: Arc::new(samples),
@@ -39,11 +58,28 @@ impl<S: Into<Frame> + Send + Sync + Copy> StaticSound<S> {
 	}
 
 	fn frame_at_index(&self, index: usize) -> Frame {
-		self.samples
-			.get(index)
-			.copied()
-			.map(|sample| sample.into())
-			.unwrap_or(Frame::ZERO)
+		match self.samples.as_ref() {
+			Samples::I16Mono(samples) => samples
+				.get(index)
+				.copied()
+				.map(|sample| sample.into())
+				.unwrap_or(Frame::ZERO),
+			Samples::I16Stereo(samples) => samples
+				.get(index)
+				.copied()
+				.map(|sample| sample.into())
+				.unwrap_or(Frame::ZERO),
+			Samples::F32Mono(samples) => samples
+				.get(index)
+				.copied()
+				.map(|sample| sample.into())
+				.unwrap_or(Frame::ZERO),
+			Samples::F32Stereo(samples) => samples
+				.get(index)
+				.copied()
+				.map(|sample| sample.into())
+				.unwrap_or(Frame::ZERO),
+		}
 	}
 
 	pub fn frame_at_position(&self, position: f64) -> Frame {
@@ -62,7 +98,7 @@ impl<S: Into<Frame> + Send + Sync + Copy> StaticSound<S> {
 	}
 }
 
-impl<S: Into<Frame> + Send + Sync + Copy> Sound for StaticSound<S> {
+impl Sound for StaticSound {
 	fn sample_rate(&mut self) -> u32 {
 		self.sample_rate
 	}
@@ -71,13 +107,13 @@ impl<S: Into<Frame> + Send + Sync + Copy> Sound for StaticSound<S> {
 		TrackId::Main
 	}
 
-	fn process(&mut self, dt: f64, _parameters: &Parameters, _clocks: &Clocks) -> ProcessResult {
+	fn process(&mut self, dt: f64, _parameters: &Parameters, _clocks: &Clocks) -> Frame {
 		let out = self.frame_at_position(self.position);
 		if self.position > self.duration().as_secs_f64() {
 			self.state = PlaybackState::Stopped;
 		}
 		self.position += dt;
-		ProcessResult::Loaded(out)
+		out
 	}
 
 	fn finished(&mut self) -> bool {
