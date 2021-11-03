@@ -103,6 +103,6 @@ pub fn from_reader(reader: impl Read + Seek) -> Result<StaticSound, DecodeError>
 	))
 }
 
-fn from_file(path: impl AsRef<Path>) -> Result<StaticSound, FromFileError> {
+pub fn from_file(path: impl AsRef<Path>) -> Result<StaticSound, FromFileError> {
 	Ok(from_reader(File::open(path)?)?)
 }

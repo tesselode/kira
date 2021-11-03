@@ -116,7 +116,7 @@ impl Sound for StaticSound {
 		out
 	}
 
-	fn finished(&mut self) -> bool {
+	fn finished(&self) -> bool {
 		self.state == PlaybackState::Stopped
 	}
 }

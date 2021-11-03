@@ -211,7 +211,7 @@ fn setup_stream(config: StreamConfig, mut renderer: Renderer) -> Result<Stream, 
 		&config,
 		move |data: &mut [f32], _| {
 			#[cfg(feature = "assert_no_alloc")]
-			assert_no_alloc::assert_no_alloc(|| renderer.on_start_processing(dt));
+			assert_no_alloc::assert_no_alloc(|| renderer.on_start_processing());
 			#[cfg(not(feature = "assert_no_alloc"))]
 			renderer.on_start_processing();
 			for frame in data.chunks_exact_mut(channels as usize) {

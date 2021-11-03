@@ -4,9 +4,14 @@ use crate::{
 	audio_stream::{AudioStreamId, AudioStreamWrapper},
 	clock::{Clock, ClockId},
 	parameter::{Parameter, ParameterId, Tween},
+	sound::{Sound, SoundId},
 	track::{SubTrackId, Track, TrackId},
 	value::Value,
 };
+
+pub(crate) enum SoundCommand {
+	Add(SoundId, Box<dyn Sound>),
+}
 
 pub(crate) enum ParameterCommand {
 	Add(ParameterId, Parameter),
@@ -38,6 +43,7 @@ pub(crate) enum AudioStreamCommand {
 }
 
 pub(crate) enum Command {
+	Sound(SoundCommand),
 	Parameter(ParameterCommand),
 	Mixer(MixerCommand),
 	Clock(ClockCommand),

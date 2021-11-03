@@ -18,6 +18,7 @@ use crate::{
 	clock::{Clock, ClockHandle, ClockId},
 	error::CommandError,
 	parameter::{Parameter, ParameterHandle, ParameterId, Tween},
+	sound::{Sound, SoundId},
 	track::{SubTrackId, Track, TrackHandle, TrackId, TrackSettings},
 	value::Value,
 };
@@ -25,9 +26,11 @@ use crate::{
 use self::{
 	command::{
 		producer::CommandProducer, AudioStreamCommand, ClockCommand, Command, MixerCommand,
-		ParameterCommand,
+		ParameterCommand, SoundCommand,
 	},
-	error::{AddAudioStreamError, AddClockError, AddParameterError, AddSubTrackError},
+	error::{
+		AddAudioStreamError, AddClockError, AddParameterError, AddSubTrackError, PlaySoundError,
+	},
 	renderer::context::Context,
 	resources::{create_resources, create_unused_resource_channels, ResourceControllers},
 };
@@ -39,6 +42,8 @@ pub struct AudioManagerSettings {
 	/// Each action you take, like playing a sound or pausing a parameter,
 	/// queues up one command.
 	pub command_capacity: usize,
+	/// The maximum number of sounds that can be playing at a time.
+	pub sound_capacity: usize,
 	/// The maximum number of parameters that can exist at a time.
 	pub parameter_capacity: usize,
 	/// The maximum number of mixer sub-tracks that can exist at a time.
@@ -53,6 +58,7 @@ impl Default for AudioManagerSettings {
 	fn default() -> Self {
 		Self {
 			command_capacity: 128,
+			sound_capacity: 128,
 			parameter_capacity: 128,
 			sub_track_capacity: 128,
 			clock_capacity: 1,
@@ -98,6 +104,23 @@ impl<B: Backend> AudioManager<B> {
 	/// Returns the current playback state of the [`Renderer`].
 	pub fn state(&self) -> RendererState {
 		self.context.state()
+	}
+
+	fn play_inner(&mut self, sound: Box<dyn Sound>) -> Result<(), PlaySoundError> {
+		let id = SoundId(
+			self.resource_controllers
+				.sound_controller
+				.try_reserve()
+				.map_err(|_| PlaySoundError::SoundLimitReached)?,
+		);
+		self.command_producer
+			.push(Command::Sound(SoundCommand::Add(id, sound)))?;
+		Ok(())
+	}
+
+	/// Plays a sound.
+	pub fn play(&mut self, sound: impl Sound + 'static) -> Result<(), PlaySoundError> {
+		self.play_inner(Box::new(sound))
 	}
 
 	/// Creates a parameter with the specified starting value.
