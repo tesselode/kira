@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod test;
+
 use std::{sync::Arc, time::Duration};
 
 use crate::{
