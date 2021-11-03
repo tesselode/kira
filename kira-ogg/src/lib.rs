@@ -3,9 +3,10 @@ use std::{
 	fs::File,
 	io::{Read, Seek},
 	path::Path,
+	sync::Arc,
 };
 
-use kira::sound::static_sound::{Samples, StaticSound};
+use kira::sound::static_sound::{Samples, StaticSoundData};
 use lewton::{inside_ogg::OggStreamReader, VorbisError};
 
 #[derive(Debug)]
@@ -76,7 +77,7 @@ impl From<DecodeError> for FromFileError {
 	}
 }
 
-pub fn from_reader(reader: impl Read + Seek) -> Result<StaticSound, DecodeError> {
+pub fn from_reader(reader: impl Read + Seek) -> Result<StaticSoundData, DecodeError> {
 	let mut reader = OggStreamReader::new(reader)?;
 	let samples = match reader.ident_hdr.audio_channels {
 		1 => {
@@ -97,12 +98,12 @@ pub fn from_reader(reader: impl Read + Seek) -> Result<StaticSound, DecodeError>
 		}
 		_ => return Err(DecodeError::UnsupportedChannelConfiguration),
 	};
-	Ok(StaticSound::new(
-		reader.ident_hdr.audio_sample_rate,
-		samples,
-	))
+	Ok(StaticSoundData {
+		sample_rate: reader.ident_hdr.audio_sample_rate,
+		samples: Arc::new(samples),
+	})
 }
 
-pub fn from_file(path: impl AsRef<Path>) -> Result<StaticSound, FromFileError> {
+pub fn from_file(path: impl AsRef<Path>) -> Result<StaticSoundData, FromFileError> {
 	Ok(from_reader(File::open(path)?)?)
 }

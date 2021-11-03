@@ -18,7 +18,7 @@ use crate::{
 	clock::{Clock, ClockHandle, ClockId},
 	error::CommandError,
 	parameter::{Parameter, ParameterHandle, ParameterId, Tween},
-	sound::{Sound, SoundId},
+	sound::SoundData,
 	track::{SubTrackId, Track, TrackHandle, TrackId, TrackSettings},
 	value::Value,
 };
@@ -106,21 +106,17 @@ impl<B: Backend> AudioManager<B> {
 		self.context.state()
 	}
 
-	fn play_inner(&mut self, sound: Box<dyn Sound>) -> Result<(), PlaySoundError> {
-		let id = SoundId(
-			self.resource_controllers
-				.sound_controller
-				.try_reserve()
-				.map_err(|_| PlaySoundError::SoundLimitReached)?,
-		);
-		self.command_producer
-			.push(Command::Sound(SoundCommand::Add(id, sound)))?;
-		Ok(())
-	}
-
 	/// Plays a sound.
-	pub fn play(&mut self, sound: impl Sound + 'static) -> Result<(), PlaySoundError> {
-		self.play_inner(Box::new(sound))
+	pub fn play<D: SoundData>(&mut self, sound_data: D) -> Result<D::Handle, PlaySoundError> {
+		let key = self
+			.resource_controllers
+			.sound_controller
+			.try_reserve()
+			.map_err(|_| PlaySoundError::SoundLimitReached)?;
+		let (sound, handle) = sound_data.into_sound();
+		self.command_producer
+			.push(Command::Sound(SoundCommand::Add(key, sound)))?;
+		Ok(handle)
 	}
 
 	/// Creates a parameter with the specified starting value.

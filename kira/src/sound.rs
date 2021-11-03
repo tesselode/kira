@@ -1,16 +1,16 @@
 pub mod static_sound;
 
-use atomic_arena::Key;
-
 use crate::{
 	dsp::Frame,
 	manager::resources::{Clocks, Parameters},
 	track::TrackId,
 };
 
-/// A unique identifier for a parameter.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct SoundId(pub(crate) Key);
+pub trait SoundData {
+	type Handle;
+
+	fn into_sound(self) -> (Box<dyn Sound>, Self::Handle);
+}
 
 pub trait Sound: Send + Sync {
 	fn sample_rate(&mut self) -> u32;

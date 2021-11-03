@@ -1,16 +1,18 @@
 pub mod producer;
 
+use atomic_arena::Key;
+
 use crate::{
 	audio_stream::{AudioStreamId, AudioStreamWrapper},
 	clock::{Clock, ClockId},
 	parameter::{Parameter, ParameterId, Tween},
-	sound::{Sound, SoundId},
+	sound::Sound,
 	track::{SubTrackId, Track, TrackId},
 	value::Value,
 };
 
 pub(crate) enum SoundCommand {
-	Add(SoundId, Box<dyn Sound>),
+	Add(Key, Box<dyn Sound>),
 }
 
 pub(crate) enum ParameterCommand {

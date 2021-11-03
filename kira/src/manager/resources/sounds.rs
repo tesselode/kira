@@ -38,9 +38,9 @@ impl Sounds {
 
 	pub fn run_command(&mut self, command: SoundCommand) {
 		match command {
-			SoundCommand::Add(id, sound) => self
+			SoundCommand::Add(key, sound) => self
 				.sounds
-				.insert_with_key(id.0, sound)
+				.insert_with_key(key, sound)
 				.expect("Sound arena is full"),
 		}
 	}
