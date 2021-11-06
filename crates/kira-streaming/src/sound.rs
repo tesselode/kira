@@ -34,6 +34,9 @@ impl Shared {
 
 pub(crate) struct StreamingSound {
 	sample_rate: u32,
+	/// Receives [`Frame`]s from the decoder thread. The first frame
+	/// is used as the "previous" frame, the second frame as the "current",
+	/// the third as the "next", and so on.
 	frame_consumer: Consumer<(usize, Frame)>,
 	stopped_signal_sender: Arc<AtomicBool>,
 	finished_signal_receiver: Arc<AtomicBool>,
@@ -48,6 +51,8 @@ impl StreamingSound {
 		let sample_rate = data.decoder.sample_rate();
 		let loop_behavior = data.settings.loop_behavior;
 		let (mut frame_producer, frame_consumer) = RingBuffer::new(BUFFER_SIZE).split();
+		// pre-seed the frame ringbuffer with a zero frame. this is the "previous" frame
+		// when the sound just started.
 		frame_producer
 			.push((0, Frame::ZERO))
 			.expect("The frame producer shouldn't be full because we just created it");
@@ -59,25 +64,33 @@ impl StreamingSound {
 			let mut decoded_frames = VecDeque::new();
 			let mut current_frame = 0;
 			loop {
+				// if the sound was manually stopped, end the thread
 				if stopped_signal_receiver.load(Ordering::SeqCst) {
 					break;
 				}
+				// if the frame ringbuffer is full, sleep for a bit
 				if frame_producer.is_full() {
 					std::thread::sleep(DECODER_THREAD_SLEEP_DURATION);
 					continue;
 				}
+				// if we have leftover frames from the last decode, push
+				// those first
 				if let Some(frame) = decoded_frames.pop_front() {
 					frame_producer
 						.push((current_frame, frame))
 						.expect("Frame producer should not be full because we just checked that");
 					current_frame += 1;
+				// otherwise, decode some new frames
 				} else if let Some(frames) = data.decoder.decode() {
 					decoded_frames = frames;
+				// if there aren't any new frames and the sound is looping,
+				// seek back to the loop position
 				} else if let Some(LoopBehavior { start_position }) = loop_behavior {
 					if let Some((sample_index, frames)) = seek(start_position, &mut data) {
 						current_frame = sample_index;
 						decoded_frames = frames;
 					}
+				// otherwise, tell the sound to finish and end the thread
 				} else {
 					finished_signal_sender.store(true, Ordering::SeqCst);
 					break;
