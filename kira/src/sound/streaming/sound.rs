@@ -25,7 +25,8 @@ const DECODER_THREAD_SLEEP_DURATION: Duration = Duration::from_millis(1);
 pub struct StreamingSound {
 	sample_rate: u32,
 	frame_consumer: Consumer<Frame>,
-	quit_signal_sender: Arc<AtomicBool>,
+	stopped_signal_sender: Arc<AtomicBool>,
+	finished_signal_receiver: Arc<AtomicBool>,
 	state: PlaybackState,
 	fractional_position: f64,
 }
@@ -37,12 +38,14 @@ impl StreamingSound {
 		frame_producer
 			.push(Frame::ZERO)
 			.expect("The frame producer shouldn't be full because we just created it");
-		let quit_signal_sender = Arc::new(AtomicBool::new(false));
-		let quit_signal_receiver = quit_signal_sender.clone();
+		let stopped_signal_sender = Arc::new(AtomicBool::new(false));
+		let stopped_signal_receiver = stopped_signal_sender.clone();
+		let finished_signal_sender = Arc::new(AtomicBool::new(false));
+		let finished_signal_receiver = finished_signal_sender.clone();
 		std::thread::spawn(move || {
 			let mut decoded_frames = VecDeque::new();
 			loop {
-				if quit_signal_receiver.load(Ordering::SeqCst) {
+				if stopped_signal_receiver.load(Ordering::SeqCst) {
 					break;
 				}
 				if frame_producer.is_full() {
@@ -53,8 +56,12 @@ impl StreamingSound {
 					frame_producer
 						.push(frame)
 						.expect("Frame producer should not be full because we just checked that");
+				} else if let Some(frames) = data.decoder.decode() {
+					decoded_frames = frames;
 				} else {
-					decoded_frames = data.decoder.decode();
+					finished_signal_sender.store(true, Ordering::SeqCst);
+					println!("reached end of sound");
+					break;
 				}
 			}
 			println!("stopping decoder thread");
@@ -62,7 +69,8 @@ impl StreamingSound {
 		Self {
 			sample_rate,
 			frame_consumer,
-			quit_signal_sender,
+			stopped_signal_sender,
+			finished_signal_receiver,
 			state: PlaybackState::Playing,
 			fractional_position: 0.0,
 		}
@@ -99,6 +107,9 @@ impl Sound for StreamingSound {
 			self.fractional_position -= 1.0;
 			self.frame_consumer.pop();
 		}
+		if self.finished_signal_receiver.load(Ordering::SeqCst) && self.frame_consumer.is_empty() {
+			self.state = PlaybackState::Stopped;
+		}
 		out
 	}
 
@@ -109,6 +120,7 @@ impl Sound for StreamingSound {
 
 impl Drop for StreamingSound {
 	fn drop(&mut self) {
-		self.quit_signal_sender.store(true, Ordering::SeqCst);
+		self.stopped_signal_sender.store(true, Ordering::SeqCst);
+		println!("dropped streaming sound");
 	}
 }

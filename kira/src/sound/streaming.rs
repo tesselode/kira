@@ -11,5 +11,5 @@ use crate::dsp::Frame;
 pub trait Decoder: Send + Sync {
 	fn sample_rate(&mut self) -> u32;
 
-	fn decode(&mut self) -> VecDeque<Frame>;
+	fn decode(&mut self) -> Option<VecDeque<Frame>>;
 }

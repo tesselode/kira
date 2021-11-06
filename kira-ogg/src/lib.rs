@@ -131,7 +131,7 @@ impl kira::sound::streaming::Decoder for Decoder {
 		self.reader.ident_hdr.audio_sample_rate
 	}
 
-	fn decode(&mut self) -> VecDeque<Frame> {
+	fn decode(&mut self) -> Option<VecDeque<Frame>> {
 		self.reader.read_dec_packet_itl().unwrap().map(|packet| {
 			match self.reader.ident_hdr.audio_channels {
 				1 => {
@@ -145,6 +145,6 @@ impl kira::sound::streaming::Decoder for Decoder {
 				},
 				_ => panic!("Unsupported channel configuration. This should have been checked when the decoder was created.")
 			}
-		}).unwrap_or_else(VecDeque::new)
+		})
 	}
 }
