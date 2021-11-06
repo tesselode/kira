@@ -8,7 +8,7 @@ pub use sound::*;
 
 use std::collections::VecDeque;
 
-use crate::dsp::Frame;
+use kira::dsp::Frame;
 
 pub trait Decoder: Send + Sync {
 	fn sample_rate(&mut self) -> u32;

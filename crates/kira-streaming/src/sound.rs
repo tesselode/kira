@@ -9,7 +9,7 @@ use std::{
 
 use ringbuf::{Consumer, RingBuffer};
 
-use crate::{
+use kira::{
 	dsp::Frame,
 	manager::resources::{Clocks, Parameters},
 	sound::{static_sound::PlaybackState, Sound},

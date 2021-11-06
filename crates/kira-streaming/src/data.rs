@@ -1,4 +1,4 @@
-use crate::sound::{Sound, SoundData};
+use kira::sound::{Sound, SoundData};
 
 use super::{settings::StreamingSoundSettings, sound::StreamingSound, Decoder};
 

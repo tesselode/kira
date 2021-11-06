@@ -1,4 +1,4 @@
-use crate::LoopBehavior;
+use kira::LoopBehavior;
 
 pub struct StreamingSoundSettings {
 	pub loop_behavior: Option<LoopBehavior>,

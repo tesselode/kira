@@ -1,5 +1,4 @@
 pub mod static_sound;
-pub mod streaming;
 
 use crate::{
 	dsp::Frame,

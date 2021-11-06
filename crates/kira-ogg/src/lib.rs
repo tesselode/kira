@@ -132,7 +132,7 @@ impl Decoder {
 	}
 }
 
-impl kira::sound::streaming::Decoder for Decoder {
+impl kira_streaming::Decoder for Decoder {
 	fn sample_rate(&mut self) -> u32 {
 		self.reader_mut().ident_hdr.audio_sample_rate
 	}

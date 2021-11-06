@@ -2,6 +2,7 @@
 members = [
 	"crates/kira",
 	"crates/kira-cpal",
+	"crates/kira-streaming",
 	"crates/kira-ogg",
 	"crates/kira-effects",
 ]
