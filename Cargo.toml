@@ -1,9 +1,9 @@
 [workspace]
 members = [
-	"kira",
-	"kira-cpal",
-	"kira-ogg",
-	"kira-effects",
+	"crates/kira",
+	"crates/kira-cpal",
+	"crates/kira-ogg",
+	"crates/kira-effects",
 ]
 
 [profile.dev]
