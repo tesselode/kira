@@ -113,7 +113,7 @@ pub fn from_file(path: impl AsRef<Path>) -> Result<StaticSoundData, FromFileErro
 }
 
 pub struct Decoder {
-	reader: OggStreamReader<File>,
+	reader: Option<OggStreamReader<File>>,
 }
 
 impl Decoder {
@@ -122,18 +122,24 @@ impl Decoder {
 		if reader.ident_hdr.audio_channels > 2 {
 			return Err(DecodeError::UnsupportedChannelConfiguration.into());
 		}
-		Ok(Self { reader })
+		Ok(Self {
+			reader: Some(reader),
+		})
+	}
+
+	fn reader_mut(&mut self) -> &mut OggStreamReader<File> {
+		self.reader.as_mut().unwrap()
 	}
 }
 
 impl kira::sound::streaming::Decoder for Decoder {
 	fn sample_rate(&mut self) -> u32 {
-		self.reader.ident_hdr.audio_sample_rate
+		self.reader_mut().ident_hdr.audio_sample_rate
 	}
 
 	fn decode(&mut self) -> Option<VecDeque<Frame>> {
-		self.reader.read_dec_packet_itl().unwrap().map(|packet| {
-			match self.reader.ident_hdr.audio_channels {
+		self.reader_mut().read_dec_packet_itl().unwrap().map(|packet| {
+			match self.reader_mut().ident_hdr.audio_channels {
 				1 => {
 					packet.iter().map(|sample| Frame::from_mono(sample.into_f32())).collect()
 				},
@@ -146,5 +152,11 @@ impl kira::sound::streaming::Decoder for Decoder {
 				_ => panic!("Unsupported channel configuration. This should have been checked when the decoder was created.")
 			}
 		})
+	}
+
+	fn reset(&mut self) {
+		let mut file = self.reader.take().unwrap().into_inner().into_inner();
+		file.rewind().unwrap();
+		self.reader = Some(OggStreamReader::new(file).unwrap());
 	}
 }

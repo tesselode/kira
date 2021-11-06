@@ -14,7 +14,7 @@ use crate::{
 	manager::resources::{Clocks, Parameters},
 	sound::{static_sound::PlaybackState, Sound},
 	track::TrackId,
-	util,
+	util, LoopBehavior,
 };
 
 use super::data::StreamingSoundData;
@@ -34,6 +34,7 @@ pub struct StreamingSound {
 impl StreamingSound {
 	pub fn new(mut data: StreamingSoundData) -> Self {
 		let sample_rate = data.decoder.sample_rate();
+		let loop_behavior = data.settings.loop_behavior;
 		let (mut frame_producer, frame_consumer) = RingBuffer::new(BUFFER_SIZE).split();
 		frame_producer
 			.push(Frame::ZERO)
@@ -58,6 +59,17 @@ impl StreamingSound {
 						.expect("Frame producer should not be full because we just checked that");
 				} else if let Some(frames) = data.decoder.decode() {
 					decoded_frames = frames;
+				} else if let Some(LoopBehavior { start_position }) = loop_behavior {
+					let mut samples_to_skip =
+						(start_position * sample_rate as f64).round() as usize;
+					data.decoder.reset();
+					while let Some(frames) = data.decoder.decode() {
+						if samples_to_skip < frames.len() {
+							decoded_frames = frames;
+							break;
+						}
+						samples_to_skip -= frames.len();
+					}
 				} else {
 					finished_signal_sender.store(true, Ordering::SeqCst);
 					println!("reached end of sound");

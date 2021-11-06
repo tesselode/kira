@@ -1,14 +1,18 @@
 use crate::sound::{Sound, SoundData};
 
-use super::{sound::StreamingSound, Decoder};
+use super::{settings::StreamingSoundSettings, sound::StreamingSound, Decoder};
 
 pub struct StreamingSoundData {
 	pub decoder: Box<dyn Decoder>,
+	pub settings: StreamingSoundSettings,
 }
 
 impl StreamingSoundData {
-	pub fn new(decoder: impl Decoder + 'static) -> Self {
-		Self { decoder: Box::new(decoder) }
+	pub fn new(decoder: impl Decoder + 'static, settings: StreamingSoundSettings) -> Self {
+		Self {
+			decoder: Box::new(decoder),
+			settings,
+		}
 	}
 }
 
