@@ -1,5 +1,7 @@
 use kira::sound::{Sound, SoundData};
 
+use crate::StreamingSoundHandle;
+
 use super::{settings::StreamingSoundSettings, sound::StreamingSound, Decoder};
 
 pub struct StreamingSoundData {
@@ -17,9 +19,11 @@ impl StreamingSoundData {
 }
 
 impl SoundData for StreamingSoundData {
-	type Handle = ();
+	type Handle = StreamingSoundHandle;
 
 	fn into_sound(self) -> (Box<dyn Sound>, Self::Handle) {
-		(Box::new(StreamingSound::new(self)), ())
+		let sound = StreamingSound::new(self);
+		let shared = sound.shared();
+		(Box::new(sound), StreamingSoundHandle::new(shared))
 	}
 }

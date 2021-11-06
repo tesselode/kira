@@ -23,6 +23,13 @@ impl Sounds {
 	}
 
 	pub fn on_start_processing(&mut self) {
+		for (_, sound) in &mut self.sounds {
+			sound.on_start_processing();
+		}
+		self.remove_unused_sounds();
+	}
+
+	fn remove_unused_sounds(&mut self) {
 		if self.unused_sound_producer.is_full() {
 			return;
 		}
