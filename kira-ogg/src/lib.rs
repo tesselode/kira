@@ -1,4 +1,5 @@
 use std::{
+	collections::VecDeque,
 	fmt::Display,
 	fs::File,
 	io::{Read, Seek},
@@ -6,7 +7,10 @@ use std::{
 	sync::Arc,
 };
 
-use kira::sound::static_sound::{Samples, StaticSoundData};
+use kira::{
+	dsp::{Frame, Sample},
+	sound::static_sound::{Samples, StaticSoundData},
+};
 use lewton::{inside_ogg::OggStreamReader, VorbisError};
 
 #[derive(Debug)]
@@ -106,4 +110,41 @@ pub fn from_reader(reader: impl Read + Seek) -> Result<StaticSoundData, DecodeEr
 
 pub fn from_file(path: impl AsRef<Path>) -> Result<StaticSoundData, FromFileError> {
 	Ok(from_reader(File::open(path)?)?)
+}
+
+pub struct Decoder {
+	reader: OggStreamReader<File>,
+}
+
+impl Decoder {
+	pub fn new(path: impl AsRef<Path>) -> Result<Self, FromFileError> {
+		let reader = OggStreamReader::new(File::open(path)?).map_err(DecodeError::VorbisError)?;
+		if reader.ident_hdr.audio_channels > 2 {
+			return Err(DecodeError::UnsupportedChannelConfiguration.into());
+		}
+		Ok(Self { reader })
+	}
+}
+
+impl kira::sound::streaming::Decoder for Decoder {
+	fn sample_rate(&mut self) -> u32 {
+		self.reader.ident_hdr.audio_sample_rate
+	}
+
+	fn decode(&mut self) -> VecDeque<Frame> {
+		self.reader.read_dec_packet_itl().unwrap().map(|packet| {
+			match self.reader.ident_hdr.audio_channels {
+				1 => {
+					packet.iter().map(|sample| Frame::from_mono(sample.into_f32())).collect()
+				},
+				2 => {
+					packet
+						.chunks_exact(2)
+						.map(|chunk| Frame::new(chunk[0].into_f32(), chunk[1].into_f32()))
+						.collect()
+				},
+				_ => panic!("Unsupported channel configuration. This should have been checked when the decoder was created.")
+			}
+		}).unwrap_or_else(VecDeque::new)
+	}
 }

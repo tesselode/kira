@@ -31,10 +31,6 @@ impl StaticSound {
 }
 
 impl Sound for StaticSound {
-	fn sample_rate(&mut self) -> u32 {
-		self.data.sample_rate
-	}
-
 	fn track(&mut self) -> TrackId {
 		TrackId::Main
 	}

@@ -1,4 +1,5 @@
 pub mod static_sound;
+pub mod streaming;
 
 use crate::{
 	dsp::Frame,
@@ -13,8 +14,6 @@ pub trait SoundData {
 }
 
 pub trait Sound: Send + Sync {
-	fn sample_rate(&mut self) -> u32;
-
 	fn track(&mut self) -> TrackId;
 
 	fn on_start_processing(&mut self) {}
