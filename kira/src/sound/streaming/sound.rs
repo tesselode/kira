@@ -60,23 +60,12 @@ impl StreamingSound {
 				} else if let Some(frames) = data.decoder.decode() {
 					decoded_frames = frames;
 				} else if let Some(LoopBehavior { start_position }) = loop_behavior {
-					let mut samples_to_skip =
-						(start_position * sample_rate as f64).round() as usize;
-					data.decoder.reset();
-					while let Some(frames) = data.decoder.decode() {
-						if samples_to_skip < frames.len() {
-							decoded_frames = frames;
-							break;
-						}
-						samples_to_skip -= frames.len();
-					}
+					seek(start_position, &mut data, &mut decoded_frames);
 				} else {
 					finished_signal_sender.store(true, Ordering::SeqCst);
-					println!("reached end of sound");
 					break;
 				}
 			}
-			println!("stopping decoder thread");
 		});
 		Self {
 			sample_rate,
@@ -97,6 +86,18 @@ impl StreamingSound {
 			}
 		});
 		frames
+	}
+}
+
+fn seek(position: f64, data: &mut StreamingSoundData, decoded_frames: &mut VecDeque<Frame>) {
+	let mut samples_to_skip = (position * data.decoder.sample_rate() as f64).round() as usize;
+	data.decoder.reset();
+	while let Some(frames) = data.decoder.decode() {
+		if samples_to_skip < frames.len() {
+			*decoded_frames = frames;
+			break;
+		}
+		samples_to_skip -= frames.len();
 	}
 }
 
@@ -133,6 +134,5 @@ impl Sound for StreamingSound {
 impl Drop for StreamingSound {
 	fn drop(&mut self) {
 		self.stopped_signal_sender.store(true, Ordering::SeqCst);
-		println!("dropped streaming sound");
 	}
 }
