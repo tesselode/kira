@@ -11,6 +11,8 @@ use super::data::StaticSoundData;
 pub enum PlaybackState {
 	Playing,
 	Pausing,
+	Paused,
+	Stopping,
 	Stopped,
 }
 

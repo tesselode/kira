@@ -12,10 +12,13 @@ use ringbuf::{Consumer, RingBuffer};
 use kira::{
 	dsp::Frame,
 	manager::resources::{Clocks, Parameters},
+	parameter::{Parameter, Tween},
 	sound::{static_sound::PlaybackState, Sound},
 	track::TrackId,
 	util, LoopBehavior,
 };
+
+use crate::Command;
 
 use super::data::StreamingSoundData;
 
@@ -33,6 +36,7 @@ impl Shared {
 }
 
 pub(crate) struct StreamingSound {
+	command_consumer: Consumer<Command>,
 	sample_rate: u32,
 	/// Receives [`Frame`]s from the decoder thread. The first frame
 	/// is used as the "previous" frame, the second frame as the "current",
@@ -41,13 +45,14 @@ pub(crate) struct StreamingSound {
 	stopped_signal_sender: Arc<AtomicBool>,
 	finished_signal_receiver: Arc<AtomicBool>,
 	state: PlaybackState,
+	volume_fade: Parameter,
 	current_frame: usize,
 	fractional_position: f64,
 	shared: Arc<Shared>,
 }
 
 impl StreamingSound {
-	pub fn new(mut data: StreamingSoundData) -> Self {
+	pub fn new(mut data: StreamingSoundData, command_consumer: Consumer<Command>) -> Self {
 		let sample_rate = data.decoder.sample_rate();
 		let loop_behavior = data.settings.loop_behavior;
 		let (mut frame_producer, frame_consumer) = RingBuffer::new(BUFFER_SIZE).split();
@@ -98,11 +103,13 @@ impl StreamingSound {
 			}
 		});
 		Self {
+			command_consumer,
 			sample_rate,
 			frame_consumer,
 			stopped_signal_sender,
 			finished_signal_receiver,
 			state: PlaybackState::Playing,
+			volume_fade: Parameter::new(1.0),
 			current_frame: 0,
 			fractional_position: 0.0,
 			shared: Arc::new(Shared {
@@ -142,6 +149,21 @@ impl StreamingSound {
 	fn position(&self) -> f64 {
 		(self.current_frame as f64 + self.fractional_position) / self.sample_rate as f64
 	}
+
+	fn pause(&mut self, tween: Tween) {
+		self.state = PlaybackState::Pausing;
+		self.volume_fade.set(0.0, tween);
+	}
+
+	fn resume(&mut self, tween: Tween) {
+		self.state = PlaybackState::Playing;
+		self.volume_fade.set(1.0, tween);
+	}
+
+	fn stop(&mut self, tween: Tween) {
+		self.state = PlaybackState::Stopping;
+		self.volume_fade.set(0.0, tween);
+	}
 }
 
 fn seek(position: f64, data: &mut StreamingSoundData) -> Option<(usize, VecDeque<Frame>)> {
@@ -163,12 +185,35 @@ impl Sound for StreamingSound {
 		TrackId::Main
 	}
 
-	fn process(&mut self, dt: f64, _parameters: &Parameters, _clocks: &Clocks) -> Frame {
+	fn on_start_processing(&mut self) {
+		self.shared
+			.position
+			.store(self.position().to_bits(), Ordering::SeqCst);
+		while let Some(command) = self.command_consumer.pop() {
+			match command {
+				Command::Pause(tween) => self.pause(tween),
+				Command::Resume(tween) => self.resume(tween),
+				Command::Stop(tween) => self.stop(tween),
+			}
+		}
+	}
+
+	fn process(&mut self, dt: f64, _parameters: &Parameters, clocks: &Clocks) -> Frame {
+		if matches!(self.state, PlaybackState::Paused | PlaybackState::Stopped) {
+			return Frame::ZERO;
+		}
 		// pause playback while waiting for audio data. the first frame
 		// in the ringbuffer is the previous frame, so we need to make
 		// sure there's at least 2 before we continue playing.
 		if self.frame_consumer.len() < 2 && !self.finished_signal_receiver.load(Ordering::SeqCst) {
 			return Frame::ZERO;
+		}
+		if self.volume_fade.update(dt, clocks) {
+			match self.state {
+				PlaybackState::Pausing => self.state = PlaybackState::Paused,
+				PlaybackState::Stopping => self.state = PlaybackState::Stopped,
+				_ => {}
+			}
 		}
 		self.update_current_frame();
 		let next_frames = self.next_frames();
@@ -187,13 +232,7 @@ impl Sound for StreamingSound {
 		if self.finished_signal_receiver.load(Ordering::SeqCst) && self.frame_consumer.is_empty() {
 			self.state = PlaybackState::Stopped;
 		}
-		out
-	}
-
-	fn on_start_processing(&mut self) {
-		self.shared
-			.position
-			.store(self.position().to_bits(), Ordering::SeqCst);
+		out * self.volume_fade.value() as f32
 	}
 
 	fn finished(&self) -> bool {

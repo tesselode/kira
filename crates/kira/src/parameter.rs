@@ -66,7 +66,7 @@ enum ParameterState {
 	},
 }
 
-pub(crate) struct Parameter {
+pub struct Parameter {
 	state: ParameterState,
 	paused: bool,
 	value: f64,
@@ -83,7 +83,7 @@ impl Parameter {
 		}
 	}
 
-	pub fn shared(&self) -> Arc<ParameterShared> {
+	pub(crate) fn shared(&self) -> Arc<ParameterShared> {
 		self.shared.clone()
 	}
 
@@ -110,7 +110,7 @@ impl Parameter {
 		};
 	}
 
-	pub fn on_start_processing(&self) {
+	pub(crate) fn on_start_processing(&self) {
 		self.shared
 			.value
 			.store(self.value.to_bits(), Ordering::SeqCst);

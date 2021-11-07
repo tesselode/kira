@@ -9,7 +9,7 @@ pub use settings::*;
 
 use std::collections::VecDeque;
 
-use kira::dsp::Frame;
+use kira::{dsp::Frame, parameter::Tween};
 
 pub trait Decoder: Send + Sync {
 	fn sample_rate(&mut self) -> u32;
@@ -17,4 +17,11 @@ pub trait Decoder: Send + Sync {
 	fn decode(&mut self) -> Option<VecDeque<Frame>>;
 
 	fn reset(&mut self);
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum Command {
+	Pause(Tween),
+	Resume(Tween),
+	Stop(Tween),
 }
