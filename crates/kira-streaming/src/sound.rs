@@ -1,10 +1,8 @@
-use std::{
-	collections::VecDeque,
-	sync::{
-		atomic::{AtomicBool, AtomicU64, Ordering},
-		Arc,
-	},
-	time::Duration,
+mod decoder_wrapper;
+
+use std::sync::{
+	atomic::{AtomicBool, AtomicU64, Ordering},
+	Arc,
 };
 
 use ringbuf::{Consumer, RingBuffer};
@@ -15,15 +13,16 @@ use kira::{
 	parameter::{Parameter, Tween},
 	sound::{static_sound::PlaybackState, Sound},
 	track::TrackId,
-	util, LoopBehavior,
+	util,
 };
 
 use crate::Command;
 
+use self::decoder_wrapper::DecoderWrapper;
+
 use super::data::StreamingSoundData;
 
 const BUFFER_SIZE: usize = 16_384;
-const DECODER_THREAD_SLEEP_DURATION: Duration = Duration::from_millis(1);
 
 pub(crate) struct Shared {
 	position: AtomicU64,
@@ -65,43 +64,14 @@ impl StreamingSound {
 		let stopped_signal_receiver = stopped_signal_sender.clone();
 		let finished_signal_sender = Arc::new(AtomicBool::new(false));
 		let finished_signal_receiver = finished_signal_sender.clone();
-		std::thread::spawn(move || {
-			let mut decoded_frames = VecDeque::new();
-			let mut current_frame = 0;
-			loop {
-				// if the sound was manually stopped, end the thread
-				if stopped_signal_receiver.load(Ordering::SeqCst) {
-					break;
-				}
-				// if the frame ringbuffer is full, sleep for a bit
-				if frame_producer.is_full() {
-					std::thread::sleep(DECODER_THREAD_SLEEP_DURATION);
-					continue;
-				}
-				// if we have leftover frames from the last decode, push
-				// those first
-				if let Some(frame) = decoded_frames.pop_front() {
-					frame_producer
-						.push((current_frame, frame))
-						.expect("Frame producer should not be full because we just checked that");
-					current_frame += 1;
-				// otherwise, decode some new frames
-				} else if let Some(frames) = data.decoder.decode() {
-					decoded_frames = frames;
-				// if there aren't any new frames and the sound is looping,
-				// seek back to the loop position
-				} else if let Some(LoopBehavior { start_position }) = loop_behavior {
-					if let Some((sample_index, frames)) = seek(start_position, &mut data) {
-						current_frame = sample_index;
-						decoded_frames = frames;
-					}
-				// otherwise, tell the sound to finish and end the thread
-				} else {
-					finished_signal_sender.store(true, Ordering::SeqCst);
-					break;
-				}
-			}
-		});
+		DecoderWrapper::new(
+			data.decoder,
+			loop_behavior,
+			frame_producer,
+			stopped_signal_receiver,
+			finished_signal_sender,
+		)
+		.start();
 		Self {
 			command_consumer,
 			sample_rate,
@@ -164,20 +134,6 @@ impl StreamingSound {
 		self.state = PlaybackState::Stopping;
 		self.volume_fade.set(0.0, tween);
 	}
-}
-
-fn seek(position: f64, data: &mut StreamingSoundData) -> Option<(usize, VecDeque<Frame>)> {
-	let mut samples_to_skip = (position * data.decoder.sample_rate() as f64).round() as usize;
-	let mut current_sample = 0;
-	data.decoder.reset();
-	while let Some(frames) = data.decoder.decode() {
-		if samples_to_skip < frames.len() {
-			return Some((current_sample, frames));
-		}
-		samples_to_skip -= frames.len();
-		current_sample += frames.len();
-	}
-	None
 }
 
 impl Sound for StreamingSound {
