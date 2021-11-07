@@ -1,7 +1,7 @@
 mod decoder_wrapper;
 
 use std::sync::{
-	atomic::{AtomicBool, AtomicU64, Ordering},
+	atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
 	Arc,
 };
 
@@ -23,6 +23,7 @@ use self::decoder_wrapper::DecoderWrapper;
 use super::data::StreamingSoundData;
 
 const BUFFER_SIZE: usize = 16_384;
+const SEEK_DESTINATION_NONE: usize = usize::MAX;
 
 pub(crate) struct Shared {
 	position: AtomicU64,
@@ -41,6 +42,7 @@ pub(crate) struct StreamingSound {
 	/// is used as the "previous" frame, the second frame as the "current",
 	/// the third as the "next", and so on.
 	frame_consumer: Consumer<(usize, Frame)>,
+	seek_destination_sender: Arc<AtomicUsize>,
 	stopped_signal_sender: Arc<AtomicBool>,
 	finished_signal_receiver: Arc<AtomicBool>,
 	state: PlaybackState,
@@ -60,6 +62,8 @@ impl StreamingSound {
 		frame_producer
 			.push((0, Frame::ZERO))
 			.expect("The frame producer shouldn't be full because we just created it");
+		let seek_destination_sender = Arc::new(AtomicUsize::new(SEEK_DESTINATION_NONE));
+		let seek_destination_receiver = seek_destination_sender.clone();
 		let stopped_signal_sender = Arc::new(AtomicBool::new(false));
 		let stopped_signal_receiver = stopped_signal_sender.clone();
 		let finished_signal_sender = Arc::new(AtomicBool::new(false));
@@ -68,6 +72,7 @@ impl StreamingSound {
 			data.decoder,
 			loop_behavior,
 			frame_producer,
+			seek_destination_receiver,
 			stopped_signal_receiver,
 			finished_signal_sender,
 		)
@@ -76,6 +81,7 @@ impl StreamingSound {
 			command_consumer,
 			sample_rate,
 			frame_consumer,
+			seek_destination_sender,
 			stopped_signal_sender,
 			finished_signal_receiver,
 			state: PlaybackState::Playing,
@@ -134,6 +140,18 @@ impl StreamingSound {
 		self.state = PlaybackState::Stopping;
 		self.volume_fade.set(0.0, tween);
 	}
+
+	fn seek_to_index(&mut self, index: usize) {
+		self.seek_destination_sender.store(index, Ordering::SeqCst);
+	}
+
+	fn seek_to(&mut self, position: f64) {
+		self.seek_to_index((position * self.sample_rate as f64).round() as usize);
+	}
+
+	fn seek_by(&mut self, amount: f64) {
+		self.seek_to(self.position() + amount);
+	}
 }
 
 impl Sound for StreamingSound {
@@ -150,6 +168,8 @@ impl Sound for StreamingSound {
 				Command::Pause(tween) => self.pause(tween),
 				Command::Resume(tween) => self.resume(tween),
 				Command::Stop(tween) => self.stop(tween),
+				Command::SeekBy(amount) => self.seek_by(amount),
+				Command::SeekTo(position) => self.seek_to(position),
 			}
 		}
 	}

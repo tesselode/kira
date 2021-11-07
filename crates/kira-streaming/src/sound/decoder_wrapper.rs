@@ -1,7 +1,7 @@
 use std::{
 	collections::VecDeque,
 	sync::{
-		atomic::{AtomicBool, Ordering},
+		atomic::{AtomicBool, AtomicUsize, Ordering},
 		Arc,
 	},
 	time::Duration,
@@ -12,6 +12,8 @@ use ringbuf::Producer;
 
 use crate::Decoder;
 
+use super::SEEK_DESTINATION_NONE;
+
 const DECODER_THREAD_SLEEP_DURATION: Duration = Duration::from_millis(1);
 
 type ShouldEndThread = bool;
@@ -20,6 +22,7 @@ pub struct DecoderWrapper {
 	decoder: Box<dyn Decoder>,
 	loop_behavior: Option<LoopBehavior>,
 	frame_producer: Producer<(usize, Frame)>,
+	seek_destination_receiver: Arc<AtomicUsize>,
 	stopped_signal_receiver: Arc<AtomicBool>,
 	finished_signal_sender: Arc<AtomicBool>,
 	decoded_frames: VecDeque<Frame>,
@@ -31,6 +34,7 @@ impl DecoderWrapper {
 		decoder: Box<dyn Decoder>,
 		loop_behavior: Option<LoopBehavior>,
 		frame_producer: Producer<(usize, Frame)>,
+		seek_destination_receiver: Arc<AtomicUsize>,
 		stopped_signal_receiver: Arc<AtomicBool>,
 		finished_signal_sender: Arc<AtomicBool>,
 	) -> Self {
@@ -38,6 +42,7 @@ impl DecoderWrapper {
 			decoder,
 			loop_behavior,
 			frame_producer,
+			seek_destination_receiver,
 			stopped_signal_receiver,
 			finished_signal_sender,
 			decoded_frames: VecDeque::new(),
@@ -64,6 +69,13 @@ impl DecoderWrapper {
 			std::thread::sleep(DECODER_THREAD_SLEEP_DURATION);
 			return false;
 		}
+		// check for seek commands
+		let seek_destination = self.seek_destination_receiver.load(Ordering::SeqCst);
+		if seek_destination != SEEK_DESTINATION_NONE {
+			self.seek(seek_destination);
+			self.seek_destination_receiver
+				.store(SEEK_DESTINATION_NONE, Ordering::SeqCst);
+		}
 		// if we have leftover frames from the last decode, push
 		// those first
 		if let Some(frame) = self.decoded_frames.pop_front() {
@@ -77,10 +89,8 @@ impl DecoderWrapper {
 		// if there aren't any new frames and the sound is looping,
 		// seek back to the loop position
 		} else if let Some(LoopBehavior { start_position }) = self.loop_behavior {
-			if let Some((sample_index, frames)) = self.seek(start_position) {
-				self.current_frame = sample_index;
-				self.decoded_frames = frames;
-			}
+			let destination = (start_position * self.decoder.sample_rate() as f64).round() as usize;
+			self.seek(destination);
 		// otherwise, tell the sound to finish and end the thread
 		} else {
 			self.finished_signal_sender.store(true, Ordering::SeqCst);
@@ -89,17 +99,30 @@ impl DecoderWrapper {
 		false
 	}
 
-	fn seek(&mut self, position: f64) -> Option<(usize, VecDeque<Frame>)> {
-		let mut samples_to_skip = (position * self.decoder.sample_rate() as f64).round() as usize;
-		let mut current_sample = 0;
+	fn reset(&mut self) {
 		self.decoder.reset();
-		while let Some(frames) = self.decoder.decode() {
-			if samples_to_skip < frames.len() {
-				return Some((current_sample, frames));
-			}
-			samples_to_skip -= frames.len();
-			current_sample += frames.len();
+		self.current_frame = 0;
+		self.decoded_frames.clear();
+	}
+
+	fn seek(&mut self, destination: usize) {
+		if self.current_frame > destination {
+			self.reset();
 		}
-		None
+		while self.current_frame + self.decoded_frames.len() < destination {
+			self.current_frame += self.decoded_frames.len();
+			if let Some(frames) = self.decoder.decode() {
+				self.decoded_frames = frames;
+			} else {
+				// if we've reached the end of the audio data and a loop behavior
+				// is set, wrap around to the start position
+				if let Some(LoopBehavior { start_position }) = self.loop_behavior {
+					let start_index =
+						(start_position * self.decoder.sample_rate() as f64).round() as usize;
+					self.seek(start_index + destination - self.current_frame);
+				}
+				break;
+			}
+		}
 	}
 }

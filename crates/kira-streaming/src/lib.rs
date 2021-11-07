@@ -24,4 +24,6 @@ enum Command {
 	Pause(Tween),
 	Resume(Tween),
 	Stop(Tween),
+	SeekBy(f64),
+	SeekTo(f64),
 }

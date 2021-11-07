@@ -43,4 +43,16 @@ impl StreamingSoundHandle {
 			.push(Command::Stop(tween))
 			.map_err(|_| CommandQueueFull)
 	}
+
+	pub fn seek_to(&mut self, position: f64) -> Result<(), CommandQueueFull> {
+		self.command_producer
+			.push(Command::SeekTo(position))
+			.map_err(|_| CommandQueueFull)
+	}
+
+	pub fn seek_by(&mut self, amount: f64) -> Result<(), CommandQueueFull> {
+		self.command_producer
+			.push(Command::SeekBy(amount))
+			.map_err(|_| CommandQueueFull)
+	}
 }
