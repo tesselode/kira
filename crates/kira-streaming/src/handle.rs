@@ -1,6 +1,6 @@
 use std::{error::Error, fmt::Display, sync::Arc};
 
-use kira::parameter::Tween;
+use kira::{parameter::Tween, value::Value};
 use ringbuf::Producer;
 
 use crate::{sound::Shared, Command};
@@ -24,6 +24,27 @@ pub struct StreamingSoundHandle {
 impl StreamingSoundHandle {
 	pub fn position(&self) -> f64 {
 		self.shared.position()
+	}
+
+	pub fn set_volume(&mut self, volume: impl Into<Value>) -> Result<(), CommandQueueFull> {
+		self.command_producer
+			.push(Command::SetVolume(volume.into()))
+			.map_err(|_| CommandQueueFull)
+	}
+
+	pub fn set_playback_rate(
+		&mut self,
+		playback_rate: impl Into<Value>,
+	) -> Result<(), CommandQueueFull> {
+		self.command_producer
+			.push(Command::SetPlaybackRate(playback_rate.into()))
+			.map_err(|_| CommandQueueFull)
+	}
+
+	pub fn set_panning(&mut self, panning: impl Into<Value>) -> Result<(), CommandQueueFull> {
+		self.command_producer
+			.push(Command::SetPanning(panning.into()))
+			.map_err(|_| CommandQueueFull)
 	}
 
 	pub fn pause(&mut self, tween: Tween) -> Result<(), CommandQueueFull> {

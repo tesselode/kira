@@ -14,6 +14,7 @@ use kira::{
 	sound::{static_sound::PlaybackState, Sound},
 	track::TrackId,
 	util,
+	value::cached::CachedValue,
 };
 
 use crate::Command;
@@ -49,6 +50,9 @@ pub(crate) struct StreamingSound {
 	volume_fade: Parameter,
 	current_frame: usize,
 	fractional_position: f64,
+	volume: CachedValue,
+	playback_rate: CachedValue,
+	panning: CachedValue,
 	shared: Arc<Shared>,
 }
 
@@ -91,6 +95,9 @@ impl StreamingSound {
 			volume_fade: Parameter::new(1.0),
 			current_frame,
 			fractional_position: 0.0,
+			volume: CachedValue::new(.., data.settings.volume, 1.0),
+			playback_rate: CachedValue::new(0.0.., data.settings.playback_rate, 1.0),
+			panning: CachedValue::new(0.0..=1.0, data.settings.panning, 0.5),
 			shared: Arc::new(Shared {
 				position: AtomicU64::new(start_position.to_bits()),
 			}),
@@ -168,6 +175,9 @@ impl Sound for StreamingSound {
 			.store(self.position().to_bits(), Ordering::SeqCst);
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
+				Command::SetVolume(volume) => self.volume.set(volume),
+				Command::SetPlaybackRate(playback_rate) => self.playback_rate.set(playback_rate),
+				Command::SetPanning(panning) => self.panning.set(panning),
 				Command::Pause(tween) => self.pause(tween),
 				Command::Resume(tween) => self.resume(tween),
 				Command::Stop(tween) => self.stop(tween),
@@ -177,7 +187,7 @@ impl Sound for StreamingSound {
 		}
 	}
 
-	fn process(&mut self, dt: f64, _parameters: &Parameters, clocks: &Clocks) -> Frame {
+	fn process(&mut self, dt: f64, parameters: &Parameters, clocks: &Clocks) -> Frame {
 		if matches!(self.state, PlaybackState::Paused | PlaybackState::Stopped) {
 			return Frame::ZERO;
 		}
@@ -187,6 +197,9 @@ impl Sound for StreamingSound {
 		if self.frame_consumer.len() < 2 && !self.finished_signal_receiver.load(Ordering::SeqCst) {
 			return Frame::ZERO;
 		}
+		self.volume.update(parameters);
+		self.playback_rate.update(parameters);
+		self.panning.update(parameters);
 		if self.volume_fade.update(dt, clocks) {
 			match self.state {
 				PlaybackState::Pausing => self.state = PlaybackState::Paused,
@@ -203,7 +216,7 @@ impl Sound for StreamingSound {
 			next_frames[3],
 			self.fractional_position as f32,
 		);
-		self.fractional_position += self.sample_rate as f64 * dt;
+		self.fractional_position += self.sample_rate as f64 * self.playback_rate.get() * dt;
 		while self.fractional_position >= 1.0 {
 			self.fractional_position -= 1.0;
 			self.frame_consumer.pop();
@@ -211,7 +224,8 @@ impl Sound for StreamingSound {
 		if self.finished_signal_receiver.load(Ordering::SeqCst) && self.frame_consumer.is_empty() {
 			self.state = PlaybackState::Stopped;
 		}
-		out * self.volume_fade.value() as f32
+		(out * self.volume_fade.value() as f32 * self.volume.get() as f32)
+			.panned(self.panning.get() as f32)
 	}
 
 	fn finished(&self) -> bool {

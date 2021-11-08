@@ -92,7 +92,8 @@ impl CachedValue {
 		self.raw_value
 	}
 
-	pub(crate) fn set(&mut self, value: Value) {
+	/// Sets the value.
+	pub fn set(&mut self, value: Value) {
 		self.value = value;
 		if let Value::Fixed(raw_value) = self.value {
 			self.raw_value = self.valid_range.clamp(raw_value);

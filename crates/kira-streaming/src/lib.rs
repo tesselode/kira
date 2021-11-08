@@ -9,7 +9,7 @@ pub use settings::*;
 
 use std::collections::VecDeque;
 
-use kira::{dsp::Frame, parameter::Tween};
+use kira::{dsp::Frame, parameter::Tween, value::Value};
 
 pub trait Decoder: Send + Sync {
 	fn sample_rate(&mut self) -> u32;
@@ -21,6 +21,9 @@ pub trait Decoder: Send + Sync {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Command {
+	SetVolume(Value),
+	SetPlaybackRate(Value),
+	SetPanning(Value),
 	Pause(Tween),
 	Resume(Tween),
 	Stop(Tween),
