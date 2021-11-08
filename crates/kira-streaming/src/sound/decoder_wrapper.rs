@@ -32,13 +32,14 @@ pub struct DecoderWrapper {
 impl DecoderWrapper {
 	pub fn new(
 		decoder: Box<dyn Decoder>,
+		start_position: f64,
 		loop_behavior: Option<LoopBehavior>,
 		frame_producer: Producer<(usize, Frame)>,
 		seek_destination_receiver: Arc<AtomicUsize>,
 		stopped_signal_receiver: Arc<AtomicBool>,
 		finished_signal_sender: Arc<AtomicBool>,
 	) -> Self {
-		Self {
+		let mut wrapper = Self {
 			decoder,
 			loop_behavior,
 			frame_producer,
@@ -47,7 +48,13 @@ impl DecoderWrapper {
 			finished_signal_sender,
 			decoded_frames: VecDeque::new(),
 			current_frame: 0,
-		}
+		};
+		wrapper.seek(start_position);
+		wrapper
+	}
+
+	pub fn current_frame(&self) -> usize {
+		self.current_frame
 	}
 
 	pub fn start(mut self) {
@@ -72,7 +79,7 @@ impl DecoderWrapper {
 		// check for seek commands
 		let seek_destination = self.seek_destination_receiver.load(Ordering::SeqCst);
 		if seek_destination != SEEK_DESTINATION_NONE {
-			self.seek(seek_destination);
+			self.seek_to_index(seek_destination);
 			self.seek_destination_receiver
 				.store(SEEK_DESTINATION_NONE, Ordering::SeqCst);
 		}
@@ -89,8 +96,7 @@ impl DecoderWrapper {
 		// if there aren't any new frames and the sound is looping,
 		// seek back to the loop position
 		} else if let Some(LoopBehavior { start_position }) = self.loop_behavior {
-			let destination = (start_position * self.decoder.sample_rate() as f64).round() as usize;
-			self.seek(destination);
+			self.seek(start_position);
 		// otherwise, tell the sound to finish and end the thread
 		} else {
 			self.finished_signal_sender.store(true, Ordering::SeqCst);
@@ -105,11 +111,11 @@ impl DecoderWrapper {
 		self.decoded_frames.clear();
 	}
 
-	fn seek(&mut self, destination: usize) {
-		if self.current_frame > destination {
+	fn seek_to_index(&mut self, index: usize) {
+		if self.current_frame > index {
 			self.reset();
 		}
-		while self.current_frame + self.decoded_frames.len() < destination {
+		while self.current_frame + self.decoded_frames.len() < index {
 			self.current_frame += self.decoded_frames.len();
 			if let Some(frames) = self.decoder.decode() {
 				self.decoded_frames = frames;
@@ -119,10 +125,15 @@ impl DecoderWrapper {
 				if let Some(LoopBehavior { start_position }) = self.loop_behavior {
 					let start_index =
 						(start_position * self.decoder.sample_rate() as f64).round() as usize;
-					self.seek(start_index + destination - self.current_frame);
+					self.seek_to_index(start_index + index - self.current_frame);
 				}
 				break;
 			}
 		}
+	}
+
+	fn seek(&mut self, position: f64) {
+		let index = (position * self.decoder.sample_rate() as f64).round() as usize;
+		self.seek_to_index(index);
 	}
 }

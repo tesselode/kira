@@ -68,15 +68,18 @@ impl StreamingSound {
 		let stopped_signal_receiver = stopped_signal_sender.clone();
 		let finished_signal_sender = Arc::new(AtomicBool::new(false));
 		let finished_signal_receiver = finished_signal_sender.clone();
-		DecoderWrapper::new(
+		let decoder_wrapper = DecoderWrapper::new(
 			data.decoder,
+			data.settings.start_position,
 			loop_behavior,
 			frame_producer,
 			seek_destination_receiver,
 			stopped_signal_receiver,
 			finished_signal_sender,
-		)
-		.start();
+		);
+		let current_frame = decoder_wrapper.current_frame();
+		decoder_wrapper.start();
+		let start_position = current_frame as f64 / sample_rate as f64;
 		Self {
 			command_consumer,
 			sample_rate,
@@ -86,10 +89,10 @@ impl StreamingSound {
 			finished_signal_receiver,
 			state: PlaybackState::Playing,
 			volume_fade: Parameter::new(1.0),
-			current_frame: 0,
+			current_frame,
 			fractional_position: 0.0,
 			shared: Arc::new(Shared {
-				position: AtomicU64::new(0.0f64.to_bits()),
+				position: AtomicU64::new(start_position.to_bits()),
 			}),
 		}
 	}
