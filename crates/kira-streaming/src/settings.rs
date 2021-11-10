@@ -1,7 +1,9 @@
-use kira::{value::Value, LoopBehavior};
+use kira::{value::Value, LoopBehavior, StartTime};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct StreamingSoundSettings {
+	/// When the instance should start playing.
+	pub start_time: StartTime,
 	/// The initial playback position of the sound (in seconds).
 	pub start_position: f64,
 	/// The volume of the sound.
@@ -22,11 +24,20 @@ pub struct StreamingSoundSettings {
 impl StreamingSoundSettings {
 	pub fn new() -> Self {
 		Self {
+			start_time: StartTime::Immediate,
 			start_position: 0.0,
 			volume: Value::Fixed(1.0),
 			playback_rate: Value::Fixed(1.0),
 			panning: Value::Fixed(0.5),
 			loop_behavior: None,
+		}
+	}
+
+	/// Sets when the sound should start playing.
+	pub fn start_time(self, start_time: impl Into<StartTime>) -> Self {
+		Self {
+			start_time: start_time.into(),
+			..self
 		}
 	}
 

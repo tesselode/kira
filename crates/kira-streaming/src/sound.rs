@@ -8,6 +8,7 @@ use std::sync::{
 use ringbuf::{Consumer, RingBuffer};
 
 use kira::{
+	clock::ClockTime,
 	dsp::Frame,
 	manager::resources::{Clocks, Parameters},
 	parameter::{Parameter, Tween},
@@ -15,6 +16,7 @@ use kira::{
 	track::TrackId,
 	util,
 	value::cached::CachedValue,
+	StartTime,
 };
 
 use crate::Command;
@@ -46,6 +48,7 @@ pub(crate) struct StreamingSound {
 	seek_destination_sender: Arc<AtomicUsize>,
 	stopped_signal_sender: Arc<AtomicBool>,
 	finished_signal_receiver: Arc<AtomicBool>,
+	start_time: StartTime,
 	state: PlaybackState,
 	volume_fade: Parameter,
 	current_frame: usize,
@@ -91,6 +94,7 @@ impl StreamingSound {
 			seek_destination_sender,
 			stopped_signal_sender,
 			finished_signal_receiver,
+			start_time: data.settings.start_time,
 			state: PlaybackState::Playing,
 			volume_fade: Parameter::new(1.0),
 			current_frame,
@@ -188,6 +192,16 @@ impl Sound for StreamingSound {
 	}
 
 	fn process(&mut self, dt: f64, parameters: &Parameters, clocks: &Clocks) -> Frame {
+		if let StartTime::ClockTime(ClockTime { clock, ticks }) = self.start_time {
+			if let Some(clock) = clocks.get(clock) {
+				if clock.ticking() && clock.ticks() >= ticks {
+					self.start_time = StartTime::Immediate;
+				}
+			}
+		}
+		if matches!(self.start_time, StartTime::ClockTime(..)) {
+			return Frame::ZERO;
+		}
 		if matches!(self.state, PlaybackState::Paused | PlaybackState::Stopped) {
 			return Frame::ZERO;
 		}
