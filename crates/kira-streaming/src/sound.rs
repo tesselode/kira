@@ -1,7 +1,7 @@
 mod decoder_wrapper;
 
 use std::sync::{
-	atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
+	atomic::{AtomicBool, AtomicU64, AtomicU8, AtomicUsize, Ordering},
 	Arc,
 };
 
@@ -29,10 +29,22 @@ const BUFFER_SIZE: usize = 16_384;
 const SEEK_DESTINATION_NONE: usize = usize::MAX;
 
 pub(crate) struct Shared {
+	state: AtomicU8,
 	position: AtomicU64,
 }
 
 impl Shared {
+	pub fn state(&self) -> PlaybackState {
+		match self.state.load(Ordering::SeqCst) {
+			0 => PlaybackState::Playing,
+			1 => PlaybackState::Pausing,
+			2 => PlaybackState::Paused,
+			3 => PlaybackState::Stopping,
+			4 => PlaybackState::Stopped,
+			_ => panic!("Invalid playback state"),
+		}
+	}
+
 	pub fn position(&self) -> f64 {
 		f64::from_bits(self.position.load(Ordering::SeqCst))
 	}
@@ -110,12 +122,18 @@ impl StreamingSound {
 			panning: CachedValue::new(0.0..=1.0, data.settings.panning, 0.5),
 			shared: Arc::new(Shared {
 				position: AtomicU64::new(start_position.to_bits()),
+				state: AtomicU8::new(PlaybackState::Playing as u8),
 			}),
 		}
 	}
 
 	pub fn shared(&self) -> Arc<Shared> {
 		self.shared.clone()
+	}
+
+	fn set_state(&mut self, state: PlaybackState) {
+		self.state = state;
+		self.shared.state.store(state as u8, Ordering::SeqCst);
 	}
 
 	fn update_current_frame(&mut self) {
@@ -147,17 +165,17 @@ impl StreamingSound {
 	}
 
 	fn pause(&mut self, tween: Tween) {
-		self.state = PlaybackState::Pausing;
+		self.set_state(PlaybackState::Pausing);
 		self.volume_fade.set(0.0, tween);
 	}
 
 	fn resume(&mut self, tween: Tween) {
-		self.state = PlaybackState::Playing;
+		self.set_state(PlaybackState::Playing);
 		self.volume_fade.set(1.0, tween);
 	}
 
 	fn stop(&mut self, tween: Tween) {
-		self.state = PlaybackState::Stopping;
+		self.set_state(PlaybackState::Stopping);
 		self.volume_fade.set(0.0, tween);
 	}
 
@@ -222,8 +240,8 @@ impl Sound for StreamingSound {
 		self.panning.update(parameters);
 		if self.volume_fade.update(dt, clocks) {
 			match self.state {
-				PlaybackState::Pausing => self.state = PlaybackState::Paused,
-				PlaybackState::Stopping => self.state = PlaybackState::Stopped,
+				PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
+				PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),
 				_ => {}
 			}
 		}
@@ -242,7 +260,7 @@ impl Sound for StreamingSound {
 			self.frame_consumer.pop();
 		}
 		if self.finished_signal_receiver.load(Ordering::SeqCst) && self.frame_consumer.is_empty() {
-			self.state = PlaybackState::Stopped;
+			self.set_state(PlaybackState::Stopped);
 		}
 		(out * self.volume_fade.value() as f32 * self.volume.get() as f32)
 			.panned(self.panning.get() as f32)

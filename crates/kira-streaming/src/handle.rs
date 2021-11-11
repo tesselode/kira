@@ -1,6 +1,6 @@
 use std::{error::Error, fmt::Display, sync::Arc};
 
-use kira::{parameter::Tween, value::Value};
+use kira::{parameter::Tween, sound::static_sound::PlaybackState, value::Value};
 use ringbuf::Producer;
 
 use crate::{sound::Shared, Command};
@@ -22,6 +22,10 @@ pub struct StreamingSoundHandle {
 }
 
 impl StreamingSoundHandle {
+	pub fn state(&self) -> PlaybackState {
+		self.shared.state()
+	}
+
 	pub fn position(&self) -> f64 {
 		self.shared.position()
 	}
