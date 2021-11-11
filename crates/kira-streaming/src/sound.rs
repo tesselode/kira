@@ -96,7 +96,13 @@ impl StreamingSound {
 			finished_signal_receiver,
 			start_time: data.settings.start_time,
 			state: PlaybackState::Playing,
-			volume_fade: Parameter::new(1.0),
+			volume_fade: if let Some(tween) = data.settings.fade_in_tween {
+				let mut parameter = Parameter::new(0.0);
+				parameter.set(1.0, tween);
+				parameter
+			} else {
+				Parameter::new(1.0)
+			},
 			current_frame,
 			fractional_position: 0.0,
 			volume: CachedValue::new(.., data.settings.volume, 1.0),

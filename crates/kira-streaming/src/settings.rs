@@ -1,4 +1,4 @@
-use kira::{value::Value, LoopBehavior, StartTime};
+use kira::{LoopBehavior, StartTime, parameter::Tween, value::Value};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct StreamingSoundSettings {
@@ -19,6 +19,8 @@ pub struct StreamingSoundSettings {
 	pub panning: Value,
 	/// The looping behavior of the sound.
 	pub loop_behavior: Option<LoopBehavior>,
+	/// An optional fade-in from silence.
+	pub fade_in_tween: Option<Tween>,
 }
 
 impl StreamingSoundSettings {
@@ -30,6 +32,7 @@ impl StreamingSoundSettings {
 			playback_rate: Value::Fixed(1.0),
 			panning: Value::Fixed(0.5),
 			loop_behavior: None,
+			fade_in_tween: None,
 		}
 	}
 
@@ -82,6 +85,14 @@ impl StreamingSoundSettings {
 	pub fn loop_behavior(self, loop_behavior: impl Into<Option<LoopBehavior>>) -> Self {
 		Self {
 			loop_behavior: loop_behavior.into(),
+			..self
+		}
+	}
+
+	/// Sets the tween used to fade in the instance from silence.
+	pub fn fade_in_tween(self, fade_in_tween: impl Into<Option<Tween>>) -> Self {
+		Self {
+			fade_in_tween: fade_in_tween.into(),
 			..self
 		}
 	}
