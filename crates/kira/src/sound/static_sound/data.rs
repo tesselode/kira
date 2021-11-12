@@ -1,12 +1,16 @@
 use std::{sync::Arc, time::Duration};
 
+use ringbuf::RingBuffer;
+
 use crate::{
 	dsp::Frame,
 	sound::{Sound, SoundData},
 	util,
 };
 
-use super::{handle::StaticSoundHandle, sound::StaticSound};
+use super::{handle::StaticSoundHandle, sound::StaticSound, StaticSoundSettings};
+
+const COMMAND_BUFFER_CAPACITY: usize = 8;
 
 #[derive(Clone)]
 pub enum Samples {
@@ -31,6 +35,7 @@ impl Samples {
 pub struct StaticSoundData {
 	pub sample_rate: u32,
 	pub samples: Arc<Samples>,
+	pub settings: StaticSoundSettings,
 }
 
 impl StaticSoundData {
@@ -83,6 +88,15 @@ impl SoundData for StaticSoundData {
 	type Handle = StaticSoundHandle;
 
 	fn into_sound(self) -> (Box<dyn Sound>, Self::Handle) {
-		(Box::new(StaticSound::new(self)), StaticSoundHandle {})
+		let (command_producer, command_consumer) = RingBuffer::new(COMMAND_BUFFER_CAPACITY).split();
+		let sound = StaticSound::new(self, command_consumer);
+		let shared = sound.shared();
+		(
+			Box::new(sound),
+			StaticSoundHandle {
+				command_producer,
+				shared,
+			},
+		)
 	}
 }
