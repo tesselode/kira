@@ -140,12 +140,14 @@ impl Decoder {
 }
 
 impl kira_streaming::Decoder for Decoder {
+	type Error = DecodeError;
+
 	fn sample_rate(&mut self) -> u32 {
 		self.reader_mut().ident_hdr.audio_sample_rate
 	}
 
-	fn decode(&mut self) -> Option<VecDeque<Frame>> {
-		self.reader_mut().read_dec_packet_itl().unwrap().map(|packet| {
+	fn decode(&mut self) -> Result<Option<VecDeque<Frame>>, Self::Error> {
+		Ok(self.reader_mut().read_dec_packet_itl()?.map(|packet| {
 			match self.reader_mut().ident_hdr.audio_channels {
 				1 => {
 					packet.iter().map(|sample| Frame::from_mono(sample.into_f32())).collect()
@@ -158,12 +160,13 @@ impl kira_streaming::Decoder for Decoder {
 				},
 				_ => panic!("Unsupported channel configuration. This should have been checked when the decoder was created.")
 			}
-		})
+		}))
 	}
 
-	fn reset(&mut self) {
+	fn reset(&mut self) -> Result<(), Self::Error> {
 		let mut file = self.reader.take().unwrap().into_inner().into_inner();
 		file.rewind().unwrap();
 		self.reader = Some(OggStreamReader::new(file).unwrap());
+		Ok(())
 	}
 }

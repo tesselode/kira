@@ -7,9 +7,11 @@ use crate::{
 };
 
 pub trait SoundData {
+	type Error;
+
 	type Handle;
 
-	fn into_sound(self) -> (Box<dyn Sound>, Self::Handle);
+	fn into_sound(self) -> Result<(Box<dyn Sound>, Self::Handle), Self::Error>;
 }
 
 pub trait Sound: Send + Sync {

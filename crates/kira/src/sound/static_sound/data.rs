@@ -85,18 +85,20 @@ impl StaticSoundData {
 }
 
 impl SoundData for StaticSoundData {
+	type Error = ();
+
 	type Handle = StaticSoundHandle;
 
-	fn into_sound(self) -> (Box<dyn Sound>, Self::Handle) {
+	fn into_sound(self) -> Result<(Box<dyn Sound>, Self::Handle), Self::Error> {
 		let (command_producer, command_consumer) = RingBuffer::new(COMMAND_BUFFER_CAPACITY).split();
 		let sound = StaticSound::new(self, command_consumer);
 		let shared = sound.shared();
-		(
+		Ok((
 			Box::new(sound),
 			StaticSoundHandle {
 				command_producer,
 				shared,
 			},
-		)
+		))
 	}
 }

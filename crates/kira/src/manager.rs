@@ -107,13 +107,18 @@ impl<B: Backend> AudioManager<B> {
 	}
 
 	/// Plays a sound.
-	pub fn play<D: SoundData>(&mut self, sound_data: D) -> Result<D::Handle, PlaySoundError> {
+	pub fn play<D: SoundData>(
+		&mut self,
+		sound_data: D,
+	) -> Result<D::Handle, PlaySoundError<D::Error>> {
 		let key = self
 			.resource_controllers
 			.sound_controller
 			.try_reserve()
 			.map_err(|_| PlaySoundError::SoundLimitReached)?;
-		let (sound, handle) = sound_data.into_sound();
+		let (sound, handle) = sound_data
+			.into_sound()
+			.map_err(PlaySoundError::IntoSoundError)?;
 		self.command_producer
 			.push(Command::Sound(SoundCommand::Add(key, sound)))?;
 		Ok(handle)

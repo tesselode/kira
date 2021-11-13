@@ -7,13 +7,16 @@ use super::{settings::StreamingSoundSettings, sound::StreamingSound, Decoder};
 
 const COMMAND_BUFFER_CAPACITY: usize = 8;
 
-pub struct StreamingSoundData {
-	pub decoder: Box<dyn Decoder>,
+pub struct StreamingSoundData<E: Send + Sync + 'static> {
+	pub decoder: Box<dyn Decoder<Error = E>>,
 	pub settings: StreamingSoundSettings,
 }
 
-impl StreamingSoundData {
-	pub fn new(decoder: impl Decoder + 'static, settings: StreamingSoundSettings) -> Self {
+impl<E: Send + Sync + 'static> StreamingSoundData<E> {
+	pub fn new(
+		decoder: impl Decoder<Error = E> + 'static,
+		settings: StreamingSoundSettings,
+	) -> Self {
 		Self {
 			decoder: Box::new(decoder),
 			settings,
@@ -21,19 +24,21 @@ impl StreamingSoundData {
 	}
 }
 
-impl SoundData for StreamingSoundData {
+impl<E: Send + Sync + 'static> SoundData for StreamingSoundData<E> {
+	type Error = E;
+
 	type Handle = StreamingSoundHandle;
 
-	fn into_sound(self) -> (Box<dyn Sound>, Self::Handle) {
+	fn into_sound(self) -> Result<(Box<dyn Sound>, Self::Handle), Self::Error> {
 		let (command_producer, command_consumer) = RingBuffer::new(COMMAND_BUFFER_CAPACITY).split();
-		let sound = StreamingSound::new(self, command_consumer);
+		let sound = StreamingSound::new(self, command_consumer)?;
 		let shared = sound.shared();
-		(
+		Ok((
 			Box::new(sound),
 			StreamingSoundHandle {
 				shared,
 				command_producer,
 			},
-		)
+		))
 	}
 }

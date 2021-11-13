@@ -12,11 +12,13 @@ use std::collections::VecDeque;
 use kira::{dsp::Frame, parameter::Tween, value::Value};
 
 pub trait Decoder: Send + Sync {
+	type Error: Send + Sync;
+
 	fn sample_rate(&mut self) -> u32;
 
-	fn decode(&mut self) -> Option<VecDeque<Frame>>;
+	fn decode(&mut self) -> Result<Option<VecDeque<Frame>>, Self::Error>;
 
-	fn reset(&mut self);
+	fn reset(&mut self) -> Result<(), Self::Error>;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

@@ -1,4 +1,4 @@
-mod decoder_wrapper;
+pub(crate) mod decoder_wrapper;
 
 use std::sync::{
 	atomic::{AtomicBool, AtomicU64, AtomicU8, AtomicUsize, Ordering},
@@ -72,7 +72,10 @@ pub(crate) struct StreamingSound {
 }
 
 impl StreamingSound {
-	pub fn new(mut data: StreamingSoundData, command_consumer: Consumer<Command>) -> Self {
+	pub fn new<E: Send + Sync + 'static>(
+		mut data: StreamingSoundData<E>,
+		command_consumer: Consumer<Command>,
+	) -> Result<Self, E> {
 		let sample_rate = data.decoder.sample_rate();
 		let loop_behavior = data.settings.loop_behavior;
 		let (mut frame_producer, frame_consumer) = RingBuffer::new(BUFFER_SIZE).split();
@@ -95,11 +98,11 @@ impl StreamingSound {
 			seek_destination_receiver,
 			stopped_signal_receiver,
 			finished_signal_sender,
-		);
+		)?;
 		let current_frame = decoder_wrapper.current_frame();
 		decoder_wrapper.start();
 		let start_position = current_frame as f64 / sample_rate as f64;
-		Self {
+		Ok(Self {
 			command_consumer,
 			sample_rate,
 			frame_consumer,
@@ -124,7 +127,7 @@ impl StreamingSound {
 				position: AtomicU64::new(start_position.to_bits()),
 				state: AtomicU8::new(PlaybackState::Playing as u8),
 			}),
-		}
+		})
 	}
 
 	pub fn shared(&self) -> Arc<Shared> {
