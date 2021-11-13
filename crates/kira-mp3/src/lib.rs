@@ -1,90 +1,19 @@
+mod decoder;
+mod error;
+
+pub use error::*;
+use kira_streaming::{StreamingSoundData, StreamingSoundSettings};
+
 use std::{
-	collections::VecDeque,
-	fmt::Display,
 	fs::File,
 	io::{Read, Seek},
 	path::Path,
 	sync::Arc,
 };
 
-use kira::{
-	dsp::Frame,
-	sound::static_sound::{Samples, StaticSoundData, StaticSoundSettings},
-};
+use kira::sound::static_sound::{Samples, StaticSoundData, StaticSoundSettings};
 
-#[derive(Debug)]
-pub enum DecodeError {
-	UnsupportedChannelConfiguration,
-	VariableSampleRate,
-	Mp3Error(minimp3::Error),
-}
-
-impl Display for DecodeError {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		match self {
-			DecodeError::UnsupportedChannelConfiguration => {
-				f.write_str("Only mono and stereo audio is supported")
-			}
-			DecodeError::VariableSampleRate => {
-				f.write_str("The audio has a variable sample rate, which is not supported")
-			}
-			DecodeError::Mp3Error(error) => error.fmt(f),
-		}
-	}
-}
-
-impl std::error::Error for DecodeError {
-	fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-		match self {
-			DecodeError::Mp3Error(error) => Some(error),
-			_ => None,
-		}
-	}
-}
-
-impl From<minimp3::Error> for DecodeError {
-	fn from(v: minimp3::Error) -> Self {
-		Self::Mp3Error(v)
-	}
-}
-
-#[derive(Debug)]
-pub enum FromFileError {
-	IoError(std::io::Error),
-	DecodeError(DecodeError),
-}
-
-impl Display for FromFileError {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		match self {
-			FromFileError::IoError(error) => error.fmt(f),
-			FromFileError::DecodeError(error) => error.fmt(f),
-		}
-	}
-}
-
-impl std::error::Error for FromFileError {
-	fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-		match self {
-			FromFileError::IoError(error) => Some(error),
-			FromFileError::DecodeError(error) => Some(error),
-		}
-	}
-}
-
-impl From<std::io::Error> for FromFileError {
-	fn from(v: std::io::Error) -> Self {
-		Self::IoError(v)
-	}
-}
-
-impl From<DecodeError> for FromFileError {
-	fn from(v: DecodeError) -> Self {
-		Self::DecodeError(v)
-	}
-}
-
-pub fn from_reader(
+pub fn load_from_reader(
 	reader: impl Read + Seek,
 	settings: StaticSoundSettings,
 ) -> Result<StaticSoundData, DecodeError> {
@@ -153,76 +82,21 @@ pub fn from_reader(
 	})
 }
 
-pub fn from_file(
+pub fn load_from_file(
 	path: impl AsRef<Path>,
 	settings: StaticSoundSettings,
-) -> Result<StaticSoundData, FromFileError> {
-	Ok(from_reader(File::open(path)?, settings)?)
+) -> Result<StaticSoundData, Error> {
+	Ok(load_from_reader(File::open(path)?, settings)?)
 }
 
-pub struct Decoder {
-	sample_rate: u32,
-	decoder: Option<minimp3::Decoder<File>>,
-}
-
-impl Decoder {
-	pub fn new(path: impl AsRef<Path>) -> Result<Self, FromFileError> {
-		let path = path.as_ref();
-		// decode one frame just to get the sample rate
-		let sample_rate = minimp3::Decoder::new(File::open(path)?)
-			.next_frame()
-			.map(|frame| frame.sample_rate as u32)
-			.map_err(DecodeError::Mp3Error)?;
-		Ok(Self {
-			sample_rate,
-			decoder: Some(minimp3::Decoder::new(File::open(path)?)),
-		})
-	}
-
-	fn decoder_mut(&mut self) -> &mut minimp3::Decoder<File> {
-		self.decoder.as_mut().unwrap()
-	}
-}
-
-impl kira_streaming::Decoder for Decoder {
-	type Error = FromFileError;
-
-	fn sample_rate(&mut self) -> u32 {
-		self.sample_rate
-	}
-
-	fn decode(&mut self) -> Result<Option<VecDeque<Frame>>, Self::Error> {
-		match self.decoder_mut().next_frame() {
-			Ok(frame) => match frame.channels {
-				1 => Ok(Some(
-					frame
-						.data
-						.iter()
-						.map(|sample| Frame::from(*sample))
-						.collect(),
-				)),
-				2 => Ok(Some(
-					frame
-						.data
-						.chunks_exact(2)
-						.map(|chunk| Frame::from([chunk[0], chunk[1]]))
-						.collect(),
-				)),
-				_ => Err(DecodeError::UnsupportedChannelConfiguration.into()),
-			},
-			Err(error) => match error {
-				minimp3::Error::Eof => Ok(None),
-				error => Err(DecodeError::Mp3Error(error).into()),
-			},
-		}
-	}
-
-	fn reset(&mut self) -> Result<(), Self::Error> {
-		let mut file = self.decoder.take().unwrap().into_inner();
-		file.rewind()?;
-		self.decoder = Some(minimp3::Decoder::new(file));
-		Ok(())
-	}
+pub fn stream(
+	path: impl AsRef<Path>,
+	settings: StreamingSoundSettings,
+) -> Result<StreamingSoundData<Error>, Error> {
+	Ok(StreamingSoundData::new(
+		decoder::Decoder::new(path)?,
+		settings,
+	))
 }
 
 fn convert_i16_mono_to_stereo(samples: Vec<i16>) -> Vec<[i16; 2]> {
