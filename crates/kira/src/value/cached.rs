@@ -1,6 +1,6 @@
 //! Saves the last valid raw value of a [`Value`]. Useful for writing
 //! [`Effect`](crate::track::effect::Effect)s and
-//! [`AudioStream`](crate::audio_stream::AudioStream)s.
+//! [`Sound`](crate::sound::Sound)s.
 
 use std::ops::{RangeFrom, RangeFull, RangeInclusive, RangeToInclusive};
 

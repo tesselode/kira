@@ -14,7 +14,6 @@ use std::sync::Arc;
 use ringbuf::RingBuffer;
 
 use crate::{
-	audio_stream::{AudioStream, AudioStreamHandle, AudioStreamId, AudioStreamWrapper},
 	clock::{Clock, ClockHandle, ClockId},
 	error::CommandError,
 	parameter::{Parameter, ParameterHandle, ParameterId, Tween},
@@ -25,12 +24,10 @@ use crate::{
 
 use self::{
 	command::{
-		producer::CommandProducer, AudioStreamCommand, ClockCommand, Command, MixerCommand,
-		ParameterCommand, SoundCommand,
+		producer::CommandProducer, ClockCommand, Command, MixerCommand, ParameterCommand,
+		SoundCommand,
 	},
-	error::{
-		AddAudioStreamError, AddClockError, AddParameterError, AddSubTrackError, PlaySoundError,
-	},
+	error::{AddClockError, AddParameterError, AddSubTrackError, PlaySoundError},
 	renderer::context::Context,
 	resources::{create_resources, create_unused_resource_channels, ResourceControllers},
 };
@@ -50,8 +47,6 @@ pub struct AudioManagerSettings {
 	pub sub_track_capacity: usize,
 	/// The maximum number of clocks that can exist at a time.
 	pub clock_capacity: usize,
-	/// The maximum number of audio streams that can be loaded at a time.
-	pub audio_stream_capacity: usize,
 }
 
 impl Default for AudioManagerSettings {
@@ -62,7 +57,6 @@ impl Default for AudioManagerSettings {
 			parameter_capacity: 128,
 			sub_track_capacity: 128,
 			clock_capacity: 1,
-			audio_stream_capacity: 32,
 		}
 	}
 }
@@ -181,33 +175,6 @@ impl<B: Backend> AudioManager<B> {
 		};
 		self.command_producer
 			.push(Command::Clock(ClockCommand::Add(id, clock)))?;
-		Ok(handle)
-	}
-
-	/// Sends an audio stream to the renderer and returns a handle to the
-	/// audio stream.
-	pub fn add_audio_stream(
-		&mut self,
-		audio_stream: impl AudioStream + 'static,
-		track: impl Into<TrackId>,
-	) -> Result<AudioStreamHandle, AddAudioStreamError> {
-		let id = AudioStreamId(
-			self.resource_controllers
-				.audio_stream_controller
-				.try_reserve()
-				.map_err(|_| AddAudioStreamError::AudioStreamLimitReached)?,
-		);
-		let audio_stream =
-			AudioStreamWrapper::new(Box::new(audio_stream), track.into(), &self.context);
-		let handle = AudioStreamHandle {
-			id,
-			shared: audio_stream.shared(),
-		};
-		self.command_producer
-			.push(Command::AudioStream(AudioStreamCommand::Add(
-				id,
-				audio_stream,
-			)))?;
 		Ok(handle)
 	}
 

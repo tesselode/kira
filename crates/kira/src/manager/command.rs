@@ -3,7 +3,6 @@ pub mod producer;
 use atomic_arena::Key;
 
 use crate::{
-	audio_stream::{AudioStreamId, AudioStreamWrapper},
 	clock::{Clock, ClockId},
 	parameter::{Parameter, ParameterId, Tween},
 	sound::Sound,
@@ -40,16 +39,11 @@ pub(crate) enum ClockCommand {
 	Stop(ClockId),
 }
 
-pub(crate) enum AudioStreamCommand {
-	Add(AudioStreamId, AudioStreamWrapper),
-}
-
 pub(crate) enum Command {
 	Sound(SoundCommand),
 	Parameter(ParameterCommand),
 	Mixer(MixerCommand),
 	Clock(ClockCommand),
-	AudioStream(AudioStreamCommand),
 	Pause(Tween),
 	Resume(Tween),
 }

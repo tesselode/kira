@@ -1,5 +1,5 @@
 //! Useful functions for writing [`Effect`s](crate::track::Effect)
-//! and [`AudioStream`s](crate::audio_stream::AudioStream).
+//! and [`Sound`s](crate::sound::Sound).
 
 use crate::dsp::Frame;
 

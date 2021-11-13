@@ -4,7 +4,6 @@
 #![allow(clippy::collapsible_else_if)]
 #![allow(clippy::large_enum_variant)]
 
-pub mod audio_stream;
 pub mod clock;
 pub mod dsp;
 mod error;

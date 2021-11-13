@@ -147,36 +147,3 @@ impl From<CommandError> for AddClockError {
 		Self::CommandError(v)
 	}
 }
-
-/// Errors that can occur when creating a audio stream.
-#[derive(Debug)]
-pub enum AddAudioStreamError {
-	/// Could not add a audio stream because the maximum number of audio streams has been reached.
-	AudioStreamLimitReached,
-	/// An error occured when sending a command to the renderer.
-	CommandError(CommandError),
-}
-
-impl Display for AddAudioStreamError {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		match self {
-			AddAudioStreamError::AudioStreamLimitReached => f.write_str("Could not add a audio stream because the maximum number of audio streams has been reached."),
-			AddAudioStreamError::CommandError(error) => error.fmt(f),
-		}
-	}
-}
-
-impl Error for AddAudioStreamError {
-	fn source(&self) -> Option<&(dyn Error + 'static)> {
-		match self {
-			AddAudioStreamError::CommandError(error) => Some(error),
-			_ => None,
-		}
-	}
-}
-
-impl From<CommandError> for AddAudioStreamError {
-	fn from(v: CommandError) -> Self {
-		Self::CommandError(v)
-	}
-}
