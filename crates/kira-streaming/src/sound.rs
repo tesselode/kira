@@ -5,7 +5,7 @@ use std::sync::{
 	Arc,
 };
 
-use ringbuf::{Consumer, RingBuffer};
+use ringbuf::{Consumer, Producer, RingBuffer};
 
 use kira::{
 	clock::ClockTime,
@@ -75,6 +75,7 @@ impl StreamingSound {
 	pub fn new<E: Send + Sync + 'static>(
 		mut data: StreamingSoundData<E>,
 		command_consumer: Consumer<Command>,
+		error_producer: Producer<E>,
 	) -> Result<Self, E> {
 		let sample_rate = data.decoder.sample_rate();
 		let loop_behavior = data.settings.loop_behavior;
@@ -100,7 +101,7 @@ impl StreamingSound {
 			finished_signal_sender,
 		)?;
 		let current_frame = decoder_wrapper.current_frame();
-		decoder_wrapper.start();
+		decoder_wrapper.start(error_producer);
 		let start_position = current_frame as f64 / sample_rate as f64;
 		Ok(Self {
 			command_consumer,

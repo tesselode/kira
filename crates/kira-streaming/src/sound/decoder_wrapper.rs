@@ -57,7 +57,7 @@ impl<E: Send + Sync + 'static> DecoderWrapper<E> {
 		self.current_frame
 	}
 
-	pub fn start(mut self) {
+	pub fn start(mut self, mut error_producer: Producer<E>) {
 		std::thread::spawn(move || loop {
 			match self.run() {
 				Ok(should_end_thread) => {
@@ -65,8 +65,8 @@ impl<E: Send + Sync + 'static> DecoderWrapper<E> {
 						break;
 					}
 				}
-				Err(_) => {
-					println!("an error occurred");
+				Err(error) => {
+					error_producer.push(error).ok();
 					break;
 				}
 			}

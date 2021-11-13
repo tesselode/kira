@@ -1,7 +1,7 @@
 use std::{error::Error, fmt::Display, sync::Arc};
 
 use kira::{parameter::Tween, sound::static_sound::PlaybackState, value::Value};
-use ringbuf::Producer;
+use ringbuf::{Consumer, Producer};
 
 use crate::{sound::Shared, Command};
 
@@ -16,12 +16,13 @@ impl Display for CommandQueueFull {
 
 impl Error for CommandQueueFull {}
 
-pub struct StreamingSoundHandle {
+pub struct StreamingSoundHandle<E: Send + Sync + 'static> {
 	pub(crate) shared: Arc<Shared>,
 	pub(crate) command_producer: Producer<Command>,
+	pub(crate) error_consumer: Consumer<E>,
 }
 
-impl StreamingSoundHandle {
+impl<E: Send + Sync + 'static> StreamingSoundHandle<E> {
 	pub fn state(&self) -> PlaybackState {
 		self.shared.state()
 	}
@@ -79,5 +80,9 @@ impl StreamingSoundHandle {
 		self.command_producer
 			.push(Command::SeekBy(amount))
 			.map_err(|_| CommandQueueFull)
+	}
+
+	pub fn pop_error(&mut self) -> Option<E> {
+		self.error_consumer.pop()
 	}
 }
