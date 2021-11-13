@@ -140,14 +140,14 @@ impl Decoder {
 }
 
 impl kira_streaming::Decoder for Decoder {
-	type Error = DecodeError;
+	type Error = FromFileError;
 
 	fn sample_rate(&mut self) -> u32 {
 		self.reader_mut().ident_hdr.audio_sample_rate
 	}
 
 	fn decode(&mut self) -> Result<Option<VecDeque<Frame>>, Self::Error> {
-		Ok(self.reader_mut().read_dec_packet_itl()?.map(|packet| {
+		Ok(self.reader_mut().read_dec_packet_itl().map_err(DecodeError::VorbisError)?.map(|packet| {
 			match self.reader_mut().ident_hdr.audio_channels {
 				1 => {
 					packet.iter().map(|sample| Frame::from_mono(sample.into_f32())).collect()
@@ -165,8 +165,8 @@ impl kira_streaming::Decoder for Decoder {
 
 	fn reset(&mut self) -> Result<(), Self::Error> {
 		let mut file = self.reader.take().unwrap().into_inner().into_inner();
-		file.rewind().unwrap();
-		self.reader = Some(OggStreamReader::new(file).unwrap());
+		file.rewind()?;
+		self.reader = Some(OggStreamReader::new(file).map_err(DecodeError::VorbisError)?);
 		Ok(())
 	}
 }
