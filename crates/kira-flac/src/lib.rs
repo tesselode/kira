@@ -1,6 +1,8 @@
+mod decoder;
 mod error;
 
 pub use error::*;
+use kira_streaming::{StreamingSoundData, StreamingSoundSettings};
 
 use std::{fs::File, io::Read, path::Path, sync::Arc};
 
@@ -84,4 +86,14 @@ pub fn load_from_file(
 	settings: StaticSoundSettings,
 ) -> Result<StaticSoundData, Error> {
 	Ok(load_from_reader(File::open(path)?, settings)?)
+}
+
+pub fn stream(
+	path: impl AsRef<Path>,
+	settings: StreamingSoundSettings,
+) -> Result<StreamingSoundData<Error>, Error> {
+	Ok(StreamingSoundData::new(
+		decoder::Decoder::new(path)?,
+		settings,
+	))
 }
