@@ -7,7 +7,7 @@ use crate::{
 	dsp::Frame,
 	manager::{command::MixerCommand, context::Context},
 	track::{SubTrackId, Track, TrackId},
-	value::cached::CachedValue,
+	value::CachedValue,
 };
 
 use super::Parameters;

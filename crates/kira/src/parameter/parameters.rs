@@ -10,7 +10,7 @@ use crate::{
 /// Contains the values of each parameter.
 ///
 /// This is an opaque type that's only useful for passing to
-/// [`CachedValue::update`](crate::value::cached::CachedValue::update).
+/// [`CachedValue::update`](crate::value::CachedValue::update).
 pub struct Parameters {
 	parameters: Arena<Parameter>,
 	unused_parameter_producer: Producer<Parameter>,

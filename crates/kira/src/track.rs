@@ -21,7 +21,7 @@ use crate::{
 	dsp::Frame,
 	manager::context::Context,
 	parameter::Parameters,
-	value::{cached::CachedValue, Value},
+	value::{CachedValue, Value},
 };
 
 /// A unique identifier for a mixer sub-track.

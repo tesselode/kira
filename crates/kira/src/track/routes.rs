@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::value::{cached::CachedValue, Value};
+use crate::value::{CachedValue, Value};
 
 use super::TrackId;
 

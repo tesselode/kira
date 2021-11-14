@@ -1,12 +1,13 @@
 //! The [`Value`] enum, which is used as the type for many settings
 //! throughout Kira.
 
-pub mod cached;
+mod cached;
 mod mapping;
 
-use crate::parameter::{ParameterHandle, ParameterId};
-
+pub use cached::*;
 pub use mapping::*;
+
+use crate::parameter::{ParameterHandle, ParameterId};
 
 /// The possible values for a setting.
 #[derive(Debug, Clone, Copy, PartialEq)]

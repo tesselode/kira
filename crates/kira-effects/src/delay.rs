@@ -5,7 +5,7 @@ use kira::{
 	parameter::Parameters,
 	track::Effect,
 	util,
-	value::{cached::CachedValue, Value},
+	value::{CachedValue, Value},
 };
 
 use super::filter::{Filter, FilterSettings};

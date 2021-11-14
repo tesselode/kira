@@ -6,7 +6,7 @@ use kira::{
 	dsp::Frame,
 	parameter::Parameters,
 	track::Effect,
-	value::{cached::CachedValue, Value},
+	value::{CachedValue, Value},
 };
 
 // This filter code is based on the filter code from baseplug:

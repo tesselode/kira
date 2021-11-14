@@ -17,7 +17,7 @@ use atomic_arena::Key;
 
 use crate::{
 	parameter::Parameters,
-	value::{cached::CachedValue, Value},
+	value::{CachedValue, Value},
 };
 
 /// A unique identifier for a clock.

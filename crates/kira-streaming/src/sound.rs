@@ -14,7 +14,7 @@ use kira::{
 	sound::{static_sound::PlaybackState, Sound},
 	track::TrackId,
 	util,
-	value::cached::CachedValue,
+	value::CachedValue,
 	StartTime,
 };
 

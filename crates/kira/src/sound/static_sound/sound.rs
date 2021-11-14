@@ -14,7 +14,7 @@ use crate::{
 	parameter::{Parameter, Parameters, Tween},
 	sound::Sound,
 	track::TrackId,
-	value::cached::CachedValue,
+	value::CachedValue,
 	LoopBehavior, StartTime,
 };
 

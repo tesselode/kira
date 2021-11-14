@@ -4,7 +4,7 @@ use kira::{
 	dsp::Frame,
 	parameter::Parameters,
 	track::Effect,
-	value::{cached::CachedValue, Value},
+	value::{CachedValue, Value},
 };
 
 /// Different types of distortion effect.
