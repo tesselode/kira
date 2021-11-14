@@ -11,6 +11,7 @@ pub trait SoundData {
 
 	type Handle;
 
+	#[allow(clippy::type_complexity)]
 	fn into_sound(self) -> Result<(Box<dyn Sound>, Self::Handle), Self::Error>;
 }
 

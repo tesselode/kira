@@ -30,6 +30,7 @@ impl<E: Send + Sync + 'static> SoundData for StreamingSoundData<E> {
 
 	type Handle = StreamingSoundHandle<E>;
 
+	#[allow(clippy::type_complexity)]
 	fn into_sound(self) -> Result<(Box<dyn Sound>, Self::Handle), Self::Error> {
 		let (command_producer, command_consumer) = RingBuffer::new(COMMAND_BUFFER_CAPACITY).split();
 		let (error_producer, error_consumer) = RingBuffer::new(ERROR_BUFFER_CAPACITY).split();

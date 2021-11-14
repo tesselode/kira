@@ -103,6 +103,7 @@ impl SoundData for StaticSoundData {
 
 	type Handle = StaticSoundHandle;
 
+	#[allow(clippy::type_complexity)]
 	fn into_sound(self) -> Result<(Box<dyn Sound>, Self::Handle), Self::Error> {
 		let (command_producer, command_consumer) = RingBuffer::new(COMMAND_BUFFER_CAPACITY).split();
 		let sound = StaticSound::new(self, command_consumer);
