@@ -2,7 +2,7 @@
 
 use kira::{
 	dsp::Frame,
-	manager::resources::Parameters,
+	parameter::Parameters,
 	track::Effect,
 	value::{cached::CachedValue, Value},
 };

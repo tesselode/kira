@@ -11,8 +11,8 @@ use ringbuf::Consumer;
 use crate::{
 	clock::ClockTime,
 	dsp::Frame,
-	manager::resources::{Clocks, Parameters},
-	parameter::{Parameter, Tween},
+	manager::resources::Clocks,
+	parameter::{Parameter, Parameters, Tween},
 	sound::Sound,
 	track::TrackId,
 	value::cached::CachedValue,

@@ -19,7 +19,8 @@ use atomic_arena::Key;
 
 use crate::{
 	dsp::Frame,
-	manager::{context::Context, resources::Parameters},
+	manager::context::Context,
+	parameter::Parameters,
 	value::{cached::CachedValue, Value},
 };
 

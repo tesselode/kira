@@ -4,7 +4,7 @@ use std::f64::consts::PI;
 
 use kira::{
 	dsp::Frame,
-	manager::resources::Parameters,
+	parameter::Parameters,
 	track::Effect,
 	value::{cached::CachedValue, Value},
 };

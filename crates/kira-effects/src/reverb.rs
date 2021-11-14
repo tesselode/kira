@@ -4,7 +4,7 @@ use all_pass::AllPassFilter;
 use comb::CombFilter;
 use kira::{
 	dsp::Frame,
-	manager::resources::Parameters,
+	parameter::Parameters,
 	track::Effect,
 	value::{cached::CachedValue, Value},
 };

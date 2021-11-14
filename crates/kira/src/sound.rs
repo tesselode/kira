@@ -1,10 +1,6 @@
 pub mod static_sound;
 
-use crate::{
-	dsp::Frame,
-	manager::resources::{Clocks, Parameters},
-	track::TrackId,
-};
+use crate::{dsp::Frame, manager::resources::Clocks, parameter::Parameters, track::TrackId};
 
 pub trait SoundData {
 	type Error;

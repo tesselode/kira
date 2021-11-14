@@ -2,11 +2,9 @@ use atomic_arena::{Arena, Controller};
 use ringbuf::Producer;
 
 use crate::{
-	manager::command::ParameterCommand,
+	manager::{command::ParameterCommand, resources::Clocks},
 	parameter::{Parameter, ParameterId},
 };
-
-use super::clocks::Clocks;
 
 /// Contains the values of each parameter.
 ///

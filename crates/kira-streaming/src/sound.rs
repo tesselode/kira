@@ -10,8 +10,8 @@ use ringbuf::{Consumer, Producer, RingBuffer};
 use kira::{
 	clock::ClockTime,
 	dsp::Frame,
-	manager::resources::{Clocks, Parameters},
-	parameter::{Parameter, Tween},
+	manager::resources::Clocks,
+	parameter::{Parameter, Parameters, Tween},
 	sound::{static_sound::PlaybackState, Sound},
 	track::TrackId,
 	util,

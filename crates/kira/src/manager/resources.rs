@@ -4,18 +4,21 @@
 
 mod clocks;
 pub(crate) mod mixer;
-mod parameters;
 pub(crate) mod sounds;
 
 pub use clocks::*;
-pub use parameters::*;
 
 use std::sync::Arc;
 
 use atomic_arena::Controller;
 use ringbuf::{Consumer, Producer, RingBuffer};
 
-use crate::{clock::Clock, parameter::Parameter, sound::Sound, track::Track};
+use crate::{
+	clock::Clock,
+	parameter::{Parameter, Parameters},
+	sound::Sound,
+	track::Track,
+};
 
 use self::{mixer::Mixer, sounds::Sounds};
 

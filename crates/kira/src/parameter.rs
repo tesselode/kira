@@ -1,7 +1,12 @@
 //! Tweenable values for controlling settings.
 
 mod handle;
+mod parameters;
 mod tween;
+
+pub use handle::*;
+pub use parameters::*;
+pub use tween::*;
 
 use std::{
 	ops::RangeInclusive,
@@ -14,9 +19,6 @@ use std::{
 use atomic_arena::Key;
 
 use crate::{clock::ClockTime, manager::resources::Clocks, start_time::StartTime};
-
-pub use handle::*;
-pub use tween::*;
 
 type JustFinishedTween = bool;
 

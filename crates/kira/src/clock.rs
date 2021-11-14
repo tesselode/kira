@@ -14,7 +14,7 @@ use std::sync::{
 use atomic_arena::Key;
 
 use crate::{
-	manager::resources::Parameters,
+	parameter::Parameters,
 	value::{cached::CachedValue, Value},
 };
 

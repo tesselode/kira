@@ -4,7 +4,7 @@
 
 use std::ops::{RangeFrom, RangeFull, RangeInclusive, RangeToInclusive};
 
-use crate::manager::resources::Parameters;
+use crate::parameter::Parameters;
 
 use super::Value;
 
