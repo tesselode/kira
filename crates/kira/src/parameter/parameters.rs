@@ -2,7 +2,8 @@ use atomic_arena::{Arena, Controller};
 use ringbuf::Producer;
 
 use crate::{
-	manager::{command::ParameterCommand, resources::Clocks},
+	clock::Clocks,
+	manager::command::ParameterCommand,
 	parameter::{Parameter, ParameterId},
 };
 

@@ -9,9 +9,8 @@ use std::{
 use ringbuf::Consumer;
 
 use crate::{
-	clock::ClockTime,
+	clock::{ClockTime, Clocks},
 	dsp::Frame,
-	manager::resources::Clocks,
 	parameter::{Parameter, Parameters, Tween},
 	sound::Sound,
 	track::TrackId,

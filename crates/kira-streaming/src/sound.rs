@@ -8,9 +8,8 @@ use std::sync::{
 use ringbuf::{Consumer, Producer, RingBuffer};
 
 use kira::{
-	clock::ClockTime,
+	clock::{ClockTime, Clocks},
 	dsp::Frame,
-	manager::resources::Clocks,
 	parameter::{Parameter, Parameters, Tween},
 	sound::{static_sound::PlaybackState, Sound},
 	track::TrackId,

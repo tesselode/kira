@@ -8,7 +8,7 @@ use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	BuildStreamError, DefaultStreamConfigError, PlayStreamError, Stream, StreamConfig,
 };
-use kira::manager::{resources::UnusedResourceCollector, Backend, Renderer};
+use kira::manager::{Backend, Renderer, UnusedResourceCollector};
 use ringbuf::{Producer, RingBuffer};
 
 const UNUSED_RESOURCE_COLLECTION_INTERVAL: Duration = Duration::from_millis(100);

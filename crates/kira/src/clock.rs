@@ -1,8 +1,10 @@
 //! A user-controllable timing source for instances and tweens.
 
+mod clocks;
 mod handle;
 mod time;
 
+pub use clocks::*;
 pub use handle::*;
 pub use time::*;
 

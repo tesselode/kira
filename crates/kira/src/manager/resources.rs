@@ -2,11 +2,8 @@
 //! [`Sound`s](crate::sound::Sound), and
 //! [`Backend`s](crate::manager::Backend).
 
-mod clocks;
 pub(crate) mod mixer;
 pub(crate) mod sounds;
-
-pub use clocks::*;
 
 use std::sync::Arc;
 
@@ -14,7 +11,7 @@ use atomic_arena::Controller;
 use ringbuf::{Consumer, Producer, RingBuffer};
 
 use crate::{
-	clock::Clock,
+	clock::{Clock, Clocks},
 	parameter::{Parameter, Parameters},
 	sound::Sound,
 	track::Track,

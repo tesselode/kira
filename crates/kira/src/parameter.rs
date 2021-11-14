@@ -18,7 +18,10 @@ use std::{
 
 use atomic_arena::Key;
 
-use crate::{clock::ClockTime, manager::resources::Clocks, start_time::StartTime};
+use crate::{
+	clock::{ClockTime, Clocks},
+	start_time::StartTime,
+};
 
 type JustFinishedTween = bool;
 

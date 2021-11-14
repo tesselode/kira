@@ -4,10 +4,11 @@ mod backend;
 pub(crate) mod command;
 pub mod error;
 mod renderer;
-pub mod resources;
+pub(crate) mod resources;
 
 pub use backend::*;
 pub use renderer::*;
+pub use resources::UnusedResourceCollector;
 
 use std::sync::Arc;
 
