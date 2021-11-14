@@ -5,6 +5,7 @@ members = [
 	"crates/kira-streaming",
 	"crates/kira-mp3",
 	"crates/kira-ogg",
+	"crates/kira-flac",
 	"crates/kira-effects",
 ]
 

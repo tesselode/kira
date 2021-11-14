@@ -3,7 +3,7 @@ use std::{sync::Arc, time::Duration};
 use ringbuf::RingBuffer;
 
 use crate::{
-	dsp::Frame,
+	dsp::{Frame, I24},
 	sound::{Sound, SoundData},
 	util,
 };
@@ -16,6 +16,8 @@ const COMMAND_BUFFER_CAPACITY: usize = 8;
 pub enum Samples {
 	I16Mono(Vec<i16>),
 	I16Stereo(Vec<[i16; 2]>),
+	I24Mono(Vec<I24>),
+	I24Stereo(Vec<[I24; 2]>),
 	F32Mono(Vec<f32>),
 	F32Stereo(Vec<[f32; 2]>),
 }
@@ -25,6 +27,8 @@ impl Samples {
 		match self {
 			Samples::I16Mono(samples) => samples.len(),
 			Samples::I16Stereo(samples) => samples.len(),
+			Samples::I24Mono(samples) => samples.len(),
+			Samples::I24Stereo(samples) => samples.len(),
 			Samples::F32Mono(samples) => samples.len(),
 			Samples::F32Stereo(samples) => samples.len(),
 		}
@@ -51,6 +55,16 @@ impl StaticSoundData {
 				.map(|sample| sample.into())
 				.unwrap_or(Frame::ZERO),
 			Samples::I16Stereo(samples) => samples
+				.get(index)
+				.copied()
+				.map(|sample| sample.into())
+				.unwrap_or(Frame::ZERO),
+			Samples::I24Mono(samples) => samples
+				.get(index)
+				.copied()
+				.map(|sample| sample.into())
+				.unwrap_or(Frame::ZERO),
+			Samples::I24Stereo(samples) => samples
 				.get(index)
 				.copied()
 				.map(|sample| sample.into())
