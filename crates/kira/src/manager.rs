@@ -1,14 +1,8 @@
 //! The main entrypoint for controlling audio from gameplay code.
 
-mod backend;
+pub mod backend;
 pub(crate) mod command;
 pub mod error;
-mod renderer;
-pub(crate) mod resources;
-
-pub use backend::*;
-pub use renderer::*;
-pub use resources::UnusedResourceCollector;
 
 use std::sync::Arc;
 
@@ -24,14 +18,41 @@ use crate::{
 };
 
 use self::{
+	backend::{
+		context::Context,
+		resources::{create_resources, create_unused_resource_channels, ResourceControllers},
+		Backend, Renderer,
+	},
 	command::{
 		producer::CommandProducer, ClockCommand, Command, MixerCommand, ParameterCommand,
 		SoundCommand,
 	},
 	error::{AddClockError, AddParameterError, AddSubTrackError, PlaySoundError},
-	renderer::context::Context,
-	resources::{create_resources, create_unused_resource_channels, ResourceControllers},
 };
+
+/// The playback state of an audio context.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MainPlaybackState {
+	/// Audio is playing normally.
+	Playing,
+	/// Audio is fading out and will be paused when the
+	/// fade-out is finished.
+	Pausing,
+	/// Audio processing is paused and no sound is being
+	/// produced.
+	Paused,
+}
+
+impl MainPlaybackState {
+	fn from_u8(state: u8) -> Self {
+		match state {
+			0 => Self::Playing,
+			1 => Self::Pausing,
+			2 => Self::Paused,
+			_ => panic!("Not a valid MainPlaybackState"),
+		}
+	}
+}
 
 /// Settings for an [`AudioManager`].
 pub struct AudioManagerSettings {
@@ -96,8 +117,8 @@ impl<B: Backend> AudioManager<B> {
 		&mut self.backend
 	}
 
-	/// Returns the current playback state of the [`Renderer`].
-	pub fn state(&self) -> RendererState {
+	/// Returns the current playback state of the audio.
+	pub fn state(&self) -> MainPlaybackState {
 		self.context.state()
 	}
 
@@ -179,12 +200,12 @@ impl<B: Backend> AudioManager<B> {
 		Ok(handle)
 	}
 
-	/// Fades out and pauses the [`Renderer`].
+	/// Fades out and pauses all audio.
 	pub fn pause(&mut self, fade_out_tween: Tween) -> Result<(), CommandError> {
 		self.command_producer.push(Command::Pause(fade_out_tween))
 	}
 
-	/// Resumes the [`Renderer`] and fades in the audio.
+	/// Resumes and fades in all audio.
 	pub fn resume(&mut self, fade_out_tween: Tween) -> Result<(), CommandError> {
 		self.command_producer.push(Command::Resume(fade_out_tween))
 	}

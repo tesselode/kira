@@ -1,9 +1,6 @@
-use crate::{
-	dsp::Frame,
-	manager::{resources::UnusedResourceCollector, Renderer},
-};
+use crate::dsp::Frame;
 
-use super::Backend;
+use super::{Backend, Renderer, UnusedResourceCollector};
 
 enum State {
 	Uninitialized,

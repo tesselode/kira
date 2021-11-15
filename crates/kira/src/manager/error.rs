@@ -14,7 +14,7 @@ pub enum PlaySoundError<E> {
 	SoundLimitReached,
 	/// An error occurred when initializing the sound.
 	IntoSoundError(E),
-	/// An error occured when sending a command to the renderer.
+	/// An error occured when sending a command to the audio thread.
 	CommandError(CommandError),
 }
 
@@ -52,7 +52,7 @@ impl<E> From<CommandError> for PlaySoundError<E> {
 pub enum AddParameterError {
 	/// Could not add a parameter because the maximum number of parameters has been reached.
 	ParameterLimitReached,
-	/// An error occured when sending a command to the renderer.
+	/// An error occured when sending a command to the audio thread.
 	CommandError(CommandError),
 }
 
@@ -85,7 +85,7 @@ impl From<CommandError> for AddParameterError {
 pub enum AddSubTrackError {
 	/// Could not add a sub-track because the maximum number of sub-tracks has been reached.
 	SubTrackLimitReached,
-	/// An error occured when sending a command to the renderer.
+	/// An error occured when sending a command to the audio thread.
 	CommandError(CommandError),
 }
 
@@ -118,7 +118,7 @@ impl From<CommandError> for AddSubTrackError {
 pub enum AddClockError {
 	/// Could not add a clock because the maximum number of clocks has been reached.
 	ClockLimitReached,
-	/// An error occured when sending a command to the renderer.
+	/// An error occured when sending a command to the audio thread.
 	CommandError(CommandError),
 }
 

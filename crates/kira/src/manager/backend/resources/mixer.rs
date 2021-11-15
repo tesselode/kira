@@ -5,7 +5,7 @@ use ringbuf::Producer;
 
 use crate::{
 	dsp::Frame,
-	manager::{command::MixerCommand, context::Context},
+	manager::{backend::context::Context, command::MixerCommand},
 	track::{SubTrackId, Track, TrackId},
 	value::CachedValue,
 };

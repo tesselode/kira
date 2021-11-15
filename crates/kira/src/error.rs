@@ -3,8 +3,7 @@ use std::{
 	fmt::{Display, Formatter},
 };
 
-/// Errors that can occur when sending a command to a
-/// [`Renderer`](super::manager::Renderer).
+/// Errors that can occur when sending a command to the audio thread.
 #[derive(Debug)]
 pub enum CommandError {
 	/// Could not add a sound because the command queue is full.

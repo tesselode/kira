@@ -1,8 +1,13 @@
+//! Important types for connecting Kira to low-level audio
+//! APIs.
+
 mod mock;
+mod renderer;
+pub(crate) mod resources;
 
 pub use mock::MockBackend;
-
-use super::{resources::UnusedResourceCollector, Renderer};
+pub use renderer::*;
+pub use resources::UnusedResourceCollector;
 
 /// Connects a [`Renderer`] to a lower level audio API.
 pub trait Backend {

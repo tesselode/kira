@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicU8, Ordering};
 
-use super::RendererState;
+use crate::manager::MainPlaybackState;
 
 pub(crate) struct Context {
 	pub(super) sample_rate: u32,
@@ -13,7 +13,7 @@ impl Context {
 		Self {
 			sample_rate,
 			dt: 1.0 / sample_rate as f64,
-			state: AtomicU8::new(RendererState::Playing as u8),
+			state: AtomicU8::new(MainPlaybackState::Playing as u8),
 		}
 	}
 
@@ -21,7 +21,7 @@ impl Context {
 		self.sample_rate
 	}
 
-	pub fn state(&self) -> RendererState {
-		RendererState::from_u8(self.state.load(Ordering::SeqCst))
+	pub fn state(&self) -> MainPlaybackState {
+		MainPlaybackState::from_u8(self.state.load(Ordering::SeqCst))
 	}
 }

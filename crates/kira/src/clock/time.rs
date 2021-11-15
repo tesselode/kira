@@ -5,7 +5,7 @@ use super::ClockId;
 /// An instant in time associated with a [`Clock`](super::Clock).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ClockTime {
-	/// The [`Clock`] this time is associated with.
+	/// The [`Clock`](super::Clock) this time is associated with.
 	pub clock: ClockId,
 	/// The elapsed time in ticks.
 	pub ticks: u64,

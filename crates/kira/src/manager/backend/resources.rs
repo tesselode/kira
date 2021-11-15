@@ -1,7 +1,3 @@
-//! Structs that are useful for writing [`Effect`s](crate::track::Effect),
-//! [`Sound`s](crate::sound::Sound), and
-//! [`Backend`s](crate::manager::Backend).
-
 pub(crate) mod mixer;
 pub(crate) mod sounds;
 
@@ -12,6 +8,7 @@ use ringbuf::{Consumer, Producer, RingBuffer};
 
 use crate::{
 	clock::{Clock, Clocks},
+	manager::AudioManagerSettings,
 	parameter::{Parameter, Parameters},
 	sound::Sound,
 	track::Track,
@@ -19,9 +16,9 @@ use crate::{
 
 use self::{mixer::Mixer, sounds::Sounds};
 
-use super::{context::Context, AudioManagerSettings};
+use super::context::Context;
 
-pub(super) struct UnusedResourceProducers {
+pub(crate) struct UnusedResourceProducers {
 	pub sound: Producer<Box<dyn Sound>>,
 	pub parameter: Producer<Parameter>,
 	pub sub_track: Producer<Track>,
@@ -48,7 +45,7 @@ impl UnusedResourceCollector {
 	}
 }
 
-pub(super) fn create_unused_resource_channels(
+pub(crate) fn create_unused_resource_channels(
 	settings: &AudioManagerSettings,
 ) -> (UnusedResourceProducers, UnusedResourceCollector) {
 	let (unused_sound_producer, unused_sound_consumer) =
@@ -75,21 +72,21 @@ pub(super) fn create_unused_resource_channels(
 	)
 }
 
-pub(super) struct Resources {
+pub(crate) struct Resources {
 	pub sounds: Sounds,
 	pub parameters: Parameters,
 	pub mixer: Mixer,
 	pub clocks: Clocks,
 }
 
-pub(super) struct ResourceControllers {
+pub(crate) struct ResourceControllers {
 	pub sound_controller: Controller,
 	pub parameter_controller: Controller,
 	pub sub_track_controller: Controller,
 	pub clock_controller: Controller,
 }
 
-pub(super) fn create_resources(
+pub(crate) fn create_resources(
 	settings: &AudioManagerSettings,
 	unused_resource_producers: UnusedResourceProducers,
 	context: &Arc<Context>,

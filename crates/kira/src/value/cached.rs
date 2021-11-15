@@ -1,5 +1,5 @@
 //! Saves the last valid raw value of a [`Value`]. Useful for writing
-//! [`Effect`](crate::track::effect::Effect)s and
+//! [`Effect`](crate::track::Effect)s and
 //! [`Sound`](crate::sound::Sound)s.
 
 use std::ops::{RangeFrom, RangeFull, RangeInclusive, RangeToInclusive};
