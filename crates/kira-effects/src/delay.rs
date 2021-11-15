@@ -1,10 +1,9 @@
 //! Adds echoes to a sound.
 
 use kira::{
-	dsp::Frame,
+	dsp::{interpolate_frame, Frame},
 	parameter::Parameters,
 	track::Effect,
-	util,
 	value::{CachedValue, Value},
 };
 
@@ -148,7 +147,7 @@ impl Effect for Delay {
 			let next_sample_index = (current_sample_index + 1) % buffer.len();
 			let next_sample_index_2 = (current_sample_index + 2) % buffer.len();
 			let fraction = read_position % 1.0;
-			let output = util::interpolate_frame(
+			let output = interpolate_frame(
 				buffer[previous_sample_index],
 				buffer[current_sample_index],
 				buffer[next_sample_index],

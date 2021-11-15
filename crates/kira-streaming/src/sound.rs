@@ -9,11 +9,10 @@ use ringbuf::{Consumer, Producer, RingBuffer};
 
 use kira::{
 	clock::{ClockTime, Clocks},
-	dsp::Frame,
+	dsp::{interpolate_frame, Frame},
 	parameter::{Parameter, Parameters, Tween},
 	sound::{static_sound::PlaybackState, Sound},
 	track::TrackId,
-	util,
 	value::CachedValue,
 	StartTime,
 };
@@ -250,7 +249,7 @@ impl Sound for StreamingSound {
 		}
 		self.update_current_frame();
 		let next_frames = self.next_frames();
-		let out = util::interpolate_frame(
+		let out = interpolate_frame(
 			next_frames[0],
 			next_frames[1],
 			next_frames[2],

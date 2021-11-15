@@ -8,6 +8,10 @@ use crate::{
 
 use super::Parameters;
 
+/// Provides access to all existing [`Clock`]s.
+///
+/// You'll only have access to this if you're writing your own
+/// [`Sound`](crate::sound::Sound)s.
 pub struct Clocks {
 	clocks: Arena<Clock>,
 	unused_clock_producer: Producer<Clock>,

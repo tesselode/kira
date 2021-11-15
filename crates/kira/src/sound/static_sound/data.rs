@@ -3,9 +3,8 @@ use std::{sync::Arc, time::Duration};
 use ringbuf::RingBuffer;
 
 use crate::{
-	dsp::{Frame, I24},
+	dsp::{interpolate_frame, Frame, I24},
 	sound::{Sound, SoundData},
-	util,
 };
 
 use super::{handle::StaticSoundHandle, sound::StaticSound, StaticSoundSettings};
@@ -94,7 +93,7 @@ impl StaticSoundData {
 		let current = self.frame_at_index(current_sample_index);
 		let next_1 = self.frame_at_index(current_sample_index + 1);
 		let next_2 = self.frame_at_index(current_sample_index + 2);
-		util::interpolate_frame(previous, current, next_1, next_2, fraction)
+		interpolate_frame(previous, current, next_1, next_2, fraction)
 	}
 }
 

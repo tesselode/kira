@@ -1,4 +1,4 @@
-//! A user-controllable timing source for instances and tweens.
+//! A user-controllable timing source.
 
 mod clocks;
 mod handle;
@@ -20,7 +20,7 @@ use crate::{
 	value::{CachedValue, Value},
 };
 
-/// A unique identifier for a clock.
+/// A unique identifier for a [`Clock`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ClockId(pub(crate) Key);
 
@@ -56,6 +56,12 @@ impl ClockShared {
 	}
 }
 
+/// A user-controllable timing source.
+///
+/// You will only need to interact with [`Clock`]s directly
+/// if you're writing your own [`Sound`](crate::sound::Sound)s.
+/// Otherwise, you'll be interacting with clocks using a
+/// [`ClockHandle`].
 pub struct Clock {
 	shared: Arc<ClockShared>,
 	ticking: bool,
@@ -79,10 +85,12 @@ impl Clock {
 		self.shared.clone()
 	}
 
+	/// Returns `true` if the clock is currently running.
 	pub fn ticking(&self) -> bool {
 		self.ticking
 	}
 
+	/// Returns the number of times the clock has ticked.
 	pub fn ticks(&self) -> u64 {
 		self.ticks
 	}
