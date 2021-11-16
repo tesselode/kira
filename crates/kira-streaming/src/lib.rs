@@ -9,7 +9,7 @@ pub use settings::*;
 
 use std::collections::VecDeque;
 
-use kira::{dsp::Frame, parameter::Tween, value::Value};
+use kira::{dsp::Frame, tween::Tween, value::Value};
 
 pub trait Decoder: Send + Sync {
 	type Error: Send + Sync;

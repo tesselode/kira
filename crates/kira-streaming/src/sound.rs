@@ -10,9 +10,10 @@ use ringbuf::{Consumer, Producer, RingBuffer};
 use kira::{
 	clock::{ClockTime, Clocks},
 	dsp::{interpolate_frame, Frame},
-	parameter::{Parameter, Parameters, Tween},
+	parameter::Parameters,
 	sound::{static_sound::PlaybackState, Sound},
 	track::TrackId,
+	tween::{Tween, Tweenable},
 	value::CachedValue,
 	StartTime,
 };
@@ -60,7 +61,7 @@ pub(crate) struct StreamingSound {
 	finished_signal_receiver: Arc<AtomicBool>,
 	start_time: StartTime,
 	state: PlaybackState,
-	volume_fade: Parameter,
+	volume_fade: Tweenable,
 	current_frame: usize,
 	fractional_position: f64,
 	volume: CachedValue,
@@ -111,11 +112,11 @@ impl StreamingSound {
 			start_time: data.settings.start_time,
 			state: PlaybackState::Playing,
 			volume_fade: if let Some(tween) = data.settings.fade_in_tween {
-				let mut parameter = Parameter::new(0.0);
-				parameter.set(1.0, tween);
-				parameter
+				let mut tweenable = Tweenable::new(0.0);
+				tweenable.set(1.0, tween);
+				tweenable
 			} else {
-				Parameter::new(1.0)
+				Tweenable::new(1.0)
 			},
 			current_frame,
 			fractional_position: 0.0,

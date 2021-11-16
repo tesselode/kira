@@ -1,3 +1,7 @@
+mod tweenable;
+
+pub use tweenable::*;
+
 use std::time::Duration;
 
 use crate::start_time::StartTime;

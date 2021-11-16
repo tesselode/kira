@@ -11,9 +11,10 @@ use ringbuf::RingBuffer;
 use crate::{
 	clock::{Clock, ClockHandle, ClockId},
 	error::CommandError,
-	parameter::{Parameter, ParameterHandle, ParameterId, Tween},
+	parameter::{Parameter, ParameterHandle, ParameterId},
 	sound::SoundData,
 	track::{SubTrackId, Track, TrackHandle, TrackId, TrackSettings},
+	tween::Tween,
 	value::Value,
 };
 

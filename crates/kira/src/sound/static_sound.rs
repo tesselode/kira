@@ -8,7 +8,7 @@ pub use handle::*;
 pub use settings::*;
 pub use sound::PlaybackState;
 
-use crate::{parameter::Tween, value::Value};
+use crate::{tween::Tween, value::Value};
 
 #[cfg(test)]
 mod test;

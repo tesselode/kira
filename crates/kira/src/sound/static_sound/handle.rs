@@ -2,7 +2,7 @@ use std::{error::Error, fmt::Display, sync::Arc};
 
 use ringbuf::Producer;
 
-use crate::{parameter::Tween, value::Value};
+use crate::{tween::Tween, value::Value};
 
 use super::{sound::Shared, Command, PlaybackState};
 

@@ -2,25 +2,20 @@
 
 mod handle;
 mod parameters;
-mod tween;
 
 pub use handle::*;
 pub use parameters::*;
-pub use tween::*;
 
-use std::{
-	ops::RangeInclusive,
-	sync::{
-		atomic::{AtomicBool, AtomicU64, Ordering},
-		Arc,
-	},
+use std::sync::{
+	atomic::{AtomicBool, AtomicU64, Ordering},
+	Arc,
 };
 
 use atomic_arena::Key;
 
 use crate::{
-	clock::{ClockTime, Clocks},
-	start_time::StartTime,
+	clock::Clocks,
+	tween::{Tween, Tweenable},
 };
 
 type JustFinishedTween = bool;
@@ -61,30 +56,18 @@ impl ParameterShared {
 	}
 }
 
-enum ParameterState {
-	Idle,
-	Tweening {
-		values: RangeInclusive<f64>,
-		time: f64,
-		tween: Tween,
-		waiting_to_start: bool,
-	},
-}
-
-pub struct Parameter {
-	state: ParameterState,
+pub(crate) struct Parameter {
+	tweenable: Tweenable,
 	paused: bool,
-	value: f64,
 	shared: Arc<ParameterShared>,
 }
 
 impl Parameter {
-	pub fn new(value: f64) -> Self {
+	pub fn new(initial_value: f64) -> Self {
 		Self {
-			state: ParameterState::Idle,
+			tweenable: Tweenable::new(initial_value),
 			paused: false,
-			value,
-			shared: Arc::new(ParameterShared::new(value)),
+			shared: Arc::new(ParameterShared::new(initial_value)),
 		}
 	}
 
@@ -93,7 +76,7 @@ impl Parameter {
 	}
 
 	pub fn value(&self) -> f64 {
-		self.value
+		self.tweenable.value()
 	}
 
 	pub fn pause(&mut self) {
@@ -107,56 +90,19 @@ impl Parameter {
 	}
 
 	pub fn set(&mut self, target: f64, tween: Tween) {
-		self.state = ParameterState::Tweening {
-			values: self.value..=target,
-			time: 0.0,
-			tween,
-			waiting_to_start: matches!(tween.start_time, StartTime::ClockTime(..)),
-		};
+		self.tweenable.set(target, tween);
 	}
 
 	pub(crate) fn on_start_processing(&self) {
 		self.shared
 			.value
-			.store(self.value.to_bits(), Ordering::SeqCst);
+			.store(self.tweenable.value().to_bits(), Ordering::SeqCst);
 	}
 
 	pub fn update(&mut self, dt: f64, clocks: &Clocks) -> JustFinishedTween {
 		if self.paused {
 			return false;
 		}
-		if let ParameterState::Tweening {
-			values,
-			time,
-			tween,
-			waiting_to_start,
-		} = &mut self.state
-		{
-			if *waiting_to_start {
-				if let StartTime::ClockTime(ClockTime { clock, ticks }) = tween.start_time {
-					if let Some(clock) = clocks.get(clock) {
-						if clock.ticking() && clock.ticks() >= ticks {
-							*waiting_to_start = false;
-						}
-					}
-				} else {
-					panic!(
-						"waiting_to_start should always be false if the start_time is Immediate"
-					);
-				}
-			}
-			if *waiting_to_start {
-				return false;
-			}
-			*time += dt;
-			if *time >= tween.duration.as_secs_f64() {
-				self.value = *values.end();
-				self.state = ParameterState::Idle;
-				return true;
-			} else {
-				self.value = values.start() + (values.end() - values.start()) * tween.value(*time);
-			}
-		}
-		false
+		self.tweenable.update(dt, clocks)
 	}
 }

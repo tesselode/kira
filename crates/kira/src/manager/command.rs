@@ -4,9 +4,10 @@ use atomic_arena::Key;
 
 use crate::{
 	clock::{Clock, ClockId},
-	parameter::{Parameter, ParameterId, Tween},
+	parameter::{Parameter, ParameterId},
 	sound::Sound,
 	track::{SubTrackId, Track, TrackId},
+	tween::Tween,
 	value::Value,
 };
 

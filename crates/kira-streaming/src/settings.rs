@@ -1,4 +1,4 @@
-use kira::{LoopBehavior, StartTime, parameter::Tween, value::Value};
+use kira::{tween::Tween, value::Value, LoopBehavior, StartTime};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct StreamingSoundSettings {

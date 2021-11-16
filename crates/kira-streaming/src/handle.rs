@@ -1,6 +1,6 @@
 use std::{error::Error, fmt::Display, sync::Arc};
 
-use kira::{parameter::Tween, sound::static_sound::PlaybackState, value::Value};
+use kira::{sound::static_sound::PlaybackState, tween::Tween, value::Value};
 use ringbuf::{Consumer, Producer};
 
 use crate::{sound::Shared, Command};

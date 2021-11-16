@@ -11,9 +11,10 @@ use ringbuf::Consumer;
 use crate::{
 	clock::{ClockTime, Clocks},
 	dsp::Frame,
-	parameter::{Parameter, Parameters, Tween},
+	parameter::Parameters,
 	sound::Sound,
 	track::TrackId,
+	tween::{Tween, Tweenable},
 	value::CachedValue,
 	LoopBehavior, StartTime,
 };
@@ -60,7 +61,7 @@ pub(super) struct StaticSound {
 	volume: CachedValue,
 	playback_rate: CachedValue,
 	panning: CachedValue,
-	volume_fade: Parameter,
+	volume_fade: Tweenable,
 	shared: Arc<Shared>,
 }
 
@@ -82,11 +83,11 @@ impl StaticSound {
 			playback_rate: CachedValue::new(.., settings.playback_rate, 1.0),
 			panning: CachedValue::new(0.0..=1.0, settings.panning, 0.5),
 			volume_fade: if let Some(tween) = settings.fade_in_tween {
-				let mut parameter = Parameter::new(0.0);
-				parameter.set(1.0, tween);
-				parameter
+				let mut tweenable = Tweenable::new(0.0);
+				tweenable.set(1.0, tween);
+				tweenable
 			} else {
-				Parameter::new(1.0)
+				Tweenable::new(1.0)
 			},
 			shared: Arc::new(Shared {
 				state: AtomicU8::new(PlaybackState::Playing as u8),

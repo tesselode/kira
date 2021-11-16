@@ -1,4 +1,4 @@
-use crate::{parameter::Tween, track::TrackId, value::Value, LoopBehavior, StartTime};
+use crate::{track::TrackId, tween::Tween, value::Value, LoopBehavior, StartTime};
 
 /// Settings for a static sound.
 #[derive(Debug, Clone, Copy, PartialEq)]
