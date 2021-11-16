@@ -94,7 +94,7 @@ pub struct AudioManager<B: Backend> {
 
 impl<B: Backend> AudioManager<B> {
 	/// Creates a new [`AudioManager`].
-	pub fn new(settings: AudioManagerSettings, mut backend: B) -> Result<Self, B::InitError> {
+	pub fn new(mut backend: B, settings: AudioManagerSettings) -> Result<Self, B::InitError> {
 		let sample_rate = backend.sample_rate();
 		let context = Arc::new(Context::new(sample_rate));
 		let (unused_resource_producers, unused_resource_collector) =
