@@ -31,7 +31,7 @@ use self::{
 	error::{AddClockError, AddParameterError, AddSubTrackError, PlaySoundError},
 };
 
-/// The playback state of an audio context.
+/// The playback state for all audio.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MainPlaybackState {
 	/// Audio is playing normally.

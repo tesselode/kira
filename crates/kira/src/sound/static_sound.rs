@@ -1,3 +1,5 @@
+//! Playable chunks of audio that are loaded into memory all at once.
+
 mod data;
 mod handle;
 mod settings;

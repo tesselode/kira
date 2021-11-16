@@ -3,6 +3,7 @@
 #![allow(clippy::collapsible_if)]
 #![allow(clippy::collapsible_else_if)]
 #![allow(clippy::large_enum_variant)]
+#![warn(missing_docs)]
 
 pub mod clock;
 pub mod dsp;

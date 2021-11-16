@@ -1,4 +1,5 @@
 #![allow(clippy::large_enum_variant)]
+#![warn(missing_docs)]
 
 pub mod delay;
 pub mod distortion;

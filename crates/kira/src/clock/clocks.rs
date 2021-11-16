@@ -29,6 +29,7 @@ impl Clocks {
 		self.clocks.controller()
 	}
 
+	/// Returns a reference to the clock with the given ID (if it exists).
 	pub fn get(&self, id: ClockId) -> Option<&Clock> {
 		self.clocks.get(id.0)
 	}
