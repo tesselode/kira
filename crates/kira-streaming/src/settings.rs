@@ -1,5 +1,6 @@
 use kira::{tween::Tween, value::Value, LoopBehavior, StartTime};
 
+/// Settings for a streaming sound.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct StreamingSoundSettings {
 	/// When the instance should start playing.
@@ -24,6 +25,7 @@ pub struct StreamingSoundSettings {
 }
 
 impl StreamingSoundSettings {
+	/// Creates a new [`StreamingSoundSettings`] with the default settings.
 	pub fn new() -> Self {
 		Self {
 			start_time: StartTime::Immediate,

@@ -1,3 +1,5 @@
+//! asdf
+
 #![warn(missing_docs)]
 
 use std::{
@@ -15,6 +17,7 @@ use ringbuf::{Producer, RingBuffer};
 
 const UNUSED_RESOURCE_COLLECTION_INTERVAL: Duration = Duration::from_millis(100);
 
+/// An error that can occur when creating a [`CpalBackend`].
 #[derive(Debug)]
 pub enum DeviceSetupError {
 	/// A default audio output device could not be determined.
@@ -49,6 +52,7 @@ impl From<DefaultStreamConfigError> for DeviceSetupError {
 	}
 }
 
+/// Errors that can occur when initializing a [`CpalBackend`].
 #[derive(Debug)]
 pub enum InitError {
 	/// A default audio output device could not be determined.
@@ -103,11 +107,14 @@ enum State {
 	},
 }
 
+/// A backend that connects Kira to the operating system's
+/// audio APIs using [cpal](https://crates.io/crates/cpal).
 pub struct CpalBackend {
 	state: State,
 }
 
 impl CpalBackend {
+	/// Creates a new [`CpalBackend`].
 	pub fn new() -> Result<Self, DeviceSetupError> {
 		let config = std::thread::spawn(|| -> Result<StreamConfig, DeviceSetupError> {
 			let host = cpal::default_host();

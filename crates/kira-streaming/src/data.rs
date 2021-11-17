@@ -8,12 +8,16 @@ use super::{settings::StreamingSoundSettings, sound::StreamingSound, Decoder};
 const COMMAND_BUFFER_CAPACITY: usize = 8;
 const ERROR_BUFFER_CAPACITY: usize = 8;
 
+/// Plays back audio by reading it from a file gradually.
 pub struct StreamingSoundData<E: Send + Sync + 'static> {
+	/// The audio decoder for this sound.
 	pub decoder: Box<dyn Decoder<Error = E>>,
+	/// Settings for the sound.
 	pub settings: StreamingSoundSettings,
 }
 
 impl<E: Send + Sync + 'static> StreamingSoundData<E> {
+	/// Creates a new [`StreamingSoundData`].
 	pub fn new(
 		decoder: impl Decoder<Error = E> + 'static,
 		settings: StreamingSoundSettings,

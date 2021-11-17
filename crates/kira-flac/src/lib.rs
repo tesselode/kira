@@ -1,3 +1,5 @@
+//! asdf
+
 #![warn(missing_docs)]
 
 mod decoder;
@@ -14,6 +16,7 @@ use kira::{
 	sound::static_sound::{Samples, StaticSoundData, StaticSoundSettings},
 };
 
+/// Loads a [`StaticSoundData`] from a flac data reader.
 pub fn load_from_reader(
 	reader: impl Read + 'static,
 	settings: StaticSoundSettings,
@@ -83,6 +86,7 @@ pub fn load_from_reader(
 	})
 }
 
+/// Loads a [`StaticSoundData`] from a flac file.
 pub fn load_from_file(
 	path: impl AsRef<Path>,
 	settings: StaticSoundSettings,
@@ -90,6 +94,7 @@ pub fn load_from_file(
 	Ok(load_from_reader(File::open(path)?, settings)?)
 }
 
+/// Creates a [`StreamingSoundData`] from a flac file.
 pub fn stream(
 	path: impl AsRef<Path>,
 	settings: StreamingSoundSettings,

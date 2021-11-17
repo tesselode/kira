@@ -1,3 +1,5 @@
+//! asdf
+
 #![warn(missing_docs)]
 
 mod decoder;
@@ -17,6 +19,7 @@ use std::{
 use kira::sound::static_sound::{Samples, StaticSoundData, StaticSoundSettings};
 use lewton::inside_ogg::OggStreamReader;
 
+/// Loads a [`StaticSoundData`] from an ogg data reader.
 pub fn load_from_reader(
 	reader: impl Read + Seek,
 	settings: StaticSoundSettings,
@@ -48,6 +51,7 @@ pub fn load_from_reader(
 	})
 }
 
+/// Loads a [`StaticSoundData`] from an ogg file.
 pub fn load_from_file(
 	path: impl AsRef<Path>,
 	settings: StaticSoundSettings,
@@ -55,6 +59,7 @@ pub fn load_from_file(
 	Ok(load_from_reader(File::open(path)?, settings)?)
 }
 
+/// Creates a [`StreamingSoundData`] from an ogg file.
 pub fn stream(
 	path: impl AsRef<Path>,
 	settings: StreamingSoundSettings,

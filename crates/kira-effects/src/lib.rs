@@ -1,3 +1,7 @@
+//! # kira-effects
+//!
+//! Provides a set of common effects to be used on Kira mixer tracks.
+
 #![allow(clippy::large_enum_variant)]
 #![warn(missing_docs)]
 

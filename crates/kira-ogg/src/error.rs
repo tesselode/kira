@@ -2,9 +2,13 @@ use std::fmt::Display;
 
 use lewton::VorbisError;
 
+/// Errors that can occur when decoding ogg audio.
 #[derive(Debug)]
 pub enum DecodeError {
+	/// The audio has an unsupported channel configuration. Only
+	/// mono and stereo audio is supported.
 	UnsupportedChannelConfiguration,
+	/// An error occurred in the decoding process.
 	VorbisError(VorbisError),
 }
 
@@ -34,9 +38,12 @@ impl From<VorbisError> for DecodeError {
 	}
 }
 
+/// Errors that can occur when loading or streaming ogg files.
 #[derive(Debug)]
 pub enum Error {
+	/// An error occurred when reading the file.
 	IoError(std::io::Error),
+	/// An error occurred when decoding the audio.
 	DecodeError(DecodeError),
 }
 

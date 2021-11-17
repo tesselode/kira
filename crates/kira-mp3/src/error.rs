@@ -1,9 +1,15 @@
 use std::fmt::Display;
 
+/// Errors that can occur when decoding mp3 audio.
 #[derive(Debug)]
 pub enum DecodeError {
+	/// The audio has an unsupported channel configuration. Only
+	/// mono and stereo audio is supported.
 	UnsupportedChannelConfiguration,
+	/// The audio has a variable sample rate, which is not
+	/// supported.
 	VariableSampleRate,
+	/// An error occurred in the decoding process.
 	Mp3Error(minimp3::Error),
 }
 
@@ -36,9 +42,12 @@ impl From<minimp3::Error> for DecodeError {
 	}
 }
 
+/// Errors that can occur when loading or streaming mp3 files.
 #[derive(Debug)]
 pub enum Error {
+	/// An error occurred when reading the file.
 	IoError(std::io::Error),
+	/// An error occurred when decoding the audio.
 	DecodeError(DecodeError),
 }
 

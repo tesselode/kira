@@ -1,3 +1,5 @@
+//! Smooth interpolation between values.
+
 mod tweenable;
 
 pub use tweenable::*;
@@ -81,7 +83,7 @@ impl Default for Easing {
 	}
 }
 
-/// A movement of one value to another over time.
+/// Describes a smooth transition between values.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Tween {
 	/// When the motion starts.

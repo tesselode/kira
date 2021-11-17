@@ -37,6 +37,32 @@ impl StaticSoundHandle {
 	}
 
 	/// Sets the volume of the sound (as a factor of the original volume).
+	///
+	/// ## Example
+	/// ```
+	/// # use std::{error::Error, sync::Arc};
+	/// #
+	/// # use kira::{
+	/// # 	manager::{backend::MockBackend, AudioManager},
+	/// # 	sound::static_sound::{Samples, StaticSoundData},
+	/// # };
+	/// #
+	/// # let mut audio_manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
+	/// # let mut sound = audio_manager.play(StaticSoundData {
+	/// # 	sample_rate: 1,
+	/// # 	samples: Arc::new(Samples::F32Stereo(vec![])),
+	/// # 	settings: Default::default(),
+	/// # })?;
+	/// #
+	/// // set the volume to a fixed value
+	/// sound.set_volume(0.75)?;
+	///
+	/// // set the volume to follow a parameter
+	/// let parameter = audio_manager.add_parameter(0.5)?;
+	/// sound.set_volume(&parameter)?;
+	/// #
+	/// # Result::<(), Box<dyn Error>>::Ok(())
+	/// ```
 	pub fn set_volume(&mut self, volume: impl Into<Value>) -> Result<(), CommandQueueFull> {
 		self.command_producer
 			.push(Command::SetVolume(volume.into()))
@@ -48,6 +74,32 @@ impl StaticSoundHandle {
 	///
 	/// Changing the playback rate will change both the speed
 	/// and pitch of the sound.
+	///
+	/// ## Example
+	/// ```
+	/// # use std::{error::Error, sync::Arc};
+	/// #
+	/// # use kira::{
+	/// # 	manager::{backend::MockBackend, AudioManager},
+	/// # 	sound::static_sound::{Samples, StaticSoundData},
+	/// # };
+	/// #
+	/// # let mut audio_manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
+	/// # let mut sound = audio_manager.play(StaticSoundData {
+	/// # 	sample_rate: 1,
+	/// # 	samples: Arc::new(Samples::F32Stereo(vec![])),
+	/// # 	settings: Default::default(),
+	/// # })?;
+	/// #
+	/// // set the playback rate to a fixed value
+	/// sound.set_playback_rate(0.75)?;
+	///
+	/// // set the playback rate to follow a parameter
+	/// let parameter = audio_manager.add_parameter(0.5)?;
+	/// sound.set_playback_rate(&parameter)?;
+	/// #
+	/// # Result::<(), Box<dyn Error>>::Ok(())
+	/// ```
 	pub fn set_playback_rate(
 		&mut self,
 		playback_rate: impl Into<Value>,
@@ -59,6 +111,32 @@ impl StaticSoundHandle {
 
 	/// Sets the panning of the sound, where `0.0` is hard left,
 	/// `0.5` is center, and `1.0` is hard right.
+	///
+	/// ## Example
+	/// ```
+	/// # use std::{error::Error, sync::Arc};
+	/// #
+	/// # use kira::{
+	/// # 	manager::{backend::MockBackend, AudioManager},
+	/// # 	sound::static_sound::{Samples, StaticSoundData},
+	/// # };
+	/// #
+	/// # let mut audio_manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
+	/// # let mut sound = audio_manager.play(StaticSoundData {
+	/// # 	sample_rate: 1,
+	/// # 	samples: Arc::new(Samples::F32Stereo(vec![])),
+	/// # 	settings: Default::default(),
+	/// # })?;
+	/// #
+	/// // set the panning to a fixed value
+	/// sound.set_panning(0.75)?;
+	///
+	/// // set the panning to follow a parameter
+	/// let parameter = audio_manager.add_parameter(0.5)?;
+	/// sound.set_panning(&parameter)?;
+	/// #
+	/// # Result::<(), Box<dyn Error>>::Ok(())
+	/// ```
 	pub fn set_panning(&mut self, panning: impl Into<Value>) -> Result<(), CommandQueueFull> {
 		self.command_producer
 			.push(Command::SetPanning(panning.into()))

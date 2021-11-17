@@ -1,9 +1,15 @@
 use std::fmt::Display;
 
+/// Errors that can occur when decoding flac audio.
 #[derive(Debug)]
 pub enum DecodeError {
+	/// The audio is an unsupported bit depth. Only 16 and 24-bit
+	/// audio are supported.
 	UnsupportedBitDepth,
+	/// The audio has an unsupported channel configuration. Only
+	/// mono and stereo audio is supported.
 	UnsupportedChannelConfiguration,
+	/// An error occurred in the decoding process.
 	FlacError(claxon::Error),
 }
 
@@ -36,9 +42,12 @@ impl From<claxon::Error> for DecodeError {
 	}
 }
 
+/// Errors that can occur when loading or streaming flac files.
 #[derive(Debug)]
 pub enum Error {
+	/// An error occurred when reading the file.
 	IoError(std::io::Error),
+	/// An error occurred when decoding the audio.
 	DecodeError(DecodeError),
 }
 

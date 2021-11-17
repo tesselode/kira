@@ -1,3 +1,5 @@
+//!
+
 #![warn(missing_docs)]
 
 mod decoder;
@@ -19,6 +21,7 @@ use kira::{
 	sound::static_sound::{Samples, StaticSoundData, StaticSoundSettings},
 };
 
+/// Loads a [`StaticSoundData`] from a wav data reader.
 pub fn load_from_reader(
 	reader: impl Read,
 	settings: StaticSoundSettings,
@@ -79,6 +82,7 @@ pub fn load_from_reader(
 	})
 }
 
+/// Loads a [`StaticSoundData`] from a wav file.
 pub fn load_from_file(
 	path: impl AsRef<Path>,
 	settings: StaticSoundSettings,
@@ -89,6 +93,7 @@ pub fn load_from_file(
 	)?)
 }
 
+/// Creates a [`StreamingSoundData`] from a wav file.
 pub fn stream(
 	path: impl AsRef<Path>,
 	settings: StreamingSoundSettings,
