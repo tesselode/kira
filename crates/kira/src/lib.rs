@@ -1,6 +1,35 @@
 /*!
 # Kira
 
+Kira is a backend-agnostic library to create expressive audio
+for games. Besides the common sound playback features, it provides
+[parameters](parameter) for smoothly adjusting properties of sounds, a
+flexible [mixer](track) for applying effects to audio, and a
+[clock] system for precisely timing audio events.
+
+## Related crates
+
+You will most likely want to use Kira with some of these other
+crates:
+
+### Backends
+- [`kira-cpal`](https://crates.io/crates/kira-cpal) - backend for
+Windows, Mac, and Linux targets
+
+### File format support
+- [`kira-mp3`](https://crates.io/crates/kira-mp3) - support for loading
+and streaming mp3 files
+- [`kira-ogg`](https://crates.io/crates/kira-ogg) - support for loading
+and streaming ogg files
+- [`kira-flac`](https://crates.io/crates/kira-flac) - support for loading
+and streaming flac files
+- [`kira-wav`](https://crates.io/crates/kira-wav) - support for loading
+and streaming wav files
+
+### Other
+- [`kira-effects`](https://crates.io/crates/kira-effects) - provides some
+basic effects that can be added to mixer tracks
+
 ## Examples
 
 ### Playing a sound multiple times simultaneously
