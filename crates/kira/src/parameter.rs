@@ -22,7 +22,7 @@ let mut parameter = manager.add_parameter(1.0)?;
 At any time, you can smoothly transition the parameter to a
 new value by using [`ParameterHandle::set`].
 
-```
+```no_run
 use std::time::Duration;
 
 use kira::{
