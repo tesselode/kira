@@ -20,7 +20,10 @@ pub struct StreamingSoundData {
 }
 
 impl StreamingSoundData {
-	pub fn new(path: impl AsRef<Path>, settings: StreamingSoundSettings) -> Result<Self, Error> {
+	pub(crate) fn new(
+		path: impl AsRef<Path>,
+		settings: StreamingSoundSettings,
+	) -> Result<Self, Error> {
 		let codecs = symphonia::default::get_codecs();
 		let probe = symphonia::default::get_probe();
 		let file = File::open(path)?;
