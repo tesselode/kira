@@ -2,11 +2,6 @@
 members = [
 	"crates/kira",
 	"crates/kira-cpal",
-	"crates/kira-streaming",
-	"crates/kira-mp3",
-	"crates/kira-ogg",
-	"crates/kira-flac",
-	"crates/kira-wav",
 	"crates/kira-symphonia",
 	"crates/kira-effects",
 ]

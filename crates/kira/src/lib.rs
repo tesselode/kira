@@ -43,7 +43,7 @@ use kira_cpal::CpalBackend;
 
 // Create an audio manager. This plays sounds and manages resources.
 let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
-let sound_data = kira_ogg::load_from_file("sound.ogg", StaticSoundSettings::default())?;
+let sound_data = kira_symphonia::load("sound.ogg", StaticSoundSettings::default())?;
 manager.play(sound_data.clone())?;
 // After a couple seconds...
 manager.play(sound_data.clone())?;
@@ -66,7 +66,7 @@ use kira_cpal::CpalBackend;
 let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
 // Create a parameter for the playback rate.
 let mut parameter = manager.add_parameter(1.0)?;
-let sound_data = kira_ogg::load_from_file(
+let sound_data = kira_symphonia::load(
 	"sound.ogg",
 	// Link this sound's playback rate to the parameter we created.
 	StaticSoundSettings::new().playback_rate(&parameter),
@@ -102,7 +102,7 @@ let filter = Filter::new(FilterSettings::new().cutoff(1000.0));
 let track = manager.add_sub_track(TrackSettings::new().with_effect(filter))?;
 // Play the sound on the track.
 let sound_data =
-	kira_ogg::load_from_file("sound.ogg", StaticSoundSettings::new().track(&track))?;
+	kira_symphonia::load("sound.ogg", StaticSoundSettings::new().track(&track))?;
 manager.play(sound_data)?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
@@ -124,13 +124,13 @@ let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::d
 // any arbitrary amount of time.
 let mut clock = manager.add_clock(60.0 / TEMPO)?;
 // Play a sound 2 ticks (beats) from now.
-let sound_data_1 = kira_ogg::load_from_file(
+let sound_data_1 = kira_symphonia::load(
 	"sound1.ogg",
 	StaticSoundSettings::new().start_time(clock.time() + 2),
 )?;
 manager.play(sound_data_1)?;
 // Play a different sound 4 ticks (beats) from now.
-let sound_data_2 = kira_ogg::load_from_file(
+let sound_data_2 = kira_symphonia::load(
 	"sound2.ogg",
 	StaticSoundSettings::new().start_time(clock.time() + 4),
 )?;

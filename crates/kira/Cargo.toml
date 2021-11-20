@@ -12,4 +12,4 @@ ringbuf = "0.2.3"
 [dev-dependencies]
 kira-cpal = { path = "../kira-cpal" }
 kira-effects = { path = "../kira-effects" }
-kira-ogg = { path = "../kira-ogg" }
+kira-symphonia = { path = "../kira-symphonia" }

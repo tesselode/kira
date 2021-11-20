@@ -83,7 +83,7 @@ use kira_cpal::CpalBackend;
 
 let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
 let mut parameter = manager.add_parameter(1.0)?;
-manager.play(kira_ogg::load_from_file(
+manager.play(kira_symphonia::load(
 	"sound.ogg",
 	StaticSoundSettings::new().playback_rate(&parameter),
 )?)?;
@@ -117,7 +117,7 @@ at all and `1.0` is fully submerged.
 We want the filter cutoff to be at `20_000.0` Hz when the parameter
 is set to `0.0` and `2_000.0` Hz when the parameter is set to `1.0`.
 To do that, we'll use this mapping:
-```
+```ignore
 Mapping {
 	input_range: (0.0, 1.0),
 	output_range: (20_000.0, 2_000.0),
@@ -128,7 +128,7 @@ Mapping {
 We want the volume to be `1.0` when the parameter is set to `0.0`
 and `0.5` when the parameter is set to `1.0`. To do that, we'll
 use this mapping:
-```
+```ignore
 Mapping {
 	input_range: (0.0, 1.0),
 	output_range: (1.0, 0.5),

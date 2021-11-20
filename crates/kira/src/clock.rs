@@ -44,7 +44,7 @@ use kira_cpal::CpalBackend;
 
 let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
 let mut clock = manager.add_clock(0.5)?;
-manager.play(kira_ogg::load_from_file(
+manager.play(kira_symphonia::load(
 	"sound.ogg",
 	StaticSoundSettings::new().start_time(StartTime::ClockTime(ClockTime {
 		clock: clock.id(),
@@ -69,7 +69,7 @@ As a shorthand, you can pass the [`ClockTime`] directly into
 #
 # let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
 # let mut clock = manager.add_clock(0.5)?;
-manager.play(kira_ogg::load_from_file(
+manager.play(kira_symphonia::load(
 	"sound.ogg",
 	StaticSoundSettings::new().start_time(ClockTime {
 		clock: clock.id(),
@@ -93,7 +93,7 @@ use kira_cpal::CpalBackend;
 
 # let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
 # let mut clock = manager.add_clock(0.5)?;
-manager.play(kira_ogg::load_from_file(
+manager.play(kira_symphonia::load(
 	"sound.ogg",
 	StaticSoundSettings::new().start_time(clock.time() + 4),
 )?)?;
