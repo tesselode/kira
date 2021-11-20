@@ -3,43 +3,13 @@ use std::{sync::Arc, time::Duration};
 use ringbuf::RingBuffer;
 
 use crate::{
-	dsp::{interpolate_frame, Frame, I24},
+	dsp::{interpolate_frame, Frame},
 	sound::{Sound, SoundData},
 };
 
 use super::{handle::StaticSoundHandle, sound::StaticSound, StaticSoundSettings};
 
 const COMMAND_BUFFER_CAPACITY: usize = 8;
-
-/// A buffer of audio samples in various formats.
-#[derive(Clone)]
-pub enum Samples {
-	/// 16-bit mono audio stored with signed integers.
-	I16Mono(Vec<i16>),
-	/// 16-bit stereo audio stored with signed integers.
-	I16Stereo(Vec<[i16; 2]>),
-	/// 24-bit mono audio stored with signed integers.
-	I24Mono(Vec<I24>),
-	/// 24-bit stereo audio stored with signed integers.
-	I24Stereo(Vec<[I24; 2]>),
-	/// Mono audio stored wtih 32-bit floating point numbers.
-	F32Mono(Vec<f32>),
-	/// Stereo audio stored wtih 32-bit floating point numbers.
-	F32Stereo(Vec<[f32; 2]>),
-}
-
-impl Samples {
-	fn len(&self) -> usize {
-		match self {
-			Samples::I16Mono(samples) => samples.len(),
-			Samples::I16Stereo(samples) => samples.len(),
-			Samples::I24Mono(samples) => samples.len(),
-			Samples::I24Stereo(samples) => samples.len(),
-			Samples::F32Mono(samples) => samples.len(),
-			Samples::F32Stereo(samples) => samples.len(),
-		}
-	}
-}
 
 /// A piece of audio loaded into memory all at once.
 ///
@@ -50,7 +20,7 @@ pub struct StaticSoundData {
 	/// The sample rate of the audio (in Hz).
 	pub sample_rate: u32,
 	/// The raw samples that make up the audio.
-	pub samples: Arc<Samples>,
+	pub frames: Arc<Vec<Frame>>,
 	/// Settings for the sound.
 	pub settings: StaticSoundSettings,
 }
@@ -58,42 +28,11 @@ pub struct StaticSoundData {
 impl StaticSoundData {
 	/// Returns the duration of the audio.
 	pub fn duration(&self) -> Duration {
-		Duration::from_secs_f64(self.samples.len() as f64 / self.sample_rate as f64)
+		Duration::from_secs_f64(self.frames.len() as f64 / self.sample_rate as f64)
 	}
 
 	fn frame_at_index(&self, index: usize) -> Frame {
-		match self.samples.as_ref() {
-			Samples::I16Mono(samples) => samples
-				.get(index)
-				.copied()
-				.map(|sample| sample.into())
-				.unwrap_or(Frame::ZERO),
-			Samples::I16Stereo(samples) => samples
-				.get(index)
-				.copied()
-				.map(|sample| sample.into())
-				.unwrap_or(Frame::ZERO),
-			Samples::I24Mono(samples) => samples
-				.get(index)
-				.copied()
-				.map(|sample| sample.into())
-				.unwrap_or(Frame::ZERO),
-			Samples::I24Stereo(samples) => samples
-				.get(index)
-				.copied()
-				.map(|sample| sample.into())
-				.unwrap_or(Frame::ZERO),
-			Samples::F32Mono(samples) => samples
-				.get(index)
-				.copied()
-				.map(|sample| sample.into())
-				.unwrap_or(Frame::ZERO),
-			Samples::F32Stereo(samples) => samples
-				.get(index)
-				.copied()
-				.map(|sample| sample.into())
-				.unwrap_or(Frame::ZERO),
-		}
+		self.frames.get(index).copied().unwrap_or(Frame::ZERO)
 	}
 
 	/// Gets the [`Frame`] at an arbitrary time in seconds.

@@ -77,7 +77,7 @@ pub fn load_from_reader(
 	};
 	Ok(StaticSoundData {
 		sample_rate: reader.spec().sample_rate,
-		samples: Arc::new(samples),
+		frames: Arc::new(samples),
 		settings,
 	})
 }

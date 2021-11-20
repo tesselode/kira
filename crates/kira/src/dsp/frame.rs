@@ -3,8 +3,6 @@ use std::{
 	ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
-use super::sample::Sample;
-
 /// A stereo audio sample.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Frame {
@@ -107,17 +105,5 @@ impl Neg for Frame {
 
 	fn neg(self) -> Self::Output {
 		Self::new(-self.left, -self.right)
-	}
-}
-
-impl<S: Sample> From<S> for Frame {
-	fn from(sample: S) -> Self {
-		Self::from_mono(sample.into_f32())
-	}
-}
-
-impl<S: Sample> From<[S; 2]> for Frame {
-	fn from(samples: [S; 2]) -> Self {
-		Self::new(samples[0].into_f32(), samples[1].into_f32())
 	}
 }

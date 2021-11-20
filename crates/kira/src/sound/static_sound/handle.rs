@@ -44,13 +44,13 @@ impl StaticSoundHandle {
 	/// #
 	/// # use kira::{
 	/// # 	manager::{backend::MockBackend, AudioManager},
-	/// # 	sound::static_sound::{Samples, StaticSoundData},
+	/// # 	sound::static_sound::StaticSoundData,
 	/// # };
 	/// #
 	/// # let mut audio_manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
 	/// # let mut sound = audio_manager.play(StaticSoundData {
 	/// # 	sample_rate: 1,
-	/// # 	samples: Arc::new(Samples::F32Stereo(vec![])),
+	/// # 	frames: Arc::new(vec![]),
 	/// # 	settings: Default::default(),
 	/// # })?;
 	/// #
@@ -81,13 +81,13 @@ impl StaticSoundHandle {
 	/// #
 	/// # use kira::{
 	/// # 	manager::{backend::MockBackend, AudioManager},
-	/// # 	sound::static_sound::{Samples, StaticSoundData},
+	/// # 	sound::static_sound::StaticSoundData,
 	/// # };
 	/// #
 	/// # let mut audio_manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
 	/// # let mut sound = audio_manager.play(StaticSoundData {
 	/// # 	sample_rate: 1,
-	/// # 	samples: Arc::new(Samples::F32Stereo(vec![])),
+	/// # 	frames: Arc::new(vec![]),
 	/// # 	settings: Default::default(),
 	/// # })?;
 	/// #
@@ -118,13 +118,13 @@ impl StaticSoundHandle {
 	/// #
 	/// # use kira::{
 	/// # 	manager::{backend::MockBackend, AudioManager},
-	/// # 	sound::static_sound::{Samples, StaticSoundData},
+	/// # 	sound::static_sound::StaticSoundData,
 	/// # };
 	/// #
 	/// # let mut audio_manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
 	/// # let mut sound = audio_manager.play(StaticSoundData {
 	/// # 	sample_rate: 1,
-	/// # 	samples: Arc::new(Samples::F32Stereo(vec![])),
+	/// # 	frames: Arc::new(vec![]),
 	/// # 	settings: Default::default(),
 	/// # })?;
 	/// #
