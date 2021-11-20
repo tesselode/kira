@@ -7,7 +7,7 @@ use std::{
 	time::Duration,
 };
 
-use kira::dsp::Frame;
+use kira::{dsp::Frame, LoopBehavior};
 use ringbuf::Producer;
 use symphonia::core::{
 	audio::{AudioBuffer, AudioBufferRef, Signal},
@@ -17,7 +17,7 @@ use symphonia::core::{
 	sample::Sample,
 };
 
-use crate::Error;
+use crate::{Error, StreamingSoundData};
 
 use super::SEEK_DESTINATION_NONE;
 
@@ -28,6 +28,7 @@ pub struct DecoderWrapper {
 	decoder: Box<dyn Decoder>,
 	sample_rate: u32,
 	track_id: u32,
+	loop_behavior: Option<LoopBehavior>,
 	frame_producer: Producer<(u64, Frame)>,
 	seek_destination_receiver: Arc<AtomicU64>,
 	stopped_signal_receiver: Arc<AtomicBool>,
@@ -38,27 +39,31 @@ pub struct DecoderWrapper {
 
 impl DecoderWrapper {
 	pub fn new(
-		format_reader: Box<dyn FormatReader>,
-		decoder: Box<dyn Decoder>,
-		sample_rate: u32,
-		track_id: u32,
+		data: StreamingSoundData,
 		frame_producer: Producer<(u64, Frame)>,
 		seek_destination_receiver: Arc<AtomicU64>,
 		stopped_signal_receiver: Arc<AtomicBool>,
 		finished_signal_sender: Arc<AtomicBool>,
-	) -> Self {
-		Self {
-			format_reader,
-			decoder,
-			sample_rate,
-			track_id,
+	) -> Result<Self, Error> {
+		let mut wrapper = Self {
+			format_reader: data.format_reader,
+			decoder: data.decoder,
+			sample_rate: data.sample_rate,
+			track_id: data.track_id,
+			loop_behavior: data.settings.loop_behavior,
 			frame_producer,
 			seek_destination_receiver,
 			stopped_signal_receiver,
 			finished_signal_sender,
 			decoded_frames: VecDeque::new(),
 			current_frame: 0,
-		}
+		};
+		wrapper.seek(data.settings.start_position)?;
+		Ok(wrapper)
+	}
+
+	pub fn current_frame(&self) -> u64 {
+		self.current_frame
 	}
 
 	pub fn start(mut self, mut error_producer: Producer<Error>) {
@@ -105,8 +110,15 @@ impl DecoderWrapper {
 		} else {
 			let reached_end_of_file = self.decode()?;
 			if reached_end_of_file {
-				self.finished_signal_sender.store(true, Ordering::SeqCst);
-				return Ok(true);
+				// if there aren't any new frames and the sound is looping,
+				// seek back to the loop position
+				if let Some(LoopBehavior { start_position }) = self.loop_behavior {
+					self.seek(start_position)?;
+				// otherwise, tell the sound to finish and end the thread
+				} else {
+					self.finished_signal_sender.store(true, Ordering::SeqCst);
+					return Ok(true);
+				}
 			}
 		}
 		Ok(false)
@@ -140,6 +152,12 @@ impl DecoderWrapper {
 			},
 		)?;
 		self.current_frame = seeked_to.actual_ts;
+		Ok(())
+	}
+
+	fn seek(&mut self, position: f64) -> Result<(), Error> {
+		let index = (position * self.sample_rate as f64).round() as u64;
+		self.seek_to_index(index)?;
 		Ok(())
 	}
 }

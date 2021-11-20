@@ -1,9 +1,12 @@
 mod data;
 mod handle;
+mod settings;
 mod sound;
 
 pub use data::*;
 pub use handle::*;
+pub use settings::*;
+
 use kira::{tween::Tween, value::Value};
 
 #[derive(Debug, Clone, Copy, PartialEq)]

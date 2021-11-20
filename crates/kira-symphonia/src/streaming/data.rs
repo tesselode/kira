@@ -4,7 +4,7 @@ use kira::sound::SoundData;
 use ringbuf::RingBuffer;
 use symphonia::core::{codecs::Decoder, formats::FormatReader, io::MediaSourceStream, probe::Hint};
 
-use crate::{Error, StreamingSoundHandle};
+use crate::{Error, StreamingSoundHandle, StreamingSoundSettings};
 
 use super::sound::StreamingSound;
 
@@ -16,10 +16,11 @@ pub struct StreamingSoundData {
 	pub(crate) decoder: Box<dyn Decoder>,
 	pub(crate) sample_rate: u32,
 	pub(crate) track_id: u32,
+	pub settings: StreamingSoundSettings,
 }
 
 impl StreamingSoundData {
-	pub fn new(path: impl AsRef<Path>) -> Result<Self, Error> {
+	pub fn new(path: impl AsRef<Path>, settings: StreamingSoundSettings) -> Result<Self, Error> {
 		let codecs = symphonia::default::get_codecs();
 		let probe = symphonia::default::get_probe();
 		let file = File::open(path)?;
@@ -44,6 +45,7 @@ impl StreamingSoundData {
 			decoder,
 			sample_rate,
 			track_id,
+			settings,
 		})
 	}
 }
