@@ -20,7 +20,7 @@ pub trait SoundData {
 }
 
 /// Represents an actively playing sound.
-pub trait Sound: Send + Sync {
+pub trait Sound: Send {
 	/// Returns the mixer track that this sound's audio should be routd to.
 	fn track(&mut self) -> TrackId;
 

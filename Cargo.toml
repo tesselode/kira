@@ -7,6 +7,7 @@ members = [
 	"crates/kira-ogg",
 	"crates/kira-flac",
 	"crates/kira-wav",
+	"crates/kira-symphonia",
 	"crates/kira-effects",
 ]
 
