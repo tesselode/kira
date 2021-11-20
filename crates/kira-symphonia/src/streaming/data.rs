@@ -4,15 +4,18 @@ use kira::sound::SoundData;
 use ringbuf::RingBuffer;
 use symphonia::core::{codecs::Decoder, formats::FormatReader, io::MediaSourceStream, probe::Hint};
 
-use crate::Error;
+use crate::{Error, StreamingSoundHandle};
 
 use super::sound::StreamingSound;
 
+const COMMAND_BUFFER_CAPACITY: usize = 8;
 const ERROR_BUFFER_CAPACITY: usize = 8;
 
 pub struct StreamingSoundData {
 	pub(crate) format_reader: Box<dyn FormatReader>,
 	pub(crate) decoder: Box<dyn Decoder>,
+	pub(crate) sample_rate: u32,
+	pub(crate) track_id: u32,
 }
 
 impl StreamingSoundData {
@@ -30,10 +33,17 @@ impl StreamingSoundData {
 			)?
 			.format;
 		let default_track = format_reader.default_track().ok_or(Error::NoDefaultTrack)?;
+		let sample_rate = default_track
+			.codec_params
+			.sample_rate
+			.ok_or(Error::UnknownSampleRate)?;
 		let decoder = codecs.make(&default_track.codec_params, &Default::default())?;
+		let track_id = default_track.id;
 		Ok(Self {
 			format_reader,
 			decoder,
+			sample_rate,
+			track_id,
 		})
 	}
 }
@@ -41,11 +51,21 @@ impl StreamingSoundData {
 impl SoundData for StreamingSoundData {
 	type Error = Error;
 
-	type Handle = ();
+	type Handle = StreamingSoundHandle;
 
 	#[allow(clippy::type_complexity)]
 	fn into_sound(self) -> Result<(Box<dyn kira::sound::Sound>, Self::Handle), Self::Error> {
+		let (command_producer, command_consumer) = RingBuffer::new(COMMAND_BUFFER_CAPACITY).split();
 		let (error_producer, error_consumer) = RingBuffer::new(ERROR_BUFFER_CAPACITY).split();
-		Ok((Box::new(StreamingSound::new(self, error_producer)?), ()))
+		let sound = StreamingSound::new(self, command_consumer, error_producer)?;
+		let shared = sound.shared();
+		Ok((
+			Box::new(sound),
+			StreamingSoundHandle {
+				shared,
+				command_producer,
+				error_consumer,
+			},
+		))
 	}
 }

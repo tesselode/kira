@@ -7,6 +7,7 @@ use std::fmt::Display;
 #[derive(Debug)]
 pub enum Error {
 	NoDefaultTrack,
+	UnknownSampleRate,
 	IoError(std::io::Error),
 	SymphoniaError(symphonia::core::errors::Error),
 }
@@ -15,6 +16,9 @@ impl Display for Error {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		match self {
 			Error::NoDefaultTrack => f.write_str("Could not determine the default audio track"),
+			Error::UnknownSampleRate => {
+				f.write_str("Could not detect the sample rate of the audio")
+			}
 			Error::IoError(error) => error.fmt(f),
 			Error::SymphoniaError(error) => error.fmt(f),
 		}

@@ -1,7 +1,7 @@
 mod decoder_wrapper;
 
 use std::sync::{
-	atomic::{AtomicBool, AtomicUsize, Ordering},
+	atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering},
 	Arc,
 };
 
@@ -13,44 +13,73 @@ use kira::{
 	track::TrackId,
 };
 use ringbuf::{Consumer, Producer, RingBuffer};
-use symphonia::core::{codecs::Decoder, formats::FormatReader};
 
-use crate::{Error, StreamingSoundData};
+use crate::{Command, Error, StreamingSoundData};
 
 use self::decoder_wrapper::DecoderWrapper;
 
 const BUFFER_SIZE: usize = 16_384;
-const SEEK_DESTINATION_NONE: usize = usize::MAX;
+const SEEK_DESTINATION_NONE: u64 = u64::MAX;
 
-pub struct StreamingSound {
+pub(crate) struct Shared {
+	state: AtomicU8,
+	position: AtomicU64,
+}
+
+impl Shared {
+	pub fn state(&self) -> PlaybackState {
+		match self.state.load(Ordering::SeqCst) {
+			0 => PlaybackState::Playing,
+			1 => PlaybackState::Pausing,
+			2 => PlaybackState::Paused,
+			3 => PlaybackState::Stopping,
+			4 => PlaybackState::Stopped,
+			_ => panic!("Invalid playback state"),
+		}
+	}
+
+	pub fn position(&self) -> f64 {
+		f64::from_bits(self.position.load(Ordering::SeqCst))
+	}
+}
+
+pub(crate) struct StreamingSound {
+	command_consumer: Consumer<Command>,
 	sample_rate: u32,
-	frame_consumer: Consumer<(usize, Frame)>,
-	seek_destination_sender: Arc<AtomicUsize>,
+	frame_consumer: Consumer<(u64, Frame)>,
+	seek_destination_sender: Arc<AtomicU64>,
 	stopped_signal_sender: Arc<AtomicBool>,
 	finished_signal_receiver: Arc<AtomicBool>,
 	state: PlaybackState,
-	current_frame: usize,
+	current_frame: u64,
 	fractional_position: f64,
+	shared: Arc<Shared>,
 }
 
 impl StreamingSound {
-	pub fn new(data: StreamingSoundData, error_producer: Producer<Error>) -> Result<Self, Error> {
-		let sample_rate = data.decoder.codec_params().sample_rate.unwrap();
+	pub fn new(
+		data: StreamingSoundData,
+		command_consumer: Consumer<Command>,
+		error_producer: Producer<Error>,
+	) -> Result<Self, Error> {
 		let (mut frame_producer, frame_consumer) = RingBuffer::new(BUFFER_SIZE).split();
 		// pre-seed the frame ringbuffer with a zero frame. this is the "previous" frame
 		// when the sound just started.
 		frame_producer
 			.push((0, Frame::ZERO))
 			.expect("The frame producer shouldn't be full because we just created it");
-		let seek_destination_sender = Arc::new(AtomicUsize::new(SEEK_DESTINATION_NONE));
+		let seek_destination_sender = Arc::new(AtomicU64::new(SEEK_DESTINATION_NONE));
 		let seek_destination_receiver = seek_destination_sender.clone();
 		let stopped_signal_sender = Arc::new(AtomicBool::new(false));
 		let stopped_signal_receiver = stopped_signal_sender.clone();
 		let finished_signal_sender = Arc::new(AtomicBool::new(false));
 		let finished_signal_receiver = finished_signal_sender.clone();
+		let sample_rate = data.sample_rate;
 		let decoder_wrapper = DecoderWrapper::new(
 			data.format_reader,
 			data.decoder,
+			data.sample_rate,
+			data.track_id,
 			frame_producer,
 			seek_destination_receiver,
 			stopped_signal_receiver,
@@ -59,6 +88,7 @@ impl StreamingSound {
 		let current_frame = 0;
 		decoder_wrapper.start(error_producer);
 		Ok(Self {
+			command_consumer,
 			sample_rate,
 			frame_consumer,
 			seek_destination_sender,
@@ -67,6 +97,10 @@ impl StreamingSound {
 			state: PlaybackState::Playing,
 			current_frame,
 			fractional_position: 0.0,
+			shared: Arc::new(Shared {
+				position: AtomicU64::new(0.0f64.to_bits()),
+				state: AtomicU8::new(PlaybackState::Playing as u8),
+			}),
 		})
 	}
 
@@ -98,11 +132,50 @@ impl StreamingSound {
 		});
 		frames
 	}
+
+	pub fn shared(&self) -> Arc<Shared> {
+		self.shared.clone()
+	}
+
+	fn position(&self) -> f64 {
+		(self.current_frame as f64 + self.fractional_position) / self.sample_rate as f64
+	}
+
+	fn seek_to_index(&mut self, index: u64) {
+		self.seek_destination_sender.store(index, Ordering::SeqCst);
+	}
+
+	fn seek_to(&mut self, position: f64) {
+		self.seek_to_index((position * self.sample_rate as f64).round() as u64);
+	}
+
+	fn seek_by(&mut self, amount: f64) {
+		self.seek_to(self.position() + amount);
+	}
 }
 
 impl Sound for StreamingSound {
 	fn track(&mut self) -> TrackId {
 		TrackId::Main
+	}
+
+	fn on_start_processing(&mut self) {
+		/* self.shared
+		.position
+		.store(self.position().to_bits(), Ordering::SeqCst); */
+		while let Some(command) = self.command_consumer.pop() {
+			match command {
+				/* Command::SetVolume(volume) => self.volume.set(volume),
+				Command::SetPlaybackRate(playback_rate) => self.playback_rate.set(playback_rate),
+				Command::SetPanning(panning) => self.panning.set(panning),
+				Command::Pause(tween) => self.pause(tween),
+				Command::Resume(tween) => self.resume(tween),
+				Command::Stop(tween) => self.stop(tween), */
+				Command::SeekBy(amount) => self.seek_by(amount),
+				Command::SeekTo(position) => self.seek_to(position),
+				_ => todo!(),
+			}
+		}
 	}
 
 	fn process(&mut self, dt: f64, parameters: &Parameters, clocks: &Clocks) -> Frame {

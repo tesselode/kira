@@ -1,7 +1,7 @@
 use std::{
 	collections::VecDeque,
 	sync::{
-		atomic::{AtomicBool, AtomicUsize, Ordering},
+		atomic::{AtomicBool, AtomicU64, Ordering},
 		Arc,
 	},
 	time::Duration,
@@ -13,37 +13,45 @@ use symphonia::core::{
 	audio::{AudioBuffer, AudioBufferRef, Signal},
 	codecs::Decoder,
 	conv::{FromSample, IntoSample},
-	formats::FormatReader,
+	formats::{FormatReader, SeekMode, SeekTo},
 	sample::Sample,
 };
 
 use crate::Error;
+
+use super::SEEK_DESTINATION_NONE;
 
 const DECODER_THREAD_SLEEP_DURATION: Duration = Duration::from_millis(1);
 
 pub struct DecoderWrapper {
 	format_reader: Box<dyn FormatReader>,
 	decoder: Box<dyn Decoder>,
-	frame_producer: Producer<(usize, Frame)>,
-	seek_destination_receiver: Arc<AtomicUsize>,
+	sample_rate: u32,
+	track_id: u32,
+	frame_producer: Producer<(u64, Frame)>,
+	seek_destination_receiver: Arc<AtomicU64>,
 	stopped_signal_receiver: Arc<AtomicBool>,
 	finished_signal_sender: Arc<AtomicBool>,
 	decoded_frames: VecDeque<Frame>,
-	current_frame: usize,
+	current_frame: u64,
 }
 
 impl DecoderWrapper {
 	pub fn new(
 		format_reader: Box<dyn FormatReader>,
 		decoder: Box<dyn Decoder>,
-		frame_producer: Producer<(usize, Frame)>,
-		seek_destination_receiver: Arc<AtomicUsize>,
+		sample_rate: u32,
+		track_id: u32,
+		frame_producer: Producer<(u64, Frame)>,
+		seek_destination_receiver: Arc<AtomicU64>,
 		stopped_signal_receiver: Arc<AtomicBool>,
 		finished_signal_sender: Arc<AtomicBool>,
 	) -> Self {
 		Self {
 			format_reader,
 			decoder,
+			sample_rate,
+			track_id,
 			frame_producer,
 			seek_destination_receiver,
 			stopped_signal_receiver,
@@ -78,6 +86,13 @@ impl DecoderWrapper {
 		if self.frame_producer.is_full() {
 			std::thread::sleep(DECODER_THREAD_SLEEP_DURATION);
 			return Ok(false);
+		}
+		// check for seek commands
+		let seek_destination = self.seek_destination_receiver.load(Ordering::SeqCst);
+		if seek_destination != SEEK_DESTINATION_NONE {
+			self.seek_to_index(seek_destination)?;
+			self.seek_destination_receiver
+				.store(SEEK_DESTINATION_NONE, Ordering::SeqCst);
 		}
 		// if we have leftover frames from the last decode, push
 		// those first
@@ -114,6 +129,18 @@ impl DecoderWrapper {
 			},
 		}
 		Ok(false)
+	}
+
+	fn seek_to_index(&mut self, index: u64) -> Result<(), Error> {
+		let seeked_to = self.format_reader.seek(
+			SeekMode::Accurate,
+			SeekTo::TimeStamp {
+				ts: index,
+				track_id: self.track_id,
+			},
+		)?;
+		self.current_frame = seeked_to.actual_ts;
+		Ok(())
 	}
 }
 
