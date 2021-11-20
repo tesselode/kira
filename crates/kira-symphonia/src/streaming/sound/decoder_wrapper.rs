@@ -198,7 +198,7 @@ where
 				frames.push_back(Frame::new((*left).into_sample(), (*right).into_sample()));
 			}
 		}
-		_ => panic!(),
+		_ => return Err(Error::UnsupportedChannelConfiguration),
 	}
 	Ok(())
 }
