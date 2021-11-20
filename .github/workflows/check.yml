@@ -1,0 +1,32 @@
+name: Test
+
+on: [push, pull_request]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v2
+      - run: rustup component add clippy
+      - run: sudo apt-get install libasound2-dev
+      - name: build kira
+        run: cargo build -p kira
+      - name: build kira-cpal
+        run: cargo build -p kira-cpal
+      - name: build kira-cpal with assert-no-alloc feature
+        run: cargo build -p kira-cpal --features assert_no_alloc
+      - name: build kira-effects
+        run: cargo build -p kira-effects
+      - name: build kira-symphonia
+        run: cargo build -p kira-symphonia
+      - name: run tests
+        run: cargo test
+      - name: lint
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-features
