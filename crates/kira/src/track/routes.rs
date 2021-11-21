@@ -14,9 +14,24 @@ impl TrackRoutes {
 	/// By default, a mixer track will send its output to the
 	/// main mixer track at full volume.
 	pub fn new() -> Self {
+		Self::parent(TrackId::Main)
+	}
+
+	/// Creates a new [`TrackRoutes`] with no routes pre-configured.
+	///
+	/// If you set a track's routes to this as is, you will not hear
+	/// any audio output from that track, since it is not routed
+	/// to the main track nor to any other track..
+	pub fn empty() -> Self {
+		Self(HashMap::new())
+	}
+
+	/// Creates a new [`TrackRoutes`] with a single route to the
+	/// specified track.
+	pub fn parent(track: impl Into<TrackId>) -> Self {
 		Self({
 			let mut routes = HashMap::new();
-			routes.insert(TrackId::Main, Value::Fixed(1.0));
+			routes.insert(track.into(), Value::Fixed(1.0));
 			routes
 		})
 	}
@@ -25,6 +40,12 @@ impl TrackRoutes {
 	/// to the specified destination track.
 	pub fn with_route(mut self, track: impl Into<TrackId>, volume: impl Into<Value>) -> Self {
 		self.0.insert(track.into(), volume.into());
+		self
+	}
+
+	/// Removes the route to the specified track.
+	pub fn without_route(mut self, track: impl Into<TrackId>) -> Self {
+		self.0.remove(&track.into());
 		self
 	}
 
