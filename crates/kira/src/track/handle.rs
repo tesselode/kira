@@ -14,7 +14,7 @@ use super::{TrackId, TrackShared};
 /// track will be removed.
 pub struct TrackHandle {
 	pub(crate) id: TrackId,
-	pub(crate) shared: Arc<TrackShared>,
+	pub(crate) shared: Option<Arc<TrackShared>>,
 	pub(crate) command_producer: CommandProducer,
 }
 
@@ -46,6 +46,8 @@ impl TrackHandle {
 
 impl Drop for TrackHandle {
 	fn drop(&mut self) {
-		self.shared.mark_for_removal();
+		if let Some(shared) = &self.shared {
+			shared.mark_for_removal();
+		}
 	}
 }

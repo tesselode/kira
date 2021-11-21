@@ -174,7 +174,7 @@ impl<B: Backend> AudioManager<B> {
 		let sub_track = Track::new(settings, &self.context);
 		let handle = TrackHandle {
 			id: TrackId::Sub(id),
-			shared: sub_track.shared(),
+			shared: Some(sub_track.shared()),
 			command_producer: self.command_producer.clone(),
 		};
 		self.command_producer
@@ -199,6 +199,15 @@ impl<B: Backend> AudioManager<B> {
 		self.command_producer
 			.push(Command::Clock(ClockCommand::Add(id, clock)))?;
 		Ok(handle)
+	}
+
+	/// Returns a handle to the main mixer track.
+	pub fn main_track(&self) -> TrackHandle {
+		TrackHandle {
+			id: TrackId::Main,
+			shared: None,
+			command_producer: self.command_producer.clone(),
+		}
 	}
 
 	/// Fades out and pauses all audio.
