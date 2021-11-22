@@ -7,21 +7,17 @@ use kira::{
 	value::{CachedValue, Value},
 };
 
-use super::filter::{Filter, FilterSettings};
-
 /// Settings for a [`Delay`] effect.
-#[derive(Debug, Copy, Clone)]
 pub struct DelaySettings {
 	/// The delay time (in seconds).
 	delay_time: Value,
 	/// The amount of feedback.
 	feedback: Value,
-	/// The amount of audio the delay can store.
+	/// The amount of audio the delay can store (in seconds).
 	/// This affects the maximum delay time.
 	buffer_length: f64,
-	/// Whether a filter should be added to the feedback loop,
-	/// and if so, the settings to use for the filter.
-	filter_settings: Option<FilterSettings>,
+	/// Effects that should be applied in the feedback loop.
+	feedback_effects: Vec<Box<dyn Effect>>,
 }
 
 impl DelaySettings {
@@ -54,13 +50,10 @@ impl DelaySettings {
 		}
 	}
 
-	/// Sets whether a filter should be added to the feedback loop,
-	/// and if so, the settings to use for the filter.
-	pub fn filter_settings(self, filter_settings: impl Into<Option<FilterSettings>>) -> Self {
-		Self {
-			filter_settings: filter_settings.into(),
-			..self
-		}
+	/// Adds an effect to the feedback loop.
+	pub fn with_feedback_effect(mut self, effect: impl Effect + 'static) -> Self {
+		self.feedback_effects.push(Box::new(effect));
+		self
 	}
 }
 
@@ -70,7 +63,7 @@ impl Default for DelaySettings {
 			delay_time: Value::Fixed(0.5),
 			feedback: Value::Fixed(0.5),
 			buffer_length: 10.0,
-			filter_settings: None,
+			feedback_effects: vec![],
 		}
 	}
 }
@@ -92,7 +85,7 @@ pub struct Delay {
 	delay_time: CachedValue,
 	feedback: CachedValue,
 	state: DelayState,
-	filter: Option<Filter>,
+	feedback_effects: Vec<Box<dyn Effect>>,
 }
 
 impl Delay {
@@ -104,7 +97,7 @@ impl Delay {
 			state: DelayState::Uninitialized {
 				buffer_length: settings.buffer_length,
 			},
-			filter: settings.filter_settings.map(Filter::new),
+			feedback_effects: settings.feedback_effects,
 		}
 	}
 }
@@ -115,6 +108,9 @@ impl Effect for Delay {
 			self.state = DelayState::Initialized {
 				buffer: vec![Frame::ZERO; (buffer_length * sample_rate as f64) as usize],
 				write_position: 0,
+			};
+			for effect in &mut self.feedback_effects {
+				effect.init(sample_rate);
 			}
 		} else {
 			panic!("The delay should be in the uninitialized state before init")
@@ -147,24 +143,23 @@ impl Effect for Delay {
 			let next_sample_index = (current_sample_index + 1) % buffer.len();
 			let next_sample_index_2 = (current_sample_index + 2) % buffer.len();
 			let fraction = read_position % 1.0;
-			let output = interpolate_frame(
+			let mut output = interpolate_frame(
 				buffer[previous_sample_index],
 				buffer[current_sample_index],
 				buffer[next_sample_index],
 				buffer[next_sample_index_2],
 				fraction,
 			);
+			for effect in &mut self.feedback_effects {
+				output = effect.process(output, dt, parameters);
+			}
 
-			// write input audio to the buffer
+			// write output audio to the buffer
 			*write_position += 1;
 			*write_position %= buffer.len();
-			let filtered_output = match &mut self.filter {
-				Some(filter) => filter.process(output, dt, parameters),
-				None => output,
-			};
-			buffer[*write_position] = input + filtered_output * self.feedback.get() as f32;
+			buffer[*write_position] = input + output * self.feedback.get() as f32;
 
-			filtered_output
+			output
 		} else {
 			panic!("The delay should be initialized by the first process call")
 		}
