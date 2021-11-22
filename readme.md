@@ -2,11 +2,10 @@
 
 #### [Documentation](https://docs.rs/kira/) | [Web demo](https://kira-demo.surge.sh/) [(source)](https://github.com/Moxinilian/kira-web-demo)
 
-Kira is an audio library designed to help create expressive audio
-for games. Besides the common features you'd expect from an audio
-library, it provides interfaces for scripting audio events,
-seamlessly looping complex pieces of music, smoothly changing
-parameters, and more.
+Kira is an audio library designed to help create expressive audio for games.
+Besides the common features you'd expect from an audio library, it provides
+interfaces for scripting audio events, seamlessly looping complex pieces of
+music, smoothly changing parameters, and more.
 
 ## Examples
 
@@ -59,13 +58,14 @@ metronome_handle.start()?;
 
 ## Platform support
 
-Kira should support all of the platforms supported by cpal.
-Windows, Linux, and WASM have been tested.
+Kira should support all of the platforms supported by cpal. Windows, Linux, and
+WASM have been tested.
 
 ## Roadmap
 
-Kira is in early development, and is not production ready.
-Here are some features that I'd like the library to have:
+Kira is in early development, and is not production ready. Here are some
+features that I'd like the library to have:
+
 - More mixer effects (EQ, compressor, better reverb, etc.)
 - C API
 - Streaming sounds
@@ -73,10 +73,9 @@ Here are some features that I'd like the library to have:
 
 ## Contributing
 
-I'd love for other people to get involved with development! Since the
-library is still in the early stages, I'm open to all kinds of input -
-bug reports, feature requests, design critiques, etc. Feel free to
-open an issue or pull request!
+I'd love for other people to get involved with development! Since the library is
+still in the early stages, I'm open to all kinds of input - bug reports, feature
+requests, design critiques, etc. Feel free to open an issue or pull request!
 
 ## License
 

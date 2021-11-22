@@ -1,13 +1,12 @@
 # Parameters
 
-Parameters are "global" float values that many settings
-can be linked to. Any setting that has the type `Value`
-can be linked to a parameter.
+Parameters are "global" float values that many settings can be linked to. Any
+setting that has the type `Value` can be linked to a parameter.
 
 ## Creating and modifying parameters
 
-To create a parameter, use `AudioManager::add_parameter`
-and provide an initial value of your choice:
+To create a parameter, use `AudioManager::add_parameter` and provide an initial
+value of your choice:
 
 ```rust ,no_run
 use kira::manager::{AudioManager, AudioManagerSettings};
@@ -18,8 +17,8 @@ let mut parameter = manager.add_parameter(1.0)?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
-At any time, you can smoothly transition the parameter to a
-new value by using `ParameterHandle::set`.
+At any time, you can smoothly transition the parameter to a new value by using
+`ParameterHandle::set`.
 
 ```rust ,no_run
 use std::time::Duration;
@@ -43,10 +42,9 @@ parameter.set(
 
 ```
 
-If you'd like to instantaneously set the value, you can use the
-default `Tween`, which is fast enough to _feel_ instantaneous,
-but still slow enough to avoid creating audio artifacts like pops
-and crackles.
+If you'd like to instantaneously set the value, you can use the default `Tween`,
+which is fast enough to _feel_ instantaneous, but still slow enough to avoid
+creating audio artifacts like pops and crackles.
 
 ```rust ,no_run
 # use std::time::Duration;
@@ -65,10 +63,9 @@ parameter.set(2.0, Tween::default())?;
 
 ## Using parameters
 
-Many settings can be linked to parameters. In this example, the
-playback rate of a sound is linked directly to a parameter.
-It will start out at normal speed, and speed up to 2x speed
-over the course of 2 seconds.
+Many settings can be linked to parameters. In this example, the playback rate of
+a sound is linked directly to a parameter. It will start out at normal speed,
+and speed up to 2x speed over the course of 2 seconds.
 
 ```rust ,no_run
 use std::time::Duration;
@@ -98,24 +95,25 @@ parameter.set(
 
 ## Custom mappings
 
-Multiple settings can be linked to the same parameter. In this
-case, we may want different settings to have different
-relationships to the parameter. We can do this using
-`Mapping`s.
+Multiple settings can be linked to the same parameter. In this case, we may want
+different settings to have different relationships to the parameter. We can do
+this using `Mapping`s.
 
-Say that when a character in a game enters water, we want
-certain sounds to become more muffled and quieter. To accomplish
-this effect, we need to change two settings:
+Say that when a character in a game enters water, we want certain sounds to
+become more muffled and quieter. To accomplish this effect, we need to change
+two settings:
+
 - A filter cutoff in **Hz**, which controls how muffled the sound is
 - A volume level, which is a factor of the sound's normal volume
 
-We'll start by arbitrarily deciding that our parameter should
-stay in a range of `0.0` to `1.0`, where `0.0` is not underwater
-at all and `1.0` is fully submerged.
+We'll start by arbitrarily deciding that our parameter should stay in a range of
+`0.0` to `1.0`, where `0.0` is not underwater at all and `1.0` is fully
+submerged.
 
-We want the filter cutoff to be at `20_000.0` Hz when the parameter
-is set to `0.0` and `2_000.0` Hz when the parameter is set to `1.0`.
-To do that, we'll use this mapping:
+We want the filter cutoff to be at `20_000.0` Hz when the parameter is set to
+`0.0` and `2_000.0` Hz when the parameter is set to `1.0`. To do that, we'll use
+this mapping:
+
 ```rust ,ignore
 Mapping {
 	input_range: (0.0, 1.0),
@@ -124,9 +122,9 @@ Mapping {
 }
 ```
 
-We want the volume to be `1.0` when the parameter is set to `0.0`
-and `0.5` when the parameter is set to `1.0`. To do that, we'll
-use this mapping:
+We want the volume to be `1.0` when the parameter is set to `0.0` and `0.5` when
+the parameter is set to `1.0`. To do that, we'll use this mapping:
+
 ```rust ,ignore
 Mapping {
 	input_range: (0.0, 1.0),
@@ -135,10 +133,9 @@ Mapping {
 }
 ```
 
-Note that in both of these cases, the second value of the
-output range is less than the first value. This is perfectly
-valid and means that as the parameter increases, the resulting
-value will decrease.
+Note that in both of these cases, the second value of the output range is less
+than the first value. This is perfectly valid and means that as the parameter
+increases, the resulting value will decrease.
 
 The full code would look something like this:
 

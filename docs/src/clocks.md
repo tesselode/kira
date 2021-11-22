@@ -2,8 +2,8 @@
 
 ## Creating clocks
 
-Clocks can be used to set the start times of sounds and
-tweens. To create a clock, use `AudioManager::add_clock`.
+Clocks can be used to set the start times of sounds and tweens. To create a
+clock, use `AudioManager::add_clock`.
 
 ```rust ,no_run
 use kira::manager::{AudioManager, AudioManagerSettings};
@@ -15,22 +15,19 @@ clock.start()?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
-When you create a clock, you have to specify the **interval**
-in seconds, which determines how much time there is between
-clock ticks. In this example, the clock has an interval of half
-a second, which means it ticks twice per second.
+When you create a clock, you have to specify the **interval** in seconds, which
+determines how much time there is between clock ticks. In this example, the
+clock has an interval of half a second, which means it ticks twice per second.
 
-Clocks are stopped when you first create them, so be sure to
-explicitly call `ClockHandle::start` when you want the clock
-to start ticking.
+Clocks are stopped when you first create them, so be sure to explicitly call
+`ClockHandle::start` when you want the clock to start ticking.
 
 ## Starting sounds on clock ticks
 
 Static sounds (and streaming sounds from the
-[`kira-streaming`](https://crates.io/crates/kira-streaming) crate)
-can be set to only start playing when a clock has ticked
-a certain number of times. You can configure this using
-`StaticSoundSettings::start_time`.
+[`kira-streaming`](https://crates.io/crates/kira-streaming) crate) can be set to
+only start playing when a clock has ticked a certain number of times. You can
+configure this using `StaticSoundSettings::start_time`.
 
 ```rust ,no_run
 use kira::{
@@ -79,9 +76,8 @@ manager.play(kira_symphonia::load(
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
-As an even shorter hand, you can use `ClockHandle::time` to get
-the clock's current `ClockTime`, and then add to it to get
-a time in the future:
+As an even shorter hand, you can use `ClockHandle::time` to get the clock's
+current `ClockTime`, and then add to it to get a time in the future:
 
 ```rust ,no_run
 use kira::{
@@ -102,9 +98,8 @@ manager.play(kira_symphonia::load(
 
 ## Starting tweens on clock ticks
 
-You can also use clocks to set the start time of tweens. In this
-example, we set a parameter to start tweening when a clock reaches
-a certain tick:
+You can also use clocks to set the start time of tweens. In this example, we set
+a parameter to start tweening when a clock reaches a certain tick:
 
 ```rust ,no_run
 use std::time::Duration;
