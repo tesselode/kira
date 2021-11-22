@@ -8,8 +8,3 @@ edition = "2018"
 [dependencies]
 atomic-arena = { git = "https://github.com/tesselode/atomic-arena", rev = "0954d93" }
 ringbuf = "0.2.3"
-
-[dev-dependencies]
-kira-cpal = { path = "../kira-cpal" }
-kira-effects = { path = "../kira-effects" }
-kira-symphonia = { path = "../kira-symphonia" }
