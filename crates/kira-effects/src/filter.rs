@@ -37,6 +37,11 @@ pub struct FilterSettings {
 	/// The resonance is a feedback effect that produces
 	/// a distinctive "ringing" sound.
 	pub resonance: Value,
+	/// How much dry (unprocessed) signal should be blended
+	/// with the wet (processed) signal. `0.0` means
+	/// only the dry signal will be heard. `1.0` means
+	/// only the wet signal will be heard.
+	mix: Value,
 }
 
 impl FilterSettings {
@@ -65,6 +70,17 @@ impl FilterSettings {
 			..self
 		}
 	}
+
+	/// Sets how much dry (unprocessed) signal should be blended
+	/// with the wet (processed) signal. `0.0` means only the dry
+	/// signal will be heard. `1.0` means only the wet signal will
+	/// be heard.
+	pub fn mix(self, mix: impl Into<Value>) -> Self {
+		Self {
+			mix: mix.into(),
+			..self
+		}
+	}
 }
 
 impl Default for FilterSettings {
@@ -73,6 +89,7 @@ impl Default for FilterSettings {
 			mode: FilterMode::LowPass,
 			cutoff: 10000.0.into(),
 			resonance: 0.0.into(),
+			mix: 1.0.into(),
 		}
 	}
 }
@@ -82,6 +99,7 @@ pub struct Filter {
 	mode: FilterMode,
 	cutoff: CachedValue,
 	resonance: CachedValue,
+	mix: CachedValue,
 	ic1eq: Frame,
 	ic2eq: Frame,
 }
@@ -93,6 +111,7 @@ impl Filter {
 			mode: settings.mode,
 			cutoff: CachedValue::new(20.0..=20000.0, settings.cutoff, 10000.0),
 			resonance: CachedValue::new(0.0..=1.0, settings.resonance, 0.0),
+			mix: CachedValue::new(0.0..=1.0, settings.mix, 1.0),
 			ic1eq: Frame::ZERO,
 			ic2eq: Frame::ZERO,
 		}
@@ -114,11 +133,13 @@ impl Effect for Filter {
 		let v2 = self.ic2eq + (self.ic1eq * (a2 as f32)) + (v3 * (a3 as f32));
 		self.ic1eq = (v1 * 2.0) - self.ic1eq;
 		self.ic2eq = (v2 * 2.0) - self.ic2eq;
-		match self.mode {
+		let output = match self.mode {
 			FilterMode::LowPass => v2,
 			FilterMode::BandPass => v1,
 			FilterMode::HighPass => input - v1 * (k as f32) - v2,
 			FilterMode::Notch => input - v1 * (k as f32),
-		}
+		};
+		let mix = self.mix.get() as f32;
+		output * mix.sqrt() + input * (1.0 - mix).sqrt()
 	}
 }

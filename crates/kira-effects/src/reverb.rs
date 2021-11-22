@@ -29,6 +29,11 @@ pub struct ReverbSettings {
 	/// The stereo width of the reverb effect (0.0 being fully mono,
 	/// 1.0 being fully stereo).
 	stereo_width: Value,
+	/// How much dry (unprocessed) signal should be blended
+	/// with the wet (processed) signal. `0.0` means
+	/// only the dry signal will be heard. `1.0` means
+	/// only the wet signal will be heard.
+	mix: Value,
 }
 
 impl ReverbSettings {
@@ -63,6 +68,17 @@ impl ReverbSettings {
 			..self
 		}
 	}
+
+	/// Sets how much dry (unprocessed) signal should be blended
+	/// with the wet (processed) signal. `0.0` means only the dry
+	/// signal will be heard. `1.0` means only the wet signal will
+	/// be heard.
+	pub fn mix(self, mix: impl Into<Value>) -> Self {
+		Self {
+			mix: mix.into(),
+			..self
+		}
+	}
 }
 
 impl Default for ReverbSettings {
@@ -71,6 +87,7 @@ impl Default for ReverbSettings {
 			feedback: Value::Fixed(0.9),
 			damping: Value::Fixed(0.1),
 			stereo_width: Value::Fixed(1.0),
+			mix: Value::Fixed(0.5),
 		}
 	}
 }
@@ -91,6 +108,7 @@ pub struct Reverb {
 	feedback: CachedValue,
 	damping: CachedValue,
 	stereo_width: CachedValue,
+	mix: CachedValue,
 	state: ReverbState,
 }
 
@@ -101,6 +119,7 @@ impl Reverb {
 			feedback: CachedValue::new(-1.0..=1.0, settings.feedback, 0.9),
 			damping: CachedValue::new(0.0..=1.0, settings.damping, 0.1),
 			stereo_width: CachedValue::new(0.0..=1.0, settings.stereo_width, 1.0),
+			mix: CachedValue::new(0.0..=1.0, settings.mix, 0.5),
 			state: ReverbState::Uninitialized,
 		}
 	}
@@ -190,11 +209,11 @@ impl Effect for Reverb {
 			let stereo_width = self.stereo_width.get() as f32;
 
 			let mut output = Frame::ZERO;
-			let input = (input.left + input.right) * GAIN;
+			let mono_input = (input.left + input.right) * GAIN;
 			// accumulate comb filters in parallel
 			for comb_filter in comb_filters {
-				output.left += comb_filter.0.process(input, feedback, damping);
-				output.right += comb_filter.1.process(input, feedback, damping);
+				output.left += comb_filter.0.process(mono_input, feedback, damping);
+				output.right += comb_filter.1.process(mono_input, feedback, damping);
 			}
 			// feed through all-pass filters in series
 			for all_pass_filter in all_pass_filters {
@@ -203,10 +222,12 @@ impl Effect for Reverb {
 			}
 			let wet_1 = stereo_width / 2.0 + 0.5;
 			let wet_2 = (1.0 - stereo_width) / 2.0;
-			Frame::new(
+			let output = Frame::new(
 				output.left * wet_1 + output.right * wet_2,
 				output.right * wet_1 + output.left * wet_2,
-			)
+			);
+			let mix = self.mix.get() as f32;
+			output * mix.sqrt() + input * (1.0 - mix).sqrt()
 		} else {
 			panic!("Reverb should be initialized before the first process call")
 		}

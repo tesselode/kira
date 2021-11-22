@@ -38,6 +38,11 @@ pub struct DistortionSettings {
 	/// The factor to multiply the signal by before applying
 	/// the distortion.
 	pub drive: Value,
+	/// How much dry (unprocessed) signal should be blended
+	/// with the wet (processed) signal. `0.0` means
+	/// only the dry signal will be heard. `1.0` means
+	/// only the wet signal will be heard.
+	pub mix: Value,
 }
 
 impl DistortionSettings {
@@ -59,6 +64,17 @@ impl DistortionSettings {
 			..self
 		}
 	}
+
+	/// Sets how much dry (unprocessed) signal should be blended
+	/// with the wet (processed) signal. `0.0` means only the dry
+	/// signal will be heard. `1.0` means only the wet signal will
+	/// be heard.
+	pub fn mix(self, mix: impl Into<Value>) -> Self {
+		Self {
+			mix: mix.into(),
+			..self
+		}
+	}
 }
 
 impl Default for DistortionSettings {
@@ -66,6 +82,7 @@ impl Default for DistortionSettings {
 		Self {
 			kind: Default::default(),
 			drive: Value::Fixed(1.0),
+			mix: Value::Fixed(1.0),
 		}
 	}
 }
@@ -75,6 +92,7 @@ impl Default for DistortionSettings {
 pub struct Distortion {
 	kind: DistortionKind,
 	drive: CachedValue,
+	mix: CachedValue,
 }
 
 impl Distortion {
@@ -83,26 +101,29 @@ impl Distortion {
 		Self {
 			kind: settings.kind,
 			drive: CachedValue::new(.., settings.drive, 1.0),
+			mix: CachedValue::new(0.0..=1.0, settings.mix, 1.0),
 		}
 	}
 }
 
 impl Effect for Distortion {
-	fn process(&mut self, mut input: Frame, _dt: f64, parameters: &Parameters) -> Frame {
+	fn process(&mut self, input: Frame, _dt: f64, parameters: &Parameters) -> Frame {
 		self.drive.update(parameters);
 		let drive = self.drive.get() as f32;
-		input *= drive;
-		input = match self.kind {
+		let mut output = input * drive;
+		output = match self.kind {
 			DistortionKind::HardClip => Frame::new(
-				input.left.max(-1.0).min(1.0),
-				input.right.max(-1.0).min(1.0),
+				output.left.max(-1.0).min(1.0),
+				output.right.max(-1.0).min(1.0),
 			),
 			DistortionKind::SoftClip => Frame::new(
-				input.left / (1.0 + input.left.abs()),
-				input.right / (1.0 + input.right.abs()),
+				output.left / (1.0 + output.left.abs()),
+				output.right / (1.0 + output.right.abs()),
 			),
 		};
-		input /= drive;
-		input
+		output /= drive;
+
+		let mix = self.mix.get() as f32;
+		output * mix.sqrt() + input * (1.0 - mix).sqrt()
 	}
 }

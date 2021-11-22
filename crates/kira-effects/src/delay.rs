@@ -18,6 +18,11 @@ pub struct DelaySettings {
 	buffer_length: f64,
 	/// Effects that should be applied in the feedback loop.
 	feedback_effects: Vec<Box<dyn Effect>>,
+	/// How much dry (unprocessed) signal should be blended
+	/// with the wet (processed) signal. `0.0` means
+	/// only the dry signal will be heard. `1.0` means
+	/// only the wet signal will be heard.
+	mix: Value,
 }
 
 impl DelaySettings {
@@ -55,6 +60,17 @@ impl DelaySettings {
 		self.feedback_effects.push(Box::new(effect));
 		self
 	}
+
+	/// Sets how much dry (unprocessed) signal should be blended
+	/// with the wet (processed) signal. `0.0` means only the dry
+	/// signal will be heard. `1.0` means only the wet signal will
+	/// be heard.
+	pub fn mix(self, mix: impl Into<Value>) -> Self {
+		Self {
+			mix: mix.into(),
+			..self
+		}
+	}
 }
 
 impl Default for DelaySettings {
@@ -64,6 +80,7 @@ impl Default for DelaySettings {
 			feedback: Value::Fixed(0.5),
 			buffer_length: 10.0,
 			feedback_effects: vec![],
+			mix: Value::Fixed(0.5),
 		}
 	}
 }
@@ -84,6 +101,7 @@ enum DelayState {
 pub struct Delay {
 	delay_time: CachedValue,
 	feedback: CachedValue,
+	mix: CachedValue,
 	state: DelayState,
 	feedback_effects: Vec<Box<dyn Effect>>,
 }
@@ -94,6 +112,7 @@ impl Delay {
 		Self {
 			delay_time: CachedValue::new(0.0.., settings.delay_time, 0.5),
 			feedback: CachedValue::new(-1.0..=1.0, settings.feedback, 0.5),
+			mix: CachedValue::new(0.0..=1.0, settings.mix, 0.5),
 			state: DelayState::Uninitialized {
 				buffer_length: settings.buffer_length,
 			},
@@ -126,6 +145,7 @@ impl Effect for Delay {
 			// update cached values
 			self.delay_time.update(parameters);
 			self.feedback.update(parameters);
+			self.mix.update(parameters);
 
 			// get the read position (in samples)
 			let mut read_position = *write_position as f32 - (self.delay_time.get() / dt) as f32;
@@ -159,7 +179,8 @@ impl Effect for Delay {
 			*write_position %= buffer.len();
 			buffer[*write_position] = input + output * self.feedback.get() as f32;
 
-			output
+			let mix = self.mix.get() as f32;
+			output * mix.sqrt() + input * (1.0 - mix).sqrt()
 		} else {
 			panic!("The delay should be initialized by the first process call")
 		}
