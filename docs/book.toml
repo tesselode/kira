@@ -1,0 +1,9 @@
+[book]
+authors = ["Andrew Minnich"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Kira"
+
+[rust]
+edition = "2018"
