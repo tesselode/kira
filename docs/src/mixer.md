@@ -10,8 +10,7 @@ The mixer has a "main" track by default, and you can add any number of
 sub-tracks. To add a sub-track, use `AudioManager::add_sub_track`.
 
 ```rust ,no_run
-use std::error::Error;
-
+# use std::error::Error;
 use kira::{manager::AudioManager, track::TrackSettings};
 use kira_cpal::CpalBackend;
 
@@ -26,9 +25,11 @@ This example uses `StaticSoundSettings`, but the streaming sound interface from
 option.
 
 ```rust ,no_run
-use std::error::Error;
-
-use kira::{manager::AudioManager, sound::static_sound::StaticSoundSettings, track::TrackSettings};
+# use std::error::Error;
+use kira::{
+	manager::AudioManager, sound::static_sound::StaticSoundSettings,
+	track::TrackSettings,
+};
 use kira_cpal::CpalBackend;
 
 let mut manager = AudioManager::new(CpalBackend::new()?, Default::default())?;
@@ -40,6 +41,12 @@ manager.play(kira_symphonia::load(
 # Result::<(), Box<dyn Error>>::Ok(())
 ```
 
+You can set the volume and panning of a track using `TrackHandle::set_volume`
+and `TrackHandle::set_panning`, respectively. The volume and panning settings
+will affect all sounds being played on the track.
+
+## Effects
+
 You can add effects to the track when creating it using
 `TrackSettings::with_effect`. All sounds that are played on that track will have
 the effects applied sequentially.
@@ -49,15 +56,18 @@ In this example, we'll use the `Filter` effect from
 mode will remove high frequencies from sounds, making them sound muffled.
 
 ```rust ,no_run
-use std::error::Error;
-
-use kira::{manager::AudioManager, sound::static_sound::StaticSoundSettings, track::TrackSettings};
+# use std::error::Error;
+use kira::{
+	manager::AudioManager, sound::static_sound::StaticSoundSettings,
+	track::TrackSettings,
+};
 use kira_cpal::CpalBackend;
 use kira_effects::filter::{Filter, FilterSettings};
 
 let mut manager = AudioManager::new(CpalBackend::new()?, Default::default())?;
 let track = manager.add_sub_track(
-    TrackSettings::new().with_effect(Filter::new(FilterSettings::new().cutoff(1000.0))),
+    TrackSettings::new()
+        .with_effect(Filter::new(FilterSettings::new().cutoff(1000.0))),
 )?;
 manager.play(kira_symphonia::load(
     "sound.ogg",
@@ -94,3 +104,122 @@ We'll end up with a hierarchy like this:
 ```
 
 We can set up the `sounds` and `player_sounds` hierarchy using `TrackRoutes`.
+
+```rust ,no_run
+# use std::error::Error;
+use kira::{
+	manager::{AudioManager, AudioManagerSettings},
+	track::{TrackRoutes, TrackSettings},
+};
+use kira_cpal::CpalBackend;
+
+let mut manager =
+    AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
+let sounds = manager.add_sub_track(TrackSettings::default())?;
+let player_sounds = manager
+    .add_sub_track(TrackSettings::new().routes(TrackRoutes::parent(&sounds)))?;
+# Result::<(), Box<dyn Error>>::Ok(())
+```
+
+The default `TrackRoutes` has a single route to the main mixer track.
+`TrackRoutes::parent` will instead create a single route to the track of your
+choosing.
+
+You can also have one track feed its audio into multiple other tracks. This can
+be useful for sharing effects between tracks.
+
+For example, let's say we have our sounds split up into player sounds and
+ambience. This game takes place in a vast cave, so we want all of the sounds to
+have a reverb effect. We want the ambience to have more reverb than the player
+sounds so that it feels farther away.
+
+We could put separate reverb effects on both the `player` and `ambience` tracks.
+Since both the player and the ambient sounds are in the same cave, we'll use the
+same settings for both reverb effects, but we'll increase the `mix` setting for
+the ambience, since ambient sounds are supposed to have more reverb. This has
+some downsides, however:
+
+- Since most of the settings are supposed to be the same between the two tracks,
+  if we want to change the reverb settings, we have to change them in two
+  different places.
+- We have two separate reverb effects running, which has a higher CPU cost than
+  if we just had one.
+
+A better alternative would be to make a separate reverb track that both the
+`player` and `ambience` tracks are routed to.
+
+```text
+        ┌──────────┐
+   ┌────►Main track◄───────┐
+   │    └─▲────────┘       │
+   │      │                │
+   │      │            ┌───┴──┐
+   │ ┌────┼────────────►Reverb│
+   │ │    │            └──▲───┘
+   │ │    │               │
+   │ │    │               │
+┌──┴─┴─┐  │   ┌────────┐  │
+│Player│  └───┤Ambience├──┘
+└──────┘      └────────┘
+```
+
+Here's what this looks like in practice:
+
+```rust ,no_run
+# use std::error::Error;
+use kira::{
+	manager::{AudioManager, AudioManagerSettings},
+	track::{TrackRoutes, TrackSettings},
+};
+use kira_cpal::CpalBackend;
+use kira_effects::reverb::{Reverb, ReverbSettings};
+
+let mut manager =
+    AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
+let reverb = manager.add_sub_track(
+    TrackSettings::new()
+        .with_effect(Reverb::new(ReverbSettings::new().mix(1.0))),
+)?;
+let player = manager.add_sub_track(
+    TrackSettings::new().routes(TrackRoutes::new().with_route(&reverb, 0.25)),
+);
+let ambience = manager.add_sub_track(
+    TrackSettings::new().routes(TrackRoutes::new().with_route(&reverb, 0.5)),
+);
+# Result::<(), Box<dyn Error>>::Ok(())
+```
+
+Let's look at this one step at a time:
+
+```rust ,ignore
+let reverb = manager.add_sub_track(
+    TrackSettings::new()
+        .with_effect(Reverb::new(ReverbSettings::new().mix(1.0))),
+)?;
+```
+
+We create the `reverb` track with a `Reverb` effect. We set the `mix` to `1.0`
+so that only the reverb signal is output from this track. We don't need any of
+the dry signal to come out of this track, since the `player` and `ambience`
+tracks will already be outputting their dry signal to the main track.
+
+```rust ,ignore
+let player = manager.add_sub_track(
+    TrackSettings::new().routes(TrackRoutes::new().with_route(&reverb, 0.25)),
+);
+```
+
+We create the `player` track with two routes:
+
+- The route to the main track with 100% volume. We don't have to set this one
+  explicitly because `TrackRoutes::new()` adds that route by default.
+- The route to the `reverb` track with 25% volume.
+
+```rust ,ignore
+let ambience = manager.add_sub_track(
+    TrackSettings::new().routes(TrackRoutes::new().with_route(&reverb, 0.5)),
+);
+```
+
+The `ambience` track is set up the same way, except the route to the `reverb`
+track has 50% volume, giving us more reverb for these sounds.
