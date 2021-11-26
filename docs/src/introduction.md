@@ -21,7 +21,10 @@ use kira::{
 use kira_cpal::CpalBackend;
 
 // Create an audio manager. This plays sounds and manages resources.
-let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
 let sound_data = kira_symphonia::load("sound.ogg", StaticSoundSettings::default())?;
 manager.play(sound_data.clone())?;
 // After a couple seconds...
@@ -36,7 +39,6 @@ manager.play(sound_data.clone())?;
 # extern crate kira;
 # extern crate kira_cpal;
 # extern crate kira_symphonia;
-#
 use std::time::Duration;
 
 use kira::{
@@ -46,7 +48,10 @@ use kira::{
 };
 use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
 // Create a parameter for the playback rate.
 let mut parameter = manager.add_parameter(1.0)?;
 let sound_data = kira_symphonia::load(
@@ -84,13 +89,18 @@ use kira::{
 use kira_cpal::CpalBackend;
 use kira_effects::filter::{Filter, FilterSettings};
 
-let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
 // Create a mixer sub-track with a filter.
 let filter = Filter::new(FilterSettings::new().cutoff(1000.0));
 let track = manager.add_sub_track(TrackSettings::new().with_effect(filter))?;
 // Play the sound on the track.
-let sound_data =
-	kira_symphonia::load("sound.ogg", StaticSoundSettings::new().track(&track))?;
+let sound_data = kira_symphonia::load(
+	"sound.ogg",
+	StaticSoundSettings::new().track(&track),
+)?;
 manager.play(sound_data)?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
@@ -110,7 +120,10 @@ use kira_cpal::CpalBackend;
 
 const TEMPO: f64 = 120.0;
 
-let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
 // Create a clock that ticks every 60.0 / TEMPO seconds. In this case,
 // each tick is one beat. Of course, we can use a tick to represent
 // any arbitrary amount of time.

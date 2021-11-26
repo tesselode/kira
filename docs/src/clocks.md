@@ -9,7 +9,10 @@ clock, use `AudioManager::add_clock`.
 use kira::manager::{AudioManager, AudioManagerSettings};
 use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
 let mut clock = manager.add_clock(0.5)?;
 clock.start()?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
@@ -38,7 +41,10 @@ use kira::{
 };
 use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
 let mut clock = manager.add_clock(0.5)?;
 manager.play(kira_symphonia::load(
 	"sound.ogg",
@@ -63,7 +69,10 @@ As a shorthand, you can pass the `ClockTime` directly into
 # };
 # use kira_cpal::CpalBackend;
 #
-# let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
+# let mut manager = AudioManager::new(
+# 	CpalBackend::new()?,
+# 	AudioManagerSettings::default(),
+# )?;
 # let mut clock = manager.add_clock(0.5)?;
 manager.play(kira_symphonia::load(
 	"sound.ogg",
@@ -86,7 +95,10 @@ use kira::{
 };
 use kira_cpal::CpalBackend;
 
-# let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
+# let mut manager = AudioManager::new(
+# 	CpalBackend::new()?,
+# 	AudioManagerSettings::default(),
+# )?;
 # let mut clock = manager.add_clock(0.5)?;
 manager.play(kira_symphonia::load(
 	"sound.ogg",
@@ -111,7 +123,10 @@ use kira::{
 };
 use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
 let mut clock = manager.add_clock(0.5)?;
 let mut parameter = manager.add_parameter(1.0)?;
 parameter.set(

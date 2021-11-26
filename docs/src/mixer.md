@@ -11,10 +11,16 @@ sub-tracks. To add a sub-track, use `AudioManager::add_sub_track`.
 
 ```rust ,no_run
 # use std::error::Error;
-use kira::{manager::AudioManager, track::TrackSettings};
+use kira::{
+    manager::{AudioManager, AudioManagerSettings},
+    track::TrackSettings,
+};
 use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(CpalBackend::new()?, Default::default())?;
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
 let track = manager.add_sub_track(TrackSettings::default())?;
 # Result::<(), Box<dyn Error>>::Ok(())
 ```
@@ -27,12 +33,16 @@ option.
 ```rust ,no_run
 # use std::error::Error;
 use kira::{
-	manager::AudioManager, sound::static_sound::StaticSoundSettings,
+	manager::{AudioManager, AudioManagerSettings},
+    sound::static_sound::StaticSoundSettings,
 	track::TrackSettings,
 };
 use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(CpalBackend::new()?, Default::default())?;
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
 let track = manager.add_sub_track(TrackSettings::default())?;
 manager.play(kira_symphonia::load(
     "sound.ogg",
@@ -58,13 +68,17 @@ mode will remove high frequencies from sounds, making them sound muffled.
 ```rust ,no_run
 # use std::error::Error;
 use kira::{
-	manager::AudioManager, sound::static_sound::StaticSoundSettings,
+	manager::{AudioManager, AudioManagerSettings},
+    sound::static_sound::StaticSoundSettings,
 	track::TrackSettings,
 };
 use kira_cpal::CpalBackend;
 use kira_effects::filter::{Filter, FilterSettings};
 
-let mut manager = AudioManager::new(CpalBackend::new()?, Default::default())?;
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
 let track = manager.add_sub_track(
     TrackSettings::new()
         .with_effect(Filter::new(FilterSettings::new().cutoff(1000.0))),
@@ -113,8 +127,10 @@ use kira::{
 };
 use kira_cpal::CpalBackend;
 
-let mut manager =
-    AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
 let sounds = manager.add_sub_track(TrackSettings::default())?;
 let player_sounds = manager
     .add_sub_track(TrackSettings::new().routes(TrackRoutes::parent(&sounds)))?;
@@ -174,8 +190,10 @@ use kira::{
 use kira_cpal::CpalBackend;
 use kira_effects::reverb::{Reverb, ReverbSettings};
 
-let mut manager =
-    AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
 let reverb = manager.add_sub_track(
     TrackSettings::new()
         .with_effect(Reverb::new(ReverbSettings::new().mix(1.0))),

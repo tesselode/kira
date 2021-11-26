@@ -12,7 +12,10 @@ value of your choice:
 use kira::manager::{AudioManager, AudioManagerSettings};
 use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
 let mut parameter = manager.add_parameter(1.0)?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
@@ -29,7 +32,10 @@ use kira::{
 };
 use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
 let mut parameter = manager.add_parameter(1.0)?;
 parameter.set(
 	2.0,
@@ -77,7 +83,10 @@ use kira::{
 };
 use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
 let mut parameter = manager.add_parameter(1.0)?;
 manager.play(kira_symphonia::load(
 	"sound.ogg",
@@ -151,7 +160,10 @@ use kira::{
 use kira_cpal::CpalBackend;
 use kira_effects::filter::{Filter, FilterSettings};
 
-let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
 let mut underwater_parameter = manager.add_parameter(0.0)?;
 manager.add_sub_track(
 	TrackSettings::new()
