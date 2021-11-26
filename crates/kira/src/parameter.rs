@@ -83,7 +83,7 @@ use kira_cpal::CpalBackend;
 
 let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
 let mut parameter = manager.add_parameter(1.0)?;
-manager.play(kira_symphonia::load(
+manager.play(kira_loaders::load(
 	"sound.ogg",
 	StaticSoundSettings::new().playback_rate(&parameter),
 )?)?;

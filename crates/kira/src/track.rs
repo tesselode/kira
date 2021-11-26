@@ -27,7 +27,7 @@ You can configure what track a sound will play on by modifying
 its settings. This example uses
 [`StaticSoundSettings`](crate::sound::static_sound::StaticSoundSettings),
 but the streaming sound interface from
-[`kira-symphonia`](https://crates.io/crates/kira-symphonia) provides
+[`kira-loaders`](https://crates.io/crates/kira-loaders) provides
 the same option.
 
 ```no_run
@@ -38,7 +38,7 @@ use kira_cpal::CpalBackend;
 
 let mut manager = AudioManager::new(CpalBackend::new()?, Default::default())?;
 let track = manager.add_sub_track(TrackSettings::default())?;
-manager.play(kira_symphonia::load(
+manager.play(kira_loaders::load(
 	"sound.ogg",
 	StaticSoundSettings::new().track(&track),
 )?)?;
@@ -65,7 +65,7 @@ let mut manager = AudioManager::new(CpalBackend::new()?, Default::default())?;
 let track = manager.add_sub_track(
 	TrackSettings::new().with_effect(Filter::new(FilterSettings::new().cutoff(1000.0))),
 )?;
-manager.play(kira_symphonia::load(
+manager.play(kira_loaders::load(
 	"sound.ogg",
 	StaticSoundSettings::new().track(&track),
 )?)?;

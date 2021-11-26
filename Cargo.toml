@@ -2,8 +2,8 @@
 members = [
 	"crates/kira",
 	"crates/kira-cpal",
-	"crates/kira-symphonia",
 	"crates/kira-effects",
+	"crates/kira-loaders",
 ]
 
 [profile.dev]

@@ -12,7 +12,7 @@ and a clock system for precisely timing audio events.
 ```rust ,no_run
 # extern crate kira;
 # extern crate kira_cpal;
-# extern crate kira_symphonia;
+# extern crate kira_loaders;
 #
 use kira::{
 	manager::{AudioManager, AudioManagerSettings},
@@ -25,7 +25,7 @@ let mut manager = AudioManager::new(
 	CpalBackend::new()?,
 	AudioManagerSettings::default(),
 )?;
-let sound_data = kira_symphonia::load("sound.ogg", StaticSoundSettings::default())?;
+let sound_data = kira_loaders::load("sound.ogg", StaticSoundSettings::default())?;
 manager.play(sound_data.clone())?;
 // After a couple seconds...
 manager.play(sound_data.clone())?;
@@ -38,7 +38,7 @@ manager.play(sound_data.clone())?;
 ```rust ,no_run
 # extern crate kira;
 # extern crate kira_cpal;
-# extern crate kira_symphonia;
+# extern crate kira_loaders;
 use std::time::Duration;
 
 use kira::{
@@ -54,7 +54,7 @@ let mut manager = AudioManager::new(
 )?;
 // Create a parameter for the playback rate.
 let mut parameter = manager.add_parameter(1.0)?;
-let sound_data = kira_symphonia::load(
+let sound_data = kira_loaders::load(
 	"sound.ogg",
 	// Link this sound's playback rate to the parameter we created.
 	StaticSoundSettings::new().playback_rate(&parameter),
@@ -79,7 +79,7 @@ This makes the audio sound muffled.
 # extern crate kira;
 # extern crate kira_cpal;
 # extern crate kira_effects;
-# extern crate kira_symphonia;
+# extern crate kira_loaders;
 #
 use kira::{
 	manager::{AudioManager, AudioManagerSettings},
@@ -97,7 +97,7 @@ let mut manager = AudioManager::new(
 let filter = Filter::new(FilterSettings::new().cutoff(1000.0));
 let track = manager.add_sub_track(TrackSettings::new().with_effect(filter))?;
 // Play the sound on the track.
-let sound_data = kira_symphonia::load(
+let sound_data = kira_loaders::load(
 	"sound.ogg",
 	StaticSoundSettings::new().track(&track),
 )?;
@@ -110,7 +110,7 @@ manager.play(sound_data)?;
 ```rust ,no_run
 # extern crate kira;
 # extern crate kira_cpal;
-# extern crate kira_symphonia;
+# extern crate kira_loaders;
 #
 use kira::{
 	manager::{AudioManager, AudioManagerSettings},
@@ -129,13 +129,13 @@ let mut manager = AudioManager::new(
 // any arbitrary amount of time.
 let mut clock = manager.add_clock(60.0 / TEMPO)?;
 // Play a sound 2 ticks (beats) from now.
-let sound_data_1 = kira_symphonia::load(
+let sound_data_1 = kira_loaders::load(
 	"sound1.ogg",
 	StaticSoundSettings::new().start_time(clock.time() + 2),
 )?;
 manager.play(sound_data_1)?;
 // Play a different sound 4 ticks (beats) from now.
-let sound_data_2 = kira_symphonia::load(
+let sound_data_2 = kira_loaders::load(
 	"sound2.ogg",
 	StaticSoundSettings::new().start_time(clock.time() + 4),
 )?;
