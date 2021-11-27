@@ -13,7 +13,7 @@ use crate::{
 	error::CommandError,
 	parameter::{Parameter, ParameterHandle, ParameterId},
 	sound::SoundData,
-	track::{SubTrackId, Track, TrackHandle, TrackId, TrackSettings},
+	track::{Effect, SubTrackId, Track, TrackHandle, TrackId, TrackSettings},
 	tween::Tween,
 	value::Value,
 };
@@ -70,6 +70,8 @@ pub struct AudioManagerSettings {
 	pub sub_track_capacity: usize,
 	/// The maximum number of clocks that can exist at a time.
 	pub clock_capacity: usize,
+	/// Effects that should be added to the main mixer track.
+	pub main_track_effects: Vec<Box<dyn Effect>>,
 }
 
 impl AudioManagerSettings {
@@ -120,6 +122,12 @@ impl AudioManagerSettings {
 			..self
 		}
 	}
+
+	/// Specifies an effect to add to the main mixer track.
+	pub fn with_main_track_effect(mut self, effect: impl Effect + 'static) -> Self {
+		self.main_track_effects.push(Box::new(effect));
+		self
+	}
 }
 
 impl Default for AudioManagerSettings {
@@ -130,6 +138,7 @@ impl Default for AudioManagerSettings {
 			parameter_capacity: 128,
 			sub_track_capacity: 128,
 			clock_capacity: 8,
+			main_track_effects: vec![],
 		}
 	}
 }
@@ -147,12 +156,12 @@ impl<B: Backend> AudioManager<B> {
 	pub fn new(mut backend: B, settings: AudioManagerSettings) -> Result<Self, B::InitError> {
 		let sample_rate = backend.sample_rate();
 		let context = Arc::new(Context::new(sample_rate));
+		let (command_producer, command_consumer) =
+			RingBuffer::new(settings.command_capacity).split();
 		let (unused_resource_producers, unused_resource_collector) =
 			create_unused_resource_channels(&settings);
 		let (resources, resource_controllers) =
-			create_resources(&settings, unused_resource_producers, &context);
-		let (command_producer, command_consumer) =
-			RingBuffer::new(settings.command_capacity).split();
+			create_resources(settings, unused_resource_producers, &context);
 		let renderer = Renderer::new(context.clone(), resources, command_consumer);
 		backend.init(renderer, unused_resource_collector)?;
 		Ok(Self {

@@ -6,7 +6,7 @@ use ringbuf::Producer;
 use crate::{
 	dsp::Frame,
 	manager::{backend::context::Context, command::MixerCommand},
-	track::{SubTrackId, Track, TrackId},
+	track::{Effect, SubTrackId, Track, TrackId, TrackSettings},
 	value::CachedValue,
 };
 
@@ -25,9 +25,17 @@ impl Mixer {
 		sub_track_capacity: usize,
 		unused_sub_track_producer: Producer<Track>,
 		context: &Arc<Context>,
+		main_track_effects: Vec<Box<dyn Effect>>,
 	) -> Self {
 		Self {
-			main_track: Track::new(Default::default(), context),
+			main_track: Track::new(
+				{
+					let mut settings = TrackSettings::new();
+					settings.effects = main_track_effects;
+					settings
+				},
+				context,
+			),
 			sub_tracks: Arena::new(sub_track_capacity),
 			sub_track_ids: Vec::with_capacity(sub_track_capacity),
 			dummy_routes: vec![],

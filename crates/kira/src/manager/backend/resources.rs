@@ -87,7 +87,7 @@ pub(crate) struct ResourceControllers {
 }
 
 pub(crate) fn create_resources(
-	settings: &AudioManagerSettings,
+	settings: AudioManagerSettings,
 	unused_resource_producers: UnusedResourceProducers,
 	context: &Arc<Context>,
 ) -> (Resources, ResourceControllers) {
@@ -102,6 +102,7 @@ pub(crate) fn create_resources(
 		settings.sub_track_capacity,
 		unused_resource_producers.sub_track,
 		context,
+		settings.main_track_effects,
 	);
 	let sub_track_controller = mixer.sub_track_controller();
 	let clocks = Clocks::new(settings.clock_capacity, unused_resource_producers.clock);
