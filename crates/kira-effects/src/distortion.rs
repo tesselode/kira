@@ -9,6 +9,7 @@ use kira::{
 
 /// Different types of distortion effect.
 #[derive(Debug, Copy, Clone)]
+#[non_exhaustive]
 pub enum DistortionKind {
 	/// The signal will be clamped to the -1.0 to 1.0 range.
 	///
@@ -32,6 +33,7 @@ impl Default for DistortionKind {
 
 /// Settings for a [`Distortion`] effect.
 #[derive(Debug, Copy, Clone)]
+#[non_exhaustive]
 pub struct DistortionSettings {
 	/// The kind of distortion to use.
 	pub kind: DistortionKind,

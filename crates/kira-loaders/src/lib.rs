@@ -15,6 +15,7 @@ use symphonia::core::{
 use std::{fmt::Display, fs::File, path::Path, sync::Arc};
 
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum Error {
 	NoDefaultTrack,
 	UnknownSampleRate,

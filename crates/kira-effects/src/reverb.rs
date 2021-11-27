@@ -19,6 +19,7 @@ const STEREO_SPREAD: usize = 23;
 
 /// Settings for a `Reverb`.
 #[derive(Debug, Copy, Clone)]
+#[non_exhaustive]
 pub struct ReverbSettings {
 	/// How much the room reverberates. A higher value will
 	/// result in a bigger sounding room. 1.0 gives an infinitely

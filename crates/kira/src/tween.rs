@@ -10,6 +10,7 @@ use crate::start_time::StartTime;
 
 /// Curves the motion of a [`Tween`].
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[non_exhaustive]
 pub enum Easing {
 	/// Maintains a constant speed for the duration of the [`Tween`].
 	Linear,

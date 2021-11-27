@@ -2,6 +2,7 @@ use crate::clock::ClockTime;
 
 /// Describes when an action should occur.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum StartTime {
 	/// The action should occur immediately.
 	Immediate,

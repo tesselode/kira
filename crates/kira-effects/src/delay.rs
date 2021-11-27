@@ -8,21 +8,22 @@ use kira::{
 };
 
 /// Settings for a [`Delay`] effect.
+#[non_exhaustive]
 pub struct DelaySettings {
 	/// The delay time (in seconds).
-	delay_time: Value,
+	pub delay_time: Value,
 	/// The amount of feedback.
-	feedback: Value,
+	pub feedback: Value,
 	/// The amount of audio the delay can store (in seconds).
 	/// This affects the maximum delay time.
-	buffer_length: f64,
+	pub buffer_length: f64,
 	/// Effects that should be applied in the feedback loop.
-	feedback_effects: Vec<Box<dyn Effect>>,
+	pub feedback_effects: Vec<Box<dyn Effect>>,
 	/// How much dry (unprocessed) signal should be blended
 	/// with the wet (processed) signal. `0.0` means
 	/// only the dry signal will be heard. `1.0` means
 	/// only the wet signal will be heard.
-	mix: Value,
+	pub mix: Value,
 }
 
 impl DelaySettings {

@@ -19,6 +19,7 @@ const UNUSED_RESOURCE_COLLECTION_INTERVAL: Duration = Duration::from_millis(100)
 
 /// An error that can occur when creating a [`CpalBackend`].
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum DeviceSetupError {
 	/// A default audio output device could not be determined.
 	NoDefaultOutputDevice,
@@ -54,6 +55,7 @@ impl From<DefaultStreamConfigError> for DeviceSetupError {
 
 /// Errors that can occur when initializing a [`CpalBackend`].
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum InitError {
 	/// A default audio output device could not be determined.
 	NoDefaultOutputDevice,

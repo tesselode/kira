@@ -56,6 +56,7 @@ impl MainPlaybackState {
 }
 
 /// Settings for an [`AudioManager`].
+#[non_exhaustive]
 pub struct AudioManagerSettings {
 	/// The number of commands that be sent to the renderer at a time.
 	///

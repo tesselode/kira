@@ -9,6 +9,7 @@ use crate::error::CommandError;
 
 /// Errors that can occur when playing a sound.
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum PlaySoundError<E> {
 	/// Could not play a sound because the maximum number of sounds has been reached.
 	SoundLimitReached,
@@ -49,6 +50,7 @@ impl<E> From<CommandError> for PlaySoundError<E> {
 
 /// Errors that can occur when creating a parameter.
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum AddParameterError {
 	/// Could not add a parameter because the maximum number of parameters has been reached.
 	ParameterLimitReached,
@@ -82,6 +84,7 @@ impl From<CommandError> for AddParameterError {
 
 /// Errors that can occur when creating a mixer sub-track.
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum AddSubTrackError {
 	/// Could not add a sub-track because the maximum number of sub-tracks has been reached.
 	SubTrackLimitReached,
@@ -115,6 +118,7 @@ impl From<CommandError> for AddSubTrackError {
 
 /// Errors that can occur when creating a clock.
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum AddClockError {
 	/// Could not add a clock because the maximum number of clocks has been reached.
 	ClockLimitReached,

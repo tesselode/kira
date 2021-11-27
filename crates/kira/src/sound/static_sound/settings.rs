@@ -2,6 +2,7 @@ use crate::{track::TrackId, tween::Tween, value::Value, LoopBehavior, StartTime}
 
 /// Settings for a static sound.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[non_exhaustive]
 pub struct StaticSoundSettings {
 	/// When the sound should start playing.
 	pub start_time: StartTime,

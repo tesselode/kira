@@ -3,6 +3,7 @@ use crate::value::Value;
 use super::{routes::TrackRoutes, Effect};
 
 /// Settings for a mixer track.
+#[non_exhaustive]
 pub struct TrackSettings {
 	/// The volume of the track.
 	pub volume: Value,

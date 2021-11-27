@@ -2,6 +2,7 @@ use kira::{track::TrackId, tween::Tween, value::Value, LoopBehavior, StartTime};
 
 /// Settings for a streaming sound.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[non_exhaustive]
 pub struct StreamingSoundSettings {
 	/// When the instance should start playing.
 	pub start_time: StartTime,

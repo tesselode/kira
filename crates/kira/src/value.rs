@@ -11,6 +11,7 @@ use crate::parameter::{ParameterHandle, ParameterId};
 
 /// The possible values for a setting.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[non_exhaustive]
 pub enum Value {
 	/// The setting is fixed to the specified value.
 	Fixed(f64),

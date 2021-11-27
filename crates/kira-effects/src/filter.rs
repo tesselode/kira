@@ -27,6 +27,7 @@ pub enum FilterMode {
 
 /// Settings for a [`Filter`].
 #[derive(Debug, Copy, Clone)]
+#[non_exhaustive]
 pub struct FilterSettings {
 	/// The frequencies that the filter will remove.
 	pub mode: FilterMode,
