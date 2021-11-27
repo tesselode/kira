@@ -69,11 +69,11 @@ if sound.state() == PlaybackState::Playing {
 
 ## Streaming sounds
 
-The previous examples all used `kira_symphonia::load`, which loads the entire
+The previous examples all used `kira_loaders::load`, which loads the entire
 sound into memory. This is good for shorter sounds, but for longer sounds this
 can have a heavy memory footprint. In those cases, you may want to use
-`kira_symphonia::stream`, which will read data from disk in realtime as the
-sound is playing.
+`kira_loaders::stream`, which will read data from disk in realtime as the sound
+is playing.
 
 There are some disadvantages to using streaming sounds:
 
