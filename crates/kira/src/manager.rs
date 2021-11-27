@@ -72,6 +72,56 @@ pub struct AudioManagerSettings {
 	pub clock_capacity: usize,
 }
 
+impl AudioManagerSettings {
+	/// Creates a new [`AudioManagerSettings`] with the default settings.
+	pub fn new() -> Self {
+		Self::default()
+	}
+
+	/// Sets the number of commands that be sent to the renderer at a time.
+	///
+	/// Each action you take, like playing a sound or pausing a parameter,
+	/// queues up one command.
+	pub fn command_capacity(self, command_capacity: usize) -> Self {
+		Self {
+			command_capacity,
+			..self
+		}
+	}
+
+	/// Sets the maximum number of sounds that can be playing at a time.
+	pub fn sound_capacity(self, sound_capacity: usize) -> Self {
+		Self {
+			sound_capacity,
+			..self
+		}
+	}
+
+	/// Sets the maximum number of parameters that can exist at a time.
+	pub fn parameter_capacity(self, parameter_capacity: usize) -> Self {
+		Self {
+			parameter_capacity,
+			..self
+		}
+	}
+
+	/// Sets the maximum number of mixer sub-tracks that can exist at a time.
+	pub fn sub_track_capacity(self, sub_track_capacity: usize) -> Self {
+		Self {
+			sub_track_capacity,
+			..self
+		}
+	}
+
+	/// Sets the maximum number of clocks that can exist at a time.
+	pub fn clock_capacity(self, clock_capacity: usize) -> Self {
+		Self {
+			clock_capacity,
+			..self
+		}
+	}
+}
+
 impl Default for AudioManagerSettings {
 	fn default() -> Self {
 		Self {
