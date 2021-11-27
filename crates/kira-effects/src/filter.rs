@@ -87,7 +87,7 @@ impl Default for FilterSettings {
 	fn default() -> Self {
 		Self {
 			mode: FilterMode::LowPass,
-			cutoff: 10000.0.into(),
+			cutoff: 1000.0.into(),
 			resonance: 0.0.into(),
 			mix: 1.0.into(),
 		}
