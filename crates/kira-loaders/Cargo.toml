@@ -8,4 +8,11 @@ edition = "2021"
 [dependencies]
 kira = { path = "../kira" }
 ringbuf = "0.2.6"
-symphonia = "0.4.0"
+symphonia = { version = "0.4.0", default-features = false }
+
+[features]
+default = ["mp3", "ogg", "flac", "wav"]
+mp3 = ["symphonia/mp3"]
+ogg = ["symphonia/ogg", "symphonia/vorbis"]
+flac = ["symphonia/flac"]
+wav = ["symphonia/wav", "symphonia/pcm"]
