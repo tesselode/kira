@@ -79,7 +79,7 @@ impl Default for AudioManagerSettings {
 			sound_capacity: 128,
 			parameter_capacity: 128,
 			sub_track_capacity: 128,
-			clock_capacity: 1,
+			clock_capacity: 8,
 		}
 	}
 }
