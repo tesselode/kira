@@ -42,7 +42,7 @@ pub struct FilterSettings {
 	/// with the wet (processed) signal. `0.0` means
 	/// only the dry signal will be heard. `1.0` means
 	/// only the wet signal will be heard.
-	mix: Value,
+	pub mix: Value,
 }
 
 impl FilterSettings {

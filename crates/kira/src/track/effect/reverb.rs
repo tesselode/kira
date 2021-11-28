@@ -24,17 +24,17 @@ pub struct ReverbSettings {
 	/// How much the room reverberates. A higher value will
 	/// result in a bigger sounding room. 1.0 gives an infinitely
 	/// reverberating room.
-	feedback: Value,
+	pub feedback: Value,
 	/// How quickly high frequencies disappear from the reverberation.
-	damping: Value,
+	pub damping: Value,
 	/// The stereo width of the reverb effect (0.0 being fully mono,
 	/// 1.0 being fully stereo).
-	stereo_width: Value,
+	pub stereo_width: Value,
 	/// How much dry (unprocessed) signal should be blended
 	/// with the wet (processed) signal. `0.0` means
 	/// only the dry signal will be heard. `1.0` means
 	/// only the wet signal will be heard.
-	mix: Value,
+	pub mix: Value,
 }
 
 impl ReverbSettings {
