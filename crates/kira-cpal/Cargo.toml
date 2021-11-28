@@ -1,9 +1,13 @@
 [package]
 name = "kira-cpal"
-version = "0.1.0"
+version = "0.1.0-beta.0"
+authors = ["Andrew Minnich <aminnich3@gmail.com>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "MIT or Apache-2.0"
+description = "Kira backend for desktop targets"
+repository = "https://github.com/tesselode/kira"
+keywords = ["gamedev", "audio", "music"]
+categories = ["game-development", "multimedia::audio"]
 
 [dependencies]
 assert_no_alloc = { version = "1.1.2", optional = true }
