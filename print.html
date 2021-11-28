@@ -1,0 +1,1043 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Kira</title>
+        <meta name="robots" content="noindex" />
+        <!-- Custom HTML head -->
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="crates.html"><strong aria-hidden="true">1.1.</strong> Crates</a></li></ol></li><li class="chapter-item expanded "><a href="playing-sounds.html"><strong aria-hidden="true">2.</strong> Playing Sounds</a></li><li class="chapter-item expanded "><a href="parameters.html"><strong aria-hidden="true">3.</strong> Parameters</a></li><li class="chapter-item expanded "><a href="mixer.html"><strong aria-hidden="true">4.</strong> The Mixer</a></li><li class="chapter-item expanded "><a href="clocks.html"><strong aria-hidden="true">5.</strong> Clocks</a></li><li class="chapter-item expanded "><a href="creating-sounds.html"><strong aria-hidden="true">6.</strong> Creating Sound Implementations</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Kira</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
+<p>Kira is a backend-agnostic library to create expressive audio for games. Besides
+the common sound playback features, it provides parameters for smoothly
+adjusting properties of sounds, a flexible mixer for applying effects to audio,
+and a clock system for precisely timing audio events.</p>
+<h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
+<h3 id="playing-a-sound-multiple-times-simultaneously"><a class="header" href="#playing-a-sound-multiple-times-simultaneously">Playing a sound multiple times simultaneously</a></h3>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span><span class="boring">
+</span>use kira::{
+	manager::{AudioManager, AudioManagerSettings},
+	sound::static_sound::StaticSoundSettings,
+};
+use kira_cpal::CpalBackend;
+
+// Create an audio manager. This plays sounds and manages resources.
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
+let sound_data = kira_loaders::load(&quot;sound.ogg&quot;, StaticSoundSettings::default())?;
+manager.play(sound_data.clone())?;
+// After a couple seconds...
+manager.play(sound_data.clone())?;
+// Cloning the sound data will not use any extra memory.
+<span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<h3 id="gradually-speeding-up-a-sound-over-time"><a class="header" href="#gradually-speeding-up-a-sound-over-time">Gradually speeding up a sound over time</a></h3>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span>use std::time::Duration;
+
+use kira::{
+	manager::{AudioManager, AudioManagerSettings},
+	sound::static_sound::StaticSoundSettings,
+	tween::Tween,
+};
+use kira_cpal::CpalBackend;
+
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
+// Create a parameter for the playback rate.
+let mut parameter = manager.add_parameter(1.0)?;
+let sound_data = kira_loaders::load(
+	&quot;sound.ogg&quot;,
+	// Link this sound's playback rate to the parameter we created.
+	StaticSoundSettings::new().playback_rate(&amp;parameter),
+)?;
+manager.play(sound_data)?;
+// Start smoothly adjusting the playback rate parameter.
+parameter.set(
+	2.0,
+	Tween {
+		duration: Duration::from_secs(3),
+		..Default::default()
+	},
+)?;
+<span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<h3 id="playing-a-sound-with-a-low-pass-filter-applied"><a class="header" href="#playing-a-sound-with-a-low-pass-filter-applied">Playing a sound with a low-pass filter applied</a></h3>
+<p>This makes the audio sound muffled.</p>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span><span class="boring">
+</span>use kira::{
+	manager::{AudioManager, AudioManagerSettings},
+	sound::static_sound::StaticSoundSettings,
+	track::{
+		TrackSettings,
+		effect::filter::{Filter, FilterSettings}
+	},
+};
+use kira_cpal::CpalBackend;
+
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
+// Create a mixer sub-track with a filter.
+let filter = Filter::new(FilterSettings::new().cutoff(1000.0));
+let track = manager.add_sub_track(TrackSettings::new().with_effect(filter))?;
+// Play the sound on the track.
+let sound_data = kira_loaders::load(
+	&quot;sound.ogg&quot;,
+	StaticSoundSettings::new().track(&amp;track),
+)?;
+manager.play(sound_data)?;
+<span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<h3 id="playing-sounds-in-time-with-a-musical-beat"><a class="header" href="#playing-sounds-in-time-with-a-musical-beat">Playing sounds in time with a musical beat</a></h3>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span><span class="boring">
+</span>use kira::{
+	manager::{AudioManager, AudioManagerSettings},
+	sound::static_sound::StaticSoundSettings,
+};
+use kira_cpal::CpalBackend;
+
+const TEMPO: f64 = 120.0;
+
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
+// Create a clock that ticks every 60.0 / TEMPO seconds. In this case,
+// each tick is one beat. Of course, we can use a tick to represent
+// any arbitrary amount of time.
+let mut clock = manager.add_clock(60.0 / TEMPO)?;
+// Play a sound 2 ticks (beats) from now.
+let sound_data_1 = kira_loaders::load(
+	&quot;sound1.ogg&quot;,
+	StaticSoundSettings::new().start_time(clock.time() + 2),
+)?;
+manager.play(sound_data_1)?;
+// Play a different sound 4 ticks (beats) from now.
+let sound_data_2 = kira_loaders::load(
+	&quot;sound2.ogg&quot;,
+	StaticSoundSettings::new().start_time(clock.time() + 4),
+)?;
+manager.play(sound_data_2)?;
+// Start the clock.
+clock.start()?;
+<span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="crates"><a class="header" href="#crates">Crates</a></h1>
+<p>You will most likely want to use Kira with some of these other crates:</p>
+<ul>
+<li><a href="https://crates.io/crates/kira-cpal"><code>kira-cpal</code></a> - backend for Windows, Mac,
+and Linux targets</li>
+<li><a href="https://crates.io/crates/kira-loaders"><code>kira-loaders</code></a> - adds support for
+loading audio files</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="playing-sounds"><a class="header" href="#playing-sounds">Playing Sounds</a></h1>
+<p>The main <code>kira</code> crate does not come with any functionality for loading audio
+from files. For that, you should use
+<a href="https://crates.io/crates/kira-loaders"><code>kira-loaders</code></a>.</p>
+<p><code>kira_loaders::load</code> returns a <code>StaticSoundData</code> that you can pass to
+<code>AudioManager::play</code> to play the sound.</p>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span>use kira::{
+	manager::{AudioManager, AudioManagerSettings},
+	sound::static_sound::StaticSoundSettings,
+};
+use kira_cpal::CpalBackend;
+
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
+let sound_data = kira_loaders::load(&quot;sound.ogg&quot;, StaticSoundSettings::new())?;
+manager.play(sound_data)?;
+<span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<p>If you want to play a sound multiple times, keep a copy of the <code>StaticSoundData</code>
+around and clone it each time you pass it to <code>AudioManager::play</code>.</p>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span>use kira::{
+	manager::{AudioManager, AudioManagerSettings},
+	sound::static_sound::StaticSoundSettings,
+};
+use kira_cpal::CpalBackend;
+
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
+let sound_data = kira_loaders::load(&quot;sound.ogg&quot;, StaticSoundSettings::new())?;
+manager.play(sound_data.clone())?;
+manager.play(sound_data.clone())?;
+<span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<p>Cloning a <code>StaticSoundData</code> is cheap, so it's perfectly fine to do this.</p>
+<p><code>AudioManager::play</code> returns a handle to the sound that you can use to query
+information about the sound or modify it.</p>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span>use kira::{
+	manager::{AudioManager, AudioManagerSettings},
+	sound::static_sound::{PlaybackState, StaticSoundSettings},
+	tween::Tween,
+};
+use kira_cpal::CpalBackend;
+
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
+let sound_data = kira_loaders::load(&quot;sound.ogg&quot;, StaticSoundSettings::new())?;
+let mut sound = manager.play(sound_data)?;
+if sound.state() == PlaybackState::Playing {
+	sound.stop(Tween::default())?;
+}
+<span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<h2 id="streaming-sounds"><a class="header" href="#streaming-sounds">Streaming sounds</a></h2>
+<p>The previous examples all used <code>kira_loaders::load</code>, which loads the entire
+sound into memory. This is good for shorter sounds, but for longer sounds this
+can have a heavy memory footprint. In those cases, you may want to use
+<code>kira_loaders::stream</code>, which will read data from disk in realtime as the sound
+is playing.</p>
+<p>There are some disadvantages to using streaming sounds:</p>
+<ul>
+<li>Streaming sounds require more CPU power.</li>
+<li>There may be a longer delay between when you call <code>AudioManager::play</code> and
+when the sound actually starts playing.</li>
+<li>Seeking the sound may also have a longer delay.</li>
+<li>If the file cannot be read from the disk fast enough, there will be hiccups in
+the sound playback. (This will not affect other sounds, though.)</li>
+<li>Backwards playback is not supported.</li>
+<li><code>StreamingSoundData</code> cannot be cloned.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="parameters"><a class="header" href="#parameters">Parameters</a></h1>
+<p>Parameters are &quot;global&quot; float values that many settings can be linked to. Any
+setting that has the type <code>Value</code> can be linked to a parameter.</p>
+<h2 id="creating-and-modifying-parameters"><a class="header" href="#creating-and-modifying-parameters">Creating and modifying parameters</a></h2>
+<p>To create a parameter, use <code>AudioManager::add_parameter</code> and provide an initial
+value of your choice:</p>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span>use kira::manager::{AudioManager, AudioManagerSettings};
+use kira_cpal::CpalBackend;
+
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
+let mut parameter = manager.add_parameter(1.0)?;
+<span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<p>At any time, you can smoothly transition the parameter to a new value by using
+<code>ParameterHandle::set</code>.</p>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span>use std::time::Duration;
+
+use kira::{
+	manager::{AudioManager, AudioManagerSettings},
+	tween::Tween,
+};
+use kira_cpal::CpalBackend;
+
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
+let mut parameter = manager.add_parameter(1.0)?;
+parameter.set(
+	2.0,
+	Tween {
+		duration: Duration::from_secs(2),
+		..Default::default()
+	},
+)?;
+<span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
+</span>
+<span class="boring">}
+</span></code></pre></pre>
+<p>If you'd like to instantaneously set the value, you can use the default <code>Tween</code>,
+which is fast enough to <em>feel</em> instantaneous, but still slow enough to avoid
+creating audio artifacts like pops and crackles.</p>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span><span class="boring">use std::time::Duration;
+</span><span class="boring">
+</span><span class="boring">use kira::{
+</span><span class="boring">	manager::{AudioManager, AudioManagerSettings},
+</span><span class="boring">	tween::Tween,
+</span><span class="boring">};
+</span><span class="boring">use kira_cpal::CpalBackend;
+</span><span class="boring">
+</span><span class="boring">let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
+</span><span class="boring">let mut parameter = manager.add_parameter(1.0)?;
+</span>parameter.set(2.0, Tween::default())?;
+<span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<h2 id="using-parameters"><a class="header" href="#using-parameters">Using parameters</a></h2>
+<p>Many settings can be linked to parameters. In this example, the playback rate of
+a sound is linked directly to a parameter. It will start out at normal speed,
+and speed up to 2x speed over the course of 2 seconds.</p>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span>use std::time::Duration;
+
+use kira::{
+	manager::{AudioManager, AudioManagerSettings},
+	sound::static_sound::StaticSoundSettings,
+	tween::Tween,
+};
+use kira_cpal::CpalBackend;
+
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
+let mut parameter = manager.add_parameter(1.0)?;
+manager.play(kira_loaders::load(
+	&quot;sound.ogg&quot;,
+	StaticSoundSettings::new().playback_rate(&amp;parameter),
+)?)?;
+parameter.set(
+	2.0,
+	Tween {
+		duration: Duration::from_secs(2),
+		..Default::default()
+	},
+)?;
+<span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<h2 id="custom-mappings"><a class="header" href="#custom-mappings">Custom mappings</a></h2>
+<p>Multiple settings can be linked to the same parameter. In this case, we may want
+different settings to have different relationships to the parameter. We can do
+this using <code>Mapping</code>s.</p>
+<p>Say that when a character in a game enters water, we want certain sounds to
+become more muffled and quieter. To accomplish this effect, we need to change
+two settings:</p>
+<ul>
+<li>A filter cutoff in <strong>Hz</strong>, which controls how muffled the sound is</li>
+<li>A volume level, which is a factor of the sound's normal volume</li>
+</ul>
+<p>We'll start by arbitrarily deciding that our parameter should stay in a range of
+<code>0.0</code> to <code>1.0</code>, where <code>0.0</code> is not underwater at all and <code>1.0</code> is fully
+submerged.</p>
+<p>We want the filter cutoff to be at <code>20_000.0</code> Hz when the parameter is set to
+<code>0.0</code> and <code>2_000.0</code> Hz when the parameter is set to <code>1.0</code>. To do that, we'll use
+this mapping:</p>
+<pre><code class="language-rust  ignore">Mapping {
+	input_range: (0.0, 1.0),
+	output_range: (20_000.0, 2_000.0),
+	..Default::default()
+}
+</code></pre>
+<p>We want the volume to be <code>1.0</code> when the parameter is set to <code>0.0</code> and <code>0.5</code> when
+the parameter is set to <code>1.0</code>. To do that, we'll use this mapping:</p>
+<pre><code class="language-rust  ignore">Mapping {
+	input_range: (0.0, 1.0),
+	output_range: (1.0, 0.5),
+	..Default::default()
+}
+</code></pre>
+<p>Note that in both of these cases, the second value of the output range is less
+than the first value. This is perfectly valid and means that as the parameter
+increases, the resulting value will decrease.</p>
+<p>The full code would look something like this:</p>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span>use std::time::Duration;
+
+use kira::{
+	manager::{AudioManager, AudioManagerSettings},
+	track::{
+		TrackSettings,
+		effect::filter::{Filter, FilterSettings},
+	},
+	tween::Tween,
+	value::{Mapping, Value},
+};
+use kira_cpal::CpalBackend;
+
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
+let mut underwater_parameter = manager.add_parameter(0.0)?;
+manager.add_sub_track(
+	TrackSettings::new()
+		.volume(Value::Parameter {
+			id: underwater_parameter.id(),
+			mapping: Mapping {
+				input_range: (0.0, 1.0),
+				output_range: (1.0, 0.5),
+				..Default::default()
+			},
+		})
+		.with_effect(Filter::new(FilterSettings::new().cutoff(
+			Value::Parameter {
+				id: underwater_parameter.id(),
+				mapping: Mapping {
+					input_range: (0.0, 1.0),
+					output_range: (20_000.0, 2_000.0),
+					..Default::default()
+				},
+			},
+		))),
+)?;
+underwater_parameter.set(
+	1.0,
+	Tween {
+		duration: Duration::from_secs(2),
+		..Default::default()
+	},
+)?;
+<span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="the-mixer"><a class="header" href="#the-mixer">The Mixer</a></h1>
+<p>Kira has an internal mixer which works like a real-life mixing console. Sounds
+can be played on &quot;tracks&quot;, which are individual streams of audio that can
+optionally have effects that modify the audio.</p>
+<h2 id="creating-and-using-tracks"><a class="header" href="#creating-and-using-tracks">Creating and using tracks</a></h2>
+<p>The mixer has a &quot;main&quot; track by default, and you can add any number of
+sub-tracks. To add a sub-track, use <code>AudioManager::add_sub_track</code>.</p>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span><span class="boring">use std::error::Error;
+</span>use kira::{
+    manager::{AudioManager, AudioManagerSettings},
+    track::TrackSettings,
+};
+use kira_cpal::CpalBackend;
+
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
+let track = manager.add_sub_track(TrackSettings::default())?;
+<span class="boring">Result::&lt;(), Box&lt;dyn Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<p>You can configure what track a sound will play on by modifying its settings.
+This example uses <code>StaticSoundSettings</code>, but the streaming sound interface from
+<a href="https://crates.io/crates/kira-loaders"><code>kira-loaders</code></a> provides the same
+option.</p>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span><span class="boring">use std::error::Error;
+</span>use kira::{
+	manager::{AudioManager, AudioManagerSettings},
+    sound::static_sound::StaticSoundSettings,
+	track::TrackSettings,
+};
+use kira_cpal::CpalBackend;
+
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
+let track = manager.add_sub_track(TrackSettings::default())?;
+manager.play(kira_loaders::load(
+    &quot;sound.ogg&quot;,
+    StaticSoundSettings::new().track(&amp;track),
+)?)?;
+<span class="boring">Result::&lt;(), Box&lt;dyn Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<p>You can set the volume and panning of a track using <code>TrackHandle::set_volume</code>
+and <code>TrackHandle::set_panning</code>, respectively. The volume and panning settings
+will affect all sounds being played on the track.</p>
+<h2 id="effects"><a class="header" href="#effects">Effects</a></h2>
+<p>You can add effects to the track when creating it using
+<code>TrackSettings::with_effect</code>. All sounds that are played on that track will have
+the effects applied sequentially.</p>
+<p>In this example, we'll use the <code>Filter</code> effect, which in the low pass mode will
+remove high frequencies from sounds, making them sound muffled.</p>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span><span class="boring">use std::error::Error;
+</span>use kira::{
+	manager::{AudioManager, AudioManagerSettings},
+    sound::static_sound::StaticSoundSettings,
+	track::{
+        TrackSettings,
+        effect::filter::{Filter, FilterSettings},
+    },
+};
+use kira_cpal::CpalBackend;
+
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
+let track = manager.add_sub_track(
+    TrackSettings::new()
+        .with_effect(Filter::new(FilterSettings::new().cutoff(1000.0))),
+)?;
+manager.play(kira_loaders::load(
+    &quot;sound.ogg&quot;,
+    StaticSoundSettings::new().track(&amp;track),
+)?)?;
+<span class="boring">Result::&lt;(), Box&lt;dyn Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<h2 id="track-routing"><a class="header" href="#track-routing">Track routing</a></h2>
+<p>By default, the output of all sub-tracks will be fed into the input of the main
+mixer track without any volume change. It can be useful to customize this
+behavior.</p>
+<p>Let's say we want to be able to control the volume level of gameplay sounds
+separately from music. We may also want to apply effects to gameplay sounds that
+come from the player specifically.</p>
+<p>We'll end up with a hierarchy like this:</p>
+<pre><code class="language-text">       ┌──────────┐
+       │Main track│
+       └─▲──────▲─┘
+         │      │
+         │      │
+    ┌────┴─┐   ┌┴────┐
+    │Sounds│   │Music│
+    └──▲───┘   └─────┘
+       │
+┌──────┴──────┐
+│Player sounds│
+└─────────────┘
+</code></pre>
+<p>We can set up the <code>sounds</code> and <code>player_sounds</code> hierarchy using <code>TrackRoutes</code>.</p>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span><span class="boring">use std::error::Error;
+</span>use kira::{
+	manager::{AudioManager, AudioManagerSettings},
+	track::{TrackRoutes, TrackSettings},
+};
+use kira_cpal::CpalBackend;
+
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
+let sounds = manager.add_sub_track(TrackSettings::default())?;
+let player_sounds = manager
+    .add_sub_track(TrackSettings::new().routes(TrackRoutes::parent(&amp;sounds)))?;
+<span class="boring">Result::&lt;(), Box&lt;dyn Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<p>The default <code>TrackRoutes</code> has a single route to the main mixer track.
+<code>TrackRoutes::parent</code> will instead create a single route to the track of your
+choosing.</p>
+<p>You can also have one track feed its audio into multiple other tracks. This can
+be useful for sharing effects between tracks.</p>
+<p>For example, let's say we have our sounds split up into player sounds and
+ambience. This game takes place in a vast cave, so we want all of the sounds to
+have a reverb effect. We want the ambience to have more reverb than the player
+sounds so that it feels farther away.</p>
+<p>We could put separate reverb effects on both the <code>player</code> and <code>ambience</code> tracks.
+Since both the player and the ambient sounds are in the same cave, we'll use the
+same settings for both reverb effects, but we'll increase the <code>mix</code> setting for
+the ambience, since ambient sounds are supposed to have more reverb. This has
+some downsides, however:</p>
+<ul>
+<li>Since most of the settings are supposed to be the same between the two tracks,
+if we want to change the reverb settings, we have to change them in two
+different places.</li>
+<li>We have two separate reverb effects running, which has a higher CPU cost than
+if we just had one.</li>
+</ul>
+<p>A better alternative would be to make a separate reverb track that both the
+<code>player</code> and <code>ambience</code> tracks are routed to.</p>
+<pre><code class="language-text">        ┌──────────┐
+   ┌────►Main track◄───────┐
+   │    └─▲────────┘       │
+   │      │                │
+   │      │            ┌───┴──┐
+   │ ┌────┼────────────►Reverb│
+   │ │    │            └──▲───┘
+   │ │    │               │
+   │ │    │               │
+┌──┴─┴─┐  │   ┌────────┐  │
+│Player│  └───┤Ambience├──┘
+└──────┘      └────────┘
+</code></pre>
+<p>Here's what this looks like in practice:</p>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span><span class="boring">use std::error::Error;
+</span>use kira::{
+	manager::{AudioManager, AudioManagerSettings},
+	track::{
+        TrackRoutes, TrackSettings,
+        effect::reverb::{Reverb, ReverbSettings},
+    },
+};
+use kira_cpal::CpalBackend;
+
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
+let reverb = manager.add_sub_track(
+    TrackSettings::new()
+        .with_effect(Reverb::new(ReverbSettings::new().mix(1.0))),
+)?;
+let player = manager.add_sub_track(
+    TrackSettings::new().routes(TrackRoutes::new().with_route(&amp;reverb, 0.25)),
+);
+let ambience = manager.add_sub_track(
+    TrackSettings::new().routes(TrackRoutes::new().with_route(&amp;reverb, 0.5)),
+);
+<span class="boring">Result::&lt;(), Box&lt;dyn Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<p>Let's look at this one step at a time:</p>
+<pre><code class="language-rust  ignore">let reverb = manager.add_sub_track(
+    TrackSettings::new()
+        .with_effect(Reverb::new(ReverbSettings::new().mix(1.0))),
+)?;
+</code></pre>
+<p>We create the <code>reverb</code> track with a <code>Reverb</code> effect. We set the <code>mix</code> to <code>1.0</code>
+so that only the reverb signal is output from this track. We don't need any of
+the dry signal to come out of this track, since the <code>player</code> and <code>ambience</code>
+tracks will already be outputting their dry signal to the main track.</p>
+<pre><code class="language-rust  ignore">let player = manager.add_sub_track(
+    TrackSettings::new().routes(TrackRoutes::new().with_route(&amp;reverb, 0.25)),
+);
+</code></pre>
+<p>We create the <code>player</code> track with two routes:</p>
+<ul>
+<li>The route to the main track with 100% volume. We don't have to set this one
+explicitly because <code>TrackRoutes::new()</code> adds that route by default.</li>
+<li>The route to the <code>reverb</code> track with 25% volume.</li>
+</ul>
+<pre><code class="language-rust  ignore">let ambience = manager.add_sub_track(
+    TrackSettings::new().routes(TrackRoutes::new().with_route(&amp;reverb, 0.5)),
+);
+</code></pre>
+<p>The <code>ambience</code> track is set up the same way, except the route to the <code>reverb</code>
+track has 50% volume, giving us more reverb for these sounds.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="clocks"><a class="header" href="#clocks">Clocks</a></h1>
+<h2 id="creating-clocks"><a class="header" href="#creating-clocks">Creating clocks</a></h2>
+<p>Clocks can be used to set the start times of sounds and tweens. To create a
+clock, use <code>AudioManager::add_clock</code>.</p>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span>use kira::manager::{AudioManager, AudioManagerSettings};
+use kira_cpal::CpalBackend;
+
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
+let mut clock = manager.add_clock(0.5)?;
+clock.start()?;
+<span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<p>When you create a clock, you have to specify the <strong>interval</strong> in seconds, which
+determines how much time there is between clock ticks. In this example, the
+clock has an interval of half a second, which means it ticks twice per second.</p>
+<p>Clocks are stopped when you first create them, so be sure to explicitly call
+<code>ClockHandle::start</code> when you want the clock to start ticking.</p>
+<h2 id="starting-sounds-on-clock-ticks"><a class="header" href="#starting-sounds-on-clock-ticks">Starting sounds on clock ticks</a></h2>
+<p>Static sounds (and streaming sounds from the
+<a href="https://crates.io/crates/kira-streaming"><code>kira-streaming</code></a> crate) can be set to
+only start playing when a clock has ticked a certain number of times. You can
+configure this using <code>StaticSoundSettings::start_time</code>.</p>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span>use kira::{
+	clock::ClockTime,
+	manager::{AudioManager, AudioManagerSettings},
+	sound::static_sound::StaticSoundSettings,
+	StartTime,
+};
+use kira_cpal::CpalBackend;
+
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
+let mut clock = manager.add_clock(0.5)?;
+manager.play(kira_loaders::load(
+	&quot;sound.ogg&quot;,
+	StaticSoundSettings::new().start_time(StartTime::ClockTime(ClockTime {
+		clock: clock.id(),
+		ticks: 4,
+	})),
+)?)?;
+clock.start()?;
+<span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<p>As a shorthand, you can pass the <code>ClockTime</code> directly into
+<code>StaticSoundSettings::start_time</code>.</p>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span><span class="boring">use kira::{
+</span><span class="boring">	clock::ClockTime,
+</span><span class="boring">	manager::{AudioManager, AudioManagerSettings},
+</span><span class="boring">	sound::static_sound::StaticSoundSettings,
+</span><span class="boring">	StartTime,
+</span><span class="boring">};
+</span><span class="boring">use kira_cpal::CpalBackend;
+</span><span class="boring">
+</span><span class="boring">let mut manager = AudioManager::new(
+</span><span class="boring">	CpalBackend::new()?,
+</span><span class="boring">	AudioManagerSettings::default(),
+</span><span class="boring">)?;
+</span><span class="boring">let mut clock = manager.add_clock(0.5)?;
+</span>manager.play(kira_loaders::load(
+	&quot;sound.ogg&quot;,
+	StaticSoundSettings::new().start_time(ClockTime {
+		clock: clock.id(),
+		ticks: 4,
+	}),
+)?)?;
+<span class="boring">clock.start()?;
+</span><span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<p>As an even shorter hand, you can use <code>ClockHandle::time</code> to get the clock's
+current <code>ClockTime</code>, and then add to it to get a time in the future:</p>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span>use kira::{
+	manager::{AudioManager, AudioManagerSettings},
+	sound::static_sound::StaticSoundSettings,
+};
+use kira_cpal::CpalBackend;
+
+<span class="boring">let mut manager = AudioManager::new(
+</span><span class="boring">	CpalBackend::new()?,
+</span><span class="boring">	AudioManagerSettings::default(),
+</span><span class="boring">)?;
+</span><span class="boring">let mut clock = manager.add_clock(0.5)?;
+</span>manager.play(kira_loaders::load(
+	&quot;sound.ogg&quot;,
+	StaticSoundSettings::new().start_time(clock.time() + 4),
+)?)?;
+<span class="boring">clock.start()?;
+</span><span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<h2 id="starting-tweens-on-clock-ticks"><a class="header" href="#starting-tweens-on-clock-ticks">Starting tweens on clock ticks</a></h2>
+<p>You can also use clocks to set the start time of tweens. In this example, we set
+a parameter to start tweening when a clock reaches a certain tick:</p>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span>use std::time::Duration;
+
+use kira::{
+	manager::{AudioManager, AudioManagerSettings},
+	tween::Tween,
+	StartTime,
+};
+use kira_cpal::CpalBackend;
+
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
+let mut clock = manager.add_clock(0.5)?;
+let mut parameter = manager.add_parameter(1.0)?;
+parameter.set(
+	2.0,
+	Tween {
+		duration: Duration::from_secs(2),
+		start_time: StartTime::ClockTime(clock.time() + 3),
+		..Default::default()
+	},
+)?;
+clock.start()?;
+<span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="creating-sound-implementations"><a class="header" href="#creating-sound-implementations">Creating <code>Sound</code> Implementations</a></h1>
+<p>Sounds in Kira have two phases:</p>
+<ol>
+<li>The <code>SoundData</code> phase: the user has created a sound, but it is not yet
+producing sound on the audio thread. If the sound data has settings,
+theyshould still be customizable at this point.</li>
+<li>The <code>Sound</code> phase: the user has played the sound using <code>AudioManager::play</code>,
+which transfers ownership to the audio thread.</li>
+</ol>
+<p>The <code>SoundData</code> trait has the <code>into_sound</code> function, which &quot;splits&quot; the sound
+data into the live <code>Sound</code> and a <code>Handle</code> which the user can use to control the
+sound from gameplay code.</p>
+<p><code>Sound</code>s simply produce a <code>Frame</code> of audio each time <code>process</code> is called. A
+<code>Sound</code> can be a finite chunk of audio, an infinite stream of audio (e.g. voice
+chat), or anything else.</p>
+<p>Kira does not provide any tools for passing messages from gameplay code to a
+<code>Sound</code> or vice versa. (Internally, Kira uses the
+<a href="https://crates.io/crates/ringbuf"><code>ringbuf</code></a> crate for this purpose.)</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+            </nav>
+
+        </div>
+
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        <script type="text/javascript">
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+    </body>
+</html>
