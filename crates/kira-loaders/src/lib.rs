@@ -1,3 +1,78 @@
+/*!
+# kira-loaders
+
+Provides support for loading and streaming sounds from audio files
+in Kira.
+
+## Examples
+
+### Loading a sound into memory all at once
+
+```no_run
+use kira::{
+	manager::{backend::MockBackend, AudioManager, AudioManagerSettings},
+	sound::static_sound::StaticSoundSettings,
+};
+
+const SAMPLE_RATE: u32 = 48_000;
+let mut manager = AudioManager::new(
+	MockBackend::new(SAMPLE_RATE),
+	AudioManagerSettings::default(),
+)
+.unwrap();
+manager.play(kira_loaders::load(
+	"sound.ogg",
+	StaticSoundSettings::default(),
+)?)?;
+# Result::<(), Box<dyn std::error::Error>>::Ok(())
+```
+
+### Streaming a sound from disk
+
+```no_run
+use kira::manager::{backend::MockBackend, AudioManager, AudioManagerSettings};
+use kira_loaders::StreamingSoundSettings;
+
+const SAMPLE_RATE: u32 = 48_000;
+let mut manager = AudioManager::new(
+	MockBackend::new(SAMPLE_RATE),
+	AudioManagerSettings::default(),
+)
+.unwrap();
+manager.play(kira_loaders::stream(
+	"sound.ogg",
+	StreamingSoundSettings::default(),
+)?)?;
+# Result::<(), Box<dyn std::error::Error>>::Ok(())
+```
+
+## Static vs. streaming sounds
+
+`kira-loaders` can load entire sounds into memory, but it can also
+stream them from the disk in real-time. This reduces the amount of
+memory needed to play large audio files.
+
+The [`stream`] function takes a [`StreamingSoundSettings`] argument,
+which is almost the same as [`StaticSoundSettings`]. Similarly,
+[`StreamingSoundHandle`]s are very similar to
+[`StaticSoundHandle`](kira::sound::static_sound::StaticSoundHandle)s.
+
+Streaming sounds have some disadvantages compared to static sounds:
+
+- Streaming sounds require more CPU power.
+- There may be a longer delay between when you call
+  [`AudioManager::play`](kira::manager::AudioManager::play) and
+  when the sound actually starts playing.
+- Seeking the sound may also have a longer delay.
+- If the file cannot be read from the disk fast enough, there will be hiccups in
+  the sound playback. (This will not affect other sounds, though.)
+- Backwards playback is not supported.
+- [`StreamingSoundData`] cannot be cloned.
+*/
+
+#![warn(missing_docs)]
+#![allow(clippy::tabs_in_doc_comments)]
+
 mod streaming;
 
 use kira::{
@@ -14,13 +89,20 @@ use symphonia::core::{
 
 use std::{fmt::Display, fs::File, path::Path, sync::Arc};
 
+/// Errors that can occur when loading or streaming an audio file.
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum Error {
+	/// Could not determine the default audio track in the file.
 	NoDefaultTrack,
+	/// Could not determine the sample rate of the audio.
 	UnknownSampleRate,
+	/// The audio uses an unsupported channel configuration. Only
+	/// mono and stereo audio is supported.
 	UnsupportedChannelConfiguration,
+	/// An error occurred while reading the file from the filesystem.
 	IoError(std::io::Error),
+	/// An error occurred when parsing the file.
 	SymphoniaError(symphonia::core::errors::Error),
 }
 
@@ -62,6 +144,7 @@ impl From<symphonia::core::errors::Error> for Error {
 	}
 }
 
+/// Loads an audio file into a [`StaticSoundData`].
 pub fn load(
 	path: impl AsRef<Path>,
 	settings: StaticSoundSettings,
@@ -109,6 +192,7 @@ pub fn load(
 	})
 }
 
+/// Creates a [`StreamingSoundData`] for an audio file.
 pub fn stream(
 	path: impl AsRef<Path>,
 	settings: StreamingSoundSettings,

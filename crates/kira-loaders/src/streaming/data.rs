@@ -11,11 +11,13 @@ use super::sound::StreamingSound;
 const COMMAND_BUFFER_CAPACITY: usize = 8;
 const ERROR_BUFFER_CAPACITY: usize = 8;
 
+/// A streaming sound that is not playing yet.
 pub struct StreamingSoundData {
 	pub(crate) format_reader: Box<dyn FormatReader>,
 	pub(crate) decoder: Box<dyn Decoder>,
 	pub(crate) sample_rate: u32,
 	pub(crate) track_id: u32,
+	/// Settings for the streaming sound.
 	pub settings: StreamingSoundSettings,
 }
 
