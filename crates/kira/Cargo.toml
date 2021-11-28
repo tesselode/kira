@@ -11,5 +11,5 @@ categories = ["game-development", "multimedia::audio"]
 readme = "../../readme.md"
 
 [dependencies]
-atomic-arena = { git = "https://github.com/tesselode/atomic-arena", rev = "f761a7d" }
+atomic-arena = "0.1.0"
 ringbuf = "0.2.3"
