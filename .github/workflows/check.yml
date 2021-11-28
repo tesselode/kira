@@ -19,8 +19,6 @@ jobs:
         run: cargo build -p kira-cpal
       - name: build kira-cpal with assert-no-alloc feature
         run: cargo build -p kira-cpal --features assert_no_alloc
-      - name: build kira-effects
-        run: cargo build -p kira-effects
       - name: build kira-loaders
         run: cargo build -p kira-loaders
       - name: run tests

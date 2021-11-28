@@ -1,6 +1,6 @@
 //! Adds echoes to a sound.
 
-use kira::{
+use crate::{
 	dsp::{interpolate_frame, Frame},
 	parameter::Parameters,
 	track::Effect,

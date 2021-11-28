@@ -153,12 +153,14 @@ use std::time::Duration;
 
 use kira::{
 	manager::{AudioManager, AudioManagerSettings},
-	track::TrackSettings,
+	track::{
+		TrackSettings,
+		effect::filter::{Filter, FilterSettings},
+	},
 	tween::Tween,
 	value::{Mapping, Value},
 };
 use kira_cpal::CpalBackend;
-use kira_effects::filter::{Filter, FilterSettings};
 
 let mut manager = AudioManager::new(
 	CpalBackend::new()?,

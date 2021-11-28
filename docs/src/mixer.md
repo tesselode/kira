@@ -61,19 +61,20 @@ You can add effects to the track when creating it using
 `TrackSettings::with_effect`. All sounds that are played on that track will have
 the effects applied sequentially.
 
-In this example, we'll use the `Filter` effect from
-[`kira-effects`](https://crates.io/crates/kira-effects), which in the low pass
-mode will remove high frequencies from sounds, making them sound muffled.
+In this example, we'll use the `Filter` effect, which in the low pass mode will
+remove high frequencies from sounds, making them sound muffled.
 
 ```rust ,no_run
 # use std::error::Error;
 use kira::{
 	manager::{AudioManager, AudioManagerSettings},
     sound::static_sound::StaticSoundSettings,
-	track::TrackSettings,
+	track::{
+        TrackSettings,
+        effect::filter::{Filter, FilterSettings},
+    },
 };
 use kira_cpal::CpalBackend;
-use kira_effects::filter::{Filter, FilterSettings};
 
 let mut manager = AudioManager::new(
 	CpalBackend::new()?,
@@ -185,10 +186,12 @@ Here's what this looks like in practice:
 # use std::error::Error;
 use kira::{
 	manager::{AudioManager, AudioManagerSettings},
-	track::{TrackRoutes, TrackSettings},
+	track::{
+        TrackRoutes, TrackSettings,
+        effect::reverb::{Reverb, ReverbSettings},
+    },
 };
 use kira_cpal::CpalBackend;
-use kira_effects::reverb::{Reverb, ReverbSettings};
 
 let mut manager = AudioManager::new(
 	CpalBackend::new()?,

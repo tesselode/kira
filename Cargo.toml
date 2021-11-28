@@ -2,7 +2,6 @@
 members = [
 	"crates/kira",
 	"crates/kira-cpal",
-	"crates/kira-effects",
 	"crates/kira-loaders",
 ]
 

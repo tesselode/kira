@@ -1,3 +1,10 @@
+//! Modifies audio signals.
+
+pub mod delay;
+pub mod distortion;
+pub mod filter;
+pub mod reverb;
+
 use crate::{dsp::Frame, parameter::Parameters};
 
 /// Receives input audio from a mixer track and outputs modified audio.

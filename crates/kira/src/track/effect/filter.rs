@@ -2,7 +2,7 @@
 
 use std::f64::consts::PI;
 
-use kira::{
+use crate::{
 	dsp::Frame,
 	parameter::Parameters,
 	track::Effect,

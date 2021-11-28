@@ -78,16 +78,17 @@ This makes the audio sound muffled.
 ```rust ,no_run
 # extern crate kira;
 # extern crate kira_cpal;
-# extern crate kira_effects;
 # extern crate kira_loaders;
 #
 use kira::{
 	manager::{AudioManager, AudioManagerSettings},
 	sound::static_sound::StaticSoundSettings,
-	track::TrackSettings,
+	track::{
+		TrackSettings,
+		effect::filter::{Filter, FilterSettings}
+	},
 };
 use kira_cpal::CpalBackend;
-use kira_effects::filter::{Filter, FilterSettings};
 
 let mut manager = AudioManager::new(
 	CpalBackend::new()?,

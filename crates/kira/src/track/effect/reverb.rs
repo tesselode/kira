@@ -1,13 +1,13 @@
 //! Adds reverberations to a sound.
 
-use all_pass::AllPassFilter;
-use comb::CombFilter;
-use kira::{
+use crate::{
 	dsp::Frame,
 	parameter::Parameters,
 	track::Effect,
 	value::{CachedValue, Value},
 };
+use all_pass::AllPassFilter;
+use comb::CombFilter;
 
 mod all_pass;
 mod comb;

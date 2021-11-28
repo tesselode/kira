@@ -1,11 +1,10 @@
 //! Organizes and applies effects to audio.
 
-mod effect;
+pub mod effect;
 mod handle;
 mod routes;
 mod settings;
 
-pub use effect::*;
 pub use handle::*;
 pub use routes::*;
 pub use settings::*;
@@ -23,6 +22,8 @@ use crate::{
 	parameter::Parameters,
 	value::{CachedValue, Value},
 };
+
+use self::effect::Effect;
 
 /// A unique identifier for a mixer sub-track.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

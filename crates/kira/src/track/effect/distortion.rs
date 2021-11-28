@@ -1,6 +1,6 @@
 //! Makes a sound harsher and noisier.
 
-use kira::{
+use crate::{
 	dsp::Frame,
 	parameter::Parameters,
 	track::Effect,

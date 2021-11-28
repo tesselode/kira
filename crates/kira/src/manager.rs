@@ -13,7 +13,7 @@ use crate::{
 	error::CommandError,
 	parameter::{Parameter, ParameterHandle, ParameterId},
 	sound::SoundData,
-	track::{Effect, SubTrackId, Track, TrackHandle, TrackId, TrackSettings},
+	track::{effect::Effect, SubTrackId, Track, TrackHandle, TrackId, TrackSettings},
 	tween::Tween,
 	value::Value,
 };
