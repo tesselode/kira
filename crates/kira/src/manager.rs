@@ -173,16 +173,6 @@ impl<B: Backend> AudioManager<B> {
 		})
 	}
 
-	/// Returns a mutable reference to this manager's backend.
-	pub fn backend_mut(&mut self) -> &mut B {
-		&mut self.backend
-	}
-
-	/// Returns the current playback state of the audio.
-	pub fn state(&self) -> MainPlaybackState {
-		self.context.state()
-	}
-
 	/// Plays a sound.
 	pub fn play<D: SoundData>(
 		&mut self,
@@ -261,6 +251,16 @@ impl<B: Backend> AudioManager<B> {
 		Ok(handle)
 	}
 
+	/// Fades out and pauses all audio.
+	pub fn pause(&mut self, fade_out_tween: Tween) -> Result<(), CommandError> {
+		self.command_producer.push(Command::Pause(fade_out_tween))
+	}
+
+	/// Resumes and fades in all audio.
+	pub fn resume(&mut self, fade_out_tween: Tween) -> Result<(), CommandError> {
+		self.command_producer.push(Command::Resume(fade_out_tween))
+	}
+
 	/// Returns a handle to the main mixer track.
 	pub fn main_track(&self) -> TrackHandle {
 		TrackHandle {
@@ -270,13 +270,53 @@ impl<B: Backend> AudioManager<B> {
 		}
 	}
 
-	/// Fades out and pauses all audio.
-	pub fn pause(&mut self, fade_out_tween: Tween) -> Result<(), CommandError> {
-		self.command_producer.push(Command::Pause(fade_out_tween))
+	/// Returns the current playback state of the audio.
+	pub fn state(&self) -> MainPlaybackState {
+		self.context.state()
 	}
 
-	/// Resumes and fades in all audio.
-	pub fn resume(&mut self, fade_out_tween: Tween) -> Result<(), CommandError> {
-		self.command_producer.push(Command::Resume(fade_out_tween))
+	/// Returns the number of sounds that can be loaded at a time.
+	pub fn sound_capacity(&self) -> usize {
+		self.resource_controllers.sound_controller.capacity()
+	}
+
+	/// Returns the number of parameters that can exist at a time.
+	pub fn parameter_capacity(&self) -> usize {
+		self.resource_controllers.parameter_controller.capacity()
+	}
+
+	/// Returns the number of mixer sub-tracks that can exist at a time.
+	pub fn sub_track_capacity(&self) -> usize {
+		self.resource_controllers.sub_track_controller.capacity()
+	}
+
+	/// Returns the number of clocks that can exist at a time.
+	pub fn clock_capacity(&self) -> usize {
+		self.resource_controllers.clock_controller.capacity()
+	}
+
+	/// Returns the number of sounds that are currently loaded.
+	pub fn num_sounds(&self) -> usize {
+		self.resource_controllers.sound_controller.len()
+	}
+
+	/// Returns the number of parameters that currently exist.
+	pub fn num_parameters(&self) -> usize {
+		self.resource_controllers.parameter_controller.len()
+	}
+
+	/// Returns the number of mixer sub-tracks that currently exist.
+	pub fn num_sub_tracks(&self) -> usize {
+		self.resource_controllers.sub_track_controller.len()
+	}
+
+	/// Returns the number of clocks that currently exist.
+	pub fn num_clocks(&self) -> usize {
+		self.resource_controllers.clock_controller.len()
+	}
+
+	/// Returns a mutable reference to this manager's backend.
+	pub fn backend_mut(&mut self) -> &mut B {
+		&mut self.backend
 	}
 }
