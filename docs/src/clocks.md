@@ -6,6 +6,9 @@ Clocks can be used to set the start times of sounds and tweens. To create a
 clock, use `AudioManager::add_clock`.
 
 ```rust ,no_run
+# extern crate kira;
+# extern crate kira_cpal;
+# extern crate kira_loaders;
 use kira::manager::{AudioManager, AudioManagerSettings};
 use kira_cpal::CpalBackend;
 
@@ -33,6 +36,9 @@ only start playing when a clock has ticked a certain number of times. You can
 configure this using `StaticSoundSettings::start_time`.
 
 ```rust ,no_run
+# extern crate kira;
+# extern crate kira_cpal;
+# extern crate kira_loaders;
 use kira::{
 	clock::ClockTime,
 	manager::{AudioManager, AudioManagerSettings},
@@ -61,6 +67,9 @@ As a shorthand, you can pass the `ClockTime` directly into
 `StaticSoundSettings::start_time`.
 
 ```rust ,no_run
+# extern crate kira;
+# extern crate kira_cpal;
+# extern crate kira_loaders;
 # use kira::{
 # 	clock::ClockTime,
 # 	manager::{AudioManager, AudioManagerSettings},
@@ -89,6 +98,9 @@ As an even shorter hand, you can use `ClockHandle::time` to get the clock's
 current `ClockTime`, and then add to it to get a time in the future:
 
 ```rust ,no_run
+# extern crate kira;
+# extern crate kira_cpal;
+# extern crate kira_loaders;
 use kira::{
 	manager::{AudioManager, AudioManagerSettings},
 	sound::static_sound::StaticSoundSettings,
@@ -114,6 +126,9 @@ You can also use clocks to set the start time of tweens. In this example, we set
 a parameter to start tweening when a clock reaches a certain tick:
 
 ```rust ,no_run
+# extern crate kira;
+# extern crate kira_cpal;
+# extern crate kira_loaders;
 use std::time::Duration;
 
 use kira::{

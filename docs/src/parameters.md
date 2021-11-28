@@ -9,6 +9,9 @@ To create a parameter, use `AudioManager::add_parameter` and provide an initial
 value of your choice:
 
 ```rust ,no_run
+# extern crate kira;
+# extern crate kira_cpal;
+# extern crate kira_loaders;
 use kira::manager::{AudioManager, AudioManagerSettings};
 use kira_cpal::CpalBackend;
 
@@ -24,6 +27,9 @@ At any time, you can smoothly transition the parameter to a new value by using
 `ParameterHandle::set`.
 
 ```rust ,no_run
+# extern crate kira;
+# extern crate kira_cpal;
+# extern crate kira_loaders;
 use std::time::Duration;
 
 use kira::{
@@ -53,6 +59,9 @@ which is fast enough to _feel_ instantaneous, but still slow enough to avoid
 creating audio artifacts like pops and crackles.
 
 ```rust ,no_run
+# extern crate kira;
+# extern crate kira_cpal;
+# extern crate kira_loaders;
 # use std::time::Duration;
 #
 # use kira::{
@@ -74,6 +83,9 @@ a sound is linked directly to a parameter. It will start out at normal speed,
 and speed up to 2x speed over the course of 2 seconds.
 
 ```rust ,no_run
+# extern crate kira;
+# extern crate kira_cpal;
+# extern crate kira_loaders;
 use std::time::Duration;
 
 use kira::{
@@ -149,6 +161,9 @@ increases, the resulting value will decrease.
 The full code would look something like this:
 
 ```rust ,no_run
+# extern crate kira;
+# extern crate kira_cpal;
+# extern crate kira_loaders;
 use std::time::Duration;
 
 use kira::{

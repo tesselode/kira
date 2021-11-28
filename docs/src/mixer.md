@@ -10,6 +10,9 @@ The mixer has a "main" track by default, and you can add any number of
 sub-tracks. To add a sub-track, use `AudioManager::add_sub_track`.
 
 ```rust ,no_run
+# extern crate kira;
+# extern crate kira_cpal;
+# extern crate kira_loaders;
 # use std::error::Error;
 use kira::{
     manager::{AudioManager, AudioManagerSettings},
@@ -31,6 +34,9 @@ This example uses `StaticSoundSettings`, but the streaming sound interface from
 option.
 
 ```rust ,no_run
+# extern crate kira;
+# extern crate kira_cpal;
+# extern crate kira_loaders;
 # use std::error::Error;
 use kira::{
 	manager::{AudioManager, AudioManagerSettings},
@@ -65,6 +71,9 @@ In this example, we'll use the `Filter` effect, which in the low pass mode will
 remove high frequencies from sounds, making them sound muffled.
 
 ```rust ,no_run
+# extern crate kira;
+# extern crate kira_cpal;
+# extern crate kira_loaders;
 # use std::error::Error;
 use kira::{
 	manager::{AudioManager, AudioManagerSettings},
@@ -121,6 +130,9 @@ We'll end up with a hierarchy like this:
 We can set up the `sounds` and `player_sounds` hierarchy using `TrackRoutes`.
 
 ```rust ,no_run
+# extern crate kira;
+# extern crate kira_cpal;
+# extern crate kira_loaders;
 # use std::error::Error;
 use kira::{
 	manager::{AudioManager, AudioManagerSettings},
@@ -183,6 +195,9 @@ A better alternative would be to make a separate reverb track that both the
 Here's what this looks like in practice:
 
 ```rust ,no_run
+# extern crate kira;
+# extern crate kira_cpal;
+# extern crate kira_loaders;
 # use std::error::Error;
 use kira::{
 	manager::{AudioManager, AudioManagerSettings},

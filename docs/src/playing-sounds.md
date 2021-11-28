@@ -8,6 +8,9 @@ from files. For that, you should use
 `AudioManager::play` to play the sound.
 
 ```rust ,no_run
+# extern crate kira;
+# extern crate kira_cpal;
+# extern crate kira_loaders;
 use kira::{
 	manager::{AudioManager, AudioManagerSettings},
 	sound::static_sound::StaticSoundSettings,
@@ -27,6 +30,9 @@ If you want to play a sound multiple times, keep a copy of the `StaticSoundData`
 around and clone it each time you pass it to `AudioManager::play`.
 
 ```rust ,no_run
+# extern crate kira;
+# extern crate kira_cpal;
+# extern crate kira_loaders;
 use kira::{
 	manager::{AudioManager, AudioManagerSettings},
 	sound::static_sound::StaticSoundSettings,
@@ -49,6 +55,9 @@ Cloning a `StaticSoundData` is cheap, so it's perfectly fine to do this.
 information about the sound or modify it.
 
 ```rust ,no_run
+# extern crate kira;
+# extern crate kira_cpal;
+# extern crate kira_loaders;
 use kira::{
 	manager::{AudioManager, AudioManagerSettings},
 	sound::static_sound::{PlaybackState, StaticSoundSettings},
@@ -65,6 +74,7 @@ let mut sound = manager.play(sound_data)?;
 if sound.state() == PlaybackState::Playing {
 	sound.stop(Tween::default())?;
 }
+# Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
 ## Streaming sounds
