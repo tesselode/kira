@@ -8,7 +8,7 @@ description = "Expressive audio library for games"
 repository = "https://github.com/tesselode/kira"
 keywords = ["gamedev", "audio", "music"]
 categories = ["game-development", "multimedia::audio"]
-readme = "../../readme.md"
+readme = "../../README.md"
 
 [dependencies]
 atomic-arena = "0.1.0"

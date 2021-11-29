@@ -8,6 +8,7 @@ description = "Audio file loading and streaming for Kira"
 repository = "https://github.com/tesselode/kira"
 keywords = ["gamedev", "audio", "music"]
 categories = ["game-development", "multimedia::audio"]
+readme = "readme.md"
 
 [dependencies]
 kira = { path = "../kira" }

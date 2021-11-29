@@ -8,6 +8,7 @@ description = "Kira backend for desktop targets"
 repository = "https://github.com/tesselode/kira"
 keywords = ["gamedev", "audio", "music"]
 categories = ["game-development", "multimedia::audio"]
+readme = "readme.md"
 
 [dependencies]
 assert_no_alloc = { version = "1.1.2", optional = true }
