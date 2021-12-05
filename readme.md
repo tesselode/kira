@@ -28,7 +28,6 @@ manager.play(sound_data.clone())?;
 // After a couple seconds...
 manager.play(sound_data.clone())?;
 // Cloning the sound data will not use any extra memory.
-# Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
 ### Gradually speeding up a sound over time
