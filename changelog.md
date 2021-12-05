@@ -1,3 +1,7 @@
+# v0.6.0 beta 0 - December 4, 2021
+
+Complete rewrite, most things have changed
+
 # v0.5.3 - May 31, 2021
 
 - Fix an issue where the `AudioManager` cleanup would fail if there are existing
