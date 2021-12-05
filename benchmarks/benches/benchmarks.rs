@@ -4,7 +4,8 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use kira::{
 	dsp::Frame,
 	manager::{backend::MockBackend, AudioManager, AudioManagerSettings},
-	sound::static_sound::StaticSoundData,
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+	LoopBehavior,
 };
 
 fn create_test_sound(num_samples: usize) -> StaticSoundData {
@@ -18,7 +19,9 @@ fn create_test_sound(num_samples: usize) -> StaticSoundData {
 	StaticSoundData {
 		sample_rate: SAMPLE_RATE,
 		frames: Arc::new(frames),
-		settings: Default::default(),
+		settings: StaticSoundSettings::new().loop_behavior(LoopBehavior {
+			start_position: 0.0,
+		}),
 	}
 }
 
