@@ -1,4 +1,4 @@
-use kira::{track::TrackId, tween::Tween, value::Value, LoopBehavior, StartTime};
+use kira::{track::TrackId, tween::Tween, LoopBehavior, StartTime};
 
 /// Settings for a streaming sound.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -9,16 +9,16 @@ pub struct StreamingSoundSettings {
 	/// The initial playback position of the sound (in seconds).
 	pub start_position: f64,
 	/// The volume of the sound.
-	pub volume: Value,
+	pub volume: f64,
 	/// The playback rate of the sound, as a factor of the
 	/// normal playback rate.
 	///
 	/// Changing the playback rate will change both the speed
 	/// and the pitch of the sound.
-	pub playback_rate: Value,
+	pub playback_rate: f64,
 	/// The panning of the sound, where 0 is hard left
 	/// and 1 is hard right.
-	pub panning: Value,
+	pub panning: f64,
 	/// The looping behavior of the sound.
 	pub loop_behavior: Option<LoopBehavior>,
 	/// The mixer track this sound should play on.
@@ -33,9 +33,9 @@ impl StreamingSoundSettings {
 		Self {
 			start_time: StartTime::Immediate,
 			start_position: 0.0,
-			volume: Value::Fixed(1.0),
-			playback_rate: Value::Fixed(1.0),
-			panning: Value::Fixed(0.5),
+			volume: 1.0,
+			playback_rate: 1.0,
+			panning: 0.5,
 			loop_behavior: None,
 			track: TrackId::Main,
 			fade_in_tween: None,
@@ -44,10 +44,7 @@ impl StreamingSoundSettings {
 
 	/// Sets when the sound should start playing.
 	pub fn start_time(self, start_time: impl Into<StartTime>) -> Self {
-		Self {
-			start_time: start_time.into(),
-			..self
-		}
+		Self { start_time: start_time.into(), ..self }
 	}
 
 	/// Sets the initial playback position of the sound (in seconds).
@@ -59,11 +56,8 @@ impl StreamingSoundSettings {
 	}
 
 	/// Sets the volume of the sound.
-	pub fn volume(self, volume: impl Into<Value>) -> Self {
-		Self {
-			volume: volume.into(),
-			..self
-		}
+	pub fn volume(self, volume: f64) -> Self {
+		Self { volume, ..self }
 	}
 
 	/// Sets the playback rate of the sound, as a factor of the
@@ -71,20 +65,17 @@ impl StreamingSoundSettings {
 	///
 	/// Changing the playback rate will change both the speed
 	/// and the pitch of the sound.
-	pub fn playback_rate(self, playback_rate: impl Into<Value>) -> Self {
+	pub fn playback_rate(self, playback_rate: f64) -> Self {
 		Self {
-			playback_rate: playback_rate.into(),
+			playback_rate,
 			..self
 		}
 	}
 
 	/// Sets the panning of the sound, where 0 is hard left
 	/// and 1 is hard right.
-	pub fn panning(self, panning: impl Into<Value>) -> Self {
-		Self {
-			panning: panning.into(),
-			..self
-		}
+	pub fn panning(self, panning: f64) -> Self {
+		Self { panning, ..self }
 	}
 
 	/// Sets the looping behavior of the sound.
@@ -97,10 +88,7 @@ impl StreamingSoundSettings {
 
 	/// Sets the mixer track this sound should play on.
 	pub fn track(self, track: impl Into<TrackId>) -> Self {
-		Self {
-			track: track.into(),
-			..self
-		}
+		Self { track: track.into(), ..self }
 	}
 
 	/// Sets the tween used to fade in the instance from silence.

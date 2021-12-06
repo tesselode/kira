@@ -30,12 +30,10 @@ pub mod dsp;
 mod error;
 mod loop_behavior;
 pub mod manager;
-pub mod parameter;
 pub mod sound;
 mod start_time;
 pub mod track;
 pub mod tween;
-pub mod value;
 
 pub use error::*;
 pub use loop_behavior::*;

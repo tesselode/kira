@@ -11,11 +11,9 @@ use ringbuf::Consumer;
 use crate::{
 	clock::ClockTime,
 	dsp::Frame,
-	parameter::Parameters,
 	sound::Sound,
 	track::TrackId,
 	tween::{Tween, Tweenable},
-	value::CachedValue,
 	LoopBehavior, StartTime,
 };
 
@@ -66,9 +64,9 @@ pub(super) struct StaticSound {
 	start_time: StartTime,
 	state: PlaybackState,
 	position: f64,
-	volume: CachedValue,
-	playback_rate: CachedValue,
-	panning: CachedValue,
+	volume: f64,
+	playback_rate: f64,
+	panning: f64,
 	volume_fade: Tweenable,
 	shared: Arc<Shared>,
 }
@@ -87,9 +85,9 @@ impl StaticSound {
 			start_time: settings.start_time,
 			state: PlaybackState::Playing,
 			position,
-			volume: CachedValue::new(.., settings.volume, 1.0),
-			playback_rate: CachedValue::new(.., settings.playback_rate, 1.0),
-			panning: CachedValue::new(0.0..=1.0, settings.panning, 0.5),
+			volume: settings.volume,
+			playback_rate: settings.playback_rate,
+			panning: settings.panning,
 			volume_fade: if let Some(tween) = settings.fade_in_tween {
 				let mut tweenable = Tweenable::new(0.0);
 				tweenable.set(1.0, tween);
@@ -130,9 +128,9 @@ impl StaticSound {
 
 	fn playback_rate(&self) -> f64 {
 		if self.data.settings.reverse {
-			-self.playback_rate.get()
+			-self.playback_rate
 		} else {
-			self.playback_rate.get()
+			self.playback_rate
 		}
 	}
 
@@ -160,9 +158,9 @@ impl Sound for StaticSound {
 			.store(self.position.to_bits(), Ordering::SeqCst);
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
-				Command::SetVolume(volume) => self.volume.set(volume),
-				Command::SetPlaybackRate(playback_rate) => self.playback_rate.set(playback_rate),
-				Command::SetPanning(panning) => self.panning.set(panning),
+				Command::SetVolume(volume) => self.volume = volume,
+				Command::SetPlaybackRate(playback_rate) => self.playback_rate = playback_rate,
+				Command::SetPanning(panning) => self.panning = panning,
 				Command::Pause(tween) => self.pause(tween),
 				Command::Resume(tween) => self.resume(tween),
 				Command::Stop(tween) => self.stop(tween),
@@ -174,7 +172,7 @@ impl Sound for StaticSound {
 		}
 	}
 
-	fn process(&mut self, dt: f64, parameters: &Parameters) -> Frame {
+	fn process(&mut self, dt: f64) -> Frame {
 		if matches!(self.start_time, StartTime::ClockTime(..)) {
 			return Frame::ZERO;
 		}
@@ -188,13 +186,9 @@ impl Sound for StaticSound {
 		if matches!(self.state, PlaybackState::Paused | PlaybackState::Stopped) {
 			return Frame::ZERO;
 		}
-		self.volume.update(parameters);
-		self.playback_rate.update(parameters);
-		self.panning.update(parameters);
 		let out = self.data.frame_at_position(self.position);
 		self.increment_playback_position(self.playback_rate() * dt);
-		(out * self.volume_fade.value() as f32 * self.volume.get() as f32)
-			.panned(self.panning.get() as f32)
+		(out * self.volume_fade.value() as f32 * self.volume as f32).panned(self.panning as f32)
 	}
 
 	fn on_clock_tick(&mut self, time: ClockTime) {

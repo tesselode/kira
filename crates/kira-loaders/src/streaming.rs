@@ -7,13 +7,13 @@ pub use data::*;
 pub use handle::*;
 pub use settings::*;
 
-use kira::{tween::Tween, value::Value};
+use kira::tween::Tween;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum Command {
-	SetVolume(Value),
-	SetPlaybackRate(Value),
-	SetPanning(Value),
+	SetVolume(f64),
+	SetPlaybackRate(f64),
+	SetPanning(f64),
 	Pause(Tween),
 	Resume(Tween),
 	Stop(Tween),

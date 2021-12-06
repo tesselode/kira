@@ -1,11 +1,6 @@
 //! Makes a sound harsher and noisier.
 
-use crate::{
-	dsp::Frame,
-	parameter::Parameters,
-	track::Effect,
-	value::{CachedValue, Value},
-};
+use crate::{dsp::Frame, track::Effect};
 
 /// Different types of distortion effect.
 #[derive(Debug, Copy, Clone)]
@@ -39,12 +34,12 @@ pub struct DistortionSettings {
 	pub kind: DistortionKind,
 	/// The factor to multiply the signal by before applying
 	/// the distortion.
-	pub drive: Value,
+	pub drive: f64,
 	/// How much dry (unprocessed) signal should be blended
 	/// with the wet (processed) signal. `0.0` means
 	/// only the dry signal will be heard. `1.0` means
 	/// only the wet signal will be heard.
-	pub mix: Value,
+	pub mix: f64,
 }
 
 impl DistortionSettings {
@@ -60,22 +55,16 @@ impl DistortionSettings {
 
 	/// Sets the factor to multiply the signal by before applying
 	/// the distortion.
-	pub fn drive(self, drive: impl Into<Value>) -> Self {
-		Self {
-			drive: drive.into(),
-			..self
-		}
+	pub fn drive(self, drive: f64) -> Self {
+		Self { drive, ..self }
 	}
 
 	/// Sets how much dry (unprocessed) signal should be blended
 	/// with the wet (processed) signal. `0.0` means only the dry
 	/// signal will be heard. `1.0` means only the wet signal will
 	/// be heard.
-	pub fn mix(self, mix: impl Into<Value>) -> Self {
-		Self {
-			mix: mix.into(),
-			..self
-		}
+	pub fn mix(self, mix: f64) -> Self {
+		Self { mix, ..self }
 	}
 }
 
@@ -83,8 +72,8 @@ impl Default for DistortionSettings {
 	fn default() -> Self {
 		Self {
 			kind: Default::default(),
-			drive: Value::Fixed(1.0),
-			mix: Value::Fixed(1.0),
+			drive: 1.0,
+			mix: 1.0,
 		}
 	}
 }
@@ -93,8 +82,8 @@ impl Default for DistortionSettings {
 /// distorted and noisy.
 pub struct Distortion {
 	kind: DistortionKind,
-	drive: CachedValue,
-	mix: CachedValue,
+	drive: f64,
+	mix: f64,
 }
 
 impl Distortion {
@@ -102,16 +91,15 @@ impl Distortion {
 	pub fn new(settings: DistortionSettings) -> Self {
 		Self {
 			kind: settings.kind,
-			drive: CachedValue::new(.., settings.drive, 1.0),
-			mix: CachedValue::new(0.0..=1.0, settings.mix, 1.0),
+			drive: settings.drive,
+			mix: settings.mix,
 		}
 	}
 }
 
 impl Effect for Distortion {
-	fn process(&mut self, input: Frame, _dt: f64, parameters: &Parameters) -> Frame {
-		self.drive.update(parameters);
-		let drive = self.drive.get() as f32;
+	fn process(&mut self, input: Frame, _dt: f64) -> Frame {
+		let drive = self.drive as f32;
 		let mut output = input * drive;
 		output = match self.kind {
 			DistortionKind::HardClip => Frame::new(
@@ -125,7 +113,7 @@ impl Effect for Distortion {
 		};
 		output /= drive;
 
-		let mix = self.mix.get() as f32;
+		let mix = self.mix as f32;
 		output * mix.sqrt() + input * (1.0 - mix).sqrt()
 	}
 }

@@ -5,7 +5,7 @@ pub mod distortion;
 pub mod filter;
 pub mod reverb;
 
-use crate::{dsp::Frame, parameter::Parameters};
+use crate::dsp::Frame;
 
 /// Receives input audio from a mixer track and outputs modified audio.
 #[allow(unused_variables)]
@@ -20,5 +20,5 @@ pub trait Effect: Send + Sync {
 	/// - `parameters` contains information about the current value of
 	/// parameters. This is an opaque type that's only useful for updating
 	/// `CachedValue`s.
-	fn process(&mut self, input: Frame, dt: f64, parameters: &Parameters) -> Frame;
+	fn process(&mut self, input: Frame, dt: f64) -> Frame;
 }

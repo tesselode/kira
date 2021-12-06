@@ -14,11 +14,6 @@ use std::sync::{
 
 use atomic_arena::Key;
 
-use crate::{
-	parameter::Parameters,
-	value::{CachedValue, Value},
-};
-
 /// A unique identifier for a [`Clock`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ClockId(pub(crate) Key);
@@ -64,17 +59,17 @@ impl ClockShared {
 pub struct Clock {
 	shared: Arc<ClockShared>,
 	ticking: bool,
-	interval: CachedValue,
+	interval: f64,
 	ticks: u64,
 	tick_timer: f64,
 }
 
 impl Clock {
-	pub(crate) fn new(interval: Value) -> Self {
+	pub(crate) fn new(interval: f64) -> Self {
 		Self {
 			shared: Arc::new(ClockShared::new()),
 			ticking: false,
-			interval: CachedValue::new(0.0.., interval, 1.0),
+			interval,
 			ticks: 0,
 			tick_timer: 1.0,
 		}
@@ -94,8 +89,8 @@ impl Clock {
 		self.ticks
 	}
 
-	pub(crate) fn set_interval(&mut self, interval: Value) {
-		self.interval.set(interval);
+	pub(crate) fn set_interval(&mut self, interval: f64) {
+		self.interval = interval;
 	}
 
 	pub(crate) fn start(&mut self) {
@@ -114,11 +109,10 @@ impl Clock {
 		self.shared.ticks.store(0, Ordering::SeqCst);
 	}
 
-	pub(crate) fn update(&mut self, dt: f64, parameters: &Parameters) -> Option<u64> {
+	pub(crate) fn update(&mut self, dt: f64) -> Option<u64> {
 		let mut ticked = false;
-		self.interval.update(parameters);
 		if self.ticking {
-			self.tick_timer -= dt / self.interval.get();
+			self.tick_timer -= dt / self.interval;
 			while self.tick_timer <= 0.0 {
 				self.tick_timer += 1.0;
 				self.ticks += 1;

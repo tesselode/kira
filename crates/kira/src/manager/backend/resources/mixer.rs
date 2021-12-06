@@ -7,16 +7,13 @@ use crate::{
 	dsp::Frame,
 	manager::{backend::context::Context, command::MixerCommand},
 	track::{effect::Effect, SubTrackId, Track, TrackId, TrackSettings},
-	value::CachedValue,
 };
-
-use super::Parameters;
 
 pub(crate) struct Mixer {
 	main_track: Track,
 	sub_tracks: Arena<Track>,
 	sub_track_ids: Vec<SubTrackId>,
-	dummy_routes: Vec<(TrackId, CachedValue)>,
+	dummy_routes: Vec<(TrackId, f64)>,
 	unused_track_producer: Producer<Track>,
 }
 
@@ -99,7 +96,7 @@ impl Mixer {
 		}
 	}
 
-	pub fn process(&mut self, dt: f64, parameters: &Parameters) -> Frame {
+	pub fn process(&mut self, dt: f64) -> Frame {
 		// iterate through the sub-tracks newest to oldest
 		for id in self.sub_track_ids.iter().rev() {
 			// process the track and get its output
@@ -107,7 +104,7 @@ impl Mixer {
 				.sub_tracks
 				.get_mut(id.0)
 				.expect("sub track IDs and sub tracks are out of sync");
-			let output = track.process(dt, parameters);
+			let output = track.process(dt);
 			// temporarily take ownership of its routes. we can't just
 			// borrow the routes because then we can't get mutable
 			// references to the other tracks
@@ -119,7 +116,7 @@ impl Mixer {
 					TrackId::Sub(id) => self.sub_tracks.get_mut(id.0),
 				};
 				if let Some(destination_track) = destination_track {
-					destination_track.add_input(output * amount.get() as f32);
+					destination_track.add_input(output * *amount as f32);
 				}
 			}
 			// borrow the track again and give it back its routes
@@ -129,6 +126,6 @@ impl Mixer {
 				.expect("sub track IDs and sub tracks are out of sync");
 			std::mem::swap(track.routes_mut(), &mut self.dummy_routes);
 		}
-		self.main_track.process(dt, parameters)
+		self.main_track.process(dt)
 	}
 }

@@ -6,7 +6,7 @@ use crate::{
 	manager::command::ClockCommand,
 };
 
-use super::{ClockTime, Parameters};
+use super::ClockTime;
 
 pub(crate) struct Clocks {
 	clocks: Arena<Clock>,
@@ -73,10 +73,10 @@ impl Clocks {
 		}
 	}
 
-	pub(crate) fn update(&mut self, dt: f64, parameters: &Parameters) -> &[ClockTime] {
+	pub(crate) fn update(&mut self, dt: f64) -> &[ClockTime] {
 		self.clock_tick_events.clear();
 		for (id, clock) in &mut self.clocks {
-			if let Some(ticks) = clock.update(dt, parameters) {
+			if let Some(ticks) = clock.update(dt) {
 				self.clock_tick_events.push(ClockTime {
 					clock: ClockId(id),
 					ticks,

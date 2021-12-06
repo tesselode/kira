@@ -11,11 +11,9 @@ use ringbuf::RingBuffer;
 use crate::{
 	clock::{Clock, ClockHandle, ClockId},
 	error::CommandError,
-	parameter::{Parameter, ParameterHandle, ParameterId},
 	sound::SoundData,
 	track::{effect::Effect, SubTrackId, Track, TrackHandle, TrackId, TrackSettings},
 	tween::Tween,
-	value::Value,
 };
 
 use self::{
@@ -24,11 +22,8 @@ use self::{
 		resources::{create_resources, create_unused_resource_channels, ResourceControllers},
 		Backend, Renderer,
 	},
-	command::{
-		producer::CommandProducer, ClockCommand, Command, MixerCommand, ParameterCommand,
-		SoundCommand,
-	},
-	error::{AddClockError, AddParameterError, AddSubTrackError, PlaySoundError},
+	command::{producer::CommandProducer, ClockCommand, Command, MixerCommand, SoundCommand},
+	error::{AddClockError, AddSubTrackError, PlaySoundError},
 };
 
 /// The playback state for all audio.
@@ -60,13 +55,11 @@ impl MainPlaybackState {
 pub struct AudioManagerSettings {
 	/// The number of commands that be sent to the renderer at a time.
 	///
-	/// Each action you take, like playing a sound or pausing a parameter,
+	/// Each action you take, like playing a sound or pausing a clock,
 	/// queues up one command.
 	pub command_capacity: usize,
 	/// The maximum number of sounds that can be playing at a time.
 	pub sound_capacity: usize,
-	/// The maximum number of parameters that can exist at a time.
-	pub parameter_capacity: usize,
 	/// The maximum number of mixer sub-tracks that can exist at a time.
 	pub sub_track_capacity: usize,
 	/// The maximum number of clocks that can exist at a time.
@@ -83,7 +76,7 @@ impl AudioManagerSettings {
 
 	/// Sets the number of commands that be sent to the renderer at a time.
 	///
-	/// Each action you take, like playing a sound or pausing a parameter,
+	/// Each action you take, like playing a sound or pausing a clock,
 	/// queues up one command.
 	pub fn command_capacity(self, command_capacity: usize) -> Self {
 		Self {
@@ -96,14 +89,6 @@ impl AudioManagerSettings {
 	pub fn sound_capacity(self, sound_capacity: usize) -> Self {
 		Self {
 			sound_capacity,
-			..self
-		}
-	}
-
-	/// Sets the maximum number of parameters that can exist at a time.
-	pub fn parameter_capacity(self, parameter_capacity: usize) -> Self {
-		Self {
-			parameter_capacity,
 			..self
 		}
 	}
@@ -136,7 +121,6 @@ impl Default for AudioManagerSettings {
 		Self {
 			command_capacity: 128,
 			sound_capacity: 128,
-			parameter_capacity: 128,
 			sub_track_capacity: 128,
 			clock_capacity: 8,
 			main_track_effects: vec![],
@@ -191,25 +175,6 @@ impl<B: Backend> AudioManager<B> {
 		Ok(handle)
 	}
 
-	/// Creates a parameter with the specified starting value.
-	pub fn add_parameter(&mut self, value: f64) -> Result<ParameterHandle, AddParameterError> {
-		let id = ParameterId(
-			self.resource_controllers
-				.parameter_controller
-				.try_reserve()
-				.map_err(|_| AddParameterError::ParameterLimitReached)?,
-		);
-		let parameter = Parameter::new(value);
-		let handle = ParameterHandle {
-			id,
-			shared: parameter.shared(),
-			command_producer: self.command_producer.clone(),
-		};
-		self.command_producer
-			.push(Command::Parameter(ParameterCommand::Add(id, parameter)))?;
-		Ok(handle)
-	}
-
 	/// Creates a mixer sub-track.
 	pub fn add_sub_track(
 		&mut self,
@@ -233,14 +198,14 @@ impl<B: Backend> AudioManager<B> {
 	}
 
 	/// Creates a clock.
-	pub fn add_clock(&mut self, interval: impl Into<Value>) -> Result<ClockHandle, AddClockError> {
+	pub fn add_clock(&mut self, interval: f64) -> Result<ClockHandle, AddClockError> {
 		let id = ClockId(
 			self.resource_controllers
 				.clock_controller
 				.try_reserve()
 				.map_err(|_| AddClockError::ClockLimitReached)?,
 		);
-		let clock = Clock::new(interval.into());
+		let clock = Clock::new(interval);
 		let handle = ClockHandle {
 			id,
 			shared: clock.shared(),
@@ -280,11 +245,6 @@ impl<B: Backend> AudioManager<B> {
 		self.resource_controllers.sound_controller.capacity()
 	}
 
-	/// Returns the number of parameters that can exist at a time.
-	pub fn parameter_capacity(&self) -> usize {
-		self.resource_controllers.parameter_controller.capacity()
-	}
-
 	/// Returns the number of mixer sub-tracks that can exist at a time.
 	pub fn sub_track_capacity(&self) -> usize {
 		self.resource_controllers.sub_track_controller.capacity()
@@ -298,11 +258,6 @@ impl<B: Backend> AudioManager<B> {
 	/// Returns the number of sounds that are currently loaded.
 	pub fn num_sounds(&self) -> usize {
 		self.resource_controllers.sound_controller.len()
-	}
-
-	/// Returns the number of parameters that currently exist.
-	pub fn num_parameters(&self) -> usize {
-		self.resource_controllers.parameter_controller.len()
 	}
 
 	/// Returns the number of mixer sub-tracks that currently exist.

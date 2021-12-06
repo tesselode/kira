@@ -3,7 +3,6 @@ use std::sync::Arc;
 use crate::{
 	error::CommandError,
 	manager::command::{producer::CommandProducer, Command, MixerCommand},
-	value::Value,
 };
 
 use super::{TrackId, TrackShared};
@@ -25,21 +24,19 @@ impl TrackHandle {
 	}
 
 	/// Sets the (post-effects) volume of the mixer track.
-	pub fn set_volume(&mut self, volume: impl Into<Value>) -> Result<(), CommandError> {
+	pub fn set_volume(&mut self, volume: f64) -> Result<(), CommandError> {
 		self.command_producer
 			.push(Command::Mixer(MixerCommand::SetTrackVolume(
-				self.id,
-				volume.into(),
+				self.id, volume,
 			)))
 	}
 
 	/// Sets the (post-effects) panning of the mixer track, where
 	/// 0.0 is hard left and 1.0 is hard right.
-	pub fn set_panning(&mut self, panning: impl Into<Value>) -> Result<(), CommandError> {
+	pub fn set_panning(&mut self, panning: f64) -> Result<(), CommandError> {
 		self.command_producer
 			.push(Command::Mixer(MixerCommand::SetTrackPanning(
-				self.id,
-				panning.into(),
+				self.id, panning,
 			)))
 	}
 }

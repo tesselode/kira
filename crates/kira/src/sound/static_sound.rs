@@ -10,16 +10,16 @@ pub use handle::*;
 pub use settings::*;
 pub use sound::PlaybackState;
 
-use crate::{tween::Tween, value::Value};
+use crate::tween::Tween;
 
 #[cfg(test)]
 mod test;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Command {
-	SetVolume(Value),
-	SetPlaybackRate(Value),
-	SetPanning(Value),
+	SetVolume(f64),
+	SetPlaybackRate(f64),
+	SetPanning(f64),
 	Pause(Tween),
 	Resume(Tween),
 	Stop(Tween),

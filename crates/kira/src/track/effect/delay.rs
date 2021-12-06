@@ -2,18 +2,16 @@
 
 use crate::{
 	dsp::{interpolate_frame, Frame},
-	parameter::Parameters,
 	track::Effect,
-	value::{CachedValue, Value},
 };
 
 /// Settings for a [`Delay`] effect.
 #[non_exhaustive]
 pub struct DelaySettings {
 	/// The delay time (in seconds).
-	pub delay_time: Value,
+	pub delay_time: f64,
 	/// The amount of feedback.
-	pub feedback: Value,
+	pub feedback: f64,
 	/// The amount of audio the delay can store (in seconds).
 	/// This affects the maximum delay time.
 	pub buffer_length: f64,
@@ -23,7 +21,7 @@ pub struct DelaySettings {
 	/// with the wet (processed) signal. `0.0` means
 	/// only the dry signal will be heard. `1.0` means
 	/// only the wet signal will be heard.
-	pub mix: Value,
+	pub mix: f64,
 }
 
 impl DelaySettings {
@@ -33,19 +31,13 @@ impl DelaySettings {
 	}
 
 	/// Sets the delay time (in seconds).
-	pub fn delay_time(self, delay_time: impl Into<Value>) -> Self {
-		Self {
-			delay_time: delay_time.into(),
-			..self
-		}
+	pub fn delay_time(self, delay_time: f64) -> Self {
+		Self { delay_time, ..self }
 	}
 
 	/// Sets the amount of feedback.
-	pub fn feedback(self, feedback: impl Into<Value>) -> Self {
-		Self {
-			feedback: feedback.into(),
-			..self
-		}
+	pub fn feedback(self, feedback: f64) -> Self {
+		Self { feedback, ..self }
 	}
 
 	/// Sets the amount of audio the delay can store.
@@ -66,22 +58,19 @@ impl DelaySettings {
 	/// with the wet (processed) signal. `0.0` means only the dry
 	/// signal will be heard. `1.0` means only the wet signal will
 	/// be heard.
-	pub fn mix(self, mix: impl Into<Value>) -> Self {
-		Self {
-			mix: mix.into(),
-			..self
-		}
+	pub fn mix(self, mix: f64) -> Self {
+		Self { mix, ..self }
 	}
 }
 
 impl Default for DelaySettings {
 	fn default() -> Self {
 		Self {
-			delay_time: Value::Fixed(0.5),
-			feedback: Value::Fixed(0.5),
+			delay_time: 0.5,
+			feedback: 0.5,
 			buffer_length: 10.0,
 			feedback_effects: vec![],
-			mix: Value::Fixed(0.5),
+			mix: 0.5,
 		}
 	}
 }
@@ -100,9 +89,9 @@ enum DelayState {
 /// An effect that repeats audio after a certain delay. Useful
 /// for creating echo effects.
 pub struct Delay {
-	delay_time: CachedValue,
-	feedback: CachedValue,
-	mix: CachedValue,
+	delay_time: f64,
+	feedback: f64,
+	mix: f64,
 	state: DelayState,
 	feedback_effects: Vec<Box<dyn Effect>>,
 }
@@ -111,9 +100,9 @@ impl Delay {
 	/// Creates a new delay effect.
 	pub fn new(settings: DelaySettings) -> Self {
 		Self {
-			delay_time: CachedValue::new(0.0.., settings.delay_time, 0.5),
-			feedback: CachedValue::new(-1.0..=1.0, settings.feedback, 0.5),
-			mix: CachedValue::new(0.0..=1.0, settings.mix, 0.5),
+			delay_time: settings.delay_time,
+			feedback: settings.feedback,
+			mix: settings.mix,
 			state: DelayState::Uninitialized {
 				buffer_length: settings.buffer_length,
 			},
@@ -137,19 +126,14 @@ impl Effect for Delay {
 		}
 	}
 
-	fn process(&mut self, input: Frame, dt: f64, parameters: &Parameters) -> Frame {
+	fn process(&mut self, input: Frame, dt: f64) -> Frame {
 		if let DelayState::Initialized {
 			buffer,
 			write_position,
 		} = &mut self.state
 		{
-			// update cached values
-			self.delay_time.update(parameters);
-			self.feedback.update(parameters);
-			self.mix.update(parameters);
-
 			// get the read position (in samples)
-			let mut read_position = *write_position as f32 - (self.delay_time.get() / dt) as f32;
+			let mut read_position = *write_position as f32 - (self.delay_time / dt) as f32;
 			while read_position < 0.0 {
 				read_position += buffer.len() as f32;
 			}
@@ -172,15 +156,15 @@ impl Effect for Delay {
 				fraction,
 			);
 			for effect in &mut self.feedback_effects {
-				output = effect.process(output, dt, parameters);
+				output = effect.process(output, dt);
 			}
 
 			// write output audio to the buffer
 			*write_position += 1;
 			*write_position %= buffer.len();
-			buffer[*write_position] = input + output * self.feedback.get() as f32;
+			buffer[*write_position] = input + output * self.feedback as f32;
 
-			let mix = self.mix.get() as f32;
+			let mix = self.mix as f32;
 			output * mix.sqrt() + input * (1.0 - mix).sqrt()
 		} else {
 			panic!("The delay should be initialized by the first process call")
