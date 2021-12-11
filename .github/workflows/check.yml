@@ -21,6 +21,8 @@ jobs:
         run: cargo build -p kira-cpal --features assert_no_alloc
       - name: build kira-loaders
         run: cargo build -p kira-loaders
+      - name: build kira-examples
+        run: cargo build --examples 
       - name: run tests
         run: cargo test
       - name: lint

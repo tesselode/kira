@@ -4,6 +4,7 @@ members = [
 	"crates/kira-cpal",
 	"crates/kira-loaders",
 	"benchmarks",
+	"examples",
 ]
 
 [profile.dev]
