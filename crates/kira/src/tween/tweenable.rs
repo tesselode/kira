@@ -1,7 +1,4 @@
-use crate::{
-	clock::{ClockTime, Clocks},
-	StartTime,
-};
+use crate::{clock::ClockTime, StartTime};
 
 use super::Tween;
 
@@ -57,7 +54,7 @@ impl Tweenable {
 
 	/// Updates the [`Tweenable`] and returns `true` if it just finished
 	/// a tween that was in progress.
-	pub fn update(&mut self, dt: f64, clocks: &Clocks) -> JustFinishedTween {
+	pub fn update(&mut self, dt: f64) -> JustFinishedTween {
 		if let State::Tweening {
 			values,
 			time,
@@ -65,19 +62,6 @@ impl Tweenable {
 			waiting_to_start,
 		} = &mut self.state
 		{
-			if *waiting_to_start {
-				if let StartTime::ClockTime(ClockTime { clock, ticks }) = tween.start_time {
-					if let Some(clock) = clocks.get(clock) {
-						if clock.ticking() && clock.ticks() >= ticks {
-							*waiting_to_start = false;
-						}
-					}
-				} else {
-					panic!(
-						"waiting_to_start should always be false if the start_time is Immediate"
-					);
-				}
-			}
 			if *waiting_to_start {
 				return false;
 			}
@@ -91,5 +75,23 @@ impl Tweenable {
 			}
 		}
 		false
+	}
+
+	pub fn on_clock_tick(&mut self, time: ClockTime) {
+		if let State::Tweening {
+			waiting_to_start,
+			tween: Tween {
+				start_time: StartTime::ClockTime(start_clock_time),
+				..
+			},
+			..
+		} = &mut self.state
+		{
+			if *waiting_to_start {
+				if time.clock == start_clock_time.clock && time.ticks >= start_clock_time.ticks {
+					*waiting_to_start = false;
+				}
+			}
+		}
 	}
 }

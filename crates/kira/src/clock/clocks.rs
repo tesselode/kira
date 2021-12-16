@@ -6,7 +6,7 @@ use crate::{
 	manager::command::ClockCommand,
 };
 
-use super::Parameters;
+use super::{ClockTime, Parameters};
 
 /// Provides access to all existing [`Clock`]s.
 ///
@@ -15,6 +15,7 @@ use super::Parameters;
 pub struct Clocks {
 	clocks: Arena<Clock>,
 	unused_clock_producer: Producer<Clock>,
+	clock_tick_events: Vec<ClockTime>,
 }
 
 impl Clocks {
@@ -22,6 +23,7 @@ impl Clocks {
 		Self {
 			clocks: Arena::new(capacity),
 			unused_clock_producer,
+			clock_tick_events: Vec::with_capacity(capacity),
 		}
 	}
 
@@ -80,9 +82,16 @@ impl Clocks {
 		}
 	}
 
-	pub(crate) fn update(&mut self, dt: f64, parameters: &Parameters) {
-		for (_, clock) in &mut self.clocks {
-			clock.update(dt, parameters);
+	pub(crate) fn update(&mut self, dt: f64, parameters: &Parameters) -> &[ClockTime] {
+		self.clock_tick_events.clear();
+		for (id, clock) in &mut self.clocks {
+			if let Some(ticks) = clock.update(dt, parameters) {
+				self.clock_tick_events.push(ClockTime {
+					clock: ClockId(id),
+					ticks,
+				});
+			}
 		}
+		&self.clock_tick_events
 	}
 }

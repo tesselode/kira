@@ -14,7 +14,7 @@ use std::sync::{
 use atomic_arena::Key;
 
 use crate::{
-	clock::Clocks,
+	clock::ClockTime,
 	tween::{Tween, Tweenable},
 };
 
@@ -99,10 +99,14 @@ impl Parameter {
 			.store(self.tweenable.value().to_bits(), Ordering::SeqCst);
 	}
 
-	pub fn update(&mut self, dt: f64, clocks: &Clocks) -> JustFinishedTween {
+	pub fn update(&mut self, dt: f64) -> JustFinishedTween {
 		if self.paused {
 			return false;
 		}
-		self.tweenable.update(dt, clocks)
+		self.tweenable.update(dt)
+	}
+
+	pub fn on_clock_tick(&mut self, time: ClockTime) {
+		self.tweenable.on_clock_tick(time);
 	}
 }

@@ -115,7 +115,8 @@ impl Clock {
 		self.shared.ticks.store(0, Ordering::SeqCst);
 	}
 
-	pub(crate) fn update(&mut self, dt: f64, parameters: &Parameters) {
+	pub(crate) fn update(&mut self, dt: f64, parameters: &Parameters) -> Option<u64> {
+		let mut ticked = false;
 		self.interval.update(parameters);
 		if self.ticking {
 			self.tick_timer -= dt / self.interval.get();
@@ -123,7 +124,13 @@ impl Clock {
 				self.tick_timer += 1.0;
 				self.ticks += 1;
 				self.shared.ticks.fetch_add(1, Ordering::SeqCst);
+				ticked = true;
 			}
+		}
+		if ticked {
+			Some(self.ticks)
+		} else {
+			None
 		}
 	}
 }

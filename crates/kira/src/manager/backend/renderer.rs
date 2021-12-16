@@ -76,10 +76,7 @@ impl Renderer {
 
 	/// Produces the next [`Frame`] of audio.
 	pub fn process(&mut self) -> Frame {
-		if self
-			.fade_volume
-			.update(self.context.dt, &self.resources.clocks)
-		{
+		if self.fade_volume.update(self.context.dt) {
 			if self.state == MainPlaybackState::Pausing {
 				self.state = MainPlaybackState::Paused;
 			}
@@ -89,17 +86,19 @@ impl Renderer {
 			return Frame::ZERO;
 		}
 		if self.state == MainPlaybackState::Playing {
-			self.resources
+			let clock_tick_events = self
+				.resources
 				.clocks
 				.update(self.context.dt, &self.resources.parameters);
-			self.resources
-				.parameters
-				.update(self.context.dt, &self.resources.clocks);
+			for time in clock_tick_events {
+				self.resources.parameters.on_clock_tick(*time);
+				self.resources.sounds.on_clock_tick(*time);
+			}
+			self.resources.parameters.update(self.context.dt);
 		}
 		self.resources.sounds.process(
 			self.context.dt,
 			&self.resources.parameters,
-			&self.resources.clocks,
 			&mut self.resources.mixer,
 		);
 		let out = self

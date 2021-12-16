@@ -2,7 +2,7 @@ use atomic_arena::{Arena, Controller};
 use ringbuf::Producer;
 
 use crate::{
-	clock::Clocks,
+	clock::ClockTime,
 	manager::command::ParameterCommand,
 	parameter::{Parameter, ParameterId},
 };
@@ -80,9 +80,15 @@ impl Parameters {
 		}
 	}
 
-	pub(crate) fn update(&mut self, dt: f64, clocks: &Clocks) {
+	pub(crate) fn update(&mut self, dt: f64) {
 		for (_, parameter) in &mut self.parameters {
-			parameter.update(dt, clocks);
+			parameter.update(dt);
+		}
+	}
+
+	pub(crate) fn on_clock_tick(&mut self, time: ClockTime) {
+		for (_, parameter) in &mut self.parameters {
+			parameter.on_clock_tick(time);
 		}
 	}
 }

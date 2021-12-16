@@ -6,7 +6,7 @@ use std::sync::{
 };
 
 use kira::{
-	clock::{ClockTime, Clocks},
+	clock::ClockTime,
 	dsp::{interpolate_frame, Frame},
 	parameter::Parameters,
 	sound::{static_sound::PlaybackState, Sound},
@@ -217,14 +217,7 @@ impl Sound for StreamingSound {
 		}
 	}
 
-	fn process(&mut self, dt: f64, parameters: &Parameters, clocks: &Clocks) -> Frame {
-		if let StartTime::ClockTime(ClockTime { clock, ticks }) = self.start_time {
-			if let Some(clock) = clocks.get(clock) {
-				if clock.ticking() && clock.ticks() >= ticks {
-					self.start_time = StartTime::Immediate;
-				}
-			}
-		}
+	fn process(&mut self, dt: f64, parameters: &Parameters) -> Frame {
 		if matches!(self.start_time, StartTime::ClockTime(..)) {
 			return Frame::ZERO;
 		}
@@ -240,7 +233,7 @@ impl Sound for StreamingSound {
 		self.volume.update(parameters);
 		self.playback_rate.update(parameters);
 		self.panning.update(parameters);
-		if self.volume_fade.update(dt, clocks) {
+		if self.volume_fade.update(dt) {
 			match self.state {
 				PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
 				PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),
@@ -266,6 +259,14 @@ impl Sound for StreamingSound {
 		}
 		(out * self.volume_fade.value() as f32 * self.volume.get() as f32)
 			.panned(self.panning.get() as f32)
+	}
+
+	fn on_clock_tick(&mut self, time: ClockTime) {
+		if let StartTime::ClockTime(ClockTime { clock, ticks }) = self.start_time {
+			if time.clock == clock && time.ticks >= ticks {
+				self.start_time = StartTime::Immediate;
+			}
+		}
 	}
 
 	fn finished(&self) -> bool {
