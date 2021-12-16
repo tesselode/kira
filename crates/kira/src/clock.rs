@@ -1,10 +1,9 @@
 //! Precise timing for audio events.
 
-mod clocks;
+pub(crate) mod clocks;
 mod handle;
 mod time;
 
-pub use clocks::*;
 pub use handle::*;
 pub use time::*;
 

@@ -8,11 +8,7 @@ use crate::{
 
 use super::{ClockTime, Parameters};
 
-/// Provides access to all existing [`Clock`]s.
-///
-/// You'll only have access to this if you're writing your own
-/// [`Sound`](crate::sound::Sound)s.
-pub struct Clocks {
+pub(crate) struct Clocks {
 	clocks: Arena<Clock>,
 	unused_clock_producer: Producer<Clock>,
 	clock_tick_events: Vec<ClockTime>,
@@ -29,11 +25,6 @@ impl Clocks {
 
 	pub(crate) fn controller(&self) -> Controller {
 		self.clocks.controller()
-	}
-
-	/// Returns a reference to the clock with the given ID (if it exists).
-	pub fn get(&self, id: ClockId) -> Option<&Clock> {
-		self.clocks.get(id.0)
 	}
 
 	pub(crate) fn on_start_processing(&mut self) {

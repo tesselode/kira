@@ -7,7 +7,7 @@ use atomic_arena::Controller;
 use ringbuf::{Consumer, Producer, RingBuffer};
 
 use crate::{
-	clock::{Clock, Clocks},
+	clock::{clocks::Clocks, Clock},
 	manager::AudioManagerSettings,
 	parameter::{Parameter, Parameters},
 	sound::Sound,
