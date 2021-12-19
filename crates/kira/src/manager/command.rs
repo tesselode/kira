@@ -21,7 +21,7 @@ pub(crate) enum MixerCommand {
 
 pub(crate) enum ClockCommand {
 	Add(ClockId, Clock),
-	SetInterval(ClockId, f64),
+	SetInterval(ClockId, f64, Tween),
 	Start(ClockId),
 	Pause(ClockId),
 	Stop(ClockId),

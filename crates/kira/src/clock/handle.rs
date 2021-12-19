@@ -3,6 +3,7 @@ use std::sync::Arc;
 use crate::{
 	error::CommandError,
 	manager::command::{producer::CommandProducer, ClockCommand, Command},
+	tween::Tween,
 };
 
 use super::{ClockId, ClockShared, ClockTime};
@@ -38,9 +39,11 @@ impl ClockHandle {
 	}
 
 	/// Sets the duration of time between each tick (in seconds).
-	pub fn set_interval(&mut self, interval: f64) -> Result<(), CommandError> {
+	pub fn set_interval(&mut self, interval: f64, tween: Tween) -> Result<(), CommandError> {
 		self.command_producer
-			.push(Command::Clock(ClockCommand::SetInterval(self.id, interval)))
+			.push(Command::Clock(ClockCommand::SetInterval(
+				self.id, interval, tween,
+			)))
 	}
 
 	/// Starts or resumes the clock.

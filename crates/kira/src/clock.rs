@@ -14,6 +14,8 @@ use std::sync::{
 
 use atomic_arena::Key;
 
+use crate::tween::{Tween, Tweenable};
+
 /// A unique identifier for a [`Clock`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ClockId(pub(crate) Key);
@@ -59,7 +61,7 @@ impl ClockShared {
 pub struct Clock {
 	shared: Arc<ClockShared>,
 	ticking: bool,
-	interval: f64,
+	interval: Tweenable,
 	ticks: u64,
 	tick_timer: f64,
 }
@@ -69,7 +71,7 @@ impl Clock {
 		Self {
 			shared: Arc::new(ClockShared::new()),
 			ticking: false,
-			interval,
+			interval: Tweenable::new(interval),
 			ticks: 0,
 			tick_timer: 1.0,
 		}
@@ -89,8 +91,8 @@ impl Clock {
 		self.ticks
 	}
 
-	pub(crate) fn set_interval(&mut self, interval: f64) {
-		self.interval = interval;
+	pub(crate) fn set_interval(&mut self, interval: f64, tween: Tween) {
+		self.interval.set(interval, tween);
 	}
 
 	pub(crate) fn start(&mut self) {
@@ -110,9 +112,10 @@ impl Clock {
 	}
 
 	pub(crate) fn update(&mut self, dt: f64) -> Option<u64> {
+		self.interval.update(dt);
 		let mut ticked = false;
 		if self.ticking {
-			self.tick_timer -= dt / self.interval;
+			self.tick_timer -= dt / self.interval.value();
 			while self.tick_timer <= 0.0 {
 				self.tick_timer += 1.0;
 				self.ticks += 1;
@@ -125,5 +128,9 @@ impl Clock {
 		} else {
 			None
 		}
+	}
+
+	pub(crate) fn on_clock_tick(&mut self, time: ClockTime) {
+		self.interval.on_clock_tick(time);
 	}
 }
