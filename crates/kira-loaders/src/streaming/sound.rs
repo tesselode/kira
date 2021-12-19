@@ -57,9 +57,9 @@ pub(crate) struct StreamingSound {
 	volume_fade: Tweenable,
 	current_frame: u64,
 	fractional_position: f64,
-	volume: f64,
-	playback_rate: f64,
-	panning: f64,
+	volume: Tweenable,
+	playback_rate: Tweenable,
+	panning: Tweenable,
 	shared: Arc<Shared>,
 }
 
@@ -117,9 +117,9 @@ impl StreamingSound {
 			},
 			current_frame,
 			fractional_position: 0.0,
-			volume,
-			playback_rate,
-			panning,
+			volume: Tweenable::new(volume),
+			playback_rate: Tweenable::new(playback_rate),
+			panning: Tweenable::new(panning),
 			shared: Arc::new(Shared {
 				position: AtomicU64::new(start_position.to_bits()),
 				state: AtomicU8::new(PlaybackState::Playing as u8),
@@ -203,9 +203,11 @@ impl Sound for StreamingSound {
 			.store(self.position().to_bits(), Ordering::SeqCst);
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
-				Command::SetVolume(volume) => self.volume = volume,
-				Command::SetPlaybackRate(playback_rate) => self.playback_rate = playback_rate,
-				Command::SetPanning(panning) => self.panning = panning,
+				Command::SetVolume(volume, tween) => self.volume.set(volume, tween),
+				Command::SetPlaybackRate(playback_rate, tween) => {
+					self.playback_rate.set(playback_rate, tween)
+				}
+				Command::SetPanning(panning, tween) => self.panning.set(panning, tween),
 				Command::Pause(tween) => self.pause(tween),
 				Command::Resume(tween) => self.resume(tween),
 				Command::Stop(tween) => self.stop(tween),
@@ -216,6 +218,9 @@ impl Sound for StreamingSound {
 	}
 
 	fn process(&mut self, dt: f64) -> Frame {
+		self.volume.update(dt);
+		self.playback_rate.update(dt);
+		self.panning.update(dt);
 		if matches!(self.start_time, StartTime::ClockTime(..)) {
 			return Frame::ZERO;
 		}
@@ -244,7 +249,7 @@ impl Sound for StreamingSound {
 			next_frames[3],
 			self.fractional_position as f32,
 		);
-		self.fractional_position += self.sample_rate as f64 * self.playback_rate * dt;
+		self.fractional_position += self.sample_rate as f64 * self.playback_rate.value() * dt;
 		while self.fractional_position >= 1.0 {
 			self.fractional_position -= 1.0;
 			self.frame_consumer.pop();
@@ -252,10 +257,14 @@ impl Sound for StreamingSound {
 		if self.finished_signal_receiver.load(Ordering::SeqCst) && self.frame_consumer.is_empty() {
 			self.set_state(PlaybackState::Stopped);
 		}
-		(out * self.volume_fade.value() as f32 * self.volume as f32).panned(self.panning as f32)
+		(out * self.volume_fade.value() as f32 * self.volume.value() as f32)
+			.panned(self.panning.value() as f32)
 	}
 
 	fn on_clock_tick(&mut self, time: ClockTime) {
+		self.volume.on_clock_tick(time);
+		self.playback_rate.on_clock_tick(time);
+		self.panning.on_clock_tick(time);
 		if let StartTime::ClockTime(ClockTime { clock, ticks }) = self.start_time {
 			if time.clock == clock && time.ticks >= ticks {
 				self.start_time = StartTime::Immediate;

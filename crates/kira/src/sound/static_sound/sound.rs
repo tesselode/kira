@@ -64,9 +64,9 @@ pub(super) struct StaticSound {
 	start_time: StartTime,
 	state: PlaybackState,
 	position: f64,
-	volume: f64,
-	playback_rate: f64,
-	panning: f64,
+	volume: Tweenable,
+	playback_rate: Tweenable,
+	panning: Tweenable,
 	volume_fade: Tweenable,
 	shared: Arc<Shared>,
 }
@@ -85,9 +85,9 @@ impl StaticSound {
 			start_time: settings.start_time,
 			state: PlaybackState::Playing,
 			position,
-			volume: settings.volume,
-			playback_rate: settings.playback_rate,
-			panning: settings.panning,
+			volume: Tweenable::new(settings.volume),
+			playback_rate: Tweenable::new(settings.playback_rate),
+			panning: Tweenable::new(settings.panning),
 			volume_fade: if let Some(tween) = settings.fade_in_tween {
 				let mut tweenable = Tweenable::new(0.0);
 				tweenable.set(1.0, tween);
@@ -128,9 +128,9 @@ impl StaticSound {
 
 	fn playback_rate(&self) -> f64 {
 		if self.data.settings.reverse {
-			-self.playback_rate
+			-self.playback_rate.value()
 		} else {
-			self.playback_rate
+			self.playback_rate.value()
 		}
 	}
 
@@ -158,9 +158,11 @@ impl Sound for StaticSound {
 			.store(self.position.to_bits(), Ordering::SeqCst);
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
-				Command::SetVolume(volume) => self.volume = volume,
-				Command::SetPlaybackRate(playback_rate) => self.playback_rate = playback_rate,
-				Command::SetPanning(panning) => self.panning = panning,
+				Command::SetVolume(volume, tween) => self.volume.set(volume, tween),
+				Command::SetPlaybackRate(playback_rate, tween) => {
+					self.playback_rate.set(playback_rate, tween)
+				}
+				Command::SetPanning(panning, tween) => self.panning.set(panning, tween),
 				Command::Pause(tween) => self.pause(tween),
 				Command::Resume(tween) => self.resume(tween),
 				Command::Stop(tween) => self.stop(tween),
@@ -173,6 +175,9 @@ impl Sound for StaticSound {
 	}
 
 	fn process(&mut self, dt: f64) -> Frame {
+		self.volume.update(dt);
+		self.playback_rate.update(dt);
+		self.panning.update(dt);
 		if matches!(self.start_time, StartTime::ClockTime(..)) {
 			return Frame::ZERO;
 		}
@@ -188,10 +193,14 @@ impl Sound for StaticSound {
 		}
 		let out = self.data.frame_at_position(self.position);
 		self.increment_playback_position(self.playback_rate() * dt);
-		(out * self.volume_fade.value() as f32 * self.volume as f32).panned(self.panning as f32)
+		(out * self.volume_fade.value() as f32 * self.volume.value() as f32)
+			.panned(self.panning.value() as f32)
 	}
 
 	fn on_clock_tick(&mut self, time: ClockTime) {
+		self.volume.on_clock_tick(time);
+		self.playback_rate.on_clock_tick(time);
+		self.panning.on_clock_tick(time);
 		if let StartTime::ClockTime(ClockTime { clock, ticks }) = self.start_time {
 			if time.clock == clock && time.ticks >= ticks {
 				self.start_time = StartTime::Immediate;

@@ -17,9 +17,9 @@ mod test;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Command {
-	SetVolume(f64),
-	SetPlaybackRate(f64),
-	SetPanning(f64),
+	SetVolume(f64, Tween),
+	SetPlaybackRate(f64, Tween),
+	SetPanning(f64, Tween),
 	Pause(Tween),
 	Resume(Tween),
 	Stop(Tween),

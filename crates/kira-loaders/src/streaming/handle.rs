@@ -39,9 +39,9 @@ impl StreamingSoundHandle {
 	}
 
 	/// Sets the volume of the sound (as a factor of the original volume).
-	pub fn set_volume(&mut self, volume: f64) -> Result<(), CommandQueueFull> {
+	pub fn set_volume(&mut self, volume: f64, tween: Tween) -> Result<(), CommandQueueFull> {
 		self.command_producer
-			.push(Command::SetVolume(volume))
+			.push(Command::SetVolume(volume, tween))
 			.map_err(|_| CommandQueueFull)
 	}
 
@@ -50,17 +50,21 @@ impl StreamingSoundHandle {
 	///
 	/// Changing the playback rate will change both the speed
 	/// and pitch of the sound.
-	pub fn set_playback_rate(&mut self, playback_rate: f64) -> Result<(), CommandQueueFull> {
+	pub fn set_playback_rate(
+		&mut self,
+		playback_rate: f64,
+		tween: Tween,
+	) -> Result<(), CommandQueueFull> {
 		self.command_producer
-			.push(Command::SetPlaybackRate(playback_rate))
+			.push(Command::SetPlaybackRate(playback_rate, tween))
 			.map_err(|_| CommandQueueFull)
 	}
 
 	/// Sets the panning of the sound, where `0.0` is hard left,
 	/// `0.5` is center, and `1.0` is hard right.
-	pub fn set_panning(&mut self, panning: f64) -> Result<(), CommandQueueFull> {
+	pub fn set_panning(&mut self, panning: f64, tween: Tween) -> Result<(), CommandQueueFull> {
 		self.command_producer
-			.push(Command::SetPanning(panning))
+			.push(Command::SetPanning(panning, tween))
 			.map_err(|_| CommandQueueFull)
 	}
 
