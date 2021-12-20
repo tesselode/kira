@@ -16,7 +16,7 @@ use std::sync::{
 
 use atomic_arena::Key;
 
-use crate::{dsp::Frame, manager::backend::context::Context};
+use crate::{clock::ClockTime, dsp::Frame, manager::backend::context::Context};
 
 use self::effect::Effect;
 
@@ -109,6 +109,12 @@ impl Track {
 		self.input += input;
 	}
 
+	pub fn on_start_processing(&mut self) {
+		for effect in &mut self.effects {
+			effect.on_start_processing();
+		}
+	}
+
 	pub fn process(&mut self, dt: f64) -> Frame {
 		let mut output = std::mem::replace(&mut self.input, Frame::ZERO);
 		for effect in &mut self.effects {
@@ -117,5 +123,11 @@ impl Track {
 		output *= self.volume as f32;
 		output = output.panned(self.panning as f32);
 		output
+	}
+
+	pub fn on_clock_tick(&mut self, time: ClockTime) {
+		for effect in &mut self.effects {
+			effect.on_clock_tick(time);
+		}
 	}
 }

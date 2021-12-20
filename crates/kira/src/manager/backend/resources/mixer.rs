@@ -4,6 +4,7 @@ use atomic_arena::{Arena, Controller};
 use ringbuf::Producer;
 
 use crate::{
+	clock::ClockTime,
 	dsp::Frame,
 	manager::{backend::context::Context, command::MixerCommand},
 	track::{effect::Effect, SubTrackId, Track, TrackBuilder, TrackId},
@@ -73,6 +74,14 @@ impl Mixer {
 	}
 
 	pub fn on_start_processing(&mut self) {
+		self.remove_unused_tracks();
+		for (_, track) in &mut self.sub_tracks {
+			track.on_start_processing();
+		}
+		self.main_track.on_start_processing();
+	}
+
+	fn remove_unused_tracks(&mut self) {
 		let mut i = 0;
 		while i < self.sub_track_ids.len() && !self.unused_track_producer.is_full() {
 			let id = self.sub_track_ids[i];
@@ -127,5 +136,12 @@ impl Mixer {
 			std::mem::swap(track.routes_mut(), &mut self.dummy_routes);
 		}
 		self.main_track.process(dt)
+	}
+
+	pub fn on_clock_tick(&mut self, time: ClockTime) {
+		for (_, track) in &mut self.sub_tracks {
+			track.on_clock_tick(time);
+		}
+		self.main_track.on_clock_tick(time);
 	}
 }

@@ -87,6 +87,7 @@ impl Renderer {
 			let clock_tick_events = self.resources.clocks.update(self.context.dt);
 			for time in clock_tick_events {
 				self.resources.sounds.on_clock_tick(*time);
+				self.resources.mixer.on_clock_tick(*time);
 			}
 		}
 		self.resources

@@ -178,7 +178,7 @@ impl<B: Backend> AudioManager<B> {
 	/// Creates a mixer sub-track.
 	pub fn add_sub_track(
 		&mut self,
-		settings: TrackBuilder,
+		builder: TrackBuilder,
 	) -> Result<TrackHandle, AddSubTrackError> {
 		let id = SubTrackId(
 			self.resource_controllers
@@ -186,7 +186,7 @@ impl<B: Backend> AudioManager<B> {
 				.try_reserve()
 				.map_err(|_| AddSubTrackError::SubTrackLimitReached)?,
 		);
-		let sub_track = Track::new(settings, &self.context);
+		let sub_track = Track::new(builder, &self.context);
 		let handle = TrackHandle {
 			id: TrackId::Sub(id),
 			shared: Some(sub_track.shared()),

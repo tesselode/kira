@@ -45,7 +45,7 @@ impl TrackBuilder {
 	}
 
 	/// Adds an effect to the track.
-	pub fn add_effect<B: EffectBuilder>(mut self, builder: B) -> B::Handle {
+	pub fn add_effect<B: EffectBuilder>(&mut self, builder: B) -> B::Handle {
 		let (effect, handle) = builder.build();
 		self.effects.push(effect);
 		handle
