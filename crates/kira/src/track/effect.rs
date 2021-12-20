@@ -7,6 +7,12 @@ pub mod reverb;
 
 use crate::dsp::Frame;
 
+pub trait EffectBuilder {
+	type Handle;
+
+	fn build(self) -> (Box<dyn Effect>, Self::Handle);
+}
+
 /// Receives input audio from a mixer track and outputs modified audio.
 #[allow(unused_variables)]
 pub trait Effect: Send + Sync {

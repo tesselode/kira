@@ -12,7 +12,7 @@ use crate::{
 	clock::{Clock, ClockHandle, ClockId},
 	error::CommandError,
 	sound::SoundData,
-	track::{effect::Effect, SubTrackId, Track, TrackHandle, TrackId, TrackSettings},
+	track::{effect::Effect, SubTrackId, Track, TrackBuilder, TrackHandle, TrackId},
 	tween::Tween,
 };
 
@@ -178,7 +178,7 @@ impl<B: Backend> AudioManager<B> {
 	/// Creates a mixer sub-track.
 	pub fn add_sub_track(
 		&mut self,
-		settings: TrackSettings,
+		settings: TrackBuilder,
 	) -> Result<TrackHandle, AddSubTrackError> {
 		let id = SubTrackId(
 			self.resource_controllers

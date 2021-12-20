@@ -6,7 +6,7 @@ use ringbuf::Producer;
 use crate::{
 	dsp::Frame,
 	manager::{backend::context::Context, command::MixerCommand},
-	track::{effect::Effect, SubTrackId, Track, TrackId, TrackSettings},
+	track::{effect::Effect, SubTrackId, Track, TrackBuilder, TrackId},
 };
 
 pub(crate) struct Mixer {
@@ -27,7 +27,7 @@ impl Mixer {
 		Self {
 			main_track: Track::new(
 				{
-					let mut settings = TrackSettings::new();
+					let mut settings = TrackBuilder::new();
 					settings.effects = main_track_effects;
 					settings
 				},

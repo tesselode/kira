@@ -1,13 +1,13 @@
 //! Organizes and applies effects to audio.
 
+mod builder;
 pub mod effect;
 mod handle;
 mod routes;
-mod settings;
 
+pub use builder::*;
 pub use handle::*;
 pub use routes::*;
-pub use settings::*;
 
 use std::sync::{
 	atomic::{AtomicBool, Ordering},
@@ -75,16 +75,16 @@ pub(crate) struct Track {
 }
 
 impl Track {
-	pub fn new(mut settings: TrackSettings, context: &Arc<Context>) -> Self {
-		for effect in &mut settings.effects {
+	pub fn new(mut builder: TrackBuilder, context: &Arc<Context>) -> Self {
+		for effect in &mut builder.effects {
 			effect.init(context.sample_rate());
 		}
 		Self {
 			shared: Arc::new(TrackShared::new()),
-			volume: settings.volume,
-			panning: settings.panning,
-			routes: settings.routes.into_vec(),
-			effects: settings.effects,
+			volume: builder.volume,
+			panning: builder.panning,
+			routes: builder.routes.into_vec(),
+			effects: builder.effects,
 			input: Frame::ZERO,
 		}
 	}
