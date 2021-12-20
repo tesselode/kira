@@ -15,8 +15,14 @@ pub(crate) enum SoundCommand {
 
 pub(crate) enum MixerCommand {
 	AddSubTrack(SubTrackId, Track),
-	SetTrackVolume(TrackId, f64),
-	SetTrackPanning(TrackId, f64),
+	SetTrackVolume(TrackId, f64, Tween),
+	SetTrackPanning(TrackId, f64, Tween),
+	SetTrackRoutes {
+		from: TrackId,
+		to: TrackId,
+		volume: f64,
+		tween: Tween,
+	},
 }
 
 pub(crate) enum ClockCommand {

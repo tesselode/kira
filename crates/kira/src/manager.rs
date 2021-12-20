@@ -4,7 +4,7 @@ pub mod backend;
 pub(crate) mod command;
 pub mod error;
 
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 
 use ringbuf::RingBuffer;
 
@@ -186,11 +186,13 @@ impl<B: Backend> AudioManager<B> {
 				.try_reserve()
 				.map_err(|_| AddSubTrackError::SubTrackLimitReached)?,
 		);
+		let existing_routes = builder.routes.0.keys().copied().collect();
 		let sub_track = Track::new(builder, &self.context);
 		let handle = TrackHandle {
 			id: TrackId::Sub(id),
 			shared: Some(sub_track.shared()),
 			command_producer: self.command_producer.clone(),
+			existing_routes,
 		};
 		self.command_producer
 			.push(Command::Mixer(MixerCommand::AddSubTrack(id, sub_track)))?;
@@ -232,6 +234,7 @@ impl<B: Backend> AudioManager<B> {
 			id: TrackId::Main,
 			shared: None,
 			command_producer: self.command_producer.clone(),
+			existing_routes: HashSet::new(),
 		}
 	}
 

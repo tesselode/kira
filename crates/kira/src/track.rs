@@ -16,7 +16,12 @@ use std::sync::{
 
 use atomic_arena::Key;
 
-use crate::{clock::ClockTime, dsp::Frame, manager::backend::context::Context};
+use crate::{
+	clock::ClockTime,
+	dsp::Frame,
+	manager::backend::context::Context,
+	tween::{Tween, Tweenable},
+};
 
 use self::effect::Effect;
 
@@ -67,9 +72,9 @@ impl TrackShared {
 
 pub(crate) struct Track {
 	shared: Arc<TrackShared>,
-	volume: f64,
-	panning: f64,
-	routes: Vec<(TrackId, f64)>,
+	volume: Tweenable,
+	panning: Tweenable,
+	routes: Vec<(TrackId, Tweenable)>,
 	effects: Vec<Box<dyn Effect>>,
 	input: Frame,
 }
@@ -81,8 +86,8 @@ impl Track {
 		}
 		Self {
 			shared: Arc::new(TrackShared::new()),
-			volume: builder.volume,
-			panning: builder.panning,
+			volume: Tweenable::new(builder.volume),
+			panning: Tweenable::new(builder.panning),
 			routes: builder.routes.into_vec(),
 			effects: builder.effects,
 			input: Frame::ZERO,
@@ -93,16 +98,29 @@ impl Track {
 		self.shared.clone()
 	}
 
-	pub fn routes_mut(&mut self) -> &mut Vec<(TrackId, f64)> {
+	pub fn routes_mut(&mut self) -> &mut Vec<(TrackId, Tweenable)> {
 		&mut self.routes
 	}
 
-	pub fn set_volume(&mut self, volume: f64) {
-		self.volume = volume;
+	pub fn set_volume(&mut self, volume: f64, tween: Tween) {
+		self.volume.set(volume, tween);
 	}
 
-	pub fn set_panning(&mut self, panning: f64) {
-		self.panning = panning;
+	pub fn set_panning(&mut self, panning: f64, tween: Tween) {
+		self.panning.set(panning, tween);
+	}
+
+	pub fn set_route(&mut self, to: TrackId, volume: f64, tween: Tween) {
+		// TODO: determine if we should store the track routes in some
+		// other data structure like an IndexMap so we don't have to do
+		// linear search
+		if let Some(route) =
+			self.routes
+				.iter_mut()
+				.find_map(|(id, route)| if *id == to { Some(route) } else { None })
+		{
+			route.set(volume, tween);
+		}
 	}
 
 	pub fn add_input(&mut self, input: Frame) {
@@ -116,16 +134,26 @@ impl Track {
 	}
 
 	pub fn process(&mut self, dt: f64) -> Frame {
+		self.volume.update(dt);
+		self.panning.update(dt);
+		for (_, route) in &mut self.routes {
+			route.update(dt);
+		}
 		let mut output = std::mem::replace(&mut self.input, Frame::ZERO);
 		for effect in &mut self.effects {
 			output = effect.process(output, dt);
 		}
-		output *= self.volume as f32;
-		output = output.panned(self.panning as f32);
+		output *= self.volume.value() as f32;
+		output = output.panned(self.panning.value() as f32);
 		output
 	}
 
 	pub fn on_clock_tick(&mut self, time: ClockTime) {
+		self.volume.on_clock_tick(time);
+		self.panning.on_clock_tick(time);
+		for (_, route) in &mut self.routes {
+			route.on_clock_tick(time);
+		}
 		for effect in &mut self.effects {
 			effect.on_clock_tick(time);
 		}

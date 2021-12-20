@@ -8,13 +8,14 @@ use crate::{
 	dsp::Frame,
 	manager::{backend::context::Context, command::MixerCommand},
 	track::{effect::Effect, SubTrackId, Track, TrackBuilder, TrackId},
+	tween::Tweenable,
 };
 
 pub(crate) struct Mixer {
 	main_track: Track,
 	sub_tracks: Arena<Track>,
 	sub_track_ids: Vec<SubTrackId>,
-	dummy_routes: Vec<(TrackId, f64)>,
+	dummy_routes: Vec<(TrackId, Tweenable)>,
 	unused_track_producer: Producer<Track>,
 }
 
@@ -60,14 +61,24 @@ impl Mixer {
 					.expect("Sub-track arena is full");
 				self.sub_track_ids.push(id);
 			}
-			MixerCommand::SetTrackVolume(id, volume) => {
+			MixerCommand::SetTrackVolume(id, volume, tween) => {
 				if let Some(track) = self.track_mut(id) {
-					track.set_volume(volume);
+					track.set_volume(volume, tween);
 				}
 			}
-			MixerCommand::SetTrackPanning(id, panning) => {
+			MixerCommand::SetTrackPanning(id, panning, tween) => {
 				if let Some(track) = self.track_mut(id) {
-					track.set_panning(panning);
+					track.set_panning(panning, tween);
+				}
+			}
+			MixerCommand::SetTrackRoutes {
+				from,
+				to,
+				volume,
+				tween,
+			} => {
+				if let Some(track) = self.track_mut(from) {
+					track.set_route(to, volume, tween);
 				}
 			}
 		}
@@ -125,7 +136,7 @@ impl Mixer {
 					TrackId::Sub(id) => self.sub_tracks.get_mut(id.0),
 				};
 				if let Some(destination_track) = destination_track {
-					destination_track.add_input(output * *amount as f32);
+					destination_track.add_input(output * amount.value() as f32);
 				}
 			}
 			// borrow the track again and give it back its routes
