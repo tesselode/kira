@@ -1,6 +1,19 @@
 //! Adds reverberations to a sound.
 
-use crate::{dsp::Frame, track::Effect};
+mod builder;
+mod handle;
+
+pub use builder::*;
+pub use handle::*;
+
+use ringbuf::Consumer;
+
+use crate::{
+	clock::ClockTime,
+	dsp::Frame,
+	track::Effect,
+	tween::{Tween, Tweenable},
+};
 use all_pass::AllPassFilter;
 use comb::CombFilter;
 
@@ -12,71 +25,11 @@ const NUM_ALL_PASS_FILTERS: usize = 4;
 const GAIN: f32 = 0.015;
 const STEREO_SPREAD: usize = 23;
 
-/// Settings for a `Reverb`.
-#[derive(Debug, Copy, Clone)]
-#[non_exhaustive]
-pub struct ReverbSettings {
-	/// How much the room reverberates. A higher value will
-	/// result in a bigger sounding room. 1.0 gives an infinitely
-	/// reverberating room.
-	pub feedback: f64,
-	/// How quickly high frequencies disappear from the reverberation.
-	pub damping: f64,
-	/// The stereo width of the reverb effect (0.0 being fully mono,
-	/// 1.0 being fully stereo).
-	pub stereo_width: f64,
-	/// How much dry (unprocessed) signal should be blended
-	/// with the wet (processed) signal. `0.0` means
-	/// only the dry signal will be heard. `1.0` means
-	/// only the wet signal will be heard.
-	pub mix: f64,
-}
-
-impl ReverbSettings {
-	/// Creates a new `ReverbSettings` with the default settings.
-	pub fn new() -> Self {
-		Self::default()
-	}
-
-	/// Sets how much the room reverberates. A higher value will
-	/// result in a bigger sounding room. 1.0 gives an infinitely
-	/// reverberating room.
-	pub fn feedback(self, feedback: f64) -> Self {
-		Self { feedback, ..self }
-	}
-
-	/// Sets how quickly high frequencies disappear from the reverberation.
-	pub fn damping(self, damping: f64) -> Self {
-		Self { damping, ..self }
-	}
-
-	/// Sets the stereo width of the reverb effect (0.0 being fully mono,
-	/// 1.0 being fully stereo).
-	pub fn stereo_width(self, stereo_width: f64) -> Self {
-		Self {
-			stereo_width,
-			..self
-		}
-	}
-
-	/// Sets how much dry (unprocessed) signal should be blended
-	/// with the wet (processed) signal. `0.0` means only the dry
-	/// signal will be heard. `1.0` means only the wet signal will
-	/// be heard.
-	pub fn mix(self, mix: f64) -> Self {
-		Self { mix, ..self }
-	}
-}
-
-impl Default for ReverbSettings {
-	fn default() -> Self {
-		Self {
-			feedback: 0.9,
-			damping: 0.1,
-			stereo_width: 1.0,
-			mix: 0.5,
-		}
-	}
+enum Command {
+	SetFeedback(f64, Tween),
+	SetDamping(f64, Tween),
+	SetStereoWidth(f64, Tween),
+	SetMix(f64, Tween),
 }
 
 #[derive(Debug)]
@@ -92,21 +45,23 @@ enum ReverbState {
 // This code is based on Freeverb by Jezar at Dreampoint, found here:
 // http://blog.bjornroche.com/2012/06/freeverb-original-public-domain-code-by.html
 pub struct Reverb {
-	feedback: f64,
-	damping: f64,
-	stereo_width: f64,
-	mix: f64,
+	command_consumer: Consumer<Command>,
+	feedback: Tweenable,
+	damping: Tweenable,
+	stereo_width: Tweenable,
+	mix: Tweenable,
 	state: ReverbState,
 }
 
 impl Reverb {
 	/// Creates a new `Reverb` effect.
-	pub fn new(settings: ReverbSettings) -> Self {
+	fn new(settings: ReverbBuilder, command_consumer: Consumer<Command>) -> Self {
 		Self {
-			feedback: settings.feedback,
-			damping: settings.damping,
-			stereo_width: settings.stereo_width,
-			mix: settings.mix,
+			command_consumer,
+			feedback: Tweenable::new(settings.feedback),
+			damping: Tweenable::new(settings.damping),
+			stereo_width: Tweenable::new(settings.stereo_width),
+			mix: Tweenable::new(settings.mix),
 			state: ReverbState::Uninitialized,
 		}
 	}
@@ -181,15 +136,33 @@ impl Effect for Reverb {
 		}
 	}
 
-	fn process(&mut self, input: Frame, _dt: f64) -> Frame {
+	fn on_start_processing(&mut self) {
+		while let Some(command) = self.command_consumer.pop() {
+			match command {
+				Command::SetFeedback(feedback, tween) => self.feedback.set(feedback, tween),
+				Command::SetDamping(damping, tween) => self.damping.set(damping, tween),
+				Command::SetStereoWidth(stereo_width, tween) => {
+					self.stereo_width.set(stereo_width, tween)
+				}
+				Command::SetMix(mix, tween) => self.mix.set(mix, tween),
+			}
+		}
+	}
+
+	fn process(&mut self, input: Frame, dt: f64) -> Frame {
 		if let ReverbState::Initialized {
 			comb_filters,
 			all_pass_filters,
 		} = &mut self.state
 		{
-			let feedback = self.feedback as f32;
-			let damping = self.damping as f32;
-			let stereo_width = self.stereo_width as f32;
+			self.feedback.update(dt);
+			self.damping.update(dt);
+			self.stereo_width.update(dt);
+			self.mix.update(dt);
+
+			let feedback = self.feedback.value() as f32;
+			let damping = self.damping.value() as f32;
+			let stereo_width = self.stereo_width.value() as f32;
 
 			let mut output = Frame::ZERO;
 			let mono_input = (input.left + input.right) * GAIN;
@@ -209,10 +182,17 @@ impl Effect for Reverb {
 				output.left * wet_1 + output.right * wet_2,
 				output.right * wet_1 + output.left * wet_2,
 			);
-			let mix = self.mix as f32;
+			let mix = self.mix.value() as f32;
 			output * mix.sqrt() + input * (1.0 - mix).sqrt()
 		} else {
 			panic!("Reverb should be initialized before the first process call")
 		}
+	}
+
+	fn on_clock_tick(&mut self, time: ClockTime) {
+		self.feedback.on_clock_tick(time);
+		self.damping.on_clock_tick(time);
+		self.stereo_width.on_clock_tick(time);
+		self.mix.on_clock_tick(time);
 	}
 }
