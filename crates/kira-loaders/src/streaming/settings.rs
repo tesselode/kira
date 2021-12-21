@@ -1,4 +1,4 @@
-use kira::{track::TrackId, tween::Tween, LoopBehavior, StartTime};
+use kira::{track::TrackId, tween::Tween, LoopBehavior, PlaybackRate, StartTime};
 
 /// Settings for a streaming sound.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -10,12 +10,11 @@ pub struct StreamingSoundSettings {
 	pub start_position: f64,
 	/// The volume of the sound.
 	pub volume: f64,
-	/// The playback rate of the sound, as a factor of the
-	/// normal playback rate.
+	/// The playback rate of the sound.
 	///
 	/// Changing the playback rate will change both the speed
 	/// and the pitch of the sound.
-	pub playback_rate: f64,
+	pub playback_rate: PlaybackRate,
 	/// The panning of the sound, where 0 is hard left
 	/// and 1 is hard right.
 	pub panning: f64,
@@ -34,7 +33,7 @@ impl StreamingSoundSettings {
 			start_time: StartTime::Immediate,
 			start_position: 0.0,
 			volume: 1.0,
-			playback_rate: 1.0,
+			playback_rate: PlaybackRate::Factor(1.0),
 			panning: 0.5,
 			loop_behavior: None,
 			track: TrackId::Main,
@@ -44,7 +43,10 @@ impl StreamingSoundSettings {
 
 	/// Sets when the sound should start playing.
 	pub fn start_time(self, start_time: impl Into<StartTime>) -> Self {
-		Self { start_time: start_time.into(), ..self }
+		Self {
+			start_time: start_time.into(),
+			..self
+		}
 	}
 
 	/// Sets the initial playback position of the sound (in seconds).
@@ -60,14 +62,13 @@ impl StreamingSoundSettings {
 		Self { volume, ..self }
 	}
 
-	/// Sets the playback rate of the sound, as a factor of the
-	/// normal playback rate.
+	/// Sets the playback rate of the sound.
 	///
 	/// Changing the playback rate will change both the speed
 	/// and the pitch of the sound.
-	pub fn playback_rate(self, playback_rate: f64) -> Self {
+	pub fn playback_rate(self, playback_rate: impl Into<PlaybackRate>) -> Self {
 		Self {
-			playback_rate,
+			playback_rate: playback_rate.into(),
 			..self
 		}
 	}
@@ -88,7 +89,10 @@ impl StreamingSoundSettings {
 
 	/// Sets the mixer track this sound should play on.
 	pub fn track(self, track: impl Into<TrackId>) -> Self {
-		Self { track: track.into(), ..self }
+		Self {
+			track: track.into(),
+			..self
+		}
 	}
 
 	/// Sets the tween used to fade in the instance from silence.

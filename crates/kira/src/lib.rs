@@ -31,6 +31,7 @@ pub mod dsp;
 mod error;
 mod loop_behavior;
 pub mod manager;
+mod playback_rate;
 pub mod sound;
 mod start_time;
 pub mod track;
@@ -38,4 +39,5 @@ pub mod tween;
 
 pub use error::*;
 pub use loop_behavior::*;
+pub use playback_rate::*;
 pub use start_time::*;

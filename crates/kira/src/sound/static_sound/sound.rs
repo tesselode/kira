@@ -14,7 +14,7 @@ use crate::{
 	sound::Sound,
 	track::TrackId,
 	tween::{Tween, Tweener},
-	LoopBehavior, StartTime,
+	LoopBehavior, PlaybackRate, StartTime,
 };
 
 use super::{data::StaticSoundData, Command};
@@ -65,7 +65,7 @@ pub(super) struct StaticSound {
 	state: PlaybackState,
 	position: f64,
 	volume: Tweener,
-	playback_rate: Tweener,
+	playback_rate: Tweener<PlaybackRate>,
 	panning: Tweener,
 	volume_fade: Tweener,
 	shared: Arc<Shared>,
@@ -128,9 +128,9 @@ impl StaticSound {
 
 	fn playback_rate(&self) -> f64 {
 		if self.data.settings.reverse {
-			-self.playback_rate.value()
+			-self.playback_rate.value().as_factor()
 		} else {
-			self.playback_rate.value()
+			self.playback_rate.value().as_factor()
 		}
 	}
 

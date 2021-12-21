@@ -1,4 +1,4 @@
-use crate::{track::TrackId, tween::Tween, LoopBehavior, StartTime};
+use crate::{track::TrackId, tween::Tween, LoopBehavior, PlaybackRate, StartTime};
 
 /// Settings for a static sound.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -10,12 +10,11 @@ pub struct StaticSoundSettings {
 	pub start_position: f64,
 	/// The volume of the sound.
 	pub volume: f64,
-	/// The playback rate of the sound, as a factor of the
-	/// normal playback rate.
+	/// The playback rate of the sound.
 	///
 	/// Changing the playback rate will change both the speed
 	/// and the pitch of the sound.
-	pub playback_rate: f64,
+	pub playback_rate: PlaybackRate,
 	/// The panning of the sound, where 0 is hard left
 	/// and 1 is hard right.
 	pub panning: f64,
@@ -39,7 +38,7 @@ impl StaticSoundSettings {
 			start_time: StartTime::default(),
 			start_position: 0.0,
 			volume: 1.0,
-			playback_rate: 1.0,
+			playback_rate: PlaybackRate::Factor(1.0),
 			panning: 0.5,
 			reverse: false,
 			loop_behavior: None,
@@ -69,14 +68,13 @@ impl StaticSoundSettings {
 		Self { volume, ..self }
 	}
 
-	/// Sets the playback rate of the sound, as a factor of the
-	/// normal playback rate.
+	/// Sets the playback rate of the sound.
 	///
 	/// Changing the playback rate will change both the speed
 	/// and the pitch of the sound.
-	pub fn playback_rate(self, playback_rate: f64) -> Self {
+	pub fn playback_rate(self, playback_rate: impl Into<PlaybackRate>) -> Self {
 		Self {
-			playback_rate,
+			playback_rate: playback_rate.into(),
 			..self
 		}
 	}

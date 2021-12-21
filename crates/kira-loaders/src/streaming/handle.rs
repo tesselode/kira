@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use kira::{sound::static_sound::PlaybackState, tween::Tween, CommandError};
+use kira::{sound::static_sound::PlaybackState, tween::Tween, CommandError, PlaybackRate};
 use ringbuf::{Consumer, Producer};
 
 use crate::Error;
@@ -32,18 +32,17 @@ impl StreamingSoundHandle {
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
-	/// Sets the playback rate of the sound (as a factor of the
-	/// original speed).
+	/// Sets the playback rate of the sound.
 	///
 	/// Changing the playback rate will change both the speed
 	/// and pitch of the sound.
 	pub fn set_playback_rate(
 		&mut self,
-		playback_rate: f64,
+		playback_rate: impl Into<PlaybackRate>,
 		tween: Tween,
 	) -> Result<(), CommandError> {
 		self.command_producer
-			.push(Command::SetPlaybackRate(playback_rate, tween))
+			.push(Command::SetPlaybackRate(playback_rate.into(), tween))
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
