@@ -1,14 +1,14 @@
 use crate::{clock::ClockTime, StartTime};
 
-use super::Tween;
+use super::{Tween, Tweenable};
 
 type JustFinishedTween = bool;
 
 #[derive(Debug, Clone, Copy)]
-enum State {
+enum State<T: Tweenable> {
 	Idle,
 	Tweening {
-		values: (f64, f64),
+		values: (T, T),
 		time: f64,
 		tween: Tween,
 		waiting_to_start: bool,
@@ -16,14 +16,14 @@ enum State {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct Tweener {
-	state: State,
-	value: f64,
+pub struct Tweener<T: Tweenable = f64> {
+	state: State<T>,
+	value: T,
 }
 
-impl Tweener {
+impl<T: Tweenable> Tweener<T> {
 	/// Creates a new [`Tweenable`] with an initial value.
-	pub fn new(initial_value: f64) -> Self {
+	pub fn new(initial_value: T) -> Self {
 		Self {
 			state: State::Idle,
 			value: initial_value,
@@ -31,13 +31,13 @@ impl Tweener {
 	}
 
 	/// Returns the current value of the [`Tweenable`].
-	pub fn value(&self) -> f64 {
+	pub fn value(&self) -> T {
 		self.value
 	}
 
 	/// Starts transitioning the [`Tweenable`] to the target
 	/// value with the given tween.
-	pub fn set(&mut self, target: f64, tween: Tween) {
+	pub fn set(&mut self, target: T, tween: Tween) {
 		self.state = State::Tweening {
 			values: (self.value, target),
 			time: 0.0,
@@ -65,7 +65,7 @@ impl Tweener {
 				self.state = State::Idle;
 				return true;
 			} else {
-				self.value = values.0 + (values.1 - values.0) * tween.value(*time);
+				self.value = T::lerp(values.0, values.1, tween.value(*time));
 			}
 		}
 		false
