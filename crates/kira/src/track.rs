@@ -20,7 +20,7 @@ use crate::{
 	clock::ClockTime,
 	dsp::Frame,
 	manager::backend::context::Context,
-	tween::{Tween, Tweenable},
+	tween::{Tween, Tweener},
 };
 
 use self::effect::Effect;
@@ -72,9 +72,9 @@ impl TrackShared {
 
 pub(crate) struct Track {
 	shared: Arc<TrackShared>,
-	volume: Tweenable,
-	panning: Tweenable,
-	routes: Vec<(TrackId, Tweenable)>,
+	volume: Tweener,
+	panning: Tweener,
+	routes: Vec<(TrackId, Tweener)>,
 	effects: Vec<Box<dyn Effect>>,
 	input: Frame,
 }
@@ -86,8 +86,8 @@ impl Track {
 		}
 		Self {
 			shared: Arc::new(TrackShared::new()),
-			volume: Tweenable::new(builder.volume),
-			panning: Tweenable::new(builder.panning),
+			volume: Tweener::new(builder.volume),
+			panning: Tweener::new(builder.panning),
 			routes: builder.routes.into_vec(),
 			effects: builder.effects,
 			input: Frame::ZERO,
@@ -98,7 +98,7 @@ impl Track {
 		self.shared.clone()
 	}
 
-	pub fn routes_mut(&mut self) -> &mut Vec<(TrackId, Tweenable)> {
+	pub fn routes_mut(&mut self) -> &mut Vec<(TrackId, Tweener)> {
 		&mut self.routes
 	}
 

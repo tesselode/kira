@@ -7,7 +7,7 @@ use ringbuf::Consumer;
 use crate::{
 	dsp::Frame,
 	manager::{command::Command, MainPlaybackState},
-	tween::Tweenable,
+	tween::Tweener,
 };
 
 use self::context::Context;
@@ -24,7 +24,7 @@ pub struct Renderer {
 	resources: Resources,
 	command_consumer: Consumer<Command>,
 	state: MainPlaybackState,
-	fade_volume: Tweenable,
+	fade_volume: Tweener,
 }
 
 impl Renderer {
@@ -38,7 +38,7 @@ impl Renderer {
 			resources,
 			command_consumer,
 			state: MainPlaybackState::Playing,
-			fade_volume: Tweenable::new(1.0),
+			fade_volume: Tweener::new(1.0),
 		}
 	}
 

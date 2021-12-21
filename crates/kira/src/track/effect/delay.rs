@@ -12,7 +12,7 @@ use crate::{
 	clock::ClockTime,
 	dsp::{interpolate_frame, Frame},
 	track::Effect,
-	tween::{Tween, Tweenable},
+	tween::{Tween, Tweener},
 };
 
 enum Command {
@@ -36,9 +36,9 @@ enum DelayState {
 /// for creating echo effects.
 pub struct Delay {
 	command_consumer: Consumer<Command>,
-	delay_time: Tweenable,
-	feedback: Tweenable,
-	mix: Tweenable,
+	delay_time: Tweener,
+	feedback: Tweener,
+	mix: Tweener,
 	state: DelayState,
 	feedback_effects: Vec<Box<dyn Effect>>,
 }
@@ -48,9 +48,9 @@ impl Delay {
 	fn new(builder: DelayBuilder, command_consumer: Consumer<Command>) -> Self {
 		Self {
 			command_consumer,
-			delay_time: Tweenable::new(builder.delay_time),
-			feedback: Tweenable::new(builder.feedback),
-			mix: Tweenable::new(builder.mix),
+			delay_time: Tweener::new(builder.delay_time),
+			feedback: Tweener::new(builder.feedback),
+			mix: Tweener::new(builder.mix),
 			state: DelayState::Uninitialized {
 				buffer_length: builder.buffer_length,
 			},

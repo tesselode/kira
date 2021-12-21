@@ -2,7 +2,7 @@ use ringbuf::RingBuffer;
 
 use crate::{
 	track::effect::{Effect, EffectBuilder},
-	tween::Tweenable,
+	tween::Tweener,
 };
 
 use super::{handle::DistortionHandle, Distortion, DistortionKind};
@@ -70,8 +70,8 @@ impl EffectBuilder for DistortionBuilder {
 			Box::new(Distortion {
 				command_consumer,
 				kind: self.kind,
-				drive: Tweenable::new(self.drive),
-				mix: Tweenable::new(self.mix),
+				drive: Tweener::new(self.drive),
+				mix: Tweener::new(self.mix),
 			}),
 			DistortionHandle { command_producer },
 		)

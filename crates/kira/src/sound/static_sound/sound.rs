@@ -13,7 +13,7 @@ use crate::{
 	dsp::Frame,
 	sound::Sound,
 	track::TrackId,
-	tween::{Tween, Tweenable},
+	tween::{Tween, Tweener},
 	LoopBehavior, StartTime,
 };
 
@@ -64,10 +64,10 @@ pub(super) struct StaticSound {
 	start_time: StartTime,
 	state: PlaybackState,
 	position: f64,
-	volume: Tweenable,
-	playback_rate: Tweenable,
-	panning: Tweenable,
-	volume_fade: Tweenable,
+	volume: Tweener,
+	playback_rate: Tweener,
+	panning: Tweener,
+	volume_fade: Tweener,
 	shared: Arc<Shared>,
 }
 
@@ -85,15 +85,15 @@ impl StaticSound {
 			start_time: settings.start_time,
 			state: PlaybackState::Playing,
 			position,
-			volume: Tweenable::new(settings.volume),
-			playback_rate: Tweenable::new(settings.playback_rate),
-			panning: Tweenable::new(settings.panning),
+			volume: Tweener::new(settings.volume),
+			playback_rate: Tweener::new(settings.playback_rate),
+			panning: Tweener::new(settings.panning),
 			volume_fade: if let Some(tween) = settings.fade_in_tween {
-				let mut tweenable = Tweenable::new(0.0);
+				let mut tweenable = Tweener::new(0.0);
 				tweenable.set(1.0, tween);
 				tweenable
 			} else {
-				Tweenable::new(1.0)
+				Tweener::new(1.0)
 			},
 			shared: Arc::new(Shared {
 				state: AtomicU8::new(PlaybackState::Playing as u8),

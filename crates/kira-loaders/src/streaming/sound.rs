@@ -10,7 +10,7 @@ use kira::{
 	dsp::{interpolate_frame, Frame},
 	sound::{static_sound::PlaybackState, Sound},
 	track::TrackId,
-	tween::{Tween, Tweenable},
+	tween::{Tween, Tweener},
 	StartTime,
 };
 use ringbuf::{Consumer, Producer, RingBuffer};
@@ -54,12 +54,12 @@ pub(crate) struct StreamingSound {
 	track: TrackId,
 	start_time: StartTime,
 	state: PlaybackState,
-	volume_fade: Tweenable,
+	volume_fade: Tweener,
 	current_frame: u64,
 	fractional_position: f64,
-	volume: Tweenable,
-	playback_rate: Tweenable,
-	panning: Tweenable,
+	volume: Tweener,
+	playback_rate: Tweener,
+	panning: Tweener,
 	shared: Arc<Shared>,
 }
 
@@ -109,17 +109,17 @@ impl StreamingSound {
 			start_time,
 			state: PlaybackState::Playing,
 			volume_fade: if let Some(tween) = fade_in_tween {
-				let mut tweenable = Tweenable::new(0.0);
+				let mut tweenable = Tweener::new(0.0);
 				tweenable.set(1.0, tween);
 				tweenable
 			} else {
-				Tweenable::new(1.0)
+				Tweener::new(1.0)
 			},
 			current_frame,
 			fractional_position: 0.0,
-			volume: Tweenable::new(volume),
-			playback_rate: Tweenable::new(playback_rate),
-			panning: Tweenable::new(panning),
+			volume: Tweener::new(volume),
+			playback_rate: Tweener::new(playback_rate),
+			panning: Tweener::new(panning),
 			shared: Arc::new(Shared {
 				position: AtomicU64::new(start_position.to_bits()),
 				state: AtomicU8::new(PlaybackState::Playing as u8),

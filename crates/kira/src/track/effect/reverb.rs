@@ -12,7 +12,7 @@ use crate::{
 	clock::ClockTime,
 	dsp::Frame,
 	track::Effect,
-	tween::{Tween, Tweenable},
+	tween::{Tween, Tweener},
 };
 use all_pass::AllPassFilter;
 use comb::CombFilter;
@@ -46,10 +46,10 @@ enum ReverbState {
 // http://blog.bjornroche.com/2012/06/freeverb-original-public-domain-code-by.html
 pub struct Reverb {
 	command_consumer: Consumer<Command>,
-	feedback: Tweenable,
-	damping: Tweenable,
-	stereo_width: Tweenable,
-	mix: Tweenable,
+	feedback: Tweener,
+	damping: Tweener,
+	stereo_width: Tweener,
+	mix: Tweener,
 	state: ReverbState,
 }
 
@@ -58,10 +58,10 @@ impl Reverb {
 	fn new(settings: ReverbBuilder, command_consumer: Consumer<Command>) -> Self {
 		Self {
 			command_consumer,
-			feedback: Tweenable::new(settings.feedback),
-			damping: Tweenable::new(settings.damping),
-			stereo_width: Tweenable::new(settings.stereo_width),
-			mix: Tweenable::new(settings.mix),
+			feedback: Tweener::new(settings.feedback),
+			damping: Tweener::new(settings.damping),
+			stereo_width: Tweener::new(settings.stereo_width),
+			mix: Tweener::new(settings.mix),
 			state: ReverbState::Uninitialized,
 		}
 	}

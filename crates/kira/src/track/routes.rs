@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::tween::Tweenable;
+use crate::tween::Tweener;
 
 use super::TrackId;
 
@@ -49,10 +49,10 @@ impl TrackRoutes {
 		self
 	}
 
-	pub(crate) fn into_vec(self) -> Vec<(TrackId, Tweenable)> {
+	pub(crate) fn into_vec(self) -> Vec<(TrackId, Tweener)> {
 		self.0
 			.iter()
-			.map(|(id, value)| (*id, Tweenable::new(*value)))
+			.map(|(id, value)| (*id, Tweener::new(*value)))
 			.collect()
 	}
 }

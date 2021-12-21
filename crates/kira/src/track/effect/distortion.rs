@@ -10,7 +10,7 @@ use crate::{
 	clock::ClockTime,
 	dsp::Frame,
 	track::Effect,
-	tween::{Tween, Tweenable},
+	tween::{Tween, Tweener},
 };
 
 enum Command {
@@ -48,8 +48,8 @@ impl Default for DistortionKind {
 pub struct Distortion {
 	command_consumer: Consumer<Command>,
 	kind: DistortionKind,
-	drive: Tweenable,
-	mix: Tweenable,
+	drive: Tweener,
+	mix: Tweener,
 }
 
 impl Effect for Distortion {

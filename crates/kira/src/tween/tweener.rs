@@ -15,19 +15,13 @@ enum State {
 	},
 }
 
-/// A value that can be smoothly transitioned to other values
-/// using [`Tween`]s.
-///
-/// This is a utility for writing [`Sound`](crate::sound::Sound)s.
-/// If you want to smoothly transition values from gameplay code,
-/// consider using [parameters](crate::parameter).
 #[derive(Debug, Clone, Copy)]
-pub struct Tweenable {
+pub struct Tweener {
 	state: State,
 	value: f64,
 }
 
-impl Tweenable {
+impl Tweener {
 	/// Creates a new [`Tweenable`] with an initial value.
 	pub fn new(initial_value: f64) -> Self {
 		Self {

@@ -14,7 +14,7 @@ use std::sync::{
 
 use atomic_arena::Key;
 
-use crate::tween::{Tween, Tweenable};
+use crate::tween::{Tween, Tweener};
 
 /// A unique identifier for a [`Clock`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -61,7 +61,7 @@ impl ClockShared {
 pub struct Clock {
 	shared: Arc<ClockShared>,
 	ticking: bool,
-	interval: Tweenable,
+	interval: Tweener,
 	ticks: u64,
 	tick_timer: f64,
 }
@@ -71,7 +71,7 @@ impl Clock {
 		Self {
 			shared: Arc::new(ClockShared::new()),
 			ticking: false,
-			interval: Tweenable::new(interval),
+			interval: Tweener::new(interval),
 			ticks: 0,
 			tick_timer: 1.0,
 		}

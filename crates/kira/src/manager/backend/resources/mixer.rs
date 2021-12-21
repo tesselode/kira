@@ -8,14 +8,14 @@ use crate::{
 	dsp::Frame,
 	manager::{backend::context::Context, command::MixerCommand},
 	track::{effect::Effect, SubTrackId, Track, TrackBuilder, TrackId},
-	tween::Tweenable,
+	tween::Tweener,
 };
 
 pub(crate) struct Mixer {
 	main_track: Track,
 	sub_tracks: Arena<Track>,
 	sub_track_ids: Vec<SubTrackId>,
-	dummy_routes: Vec<(TrackId, Tweenable)>,
+	dummy_routes: Vec<(TrackId, Tweener)>,
 	unused_track_producer: Producer<Track>,
 }
 

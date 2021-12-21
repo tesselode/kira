@@ -13,7 +13,7 @@ use crate::{
 	clock::ClockTime,
 	dsp::Frame,
 	track::Effect,
-	tween::{Tween, Tweenable},
+	tween::{Tween, Tweener},
 };
 
 enum Command {
@@ -43,9 +43,9 @@ pub enum FilterMode {
 pub struct Filter {
 	command_consumer: Consumer<Command>,
 	mode: FilterMode,
-	cutoff: Tweenable,
-	resonance: Tweenable,
-	mix: Tweenable,
+	cutoff: Tweener,
+	resonance: Tweener,
+	mix: Tweener,
 	ic1eq: Frame,
 	ic2eq: Frame,
 }
@@ -56,9 +56,9 @@ impl Filter {
 		Self {
 			command_consumer,
 			mode: builder.mode,
-			cutoff: Tweenable::new(builder.cutoff),
-			resonance: Tweenable::new(builder.resonance),
-			mix: Tweenable::new(builder.mix),
+			cutoff: Tweener::new(builder.cutoff),
+			resonance: Tweener::new(builder.resonance),
+			mix: Tweener::new(builder.mix),
 			ic1eq: Frame::ZERO,
 			ic2eq: Frame::ZERO,
 		}
