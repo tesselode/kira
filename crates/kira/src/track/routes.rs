@@ -21,7 +21,7 @@ impl TrackRoutes {
 	///
 	/// If you set a track's routes to this as is, you will not hear
 	/// any audio output from that track, since it is not routed
-	/// to the main track nor to any other track..
+	/// to the main track nor to any other track.
 	pub fn empty() -> Self {
 		Self(HashMap::new())
 	}
