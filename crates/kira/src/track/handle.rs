@@ -8,9 +8,12 @@ use crate::{
 
 use super::{TrackId, TrackShared};
 
+/// Errors that can occur when changing the volume of a track route.
 #[derive(Debug)]
 pub enum SetRouteError {
+	/// Cannot change the volume of a track route that did not exist originally.
 	NonexistentRoute,
+	/// An error occurred when sending a command to the audio renderer.
 	CommandError(CommandError),
 }
 
@@ -68,6 +71,10 @@ impl TrackHandle {
 			)))
 	}
 
+	/// Sets the volume of this track's route to another track.
+	/// 
+	/// This can only be used to change the volume of existing routes,
+	/// not to add new routes.
 	pub fn set_route(
 		&mut self,
 		to: impl Into<TrackId>,

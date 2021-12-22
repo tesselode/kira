@@ -40,6 +40,7 @@ pub trait Sound: Send {
 	/// Produces the next [`Frame`] of audio.
 	fn process(&mut self, dt: f64) -> Frame;
 
+	/// Called whenever a [clock](crate::clock) ticks.
 	fn on_clock_tick(&mut self, time: ClockTime) {}
 
 	/// Returns `true` if the sound is finished and can be unloaded.

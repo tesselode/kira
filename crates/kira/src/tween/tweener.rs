@@ -15,6 +15,8 @@ enum State<T: Tweenable> {
 	},
 }
 
+/// Holds a value and plays back tweens which smoothly
+/// adjust that value.
 #[derive(Debug, Clone, Copy)]
 pub struct Tweener<T: Tweenable = f64> {
 	state: State<T>,
@@ -71,6 +73,11 @@ impl<T: Tweenable> Tweener<T> {
 		false
 	}
 
+	/// Informs the [`Tweener`] about a clock tick.
+	///
+	/// If the current tween's start time is set to a clock
+	/// time, and that time has been reached, the tween will
+	/// start playing.
 	pub fn on_clock_tick(&mut self, time: ClockTime) {
 		if let State::Tweening {
 			waiting_to_start,
