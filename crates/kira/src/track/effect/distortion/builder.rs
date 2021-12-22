@@ -9,7 +9,7 @@ use super::{handle::DistortionHandle, Distortion, DistortionKind};
 
 const COMMAND_CAPACITY: usize = 8;
 
-/// Configures a [`Distortion`] effect.
+/// Configures a distortion effect.
 #[derive(Debug, Copy, Clone)]
 #[non_exhaustive]
 pub struct DistortionBuilder {
@@ -26,7 +26,7 @@ pub struct DistortionBuilder {
 }
 
 impl DistortionBuilder {
-	/// Creates a new `DistortionSettings` with the default settings.
+	/// Creates a new [`DistortionBuilder`] with the default settings.
 	pub fn new() -> Self {
 		Self::default()
 	}

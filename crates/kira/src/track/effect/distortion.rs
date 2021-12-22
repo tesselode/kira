@@ -43,9 +43,7 @@ impl Default for DistortionKind {
 	}
 }
 
-/// An effect that modifies an input signal to make it more
-/// distorted and noisy.
-pub struct Distortion {
+struct Distortion {
 	command_consumer: Consumer<Command>,
 	kind: DistortionKind,
 	drive: Tweener,

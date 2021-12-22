@@ -1,4 +1,4 @@
-//! Adds reverberations to a sound.
+//! Adds reverberations to a sound. Useful for simulating room tones.
 
 mod builder;
 mod handle;
@@ -41,10 +41,9 @@ enum ReverbState {
 	},
 }
 
-/// A reverb effect. Useul for simulating room tones.
 // This code is based on Freeverb by Jezar at Dreampoint, found here:
 // http://blog.bjornroche.com/2012/06/freeverb-original-public-domain-code-by.html
-pub struct Reverb {
+struct Reverb {
 	command_consumer: Consumer<Command>,
 	feedback: Tweener,
 	damping: Tweener,

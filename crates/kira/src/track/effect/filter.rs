@@ -39,8 +39,7 @@ pub enum FilterMode {
 	Notch,
 }
 
-/// An effect that removes frequencies from input audio.
-pub struct Filter {
+struct Filter {
 	command_consumer: Consumer<Command>,
 	mode: FilterMode,
 	cutoff: Tweener,

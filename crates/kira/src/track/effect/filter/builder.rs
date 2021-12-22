@@ -6,7 +6,7 @@ use super::{Filter, FilterHandle, FilterMode};
 
 const COMMAND_CAPACITY: usize = 8;
 
-/// Configures a [`Filter`].
+/// Configures a filter effect.
 #[derive(Debug, Copy, Clone)]
 #[non_exhaustive]
 pub struct FilterBuilder {
@@ -27,7 +27,7 @@ pub struct FilterBuilder {
 }
 
 impl FilterBuilder {
-	/// Creates a new `FilterBuilder` with the default settings.
+	/// Creates a new [`FilterBuilder`] with the default settings.
 	pub fn new() -> Self {
 		Self::default()
 	}

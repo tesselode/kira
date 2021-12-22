@@ -6,7 +6,7 @@ use super::{Delay, DelayHandle};
 
 const COMMAND_CAPACITY: usize = 8;
 
-/// Configures a [`Delay`] effect.
+/// Configures a delay effect.
 #[non_exhaustive]
 pub struct DelayBuilder {
 	/// The delay time (in seconds).
@@ -26,7 +26,7 @@ pub struct DelayBuilder {
 }
 
 impl DelayBuilder {
-	/// Creates a new `DelaySettings` with the default settings.
+	/// Creates a new [`DelayBuilder`] with the default settings.
 	pub fn new() -> Self {
 		Self::default()
 	}

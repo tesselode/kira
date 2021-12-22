@@ -6,7 +6,7 @@ use super::{Reverb, ReverbHandle};
 
 const COMMAND_CAPACITY: usize = 8;
 
-/// Configures a `Reverb`.
+/// Configures a reverb effect.
 #[derive(Debug, Copy, Clone)]
 #[non_exhaustive]
 pub struct ReverbBuilder {
@@ -27,7 +27,7 @@ pub struct ReverbBuilder {
 }
 
 impl ReverbBuilder {
-	/// Creates a new `ReverbBuilder` with the default settings.
+	/// Creates a new [`ReverbBuilder`] with the default settings.
 	pub fn new() -> Self {
 		Self::default()
 	}

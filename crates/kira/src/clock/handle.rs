@@ -8,7 +8,7 @@ use crate::{
 
 use super::{ClockId, ClockShared, ClockTime};
 
-/// Controls a [`Clock`](super::Clock).
+/// Controls a clock.
 ///
 /// When a [`ClockHandle`] is dropped, the corresponding clock
 /// will be removed.

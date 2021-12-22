@@ -32,9 +32,7 @@ enum DelayState {
 	},
 }
 
-/// An effect that repeats audio after a certain delay. Useful
-/// for creating echo effects.
-pub struct Delay {
+struct Delay {
 	command_consumer: Consumer<Command>,
 	delay_time: Tweener,
 	feedback: Tweener,

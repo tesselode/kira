@@ -16,7 +16,7 @@ use atomic_arena::Key;
 
 use crate::tween::{Tween, Tweener};
 
-/// A unique identifier for a [`Clock`].
+/// A unique identifier for a clock.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ClockId(pub(crate) Key);
 
@@ -52,13 +52,7 @@ impl ClockShared {
 	}
 }
 
-/// A user-controllable timing source.
-///
-/// You will only need to interact with [`Clock`]s directly
-/// if you're writing your own [`Sound`](crate::sound::Sound)s.
-/// Otherwise, you'll be interacting with clocks using a
-/// [`ClockHandle`].
-pub struct Clock {
+pub(crate) struct Clock {
 	shared: Arc<ClockShared>,
 	ticking: bool,
 	interval: Tweener,
@@ -79,16 +73,6 @@ impl Clock {
 
 	pub(crate) fn shared(&self) -> Arc<ClockShared> {
 		self.shared.clone()
-	}
-
-	/// Returns `true` if the clock is currently running.
-	pub fn ticking(&self) -> bool {
-		self.ticking
-	}
-
-	/// Returns the number of times the clock has ticked.
-	pub fn ticks(&self) -> u64 {
-		self.ticks
 	}
 
 	pub(crate) fn set_interval(&mut self, interval: f64, tween: Tween) {
