@@ -19,6 +19,9 @@ use crate::{
 
 use super::{data::StaticSoundData, Command};
 
+#[cfg(test)]
+mod test;
+
 /// The playback state of a sound.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PlaybackState {
@@ -104,6 +107,11 @@ impl StaticSound {
 
 	pub(super) fn shared(&self) -> Arc<Shared> {
 		self.shared.clone()
+	}
+
+	#[cfg(test)]
+	pub(super) fn state(&self) -> PlaybackState {
+		self.state
 	}
 
 	fn set_state(&mut self, state: PlaybackState) {

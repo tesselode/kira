@@ -2,7 +2,7 @@ use std::{sync::Arc, time::Duration};
 
 use crate::dsp::Frame;
 
-use super::data::StaticSoundData;
+use super::StaticSoundData;
 
 #[test]
 fn duration() {

@@ -12,9 +12,6 @@ pub use sound::PlaybackState;
 
 use crate::{tween::Tween, PlaybackRate};
 
-#[cfg(test)]
-mod test;
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Command {
 	SetVolume(f64, Tween),
