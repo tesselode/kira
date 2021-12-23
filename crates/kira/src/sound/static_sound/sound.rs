@@ -150,6 +150,7 @@ impl StaticSound {
 				start_position..self.data.duration().as_secs_f64(),
 			);
 		} else if self.position < 0.0 || self.position > self.data.duration().as_secs_f64() {
+			self.position = self.position.clamp(0.0, self.data.duration().as_secs_f64());
 			self.set_state(PlaybackState::Stopped);
 		}
 	}
