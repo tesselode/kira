@@ -1,3 +1,10 @@
+# v0.6.0 beta 1 - December 24, 2021
+
+- Fix looping static sounds with a loop start position greater than 0.0 starting
+  playback at that position. (The intended behavior is that the sound will still
+  start at the beginning, but jump back to the loop start position after
+  reaching the end.)
+
 # v0.6.0 beta 0 - December 4, 2021
 
 Complete rewrite, most things have changed
