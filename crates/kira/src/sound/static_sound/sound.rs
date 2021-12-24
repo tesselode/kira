@@ -1,9 +1,6 @@
-use std::{
-	ops::Range,
-	sync::{
-		atomic::{AtomicU64, AtomicU8, Ordering},
-		Arc,
-	},
+use std::sync::{
+	atomic::{AtomicU64, AtomicU8, Ordering},
+	Arc,
 };
 
 use ringbuf::Consumer;
@@ -107,11 +104,6 @@ impl StaticSound {
 
 	pub(super) fn shared(&self) -> Arc<Shared> {
 		self.shared.clone()
-	}
-
-	#[cfg(test)]
-	pub(super) fn state(&self) -> PlaybackState {
-		self.state
 	}
 
 	fn set_state(&mut self, state: PlaybackState) {
