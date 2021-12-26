@@ -7,6 +7,7 @@ use crate::{
 	sound::Sound,
 	track::{SubTrackId, Track, TrackId},
 	tween::Tween,
+	ClockSpeed,
 };
 
 pub(crate) enum SoundCommand {
@@ -27,7 +28,7 @@ pub(crate) enum MixerCommand {
 
 pub(crate) enum ClockCommand {
 	Add(ClockId, Clock),
-	SetInterval(ClockId, f64, Tween),
+	SetSpeed(ClockId, ClockSpeed, Tween),
 	Start(ClockId),
 	Pause(ClockId),
 	Stop(ClockId),

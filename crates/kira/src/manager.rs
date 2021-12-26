@@ -14,6 +14,7 @@ use crate::{
 	sound::SoundData,
 	track::{effect::Effect, SubTrackId, Track, TrackBuilder, TrackHandle, TrackId},
 	tween::Tween,
+	ClockSpeed,
 };
 
 use self::{
@@ -200,14 +201,17 @@ impl<B: Backend> AudioManager<B> {
 	}
 
 	/// Creates a clock.
-	pub fn add_clock(&mut self, interval: f64) -> Result<ClockHandle, AddClockError> {
+	pub fn add_clock(
+		&mut self,
+		speed: impl Into<ClockSpeed>,
+	) -> Result<ClockHandle, AddClockError> {
 		let id = ClockId(
 			self.resource_controllers
 				.clock_controller
 				.try_reserve()
 				.map_err(|_| AddClockError::ClockLimitReached)?,
 		);
-		let clock = Clock::new(interval);
+		let clock = Clock::new(speed.into());
 		let handle = ClockHandle {
 			id,
 			shared: clock.shared(),

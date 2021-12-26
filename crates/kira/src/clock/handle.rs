@@ -4,6 +4,7 @@ use crate::{
 	error::CommandError,
 	manager::command::{producer::CommandProducer, ClockCommand, Command},
 	tween::Tween,
+	ClockSpeed,
 };
 
 use super::{ClockId, ClockShared, ClockTime};
@@ -38,11 +39,17 @@ impl ClockHandle {
 		}
 	}
 
-	/// Sets the duration of time between each tick (in seconds).
-	pub fn set_interval(&mut self, interval: f64, tween: Tween) -> Result<(), CommandError> {
+	/// Sets the speed of the clock.
+	pub fn set_speed(
+		&mut self,
+		speed: impl Into<ClockSpeed>,
+		tween: Tween,
+	) -> Result<(), CommandError> {
 		self.command_producer
-			.push(Command::Clock(ClockCommand::SetInterval(
-				self.id, interval, tween,
+			.push(Command::Clock(ClockCommand::SetSpeed(
+				self.id,
+				speed.into(),
+				tween,
 			)))
 	}
 

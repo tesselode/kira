@@ -50,9 +50,9 @@ impl Clocks {
 				.clocks
 				.insert_with_key(id.0, clock)
 				.expect("Clock arena is full"),
-			ClockCommand::SetInterval(id, interval, tween) => {
+			ClockCommand::SetSpeed(id, speed, tween) => {
 				if let Some(clock) = self.clocks.get_mut(id.0) {
-					clock.set_interval(interval, tween);
+					clock.set_speed(speed, tween);
 				}
 			}
 			ClockCommand::Start(id) => {

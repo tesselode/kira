@@ -27,6 +27,7 @@ support for loading audio files
 #![allow(clippy::tabs_in_doc_comments)]
 
 pub mod clock;
+mod clock_speed;
 pub mod dsp;
 mod error;
 mod loop_behavior;
@@ -37,6 +38,7 @@ mod start_time;
 pub mod track;
 pub mod tween;
 
+pub use clock_speed::*;
 pub use error::*;
 pub use loop_behavior::*;
 pub use playback_rate::*;
