@@ -55,11 +55,16 @@ impl ClockShared {
 	}
 }
 
+enum State {
+	NotStarted,
+	Started { ticks: u64 },
+}
+
 pub(crate) struct Clock {
 	shared: Arc<ClockShared>,
 	ticking: bool,
 	speed: Tweener<ClockSpeed>,
-	ticks: u64,
+	state: State,
 	tick_timer: f64,
 }
 
@@ -69,7 +74,7 @@ impl Clock {
 			shared: Arc::new(ClockShared::new()),
 			ticking: false,
 			speed: Tweener::new(speed),
-			ticks: 0,
+			state: State::NotStarted,
 			tick_timer: 1.0,
 		}
 	}
@@ -94,27 +99,33 @@ impl Clock {
 
 	pub(crate) fn stop(&mut self) {
 		self.pause();
-		self.ticks = 0;
+		self.state = State::NotStarted;
 		self.shared.ticks.store(0, Ordering::SeqCst);
 	}
 
 	pub(crate) fn update(&mut self, dt: f64) -> Option<u64> {
 		self.speed.update(dt);
-		let mut ticked = false;
-		if self.ticking {
-			self.tick_timer -= self.speed.value().as_ticks_per_second() * dt;
-			while self.tick_timer <= 0.0 {
-				self.tick_timer += 1.0;
-				self.ticks += 1;
-				self.shared.ticks.fetch_add(1, Ordering::SeqCst);
-				ticked = true;
-			}
+		if !self.ticking {
+			return None;
 		}
-		if ticked {
-			Some(self.ticks)
-		} else {
-			None
+		let mut new_tick_count = None;
+		self.tick_timer -= self.speed.value().as_ticks_per_second() * dt;
+		while self.tick_timer <= 0.0 {
+			self.tick_timer += 1.0;
+			let tick_count = match &mut self.state {
+				State::NotStarted => {
+					self.state = State::Started { ticks: 0 };
+					0
+				}
+				State::Started { ticks } => {
+					*ticks += 1;
+					*ticks
+				}
+			};
+			self.shared.ticks.store(tick_count, Ordering::SeqCst);
+			new_tick_count = Some(tick_count);
 		}
+		new_tick_count
 	}
 
 	pub(crate) fn on_clock_tick(&mut self, time: ClockTime) {
