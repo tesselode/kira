@@ -13,7 +13,7 @@ use crate::{
 	LoopBehavior,
 };
 
-/// Tests that a StaticSound will play all of its samples before finishing.
+/// Tests that a `StaticSound` will play all of its samples before finishing.
 #[test]
 fn plays_all_samples() {
 	let data = StaticSoundData {
@@ -41,7 +41,7 @@ fn plays_all_samples() {
 	assert_eq!(sound.state, PlaybackState::Stopped);
 }
 
-/// Tests that a StaticSound correctly reports its playback state
+/// Tests that a `StaticSound` correctly reports its playback state
 /// to be queried by StaticSoundHandle::state.
 #[test]
 fn reports_playback_state() {
@@ -65,7 +65,7 @@ fn reports_playback_state() {
 	assert_eq!(handle.state(), PlaybackState::Stopped);
 }
 
-/// Tests that a StaticSound correctly reports its playback state
+/// Tests that a `StaticSound` correctly reports its playback state
 /// to be queried by StaticSoundHandle::state.
 #[test]
 #[allow(clippy::float_cmp)]
@@ -90,7 +90,7 @@ fn reports_playback_position() {
 	assert_eq!(handle.position(), 2.0);
 }
 
-/// Tests that a StaticSound fades out fully before pausing
+/// Tests that a `StaticSound` fades out fully before pausing
 /// and fades back in when resuming.
 #[test]
 #[allow(clippy::float_cmp)]
@@ -155,7 +155,7 @@ fn pauses_and_resumes_with_fades() {
 	}
 }
 
-/// Tests that a StaticSound stops and finishes after a fade-out.
+/// Tests that a `StaticSound` stops and finishes after a fade-out.
 #[test]
 #[allow(clippy::float_cmp)]
 fn stops_with_fade_out() {
@@ -196,7 +196,7 @@ fn stops_with_fade_out() {
 	}
 }
 
-/// Tests that a StaticSound will wait for its start clock time
+/// Tests that a `StaticSound` will wait for its start clock time
 /// when appropriate.
 #[test]
 #[allow(clippy::float_cmp)]
@@ -260,7 +260,41 @@ fn waits_for_start_time() {
 	}
 }
 
-/// Tests that a StaticSound properly obeys looping behavior when
+/// Tests that a `StaticSound` can be started partway through the sound.
+#[test]
+#[allow(clippy::float_cmp)]
+fn start_position() {
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new((0..10).map(|i| Frame::from_mono(i as f32)).collect()),
+		settings: StaticSoundSettings::new().start_position(3.0),
+	};
+	let (mut sound, _) = data.split();
+
+	assert_eq!(sound.position, 3.0);
+	assert_eq!(sound.process(1.0), Frame::from_mono(3.0).panned(0.5));
+}
+
+/// Tests that a `StaticSound` can be played backwards.
+#[test]
+#[allow(clippy::float_cmp)]
+fn reverse() {
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new((0..10).map(|i| Frame::from_mono(i as f32)).collect()),
+		settings: StaticSoundSettings::new().reverse(true).start_position(2.0),
+	};
+	let (mut sound, _) = data.split();
+
+	// start position should be from the end
+	assert_eq!(sound.position, 8.0);
+	assert_eq!(sound.process(1.0), Frame::from_mono(8.0).panned(0.5));
+	// position should decrease over time
+	assert_eq!(sound.position, 7.0);
+	assert_eq!(sound.process(1.0), Frame::from_mono(7.0).panned(0.5));
+}
+
+/// Tests that a `StaticSound` properly obeys looping behavior when
 /// playing forward.
 #[test]
 #[allow(clippy::float_cmp)]
@@ -289,7 +323,7 @@ fn loops_forward() {
 	assert_eq!(sound.process(3.0), Frame::from_mono(5.0).panned(0.5));
 }
 
-/// Tests that a StaticSound properly obeys looping behavior when
+/// Tests that a `StaticSound` properly obeys looping behavior when
 /// playing backward.
 #[test]
 #[allow(clippy::float_cmp)]
@@ -320,4 +354,48 @@ fn loops_backward() {
 	assert_eq!(sound.process(4.0), Frame::from_mono(5.0).panned(0.5));
 	assert_eq!(sound.position, 8.0);
 	assert_eq!(sound.process(4.0), Frame::from_mono(8.0).panned(0.5));
+}
+
+/// Tests that the volume of a `StaticSound` can be adjusted.
+#[test]
+#[allow(clippy::float_cmp)]
+fn volume() {
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new(vec![Frame::from_mono(1.0); 10]),
+		settings: StaticSoundSettings::new().volume(0.5),
+	};
+	let (mut sound, _) = data.split();
+
+	assert_eq!(sound.process(1.0), Frame::from_mono(0.5).panned(0.5));
+}
+
+/// Tests that the panning of a `StaticSound` can be adjusted.
+#[test]
+#[allow(clippy::float_cmp)]
+fn panning() {
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new(vec![Frame::from_mono(1.0); 10]),
+		settings: StaticSoundSettings::new().panning(0.0),
+	};
+	let (mut sound, _) = data.split();
+
+	assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.0));
+}
+
+/// Tests that the playback rate of a `StaticSound` can be adjusted.
+#[test]
+#[allow(clippy::float_cmp)]
+fn playback_rate() {
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new((0..10).map(|i| Frame::from_mono(i as f32)).collect()),
+		settings: StaticSoundSettings::new().playback_rate(2.0),
+	};
+	let (mut sound, _) = data.split();
+
+	assert_eq!(sound.process(1.0), Frame::from_mono(0.0).panned(0.5));
+	assert_eq!(sound.position, 2.0);
+	assert_eq!(sound.process(1.0), Frame::from_mono(2.0).panned(0.5));
 }
