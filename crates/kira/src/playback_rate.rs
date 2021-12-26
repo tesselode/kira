@@ -53,3 +53,26 @@ impl Tweenable for PlaybackRate {
 		}
 	}
 }
+
+#[cfg(test)]
+#[test]
+#[allow(clippy::float_cmp)]
+fn test() {
+	/// A table of semitone differences to pitch factors.
+	/// Values calculated from http://www.sengpielaudio.com/calculator-centsratio.htm
+	const TEST_CALCULATIONS: [(f64, f64); 5] = [
+		(0.0, 1.0),
+		(1.0, 1.059463),
+		(2.0, 1.122462),
+		(-1.0, 0.943874),
+		(-2.0, 0.890899),
+	];
+
+	for (semitones, factor) in TEST_CALCULATIONS {
+		assert_eq!(PlaybackRate::Factor(factor).as_factor(), factor);
+		assert!((PlaybackRate::Factor(factor).as_semitones() - semitones).abs() < 0.00001);
+
+		assert_eq!(PlaybackRate::Semitones(semitones).as_semitones(), semitones);
+		assert!((PlaybackRate::Semitones(semitones).as_factor() - factor).abs() < 0.00001);
+	}
+}
