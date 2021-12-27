@@ -1,5 +1,4 @@
 use std::{
-	ops::Range,
 	sync::{
 		atomic::{AtomicU64, AtomicU8, Ordering},
 		Arc,
@@ -139,10 +138,16 @@ impl StaticSound {
 	fn increment_playback_position(&mut self, amount: f64) {
 		self.position += amount;
 		if let Some(LoopBehavior { start_position }) = self.data.settings.loop_behavior {
-			self.position = wrap(
-				self.position,
-				start_position..self.data.duration().as_secs_f64(),
-			);
+			let duration = self.data.duration().as_secs_f64();
+			if amount.is_sign_negative() {
+				while self.position < start_position {
+					self.position += duration - start_position;
+				}
+			} else {
+				while self.position >= duration {
+					self.position -= duration - start_position;
+				}
+			}
 		} else if self.position < 0.0 || self.position > self.data.duration().as_secs_f64() {
 			self.set_state(PlaybackState::Stopped);
 		}
@@ -207,15 +212,4 @@ impl Sound for StaticSound {
 	fn finished(&self) -> bool {
 		self.state == PlaybackState::Stopped
 	}
-}
-
-fn wrap(mut x: f64, range: Range<f64>) -> f64 {
-	let length = range.end - range.start;
-	while x < range.start {
-		x += length;
-	}
-	while x > range.end {
-		x -= length;
-	}
-	x
 }
