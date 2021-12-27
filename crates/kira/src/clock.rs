@@ -1,10 +1,9 @@
 //! Precise timing for audio events.
 
-mod clocks;
+pub(crate) mod clocks;
 mod handle;
 mod time;
 
-pub use clocks::*;
 pub use handle::*;
 pub use time::*;
 
@@ -16,11 +15,11 @@ use std::sync::{
 use atomic_arena::Key;
 
 use crate::{
-	parameter::Parameters,
-	value::{CachedValue, Value},
+	tween::{Tween, Tweener},
+	ClockSpeed,
 };
 
-/// A unique identifier for a [`Clock`].
+/// A unique identifier for a clock.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ClockId(pub(crate) Key);
 
@@ -56,27 +55,26 @@ impl ClockShared {
 	}
 }
 
-/// A user-controllable timing source.
-///
-/// You will only need to interact with [`Clock`]s directly
-/// if you're writing your own [`Sound`](crate::sound::Sound)s.
-/// Otherwise, you'll be interacting with clocks using a
-/// [`ClockHandle`].
-pub struct Clock {
+enum State {
+	NotStarted,
+	Started { ticks: u64 },
+}
+
+pub(crate) struct Clock {
 	shared: Arc<ClockShared>,
 	ticking: bool,
-	interval: CachedValue,
-	ticks: u64,
+	speed: Tweener<ClockSpeed>,
+	state: State,
 	tick_timer: f64,
 }
 
 impl Clock {
-	pub(crate) fn new(interval: Value) -> Self {
+	pub(crate) fn new(speed: ClockSpeed) -> Self {
 		Self {
 			shared: Arc::new(ClockShared::new()),
 			ticking: false,
-			interval: CachedValue::new(0.0.., interval, 1.0),
-			ticks: 0,
+			speed: Tweener::new(speed),
+			state: State::NotStarted,
 			tick_timer: 1.0,
 		}
 	}
@@ -85,18 +83,8 @@ impl Clock {
 		self.shared.clone()
 	}
 
-	/// Returns `true` if the clock is currently running.
-	pub fn ticking(&self) -> bool {
-		self.ticking
-	}
-
-	/// Returns the number of times the clock has ticked.
-	pub fn ticks(&self) -> u64 {
-		self.ticks
-	}
-
-	pub(crate) fn set_interval(&mut self, interval: Value) {
-		self.interval.set(interval);
+	pub(crate) fn set_speed(&mut self, speed: ClockSpeed, tween: Tween) {
+		self.speed.set(speed, tween);
 	}
 
 	pub(crate) fn start(&mut self) {
@@ -111,19 +99,36 @@ impl Clock {
 
 	pub(crate) fn stop(&mut self) {
 		self.pause();
-		self.ticks = 0;
+		self.state = State::NotStarted;
 		self.shared.ticks.store(0, Ordering::SeqCst);
 	}
 
-	pub(crate) fn update(&mut self, dt: f64, parameters: &Parameters) {
-		self.interval.update(parameters);
-		if self.ticking {
-			self.tick_timer -= dt / self.interval.get();
-			while self.tick_timer <= 0.0 {
-				self.tick_timer += 1.0;
-				self.ticks += 1;
-				self.shared.ticks.fetch_add(1, Ordering::SeqCst);
-			}
+	pub(crate) fn update(&mut self, dt: f64) -> Option<u64> {
+		self.speed.update(dt);
+		if !self.ticking {
+			return None;
 		}
+		let mut new_tick_count = None;
+		self.tick_timer -= self.speed.value().as_ticks_per_second() * dt;
+		while self.tick_timer <= 0.0 {
+			self.tick_timer += 1.0;
+			let tick_count = match &mut self.state {
+				State::NotStarted => {
+					self.state = State::Started { ticks: 0 };
+					0
+				}
+				State::Started { ticks } => {
+					*ticks += 1;
+					*ticks
+				}
+			};
+			self.shared.ticks.store(tick_count, Ordering::SeqCst);
+			new_tick_count = Some(tick_count);
+		}
+		new_tick_count
+	}
+
+	pub(crate) fn on_clock_tick(&mut self, time: ClockTime) {
+		self.speed.on_clock_tick(time);
 	}
 }

@@ -1,11 +1,23 @@
 //! Makes a sound harsher and noisier.
 
+mod builder;
+mod handle;
+
+pub use builder::*;
+use ringbuf::Consumer;
+
 use crate::{
+	clock::ClockTime,
 	dsp::Frame,
-	parameter::Parameters,
 	track::Effect,
-	value::{CachedValue, Value},
+	tween::{Tween, Tweener},
 };
+
+enum Command {
+	SetKind(DistortionKind),
+	SetDrive(f64, Tween),
+	SetMix(f64, Tween),
+}
 
 /// Different types of distortion effect.
 #[derive(Debug, Copy, Clone)]
@@ -31,87 +43,28 @@ impl Default for DistortionKind {
 	}
 }
 
-/// Settings for a [`Distortion`] effect.
-#[derive(Debug, Copy, Clone)]
-#[non_exhaustive]
-pub struct DistortionSettings {
-	/// The kind of distortion to use.
-	pub kind: DistortionKind,
-	/// The factor to multiply the signal by before applying
-	/// the distortion.
-	pub drive: Value,
-	/// How much dry (unprocessed) signal should be blended
-	/// with the wet (processed) signal. `0.0` means
-	/// only the dry signal will be heard. `1.0` means
-	/// only the wet signal will be heard.
-	pub mix: Value,
-}
-
-impl DistortionSettings {
-	/// Creates a new `DistortionSettings` with the default settings.
-	pub fn new() -> Self {
-		Self::default()
-	}
-
-	/// Sets the kind of distortion to use.
-	pub fn kind(self, kind: DistortionKind) -> Self {
-		Self { kind, ..self }
-	}
-
-	/// Sets the factor to multiply the signal by before applying
-	/// the distortion.
-	pub fn drive(self, drive: impl Into<Value>) -> Self {
-		Self {
-			drive: drive.into(),
-			..self
-		}
-	}
-
-	/// Sets how much dry (unprocessed) signal should be blended
-	/// with the wet (processed) signal. `0.0` means only the dry
-	/// signal will be heard. `1.0` means only the wet signal will
-	/// be heard.
-	pub fn mix(self, mix: impl Into<Value>) -> Self {
-		Self {
-			mix: mix.into(),
-			..self
-		}
-	}
-}
-
-impl Default for DistortionSettings {
-	fn default() -> Self {
-		Self {
-			kind: Default::default(),
-			drive: Value::Fixed(1.0),
-			mix: Value::Fixed(1.0),
-		}
-	}
-}
-
-/// An effect that modifies an input signal to make it more
-/// distorted and noisy.
-pub struct Distortion {
+struct Distortion {
+	command_consumer: Consumer<Command>,
 	kind: DistortionKind,
-	drive: CachedValue,
-	mix: CachedValue,
-}
-
-impl Distortion {
-	/// Creates a new distortion effect.
-	pub fn new(settings: DistortionSettings) -> Self {
-		Self {
-			kind: settings.kind,
-			drive: CachedValue::new(.., settings.drive, 1.0),
-			mix: CachedValue::new(0.0..=1.0, settings.mix, 1.0),
-		}
-	}
+	drive: Tweener,
+	mix: Tweener,
 }
 
 impl Effect for Distortion {
-	fn process(&mut self, input: Frame, _dt: f64, parameters: &Parameters) -> Frame {
-		self.drive.update(parameters);
-		let drive = self.drive.get() as f32;
+	fn on_start_processing(&mut self) {
+		while let Some(command) = self.command_consumer.pop() {
+			match command {
+				Command::SetKind(kind) => self.kind = kind,
+				Command::SetDrive(drive, tween) => self.drive.set(drive, tween),
+				Command::SetMix(mix, tween) => self.mix.set(mix, tween),
+			}
+		}
+	}
+
+	fn process(&mut self, input: Frame, dt: f64) -> Frame {
+		self.drive.update(dt);
+		self.mix.update(dt);
+		let drive = self.drive.value() as f32;
 		let mut output = input * drive;
 		output = match self.kind {
 			DistortionKind::HardClip => Frame::new(
@@ -125,7 +78,12 @@ impl Effect for Distortion {
 		};
 		output /= drive;
 
-		let mix = self.mix.get() as f32;
+		let mix = self.mix.value() as f32;
 		output * mix.sqrt() + input * (1.0 - mix).sqrt()
+	}
+
+	fn on_clock_tick(&mut self, time: ClockTime) {
+		self.drive.on_clock_tick(time);
+		self.mix.on_clock_tick(time);
 	}
 }

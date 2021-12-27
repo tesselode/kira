@@ -1,10 +1,18 @@
-//! Adds reverberations to a sound.
+//! Adds reverberations to a sound. Useful for simulating room tones.
+
+mod builder;
+mod handle;
+
+pub use builder::*;
+pub use handle::*;
+
+use ringbuf::Consumer;
 
 use crate::{
+	clock::ClockTime,
 	dsp::Frame,
-	parameter::Parameters,
 	track::Effect,
-	value::{CachedValue, Value},
+	tween::{Tween, Tweener},
 };
 use all_pass::AllPassFilter;
 use comb::CombFilter;
@@ -17,80 +25,11 @@ const NUM_ALL_PASS_FILTERS: usize = 4;
 const GAIN: f32 = 0.015;
 const STEREO_SPREAD: usize = 23;
 
-/// Settings for a `Reverb`.
-#[derive(Debug, Copy, Clone)]
-#[non_exhaustive]
-pub struct ReverbSettings {
-	/// How much the room reverberates. A higher value will
-	/// result in a bigger sounding room. 1.0 gives an infinitely
-	/// reverberating room.
-	pub feedback: Value,
-	/// How quickly high frequencies disappear from the reverberation.
-	pub damping: Value,
-	/// The stereo width of the reverb effect (0.0 being fully mono,
-	/// 1.0 being fully stereo).
-	pub stereo_width: Value,
-	/// How much dry (unprocessed) signal should be blended
-	/// with the wet (processed) signal. `0.0` means
-	/// only the dry signal will be heard. `1.0` means
-	/// only the wet signal will be heard.
-	pub mix: Value,
-}
-
-impl ReverbSettings {
-	/// Creates a new `ReverbSettings` with the default settings.
-	pub fn new() -> Self {
-		Self::default()
-	}
-
-	/// Sets how much the room reverberates. A higher value will
-	/// result in a bigger sounding room. 1.0 gives an infinitely
-	/// reverberating room.
-	pub fn feedback(self, feedback: impl Into<Value>) -> Self {
-		Self {
-			feedback: feedback.into(),
-			..self
-		}
-	}
-
-	/// Sets how quickly high frequencies disappear from the reverberation.
-	pub fn damping(self, damping: impl Into<Value>) -> Self {
-		Self {
-			damping: damping.into(),
-			..self
-		}
-	}
-
-	/// Sets the stereo width of the reverb effect (0.0 being fully mono,
-	/// 1.0 being fully stereo).
-	pub fn stereo_width(self, stereo_width: impl Into<Value>) -> Self {
-		Self {
-			stereo_width: stereo_width.into(),
-			..self
-		}
-	}
-
-	/// Sets how much dry (unprocessed) signal should be blended
-	/// with the wet (processed) signal. `0.0` means only the dry
-	/// signal will be heard. `1.0` means only the wet signal will
-	/// be heard.
-	pub fn mix(self, mix: impl Into<Value>) -> Self {
-		Self {
-			mix: mix.into(),
-			..self
-		}
-	}
-}
-
-impl Default for ReverbSettings {
-	fn default() -> Self {
-		Self {
-			feedback: Value::Fixed(0.9),
-			damping: Value::Fixed(0.1),
-			stereo_width: Value::Fixed(1.0),
-			mix: Value::Fixed(0.5),
-		}
-	}
+enum Command {
+	SetFeedback(f64, Tween),
+	SetDamping(f64, Tween),
+	SetStereoWidth(f64, Tween),
+	SetMix(f64, Tween),
 }
 
 #[derive(Debug)]
@@ -102,25 +41,26 @@ enum ReverbState {
 	},
 }
 
-/// A reverb effect. Useul for simulating room tones.
 // This code is based on Freeverb by Jezar at Dreampoint, found here:
 // http://blog.bjornroche.com/2012/06/freeverb-original-public-domain-code-by.html
-pub struct Reverb {
-	feedback: CachedValue,
-	damping: CachedValue,
-	stereo_width: CachedValue,
-	mix: CachedValue,
+struct Reverb {
+	command_consumer: Consumer<Command>,
+	feedback: Tweener,
+	damping: Tweener,
+	stereo_width: Tweener,
+	mix: Tweener,
 	state: ReverbState,
 }
 
 impl Reverb {
 	/// Creates a new `Reverb` effect.
-	pub fn new(settings: ReverbSettings) -> Self {
+	fn new(settings: ReverbBuilder, command_consumer: Consumer<Command>) -> Self {
 		Self {
-			feedback: CachedValue::new(-1.0..=1.0, settings.feedback, 0.9),
-			damping: CachedValue::new(0.0..=1.0, settings.damping, 0.1),
-			stereo_width: CachedValue::new(0.0..=1.0, settings.stereo_width, 1.0),
-			mix: CachedValue::new(0.0..=1.0, settings.mix, 0.5),
+			command_consumer,
+			feedback: Tweener::new(settings.feedback),
+			damping: Tweener::new(settings.damping),
+			stereo_width: Tweener::new(settings.stereo_width),
+			mix: Tweener::new(settings.mix),
 			state: ReverbState::Uninitialized,
 		}
 	}
@@ -195,19 +135,33 @@ impl Effect for Reverb {
 		}
 	}
 
-	fn process(&mut self, input: Frame, _dt: f64, parameters: &Parameters) -> Frame {
+	fn on_start_processing(&mut self) {
+		while let Some(command) = self.command_consumer.pop() {
+			match command {
+				Command::SetFeedback(feedback, tween) => self.feedback.set(feedback, tween),
+				Command::SetDamping(damping, tween) => self.damping.set(damping, tween),
+				Command::SetStereoWidth(stereo_width, tween) => {
+					self.stereo_width.set(stereo_width, tween)
+				}
+				Command::SetMix(mix, tween) => self.mix.set(mix, tween),
+			}
+		}
+	}
+
+	fn process(&mut self, input: Frame, dt: f64) -> Frame {
 		if let ReverbState::Initialized {
 			comb_filters,
 			all_pass_filters,
 		} = &mut self.state
 		{
-			self.feedback.update(parameters);
-			self.damping.update(parameters);
-			self.stereo_width.update(parameters);
+			self.feedback.update(dt);
+			self.damping.update(dt);
+			self.stereo_width.update(dt);
+			self.mix.update(dt);
 
-			let feedback = self.feedback.get() as f32;
-			let damping = self.damping.get() as f32;
-			let stereo_width = self.stereo_width.get() as f32;
+			let feedback = self.feedback.value() as f32;
+			let damping = self.damping.value() as f32;
+			let stereo_width = self.stereo_width.value() as f32;
 
 			let mut output = Frame::ZERO;
 			let mono_input = (input.left + input.right) * GAIN;
@@ -227,10 +181,17 @@ impl Effect for Reverb {
 				output.left * wet_1 + output.right * wet_2,
 				output.right * wet_1 + output.left * wet_2,
 			);
-			let mix = self.mix.get() as f32;
+			let mix = self.mix.value() as f32;
 			output * mix.sqrt() + input * (1.0 - mix).sqrt()
 		} else {
 			panic!("Reverb should be initialized before the first process call")
 		}
+	}
+
+	fn on_clock_tick(&mut self, time: ClockTime) {
+		self.feedback.on_clock_tick(time);
+		self.damping.on_clock_tick(time);
+		self.stereo_width.on_clock_tick(time);
+		self.mix.on_clock_tick(time);
 	}
 }

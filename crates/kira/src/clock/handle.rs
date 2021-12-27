@@ -3,12 +3,13 @@ use std::sync::Arc;
 use crate::{
 	error::CommandError,
 	manager::command::{producer::CommandProducer, ClockCommand, Command},
-	value::Value,
+	tween::Tween,
+	ClockSpeed,
 };
 
 use super::{ClockId, ClockShared, ClockTime};
 
-/// Controls a [`Clock`](super::Clock).
+/// Controls a clock.
 ///
 /// When a [`ClockHandle`] is dropped, the corresponding clock
 /// will be removed.
@@ -38,12 +39,17 @@ impl ClockHandle {
 		}
 	}
 
-	/// Sets the duration of time between each tick (in seconds).
-	pub fn set_interval(&mut self, interval: impl Into<Value>) -> Result<(), CommandError> {
+	/// Sets the speed of the clock.
+	pub fn set_speed(
+		&mut self,
+		speed: impl Into<ClockSpeed>,
+		tween: Tween,
+	) -> Result<(), CommandError> {
 		self.command_producer
-			.push(Command::Clock(ClockCommand::SetInterval(
+			.push(Command::Clock(ClockCommand::SetSpeed(
 				self.id,
-				interval.into(),
+				speed.into(),
+				tween,
 			)))
 	}
 

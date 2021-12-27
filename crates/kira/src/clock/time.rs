@@ -2,10 +2,10 @@ use std::ops::{Add, AddAssign, Sub, SubAssign};
 
 use super::ClockId;
 
-/// An instant in time associated with a [`Clock`](super::Clock).
+/// An instant in time associated with a clock.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ClockTime {
-	/// The [`Clock`](super::Clock) this time is associated with.
+	/// The clock this time is associated with.
 	pub clock: ClockId,
 	/// The elapsed time in ticks.
 	pub ticks: u64,

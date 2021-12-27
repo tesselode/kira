@@ -8,7 +8,7 @@ take a look at the documentation for
 
 pub mod static_sound;
 
-use crate::{clock::Clocks, dsp::Frame, parameter::Parameters, track::TrackId};
+use crate::{clock::ClockTime, dsp::Frame, track::TrackId};
 
 /// Represents a source of audio that is loaded, but not yet playing.
 pub trait SoundData {
@@ -26,6 +26,7 @@ pub trait SoundData {
 }
 
 /// Represents an actively playing sound.
+#[allow(unused_variables)]
 pub trait Sound: Send {
 	/// Returns the mixer track that this sound's audio should be routed to.
 	fn track(&mut self) -> TrackId;
@@ -37,7 +38,10 @@ pub trait Sound: Send {
 	fn on_start_processing(&mut self) {}
 
 	/// Produces the next [`Frame`] of audio.
-	fn process(&mut self, dt: f64, parameters: &Parameters, clocks: &Clocks) -> Frame;
+	fn process(&mut self, dt: f64) -> Frame;
+
+	/// Called whenever a [clock](crate::clock) ticks.
+	fn on_clock_tick(&mut self, time: ClockTime) {}
 
 	/// Returns `true` if the sound is finished and can be unloaded.
 	fn finished(&self) -> bool;

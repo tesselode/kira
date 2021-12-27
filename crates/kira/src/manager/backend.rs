@@ -1,5 +1,4 @@
-//! Important types for connecting Kira to low-level audio
-//! APIs.
+//! Communication between Kira and a low-level audio API.
 
 mod mock;
 mod renderer;

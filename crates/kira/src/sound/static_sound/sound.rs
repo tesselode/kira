@@ -1,24 +1,23 @@
-use std::{
-	sync::{
-		atomic::{AtomicU64, AtomicU8, Ordering},
-		Arc,
-	},
+use std::sync::{
+	atomic::{AtomicU64, AtomicU8, Ordering},
+	Arc,
 };
 
 use ringbuf::Consumer;
 
 use crate::{
-	clock::{ClockTime, Clocks},
+	clock::ClockTime,
 	dsp::Frame,
-	parameter::Parameters,
 	sound::Sound,
 	track::TrackId,
-	tween::{Tween, Tweenable},
-	value::CachedValue,
-	LoopBehavior, StartTime,
+	tween::{Tween, Tweener},
+	LoopBehavior, PlaybackRate, StartTime,
 };
 
 use super::{data::StaticSoundData, Command};
+
+#[cfg(test)]
+mod test;
 
 /// The playback state of a sound.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -65,10 +64,10 @@ pub(super) struct StaticSound {
 	start_time: StartTime,
 	state: PlaybackState,
 	position: f64,
-	volume: CachedValue,
-	playback_rate: CachedValue,
-	panning: CachedValue,
-	volume_fade: Tweenable,
+	volume: Tweener,
+	playback_rate: Tweener<PlaybackRate>,
+	panning: Tweener,
+	volume_fade: Tweener,
 	shared: Arc<Shared>,
 }
 
@@ -86,15 +85,15 @@ impl StaticSound {
 			start_time: settings.start_time,
 			state: PlaybackState::Playing,
 			position,
-			volume: CachedValue::new(.., settings.volume, 1.0),
-			playback_rate: CachedValue::new(.., settings.playback_rate, 1.0),
-			panning: CachedValue::new(0.0..=1.0, settings.panning, 0.5),
+			volume: Tweener::new(settings.volume),
+			playback_rate: Tweener::new(settings.playback_rate),
+			panning: Tweener::new(settings.panning),
 			volume_fade: if let Some(tween) = settings.fade_in_tween {
-				let mut tweenable = Tweenable::new(0.0);
+				let mut tweenable = Tweener::new(0.0);
 				tweenable.set(1.0, tween);
 				tweenable
 			} else {
-				Tweenable::new(1.0)
+				Tweener::new(1.0)
 			},
 			shared: Arc::new(Shared {
 				state: AtomicU8::new(PlaybackState::Playing as u8),
@@ -129,9 +128,9 @@ impl StaticSound {
 
 	fn playback_rate(&self) -> f64 {
 		if self.data.settings.reverse {
-			-self.playback_rate.get()
+			-self.playback_rate.value().as_factor()
 		} else {
-			self.playback_rate.get()
+			self.playback_rate.value().as_factor()
 		}
 	}
 
@@ -149,6 +148,7 @@ impl StaticSound {
 				}
 			}
 		} else if self.position < 0.0 || self.position > self.data.duration().as_secs_f64() {
+			self.position = self.position.clamp(0.0, self.data.duration().as_secs_f64());
 			self.set_state(PlaybackState::Stopped);
 		}
 	}
@@ -165,9 +165,11 @@ impl Sound for StaticSound {
 			.store(self.position.to_bits(), Ordering::SeqCst);
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
-				Command::SetVolume(volume) => self.volume.set(volume),
-				Command::SetPlaybackRate(playback_rate) => self.playback_rate.set(playback_rate),
-				Command::SetPanning(panning) => self.panning.set(panning),
+				Command::SetVolume(volume, tween) => self.volume.set(volume, tween),
+				Command::SetPlaybackRate(playback_rate, tween) => {
+					self.playback_rate.set(playback_rate, tween)
+				}
+				Command::SetPanning(panning, tween) => self.panning.set(panning, tween),
 				Command::Pause(tween) => self.pause(tween),
 				Command::Resume(tween) => self.resume(tween),
 				Command::Stop(tween) => self.stop(tween),
@@ -179,18 +181,14 @@ impl Sound for StaticSound {
 		}
 	}
 
-	fn process(&mut self, dt: f64, parameters: &Parameters, clocks: &Clocks) -> Frame {
-		if let StartTime::ClockTime(ClockTime { clock, ticks }) = self.start_time {
-			if let Some(clock) = clocks.get(clock) {
-				if clock.ticking() && clock.ticks() >= ticks {
-					self.start_time = StartTime::Immediate;
-				}
-			}
-		}
+	fn process(&mut self, dt: f64) -> Frame {
+		self.volume.update(dt);
+		self.playback_rate.update(dt);
+		self.panning.update(dt);
 		if matches!(self.start_time, StartTime::ClockTime(..)) {
 			return Frame::ZERO;
 		}
-		if self.volume_fade.update(dt, clocks) {
+		if self.volume_fade.update(dt) {
 			match self.state {
 				PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
 				PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),
@@ -200,13 +198,21 @@ impl Sound for StaticSound {
 		if matches!(self.state, PlaybackState::Paused | PlaybackState::Stopped) {
 			return Frame::ZERO;
 		}
-		self.volume.update(parameters);
-		self.playback_rate.update(parameters);
-		self.panning.update(parameters);
 		let out = self.data.frame_at_position(self.position);
 		self.increment_playback_position(self.playback_rate() * dt);
-		(out * self.volume_fade.value() as f32 * self.volume.get() as f32)
-			.panned(self.panning.get() as f32)
+		(out * self.volume_fade.value() as f32 * self.volume.value() as f32)
+			.panned(self.panning.value() as f32)
+	}
+
+	fn on_clock_tick(&mut self, time: ClockTime) {
+		self.volume.on_clock_tick(time);
+		self.playback_rate.on_clock_tick(time);
+		self.panning.on_clock_tick(time);
+		if let StartTime::ClockTime(ClockTime { clock, ticks }) = self.start_time {
+			if time.clock == clock && time.ticks >= ticks {
+				self.start_time = StartTime::Immediate;
+			}
+		}
 	}
 
 	fn finished(&self) -> bool {

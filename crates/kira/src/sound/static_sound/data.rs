@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod test;
+
 use std::{sync::Arc, time::Duration};
 
 use ringbuf::RingBuffer;
@@ -50,6 +53,19 @@ impl StaticSoundData {
 		let next_2 = self.frame_at_index(current_sample_index + 2);
 		interpolate_frame(previous, current, next_1, next_2, fraction)
 	}
+
+	pub(super) fn split(self) -> (StaticSound, StaticSoundHandle) {
+		let (command_producer, command_consumer) = RingBuffer::new(COMMAND_BUFFER_CAPACITY).split();
+		let sound = StaticSound::new(self, command_consumer);
+		let shared = sound.shared();
+		(
+			sound,
+			StaticSoundHandle {
+				command_producer,
+				shared,
+			},
+		)
+	}
 }
 
 impl SoundData for StaticSoundData {
@@ -59,15 +75,7 @@ impl SoundData for StaticSoundData {
 
 	#[allow(clippy::type_complexity)]
 	fn into_sound(self) -> Result<(Box<dyn Sound>, Self::Handle), Self::Error> {
-		let (command_producer, command_consumer) = RingBuffer::new(COMMAND_BUFFER_CAPACITY).split();
-		let sound = StaticSound::new(self, command_consumer);
-		let shared = sound.shared();
-		Ok((
-			Box::new(sound),
-			StaticSoundHandle {
-				command_producer,
-				shared,
-			},
-		))
+		let (sound, handle) = self.split();
+		Ok((Box::new(sound), handle))
 	}
 }

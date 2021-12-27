@@ -1,89 +1,24 @@
 //! Adds echoes to a sound.
 
+mod builder;
+mod handle;
+
+pub use builder::*;
+pub use handle::*;
+
+use ringbuf::Consumer;
+
 use crate::{
+	clock::ClockTime,
 	dsp::{interpolate_frame, Frame},
-	parameter::Parameters,
 	track::Effect,
-	value::{CachedValue, Value},
+	tween::{Tween, Tweener},
 };
 
-/// Settings for a [`Delay`] effect.
-#[non_exhaustive]
-pub struct DelaySettings {
-	/// The delay time (in seconds).
-	pub delay_time: Value,
-	/// The amount of feedback.
-	pub feedback: Value,
-	/// The amount of audio the delay can store (in seconds).
-	/// This affects the maximum delay time.
-	pub buffer_length: f64,
-	/// Effects that should be applied in the feedback loop.
-	pub feedback_effects: Vec<Box<dyn Effect>>,
-	/// How much dry (unprocessed) signal should be blended
-	/// with the wet (processed) signal. `0.0` means
-	/// only the dry signal will be heard. `1.0` means
-	/// only the wet signal will be heard.
-	pub mix: Value,
-}
-
-impl DelaySettings {
-	/// Creates a new `DelaySettings` with the default settings.
-	pub fn new() -> Self {
-		Self::default()
-	}
-
-	/// Sets the delay time (in seconds).
-	pub fn delay_time(self, delay_time: impl Into<Value>) -> Self {
-		Self {
-			delay_time: delay_time.into(),
-			..self
-		}
-	}
-
-	/// Sets the amount of feedback.
-	pub fn feedback(self, feedback: impl Into<Value>) -> Self {
-		Self {
-			feedback: feedback.into(),
-			..self
-		}
-	}
-
-	/// Sets the amount of audio the delay can store.
-	pub fn buffer_length(self, buffer_length: f64) -> Self {
-		Self {
-			buffer_length,
-			..self
-		}
-	}
-
-	/// Adds an effect to the feedback loop.
-	pub fn with_feedback_effect(mut self, effect: impl Effect + 'static) -> Self {
-		self.feedback_effects.push(Box::new(effect));
-		self
-	}
-
-	/// Sets how much dry (unprocessed) signal should be blended
-	/// with the wet (processed) signal. `0.0` means only the dry
-	/// signal will be heard. `1.0` means only the wet signal will
-	/// be heard.
-	pub fn mix(self, mix: impl Into<Value>) -> Self {
-		Self {
-			mix: mix.into(),
-			..self
-		}
-	}
-}
-
-impl Default for DelaySettings {
-	fn default() -> Self {
-		Self {
-			delay_time: Value::Fixed(0.5),
-			feedback: Value::Fixed(0.5),
-			buffer_length: 10.0,
-			feedback_effects: vec![],
-			mix: Value::Fixed(0.5),
-		}
-	}
+enum Command {
+	SetDelayTime(f64, Tween),
+	SetFeedback(f64, Tween),
+	SetMix(f64, Tween),
 }
 
 #[derive(Debug, Clone)]
@@ -97,27 +32,27 @@ enum DelayState {
 	},
 }
 
-/// An effect that repeats audio after a certain delay. Useful
-/// for creating echo effects.
-pub struct Delay {
-	delay_time: CachedValue,
-	feedback: CachedValue,
-	mix: CachedValue,
+struct Delay {
+	command_consumer: Consumer<Command>,
+	delay_time: Tweener,
+	feedback: Tweener,
+	mix: Tweener,
 	state: DelayState,
 	feedback_effects: Vec<Box<dyn Effect>>,
 }
 
 impl Delay {
 	/// Creates a new delay effect.
-	pub fn new(settings: DelaySettings) -> Self {
+	fn new(builder: DelayBuilder, command_consumer: Consumer<Command>) -> Self {
 		Self {
-			delay_time: CachedValue::new(0.0.., settings.delay_time, 0.5),
-			feedback: CachedValue::new(-1.0..=1.0, settings.feedback, 0.5),
-			mix: CachedValue::new(0.0..=1.0, settings.mix, 0.5),
+			command_consumer,
+			delay_time: Tweener::new(builder.delay_time),
+			feedback: Tweener::new(builder.feedback),
+			mix: Tweener::new(builder.mix),
 			state: DelayState::Uninitialized {
-				buffer_length: settings.buffer_length,
+				buffer_length: builder.buffer_length,
 			},
-			feedback_effects: settings.feedback_effects,
+			feedback_effects: builder.feedback_effects,
 		}
 	}
 }
@@ -137,19 +72,31 @@ impl Effect for Delay {
 		}
 	}
 
-	fn process(&mut self, input: Frame, dt: f64, parameters: &Parameters) -> Frame {
+	fn on_start_processing(&mut self) {
+		while let Some(command) = self.command_consumer.pop() {
+			match command {
+				Command::SetDelayTime(delay_time, tween) => self.delay_time.set(delay_time, tween),
+				Command::SetFeedback(feedback, tween) => self.feedback.set(feedback, tween),
+				Command::SetMix(mix, tween) => self.mix.set(mix, tween),
+			}
+		}
+		for effect in &mut self.feedback_effects {
+			effect.on_start_processing();
+		}
+	}
+
+	fn process(&mut self, input: Frame, dt: f64) -> Frame {
 		if let DelayState::Initialized {
 			buffer,
 			write_position,
 		} = &mut self.state
 		{
-			// update cached values
-			self.delay_time.update(parameters);
-			self.feedback.update(parameters);
-			self.mix.update(parameters);
+			self.delay_time.update(dt);
+			self.feedback.update(dt);
+			self.mix.update(dt);
 
 			// get the read position (in samples)
-			let mut read_position = *write_position as f32 - (self.delay_time.get() / dt) as f32;
+			let mut read_position = *write_position as f32 - (self.delay_time.value() / dt) as f32;
 			while read_position < 0.0 {
 				read_position += buffer.len() as f32;
 			}
@@ -172,18 +119,27 @@ impl Effect for Delay {
 				fraction,
 			);
 			for effect in &mut self.feedback_effects {
-				output = effect.process(output, dt, parameters);
+				output = effect.process(output, dt);
 			}
 
 			// write output audio to the buffer
 			*write_position += 1;
 			*write_position %= buffer.len();
-			buffer[*write_position] = input + output * self.feedback.get() as f32;
+			buffer[*write_position] = input + output * self.feedback.value() as f32;
 
-			let mix = self.mix.get() as f32;
+			let mix = self.mix.value() as f32;
 			output * mix.sqrt() + input * (1.0 - mix).sqrt()
 		} else {
 			panic!("The delay should be initialized by the first process call")
+		}
+	}
+
+	fn on_clock_tick(&mut self, time: ClockTime) {
+		self.delay_time.on_clock_tick(time);
+		self.feedback.on_clock_tick(time);
+		self.mix.on_clock_tick(time);
+		for effect in &mut self.feedback_effects {
+			effect.on_clock_tick(time);
 		}
 	}
 }

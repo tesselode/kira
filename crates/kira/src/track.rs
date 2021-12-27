@@ -1,13 +1,13 @@
 //! Organizes and applies effects to audio.
 
+mod builder;
 pub mod effect;
 mod handle;
 mod routes;
-mod settings;
 
+pub use builder::*;
 pub use handle::*;
 pub use routes::*;
-pub use settings::*;
 
 use std::sync::{
 	atomic::{AtomicBool, Ordering},
@@ -17,10 +17,10 @@ use std::sync::{
 use atomic_arena::Key;
 
 use crate::{
+	clock::ClockTime,
 	dsp::Frame,
 	manager::backend::context::Context,
-	parameter::Parameters,
-	value::{CachedValue, Value},
+	tween::{Tween, Tweener},
 };
 
 use self::effect::Effect;
@@ -72,24 +72,24 @@ impl TrackShared {
 
 pub(crate) struct Track {
 	shared: Arc<TrackShared>,
-	volume: CachedValue,
-	panning: CachedValue,
-	routes: Vec<(TrackId, CachedValue)>,
+	volume: Tweener,
+	panning: Tweener,
+	routes: Vec<(TrackId, Tweener)>,
 	effects: Vec<Box<dyn Effect>>,
 	input: Frame,
 }
 
 impl Track {
-	pub fn new(mut settings: TrackSettings, context: &Arc<Context>) -> Self {
-		for effect in &mut settings.effects {
+	pub fn new(mut builder: TrackBuilder, context: &Arc<Context>) -> Self {
+		for effect in &mut builder.effects {
 			effect.init(context.sample_rate());
 		}
 		Self {
 			shared: Arc::new(TrackShared::new()),
-			volume: CachedValue::new(.., settings.volume, 1.0),
-			panning: CachedValue::new(0.0..=1.0, settings.panning, 0.5),
-			routes: settings.routes.into_vec(),
-			effects: settings.effects,
+			volume: Tweener::new(builder.volume),
+			panning: Tweener::new(builder.panning),
+			routes: builder.routes.into_vec(),
+			effects: builder.effects,
 			input: Frame::ZERO,
 		}
 	}
@@ -98,34 +98,64 @@ impl Track {
 		self.shared.clone()
 	}
 
-	pub fn routes_mut(&mut self) -> &mut Vec<(TrackId, CachedValue)> {
+	pub fn routes_mut(&mut self) -> &mut Vec<(TrackId, Tweener)> {
 		&mut self.routes
 	}
 
-	pub fn set_volume(&mut self, volume: Value) {
-		self.volume.set(volume);
+	pub fn set_volume(&mut self, volume: f64, tween: Tween) {
+		self.volume.set(volume, tween);
 	}
 
-	pub fn set_panning(&mut self, panning: Value) {
-		self.panning.set(panning);
+	pub fn set_panning(&mut self, panning: f64, tween: Tween) {
+		self.panning.set(panning, tween);
+	}
+
+	pub fn set_route(&mut self, to: TrackId, volume: f64, tween: Tween) {
+		// TODO: determine if we should store the track routes in some
+		// other data structure like an IndexMap so we don't have to do
+		// linear search
+		if let Some(route) =
+			self.routes
+				.iter_mut()
+				.find_map(|(id, route)| if *id == to { Some(route) } else { None })
+		{
+			route.set(volume, tween);
+		}
 	}
 
 	pub fn add_input(&mut self, input: Frame) {
 		self.input += input;
 	}
 
-	pub fn process(&mut self, dt: f64, parameters: &Parameters) -> Frame {
-		self.volume.update(parameters);
-		self.panning.update(parameters);
-		for (_, amount) in &mut self.routes {
-			amount.update(parameters);
+	pub fn on_start_processing(&mut self) {
+		for effect in &mut self.effects {
+			effect.on_start_processing();
+		}
+	}
+
+	pub fn process(&mut self, dt: f64) -> Frame {
+		self.volume.update(dt);
+		self.panning.update(dt);
+		for (_, route) in &mut self.routes {
+			route.update(dt);
 		}
 		let mut output = std::mem::replace(&mut self.input, Frame::ZERO);
 		for effect in &mut self.effects {
-			output = effect.process(output, dt, parameters);
+			output = effect.process(output, dt);
 		}
-		output *= self.volume.get() as f32;
-		output = output.panned(self.panning.get() as f32);
+		output *= self.volume.value() as f32;
+		output = output.panned(self.panning.value() as f32);
 		output
+	}
+
+	pub fn on_clock_tick(&mut self, time: ClockTime) {
+		self.volume.on_clock_tick(time);
+		self.panning.on_clock_tick(time);
+		for (_, route) in &mut self.routes {
+			route.on_clock_tick(time);
+		}
+		for effect in &mut self.effects {
+			effect.on_clock_tick(time);
+		}
 	}
 }

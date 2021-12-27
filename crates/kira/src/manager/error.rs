@@ -48,40 +48,6 @@ impl<E> From<CommandError> for PlaySoundError<E> {
 	}
 }
 
-/// Errors that can occur when creating a parameter.
-#[derive(Debug)]
-#[non_exhaustive]
-pub enum AddParameterError {
-	/// Could not add a parameter because the maximum number of parameters has been reached.
-	ParameterLimitReached,
-	/// An error occured when sending a command to the audio thread.
-	CommandError(CommandError),
-}
-
-impl Display for AddParameterError {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		match self {
-            AddParameterError::ParameterLimitReached => f.write_str("Could not add a parameter because the maximum number of parameters has been reached."),
-            AddParameterError::CommandError(error) => error.fmt(f),
-        }
-	}
-}
-
-impl Error for AddParameterError {
-	fn source(&self) -> Option<&(dyn Error + 'static)> {
-		match self {
-			AddParameterError::CommandError(error) => Some(error),
-			_ => None,
-		}
-	}
-}
-
-impl From<CommandError> for AddParameterError {
-	fn from(v: CommandError) -> Self {
-		Self::CommandError(v)
-	}
-}
-
 /// Errors that can occur when creating a mixer sub-track.
 #[derive(Debug)]
 #[non_exhaustive]

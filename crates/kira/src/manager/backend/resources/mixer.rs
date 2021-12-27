@@ -4,19 +4,18 @@ use atomic_arena::{Arena, Controller};
 use ringbuf::Producer;
 
 use crate::{
+	clock::ClockTime,
 	dsp::Frame,
 	manager::{backend::context::Context, command::MixerCommand},
-	track::{effect::Effect, SubTrackId, Track, TrackId, TrackSettings},
-	value::CachedValue,
+	track::{effect::Effect, SubTrackId, Track, TrackBuilder, TrackId},
+	tween::Tweener,
 };
-
-use super::Parameters;
 
 pub(crate) struct Mixer {
 	main_track: Track,
 	sub_tracks: Arena<Track>,
 	sub_track_ids: Vec<SubTrackId>,
-	dummy_routes: Vec<(TrackId, CachedValue)>,
+	dummy_routes: Vec<(TrackId, Tweener)>,
 	unused_track_producer: Producer<Track>,
 }
 
@@ -30,7 +29,7 @@ impl Mixer {
 		Self {
 			main_track: Track::new(
 				{
-					let mut settings = TrackSettings::new();
+					let mut settings = TrackBuilder::new();
 					settings.effects = main_track_effects;
 					settings
 				},
@@ -62,20 +61,38 @@ impl Mixer {
 					.expect("Sub-track arena is full");
 				self.sub_track_ids.push(id);
 			}
-			MixerCommand::SetTrackVolume(id, volume) => {
+			MixerCommand::SetTrackVolume(id, volume, tween) => {
 				if let Some(track) = self.track_mut(id) {
-					track.set_volume(volume);
+					track.set_volume(volume, tween);
 				}
 			}
-			MixerCommand::SetTrackPanning(id, panning) => {
+			MixerCommand::SetTrackPanning(id, panning, tween) => {
 				if let Some(track) = self.track_mut(id) {
-					track.set_panning(panning);
+					track.set_panning(panning, tween);
+				}
+			}
+			MixerCommand::SetTrackRoutes {
+				from,
+				to,
+				volume,
+				tween,
+			} => {
+				if let Some(track) = self.track_mut(from) {
+					track.set_route(to, volume, tween);
 				}
 			}
 		}
 	}
 
 	pub fn on_start_processing(&mut self) {
+		self.remove_unused_tracks();
+		for (_, track) in &mut self.sub_tracks {
+			track.on_start_processing();
+		}
+		self.main_track.on_start_processing();
+	}
+
+	fn remove_unused_tracks(&mut self) {
 		let mut i = 0;
 		while i < self.sub_track_ids.len() && !self.unused_track_producer.is_full() {
 			let id = self.sub_track_ids[i];
@@ -99,7 +116,7 @@ impl Mixer {
 		}
 	}
 
-	pub fn process(&mut self, dt: f64, parameters: &Parameters) -> Frame {
+	pub fn process(&mut self, dt: f64) -> Frame {
 		// iterate through the sub-tracks newest to oldest
 		for id in self.sub_track_ids.iter().rev() {
 			// process the track and get its output
@@ -107,7 +124,7 @@ impl Mixer {
 				.sub_tracks
 				.get_mut(id.0)
 				.expect("sub track IDs and sub tracks are out of sync");
-			let output = track.process(dt, parameters);
+			let output = track.process(dt);
 			// temporarily take ownership of its routes. we can't just
 			// borrow the routes because then we can't get mutable
 			// references to the other tracks
@@ -119,7 +136,7 @@ impl Mixer {
 					TrackId::Sub(id) => self.sub_tracks.get_mut(id.0),
 				};
 				if let Some(destination_track) = destination_track {
-					destination_track.add_input(output * amount.get() as f32);
+					destination_track.add_input(output * amount.value() as f32);
 				}
 			}
 			// borrow the track again and give it back its routes
@@ -129,6 +146,13 @@ impl Mixer {
 				.expect("sub track IDs and sub tracks are out of sync");
 			std::mem::swap(track.routes_mut(), &mut self.dummy_routes);
 		}
-		self.main_track.process(dt, parameters)
+		self.main_track.process(dt)
+	}
+
+	pub fn on_clock_tick(&mut self, time: ClockTime) {
+		for (_, track) in &mut self.sub_tracks {
+			track.on_clock_tick(time);
+		}
+		self.main_track.on_clock_tick(time);
 	}
 }

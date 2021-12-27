@@ -1,8 +1,10 @@
 //! Smooth interpolation between values.
 
 mod tweenable;
+mod tweener;
 
 pub use tweenable::*;
+pub use tweener::*;
 
 use std::time::Duration;
 
