@@ -9,25 +9,17 @@ use std::{
 
 use kira::{dsp::Frame, LoopBehavior};
 use ringbuf::Producer;
-use symphonia::core::{
-	audio::{AudioBuffer, AudioBufferRef, Signal},
-	codecs::Decoder,
-	conv::{FromSample, IntoSample},
-	formats::{FormatReader, SeekMode, SeekTo},
-	sample::Sample,
+
+use crate::{
+	streaming::{decoder::Decoder, sound::SEEK_DESTINATION_NONE},
+	StreamingSoundData,
 };
-
-use crate::{Error, StreamingSoundData};
-
-use super::SEEK_DESTINATION_NONE;
 
 const DECODER_THREAD_SLEEP_DURATION: Duration = Duration::from_millis(1);
 
-pub struct DecoderWrapper {
-	format_reader: Box<dyn FormatReader>,
-	decoder: Box<dyn Decoder>,
+pub struct DecoderWrapper<Error: Send + 'static> {
+	decoder: Box<dyn Decoder<Error = Error>>,
 	sample_rate: u32,
-	track_id: u32,
 	loop_behavior: Option<LoopBehavior>,
 	frame_producer: Producer<(u64, Frame)>,
 	seek_destination_receiver: Arc<AtomicU64>,
@@ -37,19 +29,18 @@ pub struct DecoderWrapper {
 	current_frame: u64,
 }
 
-impl DecoderWrapper {
+impl<Error: Send + 'static> DecoderWrapper<Error> {
 	pub fn new(
-		data: StreamingSoundData,
+		data: StreamingSoundData<Error>,
 		frame_producer: Producer<(u64, Frame)>,
 		seek_destination_receiver: Arc<AtomicU64>,
 		stopped_signal_receiver: Arc<AtomicBool>,
 		finished_signal_sender: Arc<AtomicBool>,
 	) -> Result<Self, Error> {
+		let sample_rate = data.decoder.sample_rate();
 		let mut wrapper = Self {
-			format_reader: data.format_reader,
 			decoder: data.decoder,
-			sample_rate: data.sample_rate,
-			track_id: data.track_id,
+			sample_rate,
 			loop_behavior: data.settings.loop_behavior,
 			frame_producer,
 			seek_destination_receiver,
@@ -95,7 +86,7 @@ impl DecoderWrapper {
 		// check for seek commands
 		let seek_destination = self.seek_destination_receiver.load(Ordering::SeqCst);
 		if seek_destination != SEEK_DESTINATION_NONE {
-			self.seek_to_index(seek_destination)?;
+			self.current_frame = self.decoder.seek(seek_destination)?;
 			self.seek_destination_receiver
 				.store(SEEK_DESTINATION_NONE, Ordering::SeqCst);
 		}
@@ -108,7 +99,7 @@ impl DecoderWrapper {
 			self.current_frame += 1;
 		// otherwise, decode some new frames
 		} else {
-			let reached_end_of_file = self.decode()?;
+			let reached_end_of_file = self.decoder.decode(&mut self.decoded_frames)?;
 			if reached_end_of_file {
 				// if there aren't any new frames and the sound is looping,
 				// seek back to the loop position
@@ -124,81 +115,9 @@ impl DecoderWrapper {
 		Ok(false)
 	}
 
-	fn decode(&mut self) -> Result<bool, Error> {
-		match self.format_reader.next_packet() {
-			Ok(packet) => {
-				let buffer = self.decoder.decode(&packet)?;
-				load_frames_from_buffer_ref(&mut self.decoded_frames, &buffer)?;
-			}
-			Err(error) => match error {
-				symphonia::core::errors::Error::IoError(error) => {
-					if error.kind() == std::io::ErrorKind::UnexpectedEof {
-						return Ok(true);
-					}
-					return Err(symphonia::core::errors::Error::IoError(error).into());
-				}
-				error => return Err(error.into()),
-			},
-		}
-		Ok(false)
-	}
-
-	fn seek_to_index(&mut self, index: u64) -> Result<(), Error> {
-		let seeked_to = self.format_reader.seek(
-			SeekMode::Accurate,
-			SeekTo::TimeStamp {
-				ts: index,
-				track_id: self.track_id,
-			},
-		)?;
-		self.current_frame = seeked_to.actual_ts;
-		Ok(())
-	}
-
 	fn seek(&mut self, position: f64) -> Result<(), Error> {
 		let index = (position * self.sample_rate as f64).round() as u64;
-		self.seek_to_index(index)?;
+		self.current_frame = self.decoder.seek(index)?;
 		Ok(())
 	}
-}
-
-fn load_frames_from_buffer_ref(
-	frames: &mut VecDeque<Frame>,
-	buffer: &AudioBufferRef,
-) -> Result<(), Error> {
-	match buffer {
-		AudioBufferRef::U8(buffer) => load_frames_from_buffer(frames, buffer),
-		AudioBufferRef::U16(buffer) => load_frames_from_buffer(frames, buffer),
-		AudioBufferRef::U24(buffer) => load_frames_from_buffer(frames, buffer),
-		AudioBufferRef::U32(buffer) => load_frames_from_buffer(frames, buffer),
-		AudioBufferRef::S8(buffer) => load_frames_from_buffer(frames, buffer),
-		AudioBufferRef::S16(buffer) => load_frames_from_buffer(frames, buffer),
-		AudioBufferRef::S24(buffer) => load_frames_from_buffer(frames, buffer),
-		AudioBufferRef::S32(buffer) => load_frames_from_buffer(frames, buffer),
-		AudioBufferRef::F32(buffer) => load_frames_from_buffer(frames, buffer),
-		AudioBufferRef::F64(buffer) => load_frames_from_buffer(frames, buffer),
-	}
-}
-
-fn load_frames_from_buffer<S: Sample>(
-	frames: &mut VecDeque<Frame>,
-	buffer: &AudioBuffer<S>,
-) -> Result<(), Error>
-where
-	f32: FromSample<S>,
-{
-	match buffer.spec().channels.count() {
-		1 => {
-			for sample in buffer.chan(0) {
-				frames.push_back(Frame::from_mono((*sample).into_sample()));
-			}
-		}
-		2 => {
-			for (left, right) in buffer.chan(0).iter().zip(buffer.chan(1).iter()) {
-				frames.push_back(Frame::new((*left).into_sample(), (*right).into_sample()));
-			}
-		}
-		_ => return Err(Error::UnsupportedChannelConfiguration),
-	}
-	Ok(())
 }

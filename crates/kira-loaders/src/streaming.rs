@@ -1,4 +1,5 @@
 mod data;
+pub(crate) mod decoder;
 mod handle;
 mod settings;
 mod sound;

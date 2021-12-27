@@ -73,12 +73,17 @@ Streaming sounds have some disadvantages compared to static sounds:
 #![warn(missing_docs)]
 #![allow(clippy::tabs_in_doc_comments)]
 
+mod error;
 mod streaming;
 
+use std::{fs::File, path::Path, sync::Arc};
+
+pub use error::*;
 use kira::{
 	dsp::Frame,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 };
+use streaming::decoder::symphonia::SymphoniaDecoder;
 pub use streaming::*;
 use symphonia::core::{
 	audio::{AudioBuffer, AudioBufferRef, Signal},
@@ -86,63 +91,6 @@ use symphonia::core::{
 	io::MediaSourceStream,
 	sample::Sample,
 };
-
-use std::{fmt::Display, fs::File, path::Path, sync::Arc};
-
-/// Errors that can occur when loading or streaming an audio file.
-#[derive(Debug)]
-#[non_exhaustive]
-pub enum Error {
-	/// Could not determine the default audio track in the file.
-	NoDefaultTrack,
-	/// Could not determine the sample rate of the audio.
-	UnknownSampleRate,
-	/// The audio uses an unsupported channel configuration. Only
-	/// mono and stereo audio is supported.
-	UnsupportedChannelConfiguration,
-	/// An error occurred while reading the file from the filesystem.
-	IoError(std::io::Error),
-	/// An error occurred when parsing the file.
-	SymphoniaError(symphonia::core::errors::Error),
-}
-
-impl Display for Error {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		match self {
-			Error::NoDefaultTrack => f.write_str("Could not determine the default audio track"),
-			Error::UnknownSampleRate => {
-				f.write_str("Could not detect the sample rate of the audio")
-			}
-			Error::UnsupportedChannelConfiguration => {
-				f.write_str("Only mono and stereo audio is supported")
-			}
-			Error::IoError(error) => error.fmt(f),
-			Error::SymphoniaError(error) => error.fmt(f),
-		}
-	}
-}
-
-impl std::error::Error for Error {
-	fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-		match self {
-			Error::IoError(error) => Some(error),
-			Error::SymphoniaError(error) => Some(error),
-			_ => None,
-		}
-	}
-}
-
-impl From<std::io::Error> for Error {
-	fn from(v: std::io::Error) -> Self {
-		Self::IoError(v)
-	}
-}
-
-impl From<symphonia::core::errors::Error> for Error {
-	fn from(v: symphonia::core::errors::Error) -> Self {
-		Self::SymphoniaError(v)
-	}
-}
 
 /// Loads an audio file into a [`StaticSoundData`].
 pub fn load(
@@ -196,8 +144,11 @@ pub fn load(
 pub fn stream(
 	path: impl AsRef<Path>,
 	settings: StreamingSoundSettings,
-) -> Result<StreamingSoundData, Error> {
-	StreamingSoundData::new(path, settings)
+) -> Result<StreamingSoundData<Error>, Error> {
+	Ok(StreamingSoundData {
+		decoder: Box::new(SymphoniaDecoder::new(path.as_ref())?),
+		settings,
+	})
 }
 
 fn load_frames_from_buffer_ref(

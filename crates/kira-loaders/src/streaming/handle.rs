@@ -3,18 +3,16 @@ use std::sync::Arc;
 use kira::{sound::static_sound::PlaybackState, tween::Tween, CommandError, PlaybackRate};
 use ringbuf::{Consumer, Producer};
 
-use crate::Error;
-
 use super::{sound::Shared, Command};
 
 /// Controls a streaming sound.
-pub struct StreamingSoundHandle {
+pub struct StreamingSoundHandle<Error> {
 	pub(crate) shared: Arc<Shared>,
 	pub(crate) command_producer: Producer<Command>,
 	pub(crate) error_consumer: Consumer<Error>,
 }
 
-impl StreamingSoundHandle {
+impl<Error> StreamingSoundHandle<Error> {
 	/// Returns the current playback state of the sound.
 	pub fn state(&self) -> PlaybackState {
 		self.shared.state()

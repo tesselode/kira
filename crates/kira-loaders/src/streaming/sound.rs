@@ -15,7 +15,7 @@ use kira::{
 };
 use ringbuf::{Consumer, Producer, RingBuffer};
 
-use crate::{Command, Error, StreamingSoundData};
+use crate::{Command, StreamingSoundData};
 
 use self::decoder_wrapper::DecoderWrapper;
 
@@ -64,12 +64,12 @@ pub(crate) struct StreamingSound {
 }
 
 impl StreamingSound {
-	pub fn new(
-		data: StreamingSoundData,
+	pub fn new<Error: Send + 'static>(
+		data: StreamingSoundData<Error>,
 		command_consumer: Consumer<Command>,
 		error_producer: Producer<Error>,
 	) -> Result<Self, Error> {
-		let sample_rate = data.sample_rate;
+		let sample_rate = data.decoder.sample_rate();
 		let start_time = data.settings.start_time;
 		let volume = data.settings.volume;
 		let playback_rate = data.settings.playback_rate;
@@ -281,6 +281,5 @@ impl Sound for StreamingSound {
 impl Drop for StreamingSound {
 	fn drop(&mut self) {
 		self.stopped_signal_sender.store(true, Ordering::SeqCst);
-		println!("dropped sound");
 	}
 }
