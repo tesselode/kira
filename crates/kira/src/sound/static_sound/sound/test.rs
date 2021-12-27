@@ -224,7 +224,7 @@ fn waits_for_start_time() {
 		assert_eq!(sound.position, 0.0);
 	}
 
-	// the sound is set to start at tick 2, so it should
+	// the sound is set to start at tick 2, so it should not
 	// play yet
 	sound.on_clock_tick(ClockTime {
 		clock: clock_id_1,

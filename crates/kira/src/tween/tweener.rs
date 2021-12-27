@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod test;
+
 use crate::{clock::ClockTime, StartTime};
 
 use super::{Tween, Tweenable};
