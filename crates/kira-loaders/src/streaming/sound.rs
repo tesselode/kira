@@ -1,7 +1,7 @@
-mod decode_scheduler;
+pub(crate) mod decode_scheduler;
 
 use std::sync::{
-	atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering},
+	atomic::{AtomicU64, AtomicU8, Ordering},
 	Arc,
 };
 
@@ -13,14 +13,11 @@ use kira::{
 	tween::{Tween, Tweener},
 	PlaybackRate, StartTime,
 };
-use ringbuf::{Consumer, Producer, RingBuffer};
+use ringbuf::Consumer;
 
-use crate::{Command, StreamingSoundData};
+use crate::{Command, StreamingSoundSettings};
 
-use self::decode_scheduler::DecodeScheduler;
-
-const BUFFER_SIZE: usize = 16_384;
-const SEEK_DESTINATION_NONE: u64 = u64::MAX;
+use self::decode_scheduler::{DecodeScheduler, DecodeSchedulerController};
 
 pub(crate) struct Shared {
 	state: AtomicU8,
@@ -47,10 +44,7 @@ impl Shared {
 pub(crate) struct StreamingSound {
 	command_consumer: Consumer<Command>,
 	sample_rate: u32,
-	frame_consumer: Consumer<(u64, Frame)>,
-	seek_destination_sender: Arc<AtomicU64>,
-	stopped_signal_sender: Arc<AtomicBool>,
-	finished_signal_receiver: Arc<AtomicBool>,
+	scheduler_controller: DecodeSchedulerController,
 	track: TrackId,
 	start_time: StartTime,
 	state: PlaybackState,
@@ -65,50 +59,22 @@ pub(crate) struct StreamingSound {
 
 impl StreamingSound {
 	pub fn new<Error: Send + 'static>(
-		data: StreamingSoundData<Error>,
 		command_consumer: Consumer<Command>,
-		error_producer: Producer<Error>,
-	) -> Result<Self, Error> {
-		let sample_rate = data.decoder.sample_rate();
-		let start_time = data.settings.start_time;
-		let volume = data.settings.volume;
-		let playback_rate = data.settings.playback_rate;
-		let panning = data.settings.panning;
-		let fade_in_tween = data.settings.fade_in_tween;
-		let track = data.settings.track;
-		let (mut frame_producer, frame_consumer) = RingBuffer::new(BUFFER_SIZE).split();
-		// pre-seed the frame ringbuffer with a zero frame. this is the "previous" frame
-		// when the sound just started.
-		frame_producer
-			.push((0, Frame::ZERO))
-			.expect("The frame producer shouldn't be full because we just created it");
-		let seek_destination_sender = Arc::new(AtomicU64::new(SEEK_DESTINATION_NONE));
-		let seek_destination_receiver = seek_destination_sender.clone();
-		let stopped_signal_sender = Arc::new(AtomicBool::new(false));
-		let stopped_signal_receiver = stopped_signal_sender.clone();
-		let finished_signal_sender = Arc::new(AtomicBool::new(false));
-		let finished_signal_receiver = finished_signal_sender.clone();
-		let scheduler = DecodeScheduler::new(
-			data,
-			frame_producer,
-			seek_destination_receiver,
-			stopped_signal_receiver,
-			finished_signal_sender,
-		)?;
+		scheduler_controller: DecodeSchedulerController,
+		settings: StreamingSoundSettings,
+		sample_rate: u32,
+		scheduler: &DecodeScheduler<Error>,
+	) -> Self {
 		let current_frame = scheduler.current_frame();
-		scheduler.start(error_producer);
 		let start_position = current_frame as f64 / sample_rate as f64;
-		Ok(Self {
+		Self {
 			command_consumer,
 			sample_rate,
-			frame_consumer,
-			seek_destination_sender,
-			stopped_signal_sender,
-			finished_signal_receiver,
-			track,
-			start_time,
+			scheduler_controller,
+			track: settings.track,
+			start_time: settings.start_time,
 			state: PlaybackState::Playing,
-			volume_fade: if let Some(tween) = fade_in_tween {
+			volume_fade: if let Some(tween) = settings.fade_in_tween {
 				let mut tweenable = Tweener::new(0.0);
 				tweenable.set(1.0, tween);
 				tweenable
@@ -117,14 +83,14 @@ impl StreamingSound {
 			},
 			current_frame,
 			fractional_position: 0.0,
-			volume: Tweener::new(volume),
-			playback_rate: Tweener::new(playback_rate),
-			panning: Tweener::new(panning),
+			volume: Tweener::new(settings.volume),
+			playback_rate: Tweener::new(settings.playback_rate),
+			panning: Tweener::new(settings.panning),
 			shared: Arc::new(Shared {
 				position: AtomicU64::new(start_position.to_bits()),
 				state: AtomicU8::new(PlaybackState::Playing as u8),
 			}),
-		})
+		}
 	}
 
 	pub fn shared(&self) -> Arc<Shared> {
@@ -137,26 +103,30 @@ impl StreamingSound {
 	}
 
 	fn update_current_frame(&mut self) {
-		self.frame_consumer.access(|a, b| {
-			let mut iter = a.iter().chain(b.iter());
-			if let Some((index, _)) = iter.nth(1) {
-				self.current_frame = *index;
-			}
-		});
+		self.scheduler_controller
+			.frame_consumer_mut()
+			.access(|a, b| {
+				let mut iter = a.iter().chain(b.iter());
+				if let Some((index, _)) = iter.nth(1) {
+					self.current_frame = *index;
+				}
+			});
 	}
 
-	fn next_frames(&self) -> [Frame; 4] {
+	fn next_frames(&mut self) -> [Frame; 4] {
 		let mut frames = [Frame::ZERO; 4];
-		self.frame_consumer.access(|a, b| {
-			let mut iter = a.iter().chain(b.iter());
-			for frame in &mut frames {
-				*frame = iter
-					.next()
-					.copied()
-					.map(|(_, frame)| frame)
-					.unwrap_or(Frame::ZERO);
-			}
-		});
+		self.scheduler_controller
+			.frame_consumer_mut()
+			.access(|a, b| {
+				let mut iter = a.iter().chain(b.iter());
+				for frame in &mut frames {
+					*frame = iter
+						.next()
+						.copied()
+						.map(|(_, frame)| frame)
+						.unwrap_or(Frame::ZERO);
+				}
+			});
 		frames
 	}
 
@@ -180,7 +150,7 @@ impl StreamingSound {
 	}
 
 	fn seek_to_index(&mut self, index: u64) {
-		self.seek_destination_sender.store(index, Ordering::SeqCst);
+		self.scheduler_controller.seek(index);
 	}
 
 	fn seek_to(&mut self, position: f64) {
@@ -230,7 +200,9 @@ impl Sound for StreamingSound {
 		// pause playback while waiting for audio data. the first frame
 		// in the ringbuffer is the previous frame, so we need to make
 		// sure there's at least 2 before we continue playing.
-		if self.frame_consumer.len() < 2 && !self.finished_signal_receiver.load(Ordering::SeqCst) {
+		if self.scheduler_controller.frame_consumer_mut().len() < 2
+			&& !self.scheduler_controller.finished()
+		{
 			return Frame::ZERO;
 		}
 		if self.volume_fade.update(dt) {
@@ -253,9 +225,11 @@ impl Sound for StreamingSound {
 			self.sample_rate as f64 * self.playback_rate.value().as_factor() * dt;
 		while self.fractional_position >= 1.0 {
 			self.fractional_position -= 1.0;
-			self.frame_consumer.pop();
+			self.scheduler_controller.frame_consumer_mut().pop();
 		}
-		if self.finished_signal_receiver.load(Ordering::SeqCst) && self.frame_consumer.is_empty() {
+		if self.scheduler_controller.finished()
+			&& self.scheduler_controller.frame_consumer_mut().is_empty()
+		{
 			self.set_state(PlaybackState::Stopped);
 		}
 		(out * self.volume_fade.value() as f32 * self.volume.value() as f32)
@@ -275,11 +249,5 @@ impl Sound for StreamingSound {
 
 	fn finished(&self) -> bool {
 		self.state == PlaybackState::Stopped
-	}
-}
-
-impl Drop for StreamingSound {
-	fn drop(&mut self) {
-		self.stopped_signal_sender.store(true, Ordering::SeqCst);
 	}
 }
