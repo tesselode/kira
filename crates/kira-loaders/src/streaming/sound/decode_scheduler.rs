@@ -16,7 +16,7 @@ const BUFFER_SIZE: usize = 16_384;
 const SEEK_DESTINATION_NONE: u64 = u64::MAX;
 const DECODER_THREAD_SLEEP_DURATION: Duration = Duration::from_millis(1);
 
-enum NextStep {
+pub(crate) enum NextStep {
 	Continue,
 	Wait,
 	End,
@@ -123,7 +123,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		});
 	}
 
-	fn run(&mut self) -> Result<NextStep, Error> {
+	pub fn run(&mut self) -> Result<NextStep, Error> {
 		// if the sound was manually stopped, end the thread
 		if self.stopped_signal_receiver.load(Ordering::SeqCst) {
 			return Ok(NextStep::End);
