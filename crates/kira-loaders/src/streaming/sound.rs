@@ -1,4 +1,4 @@
-mod decoder_wrapper;
+mod decode_scheduler;
 
 use std::sync::{
 	atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering},
@@ -17,7 +17,7 @@ use ringbuf::{Consumer, Producer, RingBuffer};
 
 use crate::{Command, StreamingSoundData};
 
-use self::decoder_wrapper::DecoderWrapper;
+use self::decode_scheduler::DecodeScheduler;
 
 const BUFFER_SIZE: usize = 16_384;
 const SEEK_DESTINATION_NONE: u64 = u64::MAX;
@@ -88,15 +88,15 @@ impl StreamingSound {
 		let stopped_signal_receiver = stopped_signal_sender.clone();
 		let finished_signal_sender = Arc::new(AtomicBool::new(false));
 		let finished_signal_receiver = finished_signal_sender.clone();
-		let decoder_wrapper = DecoderWrapper::new(
+		let scheduler = DecodeScheduler::new(
 			data,
 			frame_producer,
 			seek_destination_receiver,
 			stopped_signal_receiver,
 			finished_signal_sender,
 		)?;
-		let current_frame = decoder_wrapper.current_frame();
-		decoder_wrapper.start(error_producer);
+		let current_frame = scheduler.current_frame();
+		scheduler.start(error_producer);
 		let start_position = current_frame as f64 / sample_rate as f64;
 		Ok(Self {
 			command_consumer,

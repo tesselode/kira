@@ -17,7 +17,7 @@ use crate::{
 
 const DECODER_THREAD_SLEEP_DURATION: Duration = Duration::from_millis(1);
 
-pub struct DecoderWrapper<Error: Send + 'static> {
+pub struct DecodeScheduler<Error: Send + 'static> {
 	decoder: Box<dyn Decoder<Error = Error>>,
 	sample_rate: u32,
 	loop_behavior: Option<LoopBehavior>,
@@ -29,7 +29,7 @@ pub struct DecoderWrapper<Error: Send + 'static> {
 	current_frame: u64,
 }
 
-impl<Error: Send + 'static> DecoderWrapper<Error> {
+impl<Error: Send + 'static> DecodeScheduler<Error> {
 	pub fn new(
 		data: StreamingSoundData<Error>,
 		frame_producer: Producer<(u64, Frame)>,
@@ -38,7 +38,7 @@ impl<Error: Send + 'static> DecoderWrapper<Error> {
 		finished_signal_sender: Arc<AtomicBool>,
 	) -> Result<Self, Error> {
 		let sample_rate = data.decoder.sample_rate();
-		let mut wrapper = Self {
+		let mut scheduler = Self {
 			decoder: data.decoder,
 			sample_rate,
 			loop_behavior: data.settings.loop_behavior,
@@ -49,8 +49,8 @@ impl<Error: Send + 'static> DecoderWrapper<Error> {
 			decoded_frames: VecDeque::new(),
 			current_frame: 0,
 		};
-		wrapper.seek(data.settings.start_position)?;
-		Ok(wrapper)
+		scheduler.seek(data.settings.start_position)?;
+		Ok(scheduler)
 	}
 
 	pub fn current_frame(&self) -> u64 {
