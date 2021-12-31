@@ -5,6 +5,3 @@ members = [
 	"crates/kira-loaders",
 	"benchmarks",
 ]
-
-[profile.dev]
-opt-level = 3

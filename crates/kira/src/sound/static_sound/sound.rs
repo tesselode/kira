@@ -7,7 +7,7 @@ use ringbuf::Consumer;
 
 use crate::{
 	clock::ClockTime,
-	dsp::Frame,
+	dsp::{Frame, Resampler},
 	sound::Sound,
 	track::TrackId,
 	tween::{Tween, Tweener},
@@ -63,7 +63,9 @@ pub(super) struct StaticSound {
 	data: StaticSoundData,
 	start_time: StartTime,
 	state: PlaybackState,
-	position: f64,
+	resampler: Resampler,
+	current_sample_index: usize,
+	fractional_position: f64,
 	volume: Tweener,
 	playback_rate: Tweener<PlaybackRate>,
 	panning: Tweener,
@@ -74,17 +76,21 @@ pub(super) struct StaticSound {
 impl StaticSound {
 	pub fn new(data: StaticSoundData, command_consumer: Consumer<Command>) -> Self {
 		let settings = data.settings;
-		let position = if settings.reverse {
-			data.duration().as_secs_f64() - settings.start_position
+		let current_sample_index = if settings.reverse {
+			let position_seconds = data.duration().as_secs_f64() - settings.start_position;
+			(position_seconds * data.sample_rate as f64) as usize - 1
 		} else {
-			settings.start_position
+			(settings.start_position * data.sample_rate as f64) as usize
 		};
-		Self {
+		let position = current_sample_index as f64 / data.sample_rate as f64;
+		let mut sound = Self {
 			command_consumer,
 			data,
 			start_time: settings.start_time,
 			state: PlaybackState::Playing,
-			position,
+			resampler: Resampler::new(),
+			current_sample_index,
+			fractional_position: 0.0,
 			volume: Tweener::new(settings.volume),
 			playback_rate: Tweener::new(settings.playback_rate),
 			panning: Tweener::new(settings.panning),
@@ -99,7 +105,13 @@ impl StaticSound {
 				state: AtomicU8::new(PlaybackState::Playing as u8),
 				position: AtomicU64::new(position.to_bits()),
 			}),
+		};
+		// fill the resample buffer with 3 samples so playback can
+		// start immediately
+		for _ in 0..3 {
+			sound.update_position();
 		}
+		sound
 	}
 
 	pub(super) fn shared(&self) -> Arc<Shared> {
@@ -134,21 +146,63 @@ impl StaticSound {
 		}
 	}
 
-	fn increment_playback_position(&mut self, amount: f64) {
-		self.position += amount;
+	/// Increments the playback position by 1 sample. Returns `true` if the end
+	/// of the sound was reached.
+	fn increment_position(&mut self) -> bool {
 		if let Some(LoopBehavior { start_position }) = self.data.settings.loop_behavior {
-			let duration = self.data.duration().as_secs_f64();
-			if amount.is_sign_negative() {
-				while self.position < start_position {
-					self.position += duration - start_position;
-				}
+			let start_position = (start_position * self.data.sample_rate as f64) as usize;
+			if self.current_sample_index >= self.data.frames.len() - 1 {
+				self.current_sample_index = start_position;
 			} else {
-				while self.position >= duration {
-					self.position -= duration - start_position;
-				}
+				self.current_sample_index += 1;
 			}
-		} else if self.position < 0.0 || self.position > self.data.duration().as_secs_f64() {
-			self.position = self.position.clamp(0.0, self.data.duration().as_secs_f64());
+		} else {
+			if self.current_sample_index >= self.data.frames.len() - 1 {
+				return true;
+			} else {
+				self.current_sample_index += 1;
+			}
+		}
+		false
+	}
+
+	/// Decrements the playback position by 1 sample. Returns `true` if the end
+	/// of the sound was reached (which in this case would be sample -1).
+	fn decrement_position(&mut self) -> bool {
+		if let Some(LoopBehavior { start_position }) = self.data.settings.loop_behavior {
+			let start_position = (start_position * self.data.sample_rate as f64) as usize;
+			if self.current_sample_index <= start_position {
+				self.current_sample_index = self.data.frames.len() - 1;
+			} else {
+				self.current_sample_index -= 1;
+			}
+		} else {
+			if self.current_sample_index == 0 {
+				return true;
+			} else {
+				self.current_sample_index -= 1;
+			}
+		}
+		false
+	}
+
+	/// Updates the playback position and pushes a new sample to the resampler.
+	fn update_position(&mut self) {
+		let playback_rate = self.playback_rate();
+		if matches!(self.state, PlaybackState::Paused | PlaybackState::Stopped) {
+			self.resampler.push_frame(Frame::ZERO, None);
+			return;
+		}
+		let out = self.data.frames[self.current_sample_index];
+		let out = (out * self.volume_fade.value() as f32 * self.volume.value() as f32)
+			.panned(self.panning.value() as f32);
+		self.resampler.push_frame(out, self.current_sample_index);
+		let reached_end_of_sound = if playback_rate.is_sign_negative() {
+			self.decrement_position()
+		} else {
+			self.increment_position()
+		};
+		if reached_end_of_sound {
 			self.set_state(PlaybackState::Stopped);
 		}
 	}
@@ -160,9 +214,14 @@ impl Sound for StaticSound {
 	}
 
 	fn on_start_processing(&mut self) {
-		self.shared
-			.position
-			.store(self.position.to_bits(), Ordering::SeqCst);
+		let last_played_frame_position = self
+			.resampler
+			.position()
+			.expect("The resampler has not received any frames yet");
+		self.shared.position.store(
+			(last_played_frame_position as f64 / self.data.sample_rate as f64).to_bits(),
+			Ordering::SeqCst,
+		);
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
 				Command::SetVolume(volume, tween) => self.volume.set(volume, tween),
@@ -173,10 +232,8 @@ impl Sound for StaticSound {
 				Command::Pause(tween) => self.pause(tween),
 				Command::Resume(tween) => self.resume(tween),
 				Command::Stop(tween) => self.stop(tween),
-				Command::SeekBy(amount) => self.increment_playback_position(amount),
-				Command::SeekTo(position) => {
-					self.increment_playback_position(position - self.position)
-				}
+				Command::SeekBy(amount) => todo!(),
+				Command::SeekTo(position) => todo!(),
 			}
 		}
 	}
@@ -195,13 +252,13 @@ impl Sound for StaticSound {
 				_ => {}
 			}
 		}
-		if matches!(self.state, PlaybackState::Paused | PlaybackState::Stopped) {
-			return Frame::ZERO;
+		let out = self.resampler.get(self.fractional_position as f32);
+		self.fractional_position += self.data.sample_rate as f64 * self.playback_rate().abs() * dt;
+		while self.fractional_position >= 1.0 {
+			self.fractional_position -= 1.0;
+			self.update_position();
 		}
-		let out = self.data.frame_at_position(self.position);
-		self.increment_playback_position(self.playback_rate() * dt);
-		(out * self.volume_fade.value() as f32 * self.volume.value() as f32)
-			.panned(self.panning.value() as f32)
+		out
 	}
 
 	fn on_clock_tick(&mut self, time: ClockTime) {
@@ -216,6 +273,6 @@ impl Sound for StaticSound {
 	}
 
 	fn finished(&self) -> bool {
-		self.state == PlaybackState::Stopped
+		self.state == PlaybackState::Stopped && self.resampler.is_empty()
 	}
 }
