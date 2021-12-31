@@ -399,3 +399,51 @@ fn playback_rate() {
 	assert_eq!(sound.position, 2.0);
 	assert_eq!(sound.process(1.0), Frame::from_mono(2.0).panned(0.5));
 }
+
+/// Tests that a `StaticSound` outputs interpolated samples when
+/// its playback position is between samples.
+#[test]
+fn interpolates_samples() {
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new(vec![
+			Frame::from_mono(0.0),
+			Frame::from_mono(1.0),
+			Frame::from_mono(1.0),
+			Frame::from_mono(1.0),
+			Frame::from_mono(1.0),
+			Frame::from_mono(1.0),
+			Frame::from_mono(-10.0),
+		]),
+		settings: Default::default(),
+	};
+	let (mut sound, _) = data.split();
+
+	assert_eq!(sound.process(0.5), Frame::from_mono(0.0).panned(0.5));
+	// at sample 0.5, the output should be somewhere between 0 and 1.
+	// i don't care what exactly, that's up the to the interpolation algorithm.
+	let frame = sound.process(5.0);
+	assert!(frame.left > 0.0 && frame.left < 1.0);
+	// at sample 5.5, the output should be between 1 and -10.
+	let frame = sound.process(1.0);
+	assert!(frame.left < 0.0 && frame.left > -10.0);
+}
+
+/// Tests that a `StaticSound` outputs interpolated samples correctly
+/// when looping.
+#[test]
+fn interpolates_samples_when_looping() {
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new(vec![Frame::from_mono(10.0), Frame::from_mono(9.0)]),
+		settings: StaticSoundSettings::new().loop_behavior(LoopBehavior {
+			start_position: 0.0,
+		}),
+	};
+	let (mut sound, _) = data.split();
+	sound.process(1.5);
+	// because we're looping back to the first sample, which is 10.0,
+	// the interpolated sample should be be tween 9.0 and 10.0
+	let frame = sound.process(1.0);
+	assert!(frame.left > 9.0 && frame.left < 10.0);
+}
