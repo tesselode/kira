@@ -6,7 +6,7 @@ use std::{sync::Arc, time::Duration};
 use ringbuf::RingBuffer;
 
 use crate::{
-	dsp::{interpolate_frame, Frame},
+	dsp::Frame,
 	sound::{Sound, SoundData},
 };
 
@@ -32,26 +32,6 @@ impl StaticSoundData {
 	/// Returns the duration of the audio.
 	pub fn duration(&self) -> Duration {
 		Duration::from_secs_f64(self.frames.len() as f64 / self.sample_rate as f64)
-	}
-
-	fn frame_at_index(&self, index: usize) -> Frame {
-		self.frames.get(index).copied().unwrap_or(Frame::ZERO)
-	}
-
-	/// Gets the [`Frame`] at an arbitrary time in seconds.
-	pub fn frame_at_position(&self, position: f64) -> Frame {
-		let sample_position = self.sample_rate as f64 * position;
-		let fraction = (sample_position % 1.0) as f32;
-		let current_sample_index = sample_position as usize;
-		let previous = if current_sample_index == 0 {
-			Frame::ZERO
-		} else {
-			self.frame_at_index(current_sample_index - 1)
-		};
-		let current = self.frame_at_index(current_sample_index);
-		let next_1 = self.frame_at_index(current_sample_index + 1);
-		let next_2 = self.frame_at_index(current_sample_index + 2);
-		interpolate_frame(previous, current, next_1, next_2, fraction)
 	}
 
 	pub(super) fn split(self) -> (StaticSound, StaticSoundHandle) {

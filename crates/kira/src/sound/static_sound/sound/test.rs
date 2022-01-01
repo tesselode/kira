@@ -13,6 +13,8 @@ use crate::{
 	LoopBehavior,
 };
 
+use super::StaticSound;
+
 /// Tests that a `StaticSound` will play all of its samples before finishing.
 #[test]
 fn plays_all_samples() {
@@ -28,15 +30,19 @@ fn plays_all_samples() {
 	let (mut sound, _) = data.split();
 
 	assert!(!sound.finished());
-	assert_eq!(sound.state, PlaybackState::Playing);
 
 	for i in 1..=3 {
 		assert_eq!(sound.process(1.0), Frame::from_mono(i as f32).panned(0.5));
 		assert!(!sound.finished());
-		assert_eq!(sound.state, PlaybackState::Playing);
 	}
 
-	assert_eq!(sound.process(1.0), Frame::from_mono(0.0).panned(0.5));
+	// give some time for the resample buffer to empty. in the meantime we should
+	// get silent output.
+	for _ in 0..10 {
+		assert_eq!(sound.process(1.0), Frame::from_mono(0.0).panned(0.5));
+	}
+
+	// the sound should be finished and stopped by now
 	assert!(sound.finished());
 	assert_eq!(sound.state, PlaybackState::Stopped);
 }
@@ -47,22 +53,15 @@ fn plays_all_samples() {
 fn reports_playback_state() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new(vec![Frame::from_mono(0.0); 2]),
+		frames: Arc::new(vec![Frame::from_mono(0.0); 10]),
 		settings: StaticSoundSettings::new(),
 	};
 	let (mut sound, handle) = data.split();
 
-	assert_eq!(handle.state(), PlaybackState::Playing);
-
-	for _ in 0..2 {
+	for _ in 0..20 {
+		assert_eq!(handle.state(), sound.state);
 		sound.process(1.0);
-		sound.on_start_processing();
-		assert_eq!(handle.state(), PlaybackState::Playing);
 	}
-
-	sound.process(1.0);
-	sound.on_start_processing();
-	assert_eq!(handle.state(), PlaybackState::Stopped);
 }
 
 /// Tests that a `StaticSound` correctly reports its playback state
@@ -72,22 +71,19 @@ fn reports_playback_state() {
 fn reports_playback_position() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new(vec![Frame::from_mono(0.0); 2]),
+		frames: Arc::new(vec![Frame::from_mono(0.0); 10]),
 		settings: StaticSoundSettings::new(),
 	};
 	let (mut sound, handle) = data.split();
 
-	assert_eq!(handle.position(), 0.0);
-
-	for i in 1..=2 {
+	for i in 0..20 {
+		assert_eq!(
+			handle.position(),
+			i.clamp(0, 9) as f64 / sound.data.sample_rate as f64
+		);
 		sound.process(1.0);
 		sound.on_start_processing();
-		assert_eq!(handle.position(), i as f64);
 	}
-
-	sound.process(1.0);
-	sound.on_start_processing();
-	assert_eq!(handle.position(), 2.0);
 }
 
 /// Tests that a `StaticSound` fades out fully before pausing
@@ -103,7 +99,6 @@ fn pauses_and_resumes_with_fades() {
 	let (mut sound, mut handle) = data.split();
 
 	sound.process(1.0);
-	assert_eq!(sound.position, 1.0);
 	assert_eq!(sound.state, PlaybackState::Playing);
 
 	handle
@@ -113,20 +108,20 @@ fn pauses_and_resumes_with_fades() {
 		})
 		.unwrap();
 	sound.on_start_processing();
-
-	assert_eq!(sound.process(1.0), Frame::from_mono(0.75).panned(0.5));
-	assert_eq!(sound.position, 2.0);
 	assert_eq!(sound.state, PlaybackState::Pausing);
+
+	// allow for a few samples of delay because of the resampling, but the
+	// sound should fade out soon.
+	expect_frame_soon(Frame::from_mono(0.75).panned(0.5), &mut sound);
 	assert_eq!(sound.process(1.0), Frame::from_mono(0.5).panned(0.5));
-	assert_eq!(sound.position, 3.0);
-	assert_eq!(sound.state, PlaybackState::Pausing);
 	assert_eq!(sound.process(1.0), Frame::from_mono(0.25).panned(0.5));
-	assert_eq!(sound.position, 4.0);
-	assert_eq!(sound.state, PlaybackState::Pausing);
 
-	for _ in 0..3 {
+	sound.on_start_processing();
+	let position = handle.position();
+	for _ in 0..10 {
 		assert_eq!(sound.process(1.0), Frame::from_mono(0.0).panned(0.5));
-		assert_eq!(sound.position, 4.0);
+		sound.on_start_processing();
+		assert_eq!(handle.position(), position);
 		assert_eq!(sound.state, PlaybackState::Paused);
 	}
 
@@ -138,19 +133,17 @@ fn pauses_and_resumes_with_fades() {
 		.unwrap();
 	sound.on_start_processing();
 
-	assert_eq!(sound.process(1.0), Frame::from_mono(0.25).panned(0.5));
-	assert_eq!(sound.position, 5.0);
+	// allow for a few samples of delay because of the resampling, but the
+	// sound should fade back in soon.
+	expect_frame_soon(Frame::from_mono(0.25).panned(0.5), &mut sound);
 	assert_eq!(sound.state, PlaybackState::Playing);
 	assert_eq!(sound.process(1.0), Frame::from_mono(0.5).panned(0.5));
-	assert_eq!(sound.position, 6.0);
 	assert_eq!(sound.state, PlaybackState::Playing);
 	assert_eq!(sound.process(1.0), Frame::from_mono(0.75).panned(0.5));
-	assert_eq!(sound.position, 7.0);
 	assert_eq!(sound.state, PlaybackState::Playing);
 
-	for i in 0..3 {
+	for _ in 0..3 {
 		assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.5));
-		assert_eq!(sound.position, i as f64 + 8.0);
 		assert_eq!(sound.state, PlaybackState::Playing);
 	}
 }
@@ -167,7 +160,6 @@ fn stops_with_fade_out() {
 	let (mut sound, mut handle) = data.split();
 
 	sound.process(1.0);
-	assert_eq!(sound.position, 1.0);
 	assert_eq!(sound.state, PlaybackState::Playing);
 
 	handle
@@ -177,20 +169,20 @@ fn stops_with_fade_out() {
 		})
 		.unwrap();
 	sound.on_start_processing();
-
-	assert_eq!(sound.process(1.0), Frame::from_mono(0.75).panned(0.5));
-	assert_eq!(sound.position, 2.0);
 	assert_eq!(sound.state, PlaybackState::Stopping);
+
+	// allow for a few samples of delay because of the resampling, but the
+	// sound should fade out soon.
+	expect_frame_soon(Frame::from_mono(0.75).panned(0.5), &mut sound);
 	assert_eq!(sound.process(1.0), Frame::from_mono(0.5).panned(0.5));
-	assert_eq!(sound.position, 3.0);
-	assert_eq!(sound.state, PlaybackState::Stopping);
 	assert_eq!(sound.process(1.0), Frame::from_mono(0.25).panned(0.5));
-	assert_eq!(sound.position, 4.0);
-	assert_eq!(sound.state, PlaybackState::Stopping);
 
+	sound.on_start_processing();
+	let position = handle.position();
 	for _ in 0..3 {
 		assert_eq!(sound.process(1.0), Frame::from_mono(0.0).panned(0.5));
-		assert_eq!(sound.position, 4.0);
+		sound.on_start_processing();
+		assert_eq!(handle.position(), position);
 		assert_eq!(sound.state, PlaybackState::Stopped);
 		assert!(sound.finished());
 	}
@@ -210,7 +202,7 @@ fn waits_for_start_time() {
 
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new(vec![Frame::from_mono(1.0); 100]),
+		frames: Arc::new((1..100).map(|i| Frame::from_mono(i as f32)).collect()),
 		settings: StaticSoundSettings::new().start_time(ClockTime {
 			clock: clock_id_1,
 			ticks: 2,
@@ -221,7 +213,6 @@ fn waits_for_start_time() {
 	// the sound should not be playing yet
 	for _ in 0..3 {
 		assert_eq!(sound.process(1.0), Frame::from_mono(0.0));
-		assert_eq!(sound.position, 0.0);
 	}
 
 	// the sound is set to start at tick 2, so it should not
@@ -233,7 +224,6 @@ fn waits_for_start_time() {
 
 	for _ in 0..3 {
 		assert_eq!(sound.process(1.0), Frame::from_mono(0.0));
-		assert_eq!(sound.position, 0.0);
 	}
 
 	// this is a tick event for a different clock, so the
@@ -245,7 +235,6 @@ fn waits_for_start_time() {
 
 	for _ in 0..3 {
 		assert_eq!(sound.process(1.0), Frame::from_mono(0.0));
-		assert_eq!(sound.position, 0.0);
 	}
 
 	// the sound should start playing now
@@ -254,9 +243,8 @@ fn waits_for_start_time() {
 		ticks: 2,
 	});
 
-	for i in 1..=3 {
-		assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.5));
-		assert_eq!(sound.position, i as f64);
+	for i in 1..10 {
+		assert_eq!(sound.process(1.0), Frame::from_mono(i as f32).panned(0.5));
 	}
 }
 
@@ -269,9 +257,9 @@ fn start_position() {
 		frames: Arc::new((0..10).map(|i| Frame::from_mono(i as f32)).collect()),
 		settings: StaticSoundSettings::new().start_position(3.0),
 	};
-	let (mut sound, _) = data.split();
+	let (mut sound, handle) = data.split();
 
-	assert_eq!(sound.position, 3.0);
+	assert_eq!(handle.position(), 3.0);
 	assert_eq!(sound.process(1.0), Frame::from_mono(3.0).panned(0.5));
 }
 
@@ -286,12 +274,10 @@ fn reverse() {
 	};
 	let (mut sound, _) = data.split();
 
-	// start position should be from the end
-	assert_eq!(sound.position, 8.0);
-	assert_eq!(sound.process(1.0), Frame::from_mono(8.0).panned(0.5));
-	// position should decrease over time
-	assert_eq!(sound.position, 7.0);
-	assert_eq!(sound.process(1.0), Frame::from_mono(7.0).panned(0.5));
+	// start position should be from the end and decrease over time
+	for i in (0..=7).rev() {
+		assert_eq!(sound.process(1.0), Frame::from_mono(i as f32).panned(0.5));
+	}
 }
 
 /// Tests that a `StaticSound` properly obeys looping behavior when
@@ -309,17 +295,12 @@ fn loops_forward() {
 	let (mut sound, _) = data.split();
 
 	for i in 0..10 {
-		assert_eq!(sound.position, i as f64);
 		assert_eq!(sound.process(1.0), Frame::from_mono(i as f32).panned(0.5));
 	}
 
-	assert_eq!(sound.position, 3.0);
 	assert_eq!(sound.process(3.0), Frame::from_mono(3.0).panned(0.5));
-	assert_eq!(sound.position, 6.0);
 	assert_eq!(sound.process(3.0), Frame::from_mono(6.0).panned(0.5));
-	assert_eq!(sound.position, 9.0);
 	assert_eq!(sound.process(3.0), Frame::from_mono(9.0).panned(0.5));
-	assert_eq!(sound.position, 5.0);
 	assert_eq!(sound.process(3.0), Frame::from_mono(5.0).panned(0.5));
 }
 
@@ -339,20 +320,12 @@ fn loops_backward() {
 	};
 	let (mut sound, _) = data.split();
 
-	assert_eq!(sound.position, 10.0);
-	assert_eq!(sound.process(1.0), Frame::from_mono(0.0).panned(0.5));
-
 	for i in (3..10).rev() {
-		assert_eq!(sound.position, i as f64);
 		assert_eq!(sound.process(1.0), Frame::from_mono(i as f32).panned(0.5));
 	}
 
-	assert_eq!(sound.position, 9.0);
 	assert_eq!(sound.process(4.0), Frame::from_mono(9.0).panned(0.5));
-
-	assert_eq!(sound.position, 5.0);
 	assert_eq!(sound.process(4.0), Frame::from_mono(5.0).panned(0.5));
-	assert_eq!(sound.position, 8.0);
 	assert_eq!(sound.process(4.0), Frame::from_mono(8.0).panned(0.5));
 }
 
@@ -396,6 +369,117 @@ fn playback_rate() {
 	let (mut sound, _) = data.split();
 
 	assert_eq!(sound.process(1.0), Frame::from_mono(0.0).panned(0.5));
-	assert_eq!(sound.position, 2.0);
 	assert_eq!(sound.process(1.0), Frame::from_mono(2.0).panned(0.5));
+}
+
+/// Tests that a `StaticSound` outputs interpolated samples when
+/// its playback position is between samples.
+#[test]
+fn interpolates_samples() {
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new(vec![
+			Frame::from_mono(0.0),
+			Frame::from_mono(1.0),
+			Frame::from_mono(1.0),
+			Frame::from_mono(1.0),
+			Frame::from_mono(1.0),
+			Frame::from_mono(1.0),
+			Frame::from_mono(-10.0),
+		]),
+		settings: Default::default(),
+	};
+	let (mut sound, _) = data.split();
+
+	assert_eq!(sound.process(0.5), Frame::from_mono(0.0).panned(0.5));
+	// at sample 0.5, the output should be somewhere between 0 and 1.
+	// i don't care what exactly, that's up the to the interpolation algorithm.
+	let frame = sound.process(5.0);
+	assert!(frame.left > 0.0 && frame.left < 1.0);
+	// at sample 5.5, the output should be between 1 and -10.
+	let frame = sound.process(1.0);
+	assert!(frame.left < 0.0 && frame.left > -10.0);
+}
+
+/// Tests that a `StaticSound` outputs interpolated samples correctly
+/// when looping.
+#[test]
+fn interpolates_samples_when_looping() {
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new(vec![Frame::from_mono(10.0), Frame::from_mono(9.0)]),
+		settings: StaticSoundSettings::new().loop_behavior(LoopBehavior {
+			start_position: 0.0,
+		}),
+	};
+	let (mut sound, _) = data.split();
+	sound.process(1.5);
+	// because we're looping back to the first sample, which is 10.0,
+	// the interpolated sample should be be tween 9.0 and 10.0
+	let frame = sound.process(1.0);
+	assert!(frame.left > 9.0 && frame.left < 10.0);
+}
+
+/// Tests that a `StaticSound` can seek to a position.
+#[test]
+fn seek_to() {
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new((0..100).map(|i| Frame::from_mono(i as f32)).collect()),
+		settings: StaticSoundSettings::new(),
+	};
+	let (mut sound, mut handle) = data.split();
+	handle.seek_to(15.0).unwrap();
+	sound.on_start_processing();
+	expect_frame_soon(Frame::from_mono(15.0).panned(0.5), &mut sound);
+}
+
+/// Tests that a `StaticSound` can seek to a position past the end of
+/// the sound when it's looping. The resulting position should be what
+/// it would be (seek_point - duration) samples after playback reached
+/// the end of the sound if it was playing normally..
+#[test]
+fn seek_to_while_looping() {
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new((0..100).map(|i| Frame::from_mono(i as f32)).collect()),
+		settings: StaticSoundSettings::new().loop_behavior(LoopBehavior {
+			start_position: 5.0,
+		}),
+	};
+	let (mut sound, mut handle) = data.split();
+	handle.seek_to(120.0).unwrap();
+	sound.on_start_processing();
+	expect_frame_soon(Frame::from_mono(25.0).panned(0.5), &mut sound);
+}
+
+/// Tests that a `StaticSound` can seek by an amount of time.
+#[test]
+fn seek_by() {
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new((0..100).map(|i| Frame::from_mono(i as f32)).collect()),
+		settings: StaticSoundSettings::new().start_position(10.0),
+	};
+	let (mut sound, mut handle) = data.split();
+	handle.seek_by(5.0).unwrap();
+	sound.on_start_processing();
+	// we wouldn't actually expect the position to be 10.0 seconds right at
+	// this moment - the sound probably ran ahead a few samples to fill
+	// the resample buffer. so let's just say it should reach 20.0 soon.
+	expect_frame_soon(Frame::from_mono(20.0).panned(0.5), &mut sound);
+}
+
+fn expect_frame_soon(expected_frame: Frame, sound: &mut StaticSound) {
+	const NUM_SAMPLES_TO_WAIT: usize = 10;
+	for _ in 0..NUM_SAMPLES_TO_WAIT {
+		let frame = sound.process(1.0);
+		if frame == expected_frame {
+			return;
+		}
+	}
+	panic!(
+		"Sound did not output frame with value {:?} within {} samples",
+		expected_frame, NUM_SAMPLES_TO_WAIT
+	);
 }
