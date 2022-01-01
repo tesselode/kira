@@ -1,4 +1,4 @@
-use super::{interpolate_frame, Frame};
+use crate::dsp::{interpolate_frame, Frame};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct BufferedFrame {
@@ -6,7 +6,7 @@ struct BufferedFrame {
 	position: Option<usize>,
 }
 
-pub struct Resampler {
+pub(super) struct Resampler {
 	frames: [BufferedFrame; 4],
 	last_frame_position: Option<usize>,
 }

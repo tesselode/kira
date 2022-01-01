@@ -1,10 +1,8 @@
 //! Tools for manipulating audio signals.
 
 mod frame;
-mod resampler;
 
 pub use frame::*;
-pub use resampler::*;
 
 /// Given a previous frame, a current frame, the two next frames,
 /// and a position `x` from 0.0 to 1.0 between the current frame

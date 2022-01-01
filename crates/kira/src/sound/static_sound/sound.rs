@@ -1,3 +1,5 @@
+mod resampler;
+
 use std::sync::{
 	atomic::{AtomicU64, AtomicU8, Ordering},
 	Arc,
@@ -7,12 +9,14 @@ use ringbuf::Consumer;
 
 use crate::{
 	clock::ClockTime,
-	dsp::{Frame, Resampler},
+	dsp::Frame,
 	sound::Sound,
 	track::TrackId,
 	tween::{Tween, Tweener},
 	LoopBehavior, PlaybackRate, StartTime,
 };
+
+use self::resampler::Resampler;
 
 use super::{data::StaticSoundData, Command};
 
