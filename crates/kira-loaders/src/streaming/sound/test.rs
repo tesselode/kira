@@ -4,6 +4,7 @@ use kira::{
 	dsp::Frame,
 	sound::{static_sound::PlaybackState, Sound},
 	tween::Tween,
+	LoopBehavior,
 };
 
 use crate::{
@@ -56,6 +57,7 @@ impl Decoder for MockDecoder {
 		// seeking behavior with real decoders
 		let index = (index as f64 / MOCK_DECODER_PACKET_SIZE as f64) as u64
 			* MOCK_DECODER_PACKET_SIZE as u64;
+		self.current_frame_index = index as usize;
 		Ok(index)
 	}
 }
@@ -72,7 +74,7 @@ fn plays_all_samples() {
 		settings: StreamingSoundSettings::new(),
 	};
 	let (mut sound, _, mut scheduler) = data.split().unwrap();
-	while !matches!(scheduler.run().unwrap(), NextStep::End) {}
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
 
 	assert!(!sound.finished());
 
@@ -116,9 +118,9 @@ fn waits_for_samples() {
 	}
 
 	for i in 1..=3 {
+		assert_eq!(handle.position(), (i - 1) as f64);
 		assert_eq!(sound.process(1.0), Frame::from_mono(i as f32).panned(0.5));
 		sound.on_start_processing();
-		assert_eq!(handle.position(), (i - 1) as f64);
 	}
 
 	for _ in 0..3 {
@@ -137,7 +139,7 @@ fn reports_playback_state() {
 		settings: StreamingSoundSettings::new(),
 	};
 	let (mut sound, handle, mut scheduler) = data.split().unwrap();
-	while !matches!(scheduler.run().unwrap(), NextStep::End) {}
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
 
 	for _ in 0..20 {
 		assert_eq!(handle.state(), sound.state);
@@ -155,7 +157,7 @@ fn reports_playback_position() {
 		settings: StreamingSoundSettings::new(),
 	};
 	let (mut sound, handle, mut scheduler) = data.split().unwrap();
-	while !matches!(scheduler.run().unwrap(), NextStep::End) {}
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
 
 	for i in 0..20 {
 		assert_eq!(handle.position(), i.clamp(0, 9) as f64);
@@ -174,7 +176,7 @@ fn pauses_and_resumes_with_fades() {
 		settings: StreamingSoundSettings::new(),
 	};
 	let (mut sound, mut handle, mut scheduler) = data.split().unwrap();
-	while !matches!(scheduler.run().unwrap(), NextStep::End) {}
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
 
 	sound.process(1.0);
 	assert_eq!(sound.state, PlaybackState::Playing);
@@ -236,7 +238,7 @@ fn stops_with_fade_out() {
 		settings: StreamingSoundSettings::new(),
 	};
 	let (mut sound, mut handle, mut scheduler) = data.split().unwrap();
-	while !matches!(scheduler.run().unwrap(), NextStep::End) {}
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
 
 	sound.process(1.0);
 	assert_eq!(sound.state, PlaybackState::Playing);
@@ -279,10 +281,187 @@ fn start_position() {
 		settings: StreamingSoundSettings::new().start_position(3.0),
 	};
 	let (mut sound, handle, mut scheduler) = data.split().unwrap();
-	while !matches!(scheduler.run().unwrap(), NextStep::End) {}
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
 
 	assert_eq!(handle.position(), 3.0);
 	assert_eq!(sound.process(1.0), Frame::from_mono(3.0).panned(0.5));
+}
+
+/// Tests that a `StreamingSound` properly obeys looping behavior when
+/// playing forward.
+#[test]
+#[allow(clippy::float_cmp)]
+fn loops_forward() {
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(
+			(0..10).map(|i| Frame::from_mono(i as f32)).collect(),
+		)),
+		settings: StreamingSoundSettings::new().loop_behavior(LoopBehavior {
+			start_position: 3.0,
+		}),
+	};
+	let (mut sound, _, mut scheduler) = data.split().unwrap();
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
+
+	for i in 0..10 {
+		assert_eq!(sound.process(1.0), Frame::from_mono(i as f32).panned(0.5));
+	}
+
+	assert_eq!(sound.process(3.0), Frame::from_mono(3.0).panned(0.5));
+	assert_eq!(sound.process(3.0), Frame::from_mono(6.0).panned(0.5));
+	assert_eq!(sound.process(3.0), Frame::from_mono(9.0).panned(0.5));
+	assert_eq!(sound.process(3.0), Frame::from_mono(5.0).panned(0.5));
+}
+
+/// Tests that the volume of a `StreamingSound` can be adjusted.
+#[test]
+#[allow(clippy::float_cmp)]
+fn volume() {
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(1.0); 10])),
+		settings: StreamingSoundSettings::new().volume(0.5),
+	};
+	let (mut sound, _, mut scheduler) = data.split().unwrap();
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
+
+	assert_eq!(sound.process(1.0), Frame::from_mono(0.5).panned(0.5));
+}
+
+/// Tests that the panning of a `StreamingSound` can be adjusted.
+#[test]
+#[allow(clippy::float_cmp)]
+fn panning() {
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(1.0); 10])),
+		settings: StreamingSoundSettings::new().panning(0.0),
+	};
+	let (mut sound, _, mut scheduler) = data.split().unwrap();
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
+
+	assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.0));
+}
+
+/// Tests that the playback rate of a `StreamingSound` can be adjusted.
+#[test]
+#[allow(clippy::float_cmp)]
+fn playback_rate() {
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(
+			(0..10).map(|i| Frame::from_mono(i as f32)).collect(),
+		)),
+		settings: StreamingSoundSettings::new().playback_rate(2.0),
+	};
+	let (mut sound, _, mut scheduler) = data.split().unwrap();
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
+
+	assert_eq!(sound.process(1.0), Frame::from_mono(0.0).panned(0.5));
+	assert_eq!(sound.process(1.0), Frame::from_mono(2.0).panned(0.5));
+}
+
+/// Tests that a `StreamingSound` outputs interpolated samples when
+/// its playback position is between samples.
+#[test]
+fn interpolates_samples() {
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(vec![
+			Frame::from_mono(0.0),
+			Frame::from_mono(1.0),
+			Frame::from_mono(1.0),
+			Frame::from_mono(1.0),
+			Frame::from_mono(1.0),
+			Frame::from_mono(1.0),
+			Frame::from_mono(-10.0),
+		])),
+		settings: Default::default(),
+	};
+	let (mut sound, _, mut scheduler) = data.split().unwrap();
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
+
+	assert_eq!(sound.process(0.5), Frame::from_mono(0.0).panned(0.5));
+	// at sample 0.5, the output should be somewhere between 0 and 1.
+	// i don't care what exactly, that's up the to the interpolation algorithm.
+	let frame = sound.process(5.0);
+	assert!(frame.left > 0.0 && frame.left < 1.0);
+	// at sample 5.5, the output should be between 1 and -10.
+	let frame = sound.process(1.0);
+	assert!(frame.left < 0.0 && frame.left > -10.0);
+}
+
+/// Tests that a `StreamingSound` outputs interpolated samples correctly
+/// when looping.
+#[test]
+fn interpolates_samples_when_looping() {
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(vec![
+			Frame::from_mono(10.0),
+			Frame::from_mono(9.0),
+		])),
+		settings: StreamingSoundSettings::new().loop_behavior(LoopBehavior {
+			start_position: 0.0,
+		}),
+	};
+	let (mut sound, _, mut scheduler) = data.split().unwrap();
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
+
+	sound.process(1.5);
+	// because we're looping back to the first sample, which is 10.0,
+	// the interpolated sample should be be tween 9.0 and 10.0
+	let frame = sound.process(1.0);
+	assert!(frame.left > 9.0 && frame.left < 10.0);
+}
+
+/// Tests that a `StreamingSound` can seek to a position.
+#[test]
+fn seek_to() {
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(
+			(0..100).map(|i| Frame::from_mono(i as f32)).collect(),
+		)),
+		settings: StreamingSoundSettings::new(),
+	};
+	let (mut sound, mut handle, mut scheduler) = data.split().unwrap();
+
+	handle.seek_to(15.0).unwrap();
+	sound.on_start_processing();
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
+	expect_frame_soon(Frame::from_mono(15.0).panned(0.5), &mut sound);
+}
+
+/// Tests that a `StreamingSound` can seek to a position past the end of
+/// the sound when it's looping. The resulting position should be what
+/// it would be (seek_point - duration) samples after playback reached
+/// the end of the sound if it was playing normally..
+#[test]
+fn seek_to_while_looping() {
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(
+			(0..100).map(|i| Frame::from_mono(i as f32)).collect(),
+		)),
+		settings: StreamingSoundSettings::new().loop_behavior(LoopBehavior {
+			start_position: 5.0,
+		}),
+	};
+	let (mut sound, mut handle, mut scheduler) = data.split().unwrap();
+	handle.seek_to(120.0).unwrap();
+	sound.on_start_processing();
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
+	expect_frame_soon(Frame::from_mono(25.0).panned(0.5), &mut sound);
+}
+
+/// Tests that a `StreamingSound` can seek by an amount of time.
+#[test]
+fn seek_by() {
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(
+			(0..100).map(|i| Frame::from_mono(i as f32)).collect(),
+		)),
+		settings: StreamingSoundSettings::new().start_position(10.0),
+	};
+	let (mut sound, mut handle, mut scheduler) = data.split().unwrap();
+	handle.seek_by(5.0).unwrap();
+	sound.on_start_processing();
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
+	expect_frame_soon(Frame::from_mono(20.0).panned(0.5), &mut sound);
 }
 
 fn expect_frame_soon(expected_frame: Frame, sound: &mut StreamingSound) {
