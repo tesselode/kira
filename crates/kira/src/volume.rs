@@ -19,6 +19,12 @@ impl Volume {
 		match self {
 			Volume::Amplitude(amplitude) => *amplitude,
 			Volume::Decibels(db) => {
+				// adding a special case for db == 0.0 improves
+				// performance in the sound playback benchmarks
+				// by about 7%
+				if *db == 0.0 {
+					return 1.0;
+				}
 				if *db <= Self::MIN_DECIBELS {
 					return 0.0;
 				}
