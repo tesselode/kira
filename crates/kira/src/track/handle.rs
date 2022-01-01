@@ -85,7 +85,7 @@ impl TrackHandle {
 	pub fn set_route(
 		&mut self,
 		to: impl Into<TrackId>,
-		volume: f64,
+		volume: impl Into<Volume>,
 		tween: Tween,
 	) -> Result<(), SetRouteError> {
 		let to = to.into();
@@ -96,7 +96,7 @@ impl TrackHandle {
 			.push(Command::Mixer(MixerCommand::SetTrackRoutes {
 				from: self.id,
 				to,
-				volume,
+				volume: volume.into(),
 				tween,
 			}))
 			.map_err(SetRouteError::CommandError)

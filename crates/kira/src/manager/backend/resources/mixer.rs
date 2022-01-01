@@ -9,13 +9,14 @@ use crate::{
 	manager::{backend::context::Context, command::MixerCommand},
 	track::{SubTrackId, Track, TrackBuilder, TrackId},
 	tween::Tweener,
+	Volume,
 };
 
 pub(crate) struct Mixer {
 	main_track: Track,
 	sub_tracks: Arena<Track>,
 	sub_track_ids: Vec<SubTrackId>,
-	dummy_routes: Vec<(TrackId, Tweener)>,
+	dummy_routes: Vec<(TrackId, Tweener<Volume>)>,
 	unused_track_producer: Producer<Track>,
 }
 
@@ -129,7 +130,7 @@ impl Mixer {
 					TrackId::Sub(id) => self.sub_tracks.get_mut(id.0),
 				};
 				if let Some(destination_track) = destination_track {
-					destination_track.add_input(output * amount.value() as f32);
+					destination_track.add_input(output * amount.value().as_amplitude() as f32);
 				}
 			}
 			// borrow the track again and give it back its routes

@@ -21,7 +21,7 @@ pub(crate) enum MixerCommand {
 	SetTrackRoutes {
 		from: TrackId,
 		to: TrackId,
-		volume: f64,
+		volume: Volume,
 		tween: Tween,
 	},
 }

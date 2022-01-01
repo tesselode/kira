@@ -75,7 +75,7 @@ pub(crate) struct Track {
 	shared: Arc<TrackShared>,
 	volume: Tweener<Volume>,
 	panning: Tweener,
-	routes: Vec<(TrackId, Tweener)>,
+	routes: Vec<(TrackId, Tweener<Volume>)>,
 	effects: Vec<Box<dyn Effect>>,
 	input: Frame,
 }
@@ -99,7 +99,7 @@ impl Track {
 		self.shared.clone()
 	}
 
-	pub fn routes_mut(&mut self) -> &mut Vec<(TrackId, Tweener)> {
+	pub fn routes_mut(&mut self) -> &mut Vec<(TrackId, Tweener<Volume>)> {
 		&mut self.routes
 	}
 
@@ -111,7 +111,7 @@ impl Track {
 		self.panning.set(panning, tween);
 	}
 
-	pub fn set_route(&mut self, to: TrackId, volume: f64, tween: Tween) {
+	pub fn set_route(&mut self, to: TrackId, volume: Volume, tween: Tween) {
 		// TODO: determine if we should store the track routes in some
 		// other data structure like an IndexMap so we don't have to do
 		// linear search

@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
-use crate::tween::Tweener;
+use crate::{tween::Tweener, Volume};
 
 use super::TrackId;
 
 /// Defines how the output of a mixer sub-track will be
 /// fed into the input of other mixer tracks.
-pub struct TrackRoutes(pub(crate) HashMap<TrackId, f64>);
+pub struct TrackRoutes(pub(crate) HashMap<TrackId, Volume>);
 
 impl TrackRoutes {
 	/// Creates a new [`TrackRoutes`] with the default settings.
@@ -31,15 +31,15 @@ impl TrackRoutes {
 	pub fn parent(track: impl Into<TrackId>) -> Self {
 		Self({
 			let mut routes = HashMap::new();
-			routes.insert(track.into(), 1.0);
+			routes.insert(track.into(), Volume::Amplitude(1.0));
 			routes
 		})
 	}
 
 	/// Sets how much of the current track's signal will be sent
 	/// to the specified destination track.
-	pub fn with_route(mut self, track: impl Into<TrackId>, volume: f64) -> Self {
-		self.0.insert(track.into(), volume);
+	pub fn with_route(mut self, track: impl Into<TrackId>, volume: impl Into<Volume>) -> Self {
+		self.0.insert(track.into(), volume.into());
 		self
 	}
 
@@ -49,7 +49,7 @@ impl TrackRoutes {
 		self
 	}
 
-	pub(crate) fn into_vec(self) -> Vec<(TrackId, Tweener)> {
+	pub(crate) fn into_vec(self) -> Vec<(TrackId, Tweener<Volume>)> {
 		self.0
 			.iter()
 			.map(|(id, value)| (*id, Tweener::new(*value)))
