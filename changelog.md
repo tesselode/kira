@@ -1,3 +1,37 @@
+# v0.6.0 beta 2
+
+- Remove `Clock` and `Clocks` from the public API
+- Sounds and effects now have an `on_clock_tick` callback instead of having a
+  `&Clocks` argument passed into `process`
+- Remove parameters
+- Settings that were previously `Value`s can now be tweened directly without
+  needing to link them to a parameter
+- All functions that send commands to the renderer now use `CommandError` as
+  their error type
+- Effects now have a similar structure to sounds
+  - `EffectBuilder` - trait for types that can be converted to an `Effect` and a
+    handle
+  - `Effect` - runs on the renderer
+- `TrackSettings` is now `TrackBuilder`. Effects can be added by passing an
+  `EffectBuilder` to `TrackBuilder::add_effect`.
+- Changes to the built-in effects:
+  - Removed `Distortion` from the public API, `DistortionSettings` is now
+    `DistortionBuilder`, added `DistortionHandle`
+  - Removed `Delay` from the public API, `DelaySettings` is now `DelayBuilder`,
+    added `DelayHandle`
+  - Removed `Reverb` from the public API, `ReverbSettings` is now
+    `ReverbBuilder`, added `ReverbHandle`
+  - Removed `Filter` from the public API, `FilterSettings` is now
+    `FilterBuilder`, added `FilterHandle`
+- Renamed `Tweenable` to `Tweener`
+- Added a `Tweenable` trait for things that a `Tweener` can control. `Tweener`
+  is now generic over the type of the `Tweenable` value
+- Volume settings now use the `Volume` type instead of `f64`
+- Playback rate settings now use the `PlaybackRate` type instead of `f64`
+- Clock speed settings now use the `ClockSpeed` type instead of `f64`
+- Fix audio artifacts when a static sound loops
+- Slight performance improvement when sounds are center-panned
+
 # v0.6.0 beta 1 - December 24, 2021
 
 - Fix looping static sounds with a loop start position greater than 0.0 starting
