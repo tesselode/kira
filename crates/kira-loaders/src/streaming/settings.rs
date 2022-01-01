@@ -1,4 +1,4 @@
-use kira::{track::TrackId, tween::Tween, LoopBehavior, PlaybackRate, StartTime};
+use kira::{track::TrackId, tween::Tween, LoopBehavior, PlaybackRate, StartTime, Volume};
 
 /// Settings for a streaming sound.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -9,7 +9,7 @@ pub struct StreamingSoundSettings {
 	/// The initial playback position of the sound (in seconds).
 	pub start_position: f64,
 	/// The volume of the sound.
-	pub volume: f64,
+	pub volume: Volume,
 	/// The playback rate of the sound.
 	///
 	/// Changing the playback rate will change both the speed
@@ -32,7 +32,7 @@ impl StreamingSoundSettings {
 		Self {
 			start_time: StartTime::Immediate,
 			start_position: 0.0,
-			volume: 1.0,
+			volume: Volume::Amplitude(1.0),
 			playback_rate: PlaybackRate::Factor(1.0),
 			panning: 0.5,
 			loop_behavior: None,
@@ -58,8 +58,11 @@ impl StreamingSoundSettings {
 	}
 
 	/// Sets the volume of the sound.
-	pub fn volume(self, volume: f64) -> Self {
-		Self { volume, ..self }
+	pub fn volume(self, volume: impl Into<Volume>) -> Self {
+		Self {
+			volume: volume.into(),
+			..self
+		}
 	}
 
 	/// Sets the playback rate of the sound.

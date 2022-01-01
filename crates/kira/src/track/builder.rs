@@ -1,10 +1,12 @@
+use crate::Volume;
+
 use super::{effect::EffectBuilder, routes::TrackRoutes, Effect};
 
 /// Configures a mixer track.
 #[non_exhaustive]
 pub struct TrackBuilder {
 	/// The volume of the track.
-	pub(crate) volume: f64,
+	pub(crate) volume: Volume,
 	/// The panning of the track, where 0 is hard left
 	/// and 1 is hard right.
 	pub(crate) panning: f64,
@@ -20,7 +22,7 @@ impl TrackBuilder {
 	/// Creates a new [`TrackBuilder`] with the default settings.
 	pub fn new() -> Self {
 		Self {
-			volume: 1.0,
+			volume: Volume::Amplitude(1.0),
 			panning: 0.5,
 			routes: TrackRoutes::new(),
 			effects: vec![],
@@ -28,8 +30,11 @@ impl TrackBuilder {
 	}
 
 	/// Sets the volume of the track.
-	pub fn volume(self, volume: f64) -> Self {
-		Self { volume, ..self }
+	pub fn volume(self, volume: impl Into<Volume>) -> Self {
+		Self {
+			volume: volume.into(),
+			..self
+		}
 	}
 
 	/// Sets the panning of the track, where 0 is hard left

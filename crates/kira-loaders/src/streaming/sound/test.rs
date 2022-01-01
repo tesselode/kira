@@ -4,7 +4,7 @@ use kira::{
 	dsp::Frame,
 	sound::{static_sound::PlaybackState, Sound},
 	tween::Tween,
-	LoopBehavior,
+	LoopBehavior, Volume,
 };
 
 use crate::{
@@ -192,9 +192,18 @@ fn pauses_and_resumes_with_fades() {
 
 	// allow for a few samples of delay because of the resampling, but the
 	// sound should fade out soon.
-	expect_frame_soon(Frame::from_mono(0.75).panned(0.5), &mut sound);
-	assert_eq!(sound.process(1.0), Frame::from_mono(0.5).panned(0.5));
-	assert_eq!(sound.process(1.0), Frame::from_mono(0.25).panned(0.5));
+	expect_frame_soon(
+		Frame::from_mono(Volume::Decibels(-15.0).as_amplitude() as f32).panned(0.5),
+		&mut sound,
+	);
+	assert_eq!(
+		sound.process(1.0),
+		Frame::from_mono(Volume::Decibels(-30.0).as_amplitude() as f32).panned(0.5)
+	);
+	assert_eq!(
+		sound.process(1.0),
+		Frame::from_mono(Volume::Decibels(-45.0).as_amplitude() as f32).panned(0.5)
+	);
 	sound.process(1.0);
 
 	sound.on_start_processing();
@@ -216,11 +225,20 @@ fn pauses_and_resumes_with_fades() {
 
 	// allow for a few samples of delay because of the resampling, but the
 	// sound should fade back in soon.
-	expect_frame_soon(Frame::from_mono(0.25).panned(0.5), &mut sound);
+	expect_frame_soon(
+		Frame::from_mono(Volume::Decibels(-45.0).as_amplitude() as f32).panned(0.5),
+		&mut sound,
+	);
 	assert_eq!(sound.state, PlaybackState::Playing);
-	assert_eq!(sound.process(1.0), Frame::from_mono(0.5).panned(0.5));
+	assert_eq!(
+		sound.process(1.0),
+		Frame::from_mono(Volume::Decibels(-30.0).as_amplitude() as f32).panned(0.5)
+	);
 	assert_eq!(sound.state, PlaybackState::Playing);
-	assert_eq!(sound.process(1.0), Frame::from_mono(0.75).panned(0.5));
+	assert_eq!(
+		sound.process(1.0),
+		Frame::from_mono(Volume::Decibels(-15.0).as_amplitude() as f32).panned(0.5)
+	);
 	assert_eq!(sound.state, PlaybackState::Playing);
 
 	for _ in 0..3 {
@@ -254,9 +272,18 @@ fn stops_with_fade_out() {
 
 	// allow for a few samples of delay because of the resampling, but the
 	// sound should fade out soon.
-	expect_frame_soon(Frame::from_mono(0.75).panned(0.5), &mut sound);
-	assert_eq!(sound.process(1.0), Frame::from_mono(0.5).panned(0.5));
-	assert_eq!(sound.process(1.0), Frame::from_mono(0.25).panned(0.5));
+	expect_frame_soon(
+		Frame::from_mono(Volume::Decibels(-15.0).as_amplitude() as f32).panned(0.5),
+		&mut sound,
+	);
+	assert_eq!(
+		sound.process(1.0),
+		Frame::from_mono(Volume::Decibels(-30.0).as_amplitude() as f32).panned(0.5)
+	);
+	assert_eq!(
+		sound.process(1.0),
+		Frame::from_mono(Volume::Decibels(-45.0).as_amplitude() as f32).panned(0.5)
+	);
 	sound.process(1.0);
 
 	sound.on_start_processing();

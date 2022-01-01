@@ -14,7 +14,7 @@ use kira::{
 	sound::{static_sound::PlaybackState, Sound},
 	track::TrackId,
 	tween::{Tween, Tweener},
-	PlaybackRate, StartTime,
+	PlaybackRate, StartTime, Volume,
 };
 use ringbuf::Consumer;
 
@@ -51,10 +51,10 @@ pub(crate) struct StreamingSound {
 	track: TrackId,
 	start_time: StartTime,
 	state: PlaybackState,
-	volume_fade: Tweener,
+	volume_fade: Tweener<Volume>,
 	current_frame: u64,
 	fractional_position: f64,
-	volume: Tweener,
+	volume: Tweener<Volume>,
 	playback_rate: Tweener<PlaybackRate>,
 	panning: Tweener,
 	shared: Arc<Shared>,
@@ -78,11 +78,11 @@ impl StreamingSound {
 			start_time: settings.start_time,
 			state: PlaybackState::Playing,
 			volume_fade: if let Some(tween) = settings.fade_in_tween {
-				let mut tweenable = Tweener::new(0.0);
-				tweenable.set(1.0, tween);
+				let mut tweenable = Tweener::new(Volume::Decibels(Volume::MIN_DECIBELS));
+				tweenable.set(Volume::Decibels(0.0), tween);
 				tweenable
 			} else {
-				Tweener::new(1.0)
+				Tweener::new(Volume::Decibels(0.0))
 			},
 			current_frame,
 			fractional_position: 0.0,
@@ -139,17 +139,19 @@ impl StreamingSound {
 
 	fn pause(&mut self, tween: Tween) {
 		self.set_state(PlaybackState::Pausing);
-		self.volume_fade.set(0.0, tween);
+		self.volume_fade
+			.set(Volume::Decibels(Volume::MIN_DECIBELS), tween);
 	}
 
 	fn resume(&mut self, tween: Tween) {
 		self.set_state(PlaybackState::Playing);
-		self.volume_fade.set(1.0, tween);
+		self.volume_fade.set(Volume::Decibels(0.0), tween);
 	}
 
 	fn stop(&mut self, tween: Tween) {
 		self.set_state(PlaybackState::Stopping);
-		self.volume_fade.set(0.0, tween);
+		self.volume_fade
+			.set(Volume::Decibels(Volume::MIN_DECIBELS), tween);
 	}
 
 	fn seek_to_index(&mut self, index: u64) {
@@ -235,7 +237,8 @@ impl Sound for StreamingSound {
 		{
 			self.set_state(PlaybackState::Stopped);
 		}
-		(out * self.volume_fade.value() as f32 * self.volume.value() as f32)
+		(out * self.volume_fade.value().as_amplitude() as f32
+			* self.volume.value().as_amplitude() as f32)
 			.panned(self.panning.value() as f32)
 	}
 

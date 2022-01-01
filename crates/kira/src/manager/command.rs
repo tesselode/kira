@@ -7,7 +7,7 @@ use crate::{
 	sound::Sound,
 	track::{SubTrackId, Track, TrackId},
 	tween::Tween,
-	ClockSpeed,
+	ClockSpeed, Volume,
 };
 
 pub(crate) enum SoundCommand {
@@ -16,7 +16,7 @@ pub(crate) enum SoundCommand {
 
 pub(crate) enum MixerCommand {
 	AddSubTrack(SubTrackId, Track),
-	SetTrackVolume(TrackId, f64, Tween),
+	SetTrackVolume(TrackId, Volume, Tween),
 	SetTrackPanning(TrackId, f64, Tween),
 	SetTrackRoutes {
 		from: TrackId,

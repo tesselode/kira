@@ -38,9 +38,11 @@ pub mod sound;
 mod start_time;
 pub mod track;
 pub mod tween;
+mod volume;
 
 pub use clock_speed::*;
 pub use error::*;
 pub use loop_behavior::*;
 pub use playback_rate::*;
 pub use start_time::*;
+pub use volume::*;

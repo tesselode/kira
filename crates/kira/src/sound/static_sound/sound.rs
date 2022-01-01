@@ -13,7 +13,7 @@ use crate::{
 	sound::Sound,
 	track::TrackId,
 	tween::{Tween, Tweener},
-	LoopBehavior, PlaybackRate, StartTime,
+	LoopBehavior, PlaybackRate, StartTime, Volume,
 };
 
 use self::resampler::Resampler;
@@ -70,10 +70,10 @@ pub(super) struct StaticSound {
 	resampler: Resampler,
 	current_sample_index: usize,
 	fractional_position: f64,
-	volume: Tweener,
+	volume: Tweener<Volume>,
 	playback_rate: Tweener<PlaybackRate>,
 	panning: Tweener,
-	volume_fade: Tweener,
+	volume_fade: Tweener<Volume>,
 	shared: Arc<Shared>,
 }
 
@@ -99,11 +99,11 @@ impl StaticSound {
 			playback_rate: Tweener::new(settings.playback_rate),
 			panning: Tweener::new(settings.panning),
 			volume_fade: if let Some(tween) = settings.fade_in_tween {
-				let mut tweenable = Tweener::new(0.0);
-				tweenable.set(1.0, tween);
+				let mut tweenable = Tweener::new(Volume::Decibels(Volume::MIN_DECIBELS));
+				tweenable.set(Volume::Decibels(0.0), tween);
 				tweenable
 			} else {
-				Tweener::new(1.0)
+				Tweener::new(Volume::Decibels(0.0))
 			},
 			shared: Arc::new(Shared {
 				state: AtomicU8::new(PlaybackState::Playing as u8),
@@ -129,17 +129,19 @@ impl StaticSound {
 
 	fn pause(&mut self, fade_out_tween: Tween) {
 		self.set_state(PlaybackState::Pausing);
-		self.volume_fade.set(0.0, fade_out_tween);
+		self.volume_fade
+			.set(Volume::Decibels(Volume::MIN_DECIBELS), fade_out_tween);
 	}
 
 	fn resume(&mut self, fade_in_tween: Tween) {
 		self.set_state(PlaybackState::Playing);
-		self.volume_fade.set(1.0, fade_in_tween);
+		self.volume_fade.set(Volume::Decibels(0.0), fade_in_tween);
 	}
 
 	fn stop(&mut self, fade_out_tween: Tween) {
 		self.set_state(PlaybackState::Stopping);
-		self.volume_fade.set(0.0, fade_out_tween);
+		self.volume_fade
+			.set(Volume::Decibels(Volume::MIN_DECIBELS), fade_out_tween);
 	}
 
 	fn playback_rate(&self) -> f64 {
@@ -198,7 +200,9 @@ impl StaticSound {
 			return;
 		}
 		let out = self.data.frames[self.current_sample_index];
-		let out = (out * self.volume_fade.value() as f32 * self.volume.value() as f32)
+		let out = (out
+			* self.volume_fade.value().as_amplitude() as f32
+			* self.volume.value().as_amplitude() as f32)
 			.panned(self.panning.value() as f32);
 		self.resampler.push_frame(out, self.current_sample_index);
 		let reached_end_of_sound = if playback_rate.is_sign_negative() {
@@ -230,7 +234,9 @@ impl StaticSound {
 			return;
 		}
 		let out = self.data.frames[self.current_sample_index];
-		let out = (out * self.volume_fade.value() as f32 * self.volume.value() as f32)
+		let out = (out
+			* self.volume_fade.value().as_amplitude() as f32
+			* self.volume.value().as_amplitude() as f32)
 			.panned(self.panning.value() as f32);
 		self.resampler.push_frame(out, self.current_sample_index);
 	}

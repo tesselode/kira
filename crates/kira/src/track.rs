@@ -21,6 +21,7 @@ use crate::{
 	dsp::Frame,
 	manager::backend::context::Context,
 	tween::{Tween, Tweener},
+	Volume,
 };
 
 use self::effect::Effect;
@@ -72,7 +73,7 @@ impl TrackShared {
 
 pub(crate) struct Track {
 	shared: Arc<TrackShared>,
-	volume: Tweener,
+	volume: Tweener<Volume>,
 	panning: Tweener,
 	routes: Vec<(TrackId, Tweener)>,
 	effects: Vec<Box<dyn Effect>>,
@@ -102,7 +103,7 @@ impl Track {
 		&mut self.routes
 	}
 
-	pub fn set_volume(&mut self, volume: f64, tween: Tween) {
+	pub fn set_volume(&mut self, volume: Volume, tween: Tween) {
 		self.volume.set(volume, tween);
 	}
 
@@ -143,7 +144,7 @@ impl Track {
 		for effect in &mut self.effects {
 			output = effect.process(output, dt);
 		}
-		output *= self.volume.value() as f32;
+		output *= self.volume.value().as_amplitude() as f32;
 		output = output.panned(self.panning.value() as f32);
 		output
 	}

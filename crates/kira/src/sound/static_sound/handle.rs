@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use ringbuf::Producer;
 
-use crate::{tween::Tween, CommandError, PlaybackRate};
+use crate::{tween::Tween, CommandError, PlaybackRate, Volume};
 
 use super::{sound::Shared, Command, PlaybackState};
 
@@ -24,9 +24,13 @@ impl StaticSoundHandle {
 	}
 
 	/// Sets the volume of the sound (as a factor of the original volume).
-	pub fn set_volume(&mut self, volume: f64, tween: Tween) -> Result<(), CommandError> {
+	pub fn set_volume(
+		&mut self,
+		volume: impl Into<Volume>,
+		tween: Tween,
+	) -> Result<(), CommandError> {
 		self.command_producer
-			.push(Command::SetVolume(volume, tween))
+			.push(Command::SetVolume(volume.into(), tween))
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 

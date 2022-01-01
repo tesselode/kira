@@ -8,6 +8,7 @@ use crate::{
 	dsp::Frame,
 	manager::{command::Command, MainPlaybackState},
 	tween::Tweener,
+	Volume,
 };
 
 use self::context::Context;
@@ -24,7 +25,7 @@ pub struct Renderer {
 	resources: Resources,
 	command_consumer: Consumer<Command>,
 	state: MainPlaybackState,
-	fade_volume: Tweener,
+	fade_volume: Tweener<Volume>,
 }
 
 impl Renderer {
@@ -38,7 +39,7 @@ impl Renderer {
 			resources,
 			command_consumer,
 			state: MainPlaybackState::Playing,
-			fade_volume: Tweener::new(1.0),
+			fade_volume: Tweener::new(Volume::Decibels(0.0)),
 		}
 	}
 
@@ -59,14 +60,15 @@ impl Renderer {
 					self.context
 						.state
 						.store(MainPlaybackState::Pausing as u8, Ordering::SeqCst);
-					self.fade_volume.set(0.0, fade_out_tween);
+					self.fade_volume
+						.set(Volume::Decibels(Volume::MIN_DECIBELS), fade_out_tween);
 				}
 				Command::Resume(fade_in_tween) => {
 					self.state = MainPlaybackState::Playing;
 					self.context
 						.state
 						.store(MainPlaybackState::Playing as u8, Ordering::SeqCst);
-					self.fade_volume.set(1.0, fade_in_tween);
+					self.fade_volume.set(Volume::Decibels(0.0), fade_in_tween);
 				}
 			}
 		}
@@ -94,6 +96,6 @@ impl Renderer {
 			.sounds
 			.process(self.context.dt, &mut self.resources.mixer);
 		let out = self.resources.mixer.process(self.context.dt);
-		out * self.fade_volume.value() as f32
+		out * self.fade_volume.value().as_amplitude() as f32
 	}
 }

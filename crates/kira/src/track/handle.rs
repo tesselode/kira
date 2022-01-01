@@ -4,6 +4,7 @@ use crate::{
 	error::CommandError,
 	manager::command::{producer::CommandProducer, Command, MixerCommand},
 	tween::Tween,
+	Volume,
 };
 
 use super::{TrackId, TrackShared};
@@ -55,10 +56,16 @@ impl TrackHandle {
 	}
 
 	/// Sets the (post-effects) volume of the mixer track.
-	pub fn set_volume(&mut self, volume: f64, tween: Tween) -> Result<(), CommandError> {
+	pub fn set_volume(
+		&mut self,
+		volume: impl Into<Volume>,
+		tween: Tween,
+	) -> Result<(), CommandError> {
 		self.command_producer
 			.push(Command::Mixer(MixerCommand::SetTrackVolume(
-				self.id, volume, tween,
+				self.id,
+				volume.into(),
+				tween,
 			)))
 	}
 
@@ -72,7 +79,7 @@ impl TrackHandle {
 	}
 
 	/// Sets the volume of this track's route to another track.
-	/// 
+	///
 	/// This can only be used to change the volume of existing routes,
 	/// not to add new routes.
 	pub fn set_route(
