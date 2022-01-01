@@ -3,6 +3,7 @@ use ringbuf::RingBuffer;
 use crate::{
 	track::effect::{Effect, EffectBuilder},
 	tween::Tweener,
+	Volume,
 };
 
 use super::{handle::DistortionHandle, Distortion, DistortionKind};
@@ -17,7 +18,7 @@ pub struct DistortionBuilder {
 	pub kind: DistortionKind,
 	/// The factor to multiply the signal by before applying
 	/// the distortion.
-	pub drive: f64,
+	pub drive: Volume,
 	/// How much dry (unprocessed) signal should be blended
 	/// with the wet (processed) signal. `0.0` means
 	/// only the dry signal will be heard. `1.0` means
@@ -38,8 +39,11 @@ impl DistortionBuilder {
 
 	/// Sets the factor to multiply the signal by before applying
 	/// the distortion.
-	pub fn drive(self, drive: f64) -> Self {
-		Self { drive, ..self }
+	pub fn drive(self, drive: impl Into<Volume>) -> Self {
+		Self {
+			drive: drive.into(),
+			..self
+		}
 	}
 
 	/// Sets how much dry (unprocessed) signal should be blended
@@ -55,7 +59,7 @@ impl Default for DistortionBuilder {
 	fn default() -> Self {
 		Self {
 			kind: Default::default(),
-			drive: 1.0,
+			drive: Volume::Amplitude(1.0),
 			mix: 1.0,
 		}
 	}

@@ -1,6 +1,9 @@
 use ringbuf::RingBuffer;
 
-use crate::track::effect::{Effect, EffectBuilder};
+use crate::{
+	track::effect::{Effect, EffectBuilder},
+	Volume,
+};
 
 use super::{Delay, DelayHandle};
 
@@ -12,7 +15,7 @@ pub struct DelayBuilder {
 	/// The delay time (in seconds).
 	pub(super) delay_time: f64,
 	/// The amount of feedback.
-	pub(super) feedback: f64,
+	pub(super) feedback: Volume,
 	/// The amount of audio the delay can store (in seconds).
 	/// This affects the maximum delay time.
 	pub(super) buffer_length: f64,
@@ -37,8 +40,11 @@ impl DelayBuilder {
 	}
 
 	/// Sets the amount of feedback.
-	pub fn feedback(self, feedback: f64) -> Self {
-		Self { feedback, ..self }
+	pub fn feedback(self, feedback: impl Into<Volume>) -> Self {
+		Self {
+			feedback: feedback.into(),
+			..self
+		}
 	}
 
 	/// Sets the amount of audio the delay can store.
@@ -69,7 +75,7 @@ impl Default for DelayBuilder {
 	fn default() -> Self {
 		Self {
 			delay_time: 0.5,
-			feedback: 0.5,
+			feedback: Volume::Amplitude(0.5),
 			buffer_length: 10.0,
 			feedback_effects: vec![],
 			mix: 0.5,

@@ -13,11 +13,12 @@ use crate::{
 	dsp::{interpolate_frame, Frame},
 	track::Effect,
 	tween::{Tween, Tweener},
+	Volume,
 };
 
 enum Command {
 	SetDelayTime(f64, Tween),
-	SetFeedback(f64, Tween),
+	SetFeedback(Volume, Tween),
 	SetMix(f64, Tween),
 }
 
@@ -35,7 +36,7 @@ enum DelayState {
 struct Delay {
 	command_consumer: Consumer<Command>,
 	delay_time: Tweener,
-	feedback: Tweener,
+	feedback: Tweener<Volume>,
 	mix: Tweener,
 	state: DelayState,
 	feedback_effects: Vec<Box<dyn Effect>>,
@@ -125,7 +126,7 @@ impl Effect for Delay {
 			// write output audio to the buffer
 			*write_position += 1;
 			*write_position %= buffer.len();
-			buffer[*write_position] = input + output * self.feedback.value() as f32;
+			buffer[*write_position] = input + output * self.feedback.value().as_amplitude() as f32;
 
 			let mix = self.mix.value() as f32;
 			output * mix.sqrt() + input * (1.0 - mix).sqrt()

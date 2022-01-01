@@ -1,6 +1,6 @@
 use ringbuf::Producer;
 
-use crate::{tween::Tween, CommandError};
+use crate::{tween::Tween, CommandError, Volume};
 
 use super::Command;
 
@@ -18,9 +18,9 @@ impl DelayHandle {
 	}
 
 	/// Sets the amount of feedback.
-	pub fn set_feedback(&mut self, feedback: f64, tween: Tween) -> Result<(), CommandError> {
+	pub fn set_feedback(&mut self, feedback: impl Into<Volume>, tween: Tween) -> Result<(), CommandError> {
 		self.command_producer
-			.push(Command::SetFeedback(feedback, tween))
+			.push(Command::SetFeedback(feedback.into(), tween))
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 

@@ -1,6 +1,6 @@
 use ringbuf::Producer;
 
-use crate::{tween::Tween, CommandError};
+use crate::{tween::Tween, CommandError, Volume};
 
 use super::{Command, DistortionKind};
 
@@ -18,9 +18,13 @@ impl DistortionHandle {
 	}
 
 	/// Sets how much distortion should be applied.
-	pub fn set_drive(&mut self, drive: f64, tween: Tween) -> Result<(), CommandError> {
+	pub fn set_drive(
+		&mut self,
+		drive: impl Into<Volume>,
+		tween: Tween,
+	) -> Result<(), CommandError> {
 		self.command_producer
-			.push(Command::SetDrive(drive, tween))
+			.push(Command::SetDrive(drive.into(), tween))
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 

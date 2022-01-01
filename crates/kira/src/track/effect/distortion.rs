@@ -13,11 +13,12 @@ use crate::{
 	dsp::Frame,
 	track::Effect,
 	tween::{Tween, Tweener},
+	Volume,
 };
 
 enum Command {
 	SetKind(DistortionKind),
-	SetDrive(f64, Tween),
+	SetDrive(Volume, Tween),
 	SetMix(f64, Tween),
 }
 
@@ -48,7 +49,7 @@ impl Default for DistortionKind {
 struct Distortion {
 	command_consumer: Consumer<Command>,
 	kind: DistortionKind,
-	drive: Tweener,
+	drive: Tweener<Volume>,
 	mix: Tweener,
 }
 
@@ -66,7 +67,7 @@ impl Effect for Distortion {
 	fn process(&mut self, input: Frame, dt: f64) -> Frame {
 		self.drive.update(dt);
 		self.mix.update(dt);
-		let drive = self.drive.value() as f32;
+		let drive = self.drive.value().as_amplitude() as f32;
 		let mut output = input * drive;
 		output = match self.kind {
 			DistortionKind::HardClip => Frame::new(
