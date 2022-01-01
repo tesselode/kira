@@ -171,6 +171,7 @@ impl Sound for StreamingSound {
 	}
 
 	fn on_start_processing(&mut self) {
+		self.update_current_frame();
 		self.shared
 			.position
 			.store(self.position().to_bits(), Ordering::SeqCst);
@@ -215,7 +216,6 @@ impl Sound for StreamingSound {
 				_ => {}
 			}
 		}
-		self.update_current_frame();
 		let next_frames = self.next_frames();
 		let out = interpolate_frame(
 			next_frames[0],

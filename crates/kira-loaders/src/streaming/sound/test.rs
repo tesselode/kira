@@ -11,6 +11,8 @@ use crate::{
 	StreamingSoundSettings,
 };
 
+use super::StreamingSound;
+
 const MOCK_DECODER_SAMPLE_RATE: u32 = 1;
 const MOCK_DECODER_PACKET_SIZE: usize = 3;
 
@@ -62,24 +64,30 @@ impl Decoder for MockDecoder {
 #[test]
 fn plays_all_samples() {
 	let data = StreamingSoundData {
-		decoder: Box::new(MockDecoder::new(
-			(1..=10).map(|i| Frame::from_mono(i as f32)).collect(),
-		)),
-		settings: StreamingSoundSettings::default(),
+		decoder: Box::new(MockDecoder::new(vec![
+			Frame::from_mono(1.0),
+			Frame::from_mono(2.0),
+			Frame::from_mono(3.0),
+		])),
+		settings: StreamingSoundSettings::new(),
 	};
 	let (mut sound, _, mut scheduler) = data.split().unwrap();
 	while !matches!(scheduler.run().unwrap(), NextStep::End) {}
 
 	assert!(!sound.finished());
-	assert_eq!(sound.state, PlaybackState::Playing);
 
-	for i in 1..=10 {
+	for i in 1..=3 {
 		assert_eq!(sound.process(1.0), Frame::from_mono(i as f32).panned(0.5));
 		assert!(!sound.finished());
-		assert_eq!(sound.state, PlaybackState::Playing);
 	}
 
-	assert_eq!(sound.process(1.0), Frame::from_mono(0.0).panned(0.5));
+	// give some time for the resample buffer to empty. in the meantime we should
+	// get silent output.
+	for _ in 0..10 {
+		assert_eq!(sound.process(1.0), Frame::from_mono(0.0).panned(0.5));
+	}
+
+	// the sound should be finished and stopped by now
 	assert!(sound.finished());
 	assert_eq!(sound.state, PlaybackState::Stopped);
 }
@@ -95,11 +103,12 @@ fn waits_for_samples() {
 		)),
 		settings: StreamingSoundSettings::default(),
 	};
-	let (mut sound, _, mut scheduler) = data.split().unwrap();
+	let (mut sound, handle, mut scheduler) = data.split().unwrap();
 
 	for _ in 0..3 {
 		assert_eq!(sound.process(1.0), Frame::ZERO.panned(0.5));
-		assert_eq!(sound.position(), 0.0);
+		sound.on_start_processing();
+		assert_eq!(handle.position(), 0.0);
 	}
 
 	for _ in 0..4 {
@@ -108,12 +117,14 @@ fn waits_for_samples() {
 
 	for i in 1..=3 {
 		assert_eq!(sound.process(1.0), Frame::from_mono(i as f32).panned(0.5));
-		assert_eq!(sound.position(), (i - 1) as f64);
+		sound.on_start_processing();
+		assert_eq!(handle.position(), (i - 1) as f64);
 	}
 
 	for _ in 0..3 {
 		assert_eq!(sound.process(1.0), Frame::ZERO.panned(0.5));
-		assert_eq!(sound.position(), 2.0);
+		sound.on_start_processing();
+		assert_eq!(handle.position(), 2.0);
 	}
 }
 
@@ -122,23 +133,16 @@ fn waits_for_samples() {
 #[test]
 fn reports_playback_state() {
 	let data = StreamingSoundData {
-		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(0.0); 2])),
+		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(0.0); 10])),
 		settings: StreamingSoundSettings::new(),
 	};
 	let (mut sound, handle, mut scheduler) = data.split().unwrap();
 	while !matches!(scheduler.run().unwrap(), NextStep::End) {}
 
-	assert_eq!(handle.state(), PlaybackState::Playing);
-
-	for _ in 0..2 {
+	for _ in 0..20 {
+		assert_eq!(handle.state(), sound.state);
 		sound.process(1.0);
-		sound.on_start_processing();
-		assert_eq!(handle.state(), PlaybackState::Playing);
 	}
-
-	sound.process(1.0);
-	sound.on_start_processing();
-	assert_eq!(handle.state(), PlaybackState::Stopped);
 }
 
 /// Tests that a `StreamingSound` correctly reports its playback state
@@ -147,25 +151,17 @@ fn reports_playback_state() {
 #[allow(clippy::float_cmp)]
 fn reports_playback_position() {
 	let data = StreamingSoundData {
-		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(0.0); 2])),
+		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(0.0); 10])),
 		settings: StreamingSoundSettings::new(),
 	};
 	let (mut sound, handle, mut scheduler) = data.split().unwrap();
 	while !matches!(scheduler.run().unwrap(), NextStep::End) {}
 
-	assert_eq!(handle.position(), 0.0);
-
-	for i in 1..=2 {
+	for i in 0..20 {
+		assert_eq!(handle.position(), i.clamp(0, 9) as f64);
 		sound.process(1.0);
 		sound.on_start_processing();
-		assert_eq!(handle.position(), (i - 1) as f64);
 	}
-
-	sound.process(1.0);
-	sound.on_start_processing();
-	// TODO: figure out whether the final position ought to be
-	// 1.0 or 2.0
-	assert_eq!(handle.position(), 1.0);
 }
 
 /// Tests that a `StreamingSound` fades out fully before pausing
@@ -181,7 +177,6 @@ fn pauses_and_resumes_with_fades() {
 	while !matches!(scheduler.run().unwrap(), NextStep::End) {}
 
 	sound.process(1.0);
-	assert_eq!(sound.position(), 0.0);
 	assert_eq!(sound.state, PlaybackState::Playing);
 
 	handle
@@ -191,20 +186,21 @@ fn pauses_and_resumes_with_fades() {
 		})
 		.unwrap();
 	sound.on_start_processing();
-
-	assert_eq!(sound.process(1.0), Frame::from_mono(0.75).panned(0.5));
-	assert_eq!(sound.position(), 1.0);
 	assert_eq!(sound.state, PlaybackState::Pausing);
+
+	// allow for a few samples of delay because of the resampling, but the
+	// sound should fade out soon.
+	expect_frame_soon(Frame::from_mono(0.75).panned(0.5), &mut sound);
 	assert_eq!(sound.process(1.0), Frame::from_mono(0.5).panned(0.5));
-	assert_eq!(sound.position(), 2.0);
-	assert_eq!(sound.state, PlaybackState::Pausing);
 	assert_eq!(sound.process(1.0), Frame::from_mono(0.25).panned(0.5));
-	assert_eq!(sound.position(), 3.0);
-	assert_eq!(sound.state, PlaybackState::Pausing);
+	sound.process(1.0);
 
-	for _ in 0..3 {
+	sound.on_start_processing();
+	let position = handle.position();
+	for _ in 0..10 {
 		assert_eq!(sound.process(1.0), Frame::from_mono(0.0).panned(0.5));
-		assert_eq!(sound.position(), 4.0);
+		sound.on_start_processing();
+		assert_eq!(handle.position(), position);
 		assert_eq!(sound.state, PlaybackState::Paused);
 	}
 
@@ -216,19 +212,89 @@ fn pauses_and_resumes_with_fades() {
 		.unwrap();
 	sound.on_start_processing();
 
-	assert_eq!(sound.process(1.0), Frame::from_mono(0.25).panned(0.5));
-	assert_eq!(sound.position(), 5.0);
+	// allow for a few samples of delay because of the resampling, but the
+	// sound should fade back in soon.
+	expect_frame_soon(Frame::from_mono(0.25).panned(0.5), &mut sound);
 	assert_eq!(sound.state, PlaybackState::Playing);
 	assert_eq!(sound.process(1.0), Frame::from_mono(0.5).panned(0.5));
-	assert_eq!(sound.position(), 6.0);
 	assert_eq!(sound.state, PlaybackState::Playing);
 	assert_eq!(sound.process(1.0), Frame::from_mono(0.75).panned(0.5));
-	assert_eq!(sound.position(), 7.0);
 	assert_eq!(sound.state, PlaybackState::Playing);
 
-	for i in 0..3 {
+	for _ in 0..3 {
 		assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.5));
-		assert_eq!(sound.position(), i as f64 + 8.0);
 		assert_eq!(sound.state, PlaybackState::Playing);
 	}
+}
+
+/// Tests that a `StreamingSound` stops and finishes after a fade-out.
+#[test]
+#[allow(clippy::float_cmp)]
+fn stops_with_fade_out() {
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(1.0); 100])),
+		settings: StreamingSoundSettings::new(),
+	};
+	let (mut sound, mut handle, mut scheduler) = data.split().unwrap();
+	while !matches!(scheduler.run().unwrap(), NextStep::End) {}
+
+	sound.process(1.0);
+	assert_eq!(sound.state, PlaybackState::Playing);
+
+	handle
+		.stop(Tween {
+			duration: Duration::from_secs(4),
+			..Default::default()
+		})
+		.unwrap();
+	sound.on_start_processing();
+	assert_eq!(sound.state, PlaybackState::Stopping);
+
+	// allow for a few samples of delay because of the resampling, but the
+	// sound should fade out soon.
+	expect_frame_soon(Frame::from_mono(0.75).panned(0.5), &mut sound);
+	assert_eq!(sound.process(1.0), Frame::from_mono(0.5).panned(0.5));
+	assert_eq!(sound.process(1.0), Frame::from_mono(0.25).panned(0.5));
+	sound.process(1.0);
+
+	sound.on_start_processing();
+	let position = handle.position();
+	for _ in 0..3 {
+		assert_eq!(sound.process(1.0), Frame::from_mono(0.0).panned(0.5));
+		sound.on_start_processing();
+		assert_eq!(handle.position(), position);
+		assert_eq!(sound.state, PlaybackState::Stopped);
+		assert!(sound.finished());
+	}
+}
+
+/// Tests that a `StreamingSound` can be started partway through the sound.
+#[test]
+#[allow(clippy::float_cmp)]
+fn start_position() {
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(
+			(0..10).map(|i| Frame::from_mono(i as f32)).collect(),
+		)),
+		settings: StreamingSoundSettings::new().start_position(3.0),
+	};
+	let (mut sound, handle, mut scheduler) = data.split().unwrap();
+	while !matches!(scheduler.run().unwrap(), NextStep::End) {}
+
+	assert_eq!(handle.position(), 3.0);
+	assert_eq!(sound.process(1.0), Frame::from_mono(3.0).panned(0.5));
+}
+
+fn expect_frame_soon(expected_frame: Frame, sound: &mut StreamingSound) {
+	const NUM_SAMPLES_TO_WAIT: usize = 10;
+	for _ in 0..NUM_SAMPLES_TO_WAIT {
+		let frame = sound.process(1.0);
+		if frame == expected_frame {
+			return;
+		}
+	}
+	panic!(
+		"Sound did not output frame with value {:?} within {} samples",
+		expected_frame, NUM_SAMPLES_TO_WAIT
+	);
 }
