@@ -4,6 +4,8 @@ mod builder;
 mod handle;
 
 pub use builder::*;
+pub use handle::*;
+
 use ringbuf::Consumer;
 
 use crate::{
