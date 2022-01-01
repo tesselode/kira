@@ -427,27 +427,6 @@ fn seek_to() {
 	expect_frame_soon(Frame::from_mono(15.0).panned(0.5), &mut sound);
 }
 
-/// Tests that a `StreamingSound` can seek to a position past the end of
-/// the sound when it's looping. The resulting position should be what
-/// it would be (seek_point - duration) samples after playback reached
-/// the end of the sound if it was playing normally..
-#[test]
-fn seek_to_while_looping() {
-	let data = StreamingSoundData {
-		decoder: Box::new(MockDecoder::new(
-			(0..100).map(|i| Frame::from_mono(i as f32)).collect(),
-		)),
-		settings: StreamingSoundSettings::new().loop_behavior(LoopBehavior {
-			start_position: 5.0,
-		}),
-	};
-	let (mut sound, mut handle, mut scheduler) = data.split().unwrap();
-	handle.seek_to(120.0).unwrap();
-	sound.on_start_processing();
-	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
-	expect_frame_soon(Frame::from_mono(25.0).panned(0.5), &mut sound);
-}
-
 /// Tests that a `StreamingSound` can seek by an amount of time.
 #[test]
 fn seek_by() {
