@@ -31,6 +31,8 @@
 - Clock speed settings now use the `ClockSpeed` type instead of `f64`
 - Fix audio artifacts when a static sound loops
 - Slight performance improvement when sounds are center-panned
+- Allow configuring the main mixer track using a `TrackBuilder` in
+  `AudioManagerSettings`
 
 # v0.6.0 beta 1 - December 24, 2021
 
