@@ -35,7 +35,14 @@ impl Frame {
 	///
 	/// An `x` of 0 represents a hard left panning, an `x` of 1
 	/// represents a hard right panning.
+	#[allow(clippy::float_cmp)]
 	pub fn panned(self, x: f32) -> Self {
+		// adding a special case for center panning improves
+		// performance in the sound playback benchmarks by
+		// about 3%
+		if x == 0.5 {
+			return self;
+		}
 		Self::new(self.left * (1.0 - x).sqrt(), self.right * x.sqrt()) * SQRT_2
 	}
 }
