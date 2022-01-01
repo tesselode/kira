@@ -116,10 +116,12 @@ fn pauses_and_resumes_with_fades() {
 	assert_eq!(sound.process(1.0), Frame::from_mono(0.5).panned(0.5));
 	assert_eq!(sound.process(1.0), Frame::from_mono(0.25).panned(0.5));
 
-	let sample_index = sound.current_sample_index;
+	sound.on_start_processing();
+	let position = handle.position();
 	for _ in 0..10 {
 		assert_eq!(sound.process(1.0), Frame::from_mono(0.0).panned(0.5));
-		assert_eq!(sound.current_sample_index, sample_index);
+		sound.on_start_processing();
+		assert_eq!(handle.position(), position);
 		assert_eq!(sound.state, PlaybackState::Paused);
 	}
 
@@ -175,10 +177,12 @@ fn stops_with_fade_out() {
 	assert_eq!(sound.process(1.0), Frame::from_mono(0.5).panned(0.5));
 	assert_eq!(sound.process(1.0), Frame::from_mono(0.25).panned(0.5));
 
-	let sample_index = sound.current_sample_index;
+	sound.on_start_processing();
+	let position = handle.position();
 	for _ in 0..3 {
 		assert_eq!(sound.process(1.0), Frame::from_mono(0.0).panned(0.5));
-		assert_eq!(sound.current_sample_index, sample_index);
+		sound.on_start_processing();
+		assert_eq!(handle.position(), position);
 		assert_eq!(sound.state, PlaybackState::Stopped);
 		assert!(sound.finished());
 	}
