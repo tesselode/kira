@@ -10,7 +10,7 @@ pub mod static_sound;
 
 use crate::{clock::ClockTime, dsp::Frame, track::TrackId};
 
-/// Represents a source of audio that is loaded, but not yet playing.
+/// A source of audio that is loaded, but not yet playing.
 pub trait SoundData {
 	/// Errors that can occur when starting the sound.
 	type Error;
@@ -25,7 +25,7 @@ pub trait SoundData {
 	fn into_sound(self) -> Result<(Box<dyn Sound>, Self::Handle), Self::Error>;
 }
 
-/// Represents an actively playing sound.
+/// An actively playing sound.
 #[allow(unused_variables)]
 pub trait Sound: Send {
 	/// Returns the mixer track that this sound's audio should be routed to.

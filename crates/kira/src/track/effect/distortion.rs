@@ -21,7 +21,7 @@ enum Command {
 	SetMix(f64, Tween),
 }
 
-/// Different types of distortion effect.
+/// Different types of distortion.
 #[derive(Debug, Copy, Clone)]
 #[non_exhaustive]
 pub enum DistortionKind {
