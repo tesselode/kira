@@ -206,6 +206,30 @@ impl StaticSound {
 			self.set_state(PlaybackState::Stopped);
 		}
 	}
+
+	fn seek_to_index(&mut self, index: usize) {
+		self.current_sample_index = index;
+		// if the seek index is past the end of the sound and the sound is
+		// looping, wrap the seek point back into the sound
+		if let Some(LoopBehavior { start_position }) = self.data.settings.loop_behavior {
+			let start_position = (start_position * self.data.sample_rate as f64) as usize;
+			while self.current_sample_index >= self.data.frames.len() {
+				self.current_sample_index -= self.data.frames.len() - start_position;
+			}
+		// otherwise, stop the sound
+		} else if self.current_sample_index >= self.data.frames.len() {
+			self.set_state(PlaybackState::Stopped);
+		}
+		// if the sound is playing, push a frame to the resample buffer
+		// to make sure it doesn't get skipped
+		if matches!(self.state, PlaybackState::Paused | PlaybackState::Stopped) {
+			return;
+		}
+		let out = self.data.frames[self.current_sample_index];
+		let out = (out * self.volume_fade.value() as f32 * self.volume.value() as f32)
+			.panned(self.panning.value() as f32);
+		self.resampler.push_frame(out, self.current_sample_index);
+	}
 }
 
 impl Sound for StaticSound {
@@ -232,8 +256,17 @@ impl Sound for StaticSound {
 				Command::Pause(tween) => self.pause(tween),
 				Command::Resume(tween) => self.resume(tween),
 				Command::Stop(tween) => self.stop(tween),
-				Command::SeekBy(amount) => todo!(),
-				Command::SeekTo(position) => todo!(),
+				Command::SeekBy(amount) => {
+					let current_position =
+						self.current_sample_index as f64 / self.data.sample_rate as f64;
+					let position = current_position + amount;
+					let index = (position * self.data.sample_rate as f64) as usize;
+					self.seek_to_index(index);
+				}
+				Command::SeekTo(position) => {
+					let index = (position * self.data.sample_rate as f64) as usize;
+					self.seek_to_index(index);
+				}
 			}
 		}
 	}

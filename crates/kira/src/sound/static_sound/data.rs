@@ -6,7 +6,7 @@ use std::{sync::Arc, time::Duration};
 use ringbuf::RingBuffer;
 
 use crate::{
-	dsp::{interpolate_frame, Frame},
+	dsp::Frame,
 	sound::{Sound, SoundData},
 };
 

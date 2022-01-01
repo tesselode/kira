@@ -13,6 +13,8 @@ use crate::{
 	LoopBehavior,
 };
 
+use super::StaticSound;
+
 /// Tests that a `StaticSound` will play all of its samples before finishing.
 #[test]
 fn plays_all_samples() {
@@ -110,13 +112,7 @@ fn pauses_and_resumes_with_fades() {
 
 	// allow for a few samples of delay because of the resampling, but the
 	// sound should fade out soon.
-	let frame = loop {
-		let frame = sound.process(1.0);
-		if frame != Frame::from_mono(1.0).panned(0.5) {
-			break frame;
-		}
-	};
-	assert_eq!(frame, Frame::from_mono(0.75).panned(0.5));
+	expect_frame_soon(Frame::from_mono(0.75).panned(0.5), &mut sound);
 	assert_eq!(sound.process(1.0), Frame::from_mono(0.5).panned(0.5));
 	assert_eq!(sound.process(1.0), Frame::from_mono(0.25).panned(0.5));
 
@@ -137,13 +133,7 @@ fn pauses_and_resumes_with_fades() {
 
 	// allow for a few samples of delay because of the resampling, but the
 	// sound should fade back in soon.
-	let frame = loop {
-		let frame = sound.process(1.0);
-		if frame != Frame::ZERO {
-			break frame;
-		}
-	};
-	assert_eq!(frame, Frame::from_mono(0.25).panned(0.5));
+	expect_frame_soon(Frame::from_mono(0.25).panned(0.5), &mut sound);
 	assert_eq!(sound.state, PlaybackState::Playing);
 	assert_eq!(sound.process(1.0), Frame::from_mono(0.5).panned(0.5));
 	assert_eq!(sound.state, PlaybackState::Playing);
@@ -181,13 +171,7 @@ fn stops_with_fade_out() {
 
 	// allow for a few samples of delay because of the resampling, but the
 	// sound should fade out soon.
-	let frame = loop {
-		let frame = sound.process(1.0);
-		if frame != Frame::from_mono(1.0).panned(0.5) {
-			break frame;
-		}
-	};
-	assert_eq!(frame, Frame::from_mono(0.75).panned(0.5));
+	expect_frame_soon(Frame::from_mono(0.75).panned(0.5), &mut sound);
 	assert_eq!(sound.process(1.0), Frame::from_mono(0.5).panned(0.5));
 	assert_eq!(sound.process(1.0), Frame::from_mono(0.25).panned(0.5));
 
@@ -287,7 +271,7 @@ fn reverse() {
 	let (mut sound, _) = data.split();
 
 	// start position should be from the end and decrease over time
-	for i in (0..=8).rev() {
+	for i in (0..=7).rev() {
 		assert_eq!(sound.process(1.0), Frame::from_mono(i as f32).panned(0.5));
 	}
 }
@@ -430,4 +414,68 @@ fn interpolates_samples_when_looping() {
 	// the interpolated sample should be be tween 9.0 and 10.0
 	let frame = sound.process(1.0);
 	assert!(frame.left > 9.0 && frame.left < 10.0);
+}
+
+/// Tests that a `StaticSound` can seek to a position.
+#[test]
+fn seek_to() {
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new((0..100).map(|i| Frame::from_mono(i as f32)).collect()),
+		settings: StaticSoundSettings::new(),
+	};
+	let (mut sound, mut handle) = data.split();
+	handle.seek_to(15.0).unwrap();
+	sound.on_start_processing();
+	expect_frame_soon(Frame::from_mono(15.0).panned(0.5), &mut sound);
+}
+
+/// Tests that a `StaticSound` can seek to a position past the end of
+/// the sound when it's looping. The resulting position should be what
+/// it would be (seek_point - duration) samples after playback reached
+/// the end of the sound if it was playing normally..
+#[test]
+fn seek_to_while_looping() {
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new((0..100).map(|i| Frame::from_mono(i as f32)).collect()),
+		settings: StaticSoundSettings::new().loop_behavior(LoopBehavior {
+			start_position: 5.0,
+		}),
+	};
+	let (mut sound, mut handle) = data.split();
+	handle.seek_to(120.0).unwrap();
+	sound.on_start_processing();
+	expect_frame_soon(Frame::from_mono(25.0).panned(0.5), &mut sound);
+}
+
+/// Tests that a `StaticSound` can seek by an amount of time.
+#[test]
+fn seek_by() {
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new((0..100).map(|i| Frame::from_mono(i as f32)).collect()),
+		settings: StaticSoundSettings::new().start_position(10.0),
+	};
+	let (mut sound, mut handle) = data.split();
+	handle.seek_by(5.0).unwrap();
+	sound.on_start_processing();
+	// we wouldn't actually expect the position to be 10.0 seconds right at
+	// this moment - the sound probably ran ahead a few samples to fill
+	// the resample buffer. so let's just say it should reach 20.0 soon.
+	expect_frame_soon(Frame::from_mono(20.0).panned(0.5), &mut sound);
+}
+
+fn expect_frame_soon(expected_frame: Frame, sound: &mut StaticSound) {
+	const NUM_SAMPLES_TO_WAIT: usize = 10;
+	for _ in 0..NUM_SAMPLES_TO_WAIT {
+		let frame = sound.process(1.0);
+		if frame == expected_frame {
+			return;
+		}
+	}
+	panic!(
+		"Sound did not output frame with value {:?} within {} samples",
+		expected_frame, NUM_SAMPLES_TO_WAIT
+	);
 }
