@@ -9,21 +9,23 @@ clock, use `AudioManager::add_clock`.
 # extern crate kira;
 # extern crate kira_cpal;
 # extern crate kira_loaders;
-use kira::manager::{AudioManager, AudioManagerSettings};
+use kira::{
+	manager::{AudioManager, AudioManagerSettings},
+	ClockSpeed,
+};
 use kira_cpal::CpalBackend;
 
 let mut manager = AudioManager::new(
 	CpalBackend::new()?,
 	AudioManagerSettings::default(),
 )?;
-let mut clock = manager.add_clock(0.5)?;
+let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
 clock.start()?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
-When you create a clock, you have to specify the **interval** in seconds, which
-determines how much time there is between clock ticks. In this example, the
-clock has an interval of half a second, which means it ticks twice per second.
+You can specify the speed of the clock as seconds per tick, ticks per second, or
+ticks per minute.
 
 Clocks are stopped when you first create them, so be sure to explicitly call
 `ClockHandle::start` when you want the clock to start ticking.
@@ -43,7 +45,7 @@ use kira::{
 	clock::ClockTime,
 	manager::{AudioManager, AudioManagerSettings},
 	sound::static_sound::StaticSoundSettings,
-	StartTime,
+	StartTime, ClockSpeed,
 };
 use kira_cpal::CpalBackend;
 
@@ -51,7 +53,7 @@ let mut manager = AudioManager::new(
 	CpalBackend::new()?,
 	AudioManagerSettings::default(),
 )?;
-let mut clock = manager.add_clock(0.5)?;
+let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
 manager.play(kira_loaders::load(
 	"sound.ogg",
 	StaticSoundSettings::new().start_time(StartTime::ClockTime(ClockTime {
@@ -123,7 +125,8 @@ manager.play(kira_loaders::load(
 ## Starting tweens on clock ticks
 
 You can also use clocks to set the start time of tweens. In this example, we set
-a parameter to start tweening when a clock reaches a certain tick:
+the playback rate of a sound to start tweening when a clock reaches its third
+tick.
 
 ```rust ,no_run
 # extern crate kira;
@@ -133,8 +136,9 @@ use std::time::Duration;
 
 use kira::{
 	manager::{AudioManager, AudioManagerSettings},
+	sound::static_sound::StaticSoundSettings,
 	tween::Tween,
-	StartTime,
+	ClockSpeed, StartTime,
 };
 use kira_cpal::CpalBackend;
 
@@ -142,13 +146,16 @@ let mut manager = AudioManager::new(
 	CpalBackend::new()?,
 	AudioManagerSettings::default(),
 )?;
-let mut clock = manager.add_clock(0.5)?;
-let mut parameter = manager.add_parameter(1.0)?;
-parameter.set(
-	2.0,
+let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
+let mut sound = manager.play(kira_loaders::load(
+	"sound.ogg",
+	StaticSoundSettings::default(),
+)?)?;
+sound.set_playback_rate(
+	0.5,
 	Tween {
-		duration: Duration::from_secs(2),
 		start_time: StartTime::ClockTime(clock.time() + 3),
+		duration: Duration::from_secs(2),
 		..Default::default()
 	},
 )?;

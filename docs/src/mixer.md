@@ -16,7 +16,7 @@ sub-tracks. To add a sub-track, use `AudioManager::add_sub_track`.
 # use std::error::Error;
 use kira::{
     manager::{AudioManager, AudioManagerSettings},
-    track::TrackSettings,
+    track::TrackBuilder,
 };
 use kira_cpal::CpalBackend;
 
@@ -24,7 +24,7 @@ let mut manager = AudioManager::new(
 	CpalBackend::new()?,
 	AudioManagerSettings::default(),
 )?;
-let track = manager.add_sub_track(TrackSettings::default())?;
+let track = manager.add_sub_track(TrackBuilder::default())?;
 # Result::<(), Box<dyn Error>>::Ok(())
 ```
 
@@ -41,7 +41,7 @@ option.
 use kira::{
 	manager::{AudioManager, AudioManagerSettings},
     sound::static_sound::StaticSoundSettings,
-	track::TrackSettings,
+	track::TrackBuilder,
 };
 use kira_cpal::CpalBackend;
 
@@ -49,7 +49,7 @@ let mut manager = AudioManager::new(
 	CpalBackend::new()?,
 	AudioManagerSettings::default(),
 )?;
-let track = manager.add_sub_track(TrackSettings::default())?;
+let track = manager.add_sub_track(TrackBuilder::default())?;
 manager.play(kira_loaders::load(
     "sound.ogg",
     StaticSoundSettings::new().track(&track),
@@ -64,7 +64,7 @@ will affect all sounds being played on the track.
 ## Effects
 
 You can add effects to the track when creating it using
-`TrackSettings::with_effect`. All sounds that are played on that track will have
+`TrackBuilder::add_effect`. All sounds that are played on that track will have
 the effects applied sequentially.
 
 In this example, we'll use the `Filter` effect, which in the low pass mode will
@@ -79,8 +79,8 @@ use kira::{
 	manager::{AudioManager, AudioManagerSettings},
     sound::static_sound::StaticSoundSettings,
 	track::{
-        TrackSettings,
-        effect::filter::{Filter, FilterSettings},
+        TrackBuilder,
+        effect::filter::FilterBuilder,
     },
 };
 use kira_cpal::CpalBackend;
@@ -89,15 +89,41 @@ let mut manager = AudioManager::new(
 	CpalBackend::new()?,
 	AudioManagerSettings::default(),
 )?;
-let track = manager.add_sub_track(
-    TrackSettings::new()
-        .with_effect(Filter::new(FilterSettings::new().cutoff(1000.0))),
-)?;
+let track = manager.add_sub_track({
+    let mut builder = TrackBuilder::new();
+    builder.add_effect(FilterBuilder::new().cutoff(1000.0));
+    builder
+})?;
 manager.play(kira_loaders::load(
     "sound.ogg",
     StaticSoundSettings::new().track(&track),
 )?)?;
 # Result::<(), Box<dyn Error>>::Ok(())
+```
+
+`TrackBuilder:add_effect` returns a handle that can be used to modify the effect
+after the track has been created.
+
+```rust ,no_run
+# extern crate kira;
+# extern crate kira_cpal;
+# extern crate kira_loaders;
+# use kira::{
+# 	manager::{AudioManager, AudioManagerSettings},
+# 	sound::static_sound::StaticSoundSettings,
+# 	track::{effect::filter::FilterBuilder, TrackBuilder},
+# 	tween::Tween,
+# };
+# use kira_cpal::CpalBackend;
+# let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
+let mut filter;
+let track = manager.add_sub_track({
+	let mut builder = TrackBuilder::new();
+	filter = builder.add_effect(FilterBuilder::new().cutoff(1000.0));
+	builder
+})?;
+filter.set_cutoff(4000.0, Tween::default())?;
+# Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
 ## Track routing
@@ -136,7 +162,7 @@ We can set up the `sounds` and `player_sounds` hierarchy using `TrackRoutes`.
 # use std::error::Error;
 use kira::{
 	manager::{AudioManager, AudioManagerSettings},
-	track::{TrackRoutes, TrackSettings},
+	track::{TrackRoutes, TrackBuilder},
 };
 use kira_cpal::CpalBackend;
 
@@ -144,9 +170,10 @@ let mut manager = AudioManager::new(
 	CpalBackend::new()?,
 	AudioManagerSettings::default(),
 )?;
-let sounds = manager.add_sub_track(TrackSettings::default())?;
-let player_sounds = manager
-    .add_sub_track(TrackSettings::new().routes(TrackRoutes::parent(&sounds)))?;
+let sounds = manager.add_sub_track(TrackBuilder::default())?;
+let player_sounds = manager.add_sub_track(
+	TrackBuilder::new().routes(TrackRoutes::parent(&sounds)),
+)?;
 # Result::<(), Box<dyn Error>>::Ok(())
 ```
 
@@ -202,8 +229,8 @@ Here's what this looks like in practice:
 use kira::{
 	manager::{AudioManager, AudioManagerSettings},
 	track::{
-        TrackRoutes, TrackSettings,
-        effect::reverb::{Reverb, ReverbSettings},
+        TrackRoutes, TrackBuilder,
+        effect::reverb::ReverbBuilder,
     },
 };
 use kira_cpal::CpalBackend;
@@ -212,15 +239,16 @@ let mut manager = AudioManager::new(
 	CpalBackend::new()?,
 	AudioManagerSettings::default(),
 )?;
-let reverb = manager.add_sub_track(
-    TrackSettings::new()
-        .with_effect(Reverb::new(ReverbSettings::new().mix(1.0))),
-)?;
+let reverb = manager.add_sub_track({
+    let mut builder = TrackBuilder::new();
+    builder.add_effect(ReverbBuilder::new().mix(1.0));
+    builder
+})?;
 let player = manager.add_sub_track(
-    TrackSettings::new().routes(TrackRoutes::new().with_route(&reverb, 0.25)),
+    TrackBuilder::new().routes(TrackRoutes::new().with_route(&reverb, 0.25)),
 );
 let ambience = manager.add_sub_track(
-    TrackSettings::new().routes(TrackRoutes::new().with_route(&reverb, 0.5)),
+    TrackBuilder::new().routes(TrackRoutes::new().with_route(&reverb, 0.5)),
 );
 # Result::<(), Box<dyn Error>>::Ok(())
 ```
@@ -228,10 +256,11 @@ let ambience = manager.add_sub_track(
 Let's look at this one step at a time:
 
 ```rust ,ignore
-let reverb = manager.add_sub_track(
-    TrackSettings::new()
-        .with_effect(Reverb::new(ReverbSettings::new().mix(1.0))),
-)?;
+let reverb = manager.add_sub_track({
+    let mut builder = TrackBuilder::new();
+    builder.add_effect(ReverbBuilder::new().mix(1.0));
+    builder
+})?;
 ```
 
 We create the `reverb` track with a `Reverb` effect. We set the `mix` to `1.0`
@@ -241,7 +270,7 @@ tracks will already be outputting their dry signal to the main track.
 
 ```rust ,ignore
 let player = manager.add_sub_track(
-    TrackSettings::new().routes(TrackRoutes::new().with_route(&reverb, 0.25)),
+    TrackBuilder::new().routes(TrackRoutes::new().with_route(&reverb, 0.25)),
 );
 ```
 
@@ -253,7 +282,7 @@ We create the `player` track with two routes:
 
 ```rust ,ignore
 let ambience = manager.add_sub_track(
-    TrackSettings::new().routes(TrackRoutes::new().with_route(&reverb, 0.5)),
+    TrackBuilder::new().routes(TrackRoutes::new().with_route(&reverb, 0.5)),
 );
 ```
 

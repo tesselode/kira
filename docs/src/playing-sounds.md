@@ -1,11 +1,30 @@
 # Playing Sounds
 
-The main `kira` crate does not come with any functionality for loading audio
-from files. For that, you should use
-[`kira-loaders`](https://crates.io/crates/kira-loaders).
+To start using Kira, create an `AudioManager`.
 
-`kira_loaders::load` returns a `StaticSoundData` that you can pass to
-`AudioManager::play` to play the sound.
+```rust ,no_run
+# extern crate kira;
+# extern crate kira_cpal;
+# extern crate kira_loaders;
+use kira::manager::{AudioManager, AudioManagerSettings};
+use kira_cpal::CpalBackend;
+
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
+# Result::<(), Box<dyn std::error::Error>>::Ok(())
+```
+
+The `AudioManager` allows you to interact with the audio context from gameplay
+code.
+
+`AudioManager`s can play anything that implements the `SoundData` trait. The
+main `kira` crate does not come with any functionality for loading audio from
+files. For that, you should use
+[`kira-loaders`](https://crates.io/crates/kira-loaders). `kira_loaders::load`
+returns a `StaticSoundData` that you can pass to `AudioManager::play` to play
+the sound.
 
 ```rust ,no_run
 # extern crate kira;
@@ -51,6 +70,8 @@ manager.play(sound_data.clone())?;
 
 Cloning a `StaticSoundData` is cheap, so it's perfectly fine to do this.
 
+## Modifying playing sounds
+
 `AudioManager::play` returns a handle to the sound that you can use to query
 information about the sound or modify it.
 
@@ -77,21 +98,65 @@ if sound.state() == PlaybackState::Playing {
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
-## Streaming sounds
+Many parameters of sounds, like volume and playback rate, can be smoothly
+transitioned to other values.
 
-The previous examples all used `kira_loaders::load`, which loads the entire
-sound into memory. This is good for shorter sounds, but for longer sounds this
-can have a heavy memory footprint. In those cases, you may want to use
-`kira_loaders::stream`, which will read data from disk in realtime as the sound
-is playing.
+```rust ,no_run
+# extern crate kira;
+# extern crate kira_cpal;
+# extern crate kira_loaders;
+use std::time::Duration;
 
-There are some disadvantages to using streaming sounds:
+use kira::{
+	manager::{AudioManager, AudioManagerSettings},
+	sound::static_sound::StaticSoundSettings,
+	tween::Tween,
+};
+use kira_cpal::CpalBackend;
 
-- Streaming sounds require more CPU power.
-- There may be a longer delay between when you call `AudioManager::play` and
-  when the sound actually starts playing.
-- Seeking the sound may also have a longer delay.
-- If the file cannot be read from the disk fast enough, there will be hiccups in
-  the sound playback. (This will not affect other sounds, though.)
-- Backwards playback is not supported.
-- `StreamingSoundData` cannot be cloned.
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
+let sound_data = kira_loaders::load("sound.ogg", StaticSoundSettings::new())?;
+let mut sound = manager.play(sound_data)?;
+sound.set_volume(
+	0.5,
+	Tween {
+		duration: Duration::from_secs(2),
+		..Default::default()
+	},
+)?;
+# Result::<(), Box<dyn std::error::Error>>::Ok(())
+```
+
+Some property setters allow you to set the value in different units. For
+example, volumes can be set in decibels:
+
+```rust ,no_run
+# extern crate kira;
+# extern crate kira_cpal;
+# extern crate kira_loaders;
+# use std::time::Duration;
+# use kira::{
+# 	manager::{AudioManager, AudioManagerSettings},
+# 	sound::static_sound::StaticSoundSettings,
+# 	tween::Tween,
+# 	Volume,
+# };
+# use kira_cpal::CpalBackend;
+# let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
+# let sound_data = kira_loaders::load("sound.ogg", StaticSoundSettings::new())?;
+# let mut sound = manager.play(sound_data)?;
+sound.set_volume(
+	Volume::Decibels(-3.0),
+	Tween {
+		duration: Duration::from_secs(2),
+		..Default::default()
+	},
+)?;
+# Result::<(), Box<dyn std::error::Error>>::Ok(())
+```
+
+If you want to change a property instantaneously, use the default `Tween`. It's
+fast enough to sound instantaneous, but slow enough to avoid audio artifacts.

@@ -52,22 +52,16 @@ let mut manager = AudioManager::new(
 	CpalBackend::new()?,
 	AudioManagerSettings::default(),
 )?;
-// Create a parameter for the playback rate.
-let mut parameter = manager.add_parameter(1.0)?;
-let sound_data = kira_loaders::load(
-	"sound.ogg",
-	// Link this sound's playback rate to the parameter we created.
-	StaticSoundSettings::new().playback_rate(&parameter),
-)?;
-manager.play(sound_data)?;
+let sound_data = kira_loaders::load("sound.ogg", StaticSoundSettings::new())?;
+let mut sound = manager.play(sound_data)?;
 // Start smoothly adjusting the playback rate parameter.
-parameter.set(
+sound.set_playback_rate(
 	2.0,
 	Tween {
 		duration: Duration::from_secs(3),
 		..Default::default()
 	},
-)?;
+);
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
@@ -84,8 +78,8 @@ use kira::{
 	manager::{AudioManager, AudioManagerSettings},
 	sound::static_sound::StaticSoundSettings,
 	track::{
-		TrackSettings,
-		effect::filter::{Filter, FilterSettings}
+		TrackBuilder,
+		effect::filter::FilterBuilder,
 	},
 };
 use kira_cpal::CpalBackend;
@@ -95,8 +89,11 @@ let mut manager = AudioManager::new(
 	AudioManagerSettings::default(),
 )?;
 // Create a mixer sub-track with a filter.
-let filter = Filter::new(FilterSettings::new().cutoff(1000.0));
-let track = manager.add_sub_track(TrackSettings::new().with_effect(filter))?;
+let track = manager.add_sub_track({
+	let mut builder = TrackBuilder::new();
+	builder.add_effect(FilterBuilder::new().cutoff(1000.0));
+	builder
+})?;
 // Play the sound on the track.
 let sound_data = kira_loaders::load(
 	"sound.ogg",
@@ -116,6 +113,7 @@ manager.play(sound_data)?;
 use kira::{
 	manager::{AudioManager, AudioManagerSettings},
 	sound::static_sound::StaticSoundSettings,
+	ClockSpeed,
 };
 use kira_cpal::CpalBackend;
 
@@ -125,10 +123,10 @@ let mut manager = AudioManager::new(
 	CpalBackend::new()?,
 	AudioManagerSettings::default(),
 )?;
-// Create a clock that ticks every 60.0 / TEMPO seconds. In this case,
-// each tick is one beat. Of course, we can use a tick to represent
-// any arbitrary amount of time.
-let mut clock = manager.add_clock(60.0 / TEMPO)?;
+// Create a clock that ticks 120 times per second. In this case,
+// each tick is one musical beat. We can use a tick to represent any
+// arbitrary amount of time.
+let mut clock = manager.add_clock(ClockSpeed::TicksPerMinute(TEMPO))?;
 // Play a sound 2 ticks (beats) from now.
 let sound_data_1 = kira_loaders::load(
 	"sound1.ogg",
