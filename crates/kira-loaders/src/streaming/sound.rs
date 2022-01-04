@@ -106,12 +106,13 @@ impl StreamingSound {
 	}
 
 	fn update_current_frame(&mut self) {
+		let current_frame = &mut self.current_frame;
 		self.scheduler_controller
 			.frame_consumer_mut()
 			.access(|a, b| {
 				let mut iter = a.iter().chain(b.iter());
 				if let Some((index, _)) = iter.nth(1) {
-					self.current_frame = *index;
+					*current_frame = *index;
 				}
 			});
 	}
