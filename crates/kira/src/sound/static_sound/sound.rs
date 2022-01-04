@@ -308,6 +308,7 @@ impl Sound for StaticSound {
 		self.volume.on_clock_tick(time);
 		self.playback_rate.on_clock_tick(time);
 		self.panning.on_clock_tick(time);
+		self.volume_fade.on_clock_tick(time);
 		if let StartTime::ClockTime(ClockTime { clock, ticks }) = self.start_time {
 			if time.clock == clock && time.ticks >= ticks {
 				self.start_time = StartTime::Immediate;
