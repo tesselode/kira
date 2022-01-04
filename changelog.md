@@ -1,3 +1,10 @@
+# v0.6.0 beta 3 - January 4, 2022
+
+- Fix clock tick 0 occurring one tick after the clock is started instead of
+  immediately when the clock is started
+- Fix static sound pause/resume/stop fades never starting when the start time is
+  set to a clock time
+
 # v0.6.0 beta 2 - January 3, 2022
 
 - Remove `Clock` and `Clocks` from the public API

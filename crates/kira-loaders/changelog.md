@@ -1,3 +1,8 @@
+# v0.1.0 beta 2 - January 4, 2022
+
+- Fix streaming sound pause/resume/stop fades never starting when the start time
+  is set to a clock time
+
 # v0.1.0 beta 1 - January 3, 2022
 
 - Add `load_from_cursor`/`stream_from_cursor`
