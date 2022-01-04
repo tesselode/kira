@@ -76,7 +76,7 @@ Streaming sounds have some disadvantages compared to static sounds:
 mod error;
 mod streaming;
 
-use std::{fs::File, path::Path, sync::Arc};
+use std::{fs::File, io::Cursor, path::Path, sync::Arc};
 
 pub use error::*;
 use kira::{
@@ -88,19 +88,17 @@ pub use streaming::*;
 use symphonia::core::{
 	audio::{AudioBuffer, AudioBufferRef, Signal},
 	conv::{FromSample, IntoSample},
-	io::MediaSourceStream,
+	io::{MediaSource, MediaSourceStream},
 	sample::Sample,
 };
 
-/// Loads an audio file into a [`StaticSoundData`].
-pub fn load(
-	path: impl AsRef<Path>,
+fn load_from_media_source(
+	media_source: Box<dyn MediaSource>,
 	settings: StaticSoundSettings,
 ) -> Result<StaticSoundData, Error> {
 	let codecs = symphonia::default::get_codecs();
 	let probe = symphonia::default::get_probe();
-	let file = File::open(path)?;
-	let mss = MediaSourceStream::new(Box::new(file), Default::default());
+	let mss = MediaSourceStream::new(media_source, Default::default());
 	let mut format_reader = probe
 		.format(
 			&Default::default(),
@@ -140,13 +138,40 @@ pub fn load(
 	})
 }
 
+/// Loads an audio file into a [`StaticSoundData`].
+pub fn load(
+	path: impl AsRef<Path>,
+	settings: StaticSoundSettings,
+) -> Result<StaticSoundData, Error> {
+	load_from_media_source(Box::new(File::open(path)?), settings)
+}
+
+/// Loads a cursor wrapping audio file data into a [`StaticSoundData`].
+pub fn load_from_cursor<T: AsRef<[u8]> + Send + 'static>(
+	cursor: Cursor<T>,
+	settings: StaticSoundSettings,
+) -> Result<StaticSoundData, Error> {
+	load_from_media_source(Box::new(cursor), settings)
+}
+
 /// Creates a [`StreamingSoundData`] for an audio file.
 pub fn stream(
 	path: impl AsRef<Path>,
 	settings: StreamingSoundSettings,
 ) -> Result<StreamingSoundData<Error>, Error> {
 	Ok(StreamingSoundData {
-		decoder: Box::new(SymphoniaDecoder::new(path.as_ref())?),
+		decoder: Box::new(SymphoniaDecoder::new(Box::new(File::open(path)?))?),
+		settings,
+	})
+}
+
+/// Creates a [`StreamingSoundData`] for a cursor wrapping audio file data.
+pub fn stream_from_cursor<T: AsRef<[u8]> + Send + 'static>(
+	cursor: Cursor<T>,
+	settings: StreamingSoundSettings,
+) -> Result<StreamingSoundData<Error>, Error> {
+	Ok(StreamingSoundData {
+		decoder: Box::new(SymphoniaDecoder::new(Box::new(cursor))?),
 		settings,
 	})
 }

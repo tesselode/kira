@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, fs::File, path::Path};
+use std::collections::VecDeque;
 
 use kira::dsp::Frame;
 use symphonia::core::{
@@ -6,7 +6,7 @@ use symphonia::core::{
 	codecs::Decoder,
 	conv::{FromSample, IntoSample},
 	formats::{FormatReader, SeekMode, SeekTo},
-	io::MediaSourceStream,
+	io::{MediaSource, MediaSourceStream},
 	probe::Hint,
 	sample::Sample,
 };
@@ -21,11 +21,10 @@ pub(crate) struct SymphoniaDecoder {
 }
 
 impl SymphoniaDecoder {
-	pub(crate) fn new(path: &Path) -> Result<Self, Error> {
+	pub(crate) fn new(media_source: Box<dyn MediaSource>) -> Result<Self, Error> {
 		let codecs = symphonia::default::get_codecs();
 		let probe = symphonia::default::get_probe();
-		let file = File::open(path)?;
-		let mss = MediaSourceStream::new(Box::new(file), Default::default());
+		let mss = MediaSourceStream::new(media_source, Default::default());
 		let format_reader = probe
 			.format(
 				&Hint::default(),
