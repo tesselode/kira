@@ -6,6 +6,7 @@
 - Change volume settings to use the `Volume` type
 - Change playback rate settings to use the `PlaybackRate` type
 - Use dB scale for fades when pausing/resuming/stopping
+- Use the 2018 edition
 
 # v0.1.0 beta 0
 
