@@ -75,7 +75,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="crates.html"><strong aria-hidden="true">1.1.</strong> Crates</a></li></ol></li><li class="chapter-item expanded "><a href="playing-sounds.html" class="active"><strong aria-hidden="true">2.</strong> Playing Sounds</a></li><li class="chapter-item expanded "><a href="parameters.html"><strong aria-hidden="true">3.</strong> Parameters</a></li><li class="chapter-item expanded "><a href="mixer.html"><strong aria-hidden="true">4.</strong> The Mixer</a></li><li class="chapter-item expanded "><a href="clocks.html"><strong aria-hidden="true">5.</strong> Clocks</a></li><li class="chapter-item expanded "><a href="creating-sounds.html"><strong aria-hidden="true">6.</strong> Creating Sound Implementations</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="crates.html"><strong aria-hidden="true">1.1.</strong> Crates</a></li></ol></li><li class="chapter-item expanded "><a href="playing-sounds.html" class="active"><strong aria-hidden="true">2.</strong> Playing Sounds</a></li><li class="chapter-item expanded "><a href="mixer.html"><strong aria-hidden="true">3.</strong> The Mixer</a></li><li class="chapter-item expanded "><a href="clocks.html"><strong aria-hidden="true">4.</strong> Clocks</a></li><li class="chapter-item expanded "><a href="creating-sounds.html"><strong aria-hidden="true">5.</strong> Creating Sound Implementations</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -135,11 +135,31 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="playing-sounds"><a class="header" href="#playing-sounds">Playing Sounds</a></h1>
-<p>The main <code>kira</code> crate does not come with any functionality for loading audio
-from files. For that, you should use
-<a href="https://crates.io/crates/kira-loaders"><code>kira-loaders</code></a>.</p>
-<p><code>kira_loaders::load</code> returns a <code>StaticSoundData</code> that you can pass to
-<code>AudioManager::play</code> to play the sound.</p>
+<p>To start using Kira, create an <code>AudioManager</code>.</p>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span>use kira::manager::{AudioManager, AudioManagerSettings};
+use kira_cpal::CpalBackend;
+
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
+<span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<p>The <code>AudioManager</code> allows you to interact with the audio context from gameplay
+code.</p>
+<p><code>AudioManager</code>s can play anything that implements the <code>SoundData</code> trait. The
+main <code>kira</code> crate does not come with any functionality for loading audio from
+files. For that, you should use
+<a href="https://crates.io/crates/kira-loaders"><code>kira-loaders</code></a>. <code>kira_loaders::load</code>
+returns a <code>StaticSoundData</code> that you can pass to <code>AudioManager::play</code> to play
+the sound.</p>
 <pre><pre class="playground"><code class="language-rust  no_run edition2018">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -186,6 +206,7 @@ manager.play(sound_data.clone())?;
 </span><span class="boring">}
 </span></code></pre></pre>
 <p>Cloning a <code>StaticSoundData</code> is cheap, so it's perfectly fine to do this.</p>
+<h2 id="modifying-playing-sounds"><a class="header" href="#modifying-playing-sounds">Modifying playing sounds</a></h2>
 <p><code>AudioManager::play</code> returns a handle to the sound that you can use to query
 information about the sound or modify it.</p>
 <pre><pre class="playground"><code class="language-rust  no_run edition2018">
@@ -213,23 +234,70 @@ if sound.state() == PlaybackState::Playing {
 <span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
 </span><span class="boring">}
 </span></code></pre></pre>
-<h2 id="streaming-sounds"><a class="header" href="#streaming-sounds">Streaming sounds</a></h2>
-<p>The previous examples all used <code>kira_loaders::load</code>, which loads the entire
-sound into memory. This is good for shorter sounds, but for longer sounds this
-can have a heavy memory footprint. In those cases, you may want to use
-<code>kira_loaders::stream</code>, which will read data from disk in realtime as the sound
-is playing.</p>
-<p>There are some disadvantages to using streaming sounds:</p>
-<ul>
-<li>Streaming sounds require more CPU power.</li>
-<li>There may be a longer delay between when you call <code>AudioManager::play</code> and
-when the sound actually starts playing.</li>
-<li>Seeking the sound may also have a longer delay.</li>
-<li>If the file cannot be read from the disk fast enough, there will be hiccups in
-the sound playback. (This will not affect other sounds, though.)</li>
-<li>Backwards playback is not supported.</li>
-<li><code>StreamingSoundData</code> cannot be cloned.</li>
-</ul>
+<p>Many parameters of sounds, like volume and playback rate, can be smoothly
+transitioned to other values.</p>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span>use std::time::Duration;
+
+use kira::{
+	manager::{AudioManager, AudioManagerSettings},
+	sound::static_sound::StaticSoundSettings,
+	tween::Tween,
+};
+use kira_cpal::CpalBackend;
+
+let mut manager = AudioManager::new(
+	CpalBackend::new()?,
+	AudioManagerSettings::default(),
+)?;
+let sound_data = kira_loaders::load(&quot;sound.ogg&quot;, StaticSoundSettings::new())?;
+let mut sound = manager.play(sound_data)?;
+sound.set_volume(
+	0.5,
+	Tween {
+		duration: Duration::from_secs(2),
+		..Default::default()
+	},
+)?;
+<span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<p>Some property setters allow you to set the value in different units. For
+example, volumes can be set in decibels:</p>
+<pre><pre class="playground"><code class="language-rust  no_run edition2018">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate kira;
+</span><span class="boring">extern crate kira_cpal;
+</span><span class="boring">extern crate kira_loaders;
+</span><span class="boring">use std::time::Duration;
+</span><span class="boring">use kira::{
+</span><span class="boring">	manager::{AudioManager, AudioManagerSettings},
+</span><span class="boring">	sound::static_sound::StaticSoundSettings,
+</span><span class="boring">	tween::Tween,
+</span><span class="boring">	Volume,
+</span><span class="boring">};
+</span><span class="boring">use kira_cpal::CpalBackend;
+</span><span class="boring">let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
+</span><span class="boring">let sound_data = kira_loaders::load(&quot;sound.ogg&quot;, StaticSoundSettings::new())?;
+</span><span class="boring">let mut sound = manager.play(sound_data)?;
+</span>sound.set_volume(
+	Volume::Decibels(-3.0),
+	Tween {
+		duration: Duration::from_secs(2),
+		..Default::default()
+	},
+)?;
+<span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
+</span><span class="boring">}
+</span></code></pre></pre>
+<p>If you want to change a property instantaneously, use the default <code>Tween</code>. It's
+fast enough to sound instantaneous, but slow enough to avoid audio artifacts.</p>
 
                     </main>
 
@@ -238,7 +306,7 @@ the sound playback. (This will not affect other sounds, though.)</li>
                             <a rel="prev" href="crates.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
-                            <a rel="next" href="parameters.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="mixer.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         <div style="clear: both"></div>
@@ -250,7 +318,7 @@ the sound playback. (This will not affect other sounds, though.)</li>
                     <a rel="prev" href="crates.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
-                    <a rel="next" href="parameters.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="mixer.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
