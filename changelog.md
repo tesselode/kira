@@ -1,4 +1,4 @@
-# v0.6.0 beta 2
+# v0.6.0 beta 2 - January 3, 2022
 
 - Remove `Clock` and `Clocks` from the public API
 - Sounds and effects now have an `on_clock_tick` callback instead of having a
