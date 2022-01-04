@@ -55,6 +55,7 @@ impl ClockShared {
 	}
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum State {
 	NotStarted,
 	Started { ticks: u64 },
@@ -109,21 +110,22 @@ impl Clock {
 			return None;
 		}
 		let mut new_tick_count = None;
+		if self.state == State::NotStarted {
+			self.state = State::Started { ticks: 0 };
+			new_tick_count = Some(0);
+		}
 		self.tick_timer -= self.speed.value().as_ticks_per_second() * dt;
 		while self.tick_timer <= 0.0 {
 			self.tick_timer += 1.0;
-			let tick_count = match &mut self.state {
-				State::NotStarted => {
-					self.state = State::Started { ticks: 0 };
-					0
-				}
-				State::Started { ticks } => {
-					*ticks += 1;
-					*ticks
-				}
-			};
-			self.shared.ticks.store(tick_count, Ordering::SeqCst);
-			new_tick_count = Some(tick_count);
+			if let State::Started { ticks } = &mut self.state {
+				*ticks += 1;
+				new_tick_count = Some(*ticks);
+			} else {
+				panic!("clock state should be Started by now");
+			}
+		}
+		if let Some(new_tick_count) = new_tick_count {
+			self.shared.ticks.store(new_tick_count, Ordering::SeqCst);
 		}
 		new_tick_count
 	}
