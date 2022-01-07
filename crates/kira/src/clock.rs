@@ -55,10 +55,10 @@ impl ClockShared {
 	}
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 enum State {
 	NotStarted,
-	Started { ticks: u64 },
+	Started { ticks: u64, tick_timer: f64 },
 }
 
 pub(crate) struct Clock {
@@ -66,7 +66,6 @@ pub(crate) struct Clock {
 	ticking: bool,
 	speed: Tweener<ClockSpeed>,
 	state: State,
-	tick_timer: f64,
 }
 
 impl Clock {
@@ -76,7 +75,6 @@ impl Clock {
 			ticking: false,
 			speed: Tweener::new(speed),
 			state: State::NotStarted,
-			tick_timer: 1.0,
 		}
 	}
 
@@ -111,18 +109,21 @@ impl Clock {
 		}
 		let mut new_tick_count = None;
 		if self.state == State::NotStarted {
-			self.state = State::Started { ticks: 0 };
+			self.state = State::Started {
+				ticks: 0,
+				tick_timer: 1.0,
+			};
 			new_tick_count = Some(0);
 		}
-		self.tick_timer -= self.speed.value().as_ticks_per_second() * dt;
-		while self.tick_timer <= 0.0 {
-			self.tick_timer += 1.0;
-			if let State::Started { ticks } = &mut self.state {
+		if let State::Started { ticks, tick_timer } = &mut self.state {
+			*tick_timer -= self.speed.value().as_ticks_per_second() * dt;
+			while *tick_timer <= 0.0 {
+				*tick_timer += 1.0;
 				*ticks += 1;
 				new_tick_count = Some(*ticks);
-			} else {
-				panic!("clock state should be Started by now");
 			}
+		} else {
+			panic!("clock state should be Started by now");
 		}
 		if let Some(new_tick_count) = new_tick_count {
 			self.shared.ticks.store(new_tick_count, Ordering::SeqCst);
