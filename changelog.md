@@ -1,3 +1,7 @@
+# v0.6.0 beta 4 - January 6, 2022
+
+- Fix clocks not resetting their fractional position when stopped
+
 # v0.6.0 beta 3 - January 4, 2022
 
 - Fix clock tick 0 occurring one tick after the clock is started instead of
