@@ -1,4 +1,4 @@
-# v0.6.0 beta 5
+# v0.6.0 beta 5 - January 17, 2022
 
 - Fix static sounds not pausing/resuming/stopping immediately when playback is
   waiting for a clock tick
