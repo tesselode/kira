@@ -1,16 +1,15 @@
 use std::{sync::Arc, time::Duration};
 
-use atomic_arena::Arena;
-
 use crate::{
-	clock::{ClockId, ClockTime},
+	clock::ClockTime,
 	dsp::Frame,
+	manager::{backend::MockBackend, AudioManager},
 	sound::{
 		static_sound::{PlaybackState, StaticSoundData, StaticSoundSettings},
 		Sound,
 	},
 	tween::Tween,
-	LoopBehavior, Volume,
+	ClockSpeed, LoopBehavior, Volume,
 };
 
 use super::StaticSound;
@@ -221,11 +220,15 @@ fn stops_with_fade_out() {
 #[allow(clippy::float_cmp)]
 fn waits_for_start_time() {
 	// create some fake ClockIds
-	let mut dummy_arena = Arena::new(2);
-	let key1 = dummy_arena.insert(()).unwrap();
-	let key2 = dummy_arena.insert(()).unwrap();
-	let clock_id_1 = ClockId(key1);
-	let clock_id_2 = ClockId(key2);
+	let mut manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
+	let clock_id_1 = manager
+		.add_clock(ClockSpeed::TicksPerSecond(1.0))
+		.unwrap()
+		.id();
+	let clock_id_2 = manager
+		.add_clock(ClockSpeed::TicksPerSecond(1.0))
+		.unwrap()
+		.id();
 
 	let data = StaticSoundData {
 		sample_rate: 1,
@@ -279,10 +282,11 @@ fn waits_for_start_time() {
 /// even if playback is waiting for a clock time to start.
 #[test]
 fn immediate_pause_and_resume_with_clock_start_time() {
-	// create some fake ClockIds
-	let mut dummy_arena = Arena::new(2);
-	let key1 = dummy_arena.insert(()).unwrap();
-	let clock_id_1 = ClockId(key1);
+	let mut manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
+	let clock_id_1 = manager
+		.add_clock(ClockSpeed::TicksPerSecond(1.0))
+		.unwrap()
+		.id();
 
 	let data = StaticSoundData {
 		sample_rate: 1,
@@ -312,10 +316,11 @@ fn immediate_pause_and_resume_with_clock_start_time() {
 /// is waiting for a clock time to start.
 #[test]
 fn immediate_stop_with_clock_start_time() {
-	// create some fake ClockIds
-	let mut dummy_arena = Arena::new(2);
-	let key1 = dummy_arena.insert(()).unwrap();
-	let clock_id_1 = ClockId(key1);
+	let mut manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
+	let clock_id_1 = manager
+		.add_clock(ClockSpeed::TicksPerSecond(1.0))
+		.unwrap()
+		.id();
 
 	let data = StaticSoundData {
 		sample_rate: 1,
