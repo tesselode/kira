@@ -1,6 +1,7 @@
 use std::{collections::VecDeque, time::Duration};
 
 use kira::{
+	clock::ClockTime,
 	dsp::Frame,
 	manager::{backend::MockBackend, AudioManager},
 	sound::{static_sound::PlaybackState, Sound},
@@ -295,6 +296,72 @@ fn stops_with_fade_out() {
 		assert_eq!(handle.position(), position);
 		assert_eq!(sound.state, PlaybackState::Stopped);
 		assert!(sound.finished());
+	}
+}
+
+/// Tests that a `StreamingSound` will wait for its start clock time
+/// when appropriate.
+#[test]
+#[allow(clippy::float_cmp)]
+fn waits_for_start_time() {
+	// create some fake ClockIds
+	let mut manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
+	let clock_id_1 = manager
+		.add_clock(ClockSpeed::TicksPerSecond(1.0))
+		.unwrap()
+		.id();
+	let clock_id_2 = manager
+		.add_clock(ClockSpeed::TicksPerSecond(1.0))
+		.unwrap()
+		.id();
+
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(
+			(1..100).map(|i| Frame::from_mono(i as f32)).collect(),
+		)),
+		settings: StreamingSoundSettings::new().start_time(ClockTime {
+			clock: clock_id_1,
+			ticks: 2,
+		}),
+	};
+	let (mut sound, _, mut scheduler) = data.split().unwrap();
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
+
+	// the sound should not be playing yet
+	for _ in 0..3 {
+		assert_eq!(sound.process(1.0), Frame::from_mono(0.0));
+	}
+
+	// the sound is set to start at tick 2, so it should not
+	// play yet
+	sound.on_clock_tick(ClockTime {
+		clock: clock_id_1,
+		ticks: 1,
+	});
+
+	for _ in 0..3 {
+		assert_eq!(sound.process(1.0), Frame::from_mono(0.0));
+	}
+
+	// this is a tick event for a different clock, so the
+	// sound should not play yet
+	sound.on_clock_tick(ClockTime {
+		clock: clock_id_2,
+		ticks: 2,
+	});
+
+	for _ in 0..3 {
+		assert_eq!(sound.process(1.0), Frame::from_mono(0.0));
+	}
+
+	// the sound should start playing now
+	sound.on_clock_tick(ClockTime {
+		clock: clock_id_1,
+		ticks: 2,
+	});
+
+	for i in 1..10 {
+		assert_eq!(sound.process(1.0), Frame::from_mono(i as f32).panned(0.5));
 	}
 }
 
