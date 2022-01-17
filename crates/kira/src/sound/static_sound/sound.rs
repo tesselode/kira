@@ -285,15 +285,15 @@ impl Sound for StaticSound {
 		self.volume.update(dt);
 		self.playback_rate.update(dt);
 		self.panning.update(dt);
-		if matches!(self.start_time, StartTime::ClockTime(..)) {
-			return Frame::ZERO;
-		}
 		if self.volume_fade.update(dt) {
 			match self.state {
 				PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
 				PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),
 				_ => {}
 			}
+		}
+		if matches!(self.start_time, StartTime::ClockTime(..)) {
+			return Frame::ZERO;
 		}
 		let out = self.resampler.get(self.fractional_position as f32);
 		self.fractional_position += self.data.sample_rate as f64 * self.playback_rate().abs() * dt;

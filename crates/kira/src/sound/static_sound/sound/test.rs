@@ -275,6 +275,66 @@ fn waits_for_start_time() {
 	}
 }
 
+/// Tests that a `StaticSound` can be paused and resumed immediately
+/// even if playback is waiting for a clock time to start.
+#[test]
+fn immediate_pause_and_resume_with_clock_start_time() {
+	// create some fake ClockIds
+	let mut dummy_arena = Arena::new(2);
+	let key1 = dummy_arena.insert(()).unwrap();
+	let clock_id_1 = ClockId(key1);
+
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new((1..100).map(|i| Frame::from_mono(i as f32)).collect()),
+		settings: StaticSoundSettings::new().start_time(ClockTime {
+			clock: clock_id_1,
+			ticks: 2,
+		}),
+	};
+	let (mut sound, _) = data.split();
+
+	sound.pause(Tween {
+		duration: Duration::from_secs(0),
+		..Default::default()
+	});
+	sound.process(1.0);
+	assert!(sound.state == PlaybackState::Paused);
+	sound.resume(Tween {
+		duration: Duration::from_secs(0),
+		..Default::default()
+	});
+	sound.process(1.0);
+	assert!(sound.state == PlaybackState::Playing);
+}
+
+/// Tests that a `StaticSound` can be stopped immediately even if playback
+/// is waiting for a clock time to start.
+#[test]
+fn immediate_stop_with_clock_start_time() {
+	// create some fake ClockIds
+	let mut dummy_arena = Arena::new(2);
+	let key1 = dummy_arena.insert(()).unwrap();
+	let clock_id_1 = ClockId(key1);
+
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new((1..100).map(|i| Frame::from_mono(i as f32)).collect()),
+		settings: StaticSoundSettings::new().start_time(ClockTime {
+			clock: clock_id_1,
+			ticks: 2,
+		}),
+	};
+	let (mut sound, _) = data.split();
+
+	sound.stop(Tween {
+		duration: Duration::from_secs(0),
+		..Default::default()
+	});
+	sound.process(1.0);
+	assert!(sound.state == PlaybackState::Stopped);
+}
+
 /// Tests that a `StaticSound` can be started partway through the sound.
 #[test]
 #[allow(clippy::float_cmp)]

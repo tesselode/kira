@@ -198,6 +198,13 @@ impl Sound for StreamingSound {
 		self.volume.update(dt);
 		self.playback_rate.update(dt);
 		self.panning.update(dt);
+		if self.volume_fade.update(dt) {
+			match self.state {
+				PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
+				PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),
+				_ => {}
+			}
+		}
 		if matches!(self.start_time, StartTime::ClockTime(..)) {
 			return Frame::ZERO;
 		}
@@ -211,13 +218,6 @@ impl Sound for StreamingSound {
 			&& !self.scheduler_controller.finished()
 		{
 			return Frame::ZERO;
-		}
-		if self.volume_fade.update(dt) {
-			match self.state {
-				PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
-				PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),
-				_ => {}
-			}
 		}
 		let next_frames = self.next_frames();
 		let out = interpolate_frame(

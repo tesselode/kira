@@ -1,3 +1,8 @@
+# v0.1.0 beta 3
+
+- Fix streaming sounds not pausing/resuming/stopping immediately when playback
+  is waiting for a clock tick
+
 # v0.1.0 beta 2 - January 4, 2022
 
 - Fix streaming sound pause/resume/stop fades never starting when the start time

@@ -1,3 +1,8 @@
+# v0.6.0 beta 5
+
+- Fix static sounds not pausing/resuming/stopping immediately when playback is
+  waiting for a clock tick
+
 # v0.6.0 beta 4 - January 6, 2022
 
 - Fix clocks not resetting their fractional position when stopped

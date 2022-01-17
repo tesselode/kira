@@ -2,9 +2,10 @@ use std::{collections::VecDeque, time::Duration};
 
 use kira::{
 	dsp::Frame,
+	manager::{backend::MockBackend, AudioManager},
 	sound::{static_sound::PlaybackState, Sound},
 	tween::Tween,
-	LoopBehavior, Volume,
+	ClockSpeed, LoopBehavior, Volume,
 };
 
 use crate::{
@@ -295,6 +296,60 @@ fn stops_with_fade_out() {
 		assert_eq!(sound.state, PlaybackState::Stopped);
 		assert!(sound.finished());
 	}
+}
+
+/// Tests that a `StreamingSound` can be paused and resumed immediately
+/// even if playback is waiting for a clock time to start.
+#[test]
+fn immediate_pause_and_resume_with_clock_start_time() {
+	let mut manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
+	let clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0)).unwrap();
+
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(
+			(1..100).map(|i| Frame::from_mono(i as f32)).collect(),
+		)),
+		settings: StreamingSoundSettings::new().start_time(clock.time() + 1),
+	};
+	let (mut sound, _, mut scheduler) = data.split().unwrap();
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
+
+	sound.pause(Tween {
+		duration: Duration::from_secs(0),
+		..Default::default()
+	});
+	sound.process(1.0);
+	assert!(sound.state == PlaybackState::Paused);
+	sound.resume(Tween {
+		duration: Duration::from_secs(0),
+		..Default::default()
+	});
+	sound.process(1.0);
+	assert!(sound.state == PlaybackState::Playing);
+}
+
+/// Tests that a `StreamingSound` can be stopped immediately even if playback
+/// is waiting for a clock time to start.
+#[test]
+fn immediate_stop_with_clock_start_time() {
+	let mut manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
+	let clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0)).unwrap();
+
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(
+			(1..100).map(|i| Frame::from_mono(i as f32)).collect(),
+		)),
+		settings: StreamingSoundSettings::new().start_time(clock.time() + 1),
+	};
+	let (mut sound, _, mut scheduler) = data.split().unwrap();
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
+
+	sound.stop(Tween {
+		duration: Duration::from_secs(0),
+		..Default::default()
+	});
+	sound.process(1.0);
+	assert!(sound.state == PlaybackState::Stopped);
 }
 
 /// Tests that a `StreamingSound` can be started partway through the sound.
