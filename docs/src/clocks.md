@@ -76,7 +76,7 @@ As a shorthand, you can pass the `ClockTime` directly into
 # 	clock::ClockTime,
 # 	manager::{AudioManager, AudioManagerSettings},
 # 	sound::static_sound::StaticSoundSettings,
-# 	StartTime,
+# 	ClockSpeed, StartTime,
 # };
 # use kira_cpal::CpalBackend;
 #
@@ -84,7 +84,7 @@ As a shorthand, you can pass the `ClockTime` directly into
 # 	CpalBackend::new()?,
 # 	AudioManagerSettings::default(),
 # )?;
-# let mut clock = manager.add_clock(0.5)?;
+# let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
 manager.play(kira_loaders::load(
 	"sound.ogg",
 	StaticSoundSettings::new().start_time(ClockTime {
@@ -106,6 +106,7 @@ current `ClockTime`, and then add to it to get a time in the future:
 use kira::{
 	manager::{AudioManager, AudioManagerSettings},
 	sound::static_sound::StaticSoundSettings,
+	ClockSpeed,
 };
 use kira_cpal::CpalBackend;
 
@@ -113,7 +114,7 @@ use kira_cpal::CpalBackend;
 # 	CpalBackend::new()?,
 # 	AudioManagerSettings::default(),
 # )?;
-# let mut clock = manager.add_clock(0.5)?;
+# let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
 manager.play(kira_loaders::load(
 	"sound.ogg",
 	StaticSoundSettings::new().start_time(clock.time() + 4),
