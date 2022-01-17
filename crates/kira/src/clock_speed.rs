@@ -40,12 +40,6 @@ impl ClockSpeed {
 	}
 }
 
-impl From<f64> for ClockSpeed {
-	fn from(seconds_per_tick: f64) -> Self {
-		Self::SecondsPerTick(seconds_per_tick)
-	}
-}
-
 impl Tweenable for ClockSpeed {
 	fn lerp(a: Self, b: Self, amount: f64) -> Self {
 		match b {

@@ -203,17 +203,14 @@ impl<B: Backend> AudioManager<B> {
 	}
 
 	/// Creates a clock.
-	pub fn add_clock(
-		&mut self,
-		speed: impl Into<ClockSpeed>,
-	) -> Result<ClockHandle, AddClockError> {
+	pub fn add_clock(&mut self, speed: ClockSpeed) -> Result<ClockHandle, AddClockError> {
 		let id = ClockId(
 			self.resource_controllers
 				.clock_controller
 				.try_reserve()
 				.map_err(|_| AddClockError::ClockLimitReached)?,
 		);
-		let clock = Clock::new(speed.into());
+		let clock = Clock::new(speed);
 		let handle = ClockHandle {
 			id,
 			shared: clock.shared(),

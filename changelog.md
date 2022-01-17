@@ -2,6 +2,9 @@
 
 - Fix static sounds not pausing/resuming/stopping immediately when playback is
   waiting for a clock tick
+- Remove `From<f64>` implementation for `ClockSpeed`
+- Change `AudioManager::add_clock` to take a `ClockSpeed` argument instead of an
+  `impl Into<ClockSpeed>` argument
 
 # v0.6.0 beta 4 - January 6, 2022
 
