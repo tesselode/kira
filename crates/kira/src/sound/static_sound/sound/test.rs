@@ -508,6 +508,65 @@ fn volume() {
 	assert_eq!(sound.process(1.0), Frame::from_mono(0.5).panned(0.5));
 }
 
+/// Tests that the volume of a `StaticSound` can be changed
+/// after the sound is started.
+#[test]
+fn set_volume() {
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new(vec![Frame::from_mono(1.0); 10]),
+		settings: StaticSoundSettings::new(),
+	};
+	let (mut sound, mut handle) = data.split();
+
+	assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.5));
+	handle
+		.set_volume(
+			0.5,
+			Tween {
+				duration: Duration::ZERO,
+				..Default::default()
+			},
+		)
+		.unwrap();
+	sound.on_start_processing();
+	expect_frame_soon(Frame::from_mono(0.5).panned(0.5), &mut sound);
+}
+
+/// Tests that the volume of a `StaticSound` can be changed
+/// on a clock tick.
+#[test]
+fn set_volume_on_clock_tick() {
+	let mut manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
+	let clock = manager.add_clock(ClockSpeed::TicksPerSecond(1.0)).unwrap();
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new(vec![Frame::from_mono(1.0); 100]),
+		settings: StaticSoundSettings::new(),
+	};
+	let (mut sound, mut handle) = data.split();
+
+	handle
+		.set_volume(
+			0.5,
+			Tween {
+				duration: Duration::ZERO,
+				start_time: StartTime::ClockTime(clock.time() + 1),
+				..Default::default()
+			},
+		)
+		.unwrap();
+	sound.on_start_processing();
+	for _ in 0..10 {
+		assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.5));
+	}
+	sound.on_clock_tick(ClockTime {
+		clock: clock.id(),
+		ticks: 1,
+	});
+	expect_frame_soon(Frame::from_mono(0.5).panned(0.5), &mut sound);
+}
+
 /// Tests that the panning of a `StaticSound` can be adjusted.
 #[test]
 #[allow(clippy::float_cmp)]
@@ -520,6 +579,65 @@ fn panning() {
 	let (mut sound, _) = data.split();
 
 	assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.0));
+}
+
+/// Tests that the panning of a `StaticSound` can be changed
+/// after the sound is started.
+#[test]
+fn set_panning() {
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new(vec![Frame::from_mono(1.0); 10]),
+		settings: StaticSoundSettings::new(),
+	};
+	let (mut sound, mut handle) = data.split();
+
+	assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.5));
+	handle
+		.set_panning(
+			0.0,
+			Tween {
+				duration: Duration::ZERO,
+				..Default::default()
+			},
+		)
+		.unwrap();
+	sound.on_start_processing();
+	expect_frame_soon(Frame::from_mono(1.0).panned(0.0), &mut sound);
+}
+
+/// Tests that the panning of a `StaticSound` can be changed
+/// on a clock tick.
+#[test]
+fn set_panning_on_clock_tick() {
+	let mut manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
+	let clock = manager.add_clock(ClockSpeed::TicksPerSecond(1.0)).unwrap();
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new(vec![Frame::from_mono(1.0); 100]),
+		settings: StaticSoundSettings::new(),
+	};
+	let (mut sound, mut handle) = data.split();
+
+	handle
+		.set_panning(
+			0.0,
+			Tween {
+				duration: Duration::ZERO,
+				start_time: StartTime::ClockTime(clock.time() + 1),
+				..Default::default()
+			},
+		)
+		.unwrap();
+	sound.on_start_processing();
+	for _ in 0..10 {
+		assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.5));
+	}
+	sound.on_clock_tick(ClockTime {
+		clock: clock.id(),
+		ticks: 1,
+	});
+	expect_frame_soon(Frame::from_mono(1.0).panned(0.0), &mut sound);
 }
 
 /// Tests that the playback rate of a `StaticSound` can be adjusted.
@@ -535,6 +653,72 @@ fn playback_rate() {
 
 	assert_eq!(sound.process(1.0), Frame::from_mono(0.0).panned(0.5));
 	assert_eq!(sound.process(1.0), Frame::from_mono(2.0).panned(0.5));
+}
+
+/// Tests that the playback rate of a `StaticSound` can be adjusted after
+/// it's started.
+#[test]
+#[allow(clippy::float_cmp)]
+fn set_playback_rate() {
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new((0..100).map(|i| Frame::from_mono(i as f32)).collect()),
+		settings: StaticSoundSettings::new(),
+	};
+	let (mut sound, mut handle) = data.split();
+
+	assert_eq!(sound.process(1.0), Frame::from_mono(0.0).panned(0.5));
+	assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.5));
+
+	handle
+		.set_playback_rate(
+			2.0,
+			Tween {
+				duration: Duration::ZERO,
+				..Default::default()
+			},
+		)
+		.unwrap();
+	sound.on_start_processing();
+
+	assert_eq!(sound.process(1.0), Frame::from_mono(2.0).panned(0.5));
+	assert_eq!(sound.process(1.0), Frame::from_mono(4.0).panned(0.5));
+}
+
+/// Tests that the playback rate of a `StaticSound` can be adjusted on
+/// a clock tick.
+#[test]
+#[allow(clippy::float_cmp)]
+fn set_playback_rate_on_clock_tick() {
+	let mut manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
+	let clock = manager.add_clock(ClockSpeed::TicksPerSecond(1.0)).unwrap();
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new((0..100).map(|i| Frame::from_mono(i as f32)).collect()),
+		settings: StaticSoundSettings::new(),
+	};
+	let (mut sound, mut handle) = data.split();
+
+	handle
+		.set_playback_rate(
+			2.0,
+			Tween {
+				duration: Duration::ZERO,
+				start_time: StartTime::ClockTime(clock.time() + 1),
+				..Default::default()
+			},
+		)
+		.unwrap();
+	sound.on_start_processing();
+
+	assert_eq!(sound.process(1.0), Frame::from_mono(0.0).panned(0.5));
+	assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.5));
+	sound.on_clock_tick(ClockTime {
+		clock: clock.id(),
+		ticks: 1,
+	});
+	assert_eq!(sound.process(1.0), Frame::from_mono(2.0).panned(0.5));
+	assert_eq!(sound.process(1.0), Frame::from_mono(4.0).panned(0.5));
 }
 
 /// Tests that a `StaticSound` outputs interpolated samples when
