@@ -6,7 +6,7 @@ use kira::{
 	manager::{backend::MockBackend, AudioManager},
 	sound::{static_sound::PlaybackState, Sound},
 	tween::Tween,
-	ClockSpeed, LoopBehavior, Volume,
+	ClockSpeed, LoopBehavior, StartTime, Volume,
 };
 
 use crate::{
@@ -297,6 +297,79 @@ fn stops_with_fade_out() {
 		assert_eq!(sound.state, PlaybackState::Stopped);
 		assert!(sound.finished());
 	}
+}
+
+/// Tests that a `StreamingSound` can be paused and resumed on a clock tick.
+#[test]
+fn pauses_resumes_and_stops_on_clock_tick() {
+	let mut manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
+	let clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0)).unwrap();
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(1.0); 100])),
+		settings: StreamingSoundSettings::new(),
+	};
+	let (mut sound, mut handle, mut scheduler) = data.split().unwrap();
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
+
+	// pause on clock tick
+	handle
+		.pause(Tween {
+			duration: Duration::ZERO,
+			start_time: StartTime::ClockTime(clock.time() + 1),
+			..Default::default()
+		})
+		.unwrap();
+	sound.on_start_processing();
+	for _ in 0..10 {
+		assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.5));
+	}
+	sound.on_clock_tick(ClockTime {
+		clock: clock.id(),
+		ticks: 1,
+	});
+	expect_frame_soon(Frame::ZERO, &mut sound);
+	sound.on_start_processing();
+	assert_eq!(handle.state(), PlaybackState::Paused);
+
+	// resume on clock tick
+	handle
+		.resume(Tween {
+			duration: Duration::ZERO,
+			start_time: StartTime::ClockTime(clock.time() + 2),
+			..Default::default()
+		})
+		.unwrap();
+	sound.on_start_processing();
+	for _ in 0..10 {
+		assert_eq!(sound.process(1.0), Frame::ZERO);
+	}
+	sound.on_clock_tick(ClockTime {
+		clock: clock.id(),
+		ticks: 2,
+	});
+	expect_frame_soon(Frame::from_mono(1.0).panned(0.5), &mut sound);
+	sound.on_start_processing();
+	assert_eq!(handle.state(), PlaybackState::Playing);
+
+	// stop on clock tick
+	handle
+		.stop(Tween {
+			duration: Duration::ZERO,
+			start_time: StartTime::ClockTime(clock.time() + 1),
+			..Default::default()
+		})
+		.unwrap();
+	sound.on_start_processing();
+	for _ in 0..10 {
+		assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.5));
+	}
+	sound.on_clock_tick(ClockTime {
+		clock: clock.id(),
+		ticks: 1,
+	});
+	expect_frame_soon(Frame::ZERO, &mut sound);
+	sound.on_start_processing();
+	assert_eq!(handle.state(), PlaybackState::Stopped);
 }
 
 /// Tests that a `StreamingSound` will wait for its start clock time

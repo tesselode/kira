@@ -4,6 +4,9 @@ pub(crate) mod clocks;
 mod handle;
 mod time;
 
+#[cfg(test)]
+mod test;
+
 pub use handle::*;
 pub use time::*;
 
@@ -102,6 +105,10 @@ impl Clock {
 		self.shared.ticks.store(0, Ordering::SeqCst);
 	}
 
+	/// Updates the [`Clock`].
+	///
+	/// If the tick count changes this update, returns `Some(tick_number)`.
+	/// Otherwise, returns `None`.
 	pub(crate) fn update(&mut self, dt: f64) -> Option<u64> {
 		self.speed.update(dt);
 		if !self.ticking {
