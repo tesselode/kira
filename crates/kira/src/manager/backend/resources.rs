@@ -23,27 +23,15 @@ pub(crate) struct UnusedResourceProducers {
 	pub clock: Producer<Clock>,
 }
 
-/// Collects resources that have been discarded by
-/// a [`Renderer`](super::Renderer) to be
-/// deallocated at an appropriate time.
-pub struct UnusedResourceCollector {
-	unused_sound_consumer: Consumer<Box<dyn Sound>>,
-	unused_sub_track_consumer: Consumer<Track>,
-	unused_clock_consumer: Consumer<Clock>,
-}
-
-impl UnusedResourceCollector {
-	/// Deallocates all unused resources that have been collected.
-	pub fn drain(&mut self) {
-		while self.unused_sound_consumer.pop().is_some() {}
-		while self.unused_sub_track_consumer.pop().is_some() {}
-		while self.unused_clock_consumer.pop().is_some() {}
-	}
+pub(crate) struct UnusedResourceConsumers {
+	pub sound: Consumer<Box<dyn Sound>>,
+	pub sub_track: Consumer<Track>,
+	pub clock: Consumer<Clock>,
 }
 
 pub(crate) fn create_unused_resource_channels(
 	settings: &AudioManagerSettings,
-) -> (UnusedResourceProducers, UnusedResourceCollector) {
+) -> (UnusedResourceProducers, UnusedResourceConsumers) {
 	let (unused_sound_producer, unused_sound_consumer) =
 		RingBuffer::new(settings.sound_capacity).split();
 	let (unused_sub_track_producer, unused_sub_track_consumer) =
@@ -56,10 +44,10 @@ pub(crate) fn create_unused_resource_channels(
 			sub_track: unused_sub_track_producer,
 			clock: unused_clock_producer,
 		},
-		UnusedResourceCollector {
-			unused_sound_consumer,
-			unused_sub_track_consumer,
-			unused_clock_consumer,
+		UnusedResourceConsumers {
+			sound: unused_sound_consumer,
+			sub_track: unused_sub_track_consumer,
+			clock: unused_clock_consumer,
 		},
 	)
 }

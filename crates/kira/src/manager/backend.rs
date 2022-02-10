@@ -6,7 +6,6 @@ pub(crate) mod resources;
 
 pub use mock::MockBackend;
 pub use renderer::*;
-pub use resources::UnusedResourceCollector;
 
 /// Connects a [`Renderer`] to a lower level audio API.
 pub trait Backend {
@@ -17,9 +16,5 @@ pub trait Backend {
 	fn sample_rate(&mut self) -> u32;
 
 	/// Initializes the [`Backend`].
-	fn init(
-		&mut self,
-		renderer: Renderer,
-		unused_resource_collector: UnusedResourceCollector,
-	) -> Result<(), Self::InitError>;
+	fn init(&mut self, renderer: Renderer) -> Result<(), Self::InitError>;
 }

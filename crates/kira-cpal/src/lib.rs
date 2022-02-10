@@ -33,10 +33,8 @@ use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	BuildStreamError, DefaultStreamConfigError, PlayStreamError, Stream, StreamConfig,
 };
-use kira::manager::backend::{Backend, Renderer, UnusedResourceCollector};
+use kira::manager::backend::{Backend, Renderer};
 use ringbuf::{Producer, RingBuffer};
-
-const UNUSED_RESOURCE_COLLECTION_INTERVAL: Duration = Duration::from_millis(100);
 
 /// An error that can occur when creating a [`CpalBackend`].
 #[derive(Debug)]
@@ -126,7 +124,6 @@ enum State {
 	},
 	Initialized {
 		stream_quit_signal_producer: Producer<()>,
-		collector_quit_signal_producer: Producer<()>,
 	},
 }
 
@@ -164,11 +161,7 @@ impl Backend for CpalBackend {
 		}
 	}
 
-	fn init(
-		&mut self,
-		renderer: Renderer,
-		unused_resource_collector: UnusedResourceCollector,
-	) -> Result<(), Self::InitError> {
+	fn init(&mut self, renderer: Renderer) -> Result<(), Self::InitError> {
 		match &mut self.state {
 			State::Uninitialized { config } => {
 				let config = config.clone();
@@ -203,11 +196,8 @@ impl Backend for CpalBackend {
 					}
 					std::thread::sleep(Duration::from_millis(10));
 				}?;
-				let collector_quit_signal_producer =
-					start_resource_collection_thread(unused_resource_collector);
 				self.state = State::Initialized {
 					stream_quit_signal_producer,
-					collector_quit_signal_producer,
 				};
 				Ok(())
 			}
@@ -220,15 +210,10 @@ impl Drop for CpalBackend {
 	fn drop(&mut self) {
 		if let State::Initialized {
 			stream_quit_signal_producer,
-			collector_quit_signal_producer,
-			..
 		} = &mut self.state
 		{
 			if stream_quit_signal_producer.push(()).is_err() {
 				panic!("Could not send the quit signal to end the audio thread");
-			}
-			if collector_quit_signal_producer.push(()).is_err() {
-				panic!("Could not send the quit signal to end the resource collection thread");
 			}
 		}
 	}
@@ -263,17 +248,4 @@ fn setup_stream(config: StreamConfig, mut renderer: Renderer) -> Result<Stream, 
 	)?;
 	stream.play()?;
 	Ok(stream)
-}
-
-fn start_resource_collection_thread(
-	mut unused_resource_collector: UnusedResourceCollector,
-) -> Producer<()> {
-	let (quit_signal_producer, mut quit_signal_consumer) = RingBuffer::new(1).split();
-	std::thread::spawn(move || {
-		while quit_signal_consumer.pop().is_none() {
-			std::thread::sleep(UNUSED_RESOURCE_COLLECTION_INTERVAL);
-			unused_resource_collector.drain();
-		}
-	});
-	quit_signal_producer
 }

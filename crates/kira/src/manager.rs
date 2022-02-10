@@ -20,7 +20,10 @@ use crate::{
 use self::{
 	backend::{
 		context::Context,
-		resources::{create_resources, create_unused_resource_channels, ResourceControllers},
+		resources::{
+			create_resources, create_unused_resource_channels, ResourceControllers,
+			UnusedResourceConsumers,
+		},
 		Backend, Renderer,
 	},
 	command::{producer::CommandProducer, ClockCommand, Command, MixerCommand, SoundCommand},
@@ -137,6 +140,7 @@ pub struct AudioManager<B: Backend> {
 	context: Arc<Context>,
 	command_producer: CommandProducer,
 	resource_controllers: ResourceControllers,
+	unused_resource_consumers: UnusedResourceConsumers,
 }
 
 impl<B: Backend> AudioManager<B> {
@@ -146,17 +150,18 @@ impl<B: Backend> AudioManager<B> {
 		let context = Arc::new(Context::new(sample_rate));
 		let (command_producer, command_consumer) =
 			RingBuffer::new(settings.command_capacity).split();
-		let (unused_resource_producers, unused_resource_collector) =
+		let (unused_resource_producers, unused_resource_consumers) =
 			create_unused_resource_channels(&settings);
 		let (resources, resource_controllers) =
 			create_resources(settings, unused_resource_producers, &context);
 		let renderer = Renderer::new(context.clone(), resources, command_consumer);
-		backend.init(renderer, unused_resource_collector)?;
+		backend.init(renderer)?;
 		Ok(Self {
 			backend,
 			context,
 			command_producer: CommandProducer::new(command_producer),
 			resource_controllers,
+			unused_resource_consumers,
 		})
 	}
 
@@ -165,6 +170,7 @@ impl<B: Backend> AudioManager<B> {
 		&mut self,
 		sound_data: D,
 	) -> Result<D::Handle, PlaySoundError<D::Error>> {
+		while self.unused_resource_consumers.sound.pop().is_some() {}
 		let key = self
 			.resource_controllers
 			.sound_controller
@@ -183,6 +189,7 @@ impl<B: Backend> AudioManager<B> {
 		&mut self,
 		builder: TrackBuilder,
 	) -> Result<TrackHandle, AddSubTrackError> {
+		while self.unused_resource_consumers.sub_track.pop().is_some() {}
 		let id = SubTrackId(
 			self.resource_controllers
 				.sub_track_controller
@@ -204,6 +211,7 @@ impl<B: Backend> AudioManager<B> {
 
 	/// Creates a clock.
 	pub fn add_clock(&mut self, speed: ClockSpeed) -> Result<ClockHandle, AddClockError> {
+		while self.unused_resource_consumers.clock.pop().is_some() {}
 		let id = ClockId(
 			self.resource_controllers
 				.clock_controller
