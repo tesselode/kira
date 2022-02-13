@@ -22,12 +22,11 @@ use crate::{
 
 use self::{
 	backend::{
-		context::RendererShared,
 		resources::{
 			create_resources, create_unused_resource_channels, ResourceControllers,
 			UnusedResourceConsumers,
 		},
-		Backend, Renderer,
+		Backend, Renderer, RendererShared,
 	},
 	command::{producer::CommandProducer, ClockCommand, Command, MixerCommand, SoundCommand},
 	error::{AddClockError, AddSubTrackError, PlaySoundError},

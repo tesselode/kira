@@ -1,6 +1,7 @@
-pub(crate) mod context;
-
-use std::sync::{atomic::Ordering, Arc};
+use std::sync::{
+	atomic::{AtomicU8, Ordering},
+	Arc,
+};
 
 use ringbuf::Consumer;
 
@@ -11,9 +12,23 @@ use crate::{
 	Volume,
 };
 
-use self::context::RendererShared;
-
 use super::resources::Resources;
+
+pub(crate) struct RendererShared {
+	pub(super) state: AtomicU8,
+}
+
+impl RendererShared {
+	pub fn new() -> Self {
+		Self {
+			state: AtomicU8::new(MainPlaybackState::Playing as u8),
+		}
+	}
+
+	pub fn state(&self) -> MainPlaybackState {
+		MainPlaybackState::from_u8(self.state.load(Ordering::SeqCst))
+	}
+}
 
 /// Produces [`Frame`]s of audio data to be consumed by a
 /// low-level audio API.
