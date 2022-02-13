@@ -1,18 +1,17 @@
-use std::sync::Arc;
-
 use atomic_arena::{Arena, Controller};
 use ringbuf::Producer;
 
 use crate::{
 	clock::ClockTime,
 	dsp::Frame,
-	manager::{backend::context::Context, command::MixerCommand},
+	manager::command::MixerCommand,
 	track::{SubTrackId, Track, TrackBuilder, TrackId},
 	tween::Tweener,
 	Volume,
 };
 
 pub(crate) struct Mixer {
+	sample_rate: u32,
 	main_track: Track,
 	sub_tracks: Arena<Track>,
 	sub_track_ids: Vec<SubTrackId>,
@@ -24,11 +23,16 @@ impl Mixer {
 	pub fn new(
 		sub_track_capacity: usize,
 		unused_sub_track_producer: Producer<Track>,
-		context: &Arc<Context>,
+		sample_rate: u32,
 		main_track_builder: TrackBuilder,
 	) -> Self {
 		Self {
-			main_track: Track::new(main_track_builder, context),
+			sample_rate,
+			main_track: {
+				let mut track = Track::new(main_track_builder);
+				track.init_effects(sample_rate);
+				track
+			},
 			sub_tracks: Arena::new(sub_track_capacity),
 			sub_track_ids: Vec::with_capacity(sub_track_capacity),
 			dummy_routes: vec![],
@@ -49,7 +53,8 @@ impl Mixer {
 
 	pub fn run_command(&mut self, command: MixerCommand) {
 		match command {
-			MixerCommand::AddSubTrack(id, track) => {
+			MixerCommand::AddSubTrack(id, mut track) => {
+				track.init_effects(self.sample_rate);
 				self.sub_tracks
 					.insert_with_key(id.0, track)
 					.expect("Sub-track arena is full");

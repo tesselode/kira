@@ -22,7 +22,7 @@ use crate::{
 
 use self::{
 	backend::{
-		context::Context,
+		context::RendererShared,
 		resources::{
 			create_resources, create_unused_resource_channels, ResourceControllers,
 			UnusedResourceConsumers,
@@ -60,7 +60,7 @@ impl MainPlaybackState {
 /// Controls audio from gameplay code.
 pub struct AudioManager<B: Backend> {
 	backend: B,
-	context: Arc<Context>,
+	renderer_shared: Arc<RendererShared>,
 	command_producer: CommandProducer,
 	resource_controllers: ResourceControllers,
 	unused_resource_consumers: UnusedResourceConsumers,
@@ -70,18 +70,18 @@ impl<B: Backend> AudioManager<B> {
 	/// Creates a new [`AudioManager`].
 	pub fn new(mut backend: B, settings: AudioManagerSettings) -> Result<Self, B::InitError> {
 		let sample_rate = backend.sample_rate();
-		let context = Arc::new(Context::new(sample_rate));
 		let (command_producer, command_consumer) =
 			RingBuffer::new(settings.command_capacity).split();
 		let (unused_resource_producers, unused_resource_consumers) =
 			create_unused_resource_channels(&settings);
 		let (resources, resource_controllers) =
-			create_resources(settings, unused_resource_producers, &context);
-		let renderer = Renderer::new(context.clone(), resources, command_consumer);
+			create_resources(settings, unused_resource_producers, sample_rate);
+		let renderer = Renderer::new(sample_rate, resources, command_consumer);
+		let renderer_shared = renderer.shared();
 		backend.init(renderer)?;
 		Ok(Self {
 			backend,
-			context,
+			renderer_shared,
 			command_producer: CommandProducer::new(command_producer),
 			resource_controllers,
 			unused_resource_consumers,
@@ -120,7 +120,7 @@ impl<B: Backend> AudioManager<B> {
 				.map_err(|_| AddSubTrackError::SubTrackLimitReached)?,
 		);
 		let existing_routes = builder.routes.0.keys().copied().collect();
-		let sub_track = Track::new(builder, &self.context);
+		let sub_track = Track::new(builder);
 		let handle = TrackHandle {
 			id: TrackId::Sub(id),
 			shared: Some(sub_track.shared()),
@@ -174,7 +174,7 @@ impl<B: Backend> AudioManager<B> {
 
 	/// Returns the current playback state of the audio.
 	pub fn state(&self) -> MainPlaybackState {
-		self.context.state()
+		self.renderer_shared.state()
 	}
 
 	/// Returns the number of sounds that can be loaded at a time.

@@ -19,7 +19,6 @@ use atomic_arena::Key;
 use crate::{
 	clock::ClockTime,
 	dsp::Frame,
-	manager::backend::context::Context,
 	tween::{Tween, Tweener},
 	Volume,
 };
@@ -81,10 +80,7 @@ pub(crate) struct Track {
 }
 
 impl Track {
-	pub fn new(mut builder: TrackBuilder, context: &Arc<Context>) -> Self {
-		for effect in &mut builder.effects {
-			effect.init(context.sample_rate());
-		}
+	pub fn new(builder: TrackBuilder) -> Self {
 		Self {
 			shared: Arc::new(TrackShared::new()),
 			volume: Tweener::new(builder.volume),
@@ -92,6 +88,12 @@ impl Track {
 			routes: builder.routes.into_vec(),
 			effects: builder.effects,
 			input: Frame::ZERO,
+		}
+	}
+
+	pub fn init_effects(&mut self, sample_rate: u32) {
+		for effect in &mut self.effects {
+			effect.init(sample_rate);
 		}
 	}
 

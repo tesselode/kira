@@ -11,7 +11,7 @@ use crate::{
 	Volume,
 };
 
-use self::context::Context;
+use self::context::RendererShared;
 
 use super::resources::Resources;
 
@@ -21,7 +21,8 @@ use super::resources::Resources;
 /// You will probably not need to interact with [`Renderer`]s
 /// directly unless you're writing a [`Backend`](super::Backend).
 pub struct Renderer {
-	context: Arc<Context>,
+	dt: f64,
+	shared: Arc<RendererShared>,
 	resources: Resources,
 	command_consumer: Consumer<Command>,
 	state: MainPlaybackState,
@@ -30,17 +31,22 @@ pub struct Renderer {
 
 impl Renderer {
 	pub(crate) fn new(
-		context: Arc<Context>,
+		sample_rate: u32,
 		resources: Resources,
 		command_consumer: Consumer<Command>,
 	) -> Self {
 		Self {
-			context,
+			dt: 1.0 / sample_rate as f64,
+			shared: Arc::new(RendererShared::new()),
 			resources,
 			command_consumer,
 			state: MainPlaybackState::Playing,
 			fade_volume: Tweener::new(Volume::Decibels(0.0)),
 		}
+	}
+
+	pub(crate) fn shared(&self) -> Arc<RendererShared> {
+		self.shared.clone()
 	}
 
 	/// Called by the backend when it's time to process
@@ -57,7 +63,7 @@ impl Renderer {
 				Command::Clock(command) => self.resources.clocks.run_command(command),
 				Command::Pause(fade_out_tween) => {
 					self.state = MainPlaybackState::Pausing;
-					self.context
+					self.shared
 						.state
 						.store(MainPlaybackState::Pausing as u8, Ordering::SeqCst);
 					self.fade_volume
@@ -65,7 +71,7 @@ impl Renderer {
 				}
 				Command::Resume(fade_in_tween) => {
 					self.state = MainPlaybackState::Playing;
-					self.context
+					self.shared
 						.state
 						.store(MainPlaybackState::Playing as u8, Ordering::SeqCst);
 					self.fade_volume.set(Volume::Decibels(0.0), fade_in_tween);
@@ -76,7 +82,7 @@ impl Renderer {
 
 	/// Produces the next [`Frame`] of audio.
 	pub fn process(&mut self) -> Frame {
-		if self.fade_volume.update(self.context.dt) {
+		if self.fade_volume.update(self.dt) {
 			if self.state == MainPlaybackState::Pausing {
 				self.state = MainPlaybackState::Paused;
 			}
@@ -86,7 +92,7 @@ impl Renderer {
 			return Frame::ZERO;
 		}
 		if self.state == MainPlaybackState::Playing {
-			let clock_tick_events = self.resources.clocks.update(self.context.dt);
+			let clock_tick_events = self.resources.clocks.update(self.dt);
 			for time in clock_tick_events {
 				self.resources.sounds.on_clock_tick(*time);
 				self.resources.mixer.on_clock_tick(*time);
@@ -94,8 +100,8 @@ impl Renderer {
 		}
 		self.resources
 			.sounds
-			.process(self.context.dt, &mut self.resources.mixer);
-		let out = self.resources.mixer.process(self.context.dt);
+			.process(self.dt, &mut self.resources.mixer);
+		let out = self.resources.mixer.process(self.dt);
 		out * self.fade_volume.value().as_amplitude() as f32
 	}
 }
