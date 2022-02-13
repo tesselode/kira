@@ -5,7 +5,7 @@ pub(crate) mod command;
 pub mod error;
 mod settings;
 
-pub use settings::AudioManagerSettings;
+pub use settings::*;
 
 use std::{collections::HashSet, sync::Arc};
 
@@ -67,17 +67,22 @@ pub struct AudioManager<B: Backend> {
 
 impl<B: Backend> AudioManager<B> {
 	/// Creates a new [`AudioManager`].
-	pub fn new(mut backend: B, settings: AudioManagerSettings) -> Result<Self, B::InitError> {
+	pub fn new(settings: AudioManagerSettings<B>) -> Result<Self, B::Error> {
+		let mut backend = B::setup(settings.backend_settings)?;
 		let sample_rate = backend.sample_rate();
 		let (command_producer, command_consumer) =
-			RingBuffer::new(settings.command_capacity).split();
+			RingBuffer::new(settings.capacities.command_capacity).split();
 		let (unused_resource_producers, unused_resource_consumers) =
-			create_unused_resource_channels(&settings);
-		let (resources, resource_controllers) =
-			create_resources(settings, unused_resource_producers, sample_rate);
+			create_unused_resource_channels(settings.capacities);
+		let (resources, resource_controllers) = create_resources(
+			settings.capacities,
+			settings.main_track_builder,
+			unused_resource_producers,
+			sample_rate,
+		);
 		let renderer = Renderer::new(sample_rate, resources, command_consumer);
 		let renderer_shared = renderer.shared();
-		backend.init(renderer)?;
+		backend.start(renderer)?;
 		Ok(Self {
 			backend,
 			renderer_shared,

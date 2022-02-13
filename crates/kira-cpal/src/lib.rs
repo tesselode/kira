@@ -12,8 +12,7 @@ for desktop targets.
 use kira::manager::{AudioManager, AudioManagerSettings};
 use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
+let mut manager = AudioManager::<CpalBackend>::new(
 	AudioManagerSettings::default(),
 )?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
@@ -24,7 +23,6 @@ let mut manager = AudioManager::new(
 #![allow(clippy::tabs_in_doc_comments)]
 
 use std::{
-	error::Error,
 	fmt::{Display, Formatter},
 	time::Duration,
 };
@@ -36,83 +34,57 @@ use cpal::{
 use kira::manager::backend::{Backend, Renderer};
 use ringbuf::{Producer, RingBuffer};
 
-/// An error that can occur when creating a [`CpalBackend`].
+/// Errors that can occur when using the cpal backend.
 #[derive(Debug)]
 #[non_exhaustive]
-pub enum DeviceSetupError {
+pub enum Error {
 	/// A default audio output device could not be determined.
 	NoDefaultOutputDevice,
 	/// An error occurred when getting the default output configuration.
 	DefaultStreamConfigError(DefaultStreamConfigError),
-}
-
-impl Display for DeviceSetupError {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		match self {
-			DeviceSetupError::NoDefaultOutputDevice => {
-				f.write_str("Cannot find the default audio output device")
-			}
-			DeviceSetupError::DefaultStreamConfigError(error) => error.fmt(f),
-		}
-	}
-}
-
-impl Error for DeviceSetupError {
-	fn source(&self) -> Option<&(dyn Error + 'static)> {
-		match self {
-			DeviceSetupError::DefaultStreamConfigError(error) => Some(error),
-			_ => None,
-		}
-	}
-}
-
-impl From<DefaultStreamConfigError> for DeviceSetupError {
-	fn from(v: DefaultStreamConfigError) -> Self {
-		Self::DefaultStreamConfigError(v)
-	}
-}
-
-/// Errors that can occur when initializing a [`CpalBackend`].
-#[derive(Debug)]
-#[non_exhaustive]
-pub enum InitError {
-	/// A default audio output device could not be determined.
-	NoDefaultOutputDevice,
 	/// An error occured when building the audio stream.
 	BuildStreamError(BuildStreamError),
 	/// An error occured when starting the audio stream.
 	PlayStreamError(PlayStreamError),
 }
 
-impl Display for InitError {
+impl Display for Error {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		match self {
-			InitError::NoDefaultOutputDevice => {
+			Error::NoDefaultOutputDevice => {
 				f.write_str("Cannot find the default audio output device")
 			}
-			InitError::BuildStreamError(error) => error.fmt(f),
-			InitError::PlayStreamError(error) => error.fmt(f),
+			Error::DefaultStreamConfigError(error) => error.fmt(f),
+			Error::BuildStreamError(error) => error.fmt(f),
+			Error::PlayStreamError(error) => error.fmt(f),
 		}
 	}
 }
 
-impl Error for InitError {
-	fn source(&self) -> Option<&(dyn Error + 'static)> {
+impl std::error::Error for Error {
+	fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
 		match self {
-			InitError::BuildStreamError(error) => Some(error),
-			InitError::PlayStreamError(error) => Some(error),
+			Error::DefaultStreamConfigError(error) => Some(error),
+			Error::BuildStreamError(error) => Some(error),
+			Error::PlayStreamError(error) => Some(error),
 			_ => None,
 		}
 	}
 }
 
-impl From<BuildStreamError> for InitError {
+impl From<DefaultStreamConfigError> for Error {
+	fn from(v: DefaultStreamConfigError) -> Self {
+		Self::DefaultStreamConfigError(v)
+	}
+}
+
+impl From<BuildStreamError> for Error {
 	fn from(v: BuildStreamError) -> Self {
 		Self::BuildStreamError(v)
 	}
 }
 
-impl From<PlayStreamError> for InitError {
+impl From<PlayStreamError> for Error {
 	fn from(v: PlayStreamError) -> Self {
 		Self::PlayStreamError(v)
 	}
@@ -133,14 +105,17 @@ pub struct CpalBackend {
 	state: State,
 }
 
-impl CpalBackend {
-	/// Creates a new [`CpalBackend`].
-	pub fn new() -> Result<Self, DeviceSetupError> {
-		let config = std::thread::spawn(|| -> Result<StreamConfig, DeviceSetupError> {
+impl Backend for CpalBackend {
+	type Settings = ();
+
+	type Error = Error;
+
+	fn setup(_settings: Self::Settings) -> Result<Self, Self::Error> {
+		let config = std::thread::spawn(|| -> Result<StreamConfig, Error> {
 			let host = cpal::default_host();
 			let device = host
 				.default_output_device()
-				.ok_or(DeviceSetupError::NoDefaultOutputDevice)?;
+				.ok_or(Error::NoDefaultOutputDevice)?;
 			Ok(device.default_output_config()?.config())
 		})
 		.join()
@@ -149,24 +124,20 @@ impl CpalBackend {
 			state: State::Uninitialized { config },
 		})
 	}
-}
 
-impl Backend for CpalBackend {
-	type InitError = InitError;
-
-	fn sample_rate(&mut self) -> u32 {
+	fn sample_rate(&self) -> u32 {
 		match &self.state {
 			State::Uninitialized { config, .. } => config.sample_rate.0,
 			State::Initialized { .. } => unreachable!(),
 		}
 	}
 
-	fn init(&mut self, renderer: Renderer) -> Result<(), Self::InitError> {
+	fn start(&mut self, renderer: Renderer) -> Result<(), Self::Error> {
 		match &mut self.state {
 			State::Uninitialized { config } => {
 				let config = config.clone();
 				let (mut setup_result_producer, mut setup_result_consumer) =
-					RingBuffer::<Result<(), Self::InitError>>::new(1).split();
+					RingBuffer::<Result<(), Self::Error>>::new(1).split();
 				let (stream_quit_signal_producer, mut stream_quit_signal_consumer) =
 					RingBuffer::new(1).split();
 				std::thread::spawn(move || {
@@ -219,10 +190,10 @@ impl Drop for CpalBackend {
 	}
 }
 
-fn setup_stream(config: StreamConfig, mut renderer: Renderer) -> Result<Stream, InitError> {
+fn setup_stream(config: StreamConfig, mut renderer: Renderer) -> Result<Stream, Error> {
 	let device = cpal::default_host()
 		.default_output_device()
-		.ok_or(InitError::NoDefaultOutputDevice)?;
+		.ok_or(Error::NoDefaultOutputDevice)?;
 	let channels = config.channels;
 	let stream = device.build_output_stream(
 		&config,

@@ -5,7 +5,10 @@ use std::sync::{
 
 use kira::{
 	dsp::Frame,
-	manager::{backend::MockBackend, AudioManager},
+	manager::{
+		backend::{MockBackend, MockBackendSettings},
+		AudioManager, AudioManagerSettings,
+	},
 	track::{
 		effect::{Effect, EffectBuilder},
 		TrackBuilder,
@@ -61,7 +64,11 @@ impl EffectBuilder for TestEffectBuilder {
 
 #[test]
 fn change_sample_rate() {
-	let mut manager = AudioManager::new(MockBackend::new(100), Default::default()).unwrap();
+	let mut manager = AudioManager::<MockBackend>::new(AudioManagerSettings {
+		backend_settings: MockBackendSettings { sample_rate: 100 },
+		..Default::default()
+	})
+	.unwrap();
 	let mut effect_handle;
 	manager
 		.add_sub_track({

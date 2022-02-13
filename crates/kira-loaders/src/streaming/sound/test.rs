@@ -302,7 +302,7 @@ fn stops_with_fade_out() {
 /// Tests that a `StreamingSound` can be paused and resumed on a clock tick.
 #[test]
 fn pauses_resumes_and_stops_on_clock_tick() {
-	let mut manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
+	let mut manager = AudioManager::<MockBackend>::new(Default::default()).unwrap();
 	let clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0)).unwrap();
 	let data = StreamingSoundData {
 		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(1.0); 100])),
@@ -378,7 +378,7 @@ fn pauses_resumes_and_stops_on_clock_tick() {
 #[allow(clippy::float_cmp)]
 fn waits_for_start_time() {
 	// create some fake ClockIds
-	let mut manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
+	let mut manager = AudioManager::<MockBackend>::new(Default::default()).unwrap();
 	let clock_id_1 = manager
 		.add_clock(ClockSpeed::TicksPerSecond(1.0))
 		.unwrap()
@@ -442,7 +442,7 @@ fn waits_for_start_time() {
 /// even if playback is waiting for a clock time to start.
 #[test]
 fn immediate_pause_and_resume_with_clock_start_time() {
-	let mut manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
+	let mut manager = AudioManager::<MockBackend>::new(Default::default()).unwrap();
 	let clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0)).unwrap();
 
 	let data = StreamingSoundData {
@@ -472,7 +472,7 @@ fn immediate_pause_and_resume_with_clock_start_time() {
 /// is waiting for a clock time to start.
 #[test]
 fn immediate_stop_with_clock_start_time() {
-	let mut manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
+	let mut manager = AudioManager::<MockBackend>::new(Default::default()).unwrap();
 	let clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0)).unwrap();
 
 	let data = StreamingSoundData {
@@ -578,7 +578,7 @@ fn set_volume() {
 /// on a clock tick.
 #[test]
 fn set_volume_on_clock_tick() {
-	let mut manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
+	let mut manager = AudioManager::<MockBackend>::new(Default::default()).unwrap();
 	let clock = manager.add_clock(ClockSpeed::TicksPerSecond(1.0)).unwrap();
 	let data = StreamingSoundData {
 		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(1.0); 100])),
@@ -651,7 +651,7 @@ fn set_panning() {
 /// on a clock tick.
 #[test]
 fn set_panning_on_clock_tick() {
-	let mut manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
+	let mut manager = AudioManager::<MockBackend>::new(Default::default()).unwrap();
 	let clock = manager.add_clock(ClockSpeed::TicksPerSecond(1.0)).unwrap();
 	let data = StreamingSoundData {
 		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(1.0); 100])),
@@ -735,7 +735,7 @@ fn set_playback_rate() {
 #[test]
 #[allow(clippy::float_cmp)]
 fn set_playback_rate_on_clock_tick() {
-	let mut manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
+	let mut manager = AudioManager::<MockBackend>::new(Default::default()).unwrap();
 	let clock = manager.add_clock(ClockSpeed::TicksPerSecond(1.0)).unwrap();
 	let data = StreamingSoundData {
 		decoder: Box::new(MockDecoder::new(

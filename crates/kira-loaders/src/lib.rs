@@ -14,12 +14,7 @@ use kira::{
 	sound::static_sound::StaticSoundSettings,
 };
 
-const SAMPLE_RATE: u32 = 48_000;
-let mut manager = AudioManager::new(
-	MockBackend::new(SAMPLE_RATE),
-	AudioManagerSettings::default(),
-)
-.unwrap();
+let mut manager = AudioManager::<MockBackend>::new(AudioManagerSettings::default()).unwrap();
 manager.play(kira_loaders::load(
 	"sound.ogg",
 	StaticSoundSettings::default(),
@@ -33,12 +28,7 @@ manager.play(kira_loaders::load(
 use kira::manager::{backend::MockBackend, AudioManager, AudioManagerSettings};
 use kira_loaders::StreamingSoundSettings;
 
-const SAMPLE_RATE: u32 = 48_000;
-let mut manager = AudioManager::new(
-	MockBackend::new(SAMPLE_RATE),
-	AudioManagerSettings::default(),
-)
-.unwrap();
+let mut manager = AudioManager::<MockBackend>::new(AudioManagerSettings::default()).unwrap();
 manager.play(kira_loaders::stream(
 	"sound.ogg",
 	StreamingSoundSettings::default(),

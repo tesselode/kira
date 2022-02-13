@@ -101,7 +101,7 @@ fn set_speed() {
 /// other clocks when the start time is set to a clock time.
 #[test]
 fn set_speed_with_clock_time_start() {
-	let mut manager = AudioManager::new(MockBackend::new(1), Default::default()).unwrap();
+	let mut manager = AudioManager::<MockBackend>::new(Default::default()).unwrap();
 	let other_clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0)).unwrap();
 	let mut clock = Clock::new(ClockSpeed::SecondsPerTick(1.0));
 	let shared = clock.shared();

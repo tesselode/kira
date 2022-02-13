@@ -4,17 +4,23 @@ mod mock;
 mod renderer;
 pub(crate) mod resources;
 
-pub use mock::MockBackend;
+pub use mock::*;
 pub use renderer::*;
 
 /// Connects a [`Renderer`] to a lower level audio API.
-pub trait Backend {
-	/// An error that can occur when the backend is being initialized.
-	type InitError;
+pub trait Backend: Sized {
+	/// Settings for this backend.
+	type Settings;
 
-	/// Returns the sample rate that the [`Renderer`] should run at.
-	fn sample_rate(&mut self) -> u32;
+	/// Errors that can occur when using this backend.
+	type Error;
 
-	/// Initializes the [`Backend`].
-	fn init(&mut self, renderer: Renderer) -> Result<(), Self::InitError>;
+	/// Starts the backend.
+	fn setup(settings: Self::Settings) -> Result<Self, Self::Error>;
+
+	/// Sends the renderer to the backend to start audio playback.
+	fn start(&mut self, renderer: Renderer) -> Result<(), Self::Error>;
+
+	/// Returns the sample rate that the backend is running at.
+	fn sample_rate(&self) -> u32;
 }

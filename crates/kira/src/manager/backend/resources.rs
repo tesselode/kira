@@ -6,9 +6,9 @@ use ringbuf::{Consumer, Producer, RingBuffer};
 
 use crate::{
 	clock::{clocks::Clocks, Clock},
-	manager::AudioManagerSettings,
+	manager::settings::Capacities,
 	sound::Sound,
-	track::Track,
+	track::{Track, TrackBuilder},
 };
 
 use self::{mixer::Mixer, sounds::Sounds};
@@ -26,14 +26,14 @@ pub(crate) struct UnusedResourceConsumers {
 }
 
 pub(crate) fn create_unused_resource_channels(
-	settings: &AudioManagerSettings,
+	capacities: Capacities,
 ) -> (UnusedResourceProducers, UnusedResourceConsumers) {
 	let (unused_sound_producer, unused_sound_consumer) =
-		RingBuffer::new(settings.sound_capacity).split();
+		RingBuffer::new(capacities.sound_capacity).split();
 	let (unused_sub_track_producer, unused_sub_track_consumer) =
-		RingBuffer::new(settings.sub_track_capacity).split();
+		RingBuffer::new(capacities.sub_track_capacity).split();
 	let (unused_clock_producer, unused_clock_consumer) =
-		RingBuffer::new(settings.clock_capacity).split();
+		RingBuffer::new(capacities.clock_capacity).split();
 	(
 		UnusedResourceProducers {
 			sound: unused_sound_producer,
@@ -61,20 +61,21 @@ pub(crate) struct ResourceControllers {
 }
 
 pub(crate) fn create_resources(
-	settings: AudioManagerSettings,
+	capacities: Capacities,
+	main_track_builder: TrackBuilder,
 	unused_resource_producers: UnusedResourceProducers,
 	sample_rate: u32,
 ) -> (Resources, ResourceControllers) {
-	let sounds = Sounds::new(settings.sound_capacity, unused_resource_producers.sound);
+	let sounds = Sounds::new(capacities.sound_capacity, unused_resource_producers.sound);
 	let sound_controller = sounds.controller();
 	let mixer = Mixer::new(
-		settings.sub_track_capacity,
+		capacities.sub_track_capacity,
 		unused_resource_producers.sub_track,
 		sample_rate,
-		settings.main_track_builder,
+		main_track_builder,
 	);
 	let sub_track_controller = mixer.sub_track_controller();
-	let clocks = Clocks::new(settings.clock_capacity, unused_resource_producers.clock);
+	let clocks = Clocks::new(capacities.clock_capacity, unused_resource_producers.clock);
 	let clock_controller = clocks.controller();
 	(
 		Resources {

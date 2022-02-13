@@ -7,6 +7,19 @@ enum State {
 	Initialized { renderer: Renderer },
 }
 
+/// Settings for the mock backend.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct MockBackendSettings {
+	/// The sample rate that the [`Renderer`] should run at.
+	pub sample_rate: u32,
+}
+
+impl Default for MockBackendSettings {
+	fn default() -> Self {
+		Self { sample_rate: 1 }
+	}
+}
+
 /// A backend that does not connect to any lower-level
 /// audio APIs, but allows manually calling
 /// [`Renderer::on_start_processing`] and [`Renderer::process`].
@@ -18,14 +31,6 @@ pub struct MockBackend {
 }
 
 impl MockBackend {
-	/// Creates a new [`MockBackend`].
-	pub fn new(sample_rate: u32) -> Self {
-		Self {
-			sample_rate,
-			state: State::Uninitialized,
-		}
-	}
-
 	/// Changes the sample rate of the [`Renderer`].
 	pub fn set_sample_rate(&mut self, sample_rate: u32) {
 		self.sample_rate = sample_rate;
@@ -55,14 +60,23 @@ impl MockBackend {
 }
 
 impl Backend for MockBackend {
-	type InitError = ();
+	type Settings = MockBackendSettings;
 
-	fn sample_rate(&mut self) -> u32 {
-		self.sample_rate
+	type Error = ();
+
+	fn setup(settings: Self::Settings) -> Result<Self, Self::Error> {
+		Ok(Self {
+			sample_rate: settings.sample_rate,
+			state: State::Uninitialized,
+		})
 	}
 
-	fn init(&mut self, renderer: Renderer) -> Result<(), Self::InitError> {
+	fn start(&mut self, renderer: Renderer) -> Result<(), Self::Error> {
 		self.state = State::Initialized { renderer };
 		Ok(())
+	}
+
+	fn sample_rate(&self) -> u32 {
+		self.sample_rate
 	}
 }
