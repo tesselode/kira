@@ -32,9 +32,6 @@ pub trait Effect: Send + Sync {
 	/// - `input` is the input audio
 	/// - `dt` is the time that's elapsed since the previous round of
 	/// processing (in seconds)
-	/// - `parameters` contains information about the current value of
-	/// parameters. This is an opaque type that's only useful for updating
-	/// `CachedValue`s.
 	fn process(&mut self, input: Frame, dt: f64) -> Frame;
 
 	/// Called whenever a [clock](crate::clock) ticks.
