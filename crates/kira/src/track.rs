@@ -97,6 +97,12 @@ impl Track {
 		}
 	}
 
+	pub fn on_change_sample_rate(&mut self, sample_rate: u32) {
+		for effect in &mut self.effects {
+			effect.on_change_sample_rate(sample_rate);
+		}
+	}
+
 	pub fn shared(&self) -> Arc<TrackShared> {
 		self.shared.clone()
 	}

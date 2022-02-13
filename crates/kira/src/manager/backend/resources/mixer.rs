@@ -83,6 +83,13 @@ impl Mixer {
 		}
 	}
 
+	pub fn on_change_sample_rate(&mut self, sample_rate: u32) {
+		self.main_track.on_change_sample_rate(sample_rate);
+		for (_, track) in &mut self.sub_tracks {
+			track.on_change_sample_rate(sample_rate);
+		}
+	}
+
 	pub fn on_start_processing(&mut self) {
 		self.remove_unused_tracks();
 		for (_, track) in &mut self.sub_tracks {

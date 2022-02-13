@@ -26,6 +26,14 @@ impl MockBackend {
 		}
 	}
 
+	/// Changes the sample rate of the [`Renderer`].
+	pub fn set_sample_rate(&mut self, sample_rate: u32) {
+		self.sample_rate = sample_rate;
+		if let State::Initialized { renderer } = &mut self.state {
+			renderer.on_change_sample_rate(sample_rate);
+		}
+	}
+
 	/// Calls the [`on_start_processing`](Renderer::on_start_processing)
 	/// callback of the [`Renderer`].
 	pub fn on_start_processing(&mut self) {

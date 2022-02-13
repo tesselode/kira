@@ -22,6 +22,9 @@ pub trait Effect: Send + Sync {
 	/// Called when the effect is first sent to the renderer.
 	fn init(&mut self, sample_rate: u32) {}
 
+	/// Called when the sample rate of the renderer is changed.
+	fn on_change_sample_rate(&mut self, sample_rate: u32) {}
+
 	/// Called whenever a new batch of audio samples is requested by the backend.
 	///
 	/// This is a good place to put code that needs to run fairly frequently,
