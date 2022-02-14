@@ -104,13 +104,17 @@ impl Backend for CpalBackend {
 
 	type Error = Error;
 
-	fn setup(_settings: Self::Settings) -> Result<Self, Self::Error> {
+	fn setup(_settings: Self::Settings) -> Result<(Self, u32), Self::Error> {
 		let (device, config) = default_device_and_config()?;
-		Ok(Self {
-			device,
-			config,
-			state: State::NotStarted,
-		})
+		let sample_rate = config.sample_rate.0;
+		Ok((
+			Self {
+				device,
+				config,
+				state: State::NotStarted,
+			},
+			sample_rate,
+		))
 	}
 
 	fn start(&mut self, mut renderer: Renderer) -> Result<(), Self::Error> {
@@ -134,10 +138,6 @@ impl Backend for CpalBackend {
 		stream.play()?;
 		self.state = State::Started { _stream: stream };
 		Ok(())
-	}
-
-	fn sample_rate(&self) -> u32 {
-		self.config.sample_rate.0
 	}
 }
 

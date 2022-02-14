@@ -64,19 +64,18 @@ impl Backend for MockBackend {
 
 	type Error = ();
 
-	fn setup(settings: Self::Settings) -> Result<Self, Self::Error> {
-		Ok(Self {
-			sample_rate: settings.sample_rate,
-			state: State::Uninitialized,
-		})
+	fn setup(settings: Self::Settings) -> Result<(Self, u32), Self::Error> {
+		Ok((
+			Self {
+				sample_rate: settings.sample_rate,
+				state: State::Uninitialized,
+			},
+			settings.sample_rate,
+		))
 	}
 
 	fn start(&mut self, renderer: Renderer) -> Result<(), Self::Error> {
 		self.state = State::Initialized { renderer };
 		Ok(())
-	}
-
-	fn sample_rate(&self) -> u32 {
-		self.sample_rate
 	}
 }

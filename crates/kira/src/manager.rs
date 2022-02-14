@@ -68,8 +68,7 @@ pub struct AudioManager<B: Backend> {
 impl<B: Backend> AudioManager<B> {
 	/// Creates a new [`AudioManager`].
 	pub fn new(settings: AudioManagerSettings<B>) -> Result<Self, B::Error> {
-		let mut backend = B::setup(settings.backend_settings)?;
-		let sample_rate = backend.sample_rate();
+		let (mut backend, sample_rate) = B::setup(settings.backend_settings)?;
 		let (command_producer, command_consumer) =
 			RingBuffer::new(settings.capacities.command_capacity).split();
 		let (unused_resource_producers, unused_resource_consumers) =
