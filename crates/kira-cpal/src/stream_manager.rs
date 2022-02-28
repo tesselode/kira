@@ -48,6 +48,8 @@ impl StreamManagerController {
 /// in the case of device changes or disconnections.
 pub(super) struct StreamManager {
 	state: State,
+	device_name: String,
+	sample_rate: u32,
 }
 
 impl StreamManager {
@@ -61,6 +63,8 @@ impl StreamManager {
 		std::thread::spawn(move || {
 			let mut stream_manager = StreamManager {
 				state: State::Idle { renderer },
+				device_name: device_name(&device),
+				sample_rate: config.sample_rate.0,
 			};
 			stream_manager.start_stream(&device, &config).unwrap();
 			loop {
@@ -83,10 +87,20 @@ impl StreamManager {
 			..
 		} = &mut self.state
 		{
+			// check for device disconnection
 			if let Some(StreamError::DeviceNotAvailable) = stream_error_consumer.pop() {
 				self.stop_stream();
 				if let Ok((device, config)) = default_device_and_config() {
 					// TODO: gracefully handle errors that occur in this function
+					self.start_stream(&device, &config).unwrap();
+				}
+			}
+			// check for device changes
+			if let Ok((device, config)) = default_device_and_config() {
+				let device_name = device_name(&device);
+				let sample_rate = config.sample_rate.0;
+				if device_name != self.device_name || sample_rate != self.sample_rate {
+					self.stop_stream();
 					self.start_stream(&device, &config).unwrap();
 				}
 			}
@@ -100,7 +114,13 @@ impl StreamManager {
 			} else {
 				panic!("trying to start a stream when the stream manager is not idle");
 			};
-		renderer.on_change_sample_rate(config.sample_rate.0);
+		let device_name = device_name(device);
+		let sample_rate = config.sample_rate.0;
+		if sample_rate != self.sample_rate {
+			renderer.on_change_sample_rate(sample_rate);
+		}
+		self.device_name = device_name;
+		self.sample_rate = sample_rate;
 		let (mut renderer_wrapper, renderer_consumer) = RendererWrapper::new(renderer);
 		let (mut stream_error_producer, stream_error_consumer) = RingBuffer::new(1).split();
 		let channels = config.channels;
@@ -158,4 +178,10 @@ fn default_device_and_config() -> Result<(Device, StreamConfig), Error> {
 		.ok_or(Error::NoDefaultOutputDevice)?;
 	let config = device.default_output_config()?.config();
 	Ok((device, config))
+}
+
+fn device_name(device: &Device) -> String {
+	device
+		.name()
+		.unwrap_or_else(|_| "device name unavailable".to_string())
 }
