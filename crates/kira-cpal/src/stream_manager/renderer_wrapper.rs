@@ -1,17 +1,30 @@
 use std::ops::{Deref, DerefMut};
 
 use kira::manager::backend::Renderer;
-use ringbuf::Producer;
+use ringbuf::{Consumer, Producer, RingBuffer};
 
 /// Wraps a [`Renderer`] so that when it's dropped,
-/// it gets sent back thread channel.
+/// it gets sent back through a thread channel.
 ///
 /// This allows us to retrieve the renderer after a closure
 /// that takes ownership of the [`Renderer`] is dropped
 /// because of a cpal error.
 pub(super) struct RendererWrapper {
-	pub renderer: Option<Renderer>,
-	pub producer: Producer<Renderer>,
+	renderer: Option<Renderer>,
+	producer: Producer<Renderer>,
+}
+
+impl RendererWrapper {
+	pub(super) fn new(renderer: Renderer) -> (Self, Consumer<Renderer>) {
+		let (producer, consumer) = RingBuffer::new(1).split();
+		(
+			Self {
+				renderer: Some(renderer),
+				producer,
+			},
+			consumer,
+		)
+	}
 }
 
 impl Deref for RendererWrapper {
