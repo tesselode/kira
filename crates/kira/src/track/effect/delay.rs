@@ -29,6 +29,7 @@ enum DelayState {
 	},
 	Initialized {
 		buffer: Vec<Frame>,
+		buffer_length: f64,
 		write_position: usize,
 	},
 }
@@ -63,6 +64,7 @@ impl Effect for Delay {
 		if let DelayState::Uninitialized { buffer_length } = &self.state {
 			self.state = DelayState::Initialized {
 				buffer: vec![Frame::ZERO; (buffer_length * sample_rate as f64) as usize],
+				buffer_length: *buffer_length,
 				write_position: 0,
 			};
 			for effect in &mut self.feedback_effects {
@@ -70,6 +72,23 @@ impl Effect for Delay {
 			}
 		} else {
 			panic!("The delay should be in the uninitialized state before init")
+		}
+	}
+
+	fn on_change_sample_rate(&mut self, sample_rate: u32) {
+		if let DelayState::Initialized {
+			buffer,
+			buffer_length,
+			write_position,
+		} = &mut self.state
+		{
+			*buffer = vec![Frame::ZERO; (*buffer_length * sample_rate as f64) as usize];
+			*write_position = 0;
+			for effect in &mut self.feedback_effects {
+				effect.on_change_sample_rate(sample_rate);
+			}
+		} else {
+			panic!("The delay should be initialized when the change sample rate callback is called")
 		}
 	}
 
@@ -90,6 +109,7 @@ impl Effect for Delay {
 		if let DelayState::Initialized {
 			buffer,
 			write_position,
+			..
 		} = &mut self.state
 		{
 			self.delay_time.update(dt);

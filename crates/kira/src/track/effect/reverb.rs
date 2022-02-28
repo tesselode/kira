@@ -64,75 +64,79 @@ impl Reverb {
 			state: ReverbState::Uninitialized,
 		}
 	}
+
+	fn init_filters(&mut self, sample_rate: u32) {
+		const REFERENCE_SAMPLE_RATE: u32 = 44100;
+
+		let adjust_buffer_size = |buffer_size: usize| -> usize {
+			let sample_rate_factor = (sample_rate as f64) / (REFERENCE_SAMPLE_RATE as f64);
+			((buffer_size as f64) * sample_rate_factor) as usize
+		};
+
+		self.state = ReverbState::Initialized {
+			comb_filters: [
+				(
+					CombFilter::new(adjust_buffer_size(1116)),
+					CombFilter::new(adjust_buffer_size(1116 + STEREO_SPREAD)),
+				),
+				(
+					CombFilter::new(adjust_buffer_size(1188)),
+					CombFilter::new(adjust_buffer_size(1188 + STEREO_SPREAD)),
+				),
+				(
+					CombFilter::new(adjust_buffer_size(1277)),
+					CombFilter::new(adjust_buffer_size(1277 + STEREO_SPREAD)),
+				),
+				(
+					CombFilter::new(adjust_buffer_size(1356)),
+					CombFilter::new(adjust_buffer_size(1356 + STEREO_SPREAD)),
+				),
+				(
+					CombFilter::new(adjust_buffer_size(1422)),
+					CombFilter::new(adjust_buffer_size(1422 + STEREO_SPREAD)),
+				),
+				(
+					CombFilter::new(adjust_buffer_size(1491)),
+					CombFilter::new(adjust_buffer_size(1491 + STEREO_SPREAD)),
+				),
+				(
+					CombFilter::new(adjust_buffer_size(1557)),
+					CombFilter::new(adjust_buffer_size(1557 + STEREO_SPREAD)),
+				),
+				(
+					CombFilter::new(adjust_buffer_size(1617)),
+					CombFilter::new(adjust_buffer_size(1617 + STEREO_SPREAD)),
+				),
+			],
+			all_pass_filters: [
+				(
+					AllPassFilter::new(adjust_buffer_size(556)),
+					AllPassFilter::new(adjust_buffer_size(556 + STEREO_SPREAD)),
+				),
+				(
+					AllPassFilter::new(adjust_buffer_size(441)),
+					AllPassFilter::new(adjust_buffer_size(441 + STEREO_SPREAD)),
+				),
+				(
+					AllPassFilter::new(adjust_buffer_size(341)),
+					AllPassFilter::new(adjust_buffer_size(341 + STEREO_SPREAD)),
+				),
+				(
+					AllPassFilter::new(adjust_buffer_size(225)),
+					AllPassFilter::new(adjust_buffer_size(225 + STEREO_SPREAD)),
+				),
+			],
+		}
+	}
 }
 
 impl Effect for Reverb {
 	fn init(&mut self, sample_rate: u32) {
-		if let ReverbState::Uninitialized = &self.state {
-			const REFERENCE_SAMPLE_RATE: u32 = 44100;
+		self.init_filters(sample_rate);
+	}
 
-			let adjust_buffer_size = |buffer_size: usize| -> usize {
-				let sample_rate_factor = (sample_rate as f64) / (REFERENCE_SAMPLE_RATE as f64);
-				((buffer_size as f64) * sample_rate_factor) as usize
-			};
-
-			self.state = ReverbState::Initialized {
-				comb_filters: [
-					(
-						CombFilter::new(adjust_buffer_size(1116)),
-						CombFilter::new(adjust_buffer_size(1116 + STEREO_SPREAD)),
-					),
-					(
-						CombFilter::new(adjust_buffer_size(1188)),
-						CombFilter::new(adjust_buffer_size(1188 + STEREO_SPREAD)),
-					),
-					(
-						CombFilter::new(adjust_buffer_size(1277)),
-						CombFilter::new(adjust_buffer_size(1277 + STEREO_SPREAD)),
-					),
-					(
-						CombFilter::new(adjust_buffer_size(1356)),
-						CombFilter::new(adjust_buffer_size(1356 + STEREO_SPREAD)),
-					),
-					(
-						CombFilter::new(adjust_buffer_size(1422)),
-						CombFilter::new(adjust_buffer_size(1422 + STEREO_SPREAD)),
-					),
-					(
-						CombFilter::new(adjust_buffer_size(1491)),
-						CombFilter::new(adjust_buffer_size(1491 + STEREO_SPREAD)),
-					),
-					(
-						CombFilter::new(adjust_buffer_size(1557)),
-						CombFilter::new(adjust_buffer_size(1557 + STEREO_SPREAD)),
-					),
-					(
-						CombFilter::new(adjust_buffer_size(1617)),
-						CombFilter::new(adjust_buffer_size(1617 + STEREO_SPREAD)),
-					),
-				],
-				all_pass_filters: [
-					(
-						AllPassFilter::new(adjust_buffer_size(556)),
-						AllPassFilter::new(adjust_buffer_size(556 + STEREO_SPREAD)),
-					),
-					(
-						AllPassFilter::new(adjust_buffer_size(441)),
-						AllPassFilter::new(adjust_buffer_size(441 + STEREO_SPREAD)),
-					),
-					(
-						AllPassFilter::new(adjust_buffer_size(341)),
-						AllPassFilter::new(adjust_buffer_size(341 + STEREO_SPREAD)),
-					),
-					(
-						AllPassFilter::new(adjust_buffer_size(225)),
-						AllPassFilter::new(adjust_buffer_size(225 + STEREO_SPREAD)),
-					),
-				],
-			}
-		} else {
-			panic!("Reverb should be in the uninitialized state before init");
-		}
+	fn on_change_sample_rate(&mut self, sample_rate: u32) {
+		self.init_filters(sample_rate);
 	}
 
 	fn on_start_processing(&mut self) {
