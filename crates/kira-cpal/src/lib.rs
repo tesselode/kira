@@ -22,9 +22,13 @@ let mut manager = AudioManager::<CpalBackend>::new(
 #![warn(missing_docs)]
 #![allow(clippy::tabs_in_doc_comments)]
 
+mod error;
+mod renderer_wrapper;
+
+pub use error::*;
+use renderer_wrapper::RendererWrapper;
+
 use std::{
-	fmt::{Display, Formatter},
-	ops::{Deref, DerefMut},
 	sync::{
 		atomic::{AtomicBool, Ordering},
 		Arc,
@@ -34,101 +38,13 @@ use std::{
 
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
-	BuildStreamError, DefaultStreamConfigError, Device, PlayStreamError, Stream, StreamConfig,
-	StreamError,
+	Device, Stream, StreamConfig, StreamError,
 };
 use kira::manager::backend::{Backend, Renderer};
 use ringbuf::{Consumer, Producer, RingBuffer};
 
 const RESULT_POLLING_INTERVAL: Duration = Duration::from_millis(1);
 const DEVICE_POLLING_INTERVAL: Duration = Duration::from_millis(500);
-
-/// Errors that can occur when using the cpal backend.
-#[derive(Debug)]
-#[non_exhaustive]
-pub enum Error {
-	/// A default audio output device could not be determined.
-	NoDefaultOutputDevice,
-	/// An error occurred when getting the default output configuration.
-	DefaultStreamConfigError(DefaultStreamConfigError),
-	/// An error occured when building the audio stream.
-	BuildStreamError(BuildStreamError),
-	/// An error occured when starting the audio stream.
-	PlayStreamError(PlayStreamError),
-}
-
-impl Display for Error {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		match self {
-			Error::NoDefaultOutputDevice => {
-				f.write_str("Cannot find the default audio output device")
-			}
-			Error::DefaultStreamConfigError(error) => error.fmt(f),
-			Error::BuildStreamError(error) => error.fmt(f),
-			Error::PlayStreamError(error) => error.fmt(f),
-		}
-	}
-}
-
-impl std::error::Error for Error {
-	fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-		match self {
-			Error::DefaultStreamConfigError(error) => Some(error),
-			Error::BuildStreamError(error) => Some(error),
-			Error::PlayStreamError(error) => Some(error),
-			_ => None,
-		}
-	}
-}
-
-impl From<DefaultStreamConfigError> for Error {
-	fn from(v: DefaultStreamConfigError) -> Self {
-		Self::DefaultStreamConfigError(v)
-	}
-}
-
-impl From<BuildStreamError> for Error {
-	fn from(v: BuildStreamError) -> Self {
-		Self::BuildStreamError(v)
-	}
-}
-
-impl From<PlayStreamError> for Error {
-	fn from(v: PlayStreamError) -> Self {
-		Self::PlayStreamError(v)
-	}
-}
-
-struct RendererWrapper {
-	renderer: Option<Renderer>,
-	producer: Producer<Renderer>,
-}
-
-impl Deref for RendererWrapper {
-	type Target = Renderer;
-
-	fn deref(&self) -> &Self::Target {
-		self.renderer.as_ref().unwrap()
-	}
-}
-
-impl DerefMut for RendererWrapper {
-	fn deref_mut(&mut self) -> &mut Self::Target {
-		self.renderer.as_mut().unwrap()
-	}
-}
-
-impl Drop for RendererWrapper {
-	fn drop(&mut self) {
-		if self
-			.producer
-			.push(self.renderer.take().expect("The renderer does not exist"))
-			.is_err()
-		{
-			panic!("The renderer producer is full");
-		}
-	}
-}
 
 enum State {
 	Empty,
@@ -193,6 +109,14 @@ impl Backend for CpalBackend {
 	}
 }
 
+impl Drop for CpalBackend {
+	fn drop(&mut self) {
+		if let State::Initialized { should_stop } = &self.state {
+			should_stop.store(true, Ordering::SeqCst);
+		}
+	}
+}
+
 fn manage_streams(
 	device: Device,
 	config: StreamConfig,
@@ -231,14 +155,6 @@ fn manage_streams(
 			stream = new_stream;
 			stream_error_consumer = new_stream_error_consumer;
 			renderer_consumer = new_renderer_consumer;
-		}
-	}
-}
-
-impl Drop for CpalBackend {
-	fn drop(&mut self) {
-		if let State::Initialized { should_stop } = &self.state {
-			should_stop.store(true, Ordering::SeqCst);
 		}
 	}
 }
