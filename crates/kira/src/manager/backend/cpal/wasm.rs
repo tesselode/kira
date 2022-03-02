@@ -17,6 +17,8 @@ enum State {
 	},
 }
 
+/// A backend that uses [cpal](https://crates.io/crates/cpal) to
+/// connect a [`Renderer`] to the operating system's audio driver.
 pub struct CpalBackend {
 	state: State,
 }

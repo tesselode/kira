@@ -1,9 +1,6 @@
 #[cfg(feature = "symphonia")]
 mod from_file;
 
-#[cfg(feature = "symphonia")]
-pub use from_file::FromFileError;
-
 #[cfg(test)]
 mod test;
 

@@ -1,8 +1,4 @@
-mod error;
-
 use std::{fs::File, io::Cursor, path::Path, sync::Arc};
-
-pub use error::*;
 
 use symphonia::core::{
 	audio::{AudioBuffer, AudioBufferRef, Signal},
@@ -11,7 +7,10 @@ use symphonia::core::{
 	sample::Sample,
 };
 
-use crate::{dsp::Frame, sound::static_sound::StaticSoundSettings};
+use crate::{
+	dsp::Frame,
+	sound::{static_sound::StaticSoundSettings, FromFileError},
+};
 
 use super::StaticSoundData;
 
