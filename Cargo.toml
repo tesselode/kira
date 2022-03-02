@@ -1,6 +1,5 @@
 [workspace]
 members = [
 	"crates/kira",
-	"crates/kira-loaders",
 	"benchmarks",
 ]
