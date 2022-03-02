@@ -107,30 +107,24 @@ impl StreamingSound {
 
 	fn update_current_frame(&mut self) {
 		let current_frame = &mut self.current_frame;
-		self.scheduler_controller
-			.frame_consumer_mut()
-			.access(|a, b| {
-				let mut iter = a.iter().chain(b.iter());
-				if let Some((index, _)) = iter.nth(1) {
-					*current_frame = *index;
-				}
-			});
+		let (a, b) = self.scheduler_controller.frame_consumer_mut().as_slices();
+		let mut iter = a.iter().chain(b.iter());
+		if let Some((index, _)) = iter.nth(1) {
+			*current_frame = *index;
+		}
 	}
 
 	fn next_frames(&mut self) -> [Frame; 4] {
 		let mut frames = [Frame::ZERO; 4];
-		self.scheduler_controller
-			.frame_consumer_mut()
-			.access(|a, b| {
-				let mut iter = a.iter().chain(b.iter());
-				for frame in &mut frames {
-					*frame = iter
-						.next()
-						.copied()
-						.map(|(_, frame)| frame)
-						.unwrap_or(Frame::ZERO);
-				}
-			});
+		let (a, b) = self.scheduler_controller.frame_consumer_mut().as_slices();
+		let mut iter = a.iter().chain(b.iter());
+		for frame in &mut frames {
+			*frame = iter
+				.next()
+				.copied()
+				.map(|(_, frame)| frame)
+				.unwrap_or(Frame::ZERO);
+		}
 		frames
 	}
 

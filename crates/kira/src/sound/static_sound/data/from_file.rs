@@ -1,4 +1,4 @@
-use std::{fs::File, io::Cursor, path::Path, sync::Arc};
+use std::{io::Cursor, sync::Arc};
 
 use symphonia::core::{
 	audio::{AudioBuffer, AudioBufferRef, Signal},
@@ -66,10 +66,10 @@ impl StaticSoundData {
 	/// Loads an audio file into a [`StaticSoundData`].
 	#[cfg(not(target_arch = "wasm32"))]
 	pub fn load(
-		path: impl AsRef<Path>,
+		path: impl AsRef<std::path::Path>,
 		settings: StaticSoundSettings,
 	) -> Result<Self, FromFileError> {
-		Self::load_from_media_source(Box::new(File::open(path)?), settings)
+		Self::load_from_media_source(Box::new(std::fs::File::open(path)?), settings)
 	}
 
 	/// Loads a cursor wrapping audio file data into a [`StaticSoundData`].
