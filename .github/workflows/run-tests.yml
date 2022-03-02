@@ -6,11 +6,13 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  check:
+  test:
     runs-on: ubuntu-latest
     
     steps:
       - uses: actions/checkout@v2
+      - name: install cpal dependencies
+        run: sudo apt-get install libasound2-dev
       - name: install wasm32 target
         run: rustup target add wasm32-unknown-unknown
       - name: run tests (desktop - no features)
