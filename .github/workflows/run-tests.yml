@@ -13,17 +13,9 @@ jobs:
       - uses: actions/checkout@v2
       - name: install cpal dependencies
         run: sudo apt-get install libasound2-dev
-      - name: install wasm32 target
-        run: rustup target add wasm32-unknown-unknown
       - name: run tests (desktop - no features)
         run: cargo test -p kira --no-default-features
       - name: run tests (desktop - with cpal feature)
         run: cargo test -p kira --no-default-features --features=cpal
       - name: run tests (desktop - with mp3 feature)
         run: cargo test -p kira --no-default-features --features=mp3
-      - name: run tests (wasm32 - no features)
-        run: cargo test -p kira --no-default-features --target=wasm32-unknown-unknown
-      - name: run tests (wasm32 - with cpal feature)
-        run: cargo test -p kira --no-default-features --features=cpal --target=wasm32-unknown-unknown
-      - name: run tests (wasm32 - with mp3 feature)
-        run: cargo test -p kira --no-default-features --features=mp3 --target=wasm32-unknown-unknown
