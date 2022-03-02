@@ -1,10 +1,10 @@
+use crate::manager::backend::{Backend, Renderer};
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	Device, Stream, StreamConfig,
 };
-use kira::manager::backend::{Backend, Renderer};
 
-use crate::Error;
+use super::Error;
 
 enum State {
 	Empty,
