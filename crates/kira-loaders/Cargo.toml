@@ -11,7 +11,7 @@ categories = ["game-development", "multimedia::audio"]
 readme = "readme.md"
 
 [dependencies]
-kira = { path = "../kira", version = "0.6.0-beta.2" }
+kira = { path = "../kira", version = "0.6.0-beta.2", default-features = false }
 ringbuf = "0.2.6"
 symphonia = { version = "0.4.0", default-features = false }
 

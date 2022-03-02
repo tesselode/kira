@@ -1,11 +1,19 @@
 //! Communication between Kira and a low-level audio API.
 
-mod mock;
+#[cfg(feature = "cpal")]
+pub mod cpal;
+pub mod mock;
 mod renderer;
 pub(crate) mod resources;
 
-pub use mock::*;
 pub use renderer::*;
+
+#[cfg(feature = "cpal")]
+/// The default backend used by [`AudioManager`](crate::manager::AudioManager)s.
+pub type DefaultBackend = cpal::CpalBackend;
+#[cfg(not(feature = "cpal"))]
+/// The default backend used by [`AudioManager`](crate::manager::AudioManager)s.
+pub type DefaultBackend = mock::MockBackend;
 
 /// Connects a [`Renderer`] to a lower level audio API.
 pub trait Backend: Sized {

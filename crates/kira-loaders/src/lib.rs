@@ -10,7 +10,7 @@ in Kira.
 
 ```no_run
 use kira::{
-	manager::{backend::MockBackend, AudioManager, AudioManagerSettings},
+	manager::{backend::mock::MockBackend, AudioManager, AudioManagerSettings},
 	sound::static_sound::StaticSoundSettings,
 };
 
@@ -25,7 +25,7 @@ manager.play(kira_loaders::load(
 ### Streaming a sound from disk
 
 ```no_run
-use kira::manager::{backend::MockBackend, AudioManager, AudioManagerSettings};
+use kira::manager::{backend::mock::MockBackend, AudioManager, AudioManagerSettings};
 use kira_loaders::StreamingSoundSettings;
 
 let mut manager = AudioManager::<MockBackend>::new(AudioManagerSettings::default()).unwrap();

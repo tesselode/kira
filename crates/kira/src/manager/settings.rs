@@ -30,7 +30,7 @@ impl Default for Capacities {
 	}
 }
 
-/// Settings for an [`AudioManager`].
+/// Settings for an [`AudioManager`](super::AudioManager).
 pub struct AudioManagerSettings<B: Backend> {
 	/// Specifies how many of each resource type an audio context
 	/// can have.

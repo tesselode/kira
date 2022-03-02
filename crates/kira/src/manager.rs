@@ -26,7 +26,7 @@ use self::{
 			create_resources, create_unused_resource_channels, ResourceControllers,
 			UnusedResourceConsumers,
 		},
-		Backend, Renderer, RendererShared,
+		Backend, DefaultBackend, Renderer, RendererShared,
 	},
 	command::{producer::CommandProducer, ClockCommand, Command, MixerCommand, SoundCommand},
 	error::{AddClockError, AddSubTrackError, PlaySoundError},
@@ -57,7 +57,7 @@ impl MainPlaybackState {
 }
 
 /// Controls audio from gameplay code.
-pub struct AudioManager<B: Backend> {
+pub struct AudioManager<B: Backend = DefaultBackend> {
 	backend: B,
 	renderer_shared: Arc<RendererShared>,
 	command_producer: CommandProducer,

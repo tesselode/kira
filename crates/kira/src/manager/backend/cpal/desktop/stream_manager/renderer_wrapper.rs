@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use kira::manager::backend::Renderer;
+use crate::manager::backend::Renderer;
 use ringbuf::{Consumer, Producer, RingBuffer};
 
 /// Wraps a [`Renderer`] so that when it's dropped,

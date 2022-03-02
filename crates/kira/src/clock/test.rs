@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::{
 	clock::ClockTime,
-	manager::{backend::MockBackend, AudioManager},
+	manager::{backend::mock::MockBackend, AudioManager},
 	tween::Tween,
 	ClockSpeed, StartTime,
 };

@@ -6,7 +6,7 @@ use std::sync::{
 use kira::{
 	dsp::Frame,
 	manager::{
-		backend::{MockBackend, MockBackendSettings},
+		backend::mock::{MockBackend, MockBackendSettings},
 		AudioManager, AudioManagerSettings,
 	},
 	track::{

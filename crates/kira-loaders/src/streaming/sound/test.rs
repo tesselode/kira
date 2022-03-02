@@ -3,7 +3,7 @@ use std::{collections::VecDeque, time::Duration};
 use kira::{
 	clock::ClockTime,
 	dsp::Frame,
-	manager::{backend::MockBackend, AudioManager},
+	manager::{backend::mock::MockBackend, AudioManager},
 	sound::{static_sound::PlaybackState, Sound},
 	tween::Tween,
 	ClockSpeed, LoopBehavior, StartTime, Volume,

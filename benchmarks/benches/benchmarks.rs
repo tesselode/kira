@@ -4,7 +4,7 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use kira::{
 	dsp::Frame,
 	manager::{
-		backend::{MockBackend, MockBackendSettings},
+		backend::mock::{MockBackend, MockBackendSettings},
 		AudioManager, AudioManagerSettings, Capacities,
 	},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},

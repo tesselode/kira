@@ -2,13 +2,13 @@ mod stream_manager;
 
 use stream_manager::{StreamManager, StreamManagerController};
 
+use crate::manager::backend::{Backend, Renderer};
 use cpal::{
 	traits::{DeviceTrait, HostTrait},
 	Device, StreamConfig,
 };
-use kira::manager::backend::{Backend, Renderer};
 
-use crate::Error;
+use super::Error;
 
 enum State {
 	Empty,
@@ -21,6 +21,8 @@ enum State {
 	},
 }
 
+/// A backend that uses [cpal](https://crates.io/crates/cpal) to
+/// connect a [`Renderer`] to the operating system's audio driver.
 pub struct CpalBackend {
 	state: State,
 }

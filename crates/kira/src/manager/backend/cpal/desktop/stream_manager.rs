@@ -8,14 +8,14 @@ use std::{
 	time::Duration,
 };
 
+use crate::manager::backend::Renderer;
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	Device, Stream, StreamConfig, StreamError,
 };
-use kira::manager::backend::Renderer;
 use ringbuf::{Consumer, RingBuffer};
 
-use crate::Error;
+use super::super::Error;
 
 use self::renderer_wrapper::RendererWrapper;
 

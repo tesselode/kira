@@ -13,3 +13,15 @@ readme = "../../README.md"
 [dependencies]
 atomic-arena = "0.1.0"
 ringbuf = "0.2.3"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies.cpal]
+version = "0.13.5"
+optional = true
+
+[target.'cfg(target_arch = "wasm32")'.dependencies.cpal]
+version = "0.13.5"
+optional = true
+features = ["wasm-bindgen"]
+
+[features]
+default = ["cpal"]

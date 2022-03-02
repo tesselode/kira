@@ -1,3 +1,5 @@
+//! Useful for testing and benchmarking.
+
 use crate::dsp::Frame;
 
 use super::{Backend, Renderer};
