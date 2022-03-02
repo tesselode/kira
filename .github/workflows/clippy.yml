@@ -1,0 +1,45 @@
+name: Clippy
+
+on: [push, pull_request]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v2
+      - name: install wasm32 target
+        run: rustup target add wasm32-unknown-unknown
+      - name: clippy (desktop - no features)
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --no-default-features
+      - name: clippy (desktop - with cpal feature)
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --no-default-features --features=cpal
+      - name: clippy (desktop - with mp3 feature)
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --no-default-features --features=mp3
+      - name: clippy (wasm32 - no features)
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --no-default-features --target=wasm32-unknown-unknown
+      - name: clippy (wasm32 - with cpal feature)
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --no-default-features --features=cpal --target=wasm32-unknown-unknown
+      - name: clippy (wasm32 - with mp3 feature)
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --no-default-features --features=mp3 --target=wasm32-unknown-unknown
