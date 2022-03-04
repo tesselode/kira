@@ -7,18 +7,11 @@ properties of sounds, a flexible [mixer](track) for applying
 effects to audio, and a [clock] system for precisely timing
 audio events.
 
-## Related crates
-
-You will most likely want to use Kira with some of these other
-crates:
-
-- [`kira-cpal`](https://crates.io/crates/kira-cpal) - backend for
-Windows, Mac, and Linux targets
-- [`kira-loaders`](https://crates.io/crates/kira-loaders) - adds
-support for loading audio files
-
+The [book](https://tesselode.github.io/kira/) has tutorials
+on how to use Kira.
 */
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![allow(clippy::collapsible_if)]
 #![allow(clippy::collapsible_else_if)]
 #![allow(clippy::large_enum_variant)]

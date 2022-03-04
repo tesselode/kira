@@ -1,5 +1,13 @@
 //! Decodes data gradually from an audio file.
 
+#![cfg_attr(
+	docsrs,
+	doc(cfg(all(
+		any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"),
+		not(wasm32)
+	)))
+)]
+
 mod data;
 pub(crate) mod decoder;
 mod handle;

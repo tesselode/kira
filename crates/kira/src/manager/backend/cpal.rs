@@ -1,7 +1,6 @@
 //! Plays audio using [cpal](https://crates.io/crates/cpal).
 
-#![warn(missing_docs)]
-#![allow(clippy::tabs_in_doc_comments)]
+#![cfg_attr(docsrs, doc(cfg(feature = "cpal")))]
 
 mod error;
 pub use error::*;

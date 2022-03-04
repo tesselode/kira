@@ -1,9 +1,5 @@
 /*!
 Sources of audio.
-
-If you just want to load sounds from audio files (mp3, ogg, etc.),
-take a look at the documentation for
-[`kira-loaders`](https://crates.io/crates/kira-loaders).
 */
 
 #[cfg(feature = "symphonia")]

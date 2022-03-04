@@ -30,3 +30,10 @@ mp3 = ["symphonia", "symphonia/mp3"]
 ogg = ["symphonia", "symphonia/ogg", "symphonia/vorbis"]
 flac = ["symphonia", "symphonia/flac"]
 wav = ["symphonia", "symphonia/wav", "symphonia/pcm"]
+
+# docs.rs-specific configuration
+[package.metadata.docs.rs]
+# document all features
+all-features = true
+# defines the configuration attribute `docsrs`
+rustdoc-args = ["--cfg", "docsrs"]
