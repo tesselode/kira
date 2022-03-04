@@ -43,7 +43,7 @@ use kira::{
 
 let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
 let track = manager.add_sub_track(TrackBuilder::default())?;
-manager.play(StaticSoundData::load(
+manager.play(StaticSoundData::from_file(
     "sound.ogg",
     StaticSoundSettings::new().track(&track),
 )?)?;
@@ -84,7 +84,7 @@ let track = manager.add_sub_track({
     builder.add_effect(FilterBuilder::new().cutoff(1000.0));
     builder
 })?;
-manager.play(StaticSoundData::load(
+manager.play(StaticSoundData::from_file(
     "sound.ogg",
     StaticSoundSettings::new().track(&track),
 )?)?;

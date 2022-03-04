@@ -48,7 +48,7 @@ use kira::{
 
 let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
 let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
-manager.play(StaticSoundData::load(
+manager.play(StaticSoundData::from_file(
 	"sound.ogg",
 	StaticSoundSettings::new().start_time(StartTime::ClockTime(ClockTime {
 		clock: clock.id(),
@@ -78,7 +78,7 @@ As a shorthand, you can pass the `ClockTime` directly into
 # 	AudioManagerSettings::default(),
 # )?;
 # let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
-manager.play(StaticSoundData::load(
+manager.play(StaticSoundData::from_file(
 	"sound.ogg",
 	StaticSoundSettings::new().start_time(ClockTime {
 		clock: clock.id(),
@@ -107,7 +107,7 @@ use kira::{
 # 	AudioManagerSettings::default(),
 # )?;
 # let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
-manager.play(StaticSoundData::load(
+manager.play(StaticSoundData::from_file(
 	"sound.ogg",
 	StaticSoundSettings::new().start_time(clock.time() + 4),
 )?)?;
@@ -137,7 +137,7 @@ use kira::{
 
 let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
 let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
-let mut sound = manager.play(StaticSoundData::load(
+let mut sound = manager.play(StaticSoundData::from_file(
 	"sound.ogg",
 	StaticSoundSettings::default(),
 )?)?;

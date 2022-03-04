@@ -26,7 +26,7 @@ pub struct StreamingSoundData<Error: Send + 'static = FromFileError> {
 
 impl StreamingSoundData<FromFileError> {
 	/// Creates a [`StreamingSoundData`] for an audio file.
-	pub fn stream(
+	pub fn from_file(
 		path: impl AsRef<Path>,
 		settings: StreamingSoundSettings,
 	) -> Result<StreamingSoundData<FromFileError>, FromFileError> {
@@ -37,7 +37,7 @@ impl StreamingSoundData<FromFileError> {
 	}
 
 	/// Creates a [`StreamingSoundData`] for a cursor wrapping audio file data.
-	pub fn stream_from_cursor<T: AsRef<[u8]> + Send + Sync + 'static>(
+	pub fn from_cursor<T: AsRef<[u8]> + Send + Sync + 'static>(
 		cursor: Cursor<T>,
 		settings: StreamingSoundSettings,
 	) -> Result<StreamingSoundData<FromFileError>, FromFileError> {

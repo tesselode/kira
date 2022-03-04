@@ -28,7 +28,7 @@ use kira::{
 };
 
 let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
-let sound_data = StaticSoundData::load("sound.ogg", StaticSoundSettings::new())?;
+let sound_data = StaticSoundData::from_file("sound.ogg", StaticSoundSettings::new())?;
 manager.play(sound_data)?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
@@ -47,7 +47,7 @@ use kira::{
 };
 
 let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
-let sound_data = StaticSoundData::load("sound.ogg", StaticSoundSettings::new())?;
+let sound_data = StaticSoundData::from_file("sound.ogg", StaticSoundSettings::new())?;
 manager.play(sound_data.clone())?;
 manager.play(sound_data.clone())?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
@@ -75,7 +75,7 @@ use kira::{
 };
 
 let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
-let sound_data = StaticSoundData::load("sound.ogg", StaticSoundSettings::new())?;
+let sound_data = StaticSoundData::from_file("sound.ogg", StaticSoundSettings::new())?;
 let mut sound = manager.play(sound_data)?;
 if sound.state() == PlaybackState::Playing {
 	sound.stop(Tween::default())?;
@@ -100,7 +100,7 @@ use kira::{
 };
 
 let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
-let sound_data = StaticSoundData::load("sound.ogg", StaticSoundSettings::new())?;
+let sound_data = StaticSoundData::from_file("sound.ogg", StaticSoundSettings::new())?;
 let mut sound = manager.play(sound_data)?;
 sound.set_volume(
 	0.5,
@@ -128,7 +128,7 @@ example, volumes can be set in decibels:
 # 	Volume,
 # };
 # let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
-# let sound_data = StaticSoundData::load("sound.ogg", StaticSoundSettings::new())?;
+# let sound_data = StaticSoundData::from_file("sound.ogg", StaticSoundSettings::new())?;
 # let mut sound = manager.play(sound_data)?;
 sound.set_volume(
 	Volume::Decibels(-3.0),

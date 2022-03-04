@@ -22,7 +22,7 @@ use kira::{
 
 // Create an audio manager. This plays sounds and manages resources.
 let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
-let sound_data = StaticSoundData::load("sound.ogg", StaticSoundSettings::default())?;
+let sound_data = StaticSoundData::from_file("sound.ogg", StaticSoundSettings::default())?;
 manager.play(sound_data.clone())?;
 // After a couple seconds...
 manager.play(sound_data.clone())?;
@@ -47,7 +47,7 @@ use kira::{
 };
 
 let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
-let sound_data = StaticSoundData::load("sound.ogg", StaticSoundSettings::new())?;
+let sound_data = StaticSoundData::from_file("sound.ogg", StaticSoundSettings::new())?;
 let mut sound = manager.play(sound_data)?;
 // Start smoothly adjusting the playback rate parameter.
 sound.set_playback_rate(
@@ -87,7 +87,7 @@ let track = manager.add_sub_track({
 	builder
 })?;
 // Play the sound on the track.
-let sound_data = StaticSoundData::load(
+let sound_data = StaticSoundData::from_file(
 	"sound.ogg",
 	StaticSoundSettings::new().track(&track),
 )?;
@@ -117,13 +117,13 @@ let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default
 // arbitrary amount of time.
 let mut clock = manager.add_clock(ClockSpeed::TicksPerMinute(TEMPO))?;
 // Play a sound 2 ticks (beats) from now.
-let sound_data_1 = StaticSoundData::load(
+let sound_data_1 = StaticSoundData::from_file(
 	"sound1.ogg",
 	StaticSoundSettings::new().start_time(clock.time() + 2),
 )?;
 manager.play(sound_data_1)?;
 // Play a different sound 4 ticks (beats) from now.
-let sound_data_2 = StaticSoundData::load(
+let sound_data_2 = StaticSoundData::from_file(
 	"sound2.ogg",
 	StaticSoundSettings::new().start_time(clock.time() + 4),
 )?;

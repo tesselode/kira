@@ -15,7 +15,7 @@ use crate::{
 use super::StaticSoundData;
 
 impl StaticSoundData {
-	fn load_from_media_source(
+	fn from_media_source(
 		media_source: Box<dyn MediaSource>,
 		settings: StaticSoundSettings,
 	) -> Result<Self, FromFileError> {
@@ -72,11 +72,11 @@ impl StaticSoundData {
 			not(wasm32)
 		)))
 	)]
-	pub fn load(
+	pub fn from_file(
 		path: impl AsRef<std::path::Path>,
 		settings: StaticSoundSettings,
 	) -> Result<Self, FromFileError> {
-		Self::load_from_media_source(Box::new(std::fs::File::open(path)?), settings)
+		Self::from_media_source(Box::new(std::fs::File::open(path)?), settings)
 	}
 
 	/// Loads a cursor wrapping audio file data into a [`StaticSoundData`].
@@ -84,11 +84,11 @@ impl StaticSoundData {
 		docsrs,
 		doc(cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav")))
 	)]
-	pub fn load_from_cursor<T: AsRef<[u8]> + Send + Sync + 'static>(
+	pub fn from_cursor<T: AsRef<[u8]> + Send + Sync + 'static>(
 		cursor: Cursor<T>,
 		settings: StaticSoundSettings,
 	) -> Result<StaticSoundData, FromFileError> {
-		Self::load_from_media_source(Box::new(cursor), settings)
+		Self::from_media_source(Box::new(cursor), settings)
 	}
 }
 
