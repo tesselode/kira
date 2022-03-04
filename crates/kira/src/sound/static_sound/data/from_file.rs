@@ -84,7 +84,7 @@ impl StaticSoundData {
 		docsrs,
 		doc(cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav")))
 	)]
-	pub fn load_from_cursor<T: AsRef<[u8]> + Send + 'static>(
+	pub fn load_from_cursor<T: AsRef<[u8]> + Send + Sync + 'static>(
 		cursor: Cursor<T>,
 		settings: StaticSoundSettings,
 	) -> Result<StaticSoundData, FromFileError> {

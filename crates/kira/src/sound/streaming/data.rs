@@ -37,7 +37,7 @@ impl StreamingSoundData<FromFileError> {
 	}
 
 	/// Creates a [`StreamingSoundData`] for a cursor wrapping audio file data.
-	pub fn stream_from_cursor<T: AsRef<[u8]> + Send + 'static>(
+	pub fn stream_from_cursor<T: AsRef<[u8]> + Send + Sync + 'static>(
 		cursor: Cursor<T>,
 		settings: StreamingSoundSettings,
 	) -> Result<StreamingSoundData<FromFileError>, FromFileError> {
