@@ -4,43 +4,31 @@ To start using Kira, create an `AudioManager`.
 
 ```rust ,no_run
 # extern crate kira;
-# extern crate kira_cpal;
-# extern crate kira_loaders;
-use kira::manager::{AudioManager, AudioManagerSettings};
-use kira_cpal::CpalBackend;
+use kira::manager::{
+	AudioManager, AudioManagerSettings,
+	backend::cpal::CpalBackend,
+};
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
+let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
 The `AudioManager` allows you to interact with the audio context from gameplay
-code.
-
-`AudioManager`s can play anything that implements the `SoundData` trait. The
-main `kira` crate does not come with any functionality for loading audio from
-files. For that, you should use
-[`kira-loaders`](https://crates.io/crates/kira-loaders). `kira_loaders::load`
-returns a `StaticSoundData` that you can pass to `AudioManager::play` to play
-the sound.
+code. `AudioManager`s can play anything that implements the `SoundData` trait,
+such as `StaticSoundData` or `StreamingSoundData`.
 
 ```rust ,no_run
 # extern crate kira;
-# extern crate kira_cpal;
-# extern crate kira_loaders;
 use kira::{
-	manager::{AudioManager, AudioManagerSettings},
-	sound::static_sound::StaticSoundSettings,
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 };
-use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
-let sound_data = kira_loaders::load("sound.ogg", StaticSoundSettings::new())?;
+let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let sound_data = StaticSoundData::load("sound.ogg", StaticSoundSettings::new())?;
 manager.play(sound_data)?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
@@ -50,25 +38,25 @@ around and clone it each time you pass it to `AudioManager::play`.
 
 ```rust ,no_run
 # extern crate kira;
-# extern crate kira_cpal;
-# extern crate kira_loaders;
 use kira::{
-	manager::{AudioManager, AudioManagerSettings},
-	sound::static_sound::StaticSoundSettings,
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 };
-use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
-let sound_data = kira_loaders::load("sound.ogg", StaticSoundSettings::new())?;
+let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let sound_data = StaticSoundData::load("sound.ogg", StaticSoundSettings::new())?;
 manager.play(sound_data.clone())?;
 manager.play(sound_data.clone())?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
 Cloning a `StaticSoundData` is cheap, so it's perfectly fine to do this.
+
+`StreamingSoundData` cannot be cloned, so you will have to create a new one each
+time you want to play a sound.
 
 ## Modifying playing sounds
 
@@ -77,20 +65,17 @@ information about the sound or modify it.
 
 ```rust ,no_run
 # extern crate kira;
-# extern crate kira_cpal;
-# extern crate kira_loaders;
 use kira::{
-	manager::{AudioManager, AudioManagerSettings},
-	sound::static_sound::{PlaybackState, StaticSoundSettings},
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	sound::static_sound::{PlaybackState, StaticSoundData, StaticSoundSettings},
 	tween::Tween,
 };
-use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
-let sound_data = kira_loaders::load("sound.ogg", StaticSoundSettings::new())?;
+let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let sound_data = StaticSoundData::load("sound.ogg", StaticSoundSettings::new())?;
 let mut sound = manager.play(sound_data)?;
 if sound.state() == PlaybackState::Playing {
 	sound.stop(Tween::default())?;
@@ -103,22 +88,19 @@ transitioned to other values.
 
 ```rust ,no_run
 # extern crate kira;
-# extern crate kira_cpal;
-# extern crate kira_loaders;
 use std::time::Duration;
 
 use kira::{
-	manager::{AudioManager, AudioManagerSettings},
-	sound::static_sound::StaticSoundSettings,
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	tween::Tween,
 };
-use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
-let sound_data = kira_loaders::load("sound.ogg", StaticSoundSettings::new())?;
+let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let sound_data = StaticSoundData::load("sound.ogg", StaticSoundSettings::new())?;
 let mut sound = manager.play(sound_data)?;
 sound.set_volume(
 	0.5,
@@ -135,18 +117,18 @@ example, volumes can be set in decibels:
 
 ```rust ,no_run
 # extern crate kira;
-# extern crate kira_cpal;
-# extern crate kira_loaders;
 # use std::time::Duration;
 # use kira::{
-# 	manager::{AudioManager, AudioManagerSettings},
-# 	sound::static_sound::StaticSoundSettings,
+# 	manager::{
+# 		AudioManager, AudioManagerSettings,
+# 		backend::cpal::CpalBackend,
+# 	},
+# 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 # 	tween::Tween,
 # 	Volume,
 # };
-# use kira_cpal::CpalBackend;
-# let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
-# let sound_data = kira_loaders::load("sound.ogg", StaticSoundSettings::new())?;
+# let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+# let sound_data = StaticSoundData::load("sound.ogg", StaticSoundSettings::new())?;
 # let mut sound = manager.play(sound_data)?;
 sound.set_volume(
 	Volume::Decibels(-3.0),

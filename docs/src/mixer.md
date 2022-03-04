@@ -11,46 +11,39 @@ sub-tracks. To add a sub-track, use `AudioManager::add_sub_track`.
 
 ```rust ,no_run
 # extern crate kira;
-# extern crate kira_cpal;
-# extern crate kira_loaders;
 # use std::error::Error;
 use kira::{
-    manager::{AudioManager, AudioManagerSettings},
+    manager::{
+        AudioManager, AudioManagerSettings,
+        backend::cpal::CpalBackend,
+    },
     track::TrackBuilder,
 };
-use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
+let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
 let track = manager.add_sub_track(TrackBuilder::default())?;
 # Result::<(), Box<dyn Error>>::Ok(())
 ```
 
 You can configure what track a sound will play on by modifying its settings.
-This example uses `StaticSoundSettings`, but the streaming sound interface from
-[`kira-loaders`](https://crates.io/crates/kira-loaders) provides the same
-option.
+This example uses `StaticSoundSettings`, but `StreamingSoundSettings` provides
+the same option.
 
 ```rust ,no_run
 # extern crate kira;
-# extern crate kira_cpal;
-# extern crate kira_loaders;
 # use std::error::Error;
 use kira::{
-	manager::{AudioManager, AudioManagerSettings},
-    sound::static_sound::StaticSoundSettings,
+	manager::{
+        AudioManager, AudioManagerSettings,
+        backend::cpal::CpalBackend,
+    },
+    sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	track::TrackBuilder,
 };
-use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
+let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
 let track = manager.add_sub_track(TrackBuilder::default())?;
-manager.play(kira_loaders::load(
+manager.play(StaticSoundData::load(
     "sound.ogg",
     StaticSoundSettings::new().track(&track),
 )?)?;
@@ -72,29 +65,26 @@ remove high frequencies from sounds, making them sound muffled.
 
 ```rust ,no_run
 # extern crate kira;
-# extern crate kira_cpal;
-# extern crate kira_loaders;
 # use std::error::Error;
 use kira::{
-	manager::{AudioManager, AudioManagerSettings},
-    sound::static_sound::StaticSoundSettings,
+	manager::{
+        AudioManager, AudioManagerSettings,
+        backend::cpal::CpalBackend,
+    },
+    sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	track::{
         TrackBuilder,
         effect::filter::FilterBuilder,
     },
 };
-use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
+let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
 let track = manager.add_sub_track({
     let mut builder = TrackBuilder::new();
     builder.add_effect(FilterBuilder::new().cutoff(1000.0));
     builder
 })?;
-manager.play(kira_loaders::load(
+manager.play(StaticSoundData::load(
     "sound.ogg",
     StaticSoundSettings::new().track(&track),
 )?)?;
@@ -106,16 +96,16 @@ after the track has been created.
 
 ```rust ,no_run
 # extern crate kira;
-# extern crate kira_cpal;
-# extern crate kira_loaders;
 # use kira::{
-# 	manager::{AudioManager, AudioManagerSettings},
-# 	sound::static_sound::StaticSoundSettings,
+# 	manager::{
+#     AudioManager, AudioManagerSettings,
+#     backend::cpal::CpalBackend,
+#   },
+# 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 # 	track::{effect::filter::FilterBuilder, TrackBuilder},
 # 	tween::Tween,
 # };
-# use kira_cpal::CpalBackend;
-# let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
+# let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
 let mut filter;
 let track = manager.add_sub_track({
 	let mut builder = TrackBuilder::new();
@@ -157,19 +147,16 @@ We can set up the `sounds` and `player_sounds` hierarchy using `TrackRoutes`.
 
 ```rust ,no_run
 # extern crate kira;
-# extern crate kira_cpal;
-# extern crate kira_loaders;
 # use std::error::Error;
 use kira::{
-	manager::{AudioManager, AudioManagerSettings},
+	manager::{
+        AudioManager, AudioManagerSettings,
+        backend::cpal::CpalBackend,
+    },
 	track::{TrackRoutes, TrackBuilder},
 };
-use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
+let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
 let sounds = manager.add_sub_track(TrackBuilder::default())?;
 let player_sounds = manager.add_sub_track(
 	TrackBuilder::new().routes(TrackRoutes::parent(&sounds)),
@@ -223,22 +210,19 @@ Here's what this looks like in practice:
 
 ```rust ,no_run
 # extern crate kira;
-# extern crate kira_cpal;
-# extern crate kira_loaders;
 # use std::error::Error;
 use kira::{
-	manager::{AudioManager, AudioManagerSettings},
+	manager::{
+        AudioManager, AudioManagerSettings,
+        backend::cpal::CpalBackend,
+    },
 	track::{
         TrackRoutes, TrackBuilder,
         effect::reverb::ReverbBuilder,
     },
 };
-use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
+let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
 let reverb = manager.add_sub_track({
     let mut builder = TrackBuilder::new();
     builder.add_effect(ReverbBuilder::new().mix(1.0));
