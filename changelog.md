@@ -1,4 +1,4 @@
-# v0.6.0 beta 6
+# v0.6.0 beta 6 - March 5th, 2022
 
 - Moved the functionality from `kira-cpal` and `kira-loaders` into the main
   `kira` crate. `kira-cpal` and `kira-loaders` are now unneeded and deprecated.
