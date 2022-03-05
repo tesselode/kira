@@ -75,7 +75,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="crates.html"><strong aria-hidden="true">1.1.</strong> Crates</a></li></ol></li><li class="chapter-item expanded "><a href="playing-sounds.html"><strong aria-hidden="true">2.</strong> Playing Sounds</a></li><li class="chapter-item expanded "><a href="mixer.html"><strong aria-hidden="true">3.</strong> The Mixer</a></li><li class="chapter-item expanded "><a href="clocks.html" class="active"><strong aria-hidden="true">4.</strong> Clocks</a></li><li class="chapter-item expanded "><a href="creating-sounds.html"><strong aria-hidden="true">5.</strong> Creating Sound Implementations</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="playing-sounds.html"><strong aria-hidden="true">2.</strong> Playing Sounds</a></li><li class="chapter-item expanded "><a href="mixer.html"><strong aria-hidden="true">3.</strong> The Mixer</a></li><li class="chapter-item expanded "><a href="clocks.html" class="active"><strong aria-hidden="true">4.</strong> Clocks</a></li><li class="chapter-item expanded "><a href="creating-sounds.html"><strong aria-hidden="true">5.</strong> Creating Sound Implementations</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -142,18 +142,15 @@ clock, use <code>AudioManager::add_clock</code>.</p>
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
-</span><span class="boring">extern crate kira_cpal;
-</span><span class="boring">extern crate kira_loaders;
 </span>use kira::{
-	manager::{AudioManager, AudioManagerSettings},
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
 	ClockSpeed,
 };
-use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
+let mut manager = AudioManager::&lt;CpalBackend&gt;::new(AudioManagerSettings::default())?;
 let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
 clock.start()?;
 <span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
@@ -172,22 +169,19 @@ configure this using <code>StaticSoundSettings::start_time</code>.</p>
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
-</span><span class="boring">extern crate kira_cpal;
-</span><span class="boring">extern crate kira_loaders;
 </span>use kira::{
 	clock::ClockTime,
-	manager::{AudioManager, AudioManagerSettings},
-	sound::static_sound::StaticSoundSettings,
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	StartTime, ClockSpeed,
 };
-use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
+let mut manager = AudioManager::&lt;CpalBackend&gt;::new(AudioManagerSettings::default())?;
 let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
-manager.play(kira_loaders::load(
+manager.play(StaticSoundData::from_file(
 	&quot;sound.ogg&quot;,
 	StaticSoundSettings::new().start_time(StartTime::ClockTime(ClockTime {
 		clock: clock.id(),
@@ -204,22 +198,21 @@ clock.start()?;
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
-</span><span class="boring">extern crate kira_cpal;
-</span><span class="boring">extern crate kira_loaders;
 </span><span class="boring">use kira::{
 </span><span class="boring">	clock::ClockTime,
-</span><span class="boring">	manager::{AudioManager, AudioManagerSettings},
-</span><span class="boring">	sound::static_sound::StaticSoundSettings,
-</span><span class="boring">	StartTime,
+</span><span class="boring">	manager::{
+</span><span class="boring">	 	AudioManager, AudioManagerSettings,
+</span><span class="boring">		backend::cpal::CpalBackend,
+</span><span class="boring">	},
+</span><span class="boring">	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+</span><span class="boring">	ClockSpeed, StartTime,
 </span><span class="boring">};
-</span><span class="boring">use kira_cpal::CpalBackend;
 </span><span class="boring">
-</span><span class="boring">let mut manager = AudioManager::new(
-</span><span class="boring">	CpalBackend::new()?,
+</span><span class="boring">let mut manager = AudioManager::&lt;CpalBackend&gt;::new(
 </span><span class="boring">	AudioManagerSettings::default(),
 </span><span class="boring">)?;
-</span><span class="boring">let mut clock = manager.add_clock(0.5)?;
-</span>manager.play(kira_loaders::load(
+</span><span class="boring">let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
+</span>manager.play(StaticSoundData::from_file(
 	&quot;sound.ogg&quot;,
 	StaticSoundSettings::new().start_time(ClockTime {
 		clock: clock.id(),
@@ -236,20 +229,20 @@ current <code>ClockTime</code>, and then add to it to get a time in the future:<
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
-</span><span class="boring">extern crate kira_cpal;
-</span><span class="boring">extern crate kira_loaders;
 </span>use kira::{
-	manager::{AudioManager, AudioManagerSettings},
-	sound::static_sound::StaticSoundSettings,
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+	ClockSpeed,
 };
-use kira_cpal::CpalBackend;
 
-<span class="boring">let mut manager = AudioManager::new(
-</span><span class="boring">	CpalBackend::new()?,
+<span class="boring">let mut manager = AudioManager::&lt;CpalBackend&gt;::new(
 </span><span class="boring">	AudioManagerSettings::default(),
 </span><span class="boring">)?;
-</span><span class="boring">let mut clock = manager.add_clock(0.5)?;
-</span>manager.play(kira_loaders::load(
+</span><span class="boring">let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
+</span>manager.play(StaticSoundData::from_file(
 	&quot;sound.ogg&quot;,
 	StaticSoundSettings::new().start_time(clock.time() + 4),
 )?)?;
@@ -265,24 +258,21 @@ tick.</p>
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
-</span><span class="boring">extern crate kira_cpal;
-</span><span class="boring">extern crate kira_loaders;
 </span>use std::time::Duration;
 
 use kira::{
-	manager::{AudioManager, AudioManagerSettings},
-	sound::static_sound::StaticSoundSettings,
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	tween::Tween,
 	ClockSpeed, StartTime,
 };
-use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
+let mut manager = AudioManager::&lt;CpalBackend&gt;::new(AudioManagerSettings::default())?;
 let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
-let mut sound = manager.play(kira_loaders::load(
+let mut sound = manager.play(StaticSoundData::from_file(
 	&quot;sound.ogg&quot;,
 	StaticSoundSettings::default(),
 )?)?;

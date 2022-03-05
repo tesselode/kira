@@ -75,7 +75,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="crates.html"><strong aria-hidden="true">1.1.</strong> Crates</a></li></ol></li><li class="chapter-item expanded "><a href="playing-sounds.html" class="active"><strong aria-hidden="true">2.</strong> Playing Sounds</a></li><li class="chapter-item expanded "><a href="mixer.html"><strong aria-hidden="true">3.</strong> The Mixer</a></li><li class="chapter-item expanded "><a href="clocks.html"><strong aria-hidden="true">4.</strong> Clocks</a></li><li class="chapter-item expanded "><a href="creating-sounds.html"><strong aria-hidden="true">5.</strong> Creating Sound Implementations</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="playing-sounds.html" class="active"><strong aria-hidden="true">2.</strong> Playing Sounds</a></li><li class="chapter-item expanded "><a href="mixer.html"><strong aria-hidden="true">3.</strong> The Mixer</a></li><li class="chapter-item expanded "><a href="clocks.html"><strong aria-hidden="true">4.</strong> Clocks</a></li><li class="chapter-item expanded "><a href="creating-sounds.html"><strong aria-hidden="true">5.</strong> Creating Sound Implementations</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -140,43 +140,32 @@
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
-</span><span class="boring">extern crate kira_cpal;
-</span><span class="boring">extern crate kira_loaders;
-</span>use kira::manager::{AudioManager, AudioManagerSettings};
-use kira_cpal::CpalBackend;
+</span>use kira::manager::{
+	AudioManager, AudioManagerSettings,
+	backend::cpal::CpalBackend,
+};
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
+let mut manager = AudioManager::&lt;CpalBackend&gt;::new(AudioManagerSettings::default())?;
 <span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
 </span><span class="boring">}
 </span></code></pre></pre>
 <p>The <code>AudioManager</code> allows you to interact with the audio context from gameplay
-code.</p>
-<p><code>AudioManager</code>s can play anything that implements the <code>SoundData</code> trait. The
-main <code>kira</code> crate does not come with any functionality for loading audio from
-files. For that, you should use
-<a href="https://crates.io/crates/kira-loaders"><code>kira-loaders</code></a>. <code>kira_loaders::load</code>
-returns a <code>StaticSoundData</code> that you can pass to <code>AudioManager::play</code> to play
-the sound.</p>
+code. <code>AudioManager</code>s can play anything that implements the <code>SoundData</code> trait,
+such as <code>StaticSoundData</code> or <code>StreamingSoundData</code>.</p>
 <pre><pre class="playground"><code class="language-rust  no_run edition2018">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
-</span><span class="boring">extern crate kira_cpal;
-</span><span class="boring">extern crate kira_loaders;
 </span>use kira::{
-	manager::{AudioManager, AudioManagerSettings},
-	sound::static_sound::StaticSoundSettings,
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 };
-use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
-let sound_data = kira_loaders::load(&quot;sound.ogg&quot;, StaticSoundSettings::new())?;
+let mut manager = AudioManager::&lt;CpalBackend&gt;::new(AudioManagerSettings::default())?;
+let sound_data = StaticSoundData::from_file(&quot;sound.ogg&quot;, StaticSoundSettings::new())?;
 manager.play(sound_data)?;
 <span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
 </span><span class="boring">}
@@ -187,25 +176,24 @@ around and clone it each time you pass it to <code>AudioManager::play</code>.</p
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
-</span><span class="boring">extern crate kira_cpal;
-</span><span class="boring">extern crate kira_loaders;
 </span>use kira::{
-	manager::{AudioManager, AudioManagerSettings},
-	sound::static_sound::StaticSoundSettings,
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 };
-use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
-let sound_data = kira_loaders::load(&quot;sound.ogg&quot;, StaticSoundSettings::new())?;
+let mut manager = AudioManager::&lt;CpalBackend&gt;::new(AudioManagerSettings::default())?;
+let sound_data = StaticSoundData::from_file(&quot;sound.ogg&quot;, StaticSoundSettings::new())?;
 manager.play(sound_data.clone())?;
 manager.play(sound_data.clone())?;
 <span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
 </span><span class="boring">}
 </span></code></pre></pre>
 <p>Cloning a <code>StaticSoundData</code> is cheap, so it's perfectly fine to do this.</p>
+<p><code>StreamingSoundData</code> cannot be cloned, so you will have to create a new one each
+time you want to play a sound.</p>
 <h2 id="modifying-playing-sounds"><a class="header" href="#modifying-playing-sounds">Modifying playing sounds</a></h2>
 <p><code>AudioManager::play</code> returns a handle to the sound that you can use to query
 information about the sound or modify it.</p>
@@ -213,20 +201,17 @@ information about the sound or modify it.</p>
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
-</span><span class="boring">extern crate kira_cpal;
-</span><span class="boring">extern crate kira_loaders;
 </span>use kira::{
-	manager::{AudioManager, AudioManagerSettings},
-	sound::static_sound::{PlaybackState, StaticSoundSettings},
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	sound::static_sound::{PlaybackState, StaticSoundData, StaticSoundSettings},
 	tween::Tween,
 };
-use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
-let sound_data = kira_loaders::load(&quot;sound.ogg&quot;, StaticSoundSettings::new())?;
+let mut manager = AudioManager::&lt;CpalBackend&gt;::new(AudioManagerSettings::default())?;
+let sound_data = StaticSoundData::from_file(&quot;sound.ogg&quot;, StaticSoundSettings::new())?;
 let mut sound = manager.play(sound_data)?;
 if sound.state() == PlaybackState::Playing {
 	sound.stop(Tween::default())?;
@@ -240,22 +225,19 @@ transitioned to other values.</p>
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
-</span><span class="boring">extern crate kira_cpal;
-</span><span class="boring">extern crate kira_loaders;
 </span>use std::time::Duration;
 
 use kira::{
-	manager::{AudioManager, AudioManagerSettings},
-	sound::static_sound::StaticSoundSettings,
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	tween::Tween,
 };
-use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
-let sound_data = kira_loaders::load(&quot;sound.ogg&quot;, StaticSoundSettings::new())?;
+let mut manager = AudioManager::&lt;CpalBackend&gt;::new(AudioManagerSettings::default())?;
+let sound_data = StaticSoundData::from_file(&quot;sound.ogg&quot;, StaticSoundSettings::new())?;
 let mut sound = manager.play(sound_data)?;
 sound.set_volume(
 	0.5,
@@ -273,18 +255,18 @@ example, volumes can be set in decibels:</p>
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
-</span><span class="boring">extern crate kira_cpal;
-</span><span class="boring">extern crate kira_loaders;
 </span><span class="boring">use std::time::Duration;
 </span><span class="boring">use kira::{
-</span><span class="boring">	manager::{AudioManager, AudioManagerSettings},
-</span><span class="boring">	sound::static_sound::StaticSoundSettings,
+</span><span class="boring">	manager::{
+</span><span class="boring">		AudioManager, AudioManagerSettings,
+</span><span class="boring">		backend::cpal::CpalBackend,
+</span><span class="boring">	},
+</span><span class="boring">	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 </span><span class="boring">	tween::Tween,
 </span><span class="boring">	Volume,
 </span><span class="boring">};
-</span><span class="boring">use kira_cpal::CpalBackend;
-</span><span class="boring">let mut manager = AudioManager::new(CpalBackend::new()?, AudioManagerSettings::default())?;
-</span><span class="boring">let sound_data = kira_loaders::load(&quot;sound.ogg&quot;, StaticSoundSettings::new())?;
+</span><span class="boring">let mut manager = AudioManager::&lt;CpalBackend&gt;::new(AudioManagerSettings::default())?;
+</span><span class="boring">let sound_data = StaticSoundData::from_file(&quot;sound.ogg&quot;, StaticSoundSettings::new())?;
 </span><span class="boring">let mut sound = manager.play(sound_data)?;
 </span>sound.set_volume(
 	Volume::Decibels(-3.0),
@@ -303,7 +285,7 @@ fast enough to sound instantaneous, but slow enough to avoid audio artifacts.</p
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="crates.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="introduction.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                             <a rel="next" href="mixer.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
@@ -315,7 +297,7 @@ fast enough to sound instantaneous, but slow enough to avoid audio artifacts.</p
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="crates.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="introduction.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                     <a rel="next" href="mixer.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">

@@ -75,7 +75,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="crates.html"><strong aria-hidden="true">1.1.</strong> Crates</a></li></ol></li><li class="chapter-item expanded "><a href="playing-sounds.html"><strong aria-hidden="true">2.</strong> Playing Sounds</a></li><li class="chapter-item expanded "><a href="mixer.html"><strong aria-hidden="true">3.</strong> The Mixer</a></li><li class="chapter-item expanded "><a href="clocks.html"><strong aria-hidden="true">4.</strong> Clocks</a></li><li class="chapter-item expanded "><a href="creating-sounds.html"><strong aria-hidden="true">5.</strong> Creating Sound Implementations</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="playing-sounds.html"><strong aria-hidden="true">2.</strong> Playing Sounds</a></li><li class="chapter-item expanded "><a href="mixer.html"><strong aria-hidden="true">3.</strong> The Mixer</a></li><li class="chapter-item expanded "><a href="clocks.html"><strong aria-hidden="true">4.</strong> Clocks</a></li><li class="chapter-item expanded "><a href="creating-sounds.html"><strong aria-hidden="true">5.</strong> Creating Sound Implementations</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -135,31 +135,28 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
-<p>Kira is a backend-agnostic library to create expressive audio for games. Besides
-the common sound playback features, it provides parameters for smoothly
-adjusting properties of sounds, a flexible mixer for applying effects to audio,
-and a clock system for precisely timing audio events.</p>
+<p>Kira is a backend-agnostic library to create expressive audio for games. It
+provides parameters for smoothly adjusting properties of sounds, a flexible
+mixer for applying effects to audio, and a clock system for precisely timing
+audio events.</p>
 <h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
 <h3 id="playing-a-sound-multiple-times-simultaneously"><a class="header" href="#playing-a-sound-multiple-times-simultaneously">Playing a sound multiple times simultaneously</a></h3>
 <pre><pre class="playground"><code class="language-rust  no_run edition2018">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
-</span><span class="boring">extern crate kira_cpal;
-</span><span class="boring">extern crate kira_loaders;
 </span><span class="boring">
 </span>use kira::{
-	manager::{AudioManager, AudioManagerSettings},
-	sound::static_sound::StaticSoundSettings,
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 };
-use kira_cpal::CpalBackend;
 
 // Create an audio manager. This plays sounds and manages resources.
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
-let sound_data = kira_loaders::load(&quot;sound.ogg&quot;, StaticSoundSettings::default())?;
+let mut manager = AudioManager::&lt;CpalBackend&gt;::new(AudioManagerSettings::default())?;
+let sound_data = StaticSoundData::from_file(&quot;sound.ogg&quot;, StaticSoundSettings::default())?;
 manager.play(sound_data.clone())?;
 // After a couple seconds...
 manager.play(sound_data.clone())?;
@@ -172,22 +169,20 @@ manager.play(sound_data.clone())?;
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
-</span><span class="boring">extern crate kira_cpal;
-</span><span class="boring">extern crate kira_loaders;
+</span><span class="boring">
 </span>use std::time::Duration;
 
 use kira::{
-	manager::{AudioManager, AudioManagerSettings},
-	sound::static_sound::StaticSoundSettings,
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	tween::Tween,
 };
-use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
-let sound_data = kira_loaders::load(&quot;sound.ogg&quot;, StaticSoundSettings::new())?;
+let mut manager = AudioManager::&lt;CpalBackend&gt;::new(AudioManagerSettings::default())?;
+let sound_data = StaticSoundData::from_file(&quot;sound.ogg&quot;, StaticSoundSettings::new())?;
 let mut sound = manager.play(sound_data)?;
 // Start smoothly adjusting the playback rate parameter.
 sound.set_playback_rate(
@@ -206,23 +201,20 @@ sound.set_playback_rate(
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
-</span><span class="boring">extern crate kira_cpal;
-</span><span class="boring">extern crate kira_loaders;
 </span><span class="boring">
 </span>use kira::{
-	manager::{AudioManager, AudioManagerSettings},
-	sound::static_sound::StaticSoundSettings,
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	track::{
 		TrackBuilder,
 		effect::filter::FilterBuilder,
 	},
 };
-use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
+let mut manager = AudioManager::&lt;CpalBackend&gt;::new(AudioManagerSettings::default())?;
 // Create a mixer sub-track with a filter.
 let track = manager.add_sub_track({
 	let mut builder = TrackBuilder::new();
@@ -230,7 +222,7 @@ let track = manager.add_sub_track({
 	builder
 })?;
 // Play the sound on the track.
-let sound_data = kira_loaders::load(
+let sound_data = StaticSoundData::from_file(
 	&quot;sound.ogg&quot;,
 	StaticSoundSettings::new().track(&amp;track),
 )?;
@@ -243,34 +235,31 @@ manager.play(sound_data)?;
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
-</span><span class="boring">extern crate kira_cpal;
-</span><span class="boring">extern crate kira_loaders;
 </span><span class="boring">
 </span>use kira::{
-	manager::{AudioManager, AudioManagerSettings},
-	sound::static_sound::StaticSoundSettings,
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	ClockSpeed,
 };
-use kira_cpal::CpalBackend;
 
 const TEMPO: f64 = 120.0;
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
+let mut manager = AudioManager::&lt;CpalBackend&gt;::new(AudioManagerSettings::default())?;
 // Create a clock that ticks 120 times per second. In this case,
 // each tick is one musical beat. We can use a tick to represent any
 // arbitrary amount of time.
 let mut clock = manager.add_clock(ClockSpeed::TicksPerMinute(TEMPO))?;
 // Play a sound 2 ticks (beats) from now.
-let sound_data_1 = kira_loaders::load(
+let sound_data_1 = StaticSoundData::from_file(
 	&quot;sound1.ogg&quot;,
 	StaticSoundSettings::new().start_time(clock.time() + 2),
 )?;
 manager.play(sound_data_1)?;
 // Play a different sound 4 ticks (beats) from now.
-let sound_data_2 = kira_loaders::load(
+let sound_data_2 = StaticSoundData::from_file(
 	&quot;sound2.ogg&quot;,
 	StaticSoundSettings::new().start_time(clock.time() + 4),
 )?;
@@ -285,7 +274,7 @@ clock.start()?;
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="next" href="crates.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="playing-sounds.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         <div style="clear: both"></div>
@@ -294,7 +283,7 @@ clock.start()?;
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="next" href="crates.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="playing-sounds.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
