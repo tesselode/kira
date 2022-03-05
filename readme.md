@@ -7,10 +7,10 @@
 For documentation on the current stable version,
 [click here](https://docs.rs/kira/latest/kira/).
 
-Kira is a backend-agnostic library to create expressive audio for games. Besides
-the common features you'd expect from an audio library, it provides parameters
-for smoothly adjusting properties of sounds, a flexible mixer for applying
-effects to audio, and a clock system for precisely timing audio events.
+Kira is a backend-agnostic library to create expressive audio for games. It
+provides parameters for smoothly adjusting properties of sounds, a flexible
+mixer for applying effects to audio, and a clock system for precisely timing
+audio events.
 
 ## Examples
 
@@ -18,17 +18,16 @@ effects to audio, and a clock system for precisely timing audio events.
 
 ```rust
 use kira::{
-	manager::{AudioManager, AudioManagerSettings},
-	sound::static_sound::StaticSoundSettings,
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 };
-use kira_cpal::CpalBackend;
 
 // Create an audio manager. This plays sounds and manages resources.
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
-let sound_data = kira_loaders::load("sound.ogg", StaticSoundSettings::default())?;
+let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let sound_data = StaticSoundData::from_file("sound.ogg", StaticSoundSettings::default())?;
 manager.play(sound_data.clone())?;
 // After a couple seconds...
 manager.play(sound_data.clone())?;
@@ -41,32 +40,25 @@ manager.play(sound_data.clone())?;
 use std::time::Duration;
 
 use kira::{
-	manager::{AudioManager, AudioManagerSettings},
-	sound::static_sound::StaticSoundSettings,
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	tween::Tween,
 };
-use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
-// Create a parameter for the playback rate.
-let mut parameter = manager.add_parameter(1.0)?;
-let sound_data = kira_loaders::load(
-	"sound.ogg",
-	// Link this sound's playback rate to the parameter we created.
-	StaticSoundSettings::new().playback_rate(&parameter),
-)?;
-manager.play(sound_data)?;
+let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let sound_data = StaticSoundData::from_file("sound.ogg", StaticSoundSettings::new())?;
+let mut sound = manager.play(sound_data)?;
 // Start smoothly adjusting the playback rate parameter.
-parameter.set(
+sound.set_playback_rate(
 	2.0,
 	Tween {
 		duration: Duration::from_secs(3),
 		..Default::default()
 	},
-)?;
+);
 ```
 
 ### Playing a sound with a low-pass filter applied
@@ -75,24 +67,26 @@ This makes the audio sound muffled.
 
 ```rust
 use kira::{
-	manager::{AudioManager, AudioManagerSettings},
-	sound::static_sound::StaticSoundSettings,
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	track::{
-		TrackSettings,
-		effect::filter::{Filter, FilterSettings}
+		TrackBuilder,
+		effect::filter::FilterBuilder,
 	},
 };
-use kira_cpal::CpalBackend;
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
+let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
 // Create a mixer sub-track with a filter.
-let filter = Filter::new(FilterSettings::new().cutoff(1000.0));
-let track = manager.add_sub_track(TrackSettings::new().with_effect(filter))?;
+let track = manager.add_sub_track({
+	let mut builder = TrackBuilder::new();
+	builder.add_effect(FilterBuilder::new().cutoff(1000.0));
+	builder
+})?;
 // Play the sound on the track.
-let sound_data = kira_loaders::load(
+let sound_data = StaticSoundData::from_file(
 	"sound.ogg",
 	StaticSoundSettings::new().track(&track),
 )?;
@@ -103,29 +97,29 @@ manager.play(sound_data)?;
 
 ```rust
 use kira::{
-	manager::{AudioManager, AudioManagerSettings},
-	sound::static_sound::StaticSoundSettings,
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+	ClockSpeed,
 };
-use kira_cpal::CpalBackend;
 
 const TEMPO: f64 = 120.0;
 
-let mut manager = AudioManager::new(
-	CpalBackend::new()?,
-	AudioManagerSettings::default(),
-)?;
-// Create a clock that ticks every 60.0 / TEMPO seconds. In this case,
-// each tick is one beat. Of course, we can use a tick to represent
-// any arbitrary amount of time.
-let mut clock = manager.add_clock(60.0 / TEMPO)?;
+let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+// Create a clock that ticks 120 times per second. In this case,
+// each tick is one musical beat. We can use a tick to represent any
+// arbitrary amount of time.
+let mut clock = manager.add_clock(ClockSpeed::TicksPerMinute(TEMPO))?;
 // Play a sound 2 ticks (beats) from now.
-let sound_data_1 = kira_loaders::load(
+let sound_data_1 = StaticSoundData::from_file(
 	"sound1.ogg",
 	StaticSoundSettings::new().start_time(clock.time() + 2),
 )?;
 manager.play(sound_data_1)?;
 // Play a different sound 4 ticks (beats) from now.
-let sound_data_2 = kira_loaders::load(
+let sound_data_2 = StaticSoundData::from_file(
 	"sound2.ogg",
 	StaticSoundSettings::new().start_time(clock.time() + 4),
 )?;
@@ -133,6 +127,18 @@ manager.play(sound_data_2)?;
 // Start the clock.
 clock.start()?;
 ```
+
+## Platform support
+
+Kira is mainly meant for desktop platforms. Most testing has occurred on
+Windows, but it has been used successfully used on Linux.
+
+Kira can also be used in wasm environments with the following limitations:
+
+- Static sounds cannot be loaded from files
+- Streaming sounds are not supported because they make heavy use of threads
+
+If you'd like to help improve wasm support, please reach out!
 
 ## Roadmap
 

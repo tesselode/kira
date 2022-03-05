@@ -1,3 +1,32 @@
+# v0.6.0 beta 6
+
+- Moved the functionality from `kira-cpal` and `kira-loaders` into the main
+  `kira` crate. `kira-cpal` and `kira-loaders` are now unneeded and deprecated.
+  - `CpalBackend` from `kira-cpal` is now available as
+    `kira::manager::backend::cpal::CpalBackend`
+  - `kira_loaders::load` and `kira_loaders::load_from_cursor` are now
+    `StaticSoundData::from_file` and `StaticSoundData::from_cursor`
+  - `kira_loaders::stream` and `kira_loaders::stream_from_cursor` are now
+    `StreamingSoundData::from_file` and `StreamingSoundData::from_cursor`
+- Added `Renderer::on_change_sample_rate`, which the `Backend` should call if
+  the audio sample rate changes
+- Added `Effect::on_change_sample_rate`, which is called when the audio sample
+  rate changes
+- Changes to the `Backend` trait:
+  - Added the associated type `Backend::settings` and the method
+    `Backend::setup`, which is used for creating `Backend`s (basically a `new`
+    function, but required by the `Backend` trait)
+  - Renamed `Backend::init` to `Backend::start`
+  - Removed `Backend::sample_rate`
+  - Removed `UnusedResourceCollector` from the public API. `Backend`s are no
+    longer responsible for dropping unused resources.
+- Updated `MockBackend` to the new API
+- Removed the `backend` argument to `AudioManager::new`
+- Restructured `AudioManagerSettings`
+- The cpal backend will now do its best to gracefully handle device
+  disconnection and sample rate changes
+- The cpal backend now works in wasm environments
+
 # v0.6.0 beta 5 - January 17, 2022
 
 - Fix static sounds not pausing/resuming/stopping immediately when playback is
