@@ -68,11 +68,6 @@ impl Mixer {
 					track.set_volume(volume, tween);
 				}
 			}
-			MixerCommand::SetTrackPanning(id, panning, tween) => {
-				if let Some(track) = self.track_mut(id) {
-					track.set_panning(panning, tween);
-				}
-			}
 			MixerCommand::SetTrackRoutes {
 				from,
 				to,

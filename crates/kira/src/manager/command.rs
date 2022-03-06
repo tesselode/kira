@@ -17,7 +17,6 @@ pub(crate) enum SoundCommand {
 pub(crate) enum MixerCommand {
 	AddSubTrack(SubTrackId, Track),
 	SetTrackVolume(TrackId, Volume, Tween),
-	SetTrackPanning(TrackId, f64, Tween),
 	SetTrackRoutes {
 		from: TrackId,
 		to: TrackId,

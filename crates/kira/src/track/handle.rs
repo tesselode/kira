@@ -69,15 +69,6 @@ impl TrackHandle {
 			)))
 	}
 
-	/// Sets the (post-effects) panning of the mixer track, where
-	/// 0.0 is hard left and 1.0 is hard right.
-	pub fn set_panning(&mut self, panning: f64, tween: Tween) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::Mixer(MixerCommand::SetTrackPanning(
-				self.id, panning, tween,
-			)))
-	}
-
 	/// Sets the volume of this track's route to another track.
 	///
 	/// This can only be used to change the volume of existing routes,

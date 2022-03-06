@@ -7,9 +7,6 @@ use super::{effect::EffectBuilder, routes::TrackRoutes, Effect};
 pub struct TrackBuilder {
 	/// The volume of the track.
 	pub(crate) volume: Volume,
-	/// The panning of the track, where 0 is hard left
-	/// and 1 is hard right.
-	pub(crate) panning: f64,
 	/// How the output of this track should be routed
 	/// to other mixer tracks.
 	pub(crate) routes: TrackRoutes,
@@ -23,7 +20,6 @@ impl TrackBuilder {
 	pub fn new() -> Self {
 		Self {
 			volume: Volume::Amplitude(1.0),
-			panning: 0.5,
 			routes: TrackRoutes::new(),
 			effects: vec![],
 		}
@@ -35,12 +31,6 @@ impl TrackBuilder {
 			volume: volume.into(),
 			..self
 		}
-	}
-
-	/// Sets the panning of the track, where 0 is hard left
-	/// and 1 is hard right.
-	pub fn panning(self, panning: f64) -> Self {
-		Self { panning, ..self }
 	}
 
 	/// Sets how the output of this track should be routed
