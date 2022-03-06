@@ -3,7 +3,9 @@
 pub mod delay;
 pub mod distortion;
 pub mod filter;
+pub mod panning_control;
 pub mod reverb;
+pub mod volume_control;
 
 use crate::{clock::ClockTime, dsp::Frame};
 
