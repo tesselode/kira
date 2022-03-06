@@ -14,7 +14,7 @@ use crate::{
 	clock::{Clock, ClockHandle, ClockId},
 	error::CommandError,
 	sound::SoundData,
-	spatial::scene::{SpatialScene, SpatialSceneHandle, SpatialSceneId},
+	spatial::scene::{SpatialScene, SpatialSceneHandle, SpatialSceneId, SpatialSceneSettings},
 	track::{SubTrackId, Track, TrackBuilder, TrackHandle, TrackId},
 	tween::Tween,
 	ClockSpeed,
@@ -159,7 +159,10 @@ impl<B: Backend> AudioManager<B> {
 	}
 
 	/// Creates a spatial scene.
-	pub fn add_spatial_scene(&mut self) -> Result<SpatialSceneHandle, AddSpatialSceneError> {
+	pub fn add_spatial_scene(
+		&mut self,
+		settings: SpatialSceneSettings,
+	) -> Result<SpatialSceneHandle, AddSpatialSceneError> {
 		while self.unused_resource_consumers.spatial_scene.pop().is_some() {}
 		let id = SpatialSceneId(
 			self.resource_controllers
@@ -167,10 +170,12 @@ impl<B: Backend> AudioManager<B> {
 				.try_reserve()
 				.map_err(|_| AddSpatialSceneError::SpatialSceneLimitReached)?,
 		);
-		let spatial_scene = SpatialScene::new();
+		let (spatial_scene, unused_emitter_consumer) = SpatialScene::new(settings);
 		let handle = SpatialSceneHandle {
 			id,
 			shared: spatial_scene.shared(),
+			emitter_controller: spatial_scene.emitter_controller(),
+			unused_emitter_consumer,
 			command_producer: self.command_producer.clone(),
 		};
 		self.command_producer

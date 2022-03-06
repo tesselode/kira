@@ -1,27 +1,68 @@
 mod handle;
+mod settings;
 
 pub use handle::*;
+use ringbuf::{Consumer, Producer, RingBuffer};
+pub use settings::*;
 
 use std::sync::{
 	atomic::{AtomicBool, Ordering},
 	Arc,
 };
 
-use atomic_arena::Key;
+use atomic_arena::{Arena, Controller, Key};
+
+use super::emitter::{Emitter, EmitterId};
 
 pub(crate) struct SpatialScene {
+	emitters: Arena<Emitter>,
+	unused_emitter_producer: Producer<Emitter>,
 	shared: Arc<SpatialSceneShared>,
 }
 
 impl SpatialScene {
-	pub(crate) fn new() -> Self {
-		Self {
-			shared: Arc::new(SpatialSceneShared::new()),
+	pub fn new(settings: SpatialSceneSettings) -> (Self, Consumer<Emitter>) {
+		let (unused_emitter_producer, unused_emitter_consumer) =
+			RingBuffer::new(settings.emitter_capacity).split();
+		(
+			Self {
+				emitters: Arena::new(settings.emitter_capacity),
+				unused_emitter_producer,
+				shared: Arc::new(SpatialSceneShared::new()),
+			},
+			unused_emitter_consumer,
+		)
+	}
+
+	pub fn shared(&self) -> Arc<SpatialSceneShared> {
+		self.shared.clone()
+	}
+
+	pub fn emitter_controller(&self) -> Controller {
+		self.emitters.controller()
+	}
+
+	pub fn on_start_processing(&mut self) {
+		if self.unused_emitter_producer.is_full() {
+			return;
+		}
+		for (_, emitter) in self
+			.emitters
+			.drain_filter(|emitter| emitter.shared().is_marked_for_removal())
+		{
+			if self.unused_emitter_producer.push(emitter).is_err() {
+				panic!("Unused emitter producer is full")
+			}
+			if self.unused_emitter_producer.is_full() {
+				return;
+			}
 		}
 	}
 
-	pub(crate) fn shared(&self) -> Arc<SpatialSceneShared> {
-		self.shared.clone()
+	pub fn add_emitter(&mut self, id: EmitterId, emitter: Emitter) {
+		self.emitters
+			.insert_with_key(id.key, emitter)
+			.expect("Emitter arena is full");
 	}
 }
 
