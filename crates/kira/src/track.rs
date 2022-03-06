@@ -5,6 +5,9 @@ pub mod effect;
 mod handle;
 mod routes;
 
+#[cfg(test)]
+mod test;
+
 pub use builder::*;
 pub use handle::*;
 pub use routes::*;
