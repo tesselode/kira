@@ -1,4 +1,4 @@
-use crate::{track::TrackId, tween::Tween, LoopBehavior, PlaybackRate, StartTime, Volume};
+use crate::{tween::Tween, LoopBehavior, OutputDestination, PlaybackRate, StartTime, Volume};
 
 /// Settings for a static sound.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -25,8 +25,8 @@ pub struct StaticSoundSettings {
 	pub reverse: bool,
 	/// The looping behavior of the sound.
 	pub loop_behavior: Option<LoopBehavior>,
-	/// The mixer track this sound should play on.
-	pub track: TrackId,
+	/// The destination that this sound should be routed to.
+	pub output_destination: OutputDestination,
 	/// An optional fade-in from silence.
 	pub fade_in_tween: Option<Tween>,
 }
@@ -42,7 +42,7 @@ impl StaticSoundSettings {
 			panning: 0.5,
 			reverse: false,
 			loop_behavior: None,
-			track: TrackId::Main,
+			output_destination: OutputDestination::default(),
 			fade_in_tween: None,
 		}
 	}
@@ -101,10 +101,10 @@ impl StaticSoundSettings {
 		}
 	}
 
-	/// Sets the mixer track this sound should play on.
-	pub fn track(self, track: impl Into<TrackId>) -> Self {
+	/// Sets the destination that this sound should be routed to.
+	pub fn output_destination(self, output_destination: impl Into<OutputDestination>) -> Self {
 		Self {
-			track: track.into(),
+			output_destination: output_destination.into(),
 			..self
 		}
 	}

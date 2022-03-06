@@ -9,20 +9,32 @@ use std::sync::{
 
 use atomic_arena::Key;
 
+use crate::dsp::Frame;
+
 use super::scene::SpatialSceneId;
 
 pub(crate) struct Emitter {
 	shared: Arc<EmitterShared>,
+	input: Frame,
 }
 
 impl Emitter {
-	pub(crate) fn new() -> Self {
+	pub fn new() -> Self {
 		Self {
 			shared: Arc::new(EmitterShared::new()),
+			input: Frame::ZERO,
 		}
 	}
 
-	pub(crate) fn shared(&self) -> Arc<EmitterShared> {
+	pub fn add_input(&mut self, input: Frame) {
+		self.input += input;
+	}
+
+	pub fn reset_input(&mut self) {
+		self.input = Frame::ZERO;
+	}
+
+	pub fn shared(&self) -> Arc<EmitterShared> {
 		self.shared.clone()
 	}
 }

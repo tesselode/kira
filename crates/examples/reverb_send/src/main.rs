@@ -30,7 +30,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 			.loop_behavior(LoopBehavior {
 				start_position: 0.0,
 			})
-			.track(&sfx),
+			.output_destination(&sfx),
 	)?;
 	manager.play(sound)?;
 

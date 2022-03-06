@@ -128,7 +128,9 @@ impl Renderer {
 			self.dt,
 			&ClockInfoProvider::new(&self.resources.clocks),
 			&mut self.resources.mixer,
+			&mut self.resources.spatial_scenes,
 		);
+		self.resources.spatial_scenes.process();
 		let out = self
 			.resources
 			.mixer

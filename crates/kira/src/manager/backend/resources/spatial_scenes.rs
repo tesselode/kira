@@ -1,7 +1,10 @@
 use atomic_arena::{Arena, Controller};
 use ringbuf::HeapProducer;
 
-use crate::{manager::command::SpatialSceneCommand, spatial::scene::SpatialScene};
+use crate::{
+	manager::command::SpatialSceneCommand,
+	spatial::scene::{SpatialScene, SpatialSceneId},
+};
 
 pub(crate) struct SpatialScenes {
 	scenes: Arena<SpatialScene>,
@@ -18,6 +21,10 @@ impl SpatialScenes {
 
 	pub fn controller(&self) -> Controller {
 		self.scenes.controller()
+	}
+
+	pub fn get_mut(&mut self, id: SpatialSceneId) -> Option<&mut SpatialScene> {
+		self.scenes.get_mut(id.0)
 	}
 
 	pub fn on_start_processing(&mut self) {
@@ -60,6 +67,12 @@ impl SpatialScenes {
 					scene.add_listener(id, listener);
 				}
 			}
+		}
+	}
+
+	pub fn process(&mut self) {
+		for (_, scene) in &mut self.scenes {
+			scene.process();
 		}
 	}
 }

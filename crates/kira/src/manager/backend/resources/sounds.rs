@@ -1,9 +1,12 @@
 use atomic_arena::{Arena, Controller};
 use ringbuf::HeapProducer;
 
-use crate::{clock::clock_info::ClockInfoProvider, manager::command::SoundCommand, sound::Sound};
+use crate::{
+	clock::clock_info::ClockInfoProvider, manager::command::SoundCommand, sound::Sound,
+	OutputDestination,
+};
 
-use super::mixer::Mixer;
+use super::{mixer::Mixer, spatial_scenes::SpatialScenes};
 
 pub(crate) struct Sounds {
 	sounds: Arena<Box<dyn Sound>>,
@@ -52,10 +55,27 @@ impl Sounds {
 		}
 	}
 
-	pub fn process(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider, mixer: &mut Mixer) {
+	pub fn process(
+		&mut self,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+		mixer: &mut Mixer,
+		scenes: &mut SpatialScenes,
+	) {
 		for (_, sound) in &mut self.sounds {
-			if let Some(track) = mixer.track_mut(sound.track()) {
-				track.add_input(sound.process(dt, clock_info_provider));
+			match sound.output_destination() {
+				OutputDestination::Track(track_id) => {
+					if let Some(track) = mixer.track_mut(track_id) {
+						track.add_input(sound.process(dt, clock_info_provider));
+					}
+				}
+				OutputDestination::Emitter(emitter_id) => {
+					if let Some(scene) = scenes.get_mut(emitter_id.scene_id) {
+						if let Some(emitter) = scene.emitter_mut(emitter_id) {
+							emitter.add_input(sound.process(dt, clock_info_provider));
+						}
+					}
+				}
 			}
 		}
 	}

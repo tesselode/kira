@@ -11,7 +11,7 @@ pub mod streaming;
 #[cfg(feature = "symphonia")]
 pub use error::*;
 
-use crate::{clock::clock_info::ClockInfoProvider, dsp::Frame, track::TrackId};
+use crate::{clock::clock_info::ClockInfoProvider, dsp::Frame, OutputDestination};
 
 /// A source of audio that is loaded, but not yet playing.
 pub trait SoundData {
@@ -31,8 +31,8 @@ pub trait SoundData {
 /// An actively playing sound.
 #[allow(unused_variables)]
 pub trait Sound: Send {
-	/// Returns the mixer track that this sound's audio should be routed to.
-	fn track(&mut self) -> TrackId;
+	/// Returns the destination that this sound's audio should be routed to.
+	fn output_destination(&mut self) -> OutputDestination;
 
 	/// Called whenever a new batch of audio samples is requested by the backend.
 	///

@@ -17,9 +17,8 @@ use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
 	dsp::Frame,
 	sound::Sound,
-	track::TrackId,
 	tween::{Tween, Tweener},
-	LoopBehavior, PlaybackRate, StartTime, Volume,
+	LoopBehavior, OutputDestination, PlaybackRate, StartTime, Volume,
 };
 
 use self::resampler::Resampler;
@@ -236,8 +235,8 @@ impl StaticSound {
 }
 
 impl Sound for StaticSound {
-	fn track(&mut self) -> TrackId {
-		self.data.settings.track
+	fn output_destination(&mut self) -> OutputDestination {
+		self.data.settings.output_destination
 	}
 
 	fn on_start_processing(&mut self) {

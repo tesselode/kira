@@ -5,7 +5,7 @@ pub use error::*;
 use std::sync::Arc;
 
 use atomic_arena::Controller;
-use ringbuf::Consumer;
+use ringbuf::HeapConsumer;
 
 use crate::{
 	manager::command::{producer::CommandProducer, Command, SpatialSceneCommand},
@@ -27,9 +27,9 @@ pub struct SpatialSceneHandle {
 	pub(crate) id: SpatialSceneId,
 	pub(crate) shared: Arc<SpatialSceneShared>,
 	pub(crate) emitter_controller: Controller,
-	pub(crate) unused_emitter_consumer: Consumer<Emitter>,
+	pub(crate) unused_emitter_consumer: HeapConsumer<Emitter>,
 	pub(crate) listener_controller: Controller,
-	pub(crate) unused_listener_consumer: Consumer<Listener>,
+	pub(crate) unused_listener_consumer: HeapConsumer<Listener>,
 	pub(crate) command_producer: CommandProducer,
 }
 

@@ -2,7 +2,7 @@ mod handle;
 mod settings;
 
 pub use handle::*;
-use ringbuf::{Consumer, Producer, RingBuffer};
+use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 pub use settings::*;
 
 use std::sync::{
@@ -19,18 +19,20 @@ use super::{
 
 pub(crate) struct SpatialScene {
 	emitters: Arena<Emitter>,
-	unused_emitter_producer: Producer<Emitter>,
+	unused_emitter_producer: HeapProducer<Emitter>,
 	listeners: Arena<Listener>,
-	unused_listener_producer: Producer<Listener>,
+	unused_listener_producer: HeapProducer<Listener>,
 	shared: Arc<SpatialSceneShared>,
 }
 
 impl SpatialScene {
-	pub fn new(settings: SpatialSceneSettings) -> (Self, Consumer<Emitter>, Consumer<Listener>) {
+	pub fn new(
+		settings: SpatialSceneSettings,
+	) -> (Self, HeapConsumer<Emitter>, HeapConsumer<Listener>) {
 		let (unused_emitter_producer, unused_emitter_consumer) =
-			RingBuffer::new(settings.emitter_capacity).split();
+			HeapRb::new(settings.emitter_capacity).split();
 		let (unused_listener_producer, unused_listener_consumer) =
-			RingBuffer::new(settings.listener_capacity).split();
+			HeapRb::new(settings.listener_capacity).split();
 		(
 			Self {
 				emitters: Arena::new(settings.emitter_capacity),
@@ -54,6 +56,10 @@ impl SpatialScene {
 
 	pub fn listener_controller(&self) -> Controller {
 		self.listeners.controller()
+	}
+
+	pub fn emitter_mut(&mut self, id: EmitterId) -> Option<&mut Emitter> {
+		self.emitters.get_mut(id.key)
 	}
 
 	pub fn on_start_processing(&mut self) {
@@ -92,6 +98,12 @@ impl SpatialScene {
 			if self.unused_listener_producer.is_full() {
 				return;
 			}
+		}
+	}
+
+	pub fn process(&mut self) {
+		for (_, emitter) in &mut self.emitters {
+			emitter.reset_input();
 		}
 	}
 
