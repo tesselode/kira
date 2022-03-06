@@ -5,6 +5,7 @@ use atomic_arena::Key;
 use crate::{
 	clock::{Clock, ClockId},
 	sound::Sound,
+	spatial::scene::{SpatialScene, SpatialSceneId},
 	track::{SubTrackId, Track, TrackId},
 	tween::Tween,
 	ClockSpeed, Volume,
@@ -33,10 +34,15 @@ pub(crate) enum ClockCommand {
 	Stop(ClockId),
 }
 
+pub(crate) enum SpatialSceneCommand {
+	Add(SpatialSceneId, SpatialScene),
+}
+
 pub(crate) enum Command {
 	Sound(SoundCommand),
 	Mixer(MixerCommand),
 	Clock(ClockCommand),
+	SpatialScene(SpatialSceneCommand),
 	Pause(Tween),
 	Resume(Tween),
 }

@@ -78,12 +78,16 @@ impl Renderer {
 		self.resources.sounds.on_start_processing();
 		self.resources.mixer.on_start_processing();
 		self.resources.clocks.on_start_processing();
+		self.resources.spatial_scenes.on_start_processing();
 
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
 				Command::Sound(command) => self.resources.sounds.run_command(command),
 				Command::Mixer(command) => self.resources.mixer.run_command(command),
 				Command::Clock(command) => self.resources.clocks.run_command(command),
+				Command::SpatialScene(command) => {
+					self.resources.spatial_scenes.run_command(command)
+				}
 				Command::Pause(fade_out_tween) => {
 					self.state = MainPlaybackState::Pausing;
 					self.shared
