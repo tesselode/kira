@@ -7,6 +7,7 @@ use crate::{
 	sound::Sound,
 	spatial::{
 		emitter::{Emitter, EmitterId},
+		listener::{Listener, ListenerId},
 		scene::{SpatialScene, SpatialSceneId},
 	},
 	track::{SubTrackId, Track, TrackId},
@@ -40,6 +41,7 @@ pub(crate) enum ClockCommand {
 pub(crate) enum SpatialSceneCommand {
 	Add(SpatialSceneId, SpatialScene),
 	AddEmitter(EmitterId, Emitter),
+	AddListener(ListenerId, Listener),
 }
 
 pub(crate) enum Command {

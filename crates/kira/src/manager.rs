@@ -170,12 +170,15 @@ impl<B: Backend> AudioManager<B> {
 				.try_reserve()
 				.map_err(|_| AddSpatialSceneError::SpatialSceneLimitReached)?,
 		);
-		let (spatial_scene, unused_emitter_consumer) = SpatialScene::new(settings);
+		let (spatial_scene, unused_emitter_consumer, unused_listener_consumer) =
+			SpatialScene::new(settings);
 		let handle = SpatialSceneHandle {
 			id,
 			shared: spatial_scene.shared(),
 			emitter_controller: spatial_scene.emitter_controller(),
 			unused_emitter_consumer,
+			listener_controller: spatial_scene.listener_controller(),
+			unused_listener_consumer,
 			command_producer: self.command_producer.clone(),
 		};
 		self.command_producer

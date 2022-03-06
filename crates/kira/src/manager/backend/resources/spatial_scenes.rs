@@ -55,6 +55,11 @@ impl SpatialScenes {
 					scene.add_emitter(id, emitter);
 				}
 			}
+			SpatialSceneCommand::AddListener(id, listener) => {
+				if let Some(scene) = self.scenes.get_mut(id.scene().0) {
+					scene.add_listener(id, listener);
+				}
+			}
 		}
 	}
 }

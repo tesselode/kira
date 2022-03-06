@@ -1,5 +1,7 @@
 mod error;
 
+pub use error::*;
+
 use std::sync::Arc;
 
 use atomic_arena::Controller;
@@ -7,7 +9,10 @@ use ringbuf::Consumer;
 
 use crate::{
 	manager::command::{producer::CommandProducer, Command, SpatialSceneCommand},
-	spatial::emitter::{Emitter, EmitterHandle, EmitterId},
+	spatial::{
+		emitter::{Emitter, EmitterHandle, EmitterId},
+		listener::{Listener, ListenerHandle, ListenerId},
+	},
 };
 
 use self::error::AddEmitterError;
@@ -23,6 +28,8 @@ pub struct SpatialSceneHandle {
 	pub(crate) shared: Arc<SpatialSceneShared>,
 	pub(crate) emitter_controller: Controller,
 	pub(crate) unused_emitter_consumer: Consumer<Emitter>,
+	pub(crate) listener_controller: Controller,
+	pub(crate) unused_listener_consumer: Consumer<Listener>,
 	pub(crate) command_producer: CommandProducer,
 }
 
@@ -51,6 +58,29 @@ impl SpatialSceneHandle {
 		self.command_producer
 			.push(Command::SpatialScene(SpatialSceneCommand::AddEmitter(
 				id, emitter,
+			)))?;
+		Ok(handle)
+	}
+
+	/// Adds an listener to the scene.
+	pub fn add_listener(&mut self) -> Result<ListenerHandle, AddListenerError> {
+		while self.unused_listener_consumer.pop().is_some() {}
+		let id = ListenerId {
+			key: self
+				.listener_controller
+				.try_reserve()
+				.map_err(|_| AddListenerError::ListenerLimitReached)?,
+			scene_id: self.id,
+		};
+		let listener = Listener::new();
+		let handle = ListenerHandle {
+			id,
+			shared: listener.shared(),
+			command_producer: self.command_producer.clone(),
+		};
+		self.command_producer
+			.push(Command::SpatialScene(SpatialSceneCommand::AddListener(
+				id, listener,
 			)))?;
 		Ok(handle)
 	}

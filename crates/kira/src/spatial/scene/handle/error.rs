@@ -40,3 +40,39 @@ impl From<CommandError> for AddEmitterError {
 		Self::CommandError(v)
 	}
 }
+
+/// Errors that can occur when creating a listener.
+#[derive(Debug)]
+#[non_exhaustive]
+pub enum AddListenerError {
+	/// Could not add a listener because the maximum number of listeners has been reached.
+	ListenerLimitReached,
+	/// An error occured when sending a command to the audio thread.
+	CommandError(CommandError),
+}
+
+impl Display for AddListenerError {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		match self {
+			AddListenerError::ListenerLimitReached => f.write_str(
+				"Could not add a listener because the maximum number of listeners has been reached.",
+			),
+			AddListenerError::CommandError(error) => error.fmt(f),
+		}
+	}
+}
+
+impl Error for AddListenerError {
+	fn source(&self) -> Option<&(dyn Error + 'static)> {
+		match self {
+			AddListenerError::CommandError(error) => Some(error),
+			_ => None,
+		}
+	}
+}
+
+impl From<CommandError> for AddListenerError {
+	fn from(v: CommandError) -> Self {
+		Self::CommandError(v)
+	}
+}
