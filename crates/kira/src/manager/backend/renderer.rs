@@ -117,7 +117,6 @@ impl Renderer {
 				self.state = MainPlaybackState::Paused;
 			}
 		}
-
 		if self.state == MainPlaybackState::Paused {
 			return Frame::ZERO;
 		}
@@ -130,7 +129,9 @@ impl Renderer {
 			&mut self.resources.mixer,
 			&mut self.resources.spatial_scenes,
 		);
-		self.resources.spatial_scenes.process();
+		self.resources
+			.spatial_scenes
+			.process(&mut self.resources.mixer);
 		let out = self
 			.resources
 			.mixer

@@ -11,7 +11,7 @@ use crate::{
 	manager::command::{producer::CommandProducer, Command, SpatialSceneCommand},
 	spatial::{
 		emitter::{Emitter, EmitterHandle, EmitterId},
-		listener::{Listener, ListenerHandle, ListenerId},
+		listener::{Listener, ListenerHandle, ListenerId, ListenerSettings},
 	},
 };
 
@@ -63,7 +63,10 @@ impl SpatialSceneHandle {
 	}
 
 	/// Adds an listener to the scene.
-	pub fn add_listener(&mut self) -> Result<ListenerHandle, AddListenerError> {
+	pub fn add_listener(
+		&mut self,
+		settings: ListenerSettings,
+	) -> Result<ListenerHandle, AddListenerError> {
 		while self.unused_listener_consumer.pop().is_some() {}
 		let id = ListenerId {
 			key: self
@@ -72,7 +75,7 @@ impl SpatialSceneHandle {
 				.map_err(|_| AddListenerError::ListenerLimitReached)?,
 			scene_id: self.id,
 		};
-		let listener = Listener::new();
+		let listener = Listener::new(settings);
 		let handle = ListenerHandle {
 			id,
 			shared: listener.shared(),

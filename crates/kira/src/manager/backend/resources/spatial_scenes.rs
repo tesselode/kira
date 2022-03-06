@@ -6,6 +6,8 @@ use crate::{
 	spatial::scene::{SpatialScene, SpatialSceneId},
 };
 
+use super::mixer::Mixer;
+
 pub(crate) struct SpatialScenes {
 	scenes: Arena<SpatialScene>,
 	unused_scene_producer: HeapProducer<SpatialScene>,
@@ -70,9 +72,9 @@ impl SpatialScenes {
 		}
 	}
 
-	pub fn process(&mut self) {
+	pub fn process(&mut self, mixer: &mut Mixer) {
 		for (_, scene) in &mut self.scenes {
-			scene.process();
+			scene.process(mixer);
 		}
 	}
 }

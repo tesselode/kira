@@ -1,29 +1,47 @@
 mod handle;
+mod settings;
 
 pub use handle::*;
+pub use settings::*;
 
 use std::sync::{
 	atomic::{AtomicBool, Ordering},
 	Arc,
 };
 
-use atomic_arena::Key;
+use atomic_arena::{Arena, Key};
 
-use super::scene::SpatialSceneId;
+use crate::{dsp::Frame, track::TrackId};
+
+use super::{emitter::Emitter, scene::SpatialSceneId};
 
 pub(crate) struct Listener {
 	shared: Arc<ListenerShared>,
+	track: TrackId,
 }
 
 impl Listener {
-	pub(crate) fn new() -> Self {
+	pub fn new(settings: ListenerSettings) -> Self {
 		Self {
 			shared: Arc::new(ListenerShared::new()),
+			track: settings.track,
 		}
 	}
 
-	pub(crate) fn shared(&self) -> Arc<ListenerShared> {
+	pub fn shared(&self) -> Arc<ListenerShared> {
 		self.shared.clone()
+	}
+
+	pub fn track(&self) -> TrackId {
+		self.track
+	}
+
+	pub fn process(&mut self, emitters: &Arena<Emitter>) -> Frame {
+		let mut output = Frame::ZERO;
+		for (_, emitter) in emitters {
+			output += emitter.input();
+		}
+		output
 	}
 }
 

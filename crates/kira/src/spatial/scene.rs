@@ -12,6 +12,8 @@ use std::sync::{
 
 use atomic_arena::{Arena, Controller, Key};
 
+use crate::manager::backend::resources::mixer::Mixer;
+
 use super::{
 	emitter::{Emitter, EmitterId},
 	listener::{Listener, ListenerId},
@@ -101,7 +103,12 @@ impl SpatialScene {
 		}
 	}
 
-	pub fn process(&mut self) {
+	pub fn process(&mut self, mixer: &mut Mixer) {
+		for (_, listener) in &mut self.listeners {
+			if let Some(track) = mixer.track_mut(listener.track()) {
+				track.add_input(listener.process(&self.emitters));
+			}
+		}
 		for (_, emitter) in &mut self.emitters {
 			emitter.reset_input();
 		}

@@ -26,6 +26,10 @@ impl Emitter {
 		}
 	}
 
+	pub fn input(&self) -> Frame {
+		self.input
+	}
+
 	pub fn add_input(&mut self, input: Frame) {
 		self.input += input;
 	}
