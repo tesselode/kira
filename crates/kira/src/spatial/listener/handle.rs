@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::{
 	manager::command::{producer::CommandProducer, Command, SpatialSceneCommand},
-	math::Vec3,
+	math::{Vec3, Quaternion},
 	CommandError,
 };
 
@@ -27,6 +27,12 @@ impl ListenerHandle {
 	pub fn set_position(&mut self, position: Vec3) -> Result<(), CommandError> {
 		self.command_producer.push(Command::SpatialScene(
 			SpatialSceneCommand::SetListenerPosition(self.id, position),
+		))
+	}
+
+	pub fn set_orientation(&mut self, orientation: Quaternion) -> Result<(), CommandError> {
+		self.command_producer.push(Command::SpatialScene(
+			SpatialSceneCommand::SetListenerOrientation(self.id, orientation),
 		))
 	}
 }

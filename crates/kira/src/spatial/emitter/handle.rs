@@ -1,6 +1,10 @@
 use std::sync::Arc;
 
-use crate::manager::command::producer::CommandProducer;
+use crate::{
+	manager::command::{producer::CommandProducer, Command, SpatialSceneCommand},
+	math::Vec3,
+	CommandError,
+};
 
 use super::{EmitterId, EmitterShared};
 
@@ -18,6 +22,12 @@ impl EmitterHandle {
 	/// Returns the unique identifier for the emitter.
 	pub fn id(&self) -> EmitterId {
 		self.id
+	}
+
+	pub fn set_position(&mut self, position: Vec3) -> Result<(), CommandError> {
+		self.command_producer.push(Command::SpatialScene(
+			SpatialSceneCommand::SetEmitterPosition(self.id, position),
+		))
 	}
 }
 

@@ -4,7 +4,7 @@ use atomic_arena::Key;
 
 use crate::{
 	clock::{Clock, ClockId},
-	math::Vec3,
+	math::{Quaternion, Vec3},
 	sound::Sound,
 	spatial::{
 		emitter::{Emitter, EmitterId},
@@ -44,6 +44,8 @@ pub(crate) enum SpatialSceneCommand {
 	AddEmitter(EmitterId, Emitter),
 	AddListener(ListenerId, Listener),
 	SetListenerPosition(ListenerId, Vec3),
+	SetListenerOrientation(ListenerId, Quaternion),
+	SetEmitterPosition(EmitterId, Vec3),
 }
 
 pub(crate) enum Command {

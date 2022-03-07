@@ -76,6 +76,20 @@ impl SpatialScenes {
 					}
 				}
 			}
+			SpatialSceneCommand::SetListenerOrientation(id, orientation) => {
+				if let Some(scene) = self.scenes.get_mut(id.scene().0) {
+					if let Some(listener) = scene.listener_mut(id) {
+						listener.set_orientation(orientation);
+					}
+				}
+			}
+			SpatialSceneCommand::SetEmitterPosition(id, position) => {
+				if let Some(scene) = self.scenes.get_mut(id.scene().0) {
+					if let Some(emitter) = scene.emitter_mut(id) {
+						emitter.set_position(position);
+					}
+				}
+			}
 		}
 	}
 

@@ -52,6 +52,10 @@ impl Listener {
 		self.position = position;
 	}
 
+	pub fn set_orientation(&mut self, orientation: Quaternion) {
+		self.orientation = orientation;
+	}
+
 	pub fn process(&mut self, emitters: &Arena<Emitter>) -> Frame {
 		let mut output = Frame::ZERO;
 		for (_, emitter) in emitters {

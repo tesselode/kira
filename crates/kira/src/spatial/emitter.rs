@@ -62,6 +62,10 @@ impl Emitter {
 		self.enable_spatialization
 	}
 
+	pub fn set_position(&mut self, position: Vec3) {
+		self.position = position;
+	}
+
 	pub fn add_input(&mut self, input: Frame) {
 		self.input += input;
 	}
