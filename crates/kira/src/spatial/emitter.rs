@@ -22,6 +22,7 @@ pub(crate) struct Emitter {
 	position: Vec3,
 	distances: EmitterDistances,
 	attenuation_function: Option<Easing>,
+	enable_spatialization: bool,
 	input: Frame,
 }
 
@@ -32,6 +33,7 @@ impl Emitter {
 			position,
 			distances: settings.distances,
 			attenuation_function: settings.attenuation_function,
+			enable_spatialization: settings.enable_spatialization,
 			input: Frame::ZERO,
 		}
 	}
@@ -54,6 +56,10 @@ impl Emitter {
 
 	pub fn attenuation_function(&self) -> Option<Easing> {
 		self.attenuation_function
+	}
+
+	pub fn enable_spatialization(&self) -> bool {
+		self.enable_spatialization
 	}
 
 	pub fn add_input(&mut self, input: Frame) {

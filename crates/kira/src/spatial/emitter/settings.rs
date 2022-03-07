@@ -6,6 +6,7 @@ use super::EmitterDistances;
 pub struct EmitterSettings {
 	pub distances: EmitterDistances,
 	pub attenuation_function: Option<Easing>,
+	pub enable_spatialization: bool,
 }
 
 impl EmitterSettings {
@@ -13,6 +14,7 @@ impl EmitterSettings {
 		Self {
 			distances: EmitterDistances::default(),
 			attenuation_function: Some(Easing::Linear),
+			enable_spatialization: true,
 		}
 	}
 
@@ -26,6 +28,13 @@ impl EmitterSettings {
 	pub fn attenuation_function(self, attenuation_function: impl Into<Option<Easing>>) -> Self {
 		Self {
 			attenuation_function: attenuation_function.into(),
+			..self
+		}
+	}
+
+	pub fn enable_spatialization(self, enable_spatialization: bool) -> Self {
+		Self {
+			enable_spatialization,
 			..self
 		}
 	}

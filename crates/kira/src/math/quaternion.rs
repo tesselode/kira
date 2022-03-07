@@ -18,8 +18,15 @@ pub struct Quaternion {
 }
 
 impl Quaternion {
+	pub(crate) const IDENTITY: Self = Self {
+		w: 1.0,
+		x: 0.0,
+		y: 0.0,
+		z: 0.0,
+	};
+
 	/// Returns the inverse of this quaternion.
-	pub fn inverted(self) -> Self {
+	pub(crate) fn inverted(self) -> Self {
 		Self {
 			w: self.w,
 			x: -self.x,
@@ -29,7 +36,7 @@ impl Quaternion {
 	}
 
 	/// Uses this quaternion to rotate a point.
-	pub fn rotate_point(&self, point: Vec3) -> Vec3 {
+	pub(crate) fn rotate_point(&self, point: Vec3) -> Vec3 {
 		let p = Quaternion {
 			w: 0.0,
 			x: point.x,
@@ -38,6 +45,12 @@ impl Quaternion {
 		};
 		let Quaternion { x, y, z, .. } = self.inverted() * p * *self;
 		Vec3 { x, y, z }
+	}
+}
+
+impl Default for Quaternion {
+	fn default() -> Self {
+		Self::IDENTITY
 	}
 }
 

@@ -11,13 +11,22 @@ use std::sync::{
 
 use atomic_arena::{Arena, Key};
 
-use crate::{dsp::Frame, math::Vec3, track::TrackId, tween::Tweenable, Volume};
+use crate::{
+	dsp::Frame,
+	math::{Quaternion, Vec3},
+	track::TrackId,
+	tween::Tweenable,
+	Volume,
+};
 
 use super::{emitter::Emitter, scene::SpatialSceneId};
+
+const EAR_DISTANCE: f32 = 0.1;
 
 pub(crate) struct Listener {
 	shared: Arc<ListenerShared>,
 	position: Vec3,
+	orientation: Quaternion,
 	track: TrackId,
 }
 
@@ -26,6 +35,7 @@ impl Listener {
 		Self {
 			shared: Arc::new(ListenerShared::new()),
 			position: settings.position,
+			orientation: settings.orientation,
 			track: settings.track,
 		}
 	}
@@ -46,6 +56,7 @@ impl Listener {
 		let mut output = Frame::ZERO;
 		for (_, emitter) in emitters {
 			let mut emitter_output = emitter.output();
+			// attenuate volume
 			if let Some(attenuation_function) = emitter.attenuation_function() {
 				let distance = (emitter.position() - self.position).magnitude();
 				let relative_distance = emitter.distances().relative_distance(distance);
@@ -59,9 +70,31 @@ impl Listener {
 				.as_amplitude() as f32;
 				emitter_output *= amplitude;
 			}
+			// apply spatialization
+			if emitter.enable_spatialization() {
+				let (left_ear_position, right_ear_position) = self.ear_positions();
+				let left_ear_direction = self.orientation.rotate_point(Vec3::LEFT);
+				let right_ear_direction = self.orientation.rotate_point(Vec3::RIGHT);
+				let emitter_direction_relative_to_left_ear =
+					(emitter.position() - left_ear_position).normalized();
+				let emitter_direction_relative_to_right_ear =
+					(emitter.position() - right_ear_position).normalized();
+				let left_ear_volume =
+					(left_ear_direction.dot(emitter_direction_relative_to_left_ear) + 1.0) / 2.0;
+				let right_ear_volume =
+					(right_ear_direction.dot(emitter_direction_relative_to_right_ear) + 1.0) / 2.0;
+				emitter_output.left *= left_ear_volume;
+				emitter_output.right *= right_ear_volume;
+			}
 			output += emitter_output;
 		}
 		output
+	}
+
+	fn ear_positions(&self) -> (Vec3, Vec3) {
+		let left = self.position + self.orientation.rotate_point(Vec3::LEFT * EAR_DISTANCE);
+		let right = self.position + self.orientation.rotate_point(Vec3::RIGHT * EAR_DISTANCE);
+		(left, right)
 	}
 }
 
