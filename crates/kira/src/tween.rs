@@ -51,7 +51,7 @@ pub enum Easing {
 }
 
 impl Easing {
-	fn apply(&self, mut x: f64) -> f64 {
+	pub(crate) fn apply(&self, mut x: f64) -> f64 {
 		match self {
 			Easing::Linear => x,
 			Easing::InPowi(power) => x.powi(*power),

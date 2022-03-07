@@ -1,6 +1,10 @@
 use std::sync::Arc;
 
-use crate::manager::command::producer::CommandProducer;
+use crate::{
+	manager::command::{producer::CommandProducer, Command, SpatialSceneCommand},
+	math::Vec3,
+	CommandError,
+};
 
 use super::{ListenerId, ListenerShared};
 
@@ -18,6 +22,12 @@ impl ListenerHandle {
 	/// Returns the unique identifier for the listener.
 	pub fn id(&self) -> ListenerId {
 		self.id
+	}
+
+	pub fn set_position(&mut self, position: Vec3) -> Result<(), CommandError> {
+		self.command_producer.push(Command::SpatialScene(
+			SpatialSceneCommand::SetListenerPosition(self.id, position),
+		))
 	}
 }
 

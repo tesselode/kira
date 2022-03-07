@@ -1,6 +1,10 @@
+mod distances;
 mod handle;
+mod settings;
 
+pub use distances::*;
 pub use handle::*;
+pub use settings::*;
 
 use std::sync::{
 	atomic::{AtomicBool, Ordering},
@@ -9,25 +13,47 @@ use std::sync::{
 
 use atomic_arena::Key;
 
-use crate::dsp::Frame;
+use crate::{dsp::Frame, math::Vec3, tween::Easing};
 
 use super::scene::SpatialSceneId;
 
 pub(crate) struct Emitter {
 	shared: Arc<EmitterShared>,
+	position: Vec3,
+	distances: EmitterDistances,
+	attenuation_function: Option<Easing>,
 	input: Frame,
 }
 
 impl Emitter {
-	pub fn new() -> Self {
+	pub fn new(position: Vec3, settings: EmitterSettings) -> Self {
 		Self {
 			shared: Arc::new(EmitterShared::new()),
+			position,
+			distances: settings.distances,
+			attenuation_function: settings.attenuation_function,
 			input: Frame::ZERO,
 		}
 	}
 
-	pub fn input(&self) -> Frame {
+	pub fn output(&self) -> Frame {
 		self.input
+	}
+
+	pub fn shared(&self) -> Arc<EmitterShared> {
+		self.shared.clone()
+	}
+
+	pub fn position(&self) -> Vec3 {
+		self.position
+	}
+
+	pub fn distances(&self) -> EmitterDistances {
+		self.distances
+	}
+
+	pub fn attenuation_function(&self) -> Option<Easing> {
+		self.attenuation_function
 	}
 
 	pub fn add_input(&mut self, input: Frame) {
@@ -36,10 +62,6 @@ impl Emitter {
 
 	pub fn reset_input(&mut self) {
 		self.input = Frame::ZERO;
-	}
-
-	pub fn shared(&self) -> Arc<EmitterShared> {
-		self.shared.clone()
 	}
 }
 

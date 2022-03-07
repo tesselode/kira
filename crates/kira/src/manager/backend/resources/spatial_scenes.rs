@@ -69,6 +69,13 @@ impl SpatialScenes {
 					scene.add_listener(id, listener);
 				}
 			}
+			SpatialSceneCommand::SetListenerPosition(id, position) => {
+				if let Some(scene) = self.scenes.get_mut(id.scene().0) {
+					if let Some(listener) = scene.listener_mut(id) {
+						listener.set_position(position);
+					}
+				}
+			}
 		}
 	}
 

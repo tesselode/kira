@@ -9,8 +9,9 @@ use ringbuf::HeapConsumer;
 
 use crate::{
 	manager::command::{producer::CommandProducer, Command, SpatialSceneCommand},
+	math::Vec3,
 	spatial::{
-		emitter::{Emitter, EmitterHandle, EmitterId},
+		emitter::{Emitter, EmitterHandle, EmitterId, EmitterSettings},
 		listener::{Listener, ListenerHandle, ListenerId, ListenerSettings},
 	},
 };
@@ -40,7 +41,11 @@ impl SpatialSceneHandle {
 	}
 
 	/// Adds an emitter to the scene.
-	pub fn add_emitter(&mut self) -> Result<EmitterHandle, AddEmitterError> {
+	pub fn add_emitter(
+		&mut self,
+		position: Vec3,
+		settings: EmitterSettings,
+	) -> Result<EmitterHandle, AddEmitterError> {
 		while self.unused_emitter_consumer.pop().is_some() {}
 		let id = EmitterId {
 			key: self
@@ -49,7 +54,7 @@ impl SpatialSceneHandle {
 				.map_err(|_| AddEmitterError::EmitterLimitReached)?,
 			scene_id: self.id,
 		};
-		let emitter = Emitter::new();
+		let emitter = Emitter::new(position, settings);
 		let handle = EmitterHandle {
 			id,
 			shared: emitter.shared(),

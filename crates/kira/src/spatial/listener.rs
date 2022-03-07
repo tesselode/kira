@@ -11,12 +11,13 @@ use std::sync::{
 
 use atomic_arena::{Arena, Key};
 
-use crate::{dsp::Frame, track::TrackId};
+use crate::{dsp::Frame, math::Vec3, track::TrackId, tween::Tweenable, Volume};
 
 use super::{emitter::Emitter, scene::SpatialSceneId};
 
 pub(crate) struct Listener {
 	shared: Arc<ListenerShared>,
+	position: Vec3,
 	track: TrackId,
 }
 
@@ -24,6 +25,7 @@ impl Listener {
 	pub fn new(settings: ListenerSettings) -> Self {
 		Self {
 			shared: Arc::new(ListenerShared::new()),
+			position: settings.position,
 			track: settings.track,
 		}
 	}
@@ -36,10 +38,28 @@ impl Listener {
 		self.track
 	}
 
+	pub fn set_position(&mut self, position: Vec3) {
+		self.position = position;
+	}
+
 	pub fn process(&mut self, emitters: &Arena<Emitter>) -> Frame {
 		let mut output = Frame::ZERO;
 		for (_, emitter) in emitters {
-			output += emitter.input();
+			let mut emitter_output = emitter.output();
+			if let Some(attenuation_function) = emitter.attenuation_function() {
+				let distance = (emitter.position() - self.position).magnitude();
+				let relative_distance = emitter.distances().relative_distance(distance);
+				let relative_volume =
+					attenuation_function.apply((1.0 - relative_distance).into()) as f32;
+				let amplitude = Tweenable::lerp(
+					Volume::Decibels(Volume::MIN_DECIBELS),
+					Volume::Decibels(0.0),
+					relative_volume.into(),
+				)
+				.as_amplitude() as f32;
+				emitter_output *= amplitude;
+			}
+			output += emitter_output;
 		}
 		output
 	}
