@@ -19,35 +19,35 @@ jobs:
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --no-default-features
+          args: -p kira --no-default-features
           name: desktop - no features
       - name: clippy (desktop - with cpal feature)
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --no-default-features --features=cpal
+          args: -p kira --no-default-features --features=cpal
           name: desktop - with cpal feature
       - name: clippy (desktop - with mp3 feature)
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --no-default-features --features=mp3
+          args: -p kira --no-default-features --features=mp3
           name: desktop - with mp3 feature
       - name: clippy (wasm32 - no features)
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --no-default-features --target=wasm32-unknown-unknown
+          args: -p kira --no-default-features --target=wasm32-unknown-unknown
           name: wasm32 - no features
       - name: clippy (wasm32 - with cpal feature)
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --no-default-features --features=cpal --target=wasm32-unknown-unknown
+          args: -p kira --no-default-features --features=cpal --target=wasm32-unknown-unknown
           name: wasm32 - with cpal feature
       - name: clippy (wasm32 - with mp3 feature)
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --no-default-features --features=mp3 --target=wasm32-unknown-unknown
+          args: -p kira --no-default-features --features=mp3 --target=wasm32-unknown-unknown
           name: wasm32 - with mp3 feature
