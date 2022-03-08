@@ -1,3 +1,105 @@
+# v0.6.0
+
+Kira v0.6 is a complete rewrite of Kira with the following goals:
+
+- Make the API more elegant
+- Make the library leaner by removing features that weren't pulling their weight
+- Provide a solid technical foundation for future feature development
+
+Of course, the overall goals of Kira are the same: provide a library that fills
+missing niches in most audio libraries and enables people to be creative with
+their game audio.
+
+## Streaming sounds
+
+Kira now supports streaming sounds! Unlike static sounds, which keep all audio
+data in memory, streaming sounds decode audio from the filesystem in realtime.
+This has a much leaner memory footprint at the cost of higher CPU usage.
+
+## The `Sound` trait
+
+Static and streaming sounds are both implementors of the new `Sound` trait.
+`Sound`s produce arbitrary streams of audio, so they can be used for both finite
+sounds or infinite sounds, like voice chat audio. In this sense, they're similar
+to `AudioStream`s from previous versions of Kira, but they can be automatically
+unloaded when they're finished, and they can receive clock events (see below).
+They're better integrated with the rest of Kira, making them first class
+citizens instead of escape hatches.
+
+Kira no longer has any concept of "instances". If you want to play a static
+sound multiple times, you can clone it each time you want to pass it to
+`AudioManager::play`. (Static sounds share their samples via an `Arc`, so
+cloning is cheap.) Streaming sounds cannot be cloned since each one opens up a
+new file handle.
+
+## Clocks
+
+Metronomes and sequences from previous versions of Kira were useful for complex
+audio scripting, but most games don't need such a complex system. In Kira v0.6,
+they're both replaced by clocks, which are simple timing sources.
+
+Static and streaming sounds can be set to start playing at a certain clock time.
+Additionally, tweens can be set to start at a clock time. This means anything
+involving a tween, such as fading out a sound or changing its playback rate, can
+be synced to a clock.
+
+If you need a more complex system, you should be able to build it in gameplay
+code using clocks as a building block.
+
+## More flexible mixer routing
+
+The mixer no longer makes a distinction between sub-tracks and send tracks. Any
+sub-track can be routed to any number of other sub-tracks.
+
+## Modular backends
+
+Previous versions of Kira were hardcoded to use cpal to talk to the operation
+system's audio drivers. Kira v0.6.0 has a `Backend` trait, so you can implement
+your own backends.
+
+## More permissive licensing
+
+Kira is now available under the MIT or Apache-2.0 license. (Previous versions
+were only available under MIT.)
+
+## Feature removals
+
+### Parameters
+
+Previous versions of Kira had global "parameters" that you could link settings
+to, like metronome tempos and instance playback rates. The only way to smoothly
+tween a setting was to link it to a parameter and tween that parameter. It is
+useful to be able to link multiple settings to one parameter, but the more
+common use case was to create a parameter just to tween one setting, which isn't
+very ergonomic.
+
+In Kira v0.6, parameters have been removed, and all settings can be tweened
+directly. In future versions, I'd like to bring back global parameters and allow
+users to either tween settings directly _or_ link them to parameters, I just
+haven't figured out a good way to architect that.
+
+### Arrangements
+
+The main purpose of arrangements was to make it easier to create looping music
+with intro sections. It served that purpose well, but it was overkill for that
+purpose, and it wouldn't work with streaming sounds.
+
+### Groups
+
+Groups were meant to help with pausing, resuming, stopping, and unloading large
+categories of resources. It tried to cover different types of resources with
+different notions of pausing, resuming, and stopping. It mapped decently to
+instances and sequences, but I think it would have been likely that future
+versions of Kira would have a resource type that groups didn't make sense for,
+and the abstraction would become shakier over time. Furthermore, resource
+management can be done from gameplay code, so it's not even necessary for Kira
+to provide this feature.
+
+## Changes since v0.6.0 beta 6
+
+- Added volume control and panning control effects
+- Removed the built-in panning control from mixer tracks
+
 # v0.6.0 beta 6 - March 5th, 2022
 
 - Moved the functionality from `kira-cpal` and `kira-loaders` into the main
