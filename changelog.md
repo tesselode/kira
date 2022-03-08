@@ -1,4 +1,4 @@
-# v0.6.0
+# v0.6.0 - March 7th, 2022
 
 Kira v0.6 is a complete rewrite of Kira with the following goals:
 
