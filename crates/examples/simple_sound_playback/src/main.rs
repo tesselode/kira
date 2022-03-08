@@ -8,7 +8,7 @@ use kira::{
 fn main() -> Result<(), Box<dyn Error>> {
 	let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
 	let sound = StaticSoundData::from_file(
-		"crates/kira/examples/blip.ogg",
+		"crates/examples/assets/blip.ogg",
 		StaticSoundSettings::default(),
 	)?;
 

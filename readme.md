@@ -143,6 +143,18 @@ Features I'd like to have:
 - C API
 - 3d audio
 
+## Running the example crates
+
+To run one of the examples, run this command from the root directory of the
+repo:
+
+```
+cargo run -p [example_name]
+```
+
+Where `[example_name]` is the name of one of the folders in crates/examples
+(besides the "assets" folder).
+
 ## Contributing
 
 I'd love for other people to get involved with development! Since the library is

@@ -25,7 +25,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 	let mut sfx = manager
 		.add_sub_track(TrackBuilder::new().routes(TrackRoutes::new().with_route(&reverb, 0.5)))?;
 	let sound = StaticSoundData::from_file(
-		"crates/kira/examples/blip.ogg",
+		"crates/examples/assets/blip.ogg",
 		StaticSoundSettings::new()
 			.loop_behavior(LoopBehavior {
 				start_position: 0.0,

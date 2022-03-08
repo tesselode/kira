@@ -1,5 +1,8 @@
 [workspace]
 members = [
 	"crates/kira",
+	"crates/examples/metronome",
+	"crates/examples/reverb_send",
+	"crates/examples/simple_sound_playback",
 	"crates/benchmarks",
 ]
