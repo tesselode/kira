@@ -15,7 +15,8 @@ use crate::{
 use super::StaticSoundData;
 
 impl StaticSoundData {
-	fn from_media_source(
+	/// Loads [`StaticSoundData`] from any [`MediaSource`].
+	pub fn from_media_source(
 		media_source: Box<dyn MediaSource>,
 		settings: StaticSoundSettings,
 	) -> Result<Self, FromFileError> {
