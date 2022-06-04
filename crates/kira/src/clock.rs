@@ -61,7 +61,10 @@ impl ClockShared {
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum State {
 	NotStarted,
-	Started { ticks: u64, tick_timer: f64 },
+	Started {
+		ticks: u64,
+		fractional_position: f64,
+	},
 }
 
 pub(crate) struct Clock {
@@ -118,14 +121,18 @@ impl Clock {
 		if self.state == State::NotStarted {
 			self.state = State::Started {
 				ticks: 0,
-				tick_timer: 1.0,
+				fractional_position: 0.0,
 			};
 			new_tick_count = Some(0);
 		}
-		if let State::Started { ticks, tick_timer } = &mut self.state {
-			*tick_timer -= self.speed.value().as_ticks_per_second() * dt;
-			while *tick_timer <= 0.0 {
-				*tick_timer += 1.0;
+		if let State::Started {
+			ticks,
+			fractional_position: tick_timer,
+		} = &mut self.state
+		{
+			*tick_timer += self.speed.value().as_ticks_per_second() * dt;
+			while *tick_timer >= 1.0 {
+				*tick_timer -= 1.0;
 				*ticks += 1;
 				new_tick_count = Some(*ticks);
 			}
