@@ -45,6 +45,7 @@ fn pause() {
 	clock.pause();
 	// the clock should not be ticking
 	for _ in 0..3 {
+		clock.update(1.0);
 		assert!(!shared.ticking());
 		assert_eq!(shared.ticks(), 1);
 	}
@@ -67,6 +68,7 @@ fn stop() {
 	clock.stop();
 	// the clock should not be ticking
 	for _ in 0..3 {
+		clock.update(1.0);
 		assert!(!shared.ticking());
 		assert_eq!(shared.ticks(), 0);
 	}
