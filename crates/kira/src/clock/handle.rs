@@ -39,6 +39,13 @@ impl ClockHandle {
 		}
 	}
 
+	/// Returns the time between ticks (from `0.0` to `1.0`) of the clock.
+	///
+	/// A time of `0.5` is halfway between two ticks.
+	pub fn fractional_position(&self) -> f64 {
+		self.shared.fractional_position()
+	}
+
 	/// Sets the speed of the clock.
 	pub fn set_speed(
 		&mut self,

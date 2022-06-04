@@ -29,6 +29,7 @@ pub struct ClockId(pub(crate) Key);
 pub(crate) struct ClockShared {
 	ticking: AtomicBool,
 	ticks: AtomicU64,
+	fractional_position: AtomicU64,
 	removed: AtomicBool,
 }
 
@@ -37,6 +38,7 @@ impl ClockShared {
 		Self {
 			ticking: AtomicBool::new(false),
 			ticks: AtomicU64::new(0),
+			fractional_position: AtomicU64::new(0.0f64.to_bits()),
 			removed: AtomicBool::new(false),
 		}
 	}
@@ -47,6 +49,10 @@ impl ClockShared {
 
 	pub fn ticks(&self) -> u64 {
 		self.ticks.load(Ordering::SeqCst)
+	}
+
+	pub fn fractional_position(&self) -> f64 {
+		f64::from_bits(self.fractional_position.load(Ordering::SeqCst))
 	}
 
 	pub fn is_marked_for_removal(&self) -> bool {
@@ -108,6 +114,20 @@ impl Clock {
 		self.shared.ticks.store(0, Ordering::SeqCst);
 	}
 
+	pub(crate) fn on_start_processing(&mut self) {
+		let (ticks, fractional_position) = match &self.state {
+			State::NotStarted => (0, 0.0),
+			State::Started {
+				ticks,
+				fractional_position,
+			} => (*ticks, *fractional_position),
+		};
+		self.shared.ticks.store(ticks, Ordering::SeqCst);
+		self.shared
+			.fractional_position
+			.store(fractional_position.to_bits(), Ordering::SeqCst);
+	}
+
 	/// Updates the [`Clock`].
 	///
 	/// If the tick count changes this update, returns `Some(tick_number)`.
@@ -138,9 +158,6 @@ impl Clock {
 			}
 		} else {
 			panic!("clock state should be Started by now");
-		}
-		if let Some(new_tick_count) = new_tick_count {
-			self.shared.ticks.store(new_tick_count, Ordering::SeqCst);
 		}
 		new_tick_count
 	}

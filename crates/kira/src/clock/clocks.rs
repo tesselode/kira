@@ -28,6 +28,13 @@ impl Clocks {
 	}
 
 	pub(crate) fn on_start_processing(&mut self) {
+		self.remove_unused_clocks();
+		for (_, clock) in &mut self.clocks {
+			clock.on_start_processing();
+		}
+	}
+
+	fn remove_unused_clocks(&mut self) {
 		if self.unused_clock_producer.is_full() {
 			return;
 		}
