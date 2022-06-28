@@ -37,6 +37,23 @@ impl StaticSoundData {
 		Duration::from_secs_f64(self.frames.len() as f64 / self.sample_rate as f64)
 	}
 
+	/// Returns a clone of the `StaticSoundData` with the specified settings.
+	pub fn with_settings(&self, settings: StaticSoundSettings) -> Self {
+		Self {
+			settings,
+			..self.clone()
+		}
+	}
+
+	/// Returns a clone of the `StaticSoundData` with the modified settings from
+	/// the given function.
+	pub fn with_modified_settings(
+		&self,
+		f: impl FnOnce(StaticSoundSettings) -> StaticSoundSettings,
+	) -> Self {
+		self.with_settings(f(self.settings))
+	}
+
 	pub(super) fn split(self) -> (StaticSound, StaticSoundHandle) {
 		let (command_producer, command_consumer) = RingBuffer::new(COMMAND_BUFFER_CAPACITY).split();
 		let sound = StaticSound::new(self, command_consumer);
