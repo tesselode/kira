@@ -12,7 +12,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 		"crates/examples/assets/blip.ogg",
 		StaticSoundSettings::default(),
 	)?;
-	let mut clock = manager.add_clock(ClockSpeed::TicksPerMinute(120.0))?;
+	let clock = manager.add_clock(ClockSpeed::TicksPerMinute(120.0))?;
 	// queue up the first sound for clock tick 0 (will be triggered
 	// as soon as the clock is started)
 	manager.play({

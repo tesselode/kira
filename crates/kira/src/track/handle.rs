@@ -56,11 +56,7 @@ impl TrackHandle {
 	}
 
 	/// Sets the (post-effects) volume of the mixer track.
-	pub fn set_volume(
-		&mut self,
-		volume: impl Into<Volume>,
-		tween: Tween,
-	) -> Result<(), CommandError> {
+	pub fn set_volume(&self, volume: impl Into<Volume>, tween: Tween) -> Result<(), CommandError> {
 		self.command_producer
 			.push(Command::Mixer(MixerCommand::SetTrackVolume(
 				self.id,
@@ -74,7 +70,7 @@ impl TrackHandle {
 	/// This can only be used to change the volume of existing routes,
 	/// not to add new routes.
 	pub fn set_route(
-		&mut self,
+		&self,
 		to: impl Into<TrackId>,
 		volume: impl Into<Volume>,
 		tween: Tween,

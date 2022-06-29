@@ -22,7 +22,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 	// create a track for playing sound effects. this track is routed
 	// to both the main track and the reverb track, so the final result
 	// will be the original signal and the reverb signal added together.
-	let mut sfx = manager
+	let sfx = manager
 		.add_sub_track(TrackBuilder::new().routes(TrackRoutes::new().with_route(&reverb, 0.5)))?;
 	let sound = StaticSoundData::from_file(
 		"crates/examples/assets/blip.ogg",
