@@ -156,12 +156,12 @@ impl<B: Backend> AudioManager<B> {
 	}
 
 	/// Fades out and pauses all audio.
-	pub fn pause(&mut self, fade_out_tween: Tween) -> Result<(), CommandError> {
+	pub fn pause(&self, fade_out_tween: Tween) -> Result<(), CommandError> {
 		self.command_producer.push(Command::Pause(fade_out_tween))
 	}
 
 	/// Resumes and fades in all audio.
-	pub fn resume(&mut self, fade_out_tween: Tween) -> Result<(), CommandError> {
+	pub fn resume(&self, fade_out_tween: Tween) -> Result<(), CommandError> {
 		self.command_producer.push(Command::Resume(fade_out_tween))
 	}
 

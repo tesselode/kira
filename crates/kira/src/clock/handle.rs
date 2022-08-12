@@ -48,7 +48,7 @@ impl ClockHandle {
 
 	/// Sets the speed of the clock.
 	pub fn set_speed(
-		&mut self,
+		&self,
 		speed: impl Into<ClockSpeed>,
 		tween: Tween,
 	) -> Result<(), CommandError> {
@@ -61,19 +61,19 @@ impl ClockHandle {
 	}
 
 	/// Starts or resumes the clock.
-	pub fn start(&mut self) -> Result<(), CommandError> {
+	pub fn start(&self) -> Result<(), CommandError> {
 		self.command_producer
 			.push(Command::Clock(ClockCommand::Start(self.id)))
 	}
 
 	/// Pauses the clock.
-	pub fn pause(&mut self) -> Result<(), CommandError> {
+	pub fn pause(&self) -> Result<(), CommandError> {
 		self.command_producer
 			.push(Command::Clock(ClockCommand::Pause(self.id)))
 	}
 
 	/// Stops and resets the clock.
-	pub fn stop(&mut self) -> Result<(), CommandError> {
+	pub fn stop(&self) -> Result<(), CommandError> {
 		self.command_producer
 			.push(Command::Clock(ClockCommand::Stop(self.id)))
 	}

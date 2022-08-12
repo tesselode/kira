@@ -1,8 +1,6 @@
-use std::sync::{Arc, Mutex};
-
-use ringbuf::Producer;
-
 use crate::error::CommandError;
+use ringbuf::Producer;
+use std::sync::{Arc, Mutex};
 
 use super::Command;
 
@@ -14,7 +12,7 @@ impl CommandProducer {
 		Self(Arc::new(Mutex::new(raw_producer)))
 	}
 
-	pub fn push(&mut self, command: Command) -> Result<(), CommandError> {
+	pub fn push(&self, command: Command) -> Result<(), CommandError> {
 		self.0
 			.lock()
 			.map_err(|_| CommandError::MutexPoisoned)?
