@@ -138,8 +138,7 @@
 <h2 id="creating-clocks"><a class="header" href="#creating-clocks">Creating clocks</a></h2>
 <p>Clocks can be used to set the start times of sounds and tweens. To create a
 clock, use <code>AudioManager::add_clock</code>.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span>use kira::{
@@ -165,8 +164,7 @@ ticks per minute.</p>
 <a href="https://crates.io/crates/kira-streaming"><code>kira-streaming</code></a> crate) can be set to
 only start playing when a clock has ticked a certain number of times. You can
 configure this using <code>StaticSoundSettings::start_time</code>.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span>use kira::{
@@ -194,8 +192,7 @@ clock.start()?;
 </span></code></pre></pre>
 <p>As a shorthand, you can pass the <code>ClockTime</code> directly into
 <code>StaticSoundSettings::start_time</code>.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span><span class="boring">use kira::{
@@ -225,8 +222,7 @@ clock.start()?;
 </span></code></pre></pre>
 <p>As an even shorter hand, you can use <code>ClockHandle::time</code> to get the clock's
 current <code>ClockTime</code>, and then add to it to get a time in the future:</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span>use kira::{
@@ -254,8 +250,7 @@ current <code>ClockTime</code>, and then add to it to get a time in the future:<
 <p>You can also use clocks to set the start time of tweens. In this example, we set
 the playback rate of a sound to start tweening when a clock reaches its third
 tick.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span>use std::time::Duration;

@@ -141,8 +141,7 @@ optionally have effects that modify the audio.</p>
 <h2 id="creating-and-using-tracks"><a class="header" href="#creating-and-using-tracks">Creating and using tracks</a></h2>
 <p>The mixer has a &quot;main&quot; track by default, and you can add any number of
 sub-tracks. To add a sub-track, use <code>AudioManager::add_sub_track</code>.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span><span class="boring">use std::error::Error;
@@ -162,8 +161,7 @@ let track = manager.add_sub_track(TrackBuilder::default())?;
 <p>You can configure what track a sound will play on by modifying its settings.
 This example uses <code>StaticSoundSettings</code>, but <code>StreamingSoundSettings</code> provides
 the same option.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span><span class="boring">use std::error::Error;
@@ -194,8 +192,7 @@ will affect all sounds being played on the track.</p>
 the effects applied sequentially.</p>
 <p>In this example, we'll use the <code>Filter</code> effect, which in the low pass mode will
 remove high frequencies from sounds, making them sound muffled.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span><span class="boring">use std::error::Error;
@@ -226,8 +223,7 @@ manager.play(StaticSoundData::from_file(
 </span></code></pre></pre>
 <p><code>TrackBuilder:add_effect</code> returns a handle that can be used to modify the effect
 after the track has been created.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span><span class="boring">use kira::{
@@ -272,8 +268,7 @@ come from the player specifically.</p>
 └─────────────┘
 </code></pre>
 <p>We can set up the <code>sounds</code> and <code>player_sounds</code> hierarchy using <code>TrackRoutes</code>.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span><span class="boring">use std::error::Error;
@@ -330,8 +325,7 @@ if we just had one.</li>
 └──────┘      └────────┘
 </code></pre>
 <p>Here's what this looks like in practice:</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span><span class="boring">use std::error::Error;

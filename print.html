@@ -142,8 +142,7 @@ mixer for applying effects to audio, and a clock system for precisely timing
 audio events.</p>
 <h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
 <h3 id="playing-a-sound-multiple-times-simultaneously"><a class="header" href="#playing-a-sound-multiple-times-simultaneously">Playing a sound multiple times simultaneously</a></h3>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span><span class="boring">
@@ -166,8 +165,7 @@ manager.play(sound_data.clone())?;
 </span><span class="boring">}
 </span></code></pre></pre>
 <h3 id="gradually-speeding-up-a-sound-over-time"><a class="header" href="#gradually-speeding-up-a-sound-over-time">Gradually speeding up a sound over time</a></h3>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span><span class="boring">
@@ -198,8 +196,7 @@ sound.set_playback_rate(
 </span></code></pre></pre>
 <h3 id="playing-a-sound-with-a-low-pass-filter-applied"><a class="header" href="#playing-a-sound-with-a-low-pass-filter-applied">Playing a sound with a low-pass filter applied</a></h3>
 <p>This makes the audio sound muffled.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span><span class="boring">
@@ -232,8 +229,7 @@ manager.play(sound_data)?;
 </span><span class="boring">}
 </span></code></pre></pre>
 <h3 id="playing-sounds-in-time-with-a-musical-beat"><a class="header" href="#playing-sounds-in-time-with-a-musical-beat">Playing sounds in time with a musical beat</a></h3>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span><span class="boring">
@@ -272,8 +268,7 @@ clock.start()?;
 </span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="playing-sounds"><a class="header" href="#playing-sounds">Playing Sounds</a></h1>
 <p>To start using Kira, create an <code>AudioManager</code>.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span>use kira::manager::{
@@ -288,8 +283,7 @@ let mut manager = AudioManager::&lt;CpalBackend&gt;::new(AudioManagerSettings::d
 <p>The <code>AudioManager</code> allows you to interact with the audio context from gameplay
 code. <code>AudioManager</code>s can play anything that implements the <code>SoundData</code> trait,
 such as <code>StaticSoundData</code> or <code>StreamingSoundData</code>.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span>use kira::{
@@ -308,8 +302,7 @@ manager.play(sound_data)?;
 </span></code></pre></pre>
 <p>If you want to play a sound multiple times, keep a copy of the <code>StaticSoundData</code>
 around and clone it each time you pass it to <code>AudioManager::play</code>.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span>use kira::{
@@ -333,8 +326,7 @@ time you want to play a sound.</p>
 <h2 id="modifying-playing-sounds"><a class="header" href="#modifying-playing-sounds">Modifying playing sounds</a></h2>
 <p><code>AudioManager::play</code> returns a handle to the sound that you can use to query
 information about the sound or modify it.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span>use kira::{
@@ -357,8 +349,7 @@ if sound.state() == PlaybackState::Playing {
 </span></code></pre></pre>
 <p>Many parameters of sounds, like volume and playback rate, can be smoothly
 transitioned to other values.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span>use std::time::Duration;
@@ -387,8 +378,7 @@ sound.set_volume(
 </span></code></pre></pre>
 <p>Some property setters allow you to set the value in different units. For
 example, volumes can be set in decibels:</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span><span class="boring">use std::time::Duration;
@@ -423,8 +413,7 @@ optionally have effects that modify the audio.</p>
 <h2 id="creating-and-using-tracks"><a class="header" href="#creating-and-using-tracks">Creating and using tracks</a></h2>
 <p>The mixer has a &quot;main&quot; track by default, and you can add any number of
 sub-tracks. To add a sub-track, use <code>AudioManager::add_sub_track</code>.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span><span class="boring">use std::error::Error;
@@ -444,8 +433,7 @@ let track = manager.add_sub_track(TrackBuilder::default())?;
 <p>You can configure what track a sound will play on by modifying its settings.
 This example uses <code>StaticSoundSettings</code>, but <code>StreamingSoundSettings</code> provides
 the same option.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span><span class="boring">use std::error::Error;
@@ -476,8 +464,7 @@ will affect all sounds being played on the track.</p>
 the effects applied sequentially.</p>
 <p>In this example, we'll use the <code>Filter</code> effect, which in the low pass mode will
 remove high frequencies from sounds, making them sound muffled.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span><span class="boring">use std::error::Error;
@@ -508,8 +495,7 @@ manager.play(StaticSoundData::from_file(
 </span></code></pre></pre>
 <p><code>TrackBuilder:add_effect</code> returns a handle that can be used to modify the effect
 after the track has been created.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span><span class="boring">use kira::{
@@ -554,8 +540,7 @@ come from the player specifically.</p>
 └─────────────┘
 </code></pre>
 <p>We can set up the <code>sounds</code> and <code>player_sounds</code> hierarchy using <code>TrackRoutes</code>.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span><span class="boring">use std::error::Error;
@@ -612,8 +597,7 @@ if we just had one.</li>
 └──────┘      └────────┘
 </code></pre>
 <p>Here's what this looks like in practice:</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span><span class="boring">use std::error::Error;
@@ -674,8 +658,7 @@ track has 50% volume, giving us more reverb for these sounds.</p>
 <h2 id="creating-clocks"><a class="header" href="#creating-clocks">Creating clocks</a></h2>
 <p>Clocks can be used to set the start times of sounds and tweens. To create a
 clock, use <code>AudioManager::add_clock</code>.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span>use kira::{
@@ -701,8 +684,7 @@ ticks per minute.</p>
 <a href="https://crates.io/crates/kira-streaming"><code>kira-streaming</code></a> crate) can be set to
 only start playing when a clock has ticked a certain number of times. You can
 configure this using <code>StaticSoundSettings::start_time</code>.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span>use kira::{
@@ -730,8 +712,7 @@ clock.start()?;
 </span></code></pre></pre>
 <p>As a shorthand, you can pass the <code>ClockTime</code> directly into
 <code>StaticSoundSettings::start_time</code>.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span><span class="boring">use kira::{
@@ -761,8 +742,7 @@ clock.start()?;
 </span></code></pre></pre>
 <p>As an even shorter hand, you can use <code>ClockHandle::time</code> to get the clock's
 current <code>ClockTime</code>, and then add to it to get a time in the future:</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span>use kira::{
@@ -790,8 +770,7 @@ current <code>ClockTime</code>, and then add to it to get a time in the future:<
 <p>You can also use clocks to set the start time of tweens. In this example, we set
 the playback rate of a sound to start tweening when a clock reaches its third
 tick.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span>use std::time::Duration;

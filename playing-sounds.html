@@ -136,8 +136,7 @@
                     <main>
                         <h1 id="playing-sounds"><a class="header" href="#playing-sounds">Playing Sounds</a></h1>
 <p>To start using Kira, create an <code>AudioManager</code>.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span>use kira::manager::{
@@ -152,8 +151,7 @@ let mut manager = AudioManager::&lt;CpalBackend&gt;::new(AudioManagerSettings::d
 <p>The <code>AudioManager</code> allows you to interact with the audio context from gameplay
 code. <code>AudioManager</code>s can play anything that implements the <code>SoundData</code> trait,
 such as <code>StaticSoundData</code> or <code>StreamingSoundData</code>.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span>use kira::{
@@ -172,8 +170,7 @@ manager.play(sound_data)?;
 </span></code></pre></pre>
 <p>If you want to play a sound multiple times, keep a copy of the <code>StaticSoundData</code>
 around and clone it each time you pass it to <code>AudioManager::play</code>.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span>use kira::{
@@ -197,8 +194,7 @@ time you want to play a sound.</p>
 <h2 id="modifying-playing-sounds"><a class="header" href="#modifying-playing-sounds">Modifying playing sounds</a></h2>
 <p><code>AudioManager::play</code> returns a handle to the sound that you can use to query
 information about the sound or modify it.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span>use kira::{
@@ -221,8 +217,7 @@ if sound.state() == PlaybackState::Playing {
 </span></code></pre></pre>
 <p>Many parameters of sounds, like volume and playback rate, can be smoothly
 transitioned to other values.</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span>use std::time::Duration;
@@ -251,8 +246,7 @@ sound.set_volume(
 </span></code></pre></pre>
 <p>Some property setters allow you to set the value in different units. For
 example, volumes can be set in decibels:</p>
-<pre><pre class="playground"><code class="language-rust  no_run edition2018">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate kira;
 </span><span class="boring">use std::time::Duration;
