@@ -1,3 +1,17 @@
+# v0.6.1 - August 12th, 2022
+
+- Added `ClockHandle::fractional_position`
+- Added `StaticSoundData::with_settings` and `StaticSoundData::with_modified_settings`
+- Changed the following functions to take `&self` arguments instead of `&mut self` (thanks @nobbele!):
+  - `ClockHandle::set_speed`
+  - `ClockHandle::start`
+  - `ClockHandle::pause`
+  - `ClockHandle::stop`
+  - `AudioManager::pause`
+  - `AudioManager::resume`
+  - `TrackHandle::set_volume`
+  - `TrackHandle::set_route`
+
 # v0.6.0 - March 7th, 2022
 
 Kira v0.6 is a complete rewrite of Kira with the following goals:
