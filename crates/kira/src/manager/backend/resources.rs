@@ -1,3 +1,4 @@
+pub(crate) mod clocks;
 pub(crate) mod mixer;
 pub(crate) mod sounds;
 
@@ -5,13 +6,13 @@ use atomic_arena::Controller;
 use ringbuf::{Consumer, Producer, RingBuffer};
 
 use crate::{
-	clock::{clocks::Clocks, Clock},
+	clock::Clock,
 	manager::settings::Capacities,
 	sound::Sound,
 	track::{Track, TrackBuilder},
 };
 
-use self::{mixer::Mixer, sounds::Sounds};
+use self::{clocks::Clocks, mixer::Mixer, sounds::Sounds};
 
 pub(crate) struct UnusedResourceProducers {
 	pub sound: Producer<Box<dyn Sound>>,

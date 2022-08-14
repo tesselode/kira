@@ -1,6 +1,5 @@
 //! Precise timing for audio events.
 
-pub(crate) mod clocks;
 mod handle;
 mod time;
 

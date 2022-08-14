@@ -2,11 +2,9 @@ use atomic_arena::{Arena, Controller};
 use ringbuf::Producer;
 
 use crate::{
-	clock::{Clock, ClockId},
+	clock::{Clock, ClockId, ClockTime},
 	manager::command::ClockCommand,
 };
-
-use super::ClockTime;
 
 pub(crate) struct Clocks {
 	clocks: Arena<Clock>,
