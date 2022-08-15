@@ -9,7 +9,7 @@ pub use handle::*;
 use ringbuf::Consumer;
 
 use crate::{
-	clock::ClockTime,
+	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
 	track::Effect,
 	tween::{Tween, Tweener},
@@ -152,16 +152,16 @@ impl Effect for Reverb {
 		}
 	}
 
-	fn process(&mut self, input: Frame, dt: f64) -> Frame {
+	fn process(&mut self, input: Frame, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
 		if let ReverbState::Initialized {
 			comb_filters,
 			all_pass_filters,
 		} = &mut self.state
 		{
-			self.feedback.update(dt);
-			self.damping.update(dt);
-			self.stereo_width.update(dt);
-			self.mix.update(dt);
+			self.feedback.update(dt, clock_info_provider);
+			self.damping.update(dt, clock_info_provider);
+			self.stereo_width.update(dt, clock_info_provider);
+			self.mix.update(dt, clock_info_provider);
 
 			let feedback = self.feedback.value() as f32;
 			let damping = self.damping.value() as f32;
@@ -190,12 +190,5 @@ impl Effect for Reverb {
 		} else {
 			panic!("Reverb should be initialized before the first process call")
 		}
-	}
-
-	fn on_clock_tick(&mut self, time: ClockTime) {
-		self.feedback.on_clock_tick(time);
-		self.damping.on_clock_tick(time);
-		self.stereo_width.on_clock_tick(time);
-		self.mix.on_clock_tick(time);
 	}
 }

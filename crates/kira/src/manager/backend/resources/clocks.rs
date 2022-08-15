@@ -2,27 +2,31 @@ use atomic_arena::{Arena, Controller};
 use ringbuf::Producer;
 
 use crate::{
-	clock::{Clock, ClockId, ClockTime},
+	clock::{clock_info::ClockInfoProvider, Clock, ClockId},
 	manager::command::ClockCommand,
 };
 
 pub(crate) struct Clocks {
 	clocks: Arena<Clock>,
+	clock_ids: Vec<ClockId>,
 	unused_clock_producer: Producer<Clock>,
-	clock_tick_events: Vec<ClockTime>,
 }
 
 impl Clocks {
 	pub(crate) fn new(capacity: usize, unused_clock_producer: Producer<Clock>) -> Self {
 		Self {
 			clocks: Arena::new(capacity),
+			clock_ids: Vec::with_capacity(capacity),
 			unused_clock_producer,
-			clock_tick_events: Vec::with_capacity(capacity),
 		}
 	}
 
 	pub(crate) fn controller(&self) -> Controller {
 		self.clocks.controller()
+	}
+
+	pub(crate) fn get(&self, id: ClockId) -> Option<&Clock> {
+		self.clocks.get(id.0)
 	}
 
 	pub(crate) fn on_start_processing(&mut self) {
@@ -33,28 +37,37 @@ impl Clocks {
 	}
 
 	fn remove_unused_clocks(&mut self) {
-		if self.unused_clock_producer.is_full() {
-			return;
-		}
-		for (_, clock) in self
-			.clocks
-			.drain_filter(|clock| clock.shared().is_marked_for_removal())
-		{
-			if self.unused_clock_producer.push(clock).is_err() {
-				panic!("Unused clock producer is full")
-			}
-			if self.unused_clock_producer.is_full() {
-				return;
+		let mut i = 0;
+		while i < self.clock_ids.len() && !self.unused_clock_producer.is_full() {
+			let id = self.clock_ids[i];
+			let track = &mut self.clocks[id.0];
+			if track.shared().is_marked_for_removal() {
+				if self
+					.unused_clock_producer
+					.push(
+						self.clocks
+							.remove(id.0)
+							.unwrap_or_else(|| panic!("Clock with ID {:?} does not exist", id)),
+					)
+					.is_err()
+				{
+					panic!("Unused clock producer is full")
+				}
+				self.clock_ids.remove(i);
+			} else {
+				i += 1;
 			}
 		}
 	}
 
 	pub(crate) fn run_command(&mut self, command: ClockCommand) {
 		match command {
-			ClockCommand::Add(id, clock) => self
-				.clocks
-				.insert_with_key(id.0, clock)
-				.expect("Clock arena is full"),
+			ClockCommand::Add(id, clock) => {
+				self.clocks
+					.insert_with_key(id.0, clock)
+					.expect("Clock arena is full");
+				self.clock_ids.push(id);
+			}
 			ClockCommand::SetSpeed(id, speed, tween) => {
 				if let Some(clock) = self.clocks.get_mut(id.0) {
 					clock.set_speed(speed, tween);
@@ -78,21 +91,18 @@ impl Clocks {
 		}
 	}
 
-	pub(crate) fn update(&mut self, dt: f64) -> &[ClockTime] {
-		self.clock_tick_events.clear();
-		for (id, clock) in &mut self.clocks {
-			if let Some(ticks) = clock.update(dt) {
-				self.clock_tick_events.push(ClockTime {
-					clock: ClockId(id),
-					ticks,
-				});
-			}
+	pub(crate) fn update(&mut self, dt: f64) {
+		for id in &self.clock_ids {
+			let mut clock = self
+				.clocks
+				.get(id.0)
+				.cloned()
+				.expect("clock IDs and clocks are out of sync");
+			clock.update(dt, &ClockInfoProvider::new(self));
+			*self
+				.clocks
+				.get_mut(id.0)
+				.expect("clock IDs and clocks are out of sync") = clock;
 		}
-		for time in &self.clock_tick_events {
-			for (_, clock) in &mut self.clocks {
-				clock.on_clock_tick(*time);
-			}
-		}
-		&self.clock_tick_events
 	}
 }

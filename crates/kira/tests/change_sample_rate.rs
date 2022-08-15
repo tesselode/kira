@@ -4,6 +4,7 @@ use std::sync::{
 };
 
 use kira::{
+	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
 	manager::{
 		backend::mock::{MockBackend, MockBackendSettings},
@@ -30,7 +31,12 @@ impl Effect for TestEffect {
 		self.sample_rate.store(sample_rate, Ordering::SeqCst);
 	}
 
-	fn process(&mut self, _input: Frame, dt: f64) -> Frame {
+	fn process(
+		&mut self,
+		_input: Frame,
+		dt: f64,
+		_clock_info_provider: &ClockInfoProvider,
+	) -> Frame {
 		self.dt_producer.push(dt).unwrap();
 		Frame::ZERO
 	}

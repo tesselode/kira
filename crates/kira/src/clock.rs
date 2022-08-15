@@ -1,5 +1,6 @@
 //! Precise timing for audio events.
 
+pub mod clock_info;
 mod handle;
 mod time;
 
@@ -20,6 +21,8 @@ use crate::{
 	tween::{Tween, Tweener},
 	ClockSpeed,
 };
+
+use self::clock_info::ClockInfoProvider;
 
 /// A unique identifier for a clock.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -72,6 +75,7 @@ enum State {
 	},
 }
 
+#[derive(Clone)]
 pub(crate) struct Clock {
 	shared: Arc<ClockShared>,
 	ticking: bool,
@@ -131,8 +135,12 @@ impl Clock {
 	///
 	/// If the tick count changes this update, returns `Some(tick_number)`.
 	/// Otherwise, returns `None`.
-	pub(crate) fn update(&mut self, dt: f64) -> Option<u64> {
-		self.speed.update(dt);
+	pub(crate) fn update(
+		&mut self,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+	) -> Option<u64> {
+		self.speed.update(dt, clock_info_provider);
 		if !self.ticking {
 			return None;
 		}
@@ -159,9 +167,5 @@ impl Clock {
 			panic!("clock state should be Started by now");
 		}
 		new_tick_count
-	}
-
-	pub(crate) fn on_clock_tick(&mut self, time: ClockTime) {
-		self.speed.on_clock_tick(time);
 	}
 }

@@ -1,8 +1,10 @@
 use std::time::Duration;
 
 use crate::{
-	clock::ClockTime,
-	manager::{backend::mock::MockBackend, AudioManager},
+	clock::{
+		clock_info::{ClockInfo, MockClockInfoProviderBuilder},
+		ClockTime,
+	},
 	tween::Tween,
 	ClockSpeed, StartTime,
 };
@@ -17,7 +19,7 @@ fn initially_stopped() {
 	for _ in 0..3 {
 		assert!(!shared.ticking());
 		assert_eq!(shared.ticks(), 0);
-		clock.update(1.0);
+		clock.update(1.0, &MockClockInfoProviderBuilder::new(0).build());
 		clock.on_start_processing();
 	}
 }
@@ -31,7 +33,10 @@ fn basic_behavior() {
 	for i in 0..3 {
 		assert!(shared.ticking());
 		assert_eq!(shared.ticks(), i);
-		assert_eq!(clock.update(1.0), Some(i + 1));
+		assert_eq!(
+			clock.update(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+			Some(i + 1)
+		);
 		clock.on_start_processing();
 	}
 }
@@ -42,13 +47,13 @@ fn pause() {
 	let mut clock = Clock::new(ClockSpeed::SecondsPerTick(1.0));
 	let shared = clock.shared();
 	clock.start();
-	clock.update(1.5);
+	clock.update(1.5, &MockClockInfoProviderBuilder::new(0).build());
 	clock.on_start_processing();
 	assert_eq!(shared.ticks(), 1);
 	clock.pause();
 	// the clock should not be ticking
 	for _ in 0..3 {
-		clock.update(1.0);
+		clock.update(1.0, &MockClockInfoProviderBuilder::new(0).build());
 		clock.on_start_processing();
 		assert!(!shared.ticking());
 		assert_eq!(shared.ticks(), 1);
@@ -56,10 +61,10 @@ fn pause() {
 	clock.start();
 	// make sure we've preserved the fractional position from before
 	// pausing
-	clock.update(0.4);
+	clock.update(0.4, &MockClockInfoProviderBuilder::new(0).build());
 	clock.on_start_processing();
 	assert_eq!(shared.ticks(), 1);
-	clock.update(0.1);
+	clock.update(0.1, &MockClockInfoProviderBuilder::new(0).build());
 	clock.on_start_processing();
 	assert_eq!(shared.ticks(), 2);
 }
@@ -70,22 +75,22 @@ fn stop() {
 	let mut clock = Clock::new(ClockSpeed::SecondsPerTick(1.0));
 	let shared = clock.shared();
 	clock.start();
-	clock.update(1.5);
+	clock.update(1.5, &MockClockInfoProviderBuilder::new(0).build());
 	clock.on_start_processing();
 	clock.stop();
 	// the clock should not be ticking
 	for _ in 0..3 {
-		clock.update(1.0);
+		clock.update(1.0, &MockClockInfoProviderBuilder::new(0).build());
 		clock.on_start_processing();
 		assert!(!shared.ticking());
 		assert_eq!(shared.ticks(), 0);
 	}
 	clock.start();
 	// make sure the fractional position has been reset
-	clock.update(0.9);
+	clock.update(0.9, &MockClockInfoProviderBuilder::new(0).build());
 	clock.on_start_processing();
 	assert_eq!(shared.ticks(), 0);
-	clock.update(0.1);
+	clock.update(0.1, &MockClockInfoProviderBuilder::new(0).build());
 	clock.on_start_processing();
 	assert_eq!(shared.ticks(), 1);
 }
@@ -103,10 +108,10 @@ fn set_speed() {
 			..Default::default()
 		},
 	);
-	clock.update(1.0);
+	clock.update(1.0, &MockClockInfoProviderBuilder::new(0).build());
 	clock.on_start_processing();
 	assert_eq!(shared.ticks(), 2);
-	clock.update(1.0);
+	clock.update(1.0, &MockClockInfoProviderBuilder::new(0).build());
 	clock.on_start_processing();
 	assert_eq!(shared.ticks(), 4);
 }
@@ -115,8 +120,18 @@ fn set_speed() {
 /// other clocks when the start time is set to a clock time.
 #[test]
 fn set_speed_with_clock_time_start() {
-	let mut manager = AudioManager::<MockBackend>::new(Default::default()).unwrap();
-	let other_clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0)).unwrap();
+	let (clock_info_provider, clock_id) = {
+		let mut builder = MockClockInfoProviderBuilder::new(1);
+		let clock_id = builder
+			.add(ClockInfo {
+				ticking: true,
+				ticks: 0,
+				fractional_position: 0.0,
+			})
+			.unwrap();
+		(builder.build(), clock_id)
+	};
+
 	let mut clock = Clock::new(ClockSpeed::SecondsPerTick(1.0));
 	let shared = clock.shared();
 	clock.start();
@@ -124,24 +139,37 @@ fn set_speed_with_clock_time_start() {
 		ClockSpeed::SecondsPerTick(0.5),
 		Tween {
 			duration: Duration::ZERO,
-			start_time: StartTime::ClockTime(other_clock.time()),
+			start_time: StartTime::ClockTime(ClockTime {
+				clock: clock_id,
+				ticks: 1,
+			}),
 			..Default::default()
 		},
 	);
-	clock.update(1.0);
+
+	clock.update(1.0, &clock_info_provider);
 	clock.on_start_processing();
 	assert_eq!(shared.ticks(), 1);
-	clock.update(1.0);
+	clock.update(1.0, &clock_info_provider);
 	clock.on_start_processing();
 	assert_eq!(shared.ticks(), 2);
-	clock.on_clock_tick(ClockTime {
-		clock: other_clock.id(),
-		ticks: 0,
-	});
-	clock.update(1.0);
+
+	let clock_info_provider = {
+		let mut builder = MockClockInfoProviderBuilder::new(1);
+		builder
+			.add(ClockInfo {
+				ticking: true,
+				ticks: 1,
+				fractional_position: 0.0,
+			})
+			.unwrap();
+		builder.build()
+	};
+
+	clock.update(1.0, &clock_info_provider);
 	clock.on_start_processing();
 	assert_eq!(shared.ticks(), 4);
-	clock.update(1.0);
+	clock.update(1.0, &clock_info_provider);
 	clock.on_start_processing();
 	assert_eq!(shared.ticks(), 6);
 }
@@ -153,15 +181,15 @@ fn fractional_position() {
 	let shared = clock.shared();
 	assert_eq!(shared.fractional_position(), 0.0);
 	// the clock is not started yet, so the fractional position should remain at 0
-	clock.update(1.0);
+	clock.update(1.0, &MockClockInfoProviderBuilder::new(0).build());
 	clock.on_start_processing();
 	assert_eq!(shared.fractional_position(), 0.0);
 	// start the clock
 	clock.start();
-	clock.update(0.5);
+	clock.update(0.5, &MockClockInfoProviderBuilder::new(0).build());
 	clock.on_start_processing();
 	assert_eq!(shared.fractional_position(), 0.5);
-	clock.update(0.75);
+	clock.update(0.75, &MockClockInfoProviderBuilder::new(0).build());
 	clock.on_start_processing();
 	assert_eq!(shared.fractional_position(), 0.25);
 }

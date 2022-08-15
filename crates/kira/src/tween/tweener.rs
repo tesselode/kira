@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod test;
 
-use crate::{clock::ClockTime, StartTime};
+use crate::clock::clock_info::ClockInfoProvider;
 
 use super::{Tween, Tweenable};
 
@@ -14,7 +14,6 @@ enum State<T: Tweenable> {
 		values: (T, T),
 		time: f64,
 		tween: Tween,
-		waiting_to_start: bool,
 	},
 }
 
@@ -47,21 +46,23 @@ impl<T: Tweenable> Tweener<T> {
 			values: (self.value, target),
 			time: 0.0,
 			tween,
-			waiting_to_start: matches!(tween.start_time, StartTime::ClockTime(..)),
 		}
 	}
 
 	/// Updates the [`Tweenable`] and returns `true` if it just finished
 	/// a tween that was in progress.
-	pub fn update(&mut self, dt: f64) -> JustFinishedTween {
+	pub fn update(
+		&mut self,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+	) -> JustFinishedTween {
 		if let State::Tweening {
 			values,
 			time,
 			tween,
-			waiting_to_start,
 		} = &mut self.state
 		{
-			if *waiting_to_start {
+			if !clock_info_provider.should_start(tween.start_time) {
 				return false;
 			}
 			*time += dt;
@@ -74,28 +75,5 @@ impl<T: Tweenable> Tweener<T> {
 			}
 		}
 		false
-	}
-
-	/// Informs the [`Tweener`] about a clock tick.
-	///
-	/// If the current tween's start time is set to a clock
-	/// time, and that time has been reached, the tween will
-	/// start playing.
-	pub fn on_clock_tick(&mut self, time: ClockTime) {
-		if let State::Tweening {
-			waiting_to_start,
-			tween: Tween {
-				start_time: StartTime::ClockTime(start_clock_time),
-				..
-			},
-			..
-		} = &mut self.state
-		{
-			if *waiting_to_start {
-				if time.clock == start_clock_time.clock && time.ticks >= start_clock_time.ticks {
-					*waiting_to_start = false;
-				}
-			}
-		}
 	}
 }

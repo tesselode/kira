@@ -1,6 +1,7 @@
 use ringbuf::RingBuffer;
 
 use crate::{
+	clock::clock_info::MockClockInfoProviderBuilder,
 	dsp::Frame,
 	manager::command::MixerCommand,
 	track::{SubTrackId, Track, TrackBuilder, TrackRoutes},
@@ -29,7 +30,10 @@ fn parent_routing() {
 		.track_mut(child_track_id.into())
 		.unwrap()
 		.add_input(Frame::from_mono(1.0));
-	assert_eq!(mixer.process(1.0), Frame::from_mono(0.25));
+	assert_eq!(
+		mixer.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(0.25)
+	);
 }
 
 #[test]
@@ -51,5 +55,8 @@ fn send_routing() {
 		.track_mut(other_track_id.into())
 		.unwrap()
 		.add_input(Frame::from_mono(1.0));
-	assert_eq!(mixer.process(1.0), Frame::from_mono(1.25));
+	assert_eq!(
+		mixer.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(1.25)
+	);
 }

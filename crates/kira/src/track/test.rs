@@ -1,6 +1,11 @@
 use std::time::Duration;
 
-use crate::{dsp::Frame, tween::Tween, Volume};
+use crate::{
+	clock::clock_info::{ClockInfoProvider, MockClockInfoProviderBuilder},
+	dsp::Frame,
+	tween::Tween,
+	Volume,
+};
 
 use super::{
 	effect::{Effect, EffectBuilder},
@@ -12,7 +17,10 @@ use super::{
 fn volume() {
 	let mut track = Track::new(TrackBuilder::new().volume(0.5));
 	track.add_input(Frame::from_mono(1.0));
-	assert_eq!(track.process(1.0), Frame::from_mono(0.5));
+	assert_eq!(
+		track.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(0.5)
+	);
 }
 
 /// Tests that the output volume of a track can be changed
@@ -28,7 +36,10 @@ fn set_volume() {
 		},
 	);
 	track.add_input(Frame::from_mono(1.0));
-	assert_eq!(track.process(1.0), Frame::from_mono(0.5));
+	assert_eq!(
+		track.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(0.5)
+	);
 }
 
 /// Tests that effects process the input signal in order.
@@ -41,7 +52,10 @@ fn effects() {
 		builder
 	});
 	track.add_input(Frame::from_mono(1.0));
-	assert_eq!(track.process(1.0), Frame::from_mono(0.75));
+	assert_eq!(
+		track.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(0.75)
+	);
 }
 
 enum MockEffect {
@@ -58,7 +72,12 @@ impl EffectBuilder for MockEffect {
 }
 
 impl Effect for MockEffect {
-	fn process(&mut self, input: Frame, _dt: f64) -> Frame {
+	fn process(
+		&mut self,
+		input: Frame,
+		_dt: f64,
+		_clock_info_provider: &ClockInfoProvider,
+	) -> Frame {
 		match self {
 			MockEffect::Add(frame) => input + *frame,
 			MockEffect::Mul(amount) => input * *amount,

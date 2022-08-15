@@ -1,7 +1,7 @@
 use atomic_arena::{Arena, Controller};
 use ringbuf::Producer;
 
-use crate::{clock::ClockTime, manager::command::SoundCommand, sound::Sound};
+use crate::{clock::clock_info::ClockInfoProvider, manager::command::SoundCommand, sound::Sound};
 
 use super::mixer::Mixer;
 
@@ -52,17 +52,11 @@ impl Sounds {
 		}
 	}
 
-	pub fn process(&mut self, dt: f64, mixer: &mut Mixer) {
+	pub fn process(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider, mixer: &mut Mixer) {
 		for (_, sound) in &mut self.sounds {
 			if let Some(track) = mixer.track_mut(sound.track()) {
-				track.add_input(sound.process(dt));
+				track.add_input(sound.process(dt, clock_info_provider));
 			}
-		}
-	}
-
-	pub fn on_clock_tick(&mut self, time: ClockTime) {
-		for (_, sound) in &mut self.sounds {
-			sound.on_clock_tick(time);
 		}
 	}
 }

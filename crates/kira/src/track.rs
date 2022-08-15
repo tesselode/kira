@@ -20,7 +20,7 @@ use std::sync::{
 use atomic_arena::Key;
 
 use crate::{
-	clock::ClockTime,
+	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
 	tween::{Tween, Tweener},
 	Volume,
@@ -139,25 +139,15 @@ impl Track {
 		}
 	}
 
-	pub fn process(&mut self, dt: f64) -> Frame {
-		self.volume.update(dt);
+	pub fn process(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
+		self.volume.update(dt, clock_info_provider);
 		for (_, route) in &mut self.routes {
-			route.update(dt);
+			route.update(dt, clock_info_provider);
 		}
 		let mut output = std::mem::replace(&mut self.input, Frame::ZERO);
 		for effect in &mut self.effects {
-			output = effect.process(output, dt);
+			output = effect.process(output, dt, clock_info_provider);
 		}
 		output * self.volume.value().as_amplitude() as f32
-	}
-
-	pub fn on_clock_tick(&mut self, time: ClockTime) {
-		self.volume.on_clock_tick(time);
-		for (_, route) in &mut self.routes {
-			route.on_clock_tick(time);
-		}
-		for effect in &mut self.effects {
-			effect.on_clock_tick(time);
-		}
 	}
 }

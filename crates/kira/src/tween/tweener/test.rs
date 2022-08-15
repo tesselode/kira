@@ -1,9 +1,10 @@
 use std::time::Duration;
 
-use atomic_arena::Arena;
-
 use crate::{
-	clock::{ClockId, ClockTime},
+	clock::{
+		clock_info::{ClockInfo, MockClockInfoProviderBuilder},
+		ClockTime,
+	},
 	tween::Tween,
 	StartTime,
 };
@@ -20,7 +21,7 @@ fn tweening() {
 	// value should not be changing yet
 	for _ in 0..3 {
 		assert_eq!(tweener.value(), 0.0);
-		assert!(!tweener.update(1.0));
+		assert!(!tweener.update(1.0, &MockClockInfoProviderBuilder::new(0).build()));
 	}
 
 	tweener.set(
@@ -31,11 +32,11 @@ fn tweening() {
 		},
 	);
 
-	assert!(!tweener.update(1.0));
+	assert!(!tweener.update(1.0, &MockClockInfoProviderBuilder::new(0).build()));
 	assert_eq!(tweener.value(), 0.5);
-	assert!(tweener.update(1.0));
+	assert!(tweener.update(1.0, &MockClockInfoProviderBuilder::new(0).build()));
 	assert_eq!(tweener.value(), 1.0);
-	assert!(!tweener.update(1.0));
+	assert!(!tweener.update(1.0, &MockClockInfoProviderBuilder::new(0).build()));
 	assert_eq!(tweener.value(), 1.0);
 }
 
@@ -45,12 +46,24 @@ fn tweening() {
 #[test]
 #[allow(clippy::float_cmp)]
 fn waits_for_start_time() {
-	// create some fake ClockIds
-	let mut dummy_arena = Arena::new(2);
-	let key1 = dummy_arena.insert(()).unwrap();
-	let key2 = dummy_arena.insert(()).unwrap();
-	let clock_id_1 = ClockId(key1);
-	let clock_id_2 = ClockId(key2);
+	let (clock_info_provider, clock_id_1) = {
+		let mut builder = MockClockInfoProviderBuilder::new(2);
+		let clock_id_1 = builder
+			.add(ClockInfo {
+				ticking: true,
+				ticks: 0,
+				fractional_position: 0.0,
+			})
+			.unwrap();
+		builder
+			.add(ClockInfo {
+				ticking: true,
+				ticks: 0,
+				fractional_position: 0.0,
+			})
+			.unwrap();
+		(builder.build(), clock_id_1)
+	};
 
 	let mut tweener = Tweener::new(0.0);
 	tweener.set(
@@ -68,36 +81,81 @@ fn waits_for_start_time() {
 	// value should not be changing yet
 	for _ in 0..3 {
 		assert_eq!(tweener.value(), 0.0);
-		assert!(!tweener.update(1.0));
+		assert!(!tweener.update(1.0, &clock_info_provider));
 	}
+
+	let clock_info_provider = {
+		let mut builder = MockClockInfoProviderBuilder::new(2);
+		builder
+			.add(ClockInfo {
+				ticking: true,
+				ticks: 1,
+				fractional_position: 0.0,
+			})
+			.unwrap();
+		builder
+			.add(ClockInfo {
+				ticking: true,
+				ticks: 0,
+				fractional_position: 0.0,
+			})
+			.unwrap();
+		builder.build()
+	};
 
 	// the tween is set to start at tick 2, so it should not
 	// start yet
-	tweener.on_clock_tick(ClockTime {
-		clock: clock_id_1,
-		ticks: 1,
-	});
 	for _ in 0..3 {
 		assert_eq!(tweener.value(), 0.0);
-		assert!(!tweener.update(1.0));
+		assert!(!tweener.update(1.0, &clock_info_provider));
 	}
 
-	// this is a tick event for a different clock, so the
-	// tween should not start yet
-	tweener.on_clock_tick(ClockTime {
-		clock: clock_id_2,
-		ticks: 2,
-	});
+	let clock_info_provider = {
+		let mut builder = MockClockInfoProviderBuilder::new(2);
+		builder
+			.add(ClockInfo {
+				ticking: true,
+				ticks: 1,
+				fractional_position: 0.0,
+			})
+			.unwrap();
+		builder
+			.add(ClockInfo {
+				ticking: true,
+				ticks: 2,
+				fractional_position: 0.0,
+			})
+			.unwrap();
+		builder.build()
+	};
+
+	// a different clock reached tick 2, so the tween should not
+	// start yet
 	for _ in 0..3 {
 		assert_eq!(tweener.value(), 0.0);
-		assert!(!tweener.update(1.0));
+		assert!(!tweener.update(1.0, &clock_info_provider));
 	}
+
+	let clock_info_provider = {
+		let mut builder = MockClockInfoProviderBuilder::new(2);
+		builder
+			.add(ClockInfo {
+				ticking: true,
+				ticks: 2,
+				fractional_position: 0.0,
+			})
+			.unwrap();
+		builder
+			.add(ClockInfo {
+				ticking: true,
+				ticks: 2,
+				fractional_position: 0.0,
+			})
+			.unwrap();
+		builder.build()
+	};
 
 	// the tween should start now
-	tweener.on_clock_tick(ClockTime {
-		clock: clock_id_1,
-		ticks: 2,
-	});
-	assert!(tweener.update(1.0));
+	assert!(tweener.update(1.0, &clock_info_provider));
 	assert_eq!(tweener.value(), 1.0);
 }

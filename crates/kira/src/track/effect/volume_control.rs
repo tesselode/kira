@@ -9,7 +9,7 @@ pub use handle::*;
 use ringbuf::Consumer;
 
 use crate::{
-	clock::ClockTime,
+	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
 	tween::{Tween, Tweener},
 	Volume,
@@ -44,12 +44,8 @@ impl Effect for VolumeControl {
 		}
 	}
 
-	fn process(&mut self, input: Frame, dt: f64) -> Frame {
-		self.volume.update(dt);
+	fn process(&mut self, input: Frame, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
+		self.volume.update(dt, clock_info_provider);
 		input * self.volume.value().as_amplitude() as f32
-	}
-
-	fn on_clock_tick(&mut self, time: ClockTime) {
-		self.volume.on_clock_tick(time);
 	}
 }

@@ -9,7 +9,7 @@ pub use handle::*;
 use ringbuf::Consumer;
 
 use crate::{
-	clock::ClockTime,
+	clock::clock_info::ClockInfoProvider,
 	dsp::{interpolate_frame, Frame},
 	track::Effect,
 	tween::{Tween, Tweener},
@@ -105,16 +105,16 @@ impl Effect for Delay {
 		}
 	}
 
-	fn process(&mut self, input: Frame, dt: f64) -> Frame {
+	fn process(&mut self, input: Frame, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
 		if let DelayState::Initialized {
 			buffer,
 			write_position,
 			..
 		} = &mut self.state
 		{
-			self.delay_time.update(dt);
-			self.feedback.update(dt);
-			self.mix.update(dt);
+			self.delay_time.update(dt, clock_info_provider);
+			self.feedback.update(dt, clock_info_provider);
+			self.mix.update(dt, clock_info_provider);
 
 			// get the read position (in samples)
 			let mut read_position = *write_position as f32 - (self.delay_time.value() / dt) as f32;
@@ -140,7 +140,7 @@ impl Effect for Delay {
 				fraction,
 			);
 			for effect in &mut self.feedback_effects {
-				output = effect.process(output, dt);
+				output = effect.process(output, dt, clock_info_provider);
 			}
 
 			// write output audio to the buffer
@@ -152,15 +152,6 @@ impl Effect for Delay {
 			output * mix.sqrt() + input * (1.0 - mix).sqrt()
 		} else {
 			panic!("The delay should be initialized by the first process call")
-		}
-	}
-
-	fn on_clock_tick(&mut self, time: ClockTime) {
-		self.delay_time.on_clock_tick(time);
-		self.feedback.on_clock_tick(time);
-		self.mix.on_clock_tick(time);
-		for effect in &mut self.feedback_effects {
-			effect.on_clock_tick(time);
 		}
 	}
 }

@@ -9,7 +9,7 @@ pub use handle::*;
 use ringbuf::Consumer;
 
 use crate::{
-	clock::ClockTime,
+	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
 	track::Effect,
 	tween::{Tween, Tweener},
@@ -64,9 +64,9 @@ impl Effect for Distortion {
 		}
 	}
 
-	fn process(&mut self, input: Frame, dt: f64) -> Frame {
-		self.drive.update(dt);
-		self.mix.update(dt);
+	fn process(&mut self, input: Frame, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
+		self.drive.update(dt, clock_info_provider);
+		self.mix.update(dt, clock_info_provider);
 		let drive = self.drive.value().as_amplitude() as f32;
 		let mut output = input * drive;
 		output = match self.kind {
@@ -83,10 +83,5 @@ impl Effect for Distortion {
 
 		let mix = self.mix.value() as f32;
 		output * mix.sqrt() + input * (1.0 - mix).sqrt()
-	}
-
-	fn on_clock_tick(&mut self, time: ClockTime) {
-		self.drive.on_clock_tick(time);
-		self.mix.on_clock_tick(time);
 	}
 }

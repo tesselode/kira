@@ -1,15 +1,17 @@
 use std::{sync::Arc, time::Duration};
 
 use crate::{
-	clock::ClockTime,
+	clock::{
+		clock_info::{ClockInfo, MockClockInfoProviderBuilder},
+		ClockTime,
+	},
 	dsp::Frame,
-	manager::{backend::mock::MockBackend, AudioManager},
 	sound::{
 		static_sound::{PlaybackState, StaticSoundData, StaticSoundSettings},
 		Sound,
 	},
 	tween::Tween,
-	ClockSpeed, LoopBehavior, StartTime, Volume,
+	LoopBehavior, StartTime, Volume,
 };
 
 use super::StaticSound;
@@ -31,14 +33,20 @@ fn plays_all_samples() {
 	assert!(!sound.finished());
 
 	for i in 1..=3 {
-		assert_eq!(sound.process(1.0), Frame::from_mono(i as f32).panned(0.5));
+		assert_eq!(
+			sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+			Frame::from_mono(i as f32).panned(0.5)
+		);
 		assert!(!sound.finished());
 	}
 
 	// give some time for the resample buffer to empty. in the meantime we should
 	// get silent output.
 	for _ in 0..10 {
-		assert_eq!(sound.process(1.0), Frame::from_mono(0.0).panned(0.5));
+		assert_eq!(
+			sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+			Frame::from_mono(0.0).panned(0.5)
+		);
 	}
 
 	// the sound should be finished and stopped by now
@@ -59,7 +67,7 @@ fn reports_playback_state() {
 
 	for _ in 0..20 {
 		assert_eq!(handle.state(), sound.state);
-		sound.process(1.0);
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build());
 	}
 }
 
@@ -80,7 +88,7 @@ fn reports_playback_position() {
 			handle.position(),
 			i.clamp(0, 9) as f64 / sound.data.sample_rate as f64
 		);
-		sound.process(1.0);
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build());
 		sound.on_start_processing();
 	}
 }
@@ -97,7 +105,7 @@ fn pauses_and_resumes_with_fades() {
 	};
 	let (mut sound, mut handle) = data.split();
 
-	sound.process(1.0);
+	sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build());
 	assert_eq!(sound.state, PlaybackState::Playing);
 
 	handle
@@ -116,18 +124,21 @@ fn pauses_and_resumes_with_fades() {
 		&mut sound,
 	);
 	assert_eq!(
-		sound.process(1.0),
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
 		Frame::from_mono(Volume::Decibels(-30.0).as_amplitude() as f32).panned(0.5)
 	);
 	assert_eq!(
-		sound.process(1.0),
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
 		Frame::from_mono(Volume::Decibels(-45.0).as_amplitude() as f32).panned(0.5)
 	);
 
 	sound.on_start_processing();
 	let position = handle.position();
 	for _ in 0..10 {
-		assert_eq!(sound.process(1.0), Frame::from_mono(0.0).panned(0.5));
+		assert_eq!(
+			sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+			Frame::from_mono(0.0).panned(0.5)
+		);
 		sound.on_start_processing();
 		assert_eq!(handle.position(), position);
 		assert_eq!(sound.state, PlaybackState::Paused);
@@ -149,18 +160,21 @@ fn pauses_and_resumes_with_fades() {
 	);
 	assert_eq!(sound.state, PlaybackState::Playing);
 	assert_eq!(
-		sound.process(1.0),
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
 		Frame::from_mono(Volume::Decibels(-30.0).as_amplitude() as f32).panned(0.5)
 	);
 	assert_eq!(sound.state, PlaybackState::Playing);
 	assert_eq!(
-		sound.process(1.0),
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
 		Frame::from_mono(Volume::Decibels(-15.0).as_amplitude() as f32).panned(0.5)
 	);
 	assert_eq!(sound.state, PlaybackState::Playing);
 
 	for _ in 0..3 {
-		assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.5));
+		assert_eq!(
+			sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+			Frame::from_mono(1.0).panned(0.5)
+		);
 		assert_eq!(sound.state, PlaybackState::Playing);
 	}
 }
@@ -176,7 +190,7 @@ fn stops_with_fade_out() {
 	};
 	let (mut sound, mut handle) = data.split();
 
-	sound.process(1.0);
+	sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build());
 	assert_eq!(sound.state, PlaybackState::Playing);
 
 	handle
@@ -195,18 +209,21 @@ fn stops_with_fade_out() {
 		&mut sound,
 	);
 	assert_eq!(
-		sound.process(1.0),
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
 		Frame::from_mono(Volume::Decibels(-30.0).as_amplitude() as f32).panned(0.5)
 	);
 	assert_eq!(
-		sound.process(1.0),
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
 		Frame::from_mono(Volume::Decibels(-45.0).as_amplitude() as f32).panned(0.5)
 	);
 
 	sound.on_start_processing();
 	let position = handle.position();
 	for _ in 0..3 {
-		assert_eq!(sound.process(1.0), Frame::from_mono(0.0).panned(0.5));
+		assert_eq!(
+			sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+			Frame::from_mono(0.0).panned(0.5)
+		);
 		sound.on_start_processing();
 		assert_eq!(handle.position(), position);
 		assert_eq!(sound.state, PlaybackState::Stopped);
@@ -214,94 +231,29 @@ fn stops_with_fade_out() {
 	}
 }
 
-/// Tests that a `StaticSound` can be paused and resumed on a clock tick.
-#[test]
-fn pauses_resumes_and_stops_on_clock_tick() {
-	let mut manager = AudioManager::<MockBackend>::new(Default::default()).unwrap();
-	let clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0)).unwrap();
-	let data = StaticSoundData {
-		sample_rate: 1,
-		frames: Arc::new(vec![Frame::from_mono(1.0); 100]),
-		settings: StaticSoundSettings::new(),
-	};
-	let (mut sound, mut handle) = data.split();
-
-	// pause on clock tick
-	handle
-		.pause(Tween {
-			duration: Duration::ZERO,
-			start_time: StartTime::ClockTime(clock.time() + 1),
-			..Default::default()
-		})
-		.unwrap();
-	sound.on_start_processing();
-	for _ in 0..10 {
-		assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.5));
-	}
-	sound.on_clock_tick(ClockTime {
-		clock: clock.id(),
-		ticks: 1,
-	});
-	expect_frame_soon(Frame::ZERO, &mut sound);
-	sound.on_start_processing();
-	assert_eq!(handle.state(), PlaybackState::Paused);
-
-	// resume on clock tick
-	handle
-		.resume(Tween {
-			duration: Duration::ZERO,
-			start_time: StartTime::ClockTime(clock.time() + 2),
-			..Default::default()
-		})
-		.unwrap();
-	sound.on_start_processing();
-	for _ in 0..10 {
-		assert_eq!(sound.process(1.0), Frame::ZERO);
-	}
-	sound.on_clock_tick(ClockTime {
-		clock: clock.id(),
-		ticks: 2,
-	});
-	expect_frame_soon(Frame::from_mono(1.0).panned(0.5), &mut sound);
-	sound.on_start_processing();
-	assert_eq!(handle.state(), PlaybackState::Playing);
-
-	// stop on clock tick
-	handle
-		.stop(Tween {
-			duration: Duration::ZERO,
-			start_time: StartTime::ClockTime(clock.time() + 1),
-			..Default::default()
-		})
-		.unwrap();
-	sound.on_start_processing();
-	for _ in 0..10 {
-		assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.5));
-	}
-	sound.on_clock_tick(ClockTime {
-		clock: clock.id(),
-		ticks: 1,
-	});
-	expect_frame_soon(Frame::ZERO, &mut sound);
-	sound.on_start_processing();
-	assert_eq!(handle.state(), PlaybackState::Stopped);
-}
-
 /// Tests that a `StaticSound` will wait for its start clock time
 /// when appropriate.
 #[test]
 #[allow(clippy::float_cmp)]
 fn waits_for_start_time() {
-	// create some fake ClockIds
-	let mut manager = AudioManager::<MockBackend>::new(Default::default()).unwrap();
-	let clock_id_1 = manager
-		.add_clock(ClockSpeed::TicksPerSecond(1.0))
-		.unwrap()
-		.id();
-	let clock_id_2 = manager
-		.add_clock(ClockSpeed::TicksPerSecond(1.0))
-		.unwrap()
-		.id();
+	let (clock_info_provider, clock_id_1) = {
+		let mut builder = MockClockInfoProviderBuilder::new(2);
+		let clock_id_1 = builder
+			.add(ClockInfo {
+				ticking: true,
+				ticks: 0,
+				fractional_position: 0.0,
+			})
+			.unwrap();
+		builder
+			.add(ClockInfo {
+				ticking: true,
+				ticks: 0,
+				fractional_position: 0.0,
+			})
+			.unwrap();
+		(builder.build(), clock_id_1)
+	};
 
 	let data = StaticSoundData {
 		sample_rate: 1,
@@ -315,59 +267,120 @@ fn waits_for_start_time() {
 
 	// the sound should not be playing yet
 	for _ in 0..3 {
-		assert_eq!(sound.process(1.0), Frame::from_mono(0.0));
+		assert_eq!(
+			sound.process(1.0, &clock_info_provider),
+			Frame::from_mono(0.0)
+		);
 	}
+
+	let clock_info_provider = {
+		let mut builder = MockClockInfoProviderBuilder::new(2);
+		builder
+			.add(ClockInfo {
+				ticking: true,
+				ticks: 1,
+				fractional_position: 0.0,
+			})
+			.unwrap();
+		builder
+			.add(ClockInfo {
+				ticking: true,
+				ticks: 0,
+				fractional_position: 0.0,
+			})
+			.unwrap();
+		builder.build()
+	};
 
 	// the sound is set to start at tick 2, so it should not
 	// play yet
-	sound.on_clock_tick(ClockTime {
-		clock: clock_id_1,
-		ticks: 1,
-	});
-
 	for _ in 0..3 {
-		assert_eq!(sound.process(1.0), Frame::from_mono(0.0));
+		assert_eq!(
+			sound.process(1.0, &clock_info_provider),
+			Frame::from_mono(0.0)
+		);
 	}
 
-	// this is a tick event for a different clock, so the
-	// sound should not play yet
-	sound.on_clock_tick(ClockTime {
-		clock: clock_id_2,
-		ticks: 2,
-	});
+	let clock_info_provider = {
+		let mut builder = MockClockInfoProviderBuilder::new(2);
+		builder
+			.add(ClockInfo {
+				ticking: true,
+				ticks: 1,
+				fractional_position: 0.0,
+			})
+			.unwrap();
+		builder
+			.add(ClockInfo {
+				ticking: true,
+				ticks: 2,
+				fractional_position: 0.0,
+			})
+			.unwrap();
+		builder.build()
+	};
 
+	// a different clock reached tick 2, so the sound should
+	// not play yet
 	for _ in 0..3 {
-		assert_eq!(sound.process(1.0), Frame::from_mono(0.0));
+		assert_eq!(
+			sound.process(1.0, &clock_info_provider),
+			Frame::from_mono(0.0)
+		);
 	}
+
+	let clock_info_provider = {
+		let mut builder = MockClockInfoProviderBuilder::new(2);
+		builder
+			.add(ClockInfo {
+				ticking: true,
+				ticks: 2,
+				fractional_position: 0.0,
+			})
+			.unwrap();
+		builder
+			.add(ClockInfo {
+				ticking: true,
+				ticks: 2,
+				fractional_position: 0.0,
+			})
+			.unwrap();
+		builder.build()
+	};
 
 	// the sound should start playing now
-	sound.on_clock_tick(ClockTime {
-		clock: clock_id_1,
-		ticks: 2,
-	});
-
 	for i in 1..10 {
-		assert_eq!(sound.process(1.0), Frame::from_mono(i as f32).panned(0.5));
+		assert_eq!(
+			sound.process(1.0, &clock_info_provider),
+			Frame::from_mono(i as f32).panned(0.5)
+		);
 	}
 }
 
-/// Tests that a `StaticSound` can be paused and resumed immediately
-/// even if playback is waiting for a clock time to start.
+/// Tests that a `StaticSound` can be paused, resumed, and
+/// stopped immediately even if playback is waiting for a clock
+/// time to start.
 #[test]
-fn immediate_pause_and_resume_with_clock_start_time() {
-	let mut manager = AudioManager::<MockBackend>::new(Default::default()).unwrap();
-	let clock_id_1 = manager
-		.add_clock(ClockSpeed::TicksPerSecond(1.0))
-		.unwrap()
-		.id();
+fn immediate_pause_resume_and_stop_with_clock_start_time() {
+	let (clock_info_provider, clock_id) = {
+		let mut builder = MockClockInfoProviderBuilder::new(2);
+		let clock_id = builder
+			.add(ClockInfo {
+				ticking: true,
+				ticks: 0,
+				fractional_position: 0.0,
+			})
+			.unwrap();
+		(builder.build(), clock_id)
+	};
 
 	let data = StaticSoundData {
 		sample_rate: 1,
 		frames: Arc::new((1..100).map(|i| Frame::from_mono(i as f32)).collect()),
-		settings: StaticSoundSettings::new().start_time(ClockTime {
-			clock: clock_id_1,
+		settings: StaticSoundSettings::new().start_time(StartTime::ClockTime(ClockTime {
+			clock: clock_id,
 			ticks: 2,
-		}),
+		})),
 	};
 	let (mut sound, _) = data.split();
 
@@ -375,41 +388,21 @@ fn immediate_pause_and_resume_with_clock_start_time() {
 		duration: Duration::from_secs(0),
 		..Default::default()
 	});
-	sound.process(1.0);
+	sound.process(1.0, &clock_info_provider);
 	assert!(sound.state == PlaybackState::Paused);
+
 	sound.resume(Tween {
 		duration: Duration::from_secs(0),
 		..Default::default()
 	});
-	sound.process(1.0);
+	sound.process(1.0, &clock_info_provider);
 	assert!(sound.state == PlaybackState::Playing);
-}
-
-/// Tests that a `StaticSound` can be stopped immediately even if playback
-/// is waiting for a clock time to start.
-#[test]
-fn immediate_stop_with_clock_start_time() {
-	let mut manager = AudioManager::<MockBackend>::new(Default::default()).unwrap();
-	let clock_id_1 = manager
-		.add_clock(ClockSpeed::TicksPerSecond(1.0))
-		.unwrap()
-		.id();
-
-	let data = StaticSoundData {
-		sample_rate: 1,
-		frames: Arc::new((1..100).map(|i| Frame::from_mono(i as f32)).collect()),
-		settings: StaticSoundSettings::new().start_time(ClockTime {
-			clock: clock_id_1,
-			ticks: 2,
-		}),
-	};
-	let (mut sound, _) = data.split();
 
 	sound.stop(Tween {
 		duration: Duration::from_secs(0),
 		..Default::default()
 	});
-	sound.process(1.0);
+	sound.process(1.0, &clock_info_provider);
 	assert!(sound.state == PlaybackState::Stopped);
 }
 
@@ -425,7 +418,10 @@ fn start_position() {
 	let (mut sound, handle) = data.split();
 
 	assert_eq!(handle.position(), 3.0);
-	assert_eq!(sound.process(1.0), Frame::from_mono(3.0).panned(0.5));
+	assert_eq!(
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(3.0).panned(0.5)
+	);
 }
 
 /// Tests that a `StaticSound` can be started with a negative position.
@@ -440,7 +436,10 @@ fn negative_start_position() {
 	let (mut sound, _) = data.split();
 
 	for _ in 0..5 {
-		assert_eq!(sound.process(1.0), Frame::ZERO);
+		assert_eq!(
+			sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+			Frame::ZERO
+		);
 	}
 	expect_frame_soon(Frame::from_mono(1.0), &mut sound);
 }
@@ -456,7 +455,7 @@ fn out_of_bounds_start_position() {
 		settings: StaticSoundSettings::new().start_position(15.0),
 	};
 	let (mut sound, _) = data.split();
-	sound.process(1.0);
+	sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build());
 }
 
 /// Tests that a `StaticSound` can be played backwards.
@@ -472,7 +471,10 @@ fn reverse() {
 
 	// start position should be from the end and decrease over time
 	for i in (0..=7).rev() {
-		assert_eq!(sound.process(1.0), Frame::from_mono(i as f32).panned(0.5));
+		assert_eq!(
+			sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+			Frame::from_mono(i as f32).panned(0.5)
+		);
 	}
 }
 
@@ -491,13 +493,28 @@ fn loops_forward() {
 	let (mut sound, _) = data.split();
 
 	for i in 0..10 {
-		assert_eq!(sound.process(1.0), Frame::from_mono(i as f32).panned(0.5));
+		assert_eq!(
+			sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+			Frame::from_mono(i as f32).panned(0.5)
+		);
 	}
 
-	assert_eq!(sound.process(3.0), Frame::from_mono(3.0).panned(0.5));
-	assert_eq!(sound.process(3.0), Frame::from_mono(6.0).panned(0.5));
-	assert_eq!(sound.process(3.0), Frame::from_mono(9.0).panned(0.5));
-	assert_eq!(sound.process(3.0), Frame::from_mono(5.0).panned(0.5));
+	assert_eq!(
+		sound.process(3.0, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(3.0).panned(0.5)
+	);
+	assert_eq!(
+		sound.process(3.0, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(6.0).panned(0.5)
+	);
+	assert_eq!(
+		sound.process(3.0, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(9.0).panned(0.5)
+	);
+	assert_eq!(
+		sound.process(3.0, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(5.0).panned(0.5)
+	);
 }
 
 /// Tests that a `StaticSound` properly obeys looping behavior when
@@ -517,12 +534,24 @@ fn loops_backward() {
 	let (mut sound, _) = data.split();
 
 	for i in (3..10).rev() {
-		assert_eq!(sound.process(1.0), Frame::from_mono(i as f32).panned(0.5));
+		assert_eq!(
+			sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+			Frame::from_mono(i as f32).panned(0.5)
+		);
 	}
 
-	assert_eq!(sound.process(4.0), Frame::from_mono(9.0).panned(0.5));
-	assert_eq!(sound.process(4.0), Frame::from_mono(5.0).panned(0.5));
-	assert_eq!(sound.process(4.0), Frame::from_mono(8.0).panned(0.5));
+	assert_eq!(
+		sound.process(4.0, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(9.0).panned(0.5)
+	);
+	assert_eq!(
+		sound.process(4.0, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(5.0).panned(0.5)
+	);
+	assert_eq!(
+		sound.process(4.0, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(8.0).panned(0.5)
+	);
 }
 
 /// Tests that the volume of a `StaticSound` can be adjusted.
@@ -536,7 +565,10 @@ fn volume() {
 	};
 	let (mut sound, _) = data.split();
 
-	assert_eq!(sound.process(1.0), Frame::from_mono(0.5).panned(0.5));
+	assert_eq!(
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(0.5).panned(0.5)
+	);
 }
 
 /// Tests that the volume of a `StaticSound` can be changed
@@ -550,7 +582,10 @@ fn set_volume() {
 	};
 	let (mut sound, mut handle) = data.split();
 
-	assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.5));
+	assert_eq!(
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(1.0).panned(0.5)
+	);
 	handle
 		.set_volume(
 			0.5,
@@ -561,40 +596,6 @@ fn set_volume() {
 		)
 		.unwrap();
 	sound.on_start_processing();
-	expect_frame_soon(Frame::from_mono(0.5).panned(0.5), &mut sound);
-}
-
-/// Tests that the volume of a `StaticSound` can be changed
-/// on a clock tick.
-#[test]
-fn set_volume_on_clock_tick() {
-	let mut manager = AudioManager::<MockBackend>::new(Default::default()).unwrap();
-	let clock = manager.add_clock(ClockSpeed::TicksPerSecond(1.0)).unwrap();
-	let data = StaticSoundData {
-		sample_rate: 1,
-		frames: Arc::new(vec![Frame::from_mono(1.0); 100]),
-		settings: StaticSoundSettings::new(),
-	};
-	let (mut sound, mut handle) = data.split();
-
-	handle
-		.set_volume(
-			0.5,
-			Tween {
-				duration: Duration::ZERO,
-				start_time: StartTime::ClockTime(clock.time() + 1),
-				..Default::default()
-			},
-		)
-		.unwrap();
-	sound.on_start_processing();
-	for _ in 0..10 {
-		assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.5));
-	}
-	sound.on_clock_tick(ClockTime {
-		clock: clock.id(),
-		ticks: 1,
-	});
 	expect_frame_soon(Frame::from_mono(0.5).panned(0.5), &mut sound);
 }
 
@@ -609,7 +610,10 @@ fn panning() {
 	};
 	let (mut sound, _) = data.split();
 
-	assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.0));
+	assert_eq!(
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(1.0).panned(0.0)
+	);
 }
 
 /// Tests that the panning of a `StaticSound` can be changed
@@ -623,7 +627,10 @@ fn set_panning() {
 	};
 	let (mut sound, mut handle) = data.split();
 
-	assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.5));
+	assert_eq!(
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(1.0).panned(0.5)
+	);
 	handle
 		.set_panning(
 			0.0,
@@ -634,40 +641,6 @@ fn set_panning() {
 		)
 		.unwrap();
 	sound.on_start_processing();
-	expect_frame_soon(Frame::from_mono(1.0).panned(0.0), &mut sound);
-}
-
-/// Tests that the panning of a `StaticSound` can be changed
-/// on a clock tick.
-#[test]
-fn set_panning_on_clock_tick() {
-	let mut manager = AudioManager::<MockBackend>::new(Default::default()).unwrap();
-	let clock = manager.add_clock(ClockSpeed::TicksPerSecond(1.0)).unwrap();
-	let data = StaticSoundData {
-		sample_rate: 1,
-		frames: Arc::new(vec![Frame::from_mono(1.0); 100]),
-		settings: StaticSoundSettings::new(),
-	};
-	let (mut sound, mut handle) = data.split();
-
-	handle
-		.set_panning(
-			0.0,
-			Tween {
-				duration: Duration::ZERO,
-				start_time: StartTime::ClockTime(clock.time() + 1),
-				..Default::default()
-			},
-		)
-		.unwrap();
-	sound.on_start_processing();
-	for _ in 0..10 {
-		assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.5));
-	}
-	sound.on_clock_tick(ClockTime {
-		clock: clock.id(),
-		ticks: 1,
-	});
 	expect_frame_soon(Frame::from_mono(1.0).panned(0.0), &mut sound);
 }
 
@@ -682,8 +655,14 @@ fn playback_rate() {
 	};
 	let (mut sound, _) = data.split();
 
-	assert_eq!(sound.process(1.0), Frame::from_mono(0.0).panned(0.5));
-	assert_eq!(sound.process(1.0), Frame::from_mono(2.0).panned(0.5));
+	assert_eq!(
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(0.0).panned(0.5)
+	);
+	assert_eq!(
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(2.0).panned(0.5)
+	);
 }
 
 /// Tests that the playback rate of a `StaticSound` can be adjusted after
@@ -698,8 +677,14 @@ fn set_playback_rate() {
 	};
 	let (mut sound, mut handle) = data.split();
 
-	assert_eq!(sound.process(1.0), Frame::from_mono(0.0).panned(0.5));
-	assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.5));
+	assert_eq!(
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(0.0).panned(0.5)
+	);
+	assert_eq!(
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(1.0).panned(0.5)
+	);
 
 	handle
 		.set_playback_rate(
@@ -712,44 +697,14 @@ fn set_playback_rate() {
 		.unwrap();
 	sound.on_start_processing();
 
-	assert_eq!(sound.process(1.0), Frame::from_mono(2.0).panned(0.5));
-	assert_eq!(sound.process(1.0), Frame::from_mono(4.0).panned(0.5));
-}
-
-/// Tests that the playback rate of a `StaticSound` can be adjusted on
-/// a clock tick.
-#[test]
-#[allow(clippy::float_cmp)]
-fn set_playback_rate_on_clock_tick() {
-	let mut manager = AudioManager::<MockBackend>::new(Default::default()).unwrap();
-	let clock = manager.add_clock(ClockSpeed::TicksPerSecond(1.0)).unwrap();
-	let data = StaticSoundData {
-		sample_rate: 1,
-		frames: Arc::new((0..100).map(|i| Frame::from_mono(i as f32)).collect()),
-		settings: StaticSoundSettings::new(),
-	};
-	let (mut sound, mut handle) = data.split();
-
-	handle
-		.set_playback_rate(
-			2.0,
-			Tween {
-				duration: Duration::ZERO,
-				start_time: StartTime::ClockTime(clock.time() + 1),
-				..Default::default()
-			},
-		)
-		.unwrap();
-	sound.on_start_processing();
-
-	assert_eq!(sound.process(1.0), Frame::from_mono(0.0).panned(0.5));
-	assert_eq!(sound.process(1.0), Frame::from_mono(1.0).panned(0.5));
-	sound.on_clock_tick(ClockTime {
-		clock: clock.id(),
-		ticks: 1,
-	});
-	assert_eq!(sound.process(1.0), Frame::from_mono(2.0).panned(0.5));
-	assert_eq!(sound.process(1.0), Frame::from_mono(4.0).panned(0.5));
+	assert_eq!(
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(2.0).panned(0.5)
+	);
+	assert_eq!(
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(4.0).panned(0.5)
+	);
 }
 
 /// Tests that a `StaticSound` outputs interpolated samples when
@@ -771,13 +726,16 @@ fn interpolates_samples() {
 	};
 	let (mut sound, _) = data.split();
 
-	assert_eq!(sound.process(0.5), Frame::from_mono(0.0).panned(0.5));
+	assert_eq!(
+		sound.process(0.5, &MockClockInfoProviderBuilder::new(0).build()),
+		Frame::from_mono(0.0).panned(0.5)
+	);
 	// at sample 0.5, the output should be somewhere between 0 and 1.
 	// i don't care what exactly, that's up the to the interpolation algorithm.
-	let frame = sound.process(5.0);
+	let frame = sound.process(5.0, &MockClockInfoProviderBuilder::new(0).build());
 	assert!(frame.left > 0.0 && frame.left < 1.0);
 	// at sample 5.5, the output should be between 1 and -10.
-	let frame = sound.process(1.0);
+	let frame = sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build());
 	assert!(frame.left < 0.0 && frame.left > -10.0);
 }
 
@@ -793,10 +751,10 @@ fn interpolates_samples_when_looping() {
 		}),
 	};
 	let (mut sound, _) = data.split();
-	sound.process(1.5);
+	sound.process(1.5, &MockClockInfoProviderBuilder::new(0).build());
 	// because we're looping back to the first sample, which is 10.0,
 	// the interpolated sample should be be tween 9.0 and 10.0
-	let frame = sound.process(1.0);
+	let frame = sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build());
 	assert!(frame.left > 9.0 && frame.left < 10.0);
 }
 
@@ -853,7 +811,7 @@ fn seek_by() {
 fn expect_frame_soon(expected_frame: Frame, sound: &mut StaticSound) {
 	const NUM_SAMPLES_TO_WAIT: usize = 10;
 	for _ in 0..NUM_SAMPLES_TO_WAIT {
-		let frame = sound.process(1.0);
+		let frame = sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build());
 		if frame == expected_frame {
 			return;
 		}

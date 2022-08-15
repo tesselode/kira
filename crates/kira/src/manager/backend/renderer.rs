@@ -6,6 +6,7 @@ use std::sync::{
 use ringbuf::Consumer;
 
 use crate::{
+	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
 	manager::{command::Command, MainPlaybackState},
 	tween::Tweener,
@@ -104,7 +105,10 @@ impl Renderer {
 
 	/// Produces the next [`Frame`] of audio.
 	pub fn process(&mut self) -> Frame {
-		if self.fade_volume.update(self.dt) {
+		if self
+			.fade_volume
+			.update(self.dt, &ClockInfoProvider::new(&self.resources.clocks))
+		{
 			if self.state == MainPlaybackState::Pausing {
 				self.state = MainPlaybackState::Paused;
 			}
@@ -114,16 +118,17 @@ impl Renderer {
 			return Frame::ZERO;
 		}
 		if self.state == MainPlaybackState::Playing {
-			let clock_tick_events = self.resources.clocks.update(self.dt);
-			for time in clock_tick_events {
-				self.resources.sounds.on_clock_tick(*time);
-				self.resources.mixer.on_clock_tick(*time);
-			}
+			self.resources.clocks.update(self.dt);
 		}
-		self.resources
-			.sounds
-			.process(self.dt, &mut self.resources.mixer);
-		let out = self.resources.mixer.process(self.dt);
+		self.resources.sounds.process(
+			self.dt,
+			&ClockInfoProvider::new(&self.resources.clocks),
+			&mut self.resources.mixer,
+		);
+		let out = self
+			.resources
+			.mixer
+			.process(self.dt, &ClockInfoProvider::new(&self.resources.clocks));
 		out * self.fade_volume.value().as_amplitude() as f32
 	}
 }

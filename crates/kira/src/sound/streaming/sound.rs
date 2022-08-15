@@ -9,7 +9,7 @@ use std::sync::{
 };
 
 use crate::{
-	clock::ClockTime,
+	clock::clock_info::ClockInfoProvider,
 	dsp::{interpolate_frame, Frame},
 	sound::{static_sound::PlaybackState, Sound},
 	track::TrackId,
@@ -188,18 +188,18 @@ impl Sound for StreamingSound {
 		}
 	}
 
-	fn process(&mut self, dt: f64) -> Frame {
-		self.volume.update(dt);
-		self.playback_rate.update(dt);
-		self.panning.update(dt);
-		if self.volume_fade.update(dt) {
+	fn process(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
+		self.volume.update(dt, clock_info_provider);
+		self.playback_rate.update(dt, clock_info_provider);
+		self.panning.update(dt, clock_info_provider);
+		if self.volume_fade.update(dt, clock_info_provider) {
 			match self.state {
 				PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
 				PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),
 				_ => {}
 			}
 		}
-		if matches!(self.start_time, StartTime::ClockTime(..)) {
+		if !clock_info_provider.should_start(self.start_time) {
 			return Frame::ZERO;
 		}
 		if matches!(self.state, PlaybackState::Paused | PlaybackState::Stopped) {
@@ -235,18 +235,6 @@ impl Sound for StreamingSound {
 		(out * self.volume_fade.value().as_amplitude() as f32
 			* self.volume.value().as_amplitude() as f32)
 			.panned(self.panning.value() as f32)
-	}
-
-	fn on_clock_tick(&mut self, time: ClockTime) {
-		self.volume.on_clock_tick(time);
-		self.playback_rate.on_clock_tick(time);
-		self.panning.on_clock_tick(time);
-		self.volume_fade.on_clock_tick(time);
-		if let StartTime::ClockTime(ClockTime { clock, ticks }) = self.start_time {
-			if time.clock == clock && time.ticks >= ticks {
-				self.start_time = StartTime::Immediate;
-			}
-		}
 	}
 
 	fn finished(&self) -> bool {

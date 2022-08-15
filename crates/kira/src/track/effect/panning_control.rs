@@ -9,7 +9,7 @@ pub use handle::*;
 use ringbuf::Consumer;
 
 use crate::{
-	clock::ClockTime,
+	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
 	tween::{Tween, Tweener},
 };
@@ -43,12 +43,8 @@ impl Effect for PanningControl {
 		}
 	}
 
-	fn process(&mut self, input: Frame, dt: f64) -> Frame {
-		self.panning.update(dt);
+	fn process(&mut self, input: Frame, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
+		self.panning.update(dt, clock_info_provider);
 		input.panned(self.panning.value() as f32)
-	}
-
-	fn on_clock_tick(&mut self, time: ClockTime) {
-		self.panning.on_clock_tick(time);
 	}
 }

@@ -10,7 +10,7 @@ use ringbuf::Consumer;
 use std::f64::consts::PI;
 
 use crate::{
-	clock::ClockTime,
+	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
 	track::Effect,
 	tween::{Tween, Tweener},
@@ -76,10 +76,10 @@ impl Effect for Filter {
 		}
 	}
 
-	fn process(&mut self, input: Frame, dt: f64) -> Frame {
-		self.cutoff.update(dt);
-		self.resonance.update(dt);
-		self.mix.update(dt);
+	fn process(&mut self, input: Frame, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
+		self.cutoff.update(dt, clock_info_provider);
+		self.resonance.update(dt, clock_info_provider);
+		self.mix.update(dt, clock_info_provider);
 		let sample_rate = 1.0 / dt;
 		let g = (PI * (self.cutoff.value() / sample_rate)).tan();
 		let k = 2.0 - (1.9 * self.resonance.value().min(1.0).max(0.0));
@@ -99,11 +99,5 @@ impl Effect for Filter {
 		};
 		let mix = self.mix.value() as f32;
 		output * mix.sqrt() + input * (1.0 - mix).sqrt()
-	}
-
-	fn on_clock_tick(&mut self, time: ClockTime) {
-		self.cutoff.on_clock_tick(time);
-		self.resonance.on_clock_tick(time);
-		self.mix.on_clock_tick(time);
 	}
 }

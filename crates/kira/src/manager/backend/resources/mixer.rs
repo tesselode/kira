@@ -5,7 +5,7 @@ use atomic_arena::{Arena, Controller};
 use ringbuf::Producer;
 
 use crate::{
-	clock::ClockTime,
+	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
 	manager::command::MixerCommand,
 	track::{SubTrackId, Track, TrackBuilder, TrackId},
@@ -120,7 +120,7 @@ impl Mixer {
 		}
 	}
 
-	pub fn process(&mut self, dt: f64) -> Frame {
+	pub fn process(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
 		// iterate through the sub-tracks newest to oldest
 		for id in self.sub_track_ids.iter().rev() {
 			// process the track and get its output
@@ -128,7 +128,7 @@ impl Mixer {
 				.sub_tracks
 				.get_mut(id.0)
 				.expect("sub track IDs and sub tracks are out of sync");
-			let output = track.process(dt);
+			let output = track.process(dt, clock_info_provider);
 			// temporarily take ownership of its routes. we can't just
 			// borrow the routes because then we can't get mutable
 			// references to the other tracks
@@ -150,13 +150,6 @@ impl Mixer {
 				.expect("sub track IDs and sub tracks are out of sync");
 			std::mem::swap(track.routes_mut(), &mut self.dummy_routes);
 		}
-		self.main_track.process(dt)
-	}
-
-	pub fn on_clock_tick(&mut self, time: ClockTime) {
-		for (_, track) in &mut self.sub_tracks {
-			track.on_clock_tick(time);
-		}
-		self.main_track.on_clock_tick(time);
+		self.main_track.process(dt, clock_info_provider)
 	}
 }
