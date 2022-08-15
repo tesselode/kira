@@ -53,7 +53,7 @@ impl<'a> ClockInfoProvider<'a> {
 	pub fn should_start(&self, start_time: StartTime) -> bool {
 		if let StartTime::ClockTime(ClockTime { clock, ticks }) = start_time {
 			if let Some(clock_info) = self.get(clock) {
-				clock_info.ticks >= ticks
+				clock_info.ticking && clock_info.ticks >= ticks
 			} else {
 				false
 			}
