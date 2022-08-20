@@ -19,7 +19,7 @@ use crate::{
 	sound::Sound,
 	track::TrackId,
 	tween::{Tween, Tweener},
-	LoopBehavior, PlaybackRate, StartTime, Volume,
+	LoopBehavior, PlaybackRate, Volume,
 };
 
 use self::resampler::Resampler;
@@ -29,7 +29,6 @@ use super::{data::StaticSoundData, Command, StaticSoundSettings};
 pub(super) struct StaticSound {
 	command_consumer: Consumer<Command>,
 	data: StaticSoundData,
-	start_time: StartTime,
 	state: PlaybackState,
 	resampler: Resampler,
 	current_frame_index: i64,
@@ -49,7 +48,6 @@ impl StaticSound {
 		let mut sound = Self {
 			command_consumer,
 			data,
-			start_time: settings.start_time,
 			state: PlaybackState::Playing,
 			resampler: Resampler::new(starting_frame_index),
 			current_frame_index: starting_frame_index,
@@ -273,7 +271,7 @@ impl Sound for StaticSound {
 				_ => {}
 			}
 		}
-		if !clock_info_provider.should_start(self.start_time) {
+		if !clock_info_provider.should_start(self.data.settings.start_time) {
 			return Frame::ZERO;
 		}
 		let out = self.resampler.get(self.fractional_position as f32);
