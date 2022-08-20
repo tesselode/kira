@@ -357,6 +357,50 @@ fn waits_for_start_time() {
 	}
 }
 
+/// Tests that a `StaticSound` will stop (allowing it to be removed)
+/// if it's waiting on a clock that no longer exists before it can
+/// start.
+///
+/// Without this behavior, a sound in this situation would be in limbo
+/// forever with no way to free up its resources.
+#[test]
+fn stops_if_depending_on_missing_clock() {
+	let (clock_info_provider, clock_id) = {
+		let mut builder = MockClockInfoProviderBuilder::new(1);
+		let clock_id = builder
+			.add(ClockInfo {
+				ticking: true,
+				ticks: 0,
+				fractional_position: 0.0,
+			})
+			.unwrap();
+		(builder.build(), clock_id)
+	};
+
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new((1..100).map(|i| Frame::from_mono(i as f32)).collect()),
+		settings: StaticSoundSettings::new().start_time(ClockTime {
+			clock: clock_id,
+			ticks: 2,
+		}),
+	};
+	let (mut sound, handle) = data.split();
+
+	sound.process(1.0, &clock_info_provider);
+	sound.on_start_processing();
+	assert_eq!(handle.state(), PlaybackState::Playing);
+
+	// the clock is removed
+	let clock_info_provider = MockClockInfoProviderBuilder::new(1).build();
+
+	sound.process(1.0, &clock_info_provider);
+	// the sound needs one extra process call to go from Stopping to Stopped
+	sound.process(1.0, &clock_info_provider);
+	sound.on_start_processing();
+	assert_eq!(handle.state(), PlaybackState::Stopped);
+}
+
 /// Tests that a `StaticSound` can be paused, resumed, and
 /// stopped immediately even if playback is waiting for a clock
 /// time to start.

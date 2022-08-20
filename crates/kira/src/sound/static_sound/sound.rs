@@ -14,12 +14,12 @@ use std::{
 use ringbuf::Consumer;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider,
+	clock::clock_info::{ClockInfoProvider, WhenToStart},
 	dsp::Frame,
 	sound::Sound,
 	track::TrackId,
 	tween::{Tween, Tweener},
-	LoopBehavior, PlaybackRate, Volume,
+	LoopBehavior, PlaybackRate, StartTime, Volume,
 };
 
 use self::resampler::Resampler;
@@ -30,6 +30,7 @@ pub(super) struct StaticSound {
 	command_consumer: Consumer<Command>,
 	data: StaticSoundData,
 	state: PlaybackState,
+	when_to_start: WhenToStart,
 	resampler: Resampler,
 	current_frame_index: i64,
 	fractional_position: f64,
@@ -49,6 +50,11 @@ impl StaticSound {
 			command_consumer,
 			data,
 			state: PlaybackState::Playing,
+			when_to_start: if matches!(settings.start_time, StartTime::ClockTime(..)) {
+				WhenToStart::Later
+			} else {
+				WhenToStart::Now
+			},
 			resampler: Resampler::new(starting_frame_index),
 			current_frame_index: starting_frame_index,
 			fractional_position: 0.0,
@@ -261,6 +267,7 @@ impl Sound for StaticSound {
 	}
 
 	fn process(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
+		// update tweeners
 		self.volume.update(dt, clock_info_provider);
 		self.playback_rate.update(dt, clock_info_provider);
 		self.panning.update(dt, clock_info_provider);
@@ -271,9 +278,32 @@ impl Sound for StaticSound {
 				_ => {}
 			}
 		}
-		if !clock_info_provider.should_start(self.data.settings.start_time) {
-			return Frame::ZERO;
+
+		// for sounds waiting on a clock, check if it's ready to start
+		match self.when_to_start {
+			WhenToStart::Now => {}
+			// if the sound is waiting for a start time, check the clock info
+			// provider for a change in that status
+			WhenToStart::Later => {
+				self.when_to_start =
+					clock_info_provider.when_to_start(self.data.settings.start_time);
+				match self.when_to_start {
+					WhenToStart::Now => {}
+					// if the sound is still waiting, return silence
+					WhenToStart::Later => return Frame::ZERO,
+					// if we learn that the sound will never start,
+					// stop the sound and return silence
+					WhenToStart::Never => {
+						self.stop(Tween::default());
+						return Frame::ZERO;
+					}
+				}
+			}
+			// if we already know the sound will never start, output silence
+			WhenToStart::Never => return Frame::ZERO,
 		}
+
+		// play back audio
 		let out = self.resampler.get(self.fractional_position as f32);
 		self.fractional_position += self.data.sample_rate as f64 * self.playback_rate().abs() * dt;
 		while self.fractional_position >= 1.0 {

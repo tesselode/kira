@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod test;
 
-use crate::clock::clock_info::ClockInfoProvider;
+use crate::clock::clock_info::{ClockInfoProvider, WhenToStart};
 
 use super::{Tween, Tweenable};
 
@@ -62,7 +62,7 @@ impl<T: Tweenable> Tweener<T> {
 			tween,
 		} = &mut self.state
 		{
-			if !clock_info_provider.should_start(tween.start_time) {
+			if clock_info_provider.when_to_start(tween.start_time) != WhenToStart::Now {
 				return false;
 			}
 			*time += dt;

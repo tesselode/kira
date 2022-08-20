@@ -48,17 +48,21 @@ impl<'a> ClockInfoProvider<'a> {
 		}
 	}
 
-	/// Returns `true` if something with the given start time should
-	/// start now given the current state of the clocks.
-	pub fn should_start(&self, start_time: StartTime) -> bool {
+	/// Returns whether something with the given start time should
+	/// start now, later, or never given the current state of the clocks.
+	pub fn when_to_start(&self, start_time: StartTime) -> WhenToStart {
 		if let StartTime::ClockTime(ClockTime { clock, ticks }) = start_time {
 			if let Some(clock_info) = self.get(clock) {
-				clock_info.ticking && clock_info.ticks >= ticks
+				if clock_info.ticking && clock_info.ticks >= ticks {
+					WhenToStart::Now
+				} else {
+					WhenToStart::Later
+				}
 			} else {
-				false
+				WhenToStart::Never
 			}
 		} else {
-			true
+			WhenToStart::Now
 		}
 	}
 }
@@ -66,6 +70,24 @@ impl<'a> ClockInfoProvider<'a> {
 enum ClockInfoProviderKind<'a> {
 	Normal { clocks: &'a Clocks },
 	Mock { clock_info: Arena<ClockInfo> },
+}
+
+/// When something should start given the current state
+/// of the clocks.
+///
+/// The "something" in question can be anything that
+/// would start at a given [`StartTime`](crate::StartTime).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum WhenToStart {
+	/// The thing should start now.
+	Now,
+	/// The thing should start later because the appropriate
+	/// clock isn't ticking or hasn't reached the target tick
+	/// yet.
+	Later,
+	/// The thing will never start because the clock it depends
+	/// on no longer exists.
+	Never,
 }
 
 /// Builds a `ClockInfoProvider` that provides fake clock info.

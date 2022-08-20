@@ -9,7 +9,7 @@ use std::sync::{
 };
 
 use crate::{
-	clock::clock_info::ClockInfoProvider,
+	clock::clock_info::{ClockInfoProvider, WhenToStart},
 	dsp::{interpolate_frame, Frame},
 	sound::{static_sound::PlaybackState, Sound},
 	track::TrackId,
@@ -51,6 +51,7 @@ pub(crate) struct StreamingSound {
 	track: TrackId,
 	start_time: StartTime,
 	state: PlaybackState,
+	when_to_start: WhenToStart,
 	volume_fade: Tweener<Volume>,
 	current_frame: i64,
 	fractional_position: f64,
@@ -77,6 +78,11 @@ impl StreamingSound {
 			track: settings.track,
 			start_time: settings.start_time,
 			state: PlaybackState::Playing,
+			when_to_start: if matches!(settings.start_time, StartTime::ClockTime(..)) {
+				WhenToStart::Later
+			} else {
+				WhenToStart::Now
+			},
 			volume_fade: if let Some(tween) = settings.fade_in_tween {
 				let mut tweenable = Tweener::new(Volume::Decibels(Volume::MIN_DECIBELS));
 				tweenable.set(Volume::Decibels(0.0), tween);
@@ -189,6 +195,7 @@ impl Sound for StreamingSound {
 	}
 
 	fn process(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
+		// update tweeners
 		self.volume.update(dt, clock_info_provider);
 		self.playback_rate.update(dt, clock_info_provider);
 		self.panning.update(dt, clock_info_provider);
@@ -199,9 +206,30 @@ impl Sound for StreamingSound {
 				_ => {}
 			}
 		}
-		if !clock_info_provider.should_start(self.start_time) {
-			return Frame::ZERO;
+
+		// for sounds waiting on a clock, check if it's ready to start
+		match self.when_to_start {
+			WhenToStart::Now => {}
+			// if the sound is waiting for a start time, check the clock info
+			// provider for a change in that status
+			WhenToStart::Later => {
+				self.when_to_start = clock_info_provider.when_to_start(self.start_time);
+				match self.when_to_start {
+					WhenToStart::Now => {}
+					// if the sound is still waiting, return silence
+					WhenToStart::Later => return Frame::ZERO,
+					// if we learn that the sound will never start,
+					// stop the sound and return silence
+					WhenToStart::Never => {
+						self.stop(Tween::default());
+						return Frame::ZERO;
+					}
+				}
+			}
+			// if we already know the sound will never start, output silence
+			WhenToStart::Never => return Frame::ZERO,
 		}
+
 		if matches!(self.state, PlaybackState::Paused | PlaybackState::Stopped) {
 			return Frame::ZERO;
 		}
