@@ -120,7 +120,6 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 				},
 				Err(error) => {
 					self.error_producer.push(error).ok();
-					break;
 				}
 			}
 		});
@@ -138,9 +137,9 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		// check for seek commands
 		let seek_destination = self.seek_destination_receiver.load(Ordering::SeqCst);
 		if seek_destination != SEEK_DESTINATION_NONE {
-			self.seek_to_index(seek_destination)?;
 			self.seek_destination_receiver
 				.store(SEEK_DESTINATION_NONE, Ordering::SeqCst);
+			self.seek_to_index(seek_destination)?;
 		}
 		// if we have leftover frames from the last decode, push
 		// those first
@@ -184,9 +183,10 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 			self.current_frame = index;
 			self.decoder.seek(0)?;
 		} else {
+			let desired_index = index.try_into().expect("can't convert i64 to u64");
 			self.current_frame = self
 				.decoder
-				.seek(index.try_into().expect("can't convert i64 to u64"))?
+				.seek(desired_index)?
 				.try_into()
 				.expect("sound is too long, cannot convert u64 to i64");
 		}
