@@ -1,38 +1,36 @@
 use crate::dsp::{interpolate_frame, Frame};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-struct BufferedFrame {
+struct RecentFrame {
+	/// A frame of audio.
 	frame: Frame,
-	position: Option<usize>,
+	/// The current frame index of the source sound at the
+	/// time this frame was pushed to the resampler.
+	frame_index: usize,
 }
 
 pub(super) struct Resampler {
-	frames: [BufferedFrame; 4],
-	last_frame_position: Option<usize>,
+	frames: [RecentFrame; 4],
 }
 
 impl Resampler {
-	pub fn new() -> Self {
+	pub fn new(starting_frame_index: usize) -> Self {
 		Self {
-			frames: [BufferedFrame {
+			frames: [RecentFrame {
 				frame: Frame::ZERO,
-				position: None,
+				frame_index: starting_frame_index,
 			}; 4],
-			last_frame_position: None,
 		}
 	}
 
-	pub fn push_frame(&mut self, frame: Frame, position: impl Into<Option<usize>>) {
+	pub fn push_frame(&mut self, frame: Frame, sample_index: usize) {
 		for i in 0..self.frames.len() - 1 {
 			self.frames[i] = self.frames[i + 1];
 		}
-		self.frames[self.frames.len() - 1] = BufferedFrame {
+		self.frames[self.frames.len() - 1] = RecentFrame {
 			frame,
-			position: position.into(),
+			frame_index: sample_index,
 		};
-		if let Some(position) = self.frames[1].position {
-			self.last_frame_position = Some(position);
-		}
 	}
 
 	pub fn get(&self, fractional_position: f32) -> Frame {
@@ -45,13 +43,21 @@ impl Resampler {
 		)
 	}
 
-	pub fn position(&self) -> Option<usize> {
-		self.last_frame_position
+	/// Returns the index of the frame in the source sound
+	/// that the user is currently hearing from this resampler.
+	///
+	/// This is not the same as the most recently pushed frame.
+	/// The user mainly hears a frame between `self.frames[1]` and
+	/// `self.frames[2]`. `self.frames[0]` and `self.frames[3]`
+	/// are used to provide additional information to the interpolation
+	/// algorithm to get a smoother result.
+	pub fn current_frame_index(&self) -> usize {
+		self.frames[1].frame_index
 	}
 
-	pub fn is_empty(&self) -> bool {
+	pub fn outputting_silence(&self) -> bool {
 		self.frames
 			.iter()
-			.all(|BufferedFrame { frame, .. }| *frame == Frame::ZERO)
+			.all(|RecentFrame { frame, .. }| *frame == Frame::ZERO)
 	}
 }

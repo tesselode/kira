@@ -92,7 +92,7 @@ impl StaticSound {
 			data,
 			start_time: settings.start_time,
 			state: PlaybackState::Playing,
-			resampler: Resampler::new(),
+			resampler: Resampler::new(current_sample_index),
 			current_sample_index,
 			fractional_position: 0.0,
 			volume: Tweener::new(settings.volume),
@@ -196,7 +196,8 @@ impl StaticSound {
 	fn update_position(&mut self) {
 		let playback_rate = self.playback_rate();
 		if matches!(self.state, PlaybackState::Paused | PlaybackState::Stopped) {
-			self.resampler.push_frame(Frame::ZERO, None);
+			self.resampler
+				.push_frame(Frame::ZERO, self.current_sample_index);
 			return;
 		}
 		let out = self.data.frames[self.current_sample_index];
@@ -248,10 +249,7 @@ impl Sound for StaticSound {
 	}
 
 	fn on_start_processing(&mut self) {
-		let last_played_frame_position = self
-			.resampler
-			.position()
-			.expect("The resampler has not received any frames yet");
+		let last_played_frame_position = self.resampler.current_frame_index();
 		self.shared.position.store(
 			(last_played_frame_position as f64 / self.data.sample_rate as f64).to_bits(),
 			Ordering::SeqCst,
@@ -317,6 +315,6 @@ impl Sound for StaticSound {
 	}
 
 	fn finished(&self) -> bool {
-		self.state == PlaybackState::Stopped && self.resampler.is_empty()
+		self.state == PlaybackState::Stopped && self.resampler.outputting_silence()
 	}
 }
