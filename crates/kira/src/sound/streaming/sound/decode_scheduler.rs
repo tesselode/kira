@@ -1,7 +1,8 @@
 use std::{
 	collections::VecDeque,
+	convert::TryInto,
 	sync::{
-		atomic::{AtomicBool, AtomicU64, Ordering},
+		atomic::{AtomicBool, AtomicI64, Ordering},
 		Arc,
 	},
 	time::Duration,
@@ -15,7 +16,7 @@ use crate::{
 use ringbuf::{Consumer, Producer, RingBuffer};
 
 const BUFFER_SIZE: usize = 16_384;
-const SEEK_DESTINATION_NONE: u64 = u64::MAX;
+const SEEK_DESTINATION_NONE: i64 = i64::MAX;
 const DECODER_THREAD_SLEEP_DURATION: Duration = Duration::from_millis(1);
 
 pub(crate) enum NextStep {
@@ -25,18 +26,18 @@ pub(crate) enum NextStep {
 }
 
 pub(crate) struct DecodeSchedulerController {
-	frame_consumer: Consumer<(u64, Frame)>,
-	seek_destination_sender: Arc<AtomicU64>,
+	frame_consumer: Consumer<(i64, Frame)>,
+	seek_destination_sender: Arc<AtomicI64>,
 	stopped_signal_sender: Arc<AtomicBool>,
 	finished_signal_receiver: Arc<AtomicBool>,
 }
 
 impl DecodeSchedulerController {
-	pub fn frame_consumer_mut(&mut self) -> &mut Consumer<(u64, Frame)> {
+	pub fn frame_consumer_mut(&mut self) -> &mut Consumer<(i64, Frame)> {
 		&mut self.frame_consumer
 	}
 
-	pub fn seek(&self, index: u64) {
+	pub fn seek(&self, index: i64) {
 		self.seek_destination_sender.store(index, Ordering::SeqCst);
 	}
 
@@ -55,12 +56,12 @@ pub(crate) struct DecodeScheduler<Error: Send + 'static> {
 	decoder: Box<dyn Decoder<Error = Error>>,
 	sample_rate: u32,
 	loop_behavior: Option<LoopBehavior>,
-	frame_producer: Producer<(u64, Frame)>,
-	seek_destination_receiver: Arc<AtomicU64>,
+	frame_producer: Producer<(i64, Frame)>,
+	seek_destination_receiver: Arc<AtomicI64>,
 	stopped_signal_receiver: Arc<AtomicBool>,
 	finished_signal_sender: Arc<AtomicBool>,
 	decoded_frames: VecDeque<Frame>,
-	current_frame: u64,
+	current_frame: i64,
 	error_producer: Producer<Error>,
 }
 
@@ -76,7 +77,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		frame_producer
 			.push((0, Frame::ZERO))
 			.expect("The frame producer shouldn't be full because we just created it");
-		let seek_destination_sender = Arc::new(AtomicU64::new(SEEK_DESTINATION_NONE));
+		let seek_destination_sender = Arc::new(AtomicI64::new(SEEK_DESTINATION_NONE));
 		let seek_destination_receiver = seek_destination_sender.clone();
 		let stopped_signal_sender = Arc::new(AtomicBool::new(false));
 		let stopped_signal_receiver = stopped_signal_sender.clone();
@@ -105,7 +106,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		Ok((scheduler, controller))
 	}
 
-	pub fn current_frame(&self) -> u64 {
+	pub fn current_frame(&self) -> i64 {
 		self.current_frame
 	}
 
@@ -137,7 +138,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		// check for seek commands
 		let seek_destination = self.seek_destination_receiver.load(Ordering::SeqCst);
 		if seek_destination != SEEK_DESTINATION_NONE {
-			self.current_frame = self.decoder.seek(seek_destination)?;
+			self.seek_to_index(seek_destination)?;
 			self.seek_destination_receiver
 				.store(SEEK_DESTINATION_NONE, Ordering::SeqCst);
 		}
@@ -146,6 +147,12 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		if let Some(frame) = self.decoded_frames.pop_front() {
 			self.frame_producer
 				.push((self.current_frame, frame))
+				.expect("Frame producer should not be full because we just checked that");
+			self.current_frame += 1;
+		// otherwise, if the current position is negative, push silence
+		} else if self.current_frame < 0 {
+			self.frame_producer
+				.push((self.current_frame, Frame::ZERO))
 				.expect("Frame producer should not be full because we just checked that");
 			self.current_frame += 1;
 		// otherwise, decode some new frames
@@ -167,8 +174,22 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 	}
 
 	fn seek(&mut self, position: f64) -> Result<(), Error> {
-		let index = (position * self.sample_rate as f64).round() as u64;
-		self.current_frame = self.decoder.seek(index)?;
+		let index = (position * self.sample_rate as f64).round() as i64;
+		self.seek_to_index(index)?;
+		Ok(())
+	}
+
+	fn seek_to_index(&mut self, index: i64) -> Result<(), Error> {
+		if index < 0 {
+			self.current_frame = index;
+			self.decoder.seek(0)?;
+		} else {
+			self.current_frame = self
+				.decoder
+				.seek(index.try_into().expect("can't convert i64 to u64"))?
+				.try_into()
+				.expect("sound is too long, cannot convert u64 to i64");
+		}
 		Ok(())
 	}
 }

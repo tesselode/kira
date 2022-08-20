@@ -52,7 +52,7 @@ pub(crate) struct StreamingSound {
 	start_time: StartTime,
 	state: PlaybackState,
 	volume_fade: Tweener<Volume>,
-	current_frame: u64,
+	current_frame: i64,
 	fractional_position: f64,
 	volume: Tweener<Volume>,
 	playback_rate: Tweener<PlaybackRate>,
@@ -149,12 +149,12 @@ impl StreamingSound {
 			.set(Volume::Decibels(Volume::MIN_DECIBELS), tween);
 	}
 
-	fn seek_to_index(&mut self, index: u64) {
+	fn seek_to_index(&mut self, index: i64) {
 		self.scheduler_controller.seek(index);
 	}
 
 	fn seek_to(&mut self, position: f64) {
-		self.seek_to_index((position * self.sample_rate as f64).round() as u64);
+		self.seek_to_index((position * self.sample_rate as f64).round() as i64);
 	}
 
 	fn seek_by(&mut self, amount: f64) {

@@ -3,9 +3,12 @@ mod resampler;
 #[cfg(test)]
 mod test;
 
-use std::sync::{
-	atomic::{AtomicU64, AtomicU8, Ordering},
-	Arc,
+use std::{
+	convert::TryInto,
+	sync::{
+		atomic::{AtomicU64, AtomicU8, Ordering},
+		Arc,
+	},
 };
 
 use ringbuf::Consumer;
@@ -29,7 +32,7 @@ pub(super) struct StaticSound {
 	start_time: StartTime,
 	state: PlaybackState,
 	resampler: Resampler,
-	current_frame_index: usize,
+	current_frame_index: i64,
 	fractional_position: f64,
 	volume: Tweener<Volume>,
 	playback_rate: Tweener<PlaybackRate>,
@@ -105,15 +108,18 @@ impl StaticSound {
 	/// Increments the playback position by 1 sample. Returns `true` if the end
 	/// of the sound was reached.
 	fn increment_position(&mut self) -> bool {
+		let max_frame_index = (self.data.frames.len() - 1)
+			.try_into()
+			.expect("sound is too long, cannot convert usize to i64");
 		if let Some(LoopBehavior { start_position }) = self.data.settings.loop_behavior {
-			let start_position = (start_position * self.data.sample_rate as f64) as usize;
-			if self.current_frame_index >= self.data.frames.len() - 1 {
+			let start_position = (start_position * self.data.sample_rate as f64) as i64;
+			if self.current_frame_index >= max_frame_index {
 				self.current_frame_index = start_position;
 			} else {
 				self.current_frame_index += 1;
 			}
 		} else {
-			if self.current_frame_index >= self.data.frames.len() - 1 {
+			if self.current_frame_index >= max_frame_index {
 				return true;
 			} else {
 				self.current_frame_index += 1;
@@ -125,10 +131,13 @@ impl StaticSound {
 	/// Decrements the playback position by 1 sample. Returns `true` if the end
 	/// of the sound was reached (which in this case would be sample -1).
 	fn decrement_position(&mut self) -> bool {
+		let max_frame_index = (self.data.frames.len() - 1)
+			.try_into()
+			.expect("sound is too long, cannot convert usize to i64");
 		if let Some(LoopBehavior { start_position }) = self.data.settings.loop_behavior {
-			let start_position = (start_position * self.data.sample_rate as f64) as usize;
+			let start_position = (start_position * self.data.sample_rate as f64) as i64;
 			if self.current_frame_index <= start_position {
-				self.current_frame_index = self.data.frames.len() - 1;
+				self.current_frame_index = max_frame_index;
 			} else {
 				self.current_frame_index -= 1;
 			}
@@ -160,17 +169,23 @@ impl StaticSound {
 		}
 	}
 
-	fn seek_to_index(&mut self, index: usize) {
+	fn seek_to_index(&mut self, index: i64) {
 		self.current_frame_index = index;
+		let num_frames: i64 = self
+			.data
+			.frames
+			.len()
+			.try_into()
+			.expect("sound is too long, cannot convert usize to i64");
 		// if the seek index is past the end of the sound and the sound is
 		// looping, wrap the seek point back into the sound
 		if let Some(LoopBehavior { start_position }) = self.data.settings.loop_behavior {
-			let start_position = (start_position * self.data.sample_rate as f64) as usize;
-			while self.current_frame_index >= self.data.frames.len() {
-				self.current_frame_index -= self.data.frames.len() - start_position;
+			let start_position = (start_position * self.data.sample_rate as f64) as i64;
+			while self.current_frame_index >= num_frames {
+				self.current_frame_index -= num_frames - start_position;
 			}
 		// otherwise, stop the sound
-		} else if self.current_frame_index >= self.data.frames.len() {
+		} else if self.current_frame_index >= num_frames {
 			self.set_state(PlaybackState::Stopped);
 		}
 		// if the sound is playing, push a frame to the resample buffer
@@ -182,23 +197,36 @@ impl StaticSound {
 	}
 
 	fn push_frame_to_resampler(&mut self) {
-		let out = self.data.frames[self.current_frame_index];
-		let out = (out
-			* self.volume_fade.value().as_amplitude() as f32
-			* self.volume.value().as_amplitude() as f32)
-			.panned(self.panning.value() as f32);
-		self.resampler.push_frame(out, self.current_frame_index);
+		let num_frames: i64 = self
+			.data
+			.frames
+			.len()
+			.try_into()
+			.expect("sound is too long, cannot convert usize to i64");
+		let frame = if self.current_frame_index < 0 || self.current_frame_index >= num_frames {
+			Frame::ZERO
+		} else {
+			let frame_index: usize = self
+				.current_frame_index
+				.try_into()
+				.expect("cannot convert i64 into usize");
+			(self.data.frames[frame_index]
+				* self.volume_fade.value().as_amplitude() as f32
+				* self.volume.value().as_amplitude() as f32)
+				.panned(self.panning.value() as f32)
+		};
+		self.resampler.push_frame(frame, self.current_frame_index);
 	}
 
 	fn seek_by(&mut self, amount: f64) {
 		let current_position = self.current_frame_index as f64 / self.data.sample_rate as f64;
 		let position = current_position + amount;
-		let index = (position * self.data.sample_rate as f64) as usize;
+		let index = (position * self.data.sample_rate as f64) as i64;
 		self.seek_to_index(index);
 	}
 
 	fn seek_to(&mut self, position: f64) {
-		let index = (position * self.data.sample_rate as f64) as usize;
+		let index = (position * self.data.sample_rate as f64) as i64;
 		self.seek_to_index(index);
 	}
 }
@@ -313,12 +341,12 @@ impl Shared {
 	}
 }
 
-fn starting_frame_index(settings: StaticSoundSettings, data: &StaticSoundData) -> usize {
+fn starting_frame_index(settings: StaticSoundSettings, data: &StaticSoundData) -> i64 {
 	if settings.reverse {
 		let position_seconds = data.duration().as_secs_f64() - settings.start_position;
-		(position_seconds * data.sample_rate as f64) as usize - 1
+		(position_seconds * data.sample_rate as f64) as i64 - 1
 	} else {
-		(settings.start_position * data.sample_rate as f64) as usize
+		(settings.start_position * data.sample_rate as f64) as i64
 	}
 }
 

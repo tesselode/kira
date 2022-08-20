@@ -6,7 +6,7 @@ struct RecentFrame {
 	frame: Frame,
 	/// The current frame index of the source sound at the
 	/// time this frame was pushed to the resampler.
-	frame_index: usize,
+	frame_index: i64,
 }
 
 pub(super) struct Resampler {
@@ -14,7 +14,7 @@ pub(super) struct Resampler {
 }
 
 impl Resampler {
-	pub fn new(starting_frame_index: usize) -> Self {
+	pub fn new(starting_frame_index: i64) -> Self {
 		Self {
 			frames: [RecentFrame {
 				frame: Frame::ZERO,
@@ -23,7 +23,7 @@ impl Resampler {
 		}
 	}
 
-	pub fn push_frame(&mut self, frame: Frame, sample_index: usize) {
+	pub fn push_frame(&mut self, frame: Frame, sample_index: i64) {
 		for i in 0..self.frames.len() - 1 {
 			self.frames[i] = self.frames[i + 1];
 		}
@@ -51,7 +51,7 @@ impl Resampler {
 	/// `self.frames[2]`. `self.frames[0]` and `self.frames[3]`
 	/// are used to provide additional information to the interpolation
 	/// algorithm to get a smoother result.
-	pub fn current_frame_index(&self) -> usize {
+	pub fn current_frame_index(&self) -> i64 {
 		self.frames[1].frame_index
 	}
 
