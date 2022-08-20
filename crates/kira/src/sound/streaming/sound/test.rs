@@ -527,23 +527,6 @@ fn negative_start_position() {
 	expect_frame_soon(Frame::from_mono(1.0), &mut sound);
 }
 
-/// Tests that starting a `StreamingSound` past the end of the sound
-/// will not cause a panic.
-#[test]
-#[allow(clippy::float_cmp)]
-fn out_of_bounds_start_position() {
-	let data = StreamingSoundData {
-		decoder: Box::new(MockDecoder::new(
-			(0..10).map(|i| Frame::from_mono(i as f32)).collect(),
-		)),
-		settings: StreamingSoundSettings::new().start_position(15.0),
-	};
-	let (mut sound, _, mut scheduler) = data.split().unwrap();
-	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
-
-	sound.process(1.0);
-}
-
 /// Tests that a `StreamingSound` properly obeys looping behavior when
 /// playing forward.
 #[test]
