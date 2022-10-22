@@ -1,4 +1,4 @@
-use ringbuf::RingBuffer;
+use ringbuf::HeapRb;
 
 use crate::{track::effect::EffectBuilder, Volume};
 
@@ -27,7 +27,7 @@ impl EffectBuilder for VolumeControlBuilder {
 	type Handle = VolumeControlHandle;
 
 	fn build(self) -> (Box<dyn crate::track::effect::Effect>, Self::Handle) {
-		let (command_producer, command_consumer) = RingBuffer::new(COMMAND_CAPACITY).split();
+		let (command_producer, command_consumer) = HeapRb::new(COMMAND_CAPACITY).split();
 		(
 			Box::new(VolumeControl::new(self, command_consumer)),
 			VolumeControlHandle { command_producer },

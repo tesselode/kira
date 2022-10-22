@@ -3,7 +3,7 @@ use std::sync::{
 	Arc,
 };
 
-use ringbuf::Consumer;
+use ringbuf::HeapConsumer;
 
 use crate::{
 	clock::clock_info::ClockInfoProvider,
@@ -40,7 +40,7 @@ pub struct Renderer {
 	dt: f64,
 	shared: Arc<RendererShared>,
 	resources: Resources,
-	command_consumer: Consumer<Command>,
+	command_consumer: HeapConsumer<Command>,
 	state: MainPlaybackState,
 	fade_volume: Tweener<Volume>,
 }
@@ -49,7 +49,7 @@ impl Renderer {
 	pub(crate) fn new(
 		sample_rate: u32,
 		resources: Resources,
-		command_consumer: Consumer<Command>,
+		command_consumer: HeapConsumer<Command>,
 	) -> Self {
 		Self {
 			dt: 1.0 / sample_rate as f64,

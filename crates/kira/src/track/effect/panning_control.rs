@@ -6,7 +6,7 @@ mod handle;
 pub use builder::*;
 pub use handle::*;
 
-use ringbuf::Consumer;
+use ringbuf::HeapConsumer;
 
 use crate::{
 	clock::clock_info::ClockInfoProvider,
@@ -21,12 +21,12 @@ enum Command {
 }
 
 struct PanningControl {
-	command_consumer: Consumer<Command>,
+	command_consumer: HeapConsumer<Command>,
 	panning: Tweener,
 }
 
 impl PanningControl {
-	fn new(builder: PanningControlBuilder, command_consumer: Consumer<Command>) -> Self {
+	fn new(builder: PanningControlBuilder, command_consumer: HeapConsumer<Command>) -> Self {
 		Self {
 			command_consumer,
 			panning: Tweener::new(builder.0),

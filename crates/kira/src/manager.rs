@@ -5,11 +5,10 @@ pub(crate) mod command;
 pub mod error;
 mod settings;
 
+use ringbuf::HeapRb;
 pub use settings::*;
 
 use std::{collections::HashSet, sync::Arc};
-
-use ringbuf::RingBuffer;
 
 use crate::{
 	clock::{Clock, ClockHandle, ClockId},
@@ -70,7 +69,7 @@ impl<B: Backend> AudioManager<B> {
 	pub fn new(settings: AudioManagerSettings<B>) -> Result<Self, B::Error> {
 		let (mut backend, sample_rate) = B::setup(settings.backend_settings)?;
 		let (command_producer, command_consumer) =
-			RingBuffer::new(settings.capacities.command_capacity).split();
+			HeapRb::new(settings.capacities.command_capacity).split();
 		let (unused_resource_producers, unused_resource_consumers) =
 			create_unused_resource_channels(settings.capacities);
 		let (resources, resource_controllers) = create_resources(

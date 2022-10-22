@@ -13,7 +13,7 @@ use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	Device, Stream, StreamConfig, StreamError,
 };
-use ringbuf::{Consumer, RingBuffer};
+use ringbuf::{HeapConsumer, HeapRb};
 
 use super::super::Error;
 
@@ -29,8 +29,8 @@ enum State {
 	},
 	Running {
 		stream: Stream,
-		stream_error_consumer: Consumer<StreamError>,
-		renderer_consumer: Consumer<Renderer>,
+		stream_error_consumer: HeapConsumer<StreamError>,
+		renderer_consumer: HeapConsumer<Renderer>,
 	},
 }
 
@@ -122,7 +122,7 @@ impl StreamManager {
 		self.device_name = device_name;
 		self.sample_rate = sample_rate;
 		let (mut renderer_wrapper, renderer_consumer) = RendererWrapper::new(renderer);
-		let (mut stream_error_producer, stream_error_consumer) = RingBuffer::new(1).split();
+		let (mut stream_error_producer, stream_error_consumer) = HeapRb::new(1).split();
 		let channels = config.channels;
 		let stream = device.build_output_stream(
 			config,

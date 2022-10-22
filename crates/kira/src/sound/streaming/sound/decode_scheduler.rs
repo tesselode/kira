@@ -13,7 +13,7 @@ use crate::{
 	sound::streaming::{decoder::Decoder, StreamingSoundSettings},
 	LoopBehavior,
 };
-use ringbuf::{Consumer, Producer, RingBuffer};
+use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 
 const BUFFER_SIZE: usize = 16_384;
 const SEEK_DESTINATION_NONE: i64 = i64::MAX;
@@ -26,14 +26,14 @@ pub(crate) enum NextStep {
 }
 
 pub(crate) struct DecodeSchedulerController {
-	frame_consumer: Consumer<(i64, Frame)>,
+	frame_consumer: HeapConsumer<(i64, Frame)>,
 	seek_destination_sender: Arc<AtomicI64>,
 	stopped_signal_sender: Arc<AtomicBool>,
 	finished_signal_receiver: Arc<AtomicBool>,
 }
 
 impl DecodeSchedulerController {
-	pub fn frame_consumer_mut(&mut self) -> &mut Consumer<(i64, Frame)> {
+	pub fn frame_consumer_mut(&mut self) -> &mut HeapConsumer<(i64, Frame)> {
 		&mut self.frame_consumer
 	}
 
@@ -56,22 +56,22 @@ pub(crate) struct DecodeScheduler<Error: Send + 'static> {
 	decoder: Box<dyn Decoder<Error = Error>>,
 	sample_rate: u32,
 	loop_behavior: Option<LoopBehavior>,
-	frame_producer: Producer<(i64, Frame)>,
+	frame_producer: HeapProducer<(i64, Frame)>,
 	seek_destination_receiver: Arc<AtomicI64>,
 	stopped_signal_receiver: Arc<AtomicBool>,
 	finished_signal_sender: Arc<AtomicBool>,
 	decoded_frames: VecDeque<Frame>,
 	current_frame: i64,
-	error_producer: Producer<Error>,
+	error_producer: HeapProducer<Error>,
 }
 
 impl<Error: Send + 'static> DecodeScheduler<Error> {
 	pub fn new(
 		decoder: Box<dyn Decoder<Error = Error>>,
 		settings: StreamingSoundSettings,
-		error_producer: Producer<Error>,
+		error_producer: HeapProducer<Error>,
 	) -> Result<(Self, DecodeSchedulerController), Error> {
-		let (mut frame_producer, frame_consumer) = RingBuffer::new(BUFFER_SIZE).split();
+		let (mut frame_producer, frame_consumer) = HeapRb::new(BUFFER_SIZE).split();
 		// pre-seed the frame ringbuffer with a zero frame. this is the "previous" frame
 		// when the sound just started.
 		frame_producer

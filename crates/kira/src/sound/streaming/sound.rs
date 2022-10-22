@@ -16,7 +16,7 @@ use crate::{
 	tween::{Tween, Tweener},
 	PlaybackRate, StartTime, Volume,
 };
-use ringbuf::Consumer;
+use ringbuf::HeapConsumer;
 
 use super::{Command, StreamingSoundSettings};
 
@@ -45,7 +45,7 @@ impl Shared {
 }
 
 pub(crate) struct StreamingSound {
-	command_consumer: Consumer<Command>,
+	command_consumer: HeapConsumer<Command>,
 	sample_rate: u32,
 	scheduler_controller: DecodeSchedulerController,
 	track: TrackId,
@@ -63,7 +63,7 @@ pub(crate) struct StreamingSound {
 
 impl StreamingSound {
 	pub fn new<Error: Send + 'static>(
-		command_consumer: Consumer<Command>,
+		command_consumer: HeapConsumer<Command>,
 		scheduler_controller: DecodeSchedulerController,
 		settings: StreamingSoundSettings,
 		sample_rate: u32,

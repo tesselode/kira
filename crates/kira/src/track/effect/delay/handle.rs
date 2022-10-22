@@ -1,4 +1,4 @@
-use ringbuf::Producer;
+use ringbuf::HeapProducer;
 
 use crate::{tween::Tween, CommandError, Volume};
 
@@ -6,7 +6,7 @@ use super::Command;
 
 /// Controls a delay effect.
 pub struct DelayHandle {
-	pub(super) command_producer: Producer<Command>,
+	pub(super) command_producer: HeapProducer<Command>,
 }
 
 impl DelayHandle {
@@ -18,7 +18,11 @@ impl DelayHandle {
 	}
 
 	/// Sets the amount of feedback.
-	pub fn set_feedback(&mut self, feedback: impl Into<Volume>, tween: Tween) -> Result<(), CommandError> {
+	pub fn set_feedback(
+		&mut self,
+		feedback: impl Into<Volume>,
+		tween: Tween,
+	) -> Result<(), CommandError> {
 		self.command_producer
 			.push(Command::SetFeedback(feedback.into(), tween))
 			.map_err(|_| CommandError::CommandQueueFull)

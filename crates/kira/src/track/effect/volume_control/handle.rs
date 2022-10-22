@@ -1,4 +1,4 @@
-use ringbuf::Producer;
+use ringbuf::HeapProducer;
 
 use crate::{tween::Tween, CommandError, Volume};
 
@@ -6,7 +6,7 @@ use super::Command;
 
 /// Controls a volume control effect.
 pub struct VolumeControlHandle {
-	pub(super) command_producer: Producer<Command>,
+	pub(super) command_producer: HeapProducer<Command>,
 }
 
 impl VolumeControlHandle {

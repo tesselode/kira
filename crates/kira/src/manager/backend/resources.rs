@@ -3,7 +3,7 @@ pub(crate) mod mixer;
 pub(crate) mod sounds;
 
 use atomic_arena::Controller;
-use ringbuf::{Consumer, Producer, RingBuffer};
+use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 
 use crate::{
 	clock::Clock,
@@ -15,26 +15,26 @@ use crate::{
 use self::{clocks::Clocks, mixer::Mixer, sounds::Sounds};
 
 pub(crate) struct UnusedResourceProducers {
-	pub sound: Producer<Box<dyn Sound>>,
-	pub sub_track: Producer<Track>,
-	pub clock: Producer<Clock>,
+	pub sound: HeapProducer<Box<dyn Sound>>,
+	pub sub_track: HeapProducer<Track>,
+	pub clock: HeapProducer<Clock>,
 }
 
 pub(crate) struct UnusedResourceConsumers {
-	pub sound: Consumer<Box<dyn Sound>>,
-	pub sub_track: Consumer<Track>,
-	pub clock: Consumer<Clock>,
+	pub sound: HeapConsumer<Box<dyn Sound>>,
+	pub sub_track: HeapConsumer<Track>,
+	pub clock: HeapConsumer<Clock>,
 }
 
 pub(crate) fn create_unused_resource_channels(
 	capacities: Capacities,
 ) -> (UnusedResourceProducers, UnusedResourceConsumers) {
 	let (unused_sound_producer, unused_sound_consumer) =
-		RingBuffer::new(capacities.sound_capacity).split();
+		HeapRb::new(capacities.sound_capacity).split();
 	let (unused_sub_track_producer, unused_sub_track_consumer) =
-		RingBuffer::new(capacities.sub_track_capacity).split();
+		HeapRb::new(capacities.sub_track_capacity).split();
 	let (unused_clock_producer, unused_clock_consumer) =
-		RingBuffer::new(capacities.clock_capacity).split();
+		HeapRb::new(capacities.clock_capacity).split();
 	(
 		UnusedResourceProducers {
 			sound: unused_sound_producer,

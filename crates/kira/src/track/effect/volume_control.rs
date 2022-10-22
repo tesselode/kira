@@ -6,7 +6,7 @@ mod handle;
 pub use builder::*;
 pub use handle::*;
 
-use ringbuf::Consumer;
+use ringbuf::HeapConsumer;
 
 use crate::{
 	clock::clock_info::ClockInfoProvider,
@@ -22,12 +22,12 @@ enum Command {
 }
 
 struct VolumeControl {
-	command_consumer: Consumer<Command>,
+	command_consumer: HeapConsumer<Command>,
 	volume: Tweener<Volume>,
 }
 
 impl VolumeControl {
-	fn new(builder: VolumeControlBuilder, command_consumer: Consumer<Command>) -> Self {
+	fn new(builder: VolumeControlBuilder, command_consumer: HeapConsumer<Command>) -> Self {
 		Self {
 			command_consumer,
 			volume: Tweener::new(builder.0),

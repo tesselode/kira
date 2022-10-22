@@ -1,4 +1,4 @@
-use ringbuf::RingBuffer;
+use ringbuf::HeapRb;
 
 use crate::{
 	track::effect::{Effect, EffectBuilder},
@@ -87,7 +87,7 @@ impl EffectBuilder for DelayBuilder {
 	type Handle = DelayHandle;
 
 	fn build(self) -> (Box<dyn Effect>, Self::Handle) {
-		let (command_producer, command_consumer) = RingBuffer::new(COMMAND_CAPACITY).split();
+		let (command_producer, command_consumer) = HeapRb::new(COMMAND_CAPACITY).split();
 		(
 			Box::new(Delay::new(self, command_consumer)),
 			DelayHandle { command_producer },

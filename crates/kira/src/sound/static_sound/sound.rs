@@ -11,7 +11,7 @@ use std::{
 	},
 };
 
-use ringbuf::Consumer;
+use ringbuf::HeapConsumer;
 
 use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
@@ -27,7 +27,7 @@ use self::resampler::Resampler;
 use super::{data::StaticSoundData, Command, StaticSoundSettings};
 
 pub(super) struct StaticSound {
-	command_consumer: Consumer<Command>,
+	command_consumer: HeapConsumer<Command>,
 	data: StaticSoundData,
 	state: PlaybackState,
 	when_to_start: WhenToStart,
@@ -42,7 +42,7 @@ pub(super) struct StaticSound {
 }
 
 impl StaticSound {
-	pub fn new(data: StaticSoundData, command_consumer: Consumer<Command>) -> Self {
+	pub fn new(data: StaticSoundData, command_consumer: HeapConsumer<Command>) -> Self {
 		let settings = data.settings;
 		let starting_frame_index = starting_frame_index(settings, &data);
 		let position = starting_frame_index as f64 / data.sample_rate as f64;

@@ -6,7 +6,7 @@ mod handle;
 pub use builder::*;
 pub use handle::*;
 
-use ringbuf::Consumer;
+use ringbuf::HeapConsumer;
 
 use crate::{
 	clock::clock_info::ClockInfoProvider,
@@ -47,7 +47,7 @@ impl Default for DistortionKind {
 }
 
 struct Distortion {
-	command_consumer: Consumer<Command>,
+	command_consumer: HeapConsumer<Command>,
 	kind: DistortionKind,
 	drive: Tweener<Volume>,
 	mix: Tweener,

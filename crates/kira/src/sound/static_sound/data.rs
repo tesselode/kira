@@ -6,7 +6,7 @@ mod test;
 
 use std::{sync::Arc, time::Duration};
 
-use ringbuf::RingBuffer;
+use ringbuf::HeapRb;
 
 use crate::{
 	dsp::Frame,
@@ -55,7 +55,7 @@ impl StaticSoundData {
 	}
 
 	pub(super) fn split(self) -> (StaticSound, StaticSoundHandle) {
-		let (command_producer, command_consumer) = RingBuffer::new(COMMAND_BUFFER_CAPACITY).split();
+		let (command_producer, command_consumer) = HeapRb::new(COMMAND_BUFFER_CAPACITY).split();
 		let sound = StaticSound::new(self, command_consumer);
 		let shared = sound.shared();
 		(

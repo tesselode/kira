@@ -1,5 +1,5 @@
 use atomic_arena::{Arena, Controller};
-use ringbuf::Producer;
+use ringbuf::HeapProducer;
 
 use crate::{
 	clock::{clock_info::ClockInfoProvider, Clock, ClockId},
@@ -9,11 +9,11 @@ use crate::{
 pub(crate) struct Clocks {
 	clocks: Arena<Clock>,
 	clock_ids: Vec<ClockId>,
-	unused_clock_producer: Producer<Clock>,
+	unused_clock_producer: HeapProducer<Clock>,
 }
 
 impl Clocks {
-	pub(crate) fn new(capacity: usize, unused_clock_producer: Producer<Clock>) -> Self {
+	pub(crate) fn new(capacity: usize, unused_clock_producer: HeapProducer<Clock>) -> Self {
 		Self {
 			clocks: Arena::new(capacity),
 			clock_ids: Vec::with_capacity(capacity),

@@ -4,7 +4,7 @@ use std::path::Path;
 
 use crate::sound::FromFileError;
 use crate::sound::SoundData;
-use ringbuf::RingBuffer;
+use ringbuf::HeapRb;
 
 use super::decoder::symphonia::SymphoniaDecoder;
 use super::{StreamingSoundHandle, StreamingSoundSettings};
@@ -59,8 +59,8 @@ impl<Error: Send + 'static> StreamingSoundData<Error> {
 		),
 		Error,
 	> {
-		let (command_producer, command_consumer) = RingBuffer::new(COMMAND_BUFFER_CAPACITY).split();
-		let (error_producer, error_consumer) = RingBuffer::new(ERROR_BUFFER_CAPACITY).split();
+		let (command_producer, command_consumer) = HeapRb::new(COMMAND_BUFFER_CAPACITY).split();
+		let (error_producer, error_consumer) = HeapRb::new(ERROR_BUFFER_CAPACITY).split();
 		let sample_rate = self.decoder.sample_rate();
 		let (scheduler, scheduler_controller) =
 			DecodeScheduler::new(self.decoder, self.settings, error_producer)?;

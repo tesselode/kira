@@ -1,7 +1,7 @@
 use std::ops::{Deref, DerefMut};
 
 use crate::manager::backend::Renderer;
-use ringbuf::{Consumer, Producer, RingBuffer};
+use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 
 /// Wraps a [`Renderer`] so that when it's dropped,
 /// it gets sent back through a thread channel.
@@ -11,12 +11,12 @@ use ringbuf::{Consumer, Producer, RingBuffer};
 /// because of a cpal error.
 pub(super) struct RendererWrapper {
 	renderer: Option<Renderer>,
-	producer: Producer<Renderer>,
+	producer: HeapProducer<Renderer>,
 }
 
 impl RendererWrapper {
-	pub(super) fn new(renderer: Renderer) -> (Self, Consumer<Renderer>) {
-		let (producer, consumer) = RingBuffer::new(1).split();
+	pub(super) fn new(renderer: Renderer) -> (Self, HeapConsumer<Renderer>) {
+		let (producer, consumer) = HeapRb::new(1).split();
 		(
 			Self {
 				renderer: Some(renderer),

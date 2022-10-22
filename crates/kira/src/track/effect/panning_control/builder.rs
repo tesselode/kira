@@ -1,4 +1,4 @@
-use ringbuf::RingBuffer;
+use ringbuf::HeapRb;
 
 use crate::track::effect::EffectBuilder;
 
@@ -20,7 +20,7 @@ impl EffectBuilder for PanningControlBuilder {
 	type Handle = PanningControlHandle;
 
 	fn build(self) -> (Box<dyn crate::track::effect::Effect>, Self::Handle) {
-		let (command_producer, command_consumer) = RingBuffer::new(COMMAND_CAPACITY).split();
+		let (command_producer, command_consumer) = HeapRb::new(COMMAND_CAPACITY).split();
 		(
 			Box::new(PanningControl::new(self, command_consumer)),
 			PanningControlHandle { command_producer },

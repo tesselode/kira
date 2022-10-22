@@ -6,7 +6,7 @@ mod handle;
 pub use builder::*;
 pub use handle::*;
 
-use ringbuf::Consumer;
+use ringbuf::HeapConsumer;
 
 use crate::{
 	clock::clock_info::ClockInfoProvider,
@@ -35,7 +35,7 @@ enum DelayState {
 }
 
 struct Delay {
-	command_consumer: Consumer<Command>,
+	command_consumer: HeapConsumer<Command>,
 	delay_time: Tweener,
 	feedback: Tweener<Volume>,
 	mix: Tweener,
@@ -45,7 +45,7 @@ struct Delay {
 
 impl Delay {
 	/// Creates a new delay effect.
-	fn new(builder: DelayBuilder, command_consumer: Consumer<Command>) -> Self {
+	fn new(builder: DelayBuilder, command_consumer: HeapConsumer<Command>) -> Self {
 		Self {
 			command_consumer,
 			delay_time: Tweener::new(builder.delay_time),

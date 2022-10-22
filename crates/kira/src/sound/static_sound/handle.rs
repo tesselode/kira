@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use ringbuf::Producer;
+use ringbuf::HeapProducer;
 
 use crate::{tween::Tween, CommandError, PlaybackRate, Volume};
 
@@ -8,7 +8,7 @@ use super::{sound::Shared, Command, PlaybackState};
 
 /// Controls a static sound.
 pub struct StaticSoundHandle {
-	pub(super) command_producer: Producer<Command>,
+	pub(super) command_producer: HeapProducer<Command>,
 	pub(super) shared: Arc<Shared>,
 }
 

@@ -1,4 +1,4 @@
-use ringbuf::RingBuffer;
+use ringbuf::HeapRb;
 
 use crate::{
 	clock::clock_info::MockClockInfoProviderBuilder,
@@ -11,7 +11,7 @@ use super::Mixer;
 
 #[test]
 fn parent_routing() {
-	let (unused_sub_track_producer, _) = RingBuffer::new(1).split();
+	let (unused_sub_track_producer, _) = HeapRb::new(1).split();
 	let mut mixer = Mixer::new(100, unused_sub_track_producer, 1, TrackBuilder::new());
 	let sub_track_controller = mixer.sub_track_controller();
 	let parent_track_id = SubTrackId(sub_track_controller.try_reserve().unwrap());
@@ -38,7 +38,7 @@ fn parent_routing() {
 
 #[test]
 fn send_routing() {
-	let (unused_sub_track_producer, _) = RingBuffer::new(1).split();
+	let (unused_sub_track_producer, _) = HeapRb::new(1).split();
 	let mut mixer = Mixer::new(100, unused_sub_track_producer, 1, TrackBuilder::new());
 	let sub_track_controller = mixer.sub_track_controller();
 	let send_track_id = SubTrackId(sub_track_controller.try_reserve().unwrap());

@@ -1,4 +1,4 @@
-use ringbuf::Producer;
+use ringbuf::HeapProducer;
 
 use crate::{tween::Tween, CommandError, Volume};
 
@@ -6,7 +6,7 @@ use super::{Command, DistortionKind};
 
 /// Controls a distortion effect.
 pub struct DistortionHandle {
-	pub(super) command_producer: Producer<Command>,
+	pub(super) command_producer: HeapProducer<Command>,
 }
 
 impl DistortionHandle {

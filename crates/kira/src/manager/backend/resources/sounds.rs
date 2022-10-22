@@ -1,5 +1,5 @@
 use atomic_arena::{Arena, Controller};
-use ringbuf::Producer;
+use ringbuf::HeapProducer;
 
 use crate::{clock::clock_info::ClockInfoProvider, manager::command::SoundCommand, sound::Sound};
 
@@ -7,11 +7,11 @@ use super::mixer::Mixer;
 
 pub(crate) struct Sounds {
 	sounds: Arena<Box<dyn Sound>>,
-	unused_sound_producer: Producer<Box<dyn Sound>>,
+	unused_sound_producer: HeapProducer<Box<dyn Sound>>,
 }
 
 impl Sounds {
-	pub fn new(capacity: usize, unused_sound_producer: Producer<Box<dyn Sound>>) -> Self {
+	pub fn new(capacity: usize, unused_sound_producer: HeapProducer<Box<dyn Sound>>) -> Self {
 		Self {
 			sounds: Arena::new(capacity),
 			unused_sound_producer,

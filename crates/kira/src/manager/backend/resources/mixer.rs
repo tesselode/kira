@@ -2,7 +2,7 @@
 mod test;
 
 use atomic_arena::{Arena, Controller};
-use ringbuf::Producer;
+use ringbuf::HeapProducer;
 
 use crate::{
 	clock::clock_info::ClockInfoProvider,
@@ -19,13 +19,13 @@ pub(crate) struct Mixer {
 	sub_tracks: Arena<Track>,
 	sub_track_ids: Vec<SubTrackId>,
 	dummy_routes: Vec<(TrackId, Tweener<Volume>)>,
-	unused_track_producer: Producer<Track>,
+	unused_track_producer: HeapProducer<Track>,
 }
 
 impl Mixer {
 	pub fn new(
 		sub_track_capacity: usize,
-		unused_sub_track_producer: Producer<Track>,
+		unused_sub_track_producer: HeapProducer<Track>,
 		sample_rate: u32,
 		main_track_builder: TrackBuilder,
 	) -> Self {

@@ -1,15 +1,15 @@
 use std::sync::Arc;
 
 use crate::{sound::static_sound::PlaybackState, tween::Tween, CommandError, PlaybackRate, Volume};
-use ringbuf::{Consumer, Producer};
+use ringbuf::{HeapConsumer, HeapProducer};
 
 use super::{sound::Shared, Command};
 
 /// Controls a streaming sound.
 pub struct StreamingSoundHandle<Error> {
 	pub(crate) shared: Arc<Shared>,
-	pub(crate) command_producer: Producer<Command>,
-	pub(crate) error_consumer: Consumer<Error>,
+	pub(crate) command_producer: HeapProducer<Command>,
+	pub(crate) error_consumer: HeapConsumer<Error>,
 }
 
 impl<Error> StreamingSoundHandle<Error> {

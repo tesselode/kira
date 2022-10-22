@@ -1,14 +1,14 @@
 use crate::error::CommandError;
-use ringbuf::Producer;
+use ringbuf::HeapProducer;
 use std::sync::{Arc, Mutex};
 
 use super::Command;
 
 #[derive(Clone)]
-pub(crate) struct CommandProducer(Arc<Mutex<Producer<Command>>>);
+pub(crate) struct CommandProducer(Arc<Mutex<HeapProducer<Command>>>);
 
 impl CommandProducer {
-	pub fn new(raw_producer: Producer<Command>) -> Self {
+	pub fn new(raw_producer: HeapProducer<Command>) -> Self {
 		Self(Arc::new(Mutex::new(raw_producer)))
 	}
 

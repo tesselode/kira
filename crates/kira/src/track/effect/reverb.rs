@@ -6,7 +6,7 @@ mod handle;
 pub use builder::*;
 pub use handle::*;
 
-use ringbuf::Consumer;
+use ringbuf::HeapConsumer;
 
 use crate::{
 	clock::clock_info::ClockInfoProvider,
@@ -44,7 +44,7 @@ enum ReverbState {
 // This code is based on Freeverb by Jezar at Dreampoint, found here:
 // http://blog.bjornroche.com/2012/06/freeverb-original-public-domain-code-by.html
 struct Reverb {
-	command_consumer: Consumer<Command>,
+	command_consumer: HeapConsumer<Command>,
 	feedback: Tweener,
 	damping: Tweener,
 	stereo_width: Tweener,
@@ -54,7 +54,7 @@ struct Reverb {
 
 impl Reverb {
 	/// Creates a new `Reverb` effect.
-	fn new(settings: ReverbBuilder, command_consumer: Consumer<Command>) -> Self {
+	fn new(settings: ReverbBuilder, command_consumer: HeapConsumer<Command>) -> Self {
 		Self {
 			command_consumer,
 			feedback: Tweener::new(settings.feedback),

@@ -5,7 +5,7 @@ mod handle;
 
 pub use builder::*;
 pub use handle::*;
-use ringbuf::Consumer;
+use ringbuf::HeapConsumer;
 
 use std::f64::consts::PI;
 
@@ -40,7 +40,7 @@ pub enum FilterMode {
 }
 
 struct Filter {
-	command_consumer: Consumer<Command>,
+	command_consumer: HeapConsumer<Command>,
 	mode: FilterMode,
 	cutoff: Tweener,
 	resonance: Tweener,
@@ -51,7 +51,7 @@ struct Filter {
 
 impl Filter {
 	/// Creates a new filter.
-	fn new(builder: FilterBuilder, command_consumer: Consumer<Command>) -> Self {
+	fn new(builder: FilterBuilder, command_consumer: HeapConsumer<Command>) -> Self {
 		Self {
 			command_consumer,
 			mode: builder.mode,
