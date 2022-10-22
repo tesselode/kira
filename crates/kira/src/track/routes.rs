@@ -6,6 +6,7 @@ use super::TrackId;
 
 /// Defines how the output of a mixer sub-track will be
 /// fed into the input of other mixer tracks.
+#[derive(Debug, Clone, PartialEq)]
 pub struct TrackRoutes(pub(crate) HashMap<TrackId, Volume>);
 
 impl TrackRoutes {

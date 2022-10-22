@@ -1,37 +1,48 @@
+# v0.7.1
+
+- Update `cpal` to 0.14.0
+- Update `ringbuf` to 0.3.1
+- Implement `PartialEq` for `StaticSoundData`, `DistortionKind`,
+  `DistortionBuilder`, `FilterMode`, `FilterBuilder`, `PanningControlBuilder`,
+  `ReverbBuilder`, `VolumeControlBuilder`, and `TrackRoutes`
+- Implement `Debug` for `StaticSoundData` and `TrackRoutes`
+- Implement `Clone` for `TrackRoutes`
+
 # v0.7.0 - August 20th, 2022
 
 This is a bugfix release, but unfortunately one of the bugfixes did require a
-breaking change. Fortunately, this breaking change only affects people who
-have created their own `Sound` or `Effect` implementations, which is not the
-most common use case.
+breaking change. Fortunately, this breaking change only affects people who have
+created their own `Sound` or `Effect` implementations, which is not the most
+common use case.
 
 Fixes:
 
-- Fix a panic when starting a `StaticSound` with a start position later
-than the end of the sound
-- Fix negative start positions getting rounded up to `0.0`. Now sounds
-played with negative start positions will output silence until the position
-reaches `0.0`, at which point normal playback will resume. This is the
-behavior from versions 0.5.x and prior, and it was not meant to change
-in 0.6.x.
-- Streaming sounds will no longer stop after they encounter an error,
-allowing them to recover from non-fatal errors and continue playback
-- Fix a bug where if a sound was played with the start time set to a clock
-time, and the clock time had already passed by the time the sound was
-played, it would not start until the next tick of that clock
+- Fix a panic when starting a `StaticSound` with a start position later than the
+  end of the sound
+- Fix negative start positions getting rounded up to `0.0`. Now sounds played
+  with negative start positions will output silence until the position reaches
+  `0.0`, at which point normal playback will resume. This is the behavior from
+  versions 0.5.x and prior, and it was not meant to change in 0.6.x.
+- Streaming sounds will no longer stop after they encounter an error, allowing
+  them to recover from non-fatal errors and continue playback
+- Fix a bug where if a sound was played with the start time set to a clock time,
+  and the clock time had already passed by the time the sound was played, it
+  would not start until the next tick of that clock
 
 Breaking changes (only for `Sound` and `Effect` implementations):
 
 - Removed the `on_clock_tick` callback from `Sound`, `Effect`, and `Tweener`
-- Instead, `Sound::process`, `Effect::process`, and `Tweener::update`
-receive a `&ClockInfoProvider` argument. `ClockInfoProvider` can report
-the current state of any active clock.
+- Instead, `Sound::process`, `Effect::process`, and `Tweener::update` receive a
+  `&ClockInfoProvider` argument. `ClockInfoProvider` can report the current
+  state of any active clock.
 
 # v0.6.1 - August 12th, 2022
 
 - Added `ClockHandle::fractional_position`
-- Added `StaticSoundData::with_settings` and `StaticSoundData::with_modified_settings`
-- Changed the following functions to take `&self` arguments instead of `&mut self` (thanks @nobbele!):
+- Added `StaticSoundData::with_settings` and
+  `StaticSoundData::with_modified_settings`
+- Changed the following functions to take `&self` arguments instead of
+  `&mut self` (thanks @nobbele!):
   - `ClockHandle::set_speed`
   - `ClockHandle::start`
   - `ClockHandle::pause`

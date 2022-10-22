@@ -4,7 +4,11 @@ mod from_file;
 #[cfg(test)]
 mod test;
 
-use std::{sync::Arc, time::Duration};
+use std::{
+	fmt::{Debug, Formatter},
+	sync::Arc,
+	time::Duration,
+};
 
 use ringbuf::HeapRb;
 
@@ -21,7 +25,7 @@ const COMMAND_BUFFER_CAPACITY: usize = 8;
 ///
 /// These can be cheaply cloned, as the audio data is shared
 /// among all clones.
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct StaticSoundData {
 	/// The sample rate of the audio (in Hz).
 	pub sample_rate: u32,
@@ -77,5 +81,30 @@ impl SoundData for StaticSoundData {
 	fn into_sound(self) -> Result<(Box<dyn Sound>, Self::Handle), Self::Error> {
 		let (sound, handle) = self.split();
 		Ok((Box::new(sound), handle))
+	}
+}
+
+impl Debug for StaticSoundData {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("StaticSoundData")
+			.field("sample_rate", &self.sample_rate)
+			.field(
+				"frames",
+				&FramesDebug {
+					len: self.frames.len(),
+				},
+			)
+			.field("settings", &self.settings)
+			.finish()
+	}
+}
+
+struct FramesDebug {
+	len: usize,
+}
+
+impl Debug for FramesDebug {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		f.write_fmt(format_args!("[{} frames]", self.len))
 	}
 }

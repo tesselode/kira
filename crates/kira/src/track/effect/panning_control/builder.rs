@@ -7,7 +7,7 @@ use super::{PanningControl, PanningControlHandle};
 const COMMAND_CAPACITY: usize = 8;
 
 /// Configures a panning control effect.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct PanningControlBuilder(pub f64);
 
 impl Default for PanningControlBuilder {

@@ -7,7 +7,7 @@ use super::{Filter, FilterHandle, FilterMode};
 const COMMAND_CAPACITY: usize = 8;
 
 /// Configures a filter effect.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 #[non_exhaustive]
 pub struct FilterBuilder {
 	/// The frequencies that the filter will remove.

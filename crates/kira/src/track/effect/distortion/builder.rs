@@ -11,7 +11,7 @@ use super::{handle::DistortionHandle, Distortion, DistortionKind};
 const COMMAND_CAPACITY: usize = 8;
 
 /// Configures a distortion effect.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 #[non_exhaustive]
 pub struct DistortionBuilder {
 	/// The kind of distortion to use.

@@ -23,7 +23,7 @@ enum Command {
 }
 
 /// Different types of distortion.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 #[non_exhaustive]
 pub enum DistortionKind {
 	/// The signal will be clamped to the -1.0 to 1.0 range.

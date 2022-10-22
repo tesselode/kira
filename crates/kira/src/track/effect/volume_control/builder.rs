@@ -7,7 +7,7 @@ use super::{VolumeControl, VolumeControlHandle};
 const COMMAND_CAPACITY: usize = 8;
 
 /// Configures a volume control effect.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct VolumeControlBuilder(pub Volume);
 
 impl VolumeControlBuilder {

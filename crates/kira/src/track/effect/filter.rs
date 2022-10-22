@@ -27,7 +27,7 @@ enum Command {
 // https://github.com/wrl/baseplug/blob/trunk/examples/svf/svf_simper.rs
 
 /// The frequencies that the filter will remove.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum FilterMode {
 	/// Removes frequencies above the cutoff frequency.
 	LowPass,

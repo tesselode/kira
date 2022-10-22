@@ -7,7 +7,7 @@ use super::{Reverb, ReverbHandle};
 const COMMAND_CAPACITY: usize = 8;
 
 /// Configures a reverb effect.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 #[non_exhaustive]
 pub struct ReverbBuilder {
 	/// How much the room reverberates. A higher value will
