@@ -1,4 +1,4 @@
-# v0.7.1
+# v0.7.1 - October 23, 2022
 
 - Update `cpal` to 0.14.1
 - Update `ringbuf` to 0.3.1
