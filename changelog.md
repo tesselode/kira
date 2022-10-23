@@ -1,5 +1,6 @@
 # v0.7.1
 
+- Update `cpal` to 0.14.1
 - Update `ringbuf` to 0.3.1
 - Implement `PartialEq` for `StaticSoundData`, `DistortionKind`,
   `DistortionBuilder`, `FilterMode`, `FilterBuilder`, `PanningControlBuilder`,
