@@ -1,6 +1,7 @@
 name: Deploy book to GitHub Pages
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
 
