@@ -3,8 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Page not found - Kira</title>
-        <base href="/">
+        <title>Installation - Kira</title>
         <!-- Custom HTML head -->
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="">
@@ -76,7 +75,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="installation.html"><strong aria-hidden="true">2.</strong> Installation</a></li><li class="chapter-item expanded "><a href="playing-sounds.html"><strong aria-hidden="true">3.</strong> Playing Sounds</a></li><li class="chapter-item expanded "><a href="mixer.html"><strong aria-hidden="true">4.</strong> The Mixer</a></li><li class="chapter-item expanded "><a href="clocks.html"><strong aria-hidden="true">5.</strong> Clocks</a></li><li class="chapter-item expanded "><a href="creating-sounds.html"><strong aria-hidden="true">6.</strong> Creating Sound Implementations</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="installation.html" class="active"><strong aria-hidden="true">2.</strong> Installation</a></li><li class="chapter-item expanded "><a href="playing-sounds.html"><strong aria-hidden="true">3.</strong> Playing Sounds</a></li><li class="chapter-item expanded "><a href="mixer.html"><strong aria-hidden="true">4.</strong> The Mixer</a></li><li class="chapter-item expanded "><a href="clocks.html"><strong aria-hidden="true">5.</strong> Clocks</a></li><li class="chapter-item expanded "><a href="creating-sounds.html"><strong aria-hidden="true">6.</strong> Creating Sound Implementations</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -135,19 +134,89 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="document-not-found-404"><a class="header" href="#document-not-found-404">Document not found (404)</a></h1>
-<p>This URL is invalid, sorry. Please use the navigation bar or search to continue.</p>
+                        <h1 id="installation"><a class="header" href="#installation">Installation</a></h1>
+<p>To use Kira in your project, add it to the Cargo.toml file for your crate in the
+<code>dependencies</code> section.</p>
+<pre><code class="language-toml">[dependencies]
+kira = &quot;0.7.1&quot;
+</code></pre>
+<h2 id="features"><a class="header" href="#features">Features</a></h2>
+<p>By default, Kira comes with a <code>cpal</code> backend for communicating with the
+operating system's audio drivers and support for mp3, ogg, flac, and wav files.
+You can manually pick which of these features to enable by setting
+<code>default-features</code> to <code>false</code> and listing the specific features you want.</p>
+<p>For example, if you're only going to use ogg files, you can disable the other
+file types to save some compile time and binary size:</p>
+<pre><code class="language-toml">[dependencies]
+kira = { version = &quot;0.7.1&quot;, default-features = false, features = [&quot;cpal&quot;, &quot;ogg&quot;] }
+</code></pre>
+<h2 id="performance"><a class="header" href="#performance">Performance</a></h2>
+<p>By default, Rust programs run with the <code>dev</code> profile are not optimized. This can
+lead to poor performance of audio playback and long loading times for audio
+files. You can alleviate this by building Kira and its audio-related
+dependencies with a higher optimization level. Add the following to your
+Cargo.toml:</p>
+<pre><code class="language-toml">[profile.dev.package.kira]
+opt-level = 3
+
+[profile.dev.package.cpal]
+opt-level = 3
+
+[profile.dev.package.symphonia]
+opt-level = 3
+
+[profile.dev.package.symphonia-bundle-mp3]
+opt-level = 3
+
+[profile.dev.package.symphonia-format-ogg]
+opt-level = 3
+
+[profile.dev.package.symphonia-codec-vorbis]
+opt-level = 3
+
+[profile.dev.package.symphonia-bundle-flac]
+opt-level = 3
+
+[profile.dev.package.symphonia-format-wav]
+opt-level = 3
+
+[profile.dev.package.symphonia-codec-pcm]
+opt-level = 3
+</code></pre>
+<p>You can also build all of your projects with a higher optimization level by
+using this snippet instead:</p>
+<pre><code class="language-toml">[profile.dev.package.&quot;*&quot;]
+opt-level = 3
+</code></pre>
+<p>Building dependencies with a higher optimization level does increase compile
+times, but only when compiling your project from scratch. If you only make
+changes to your crate, you're not recompiling the dependencies, so you don't
+suffer from the longer compilation step in that case. Building dependencies
+optimized and the main crate unoptimized can be a good balance of performance
+and compile times for games.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="introduction.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                            <a rel="next" href="playing-sounds.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
                         <div style="clear: both"></div>
                     </nav>
                 </div>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="introduction.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                    <a rel="next" href="playing-sounds.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
             </nav>
 
         </div>
