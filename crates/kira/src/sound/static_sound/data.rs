@@ -30,7 +30,7 @@ pub struct StaticSoundData {
 	/// The sample rate of the audio (in Hz).
 	pub sample_rate: u32,
 	/// The raw samples that make up the audio.
-	pub frames: Arc<Vec<Frame>>,
+	pub frames: Arc<[Frame]>,
 	/// Settings for the sound.
 	pub settings: StaticSoundSettings,
 }

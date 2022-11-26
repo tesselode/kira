@@ -21,7 +21,7 @@ use super::StaticSound;
 fn plays_all_samples() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new(vec![
+		frames: Arc::new([
 			Frame::from_mono(1.0),
 			Frame::from_mono(2.0),
 			Frame::from_mono(3.0),
@@ -60,7 +60,7 @@ fn plays_all_samples() {
 fn reports_playback_state() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new(vec![Frame::from_mono(0.0); 10]),
+		frames: Arc::new([Frame::from_mono(0.0); 10]),
 		settings: StaticSoundSettings::new(),
 	};
 	let (mut sound, handle) = data.split();
@@ -78,7 +78,7 @@ fn reports_playback_state() {
 fn reports_playback_position() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new(vec![Frame::from_mono(0.0); 10]),
+		frames: Arc::new([Frame::from_mono(0.0); 10]),
 		settings: StaticSoundSettings::new(),
 	};
 	let (mut sound, handle) = data.split();
@@ -100,7 +100,7 @@ fn reports_playback_position() {
 fn pauses_and_resumes_with_fades() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new(vec![Frame::from_mono(1.0); 100]),
+		frames: Arc::new([Frame::from_mono(1.0); 100]),
 		settings: StaticSoundSettings::new(),
 	};
 	let (mut sound, mut handle) = data.split();
@@ -185,7 +185,7 @@ fn pauses_and_resumes_with_fades() {
 fn stops_with_fade_out() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new(vec![Frame::from_mono(1.0); 100]),
+		frames: Arc::new([Frame::from_mono(1.0); 100]),
 		settings: StaticSoundSettings::new(),
 	};
 	let (mut sound, mut handle) = data.split();
@@ -257,7 +257,7 @@ fn waits_for_start_time() {
 
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new((1..100).map(|i| Frame::from_mono(i as f32)).collect()),
+		frames: (1..100).map(|i| Frame::from_mono(i as f32)).collect(),
 		settings: StaticSoundSettings::new().start_time(ClockTime {
 			clock: clock_id_1,
 			ticks: 2,
@@ -379,7 +379,7 @@ fn stops_if_depending_on_missing_clock() {
 
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new((1..100).map(|i| Frame::from_mono(i as f32)).collect()),
+		frames: (1..100).map(|i| Frame::from_mono(i as f32)).collect(),
 		settings: StaticSoundSettings::new().start_time(ClockTime {
 			clock: clock_id,
 			ticks: 2,
@@ -420,7 +420,7 @@ fn immediate_pause_resume_and_stop_with_clock_start_time() {
 
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new((1..100).map(|i| Frame::from_mono(i as f32)).collect()),
+		frames: (1..100).map(|i| Frame::from_mono(i as f32)).collect(),
 		settings: StaticSoundSettings::new().start_time(StartTime::ClockTime(ClockTime {
 			clock: clock_id,
 			ticks: 2,
@@ -456,7 +456,7 @@ fn immediate_pause_resume_and_stop_with_clock_start_time() {
 fn start_position() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new((0..10).map(|i| Frame::from_mono(i as f32)).collect()),
+		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
 		settings: StaticSoundSettings::new().start_position(3.0),
 	};
 	let (mut sound, handle) = data.split();
@@ -474,7 +474,7 @@ fn start_position() {
 fn negative_start_position() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new((0..10).map(|i| Frame::from_mono(i as f32)).collect()),
+		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
 		settings: StaticSoundSettings::new().start_position(-5.0),
 	};
 	let (mut sound, _) = data.split();
@@ -495,7 +495,7 @@ fn negative_start_position() {
 fn out_of_bounds_start_position() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new((0..10).map(|i| Frame::from_mono(i as f32)).collect()),
+		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
 		settings: StaticSoundSettings::new().start_position(15.0),
 	};
 	let (mut sound, _) = data.split();
@@ -508,7 +508,7 @@ fn out_of_bounds_start_position() {
 fn reverse() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new((0..10).map(|i| Frame::from_mono(i as f32)).collect()),
+		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
 		settings: StaticSoundSettings::new().reverse(true).start_position(2.0),
 	};
 	let (mut sound, _) = data.split();
@@ -529,7 +529,7 @@ fn reverse() {
 fn loops_forward() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new((0..10).map(|i| Frame::from_mono(i as f32)).collect()),
+		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
 		settings: StaticSoundSettings::new().loop_behavior(LoopBehavior {
 			start_position: 3.0,
 		}),
@@ -568,7 +568,7 @@ fn loops_forward() {
 fn loops_backward() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new((0..10).map(|i| Frame::from_mono(i as f32)).collect()),
+		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
 		settings: StaticSoundSettings::new()
 			.loop_behavior(LoopBehavior {
 				start_position: 3.0,
@@ -604,7 +604,7 @@ fn loops_backward() {
 fn volume() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new(vec![Frame::from_mono(1.0); 10]),
+		frames: Arc::new([Frame::from_mono(1.0); 10]),
 		settings: StaticSoundSettings::new().volume(0.5),
 	};
 	let (mut sound, _) = data.split();
@@ -621,7 +621,7 @@ fn volume() {
 fn set_volume() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new(vec![Frame::from_mono(1.0); 10]),
+		frames: Arc::new([Frame::from_mono(1.0); 10]),
 		settings: StaticSoundSettings::new(),
 	};
 	let (mut sound, mut handle) = data.split();
@@ -649,7 +649,7 @@ fn set_volume() {
 fn panning() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new(vec![Frame::from_mono(1.0); 10]),
+		frames: Arc::new([Frame::from_mono(1.0); 10]),
 		settings: StaticSoundSettings::new().panning(0.0),
 	};
 	let (mut sound, _) = data.split();
@@ -666,7 +666,7 @@ fn panning() {
 fn set_panning() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new(vec![Frame::from_mono(1.0); 10]),
+		frames: Arc::new([Frame::from_mono(1.0); 10]),
 		settings: StaticSoundSettings::new(),
 	};
 	let (mut sound, mut handle) = data.split();
@@ -694,7 +694,7 @@ fn set_panning() {
 fn playback_rate() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new((0..10).map(|i| Frame::from_mono(i as f32)).collect()),
+		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
 		settings: StaticSoundSettings::new().playback_rate(2.0),
 	};
 	let (mut sound, _) = data.split();
@@ -716,7 +716,7 @@ fn playback_rate() {
 fn set_playback_rate() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new((0..100).map(|i| Frame::from_mono(i as f32)).collect()),
+		frames: (0..100).map(|i| Frame::from_mono(i as f32)).collect(),
 		settings: StaticSoundSettings::new(),
 	};
 	let (mut sound, mut handle) = data.split();
@@ -757,7 +757,7 @@ fn set_playback_rate() {
 fn interpolates_samples() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new(vec![
+		frames: Arc::new([
 			Frame::from_mono(0.0),
 			Frame::from_mono(1.0),
 			Frame::from_mono(1.0),
@@ -789,7 +789,7 @@ fn interpolates_samples() {
 fn interpolates_samples_when_looping() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new(vec![Frame::from_mono(10.0), Frame::from_mono(9.0)]),
+		frames: Arc::new([Frame::from_mono(10.0), Frame::from_mono(9.0)]),
 		settings: StaticSoundSettings::new().loop_behavior(LoopBehavior {
 			start_position: 0.0,
 		}),
@@ -807,7 +807,7 @@ fn interpolates_samples_when_looping() {
 fn seek_to() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new((0..100).map(|i| Frame::from_mono(i as f32)).collect()),
+		frames: (0..100).map(|i| Frame::from_mono(i as f32)).collect(),
 		settings: StaticSoundSettings::new(),
 	};
 	let (mut sound, mut handle) = data.split();
@@ -824,7 +824,7 @@ fn seek_to() {
 fn seek_to_while_looping() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new((0..100).map(|i| Frame::from_mono(i as f32)).collect()),
+		frames: (0..100).map(|i| Frame::from_mono(i as f32)).collect(),
 		settings: StaticSoundSettings::new().loop_behavior(LoopBehavior {
 			start_position: 5.0,
 		}),
@@ -840,7 +840,7 @@ fn seek_to_while_looping() {
 fn seek_by() {
 	let data = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new((0..100).map(|i| Frame::from_mono(i as f32)).collect()),
+		frames: (0..100).map(|i| Frame::from_mono(i as f32)).collect(),
 		settings: StaticSoundSettings::new().start_position(10.0),
 	};
 	let (mut sound, mut handle) = data.split();

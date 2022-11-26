@@ -1,4 +1,4 @@
-use std::{io::Cursor, sync::Arc};
+use std::io::Cursor;
 
 use symphonia::core::{
 	audio::{AudioBuffer, AudioBufferRef, Signal},
@@ -58,7 +58,7 @@ impl StaticSoundData {
 		}
 		Ok(Self {
 			sample_rate,
-			frames: Arc::new(frames),
+			frames: frames.into(),
 			settings,
 		})
 	}
