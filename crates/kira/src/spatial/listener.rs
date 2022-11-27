@@ -27,11 +27,11 @@ pub(crate) struct Listener {
 }
 
 impl Listener {
-	pub fn new(settings: ListenerSettings) -> Self {
+	pub fn new(position: Vec3, orientation: Quat, settings: ListenerSettings) -> Self {
 		Self {
 			shared: Arc::new(ListenerShared::new()),
-			position: settings.position,
-			orientation: settings.orientation,
+			position,
+			orientation,
 			track: settings.track,
 		}
 	}

@@ -1,7 +1,7 @@
 mod error;
 
 pub use error::*;
-use glam::Vec3;
+use glam::{Quat, Vec3};
 
 use std::sync::Arc;
 
@@ -70,6 +70,8 @@ impl SpatialSceneHandle {
 	/// Adds an listener to the scene.
 	pub fn add_listener(
 		&mut self,
+		position: Vec3,
+		orientation: Quat,
 		settings: ListenerSettings,
 	) -> Result<ListenerHandle, AddListenerError> {
 		while self.unused_listener_consumer.pop().is_some() {}
@@ -80,7 +82,7 @@ impl SpatialSceneHandle {
 				.map_err(|_| AddListenerError::ListenerLimitReached)?,
 			scene_id: self.id,
 		};
-		let listener = Listener::new(settings);
+		let listener = Listener::new(position, orientation, settings);
 		let handle = ListenerHandle {
 			id,
 			shared: listener.shared(),
