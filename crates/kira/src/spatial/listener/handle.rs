@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use crate::{
 	manager::command::{producer::CommandProducer, Command, SpatialSceneCommand},
+	tween::Tween,
 	CommandError,
 };
 
@@ -26,20 +27,22 @@ impl ListenerHandle {
 	pub fn set_position(
 		&mut self,
 		position: impl Into<mint::Vector3<f32>>,
+		tween: Tween,
 	) -> Result<(), CommandError> {
 		let position: mint::Vector3<f32> = position.into();
 		self.command_producer.push(Command::SpatialScene(
-			SpatialSceneCommand::SetListenerPosition(self.id, position.into()),
+			SpatialSceneCommand::SetListenerPosition(self.id, position.into(), tween),
 		))
 	}
 
 	pub fn set_orientation(
 		&mut self,
 		orientation: impl Into<mint::Quaternion<f32>>,
+		tween: Tween,
 	) -> Result<(), CommandError> {
 		let orientation: mint::Quaternion<f32> = orientation.into();
 		self.command_producer.push(Command::SpatialScene(
-			SpatialSceneCommand::SetListenerOrientation(self.id, orientation.into()),
+			SpatialSceneCommand::SetListenerOrientation(self.id, orientation.into(), tween),
 		))
 	}
 }

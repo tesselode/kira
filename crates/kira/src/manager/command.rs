@@ -43,9 +43,9 @@ pub(crate) enum SpatialSceneCommand {
 	Add(SpatialSceneId, SpatialScene),
 	AddEmitter(EmitterId, Emitter),
 	AddListener(ListenerId, Listener),
-	SetListenerPosition(ListenerId, Vec3),
-	SetListenerOrientation(ListenerId, Quat),
-	SetEmitterPosition(EmitterId, Vec3),
+	SetListenerPosition(ListenerId, Vec3, Tween),
+	SetListenerOrientation(ListenerId, Quat, Tween),
+	SetEmitterPosition(EmitterId, Vec3, Tween),
 }
 
 pub(crate) enum Command {

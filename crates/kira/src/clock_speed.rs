@@ -41,17 +41,23 @@ impl ClockSpeed {
 }
 
 impl Tweenable for ClockSpeed {
-	fn lerp(a: Self, b: Self, amount: f64) -> Self {
+	fn interpolate(a: Self, b: Self, amount: f64) -> Self {
 		match b {
-			ClockSpeed::SecondsPerTick(b) => {
-				ClockSpeed::SecondsPerTick(Tweenable::lerp(a.as_seconds_per_tick(), b, amount))
-			}
-			ClockSpeed::TicksPerSecond(b) => {
-				ClockSpeed::TicksPerSecond(Tweenable::lerp(a.as_ticks_per_second(), b, amount))
-			}
-			ClockSpeed::TicksPerMinute(b) => {
-				ClockSpeed::TicksPerMinute(Tweenable::lerp(a.as_ticks_per_minute(), b, amount))
-			}
+			ClockSpeed::SecondsPerTick(b) => ClockSpeed::SecondsPerTick(Tweenable::interpolate(
+				a.as_seconds_per_tick(),
+				b,
+				amount,
+			)),
+			ClockSpeed::TicksPerSecond(b) => ClockSpeed::TicksPerSecond(Tweenable::interpolate(
+				a.as_ticks_per_second(),
+				b,
+				amount,
+			)),
+			ClockSpeed::TicksPerMinute(b) => ClockSpeed::TicksPerMinute(Tweenable::interpolate(
+				a.as_ticks_per_minute(),
+				b,
+				amount,
+			)),
 		}
 	}
 }

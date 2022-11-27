@@ -129,9 +129,11 @@ impl Renderer {
 			&mut self.resources.mixer,
 			&mut self.resources.spatial_scenes,
 		);
-		self.resources
-			.spatial_scenes
-			.process(&mut self.resources.mixer);
+		self.resources.spatial_scenes.process(
+			self.dt,
+			&ClockInfoProvider::new(&self.resources.clocks),
+			&mut self.resources.mixer,
+		);
 		let out = self
 			.resources
 			.mixer

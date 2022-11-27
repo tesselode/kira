@@ -12,7 +12,13 @@ use std::sync::{
 
 use atomic_arena::{Arena, Key};
 
-use crate::{dsp::Frame, track::TrackId, tween::Tweenable, Volume};
+use crate::{
+	clock::clock_info::ClockInfoProvider,
+	dsp::Frame,
+	track::TrackId,
+	tween::{Tween, Tweenable, Tweener},
+	Volume,
+};
 
 use super::{emitter::Emitter, scene::SpatialSceneId};
 
@@ -21,8 +27,8 @@ const MIN_EAR_AMPLITUDE: f32 = 0.5;
 
 pub(crate) struct Listener {
 	shared: Arc<ListenerShared>,
-	position: Vec3,
-	orientation: Quat,
+	position: Tweener<Vec3>,
+	orientation: Tweener<Quat>,
 	track: TrackId,
 }
 
@@ -30,8 +36,8 @@ impl Listener {
 	pub fn new(position: Vec3, orientation: Quat, settings: ListenerSettings) -> Self {
 		Self {
 			shared: Arc::new(ListenerShared::new()),
-			position,
-			orientation,
+			position: Tweener::new(position),
+			orientation: Tweener::new(orientation),
 			track: settings.track,
 		}
 	}
@@ -44,25 +50,32 @@ impl Listener {
 		self.track
 	}
 
-	pub fn set_position(&mut self, position: Vec3) {
-		self.position = position;
+	pub fn set_position(&mut self, position: Vec3, tween: Tween) {
+		self.position.set(position, tween);
 	}
 
-	pub fn set_orientation(&mut self, orientation: Quat) {
-		self.orientation = orientation;
+	pub fn set_orientation(&mut self, orientation: Quat, tween: Tween) {
+		self.orientation.set(orientation, tween);
 	}
 
-	pub fn process(&mut self, emitters: &Arena<Emitter>) -> Frame {
+	pub fn process(
+		&mut self,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+		emitters: &Arena<Emitter>,
+	) -> Frame {
+		self.position.update(dt, clock_info_provider);
+		self.orientation.update(dt, clock_info_provider);
 		let mut output = Frame::ZERO;
 		for (_, emitter) in emitters {
 			let mut emitter_output = emitter.output();
 			// attenuate volume
 			if let Some(attenuation_function) = emitter.attenuation_function() {
-				let distance = (emitter.position() - self.position).length();
+				let distance = (emitter.position() - self.position.value()).length();
 				let relative_distance = emitter.distances().relative_distance(distance);
 				let relative_volume =
 					attenuation_function.apply((1.0 - relative_distance).into()) as f32;
-				let amplitude = Tweenable::lerp(
+				let amplitude = Tweenable::interpolate(
 					Volume::Decibels(Volume::MIN_DECIBELS),
 					Volume::Decibels(0.0),
 					relative_volume.into(),
@@ -73,8 +86,9 @@ impl Listener {
 			// apply spatialization
 			if emitter.enable_spatialization() {
 				let (left_ear_position, right_ear_position) = self.ear_positions();
-				let left_ear_direction = self.orientation * Vec3::NEG_X;
-				let right_ear_direction = self.orientation * Vec3::X;
+				let orientation = self.orientation.value();
+				let left_ear_direction = orientation * Vec3::NEG_X;
+				let right_ear_direction = orientation * Vec3::X;
 				let emitter_direction_relative_to_left_ear =
 					(emitter.position() - left_ear_position).normalize_or_zero();
 				let emitter_direction_relative_to_right_ear =
@@ -94,8 +108,10 @@ impl Listener {
 	}
 
 	fn ear_positions(&self) -> (Vec3, Vec3) {
-		let left = self.position + self.orientation * (Vec3::NEG_X * EAR_DISTANCE);
-		let right = self.position + self.orientation * (Vec3::X * EAR_DISTANCE);
+		let position = self.position.value();
+		let orientation = self.orientation.value();
+		let left = position + orientation * (Vec3::NEG_X * EAR_DISTANCE);
+		let right = position + orientation * (Vec3::X * EAR_DISTANCE);
 		(left, right)
 	}
 }

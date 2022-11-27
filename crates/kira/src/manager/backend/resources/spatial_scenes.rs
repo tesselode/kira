@@ -2,6 +2,7 @@ use atomic_arena::{Arena, Controller};
 use ringbuf::HeapProducer;
 
 use crate::{
+	clock::clock_info::ClockInfoProvider,
 	manager::command::SpatialSceneCommand,
 	spatial::scene::{SpatialScene, SpatialSceneId},
 };
@@ -69,33 +70,33 @@ impl SpatialScenes {
 					scene.add_listener(id, listener);
 				}
 			}
-			SpatialSceneCommand::SetListenerPosition(id, position) => {
+			SpatialSceneCommand::SetListenerPosition(id, position, tween) => {
 				if let Some(scene) = self.scenes.get_mut(id.scene().0) {
 					if let Some(listener) = scene.listener_mut(id) {
-						listener.set_position(position);
+						listener.set_position(position, tween);
 					}
 				}
 			}
-			SpatialSceneCommand::SetListenerOrientation(id, orientation) => {
+			SpatialSceneCommand::SetListenerOrientation(id, orientation, tween) => {
 				if let Some(scene) = self.scenes.get_mut(id.scene().0) {
 					if let Some(listener) = scene.listener_mut(id) {
-						listener.set_orientation(orientation);
+						listener.set_orientation(orientation, tween);
 					}
 				}
 			}
-			SpatialSceneCommand::SetEmitterPosition(id, position) => {
+			SpatialSceneCommand::SetEmitterPosition(id, position, tween) => {
 				if let Some(scene) = self.scenes.get_mut(id.scene().0) {
 					if let Some(emitter) = scene.emitter_mut(id) {
-						emitter.set_position(position);
+						emitter.set_position(position, tween);
 					}
 				}
 			}
 		}
 	}
 
-	pub fn process(&mut self, mixer: &mut Mixer) {
+	pub fn process(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider, mixer: &mut Mixer) {
 		for (_, scene) in &mut self.scenes {
-			scene.process(mixer);
+			scene.process(dt, clock_info_provider, mixer);
 		}
 	}
 }

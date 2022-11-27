@@ -54,10 +54,14 @@ impl From<f64> for Volume {
 }
 
 impl Tweenable for Volume {
-	fn lerp(a: Self, b: Self, amount: f64) -> Self {
+	fn interpolate(a: Self, b: Self, amount: f64) -> Self {
 		match b {
-			Volume::Amplitude(b) => Volume::Amplitude(Tweenable::lerp(a.as_amplitude(), b, amount)),
-			Volume::Decibels(b) => Volume::Decibels(Tweenable::lerp(a.as_decibels(), b, amount)),
+			Volume::Amplitude(b) => {
+				Volume::Amplitude(Tweenable::interpolate(a.as_amplitude(), b, amount))
+			}
+			Volume::Decibels(b) => {
+				Volume::Decibels(Tweenable::interpolate(a.as_decibels(), b, amount))
+			}
 		}
 	}
 }

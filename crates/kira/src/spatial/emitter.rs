@@ -14,13 +14,17 @@ use std::sync::{
 
 use atomic_arena::Key;
 
-use crate::{dsp::Frame, tween::Easing};
+use crate::{
+	clock::clock_info::ClockInfoProvider,
+	dsp::Frame,
+	tween::{Easing, Tween, Tweener},
+};
 
 use super::scene::SpatialSceneId;
 
 pub(crate) struct Emitter {
 	shared: Arc<EmitterShared>,
-	position: Vec3,
+	position: Tweener<Vec3>,
 	distances: EmitterDistances,
 	attenuation_function: Option<Easing>,
 	enable_spatialization: bool,
@@ -31,7 +35,7 @@ impl Emitter {
 	pub fn new(position: Vec3, settings: EmitterSettings) -> Self {
 		Self {
 			shared: Arc::new(EmitterShared::new()),
-			position,
+			position: Tweener::new(position),
 			distances: settings.distances,
 			attenuation_function: settings.attenuation_function,
 			enable_spatialization: settings.enable_spatialization,
@@ -48,7 +52,7 @@ impl Emitter {
 	}
 
 	pub fn position(&self) -> Vec3 {
-		self.position
+		self.position.value()
 	}
 
 	pub fn distances(&self) -> EmitterDistances {
@@ -63,8 +67,8 @@ impl Emitter {
 		self.enable_spatialization
 	}
 
-	pub fn set_position(&mut self, position: Vec3) {
-		self.position = position;
+	pub fn set_position(&mut self, position: Vec3, tween: Tween) {
+		self.position.set(position, tween);
 	}
 
 	pub fn add_input(&mut self, input: Frame) {
@@ -73,6 +77,10 @@ impl Emitter {
 
 	pub fn reset_input(&mut self) {
 		self.input = Frame::ZERO;
+	}
+
+	pub fn update(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider) {
+		self.position.update(dt, clock_info_provider);
 	}
 }
 

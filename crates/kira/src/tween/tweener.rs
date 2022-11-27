@@ -71,7 +71,7 @@ impl<T: Tweenable> Tweener<T> {
 				self.state = State::Idle;
 				return true;
 			} else {
-				self.value = T::lerp(values.0, values.1, tween.value(*time));
+				self.value = T::interpolate(values.0, values.1, tween.value(*time));
 			}
 		}
 		false

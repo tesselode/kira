@@ -42,13 +42,13 @@ impl From<f64> for PlaybackRate {
 }
 
 impl Tweenable for PlaybackRate {
-	fn lerp(a: Self, b: Self, amount: f64) -> Self {
+	fn interpolate(a: Self, b: Self, amount: f64) -> Self {
 		match b {
 			PlaybackRate::Factor(b) => {
-				PlaybackRate::Factor(Tweenable::lerp(a.as_factor(), b, amount))
+				PlaybackRate::Factor(Tweenable::interpolate(a.as_factor(), b, amount))
 			}
 			PlaybackRate::Semitones(b) => {
-				PlaybackRate::Semitones(Tweenable::lerp(a.as_semitones(), b, amount))
+				PlaybackRate::Semitones(Tweenable::interpolate(a.as_semitones(), b, amount))
 			}
 		}
 	}
