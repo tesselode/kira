@@ -22,6 +22,7 @@ use crate::{
 use super::{emitter::Emitter, scene::SpatialSceneId};
 
 const EAR_DISTANCE: f32 = 0.1;
+const MIN_EAR_AMPLITUDE: f32 = 0.5;
 
 pub(crate) struct Listener {
 	shared: Arc<ListenerShared>,
@@ -87,8 +88,10 @@ impl Listener {
 					(left_ear_direction.dot(emitter_direction_relative_to_left_ear) + 1.0) / 2.0;
 				let right_ear_volume =
 					(right_ear_direction.dot(emitter_direction_relative_to_right_ear) + 1.0) / 2.0;
-				emitter_output.left *= left_ear_volume;
-				emitter_output.right *= right_ear_volume;
+				emitter_output.left *=
+					MIN_EAR_AMPLITUDE + (1.0 - MIN_EAR_AMPLITUDE) * left_ear_volume;
+				emitter_output.right *=
+					MIN_EAR_AMPLITUDE + (1.0 - MIN_EAR_AMPLITUDE) * right_ear_volume;
 			}
 			output += emitter_output;
 		}
