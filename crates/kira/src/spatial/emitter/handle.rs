@@ -1,7 +1,5 @@
 use std::sync::Arc;
 
-use glam::Vec3;
-
 use crate::{
 	manager::command::{producer::CommandProducer, Command, SpatialSceneCommand},
 	CommandError,
@@ -25,9 +23,13 @@ impl EmitterHandle {
 		self.id
 	}
 
-	pub fn set_position(&mut self, position: Vec3) -> Result<(), CommandError> {
+	pub fn set_position(
+		&mut self,
+		position: impl Into<mint::Vector3<f32>>,
+	) -> Result<(), CommandError> {
+		let position: mint::Vector3<f32> = position.into();
 		self.command_producer.push(Command::SpatialScene(
-			SpatialSceneCommand::SetEmitterPosition(self.id, position),
+			SpatialSceneCommand::SetEmitterPosition(self.id, position.into()),
 		))
 	}
 }

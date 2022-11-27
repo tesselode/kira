@@ -43,7 +43,28 @@ impl SpatialSceneHandle {
 	/// Adds an emitter to the scene.
 	pub fn add_emitter(
 		&mut self,
-		position: Vec3,
+		position: impl Into<mint::Vector3<f32>>,
+		settings: EmitterSettings,
+	) -> Result<EmitterHandle, AddEmitterError> {
+		let position: mint::Vector3<f32> = position.into();
+		self.add_emitter_inner(position.into(), settings)
+	}
+
+	/// Adds a listener to the scene.
+	pub fn add_listener(
+		&mut self,
+		position: impl Into<mint::Vector3<f32>>,
+		orientation: impl Into<mint::Quaternion<f32>>,
+		settings: ListenerSettings,
+	) -> Result<ListenerHandle, AddListenerError> {
+		let position: mint::Vector3<f32> = position.into();
+		let orientation: mint::Quaternion<f32> = orientation.into();
+		self.add_listener_inner(position.into(), orientation.into(), settings)
+	}
+
+	fn add_emitter_inner(
+		&mut self,
+		position: glam::Vec3,
 		settings: EmitterSettings,
 	) -> Result<EmitterHandle, AddEmitterError> {
 		while self.unused_emitter_consumer.pop().is_some() {}
@@ -67,8 +88,7 @@ impl SpatialSceneHandle {
 		Ok(handle)
 	}
 
-	/// Adds an listener to the scene.
-	pub fn add_listener(
+	fn add_listener_inner(
 		&mut self,
 		position: Vec3,
 		orientation: Quat,

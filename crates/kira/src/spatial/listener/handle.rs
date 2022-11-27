@@ -1,7 +1,5 @@
 use std::sync::Arc;
 
-use glam::{Quat, Vec3};
-
 use crate::{
 	manager::command::{producer::CommandProducer, Command, SpatialSceneCommand},
 	CommandError,
@@ -25,15 +23,23 @@ impl ListenerHandle {
 		self.id
 	}
 
-	pub fn set_position(&mut self, position: Vec3) -> Result<(), CommandError> {
+	pub fn set_position(
+		&mut self,
+		position: impl Into<mint::Vector3<f32>>,
+	) -> Result<(), CommandError> {
+		let position: mint::Vector3<f32> = position.into();
 		self.command_producer.push(Command::SpatialScene(
-			SpatialSceneCommand::SetListenerPosition(self.id, position),
+			SpatialSceneCommand::SetListenerPosition(self.id, position.into()),
 		))
 	}
 
-	pub fn set_orientation(&mut self, orientation: Quat) -> Result<(), CommandError> {
+	pub fn set_orientation(
+		&mut self,
+		orientation: impl Into<mint::Quaternion<f32>>,
+	) -> Result<(), CommandError> {
+		let orientation: mint::Quaternion<f32> = orientation.into();
 		self.command_producer.push(Command::SpatialScene(
-			SpatialSceneCommand::SetListenerOrientation(self.id, orientation),
+			SpatialSceneCommand::SetListenerOrientation(self.id, orientation.into()),
 		))
 	}
 }
