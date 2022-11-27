@@ -85,6 +85,7 @@ impl Listener {
 			}
 			// apply spatialization
 			if emitter.enable_spatialization() {
+				emitter_output = emitter_output.as_mono();
 				let (left_ear_position, right_ear_position) = self.ear_positions();
 				let orientation = self.orientation.value();
 				let left_ear_direction = orientation * Vec3::NEG_X;

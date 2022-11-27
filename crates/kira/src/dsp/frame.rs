@@ -45,6 +45,11 @@ impl Frame {
 		}
 		Self::new(self.left * (1.0 - x).sqrt(), self.right * x.sqrt()) * SQRT_2
 	}
+
+	/// Returns the frame mixed down to mono.
+	pub fn as_mono(self) -> Self {
+		Self::from_mono((self.left + self.right) / 2.0)
+	}
 }
 
 impl Add for Frame {
