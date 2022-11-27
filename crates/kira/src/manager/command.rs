@@ -1,10 +1,10 @@
 pub mod producer;
 
 use atomic_arena::Key;
+use glam::{Quat, Vec3};
 
 use crate::{
 	clock::{Clock, ClockId},
-	math::{Quaternion, Vec3},
 	sound::Sound,
 	spatial::{
 		emitter::{Emitter, EmitterId},
@@ -44,7 +44,7 @@ pub(crate) enum SpatialSceneCommand {
 	AddEmitter(EmitterId, Emitter),
 	AddListener(ListenerId, Listener),
 	SetListenerPosition(ListenerId, Vec3),
-	SetListenerOrientation(ListenerId, Quaternion),
+	SetListenerOrientation(ListenerId, Quat),
 	SetEmitterPosition(EmitterId, Vec3),
 }
 

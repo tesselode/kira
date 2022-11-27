@@ -3,6 +3,7 @@ mod handle;
 mod settings;
 
 pub use distances::*;
+use glam::Vec3;
 pub use handle::*;
 pub use settings::*;
 
@@ -13,7 +14,7 @@ use std::sync::{
 
 use atomic_arena::Key;
 
-use crate::{dsp::Frame, math::Vec3, tween::Easing};
+use crate::{dsp::Frame, tween::Easing};
 
 use super::scene::SpatialSceneId;
 

@@ -1,11 +1,10 @@
-use crate::{
-	math::{Quaternion, Vec3},
-	track::TrackId,
-};
+use glam::{Quat, Vec3};
+
+use crate::track::TrackId;
 
 pub struct ListenerSettings {
 	pub position: Vec3,
-	pub orientation: Quaternion,
+	pub orientation: Quat,
 	pub track: TrackId,
 }
 
@@ -13,7 +12,7 @@ impl ListenerSettings {
 	pub fn new() -> Self {
 		Self {
 			position: Vec3::default(),
-			orientation: Quaternion::default(),
+			orientation: Quat::default(),
 			track: TrackId::Main,
 		}
 	}
@@ -22,7 +21,7 @@ impl ListenerSettings {
 		Self { position, ..self }
 	}
 
-	pub fn orientation(self, orientation: Quaternion) -> Self {
+	pub fn orientation(self, orientation: Quat) -> Self {
 		Self {
 			orientation,
 			..self

@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
+use glam::Vec3;
+
 use crate::{
 	manager::command::{producer::CommandProducer, Command, SpatialSceneCommand},
-	math::Vec3,
 	CommandError,
 };
 

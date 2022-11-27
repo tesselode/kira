@@ -12,6 +12,8 @@ readme = "../../README.md"
 
 [dependencies]
 atomic-arena = "0.1.0"
+glam = { version = "0.22.0", features = ["mint"] }
+mint = "0.5.9"
 ringbuf = "0.3.1"
 symphonia = { version = "0.5.0", optional = true, default-features = false }
 

@@ -1,6 +1,7 @@
 mod error;
 
 pub use error::*;
+use glam::Vec3;
 
 use std::sync::Arc;
 
@@ -9,7 +10,6 @@ use ringbuf::HeapConsumer;
 
 use crate::{
 	manager::command::{producer::CommandProducer, Command, SpatialSceneCommand},
-	math::Vec3,
 	spatial::{
 		emitter::{Emitter, EmitterHandle, EmitterId, EmitterSettings},
 		listener::{Listener, ListenerHandle, ListenerId, ListenerSettings},

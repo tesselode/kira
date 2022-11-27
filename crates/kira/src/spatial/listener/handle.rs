@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
+use glam::{Quat, Vec3};
+
 use crate::{
 	manager::command::{producer::CommandProducer, Command, SpatialSceneCommand},
-	math::{Vec3, Quaternion},
 	CommandError,
 };
 
@@ -30,7 +31,7 @@ impl ListenerHandle {
 		))
 	}
 
-	pub fn set_orientation(&mut self, orientation: Quaternion) -> Result<(), CommandError> {
+	pub fn set_orientation(&mut self, orientation: Quat) -> Result<(), CommandError> {
 		self.command_producer.push(Command::SpatialScene(
 			SpatialSceneCommand::SetListenerOrientation(self.id, orientation),
 		))
