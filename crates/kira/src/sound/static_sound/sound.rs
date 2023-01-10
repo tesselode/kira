@@ -47,7 +47,7 @@ impl StaticSound {
 		let settings = data.settings;
 		let starting_frame_index = starting_frame_index(settings, &data);
 		let ending_frame_index = ending_frame_index(settings, &data);
-		info!("starting: {:?}, ending frame index: {:?}", starting_frame_index, ending_frame_index);
+		println!("starting: {:?}, ending frame index: {:?}", starting_frame_index, ending_frame_index);
 		let position = starting_frame_index as f64 / data.sample_rate as f64;
 		let mut sound = Self {
 			command_consumer,
@@ -177,11 +177,11 @@ impl StaticSound {
 		// looping, wrap the seek point back into the sound
 		if let Some(LoopBehavior { start_position }) = self.data.settings.loop_behavior {
 			let start_position = (start_position * self.data.sample_rate as f64) as i64;
-			while self.current_frame_index >= self.ending_frame_index {
-				self.current_frame_index -= self.ending_frame_index - start_position;
+			while self.current_frame_index > self.ending_frame_index {
+				self.current_frame_index -= 1 + self.ending_frame_index - start_position;
 			}
 		// otherwise, stop the sound
-		} else if self.current_frame_index >= self.ending_frame_index {
+		} else if self.current_frame_index > self.ending_frame_index {
 			self.set_state(PlaybackState::Stopped);
 		}
 		// if the sound is playing, push a frame to the resample buffer
@@ -193,7 +193,7 @@ impl StaticSound {
 	}
 
 	fn push_frame_to_resampler(&mut self) {
-		let frame = if self.current_frame_index < 0 || self.current_frame_index >= self.ending_frame_index {
+		let frame = if self.current_frame_index < 0 || self.current_frame_index > self.ending_frame_index {
 			Frame::ZERO
 		} else {
 			let frame_index: usize = self
@@ -364,17 +364,18 @@ fn ending_frame_index(settings: StaticSoundSettings, data: &StaticSoundData) -> 
 	if settings.reverse {
 		if let Some(end_position) = settings.end_position {
 			let position_seconds = data.duration().as_secs_f64() - end_position;
-			(position_seconds * data.sample_rate as f64) as i64 - 1
+			(position_seconds * data.sample_rate as f64) as i64
 		} else {
 			0
 		}
 	} else {
+		let max_frame = (data.frames.len() - 1)
+			.try_into()
+			.expect("sound is too long, cannot convert usize to i64");
 		if let Some(end_position) = settings.end_position {
-			(end_position * data.sample_rate as f64) as i64
+			((end_position * data.sample_rate as f64) as i64 - 1).min(max_frame)
 		} else {
-			(data.frames.len() - 1)
-				.try_into()
-				.expect("sound is too long, cannot convert usize to i64")
+			max_frame
 		}
 	}
 }
