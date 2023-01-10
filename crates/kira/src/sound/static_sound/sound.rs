@@ -47,7 +47,6 @@ impl StaticSound {
 		let settings = data.settings;
 		let starting_frame_index = starting_frame_index(settings, &data);
 		let ending_frame_index = ending_frame_index(settings, &data);
-		println!("starting: {:?}, ending frame index: {:?}", starting_frame_index, ending_frame_index);
 		let position = starting_frame_index as f64 / data.sample_rate as f64;
 		let mut sound = Self {
 			command_consumer,
