@@ -8,6 +8,10 @@ pub struct StaticSoundSettings {
 	pub start_time: StartTime,
 	/// The initial playback position of the sound (in seconds).
 	pub start_position: f64,
+	/// The ending position of the sound (in seconds).
+	///
+	/// If None, play until the end of the sound
+	pub end_position: Option<f64>,
 	/// The volume of the sound.
 	pub volume: Volume,
 	/// The playback rate of the sound.
@@ -37,6 +41,7 @@ impl StaticSoundSettings {
 		Self {
 			start_time: StartTime::default(),
 			start_position: 0.0,
+			end_position: None,
 			volume: Volume::Amplitude(1.0),
 			playback_rate: PlaybackRate::Factor(1.0),
 			panning: 0.5,

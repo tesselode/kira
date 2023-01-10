@@ -33,6 +33,7 @@ pub(super) struct StaticSound {
 	when_to_start: WhenToStart,
 	resampler: Resampler,
 	current_frame_index: i64,
+	ending_frame_index: i64,
 	fractional_position: f64,
 	volume: Tweener<Volume>,
 	playback_rate: Tweener<PlaybackRate>,
@@ -45,6 +46,7 @@ impl StaticSound {
 	pub fn new(data: StaticSoundData, command_consumer: HeapConsumer<Command>) -> Self {
 		let settings = data.settings;
 		let starting_frame_index = starting_frame_index(settings, &data);
+		let ending_frame_index = ending_frame_index(settings, &data);
 		let position = starting_frame_index as f64 / data.sample_rate as f64;
 		let mut sound = Self {
 			command_consumer,
@@ -57,6 +59,7 @@ impl StaticSound {
 			},
 			resampler: Resampler::new(starting_frame_index),
 			current_frame_index: starting_frame_index,
+			ending_frame_index: ending_frame_index,
 			fractional_position: 0.0,
 			volume: Tweener::new(settings.volume),
 			playback_rate: Tweener::new(settings.playback_rate),
@@ -112,18 +115,15 @@ impl StaticSound {
 	/// Increments the playback position by 1 sample. Returns `true` if the end
 	/// of the sound was reached.
 	fn increment_position(&mut self) -> bool {
-		let max_frame_index = (self.data.frames.len() - 1)
-			.try_into()
-			.expect("sound is too long, cannot convert usize to i64");
 		if let Some(LoopBehavior { start_position }) = self.data.settings.loop_behavior {
 			let start_position = (start_position * self.data.sample_rate as f64) as i64;
-			if self.current_frame_index >= max_frame_index {
+			if self.current_frame_index >= self.ending_frame_index {
 				self.current_frame_index = start_position;
 			} else {
 				self.current_frame_index += 1;
 			}
 		} else {
-			if self.current_frame_index >= max_frame_index {
+			if self.current_frame_index >= self.ending_frame_index {
 				return true;
 			} else {
 				self.current_frame_index += 1;
@@ -135,13 +135,10 @@ impl StaticSound {
 	/// Decrements the playback position by 1 sample. Returns `true` if the end
 	/// of the sound was reached (which in this case would be sample -1).
 	fn decrement_position(&mut self) -> bool {
-		let max_frame_index = (self.data.frames.len() - 1)
-			.try_into()
-			.expect("sound is too long, cannot convert usize to i64");
 		if let Some(LoopBehavior { start_position }) = self.data.settings.loop_behavior {
 			let start_position = (start_position * self.data.sample_rate as f64) as i64;
 			if self.current_frame_index <= start_position {
-				self.current_frame_index = max_frame_index;
+				self.current_frame_index = self.ending_frame_index;
 			} else {
 				self.current_frame_index -= 1;
 			}
@@ -175,21 +172,15 @@ impl StaticSound {
 
 	fn seek_to_index(&mut self, index: i64) {
 		self.current_frame_index = index;
-		let num_frames: i64 = self
-			.data
-			.frames
-			.len()
-			.try_into()
-			.expect("sound is too long, cannot convert usize to i64");
 		// if the seek index is past the end of the sound and the sound is
 		// looping, wrap the seek point back into the sound
 		if let Some(LoopBehavior { start_position }) = self.data.settings.loop_behavior {
 			let start_position = (start_position * self.data.sample_rate as f64) as i64;
-			while self.current_frame_index >= num_frames {
-				self.current_frame_index -= num_frames - start_position;
+			while self.current_frame_index >= self.ending_frame_index {
+				self.current_frame_index -= self.ending_frame_index - start_position;
 			}
 		// otherwise, stop the sound
-		} else if self.current_frame_index >= num_frames {
+		} else if self.current_frame_index >= self.ending_frame_index {
 			self.set_state(PlaybackState::Stopped);
 		}
 		// if the sound is playing, push a frame to the resample buffer
@@ -201,13 +192,7 @@ impl StaticSound {
 	}
 
 	fn push_frame_to_resampler(&mut self) {
-		let num_frames: i64 = self
-			.data
-			.frames
-			.len()
-			.try_into()
-			.expect("sound is too long, cannot convert usize to i64");
-		let frame = if self.current_frame_index < 0 || self.current_frame_index >= num_frames {
+		let frame = if self.current_frame_index < 0 || self.current_frame_index >= self.ending_frame_index {
 			Frame::ZERO
 		} else {
 			let frame_index: usize = self
@@ -363,6 +348,33 @@ fn starting_frame_index(settings: StaticSoundSettings, data: &StaticSoundData) -
 		(position_seconds * data.sample_rate as f64) as i64 - 1
 	} else {
 		(settings.start_position * data.sample_rate as f64) as i64
+	}
+}
+
+fn ending_frame_index(settings: StaticSoundSettings, data: &StaticSoundData) -> i64 {
+	if let Some(end_position) = settings.end_position {
+		if let Some( LoopBehavior { start_position}) = data.settings.loop_behavior {
+			assert!(start_position < end_position, "the start position of the loop behaviour\
+			 must be before the end position");
+		}
+		assert!(settings.start_position < end_position, "the start position of the sound\
+			 must be before the end position");
+	}
+	if settings.reverse {
+		if let Some(end_position) = settings.end_position {
+			let position_seconds = data.duration().as_secs_f64() - end_position;
+			(position_seconds * data.sample_rate as f64) as i64 - 1
+		} else {
+			0
+		}
+	} else {
+		if let Some(end_position) = settings.end_position {
+			(end_position * data.sample_rate as f64) as i64
+		} else {
+			(data.frames.len() - 1)
+				.try_into()
+				.expect("sound is too long, cannot convert usize to i64")
+		}
 	}
 }
 
