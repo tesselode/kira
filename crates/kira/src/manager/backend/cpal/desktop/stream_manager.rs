@@ -50,6 +50,7 @@ pub(super) struct StreamManager {
 	state: State,
 	device_name: String,
 	sample_rate: u32,
+	follow_device: bool,
 }
 
 impl StreamManager {
@@ -57,6 +58,7 @@ impl StreamManager {
 		renderer: Renderer,
 		device: Device,
 		config: StreamConfig,
+		follow_device: bool,
 	) -> StreamManagerController {
 		let should_drop = Arc::new(AtomicBool::new(false));
 		let should_drop_clone = should_drop.clone();
@@ -65,6 +67,7 @@ impl StreamManager {
 				state: State::Idle { renderer },
 				device_name: device_name(&device),
 				sample_rate: config.sample_rate.0,
+				follow_device: follow_device,
 			};
 			stream_manager.start_stream(&device, &config).unwrap();
 			loop {
@@ -96,12 +99,14 @@ impl StreamManager {
 				}
 			}
 			// check for device changes
-			if let Ok((device, config)) = default_device_and_config() {
-				let device_name = device_name(&device);
-				let sample_rate = config.sample_rate.0;
-				if device_name != self.device_name || sample_rate != self.sample_rate {
-					self.stop_stream();
-					self.start_stream(&device, &config).unwrap();
+			if self.follow_device {
+				if let Ok((device, config)) = default_device_and_config() {
+					let device_name = device_name(&device);
+					let sample_rate = config.sample_rate.0;
+					if device_name != self.device_name || sample_rate != self.sample_rate {
+						self.stop_stream();
+						self.start_stream(&device, &config).unwrap();
+					}
 				}
 			}
 		}
