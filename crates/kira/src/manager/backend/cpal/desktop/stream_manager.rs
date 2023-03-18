@@ -147,6 +147,7 @@ impl StreamManager {
 					.push(error)
 					.expect("Stream error producer is full");
 			},
+			None,
 		)?;
 		stream.play()?;
 		self.state = State::Running {
