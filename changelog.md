@@ -1,3 +1,7 @@
+# v0.7.3 - March 18, 2023
+
+- Fix compile error on WASM targets
+
 # v0.7.2 - March 18, 2023
 
 - Fix crackling on Mac OS when multiple applications are playing audio

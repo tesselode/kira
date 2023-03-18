@@ -63,6 +63,7 @@ impl Backend for CpalBackend {
 					}
 				},
 				move |_| {},
+				None,
 			)?;
 			stream.play()?;
 			self.state = State::Initialized { _stream: stream };
