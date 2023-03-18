@@ -4,8 +4,10 @@
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
         <title>The Mixer - Kira</title>
+
+
         <!-- Custom HTML head -->
-        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff" />
@@ -16,25 +18,29 @@
         <link rel="stylesheet" href="css/general.css">
         <link rel="stylesheet" href="css/chrome.css">
         <link rel="stylesheet" href="css/print.css" media="print">
+
         <!-- Fonts -->
         <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
         <link rel="stylesheet" href="fonts/fonts.css">
+
         <!-- Highlight.js Stylesheets -->
         <link rel="stylesheet" href="highlight.css">
         <link rel="stylesheet" href="tomorrow-night.css">
         <link rel="stylesheet" href="ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
+
     </head>
     <body>
+    <div id="body-container">
         <!-- Provide site root to javascript -->
-        <script type="text/javascript">
+        <script>
             var path_to_root = "";
             var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
         </script>
 
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
-        <script type="text/javascript">
+        <script>
             try {
                 var theme = localStorage.getItem('mdbook-theme');
                 var sidebar = localStorage.getItem('mdbook-sidebar');
@@ -50,7 +56,7 @@
         </script>
 
         <!-- Set the theme before any content is loaded, prevents flash -->
-        <script type="text/javascript">
+        <script>
             var theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
@@ -62,12 +68,14 @@
         </script>
 
         <!-- Hide / unhide sidebar before it is displayed -->
-        <script type="text/javascript">
+        <script>
             var html = document.querySelector('html');
-            var sidebar = 'hidden';
+            var sidebar = null;
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
             }
             html.classList.remove('sidebar-visible');
             html.classList.add("sidebar-" + sidebar);
@@ -83,7 +91,7 @@
         <div id="page-wrapper" class="page-wrapper">
 
             <div class="page">
-                <div id="menu-bar-hover-placeholder"></div>
+                                <div id="menu-bar-hover-placeholder"></div>
                 <div id="menu-bar" class="menu-bar sticky bordered">
                     <div class="left-buttons">
                         <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
@@ -93,7 +101,7 @@
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
@@ -110,6 +118,7 @@
                         <a href="print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
+
                     </div>
                 </div>
 
@@ -123,8 +132,9 @@
                         </ul>
                     </div>
                 </div>
+
                 <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
-                <script type="text/javascript">
+                <script>
                     document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
                     document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
                     Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
@@ -156,8 +166,7 @@ sub-tracks. To add a sub-track, use <code>AudioManager::add_sub_track</code>.</p
 let mut manager = AudioManager::&lt;CpalBackend&gt;::new(AudioManagerSettings::default())?;
 let track = manager.add_sub_track(TrackBuilder::default())?;
 <span class="boring">Result::&lt;(), Box&lt;dyn Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <p>You can configure what track a sound will play on by modifying its settings.
 This example uses <code>StaticSoundSettings</code>, but <code>StreamingSoundSettings</code> provides
 the same option.</p>
@@ -181,8 +190,7 @@ manager.play(StaticSoundData::from_file(
     StaticSoundSettings::new().track(&amp;track),
 )?)?;
 <span class="boring">Result::&lt;(), Box&lt;dyn Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <p>You can set the volume and panning of a track using <code>TrackHandle::set_volume</code>
 and <code>TrackHandle::set_panning</code>, respectively. The volume and panning settings
 will affect all sounds being played on the track.</p>
@@ -219,8 +227,7 @@ manager.play(StaticSoundData::from_file(
     StaticSoundSettings::new().track(&amp;track),
 )?)?;
 <span class="boring">Result::&lt;(), Box&lt;dyn Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <p><code>TrackBuilder:add_effect</code> returns a handle that can be used to modify the effect
 after the track has been created.</p>
 <pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
@@ -244,8 +251,7 @@ let track = manager.add_sub_track({
 })?;
 filter.set_cutoff(4000.0, Tween::default())?;
 <span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <h2 id="track-routing"><a class="header" href="#track-routing">Track routing</a></h2>
 <p>By default, the output of all sub-tracks will be fed into the input of the main
 mixer track without any volume change. It can be useful to customize this
@@ -286,8 +292,7 @@ let player_sounds = manager.add_sub_track(
 	TrackBuilder::new().routes(TrackRoutes::parent(&amp;sounds)),
 )?;
 <span class="boring">Result::&lt;(), Box&lt;dyn Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <p>The default <code>TrackRoutes</code> has a single route to the main mixer track.
 <code>TrackRoutes::parent</code> will instead create a single route to the track of your
 choosing.</p>
@@ -353,23 +358,20 @@ let ambience = manager.add_sub_track(
     TrackBuilder::new().routes(TrackRoutes::new().with_route(&amp;reverb, 0.5)),
 );
 <span class="boring">Result::&lt;(), Box&lt;dyn Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <p>Let's look at this one step at a time:</p>
 <pre><code class="language-rust  ignore">let reverb = manager.add_sub_track({
     let mut builder = TrackBuilder::new();
     builder.add_effect(ReverbBuilder::new().mix(1.0));
     builder
-})?;
-</code></pre>
+})?;</code></pre>
 <p>We create the <code>reverb</code> track with a <code>Reverb</code> effect. We set the <code>mix</code> to <code>1.0</code>
 so that only the reverb signal is output from this track. We don't need any of
 the dry signal to come out of this track, since the <code>player</code> and <code>ambience</code>
 tracks will already be outputting their dry signal to the main track.</p>
 <pre><code class="language-rust  ignore">let player = manager.add_sub_track(
     TrackBuilder::new().routes(TrackRoutes::new().with_route(&amp;reverb, 0.25)),
-);
-</code></pre>
+);</code></pre>
 <p>We create the <code>player</code> track with two routes:</p>
 <ul>
 <li>The route to the main track with 100% volume. We don't have to set this one
@@ -378,8 +380,7 @@ explicitly because <code>TrackRoutes::new()</code> adds that route by default.</
 </ul>
 <pre><code class="language-rust  ignore">let ambience = manager.add_sub_track(
     TrackBuilder::new().routes(TrackRoutes::new().with_route(&amp;reverb, 0.5)),
-);
-</code></pre>
+);</code></pre>
 <p>The <code>ambience</code> track is set up the same way, except the route to the <code>reverb</code>
 track has 50% volume, giving us more reverb for these sounds.</p>
 
@@ -390,9 +391,11 @@ track has 50% volume, giving us more reverb for these sounds.</p>
                             <a rel="prev" href="playing-sounds.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
+
                             <a rel="next" href="clocks.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
+
                         <div style="clear: both"></div>
                     </nav>
                 </div>
@@ -402,6 +405,7 @@ track has 50% volume, giving us more reverb for these sounds.</p>
                     <a rel="prev" href="playing-sounds.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
+
                     <a rel="next" href="clocks.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
@@ -409,16 +413,25 @@ track has 50% volume, giving us more reverb for these sounds.</p>
 
         </div>
 
-        <script type="text/javascript">
+
+
+
+        <script>
             window.playground_copyable = true;
         </script>
-        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
-        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
-        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
 
         <!-- Custom JS scripts -->
+
+
+    </div>
     </body>
 </html>

@@ -5,8 +5,10 @@
         <meta charset="UTF-8">
         <title>Kira</title>
         <meta name="robots" content="noindex" />
+
+
         <!-- Custom HTML head -->
-        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff" />
@@ -17,25 +19,29 @@
         <link rel="stylesheet" href="css/general.css">
         <link rel="stylesheet" href="css/chrome.css">
         <link rel="stylesheet" href="css/print.css" media="print">
+
         <!-- Fonts -->
         <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
         <link rel="stylesheet" href="fonts/fonts.css">
+
         <!-- Highlight.js Stylesheets -->
         <link rel="stylesheet" href="highlight.css">
         <link rel="stylesheet" href="tomorrow-night.css">
         <link rel="stylesheet" href="ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
+
     </head>
     <body>
+    <div id="body-container">
         <!-- Provide site root to javascript -->
-        <script type="text/javascript">
+        <script>
             var path_to_root = "";
             var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
         </script>
 
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
-        <script type="text/javascript">
+        <script>
             try {
                 var theme = localStorage.getItem('mdbook-theme');
                 var sidebar = localStorage.getItem('mdbook-sidebar');
@@ -51,7 +57,7 @@
         </script>
 
         <!-- Set the theme before any content is loaded, prevents flash -->
-        <script type="text/javascript">
+        <script>
             var theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
@@ -63,12 +69,14 @@
         </script>
 
         <!-- Hide / unhide sidebar before it is displayed -->
-        <script type="text/javascript">
+        <script>
             var html = document.querySelector('html');
-            var sidebar = 'hidden';
+            var sidebar = null;
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
             }
             html.classList.remove('sidebar-visible');
             html.classList.add("sidebar-" + sidebar);
@@ -84,7 +92,7 @@
         <div id="page-wrapper" class="page-wrapper">
 
             <div class="page">
-                <div id="menu-bar-hover-placeholder"></div>
+                                <div id="menu-bar-hover-placeholder"></div>
                 <div id="menu-bar" class="menu-bar sticky bordered">
                     <div class="left-buttons">
                         <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
@@ -94,7 +102,7 @@
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
@@ -111,6 +119,7 @@
                         <a href="print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
+
                     </div>
                 </div>
 
@@ -124,8 +133,9 @@
                         </ul>
                     </div>
                 </div>
+
                 <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
-                <script type="text/javascript">
+                <script>
                     document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
                     document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
                     Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
@@ -162,8 +172,7 @@ manager.play(sound_data.clone())?;
 manager.play(sound_data.clone())?;
 // Cloning the sound data will not use any extra memory.
 <span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <h3 id="gradually-speeding-up-a-sound-over-time"><a class="header" href="#gradually-speeding-up-a-sound-over-time">Gradually speeding up a sound over time</a></h3>
 <pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -192,8 +201,7 @@ sound.set_playback_rate(
 	},
 );
 <span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <h3 id="playing-a-sound-with-a-low-pass-filter-applied"><a class="header" href="#playing-a-sound-with-a-low-pass-filter-applied">Playing a sound with a low-pass filter applied</a></h3>
 <p>This makes the audio sound muffled.</p>
 <pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
@@ -226,8 +234,7 @@ let sound_data = StaticSoundData::from_file(
 )?;
 manager.play(sound_data)?;
 <span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <h3 id="playing-sounds-in-time-with-a-musical-beat"><a class="header" href="#playing-sounds-in-time-with-a-musical-beat">Playing sounds in time with a musical beat</a></h3>
 <pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -264,8 +271,7 @@ manager.play(sound_data_2)?;
 // Start the clock.
 clock.start()?;
 <span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="installation"><a class="header" href="#installation">Installation</a></h1>
 <p>To use Kira in your project, add it to the Cargo.toml file for your crate in the
 <code>dependencies</code> section.</p>
@@ -338,8 +344,7 @@ and compile times for games.</p>
 
 let mut manager = AudioManager::&lt;CpalBackend&gt;::new(AudioManagerSettings::default())?;
 <span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <p>The <code>AudioManager</code> allows you to interact with the audio context from gameplay
 code. <code>AudioManager</code>s can play anything that implements the <code>SoundData</code> trait,
 such as <code>StaticSoundData</code> or <code>StreamingSoundData</code>.</p>
@@ -358,8 +363,7 @@ let mut manager = AudioManager::&lt;CpalBackend&gt;::new(AudioManagerSettings::d
 let sound_data = StaticSoundData::from_file(&quot;sound.ogg&quot;, StaticSoundSettings::new())?;
 manager.play(sound_data)?;
 <span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <p>If you want to play a sound multiple times, keep a copy of the <code>StaticSoundData</code>
 around and clone it each time you pass it to <code>AudioManager::play</code>.</p>
 <pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
@@ -378,8 +382,7 @@ let sound_data = StaticSoundData::from_file(&quot;sound.ogg&quot;, StaticSoundSe
 manager.play(sound_data.clone())?;
 manager.play(sound_data.clone())?;
 <span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <p>Cloning a <code>StaticSoundData</code> is cheap, so it's perfectly fine to do this.</p>
 <p><code>StreamingSoundData</code> cannot be cloned, so you will have to create a new one each
 time you want to play a sound.</p>
@@ -405,8 +408,7 @@ if sound.state() == PlaybackState::Playing {
 	sound.stop(Tween::default())?;
 }
 <span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <p>Many parameters of sounds, like volume and playback rate, can be smoothly
 transitioned to other values.</p>
 <pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
@@ -434,8 +436,7 @@ sound.set_volume(
 	},
 )?;
 <span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <p>Some property setters allow you to set the value in different units. For
 example, volumes can be set in decibels:</p>
 <pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
@@ -462,8 +463,7 @@ example, volumes can be set in decibels:</p>
 	},
 )?;
 <span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <p>If you want to change a property instantaneously, use the default <code>Tween</code>. It's
 fast enough to sound instantaneous, but slow enough to avoid audio artifacts.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="the-mixer"><a class="header" href="#the-mixer">The Mixer</a></h1>
@@ -488,8 +488,7 @@ sub-tracks. To add a sub-track, use <code>AudioManager::add_sub_track</code>.</p
 let mut manager = AudioManager::&lt;CpalBackend&gt;::new(AudioManagerSettings::default())?;
 let track = manager.add_sub_track(TrackBuilder::default())?;
 <span class="boring">Result::&lt;(), Box&lt;dyn Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <p>You can configure what track a sound will play on by modifying its settings.
 This example uses <code>StaticSoundSettings</code>, but <code>StreamingSoundSettings</code> provides
 the same option.</p>
@@ -513,8 +512,7 @@ manager.play(StaticSoundData::from_file(
     StaticSoundSettings::new().track(&amp;track),
 )?)?;
 <span class="boring">Result::&lt;(), Box&lt;dyn Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <p>You can set the volume and panning of a track using <code>TrackHandle::set_volume</code>
 and <code>TrackHandle::set_panning</code>, respectively. The volume and panning settings
 will affect all sounds being played on the track.</p>
@@ -551,8 +549,7 @@ manager.play(StaticSoundData::from_file(
     StaticSoundSettings::new().track(&amp;track),
 )?)?;
 <span class="boring">Result::&lt;(), Box&lt;dyn Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <p><code>TrackBuilder:add_effect</code> returns a handle that can be used to modify the effect
 after the track has been created.</p>
 <pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
@@ -576,8 +573,7 @@ let track = manager.add_sub_track({
 })?;
 filter.set_cutoff(4000.0, Tween::default())?;
 <span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <h2 id="track-routing"><a class="header" href="#track-routing">Track routing</a></h2>
 <p>By default, the output of all sub-tracks will be fed into the input of the main
 mixer track without any volume change. It can be useful to customize this
@@ -618,8 +614,7 @@ let player_sounds = manager.add_sub_track(
 	TrackBuilder::new().routes(TrackRoutes::parent(&amp;sounds)),
 )?;
 <span class="boring">Result::&lt;(), Box&lt;dyn Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <p>The default <code>TrackRoutes</code> has a single route to the main mixer track.
 <code>TrackRoutes::parent</code> will instead create a single route to the track of your
 choosing.</p>
@@ -685,23 +680,20 @@ let ambience = manager.add_sub_track(
     TrackBuilder::new().routes(TrackRoutes::new().with_route(&amp;reverb, 0.5)),
 );
 <span class="boring">Result::&lt;(), Box&lt;dyn Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <p>Let's look at this one step at a time:</p>
 <pre><code class="language-rust  ignore">let reverb = manager.add_sub_track({
     let mut builder = TrackBuilder::new();
     builder.add_effect(ReverbBuilder::new().mix(1.0));
     builder
-})?;
-</code></pre>
+})?;</code></pre>
 <p>We create the <code>reverb</code> track with a <code>Reverb</code> effect. We set the <code>mix</code> to <code>1.0</code>
 so that only the reverb signal is output from this track. We don't need any of
 the dry signal to come out of this track, since the <code>player</code> and <code>ambience</code>
 tracks will already be outputting their dry signal to the main track.</p>
 <pre><code class="language-rust  ignore">let player = manager.add_sub_track(
     TrackBuilder::new().routes(TrackRoutes::new().with_route(&amp;reverb, 0.25)),
-);
-</code></pre>
+);</code></pre>
 <p>We create the <code>player</code> track with two routes:</p>
 <ul>
 <li>The route to the main track with 100% volume. We don't have to set this one
@@ -710,8 +702,7 @@ explicitly because <code>TrackRoutes::new()</code> adds that route by default.</
 </ul>
 <pre><code class="language-rust  ignore">let ambience = manager.add_sub_track(
     TrackBuilder::new().routes(TrackRoutes::new().with_route(&amp;reverb, 0.5)),
-);
-</code></pre>
+);</code></pre>
 <p>The <code>ambience</code> track is set up the same way, except the route to the <code>reverb</code>
 track has 50% volume, giving us more reverb for these sounds.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="clocks"><a class="header" href="#clocks">Clocks</a></h1>
@@ -733,8 +724,7 @@ let mut manager = AudioManager::&lt;CpalBackend&gt;::new(AudioManagerSettings::d
 let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
 clock.start()?;
 <span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <p>You can specify the speed of the clock as seconds per tick, ticks per second, or
 ticks per minute.</p>
 <p>Clocks are stopped when you first create them, so be sure to explicitly call
@@ -768,8 +758,7 @@ manager.play(StaticSoundData::from_file(
 )?)?;
 clock.start()?;
 <span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <p>As a shorthand, you can pass the <code>ClockTime</code> directly into
 <code>StaticSoundSettings::start_time</code>.</p>
 <pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
@@ -798,8 +787,7 @@ clock.start()?;
 )?)?;
 <span class="boring">clock.start()?;
 </span><span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <p>As an even shorter hand, you can use <code>ClockHandle::time</code> to get the clock's
 current <code>ClockTime</code>, and then add to it to get a time in the future:</p>
 <pre><pre class="playground"><code class="language-rust  no_run edition2018"><span class="boring">#![allow(unused)]
@@ -824,8 +812,7 @@ current <code>ClockTime</code>, and then add to it to get a time in the future:<
 )?)?;
 <span class="boring">clock.start()?;
 </span><span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <h2 id="starting-tweens-on-clock-ticks"><a class="header" href="#starting-tweens-on-clock-ticks">Starting tweens on clock ticks</a></h2>
 <p>You can also use clocks to set the start time of tweens. In this example, we set
 the playback rate of a sound to start tweening when a clock reaches its third
@@ -861,8 +848,7 @@ sound.set_playback_rate(
 )?;
 clock.start()?;
 <span class="boring">Result::&lt;(), Box&lt;dyn std::error::Error&gt;&gt;::Ok(())
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="creating-sound-implementations"><a class="header" href="#creating-sound-implementations">Creating <code>Sound</code> Implementations</a></h1>
 <p>Sounds in Kira have two phases:</p>
 <ol>
@@ -886,31 +872,43 @@ chat), or anything else.</p>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
+
+
                         <div style="clear: both"></div>
                     </nav>
                 </div>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
             </nav>
 
         </div>
 
-        <script type="text/javascript">
+
+
+
+        <script>
             window.playground_copyable = true;
         </script>
-        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
-        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
-        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
 
         <!-- Custom JS scripts -->
-        <script type="text/javascript">
+
+        <script>
         window.addEventListener('load', function() {
             window.setTimeout(window.print, 100);
         });
         </script>
+
+    </div>
     </body>
 </html>
