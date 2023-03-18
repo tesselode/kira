@@ -1,3 +1,8 @@
+# v0.7.2 - March 18, 2023
+
+- Fix crackling on Mac OS when multiple applications are playing audio
+- Update `cpal` to 0.15.1
+
 # v0.7.1 - October 23, 2022
 
 - Update `cpal` to 0.14.1
