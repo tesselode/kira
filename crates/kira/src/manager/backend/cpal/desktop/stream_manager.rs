@@ -96,6 +96,10 @@ impl StreamManager {
 				}
 			}
 			// check for device changes
+			// Disabled on macos due to audio artifacts that seem to occur when the device is
+			// queried while playing.
+			// see: https://github.com/tesselode/kira/issues/38
+			#[cfg(not(target_os = "macos"))]
 			if let Ok((device, config)) = default_device_and_config() {
 				let device_name = device_name(&device);
 				let sample_rate = config.sample_rate.0;
