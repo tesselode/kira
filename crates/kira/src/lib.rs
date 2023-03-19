@@ -26,6 +26,7 @@ pub mod dsp;
 mod error;
 mod loop_behavior;
 pub mod manager;
+pub mod modulator;
 mod output_destination;
 mod playback_rate;
 pub mod sound;

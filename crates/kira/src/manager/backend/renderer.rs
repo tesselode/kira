@@ -79,6 +79,7 @@ impl Renderer {
 		self.resources.mixer.on_start_processing();
 		self.resources.clocks.on_start_processing();
 		self.resources.spatial_scenes.on_start_processing();
+		self.resources.modulators.on_start_processing();
 
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
@@ -88,6 +89,7 @@ impl Renderer {
 				Command::SpatialScene(command) => {
 					self.resources.spatial_scenes.run_command(command)
 				}
+				Command::Modulator(command) => self.resources.modulators.run_command(command),
 				Command::Pause(fade_out_tween) => {
 					self.state = MainPlaybackState::Pausing;
 					self.shared
@@ -121,6 +123,9 @@ impl Renderer {
 			return Frame::ZERO;
 		}
 		if self.state == MainPlaybackState::Playing {
+			self.resources
+				.modulators
+				.process(self.dt, &ClockInfoProvider::new(&self.resources.clocks));
 			self.resources.clocks.update(self.dt);
 		}
 		self.resources.sounds.process(
