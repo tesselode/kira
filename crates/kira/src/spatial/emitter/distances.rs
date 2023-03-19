@@ -17,7 +17,7 @@ impl Default for EmitterDistances {
 	fn default() -> Self {
 		Self {
 			min_distance: 1.0,
-			max_distance: 500.0,
+			max_distance: 100.0,
 		}
 	}
 }
