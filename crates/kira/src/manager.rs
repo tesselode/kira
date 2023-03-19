@@ -229,6 +229,13 @@ impl<B: Backend> AudioManager<B> {
 		self.resource_controllers.clock_controller.capacity()
 	}
 
+	/// Returns the number of spatial scenes that can exist at a time.
+	pub fn spatial_scene_capacity(&self) -> usize {
+		self.resource_controllers
+			.spatial_scene_controller
+			.capacity()
+	}
+
 	/// Returns the number of sounds that are currently loaded.
 	pub fn num_sounds(&self) -> usize {
 		self.resource_controllers.sound_controller.len()
@@ -242,6 +249,11 @@ impl<B: Backend> AudioManager<B> {
 	/// Returns the number of clocks that currently exist.
 	pub fn num_clocks(&self) -> usize {
 		self.resource_controllers.clock_controller.len()
+	}
+
+	/// Returns the number of spatial scenes that currently exist.
+	pub fn num_spatial_scenes(&self) -> usize {
+		self.resource_controllers.spatial_scene_controller.len()
 	}
 
 	/// Returns a mutable reference to this manager's backend.
