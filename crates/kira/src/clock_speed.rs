@@ -1,4 +1,4 @@
-use crate::tween::Tweenable;
+use crate::{parameter::Value, tween::Tweenable};
 
 /// The rate that a [clock](crate::clock) ticks at.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -59,6 +59,12 @@ impl Tweenable for ClockSpeed {
 				amount,
 			)),
 		}
+	}
+}
+
+impl From<ClockSpeed> for Value<ClockSpeed> {
+	fn from(clock_speed: ClockSpeed) -> Self {
+		Value::Fixed(clock_speed)
 	}
 }
 

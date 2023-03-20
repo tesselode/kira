@@ -45,9 +45,34 @@ where
 	}
 }
 
-impl<T> From<T> for Value<T> {
-	fn from(value: T) -> Self {
+impl From<f64> for Value<f64> {
+	fn from(value: f64) -> Self {
 		Self::Fixed(value)
+	}
+}
+
+impl From<mint::Vector3<f32>> for Value<mint::Vector3<f32>> {
+	fn from(value: mint::Vector3<f32>) -> Self {
+		Self::Fixed(value)
+	}
+}
+
+impl From<mint::Quaternion<f32>> for Value<mint::Quaternion<f32>> {
+	fn from(value: mint::Quaternion<f32>) -> Self {
+		Self::Fixed(value)
+	}
+}
+
+impl<T, IntoId> From<IntoId> for Value<T>
+where
+	ModulatorId: From<IntoId>,
+	ModulatorMapping<T>: Default,
+{
+	fn from(id: IntoId) -> Self {
+		Self::FromModulator {
+			id: id.into(),
+			mapping: ModulatorMapping::default(),
+		}
 	}
 }
 
@@ -81,5 +106,16 @@ impl<T> ModulatorMapping<T> {
 			amount = amount.min(1.0);
 		}
 		T::interpolate(self.output_range.0, self.output_range.1, amount)
+	}
+}
+
+impl Default for ModulatorMapping<f64> {
+	fn default() -> Self {
+		Self {
+			input_range: (0.0, 1.0),
+			output_range: (0.0, 1.0),
+			clamp_bottom: false,
+			clamp_top: false,
+		}
 	}
 }
