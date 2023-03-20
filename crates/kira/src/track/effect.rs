@@ -7,7 +7,10 @@ pub mod panning_control;
 pub mod reverb;
 pub mod volume_control;
 
-use crate::{clock::clock_info::ClockInfoProvider, dsp::Frame};
+use crate::{
+	clock::clock_info::ClockInfoProvider, dsp::Frame,
+	modulator::value_provider::ModulatorValueProvider,
+};
 
 /// Configures an effect.
 pub trait EffectBuilder {
@@ -37,5 +40,11 @@ pub trait Effect: Send + Sync {
 	/// - `input` is the input audio
 	/// - `dt` is the time that's elapsed since the previous round of
 	/// processing (in seconds)
-	fn process(&mut self, input: Frame, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame;
+	fn process(
+		&mut self,
+		input: Frame,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+		modulator_value_provider: &ModulatorValueProvider,
+	) -> Frame;
 }

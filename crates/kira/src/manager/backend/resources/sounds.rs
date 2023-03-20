@@ -2,8 +2,8 @@ use atomic_arena::{Arena, Controller};
 use ringbuf::HeapProducer;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider, manager::command::SoundCommand, sound::Sound,
-	OutputDestination,
+	clock::clock_info::ClockInfoProvider, manager::command::SoundCommand,
+	modulator::value_provider::ModulatorValueProvider, sound::Sound, OutputDestination,
 };
 
 use super::{mixer::Mixer, spatial_scenes::SpatialScenes};
@@ -59,6 +59,7 @@ impl Sounds {
 		&mut self,
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
+		modulator_value_provider: &ModulatorValueProvider,
 		mixer: &mut Mixer,
 		scenes: &mut SpatialScenes,
 	) {
@@ -66,13 +67,21 @@ impl Sounds {
 			match sound.output_destination() {
 				OutputDestination::Track(track_id) => {
 					if let Some(track) = mixer.track_mut(track_id) {
-						track.add_input(sound.process(dt, clock_info_provider));
+						track.add_input(sound.process(
+							dt,
+							clock_info_provider,
+							modulator_value_provider,
+						));
 					}
 				}
 				OutputDestination::Emitter(emitter_id) => {
 					if let Some(scene) = scenes.get_mut(emitter_id.scene_id) {
 						if let Some(emitter) = scene.emitter_mut(emitter_id) {
-							emitter.add_input(sound.process(dt, clock_info_provider));
+							emitter.add_input(sound.process(
+								dt,
+								clock_info_provider,
+								modulator_value_provider,
+							));
 						}
 					}
 				}

@@ -11,8 +11,10 @@ use ringbuf::HeapConsumer;
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
+	modulator::value_provider::ModulatorValueProvider,
+	parameter::{Parameter, Value},
 	track::Effect,
-	tween::{Tween, Tweener},
+	tween::Tween,
 };
 use all_pass::AllPassFilter;
 use comb::CombFilter;
@@ -26,10 +28,10 @@ const GAIN: f32 = 0.015;
 const STEREO_SPREAD: usize = 23;
 
 enum Command {
-	SetFeedback(f64, Tween),
-	SetDamping(f64, Tween),
-	SetStereoWidth(f64, Tween),
-	SetMix(f64, Tween),
+	SetFeedback(Value<f64>, Tween),
+	SetDamping(Value<f64>, Tween),
+	SetStereoWidth(Value<f64>, Tween),
+	SetMix(Value<f64>, Tween),
 }
 
 #[derive(Debug)]
@@ -45,10 +47,10 @@ enum ReverbState {
 // http://blog.bjornroche.com/2012/06/freeverb-original-public-domain-code-by.html
 struct Reverb {
 	command_consumer: HeapConsumer<Command>,
-	feedback: Tweener,
-	damping: Tweener,
-	stereo_width: Tweener,
-	mix: Tweener,
+	feedback: Parameter,
+	damping: Parameter,
+	stereo_width: Parameter,
+	mix: Parameter,
 	state: ReverbState,
 }
 
@@ -57,10 +59,10 @@ impl Reverb {
 	fn new(settings: ReverbBuilder, command_consumer: HeapConsumer<Command>) -> Self {
 		Self {
 			command_consumer,
-			feedback: Tweener::new(settings.feedback),
-			damping: Tweener::new(settings.damping),
-			stereo_width: Tweener::new(settings.stereo_width),
-			mix: Tweener::new(settings.mix),
+			feedback: Parameter::new(settings.feedback, 0.9),
+			damping: Parameter::new(settings.damping, 0.1),
+			stereo_width: Parameter::new(settings.stereo_width, 1.0),
+			mix: Parameter::new(settings.mix, 0.5),
 			state: ReverbState::Uninitialized,
 		}
 	}
@@ -152,16 +154,26 @@ impl Effect for Reverb {
 		}
 	}
 
-	fn process(&mut self, input: Frame, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
+	fn process(
+		&mut self,
+		input: Frame,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+		modulator_value_provider: &ModulatorValueProvider,
+	) -> Frame {
 		if let ReverbState::Initialized {
 			comb_filters,
 			all_pass_filters,
 		} = &mut self.state
 		{
-			self.feedback.update(dt, clock_info_provider);
-			self.damping.update(dt, clock_info_provider);
-			self.stereo_width.update(dt, clock_info_provider);
-			self.mix.update(dt, clock_info_provider);
+			self.feedback
+				.update(dt, clock_info_provider, modulator_value_provider);
+			self.damping
+				.update(dt, clock_info_provider, modulator_value_provider);
+			self.stereo_width
+				.update(dt, clock_info_provider, modulator_value_provider);
+			self.mix
+				.update(dt, clock_info_provider, modulator_value_provider);
 
 			let feedback = self.feedback.value() as f32;
 			let damping = self.damping.value() as f32;

@@ -11,8 +11,10 @@ use std::sync::{
 use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
 	dsp::{interpolate_frame, Frame},
+	modulator::value_provider::ModulatorValueProvider,
+	parameter::{Parameter, Value},
 	sound::{static_sound::PlaybackState, Sound},
-	tween::{Tween, Tweener},
+	tween::Tween,
 	OutputDestination, PlaybackRate, StartTime, Volume,
 };
 use ringbuf::HeapConsumer;
@@ -51,12 +53,12 @@ pub(crate) struct StreamingSound {
 	start_time: StartTime,
 	state: PlaybackState,
 	when_to_start: WhenToStart,
-	volume_fade: Tweener<Volume>,
+	volume_fade: Parameter<Volume>,
 	current_frame: i64,
 	fractional_position: f64,
-	volume: Tweener<Volume>,
-	playback_rate: Tweener<PlaybackRate>,
-	panning: Tweener,
+	volume: Parameter<Volume>,
+	playback_rate: Parameter<PlaybackRate>,
+	panning: Parameter,
 	shared: Arc<Shared>,
 }
 
@@ -83,17 +85,20 @@ impl StreamingSound {
 				WhenToStart::Now
 			},
 			volume_fade: if let Some(tween) = settings.fade_in_tween {
-				let mut tweenable = Tweener::new(Volume::Decibels(Volume::MIN_DECIBELS));
-				tweenable.set(Volume::Decibels(0.0), tween);
+				let mut tweenable = Parameter::new(
+					Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)),
+					Volume::Decibels(Volume::MIN_DECIBELS),
+				);
+				tweenable.set(Value::Fixed(Volume::Decibels(0.0)), tween);
 				tweenable
 			} else {
-				Tweener::new(Volume::Decibels(0.0))
+				Parameter::new(Value::Fixed(Volume::Decibels(0.0)), Volume::Decibels(0.0))
 			},
 			current_frame,
 			fractional_position: 0.0,
-			volume: Tweener::new(settings.volume),
-			playback_rate: Tweener::new(settings.playback_rate),
-			panning: Tweener::new(settings.panning),
+			volume: Parameter::new(settings.volume, Volume::Amplitude(1.0)),
+			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate::Factor(1.0)),
+			panning: Parameter::new(settings.panning, 0.5),
 			shared: Arc::new(Shared {
 				position: AtomicU64::new(start_position.to_bits()),
 				state: AtomicU8::new(PlaybackState::Playing as u8),
@@ -140,18 +145,19 @@ impl StreamingSound {
 	fn pause(&mut self, tween: Tween) {
 		self.set_state(PlaybackState::Pausing);
 		self.volume_fade
-			.set(Volume::Decibels(Volume::MIN_DECIBELS), tween);
+			.set(Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)), tween);
 	}
 
 	fn resume(&mut self, tween: Tween) {
 		self.set_state(PlaybackState::Playing);
-		self.volume_fade.set(Volume::Decibels(0.0), tween);
+		self.volume_fade
+			.set(Value::Fixed(Volume::Decibels(0.0)), tween);
 	}
 
 	fn stop(&mut self, tween: Tween) {
 		self.set_state(PlaybackState::Stopping);
 		self.volume_fade
-			.set(Volume::Decibels(Volume::MIN_DECIBELS), tween);
+			.set(Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)), tween);
 	}
 
 	fn seek_to_index(&mut self, index: i64) {
@@ -193,12 +199,23 @@ impl Sound for StreamingSound {
 		}
 	}
 
-	fn process(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
-		// update tweeners
-		self.volume.update(dt, clock_info_provider);
-		self.playback_rate.update(dt, clock_info_provider);
-		self.panning.update(dt, clock_info_provider);
-		if self.volume_fade.update(dt, clock_info_provider) {
+	fn process(
+		&mut self,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+		modulator_value_provider: &ModulatorValueProvider,
+	) -> Frame {
+		// update parameters
+		self.volume
+			.update(dt, clock_info_provider, modulator_value_provider);
+		self.playback_rate
+			.update(dt, clock_info_provider, modulator_value_provider);
+		self.panning
+			.update(dt, clock_info_provider, modulator_value_provider);
+		if self
+			.volume_fade
+			.update(dt, clock_info_provider, modulator_value_provider)
+		{
 			match self.state {
 				PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
 				PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),

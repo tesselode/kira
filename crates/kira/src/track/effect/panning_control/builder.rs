@@ -1,6 +1,6 @@
 use ringbuf::HeapRb;
 
-use crate::track::effect::EffectBuilder;
+use crate::{parameter::Value, track::effect::EffectBuilder};
 
 use super::{PanningControl, PanningControlHandle};
 
@@ -8,11 +8,11 @@ const COMMAND_CAPACITY: usize = 8;
 
 /// Configures a panning control effect.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct PanningControlBuilder(pub f64);
+pub struct PanningControlBuilder(pub Value<f64>);
 
 impl Default for PanningControlBuilder {
 	fn default() -> Self {
-		Self(0.5)
+		Self(Value::Fixed(0.5))
 	}
 }
 

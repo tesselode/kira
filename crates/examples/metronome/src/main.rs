@@ -2,6 +2,7 @@ use std::{error::Error, time::Duration};
 
 use kira::{
 	manager::{backend::cpal::CpalBackend, AudioManager, AudioManagerSettings},
+	parameter::Value,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	ClockSpeed, PlaybackRate, StartTime,
 };
@@ -17,7 +18,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 	// as soon as the clock is started)
 	manager.play({
 		let mut sound = sound.clone();
-		sound.settings.playback_rate = PlaybackRate::Factor(2.0);
+		sound.settings.playback_rate = Value::Fixed(PlaybackRate::Factor(2.0));
 		sound.settings.start_time = StartTime::ClockTime(clock.time());
 		sound
 	})?;
@@ -39,7 +40,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 				let mut sound = sound.clone();
 				// every 4 beats, play the sound at a higher pitch
 				if (current_clock_time.ticks + 1) % 4 == 0 {
-					sound.settings.playback_rate = PlaybackRate::Factor(2.0);
+					sound.settings.playback_rate = Value::Fixed(PlaybackRate::Factor(2.0));
 				}
 				sound.settings.start_time = StartTime::ClockTime(clock.time() + 1);
 				sound

@@ -16,8 +16,10 @@ use ringbuf::HeapConsumer;
 use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
 	dsp::Frame,
+	modulator::value_provider::ModulatorValueProvider,
+	parameter::{Parameter, Value},
 	sound::Sound,
-	tween::{Tween, Tweener},
+	tween::Tween,
 	LoopBehavior, OutputDestination, PlaybackRate, StartTime, Volume,
 };
 
@@ -33,10 +35,10 @@ pub(super) struct StaticSound {
 	resampler: Resampler,
 	current_frame_index: i64,
 	fractional_position: f64,
-	volume: Tweener<Volume>,
-	playback_rate: Tweener<PlaybackRate>,
-	panning: Tweener,
-	volume_fade: Tweener<Volume>,
+	volume: Parameter<Volume>,
+	playback_rate: Parameter<PlaybackRate>,
+	panning: Parameter,
+	volume_fade: Parameter<Volume>,
 	shared: Arc<Shared>,
 }
 
@@ -57,10 +59,10 @@ impl StaticSound {
 			resampler: Resampler::new(starting_frame_index),
 			current_frame_index: starting_frame_index,
 			fractional_position: 0.0,
-			volume: Tweener::new(settings.volume),
-			playback_rate: Tweener::new(settings.playback_rate),
-			panning: Tweener::new(settings.panning),
-			volume_fade: create_volume_fade_tweener(settings),
+			volume: Parameter::new(settings.volume, Volume::Amplitude(1.0)),
+			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate::Factor(1.0)),
+			panning: Parameter::new(settings.panning, 0.5),
+			volume_fade: create_volume_fade_parameter(settings),
 			shared: Arc::new(Shared {
 				state: AtomicU8::new(PlaybackState::Playing as u8),
 				position: AtomicU64::new(position.to_bits()),
@@ -85,19 +87,24 @@ impl StaticSound {
 
 	fn pause(&mut self, fade_out_tween: Tween) {
 		self.set_state(PlaybackState::Pausing);
-		self.volume_fade
-			.set(Volume::Decibels(Volume::MIN_DECIBELS), fade_out_tween);
+		self.volume_fade.set(
+			Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)),
+			fade_out_tween,
+		);
 	}
 
 	fn resume(&mut self, fade_in_tween: Tween) {
 		self.set_state(PlaybackState::Playing);
-		self.volume_fade.set(Volume::Decibels(0.0), fade_in_tween);
+		self.volume_fade
+			.set(Value::Fixed(Volume::Decibels(0.0)), fade_in_tween);
 	}
 
 	fn stop(&mut self, fade_out_tween: Tween) {
 		self.set_state(PlaybackState::Stopping);
-		self.volume_fade
-			.set(Volume::Decibels(Volume::MIN_DECIBELS), fade_out_tween);
+		self.volume_fade.set(
+			Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)),
+			fade_out_tween,
+		);
 	}
 
 	fn playback_rate(&self) -> f64 {
@@ -265,12 +272,23 @@ impl Sound for StaticSound {
 		}
 	}
 
-	fn process(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
-		// update tweeners
-		self.volume.update(dt, clock_info_provider);
-		self.playback_rate.update(dt, clock_info_provider);
-		self.panning.update(dt, clock_info_provider);
-		if self.volume_fade.update(dt, clock_info_provider) {
+	fn process(
+		&mut self,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+		modulator_value_provider: &ModulatorValueProvider,
+	) -> Frame {
+		// update parameters
+		self.volume
+			.update(dt, clock_info_provider, modulator_value_provider);
+		self.playback_rate
+			.update(dt, clock_info_provider, modulator_value_provider);
+		self.panning
+			.update(dt, clock_info_provider, modulator_value_provider);
+		if self
+			.volume_fade
+			.update(dt, clock_info_provider, modulator_value_provider)
+		{
 			match self.state {
 				PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
 				PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),
@@ -365,12 +383,15 @@ fn starting_frame_index(settings: StaticSoundSettings, data: &StaticSoundData) -
 	}
 }
 
-fn create_volume_fade_tweener(settings: StaticSoundSettings) -> Tweener<Volume> {
+fn create_volume_fade_parameter(settings: StaticSoundSettings) -> Parameter<Volume> {
 	if let Some(tween) = settings.fade_in_tween {
-		let mut tweenable = Tweener::new(Volume::Decibels(Volume::MIN_DECIBELS));
-		tweenable.set(Volume::Decibels(0.0), tween);
+		let mut tweenable = Parameter::new(
+			Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)),
+			Volume::Decibels(Volume::MIN_DECIBELS),
+		);
+		tweenable.set(Value::Fixed(Volume::Decibels(0.0)), tween);
 		tweenable
 	} else {
-		Tweener::new(Volume::Decibels(0.0))
+		Parameter::new(Value::Fixed(Volume::Decibels(0.0)), Volume::Decibels(0.0))
 	}
 }

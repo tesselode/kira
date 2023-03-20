@@ -10,6 +10,7 @@ use ringbuf::HeapConsumer;
 
 use crate::{
 	manager::command::{producer::CommandProducer, Command, SpatialSceneCommand},
+	parameter::Value,
 	spatial::{
 		emitter::{Emitter, EmitterHandle, EmitterId, EmitterSettings},
 		listener::{Listener, ListenerHandle, ListenerId, ListenerSettings},
@@ -43,28 +44,28 @@ impl SpatialSceneHandle {
 	/// Adds an emitter to the scene.
 	pub fn add_emitter(
 		&mut self,
-		position: impl Into<mint::Vector3<f32>>,
+		position: impl Into<Value<mint::Vector3<f32>>>,
 		settings: EmitterSettings,
 	) -> Result<EmitterHandle, AddEmitterError> {
-		let position: mint::Vector3<f32> = position.into();
-		self.add_emitter_inner(position.into(), settings)
+		let position: Value<mint::Vector3<f32>> = position.into();
+		self.add_emitter_inner(position.to_(), settings)
 	}
 
 	/// Adds a listener to the scene.
 	pub fn add_listener(
 		&mut self,
-		position: impl Into<mint::Vector3<f32>>,
-		orientation: impl Into<mint::Quaternion<f32>>,
+		position: impl Into<Value<mint::Vector3<f32>>>,
+		orientation: impl Into<Value<mint::Quaternion<f32>>>,
 		settings: ListenerSettings,
 	) -> Result<ListenerHandle, AddListenerError> {
-		let position: mint::Vector3<f32> = position.into();
-		let orientation: mint::Quaternion<f32> = orientation.into();
-		self.add_listener_inner(position.into(), orientation.into(), settings)
+		let position: Value<mint::Vector3<f32>> = position.into();
+		let orientation: Value<mint::Quaternion<f32>> = orientation.into();
+		self.add_listener_inner(position.to_(), orientation.to_(), settings)
 	}
 
 	fn add_emitter_inner(
 		&mut self,
-		position: glam::Vec3,
+		position: Value<glam::Vec3>,
 		settings: EmitterSettings,
 	) -> Result<EmitterHandle, AddEmitterError> {
 		while self.unused_emitter_consumer.pop().is_some() {}
@@ -90,8 +91,8 @@ impl SpatialSceneHandle {
 
 	fn add_listener_inner(
 		&mut self,
-		position: Vec3,
-		orientation: Quat,
+		position: Value<Vec3>,
+		orientation: Value<Quat>,
 		settings: ListenerSettings,
 	) -> Result<ListenerHandle, AddListenerError> {
 		while self.unused_listener_consumer.pop().is_some() {}

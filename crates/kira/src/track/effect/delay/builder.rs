@@ -1,6 +1,7 @@
 use ringbuf::HeapRb;
 
 use crate::{
+	parameter::Value,
 	track::effect::{Effect, EffectBuilder},
 	Volume,
 };
@@ -13,9 +14,9 @@ const COMMAND_CAPACITY: usize = 8;
 #[non_exhaustive]
 pub struct DelayBuilder {
 	/// The delay time (in seconds).
-	pub(super) delay_time: f64,
+	pub(super) delay_time: Value<f64>,
 	/// The amount of feedback.
-	pub(super) feedback: Volume,
+	pub(super) feedback: Value<Volume>,
 	/// The amount of audio the delay can store (in seconds).
 	/// This affects the maximum delay time.
 	pub(super) buffer_length: f64,
@@ -25,7 +26,7 @@ pub struct DelayBuilder {
 	/// with the wet (processed) signal. `0.0` means
 	/// only the dry signal will be heard. `1.0` means
 	/// only the wet signal will be heard.
-	pub(super) mix: f64,
+	pub(super) mix: Value<f64>,
 }
 
 impl DelayBuilder {
@@ -35,12 +36,15 @@ impl DelayBuilder {
 	}
 
 	/// Sets the delay time (in seconds).
-	pub fn delay_time(self, delay_time: f64) -> Self {
-		Self { delay_time, ..self }
+	pub fn delay_time(self, delay_time: impl Into<Value<f64>>) -> Self {
+		Self {
+			delay_time: delay_time.into(),
+			..self
+		}
 	}
 
 	/// Sets the amount of feedback.
-	pub fn feedback(self, feedback: impl Into<Volume>) -> Self {
+	pub fn feedback(self, feedback: impl Into<Value<Volume>>) -> Self {
 		Self {
 			feedback: feedback.into(),
 			..self
@@ -66,19 +70,22 @@ impl DelayBuilder {
 	/// with the wet (processed) signal. `0.0` means only the dry
 	/// signal will be heard. `1.0` means only the wet signal will
 	/// be heard.
-	pub fn mix(self, mix: f64) -> Self {
-		Self { mix, ..self }
+	pub fn mix(self, mix: impl Into<Value<f64>>) -> Self {
+		Self {
+			mix: mix.into(),
+			..self
+		}
 	}
 }
 
 impl Default for DelayBuilder {
 	fn default() -> Self {
 		Self {
-			delay_time: 0.5,
-			feedback: Volume::Amplitude(0.5),
+			delay_time: Value::Fixed(0.5),
+			feedback: Value::Fixed(Volume::Amplitude(0.5)),
 			buffer_length: 10.0,
 			feedback_effects: vec![],
-			mix: 0.5,
+			mix: Value::Fixed(0.5),
 		}
 	}
 }

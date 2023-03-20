@@ -1,8 +1,8 @@
 use ringbuf::HeapRb;
 
 use crate::{
+	parameter::{Parameter, Value},
 	track::effect::{Effect, EffectBuilder},
-	tween::Tweener,
 	Volume,
 };
 
@@ -18,12 +18,12 @@ pub struct DistortionBuilder {
 	pub kind: DistortionKind,
 	/// The factor to multiply the signal by before applying
 	/// the distortion.
-	pub drive: Volume,
+	pub drive: Value<Volume>,
 	/// How much dry (unprocessed) signal should be blended
 	/// with the wet (processed) signal. `0.0` means
 	/// only the dry signal will be heard. `1.0` means
 	/// only the wet signal will be heard.
-	pub mix: f64,
+	pub mix: Value<f64>,
 }
 
 impl DistortionBuilder {
@@ -39,7 +39,7 @@ impl DistortionBuilder {
 
 	/// Sets the factor to multiply the signal by before applying
 	/// the distortion.
-	pub fn drive(self, drive: impl Into<Volume>) -> Self {
+	pub fn drive(self, drive: impl Into<Value<Volume>>) -> Self {
 		Self {
 			drive: drive.into(),
 			..self
@@ -50,8 +50,11 @@ impl DistortionBuilder {
 	/// with the wet (processed) signal. `0.0` means only the dry
 	/// signal will be heard. `1.0` means only the wet signal will
 	/// be heard.
-	pub fn mix(self, mix: f64) -> Self {
-		Self { mix, ..self }
+	pub fn mix(self, mix: impl Into<Value<f64>>) -> Self {
+		Self {
+			mix: mix.into(),
+			..self
+		}
 	}
 }
 
@@ -59,8 +62,8 @@ impl Default for DistortionBuilder {
 	fn default() -> Self {
 		Self {
 			kind: Default::default(),
-			drive: Volume::Amplitude(1.0),
-			mix: 1.0,
+			drive: Value::Fixed(Volume::Amplitude(1.0)),
+			mix: Value::Fixed(1.0),
 		}
 	}
 }
@@ -74,8 +77,8 @@ impl EffectBuilder for DistortionBuilder {
 			Box::new(Distortion {
 				command_consumer,
 				kind: self.kind,
-				drive: Tweener::new(self.drive),
-				mix: Tweener::new(self.mix),
+				drive: Parameter::new(self.drive, Volume::Amplitude(1.0)),
+				mix: Parameter::new(self.mix, 1.0),
 			}),
 			DistortionHandle { command_producer },
 		)

@@ -33,10 +33,6 @@ impl Modulators {
 			.map(|modulator| modulator.as_ref())
 	}
 
-	pub fn get_mut(&mut self, id: ModulatorId) -> Option<&mut Box<dyn Modulator>> {
-		self.modulators.get_mut(id.0)
-	}
-
 	pub fn on_start_processing(&mut self) {
 		self.remove_unused_modulators();
 		for (_, modulator) in &mut self.modulators {

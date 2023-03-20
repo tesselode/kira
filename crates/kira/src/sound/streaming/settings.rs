@@ -1,4 +1,7 @@
-use crate::{tween::Tween, LoopBehavior, OutputDestination, PlaybackRate, StartTime, Volume};
+use crate::{
+	parameter::Value, tween::Tween, LoopBehavior, OutputDestination, PlaybackRate, StartTime,
+	Volume,
+};
 
 /// Settings for a streaming sound.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -9,15 +12,15 @@ pub struct StreamingSoundSettings {
 	/// The initial playback position of the sound (in seconds).
 	pub start_position: f64,
 	/// The volume of the sound.
-	pub volume: Volume,
+	pub volume: Value<Volume>,
 	/// The playback rate of the sound.
 	///
 	/// Changing the playback rate will change both the speed
 	/// and the pitch of the sound.
-	pub playback_rate: PlaybackRate,
+	pub playback_rate: Value<PlaybackRate>,
 	/// The panning of the sound, where 0 is hard left
 	/// and 1 is hard right.
-	pub panning: f64,
+	pub panning: Value<f64>,
 	/// The looping behavior of the sound.
 	pub loop_behavior: Option<LoopBehavior>,
 	/// The destination that this sound should be routed to.
@@ -32,9 +35,9 @@ impl StreamingSoundSettings {
 		Self {
 			start_time: StartTime::Immediate,
 			start_position: 0.0,
-			volume: Volume::Amplitude(1.0),
-			playback_rate: PlaybackRate::Factor(1.0),
-			panning: 0.5,
+			volume: Value::Fixed(Volume::Amplitude(1.0)),
+			playback_rate: Value::Fixed(PlaybackRate::Factor(1.0)),
+			panning: Value::Fixed(0.5),
 			loop_behavior: None,
 			output_destination: OutputDestination::default(),
 			fade_in_tween: None,
@@ -58,7 +61,7 @@ impl StreamingSoundSettings {
 	}
 
 	/// Sets the volume of the sound.
-	pub fn volume(self, volume: impl Into<Volume>) -> Self {
+	pub fn volume(self, volume: impl Into<Value<Volume>>) -> Self {
 		Self {
 			volume: volume.into(),
 			..self
@@ -69,7 +72,7 @@ impl StreamingSoundSettings {
 	///
 	/// Changing the playback rate will change both the speed
 	/// and the pitch of the sound.
-	pub fn playback_rate(self, playback_rate: impl Into<PlaybackRate>) -> Self {
+	pub fn playback_rate(self, playback_rate: impl Into<Value<PlaybackRate>>) -> Self {
 		Self {
 			playback_rate: playback_rate.into(),
 			..self
@@ -78,8 +81,11 @@ impl StreamingSoundSettings {
 
 	/// Sets the panning of the sound, where 0 is hard left
 	/// and 1 is hard right.
-	pub fn panning(self, panning: f64) -> Self {
-		Self { panning, ..self }
+	pub fn panning(self, panning: impl Into<Value<f64>>) -> Self {
+		Self {
+			panning: panning.into(),
+			..self
+		}
 	}
 
 	/// Sets the looping behavior of the sound.

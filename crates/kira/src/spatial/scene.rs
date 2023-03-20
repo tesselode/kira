@@ -12,7 +12,10 @@ use std::sync::{
 
 use atomic_arena::{Arena, Controller, Key};
 
-use crate::{clock::clock_info::ClockInfoProvider, manager::backend::resources::mixer::Mixer};
+use crate::{
+	clock::clock_info::ClockInfoProvider, manager::backend::resources::mixer::Mixer,
+	modulator::value_provider::ModulatorValueProvider,
+};
 
 use super::{
 	emitter::{Emitter, EmitterId},
@@ -107,13 +110,24 @@ impl SpatialScene {
 		}
 	}
 
-	pub fn process(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider, mixer: &mut Mixer) {
+	pub fn process(
+		&mut self,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+		modulator_value_provider: &ModulatorValueProvider,
+		mixer: &mut Mixer,
+	) {
 		for (_, emitter) in &mut self.emitters {
-			emitter.update(dt, clock_info_provider);
+			emitter.update(dt, clock_info_provider, modulator_value_provider);
 		}
 		for (_, listener) in &mut self.listeners {
 			if let Some(track) = mixer.track_mut(listener.track()) {
-				track.add_input(listener.process(dt, clock_info_provider, &self.emitters));
+				track.add_input(listener.process(
+					dt,
+					clock_info_provider,
+					modulator_value_provider,
+					&self.emitters,
+				));
 			}
 		}
 		for (_, emitter) in &mut self.emitters {

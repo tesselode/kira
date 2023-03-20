@@ -15,6 +15,7 @@ use crate::{
 	error::CommandError,
 	manager::command::ModulatorCommand,
 	modulator::{ModulatorBuilder, ModulatorId},
+	parameter::Value,
 	sound::SoundData,
 	spatial::scene::{SpatialScene, SpatialSceneHandle, SpatialSceneId, SpatialSceneSettings},
 	track::{SubTrackId, Track, TrackBuilder, TrackHandle, TrackId},
@@ -143,7 +144,10 @@ impl<B: Backend> AudioManager<B> {
 	}
 
 	/// Creates a clock.
-	pub fn add_clock(&mut self, speed: ClockSpeed) -> Result<ClockHandle, AddClockError> {
+	pub fn add_clock(
+		&mut self,
+		speed: impl Into<Value<ClockSpeed>>,
+	) -> Result<ClockHandle, AddClockError> {
 		while self.unused_resource_consumers.clock.pop().is_some() {}
 		let id = ClockId(
 			self.resource_controllers
@@ -151,7 +155,7 @@ impl<B: Backend> AudioManager<B> {
 				.try_reserve()
 				.map_err(|_| AddClockError::ClockLimitReached)?,
 		);
-		let clock = Clock::new(speed);
+		let clock = Clock::new(speed.into());
 		let handle = ClockHandle {
 			id,
 			shared: clock.shared(),
@@ -198,6 +202,7 @@ impl<B: Backend> AudioManager<B> {
 		&mut self,
 		builder: Builder,
 	) -> Result<Builder::Handle, AddModulatorError> {
+		while self.unused_resource_consumers.modulator.pop().is_some() {}
 		let id = ModulatorId(
 			self.resource_controllers
 				.modulator_controller

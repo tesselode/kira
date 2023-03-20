@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use crate::{sound::static_sound::PlaybackState, tween::Tween, CommandError, PlaybackRate, Volume};
+use crate::{
+	parameter::Value, sound::static_sound::PlaybackState, tween::Tween, CommandError, PlaybackRate,
+	Volume,
+};
 use ringbuf::{HeapConsumer, HeapProducer};
 
 use super::{sound::Shared, Command};
@@ -26,7 +29,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	/// Sets the volume of the sound (as a factor of the original volume).
 	pub fn set_volume(
 		&mut self,
-		volume: impl Into<Volume>,
+		volume: impl Into<Value<Volume>>,
 		tween: Tween,
 	) -> Result<(), CommandError> {
 		self.command_producer
@@ -40,7 +43,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	/// and pitch of the sound.
 	pub fn set_playback_rate(
 		&mut self,
-		playback_rate: impl Into<PlaybackRate>,
+		playback_rate: impl Into<Value<PlaybackRate>>,
 		tween: Tween,
 	) -> Result<(), CommandError> {
 		self.command_producer
@@ -50,9 +53,13 @@ impl<Error> StreamingSoundHandle<Error> {
 
 	/// Sets the panning of the sound, where `0.0` is hard left,
 	/// `0.5` is center, and `1.0` is hard right.
-	pub fn set_panning(&mut self, panning: f64, tween: Tween) -> Result<(), CommandError> {
+	pub fn set_panning(
+		&mut self,
+		panning: impl Into<Value<f64>>,
+		tween: Tween,
+	) -> Result<(), CommandError> {
 		self.command_producer
-			.push(Command::SetPanning(panning, tween))
+			.push(Command::SetPanning(panning.into(), tween))
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 

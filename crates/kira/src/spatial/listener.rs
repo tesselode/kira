@@ -15,8 +15,10 @@ use atomic_arena::{Arena, Key};
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
+	modulator::value_provider::ModulatorValueProvider,
+	parameter::{Parameter, Value},
 	track::TrackId,
-	tween::{Tween, Tweenable, Tweener},
+	tween::{Tween, Tweenable},
 	Volume,
 };
 
@@ -27,17 +29,21 @@ const MIN_EAR_AMPLITUDE: f32 = 0.5;
 
 pub(crate) struct Listener {
 	shared: Arc<ListenerShared>,
-	position: Tweener<Vec3>,
-	orientation: Tweener<Quat>,
+	position: Parameter<Vec3>,
+	orientation: Parameter<Quat>,
 	track: TrackId,
 }
 
 impl Listener {
-	pub fn new(position: Vec3, orientation: Quat, settings: ListenerSettings) -> Self {
+	pub fn new(
+		position: Value<Vec3>,
+		orientation: Value<Quat>,
+		settings: ListenerSettings,
+	) -> Self {
 		Self {
 			shared: Arc::new(ListenerShared::new()),
-			position: Tweener::new(position),
-			orientation: Tweener::new(orientation),
+			position: Parameter::new(position, Vec3::ZERO),
+			orientation: Parameter::new(orientation, Quat::IDENTITY),
 			track: settings.track,
 		}
 	}
@@ -50,11 +56,11 @@ impl Listener {
 		self.track
 	}
 
-	pub fn set_position(&mut self, position: Vec3, tween: Tween) {
+	pub fn set_position(&mut self, position: Value<Vec3>, tween: Tween) {
 		self.position.set(position, tween);
 	}
 
-	pub fn set_orientation(&mut self, orientation: Quat, tween: Tween) {
+	pub fn set_orientation(&mut self, orientation: Value<Quat>, tween: Tween) {
 		self.orientation.set(orientation, tween);
 	}
 
@@ -62,10 +68,13 @@ impl Listener {
 		&mut self,
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
+		modulator_value_provider: &ModulatorValueProvider,
 		emitters: &Arena<Emitter>,
 	) -> Frame {
-		self.position.update(dt, clock_info_provider);
-		self.orientation.update(dt, clock_info_provider);
+		self.position
+			.update(dt, clock_info_provider, modulator_value_provider);
+		self.orientation
+			.update(dt, clock_info_provider, modulator_value_provider);
 		let mut output = Frame::ZERO;
 		for (_, emitter) in emitters {
 			let mut emitter_output = emitter.output();

@@ -18,7 +18,9 @@ use std::sync::{
 use atomic_arena::Key;
 
 use crate::{
-	tween::{Tween, Tweener},
+	modulator::value_provider::ModulatorValueProvider,
+	parameter::{Parameter, Value},
+	tween::Tween,
 	ClockSpeed,
 };
 
@@ -79,16 +81,16 @@ enum State {
 pub(crate) struct Clock {
 	shared: Arc<ClockShared>,
 	ticking: bool,
-	speed: Tweener<ClockSpeed>,
+	speed: Parameter<ClockSpeed>,
 	state: State,
 }
 
 impl Clock {
-	pub(crate) fn new(speed: ClockSpeed) -> Self {
+	pub(crate) fn new(speed: Value<ClockSpeed>) -> Self {
 		Self {
 			shared: Arc::new(ClockShared::new()),
 			ticking: false,
-			speed: Tweener::new(speed),
+			speed: Parameter::new(speed, ClockSpeed::TicksPerMinute(120.0)),
 			state: State::NotStarted,
 		}
 	}
@@ -97,7 +99,7 @@ impl Clock {
 		self.shared.clone()
 	}
 
-	pub(crate) fn set_speed(&mut self, speed: ClockSpeed, tween: Tween) {
+	pub(crate) fn set_speed(&mut self, speed: Value<ClockSpeed>, tween: Tween) {
 		self.speed.set(speed, tween);
 	}
 
@@ -139,8 +141,10 @@ impl Clock {
 		&mut self,
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
+		modulator_value_provider: &ModulatorValueProvider,
 	) -> Option<u64> {
-		self.speed.update(dt, clock_info_provider);
+		self.speed
+			.update(dt, clock_info_provider, modulator_value_provider);
 		if !self.ticking {
 			return None;
 		}

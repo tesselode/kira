@@ -1,4 +1,4 @@
-use crate::Volume;
+use crate::{parameter::Value, Volume};
 
 use super::{effect::EffectBuilder, routes::TrackRoutes, Effect};
 
@@ -6,7 +6,7 @@ use super::{effect::EffectBuilder, routes::TrackRoutes, Effect};
 #[non_exhaustive]
 pub struct TrackBuilder {
 	/// The volume of the track.
-	pub(crate) volume: Volume,
+	pub(crate) volume: Value<Volume>,
 	/// How the output of this track should be routed
 	/// to other mixer tracks.
 	pub(crate) routes: TrackRoutes,
@@ -19,14 +19,14 @@ impl TrackBuilder {
 	/// Creates a new [`TrackBuilder`] with the default settings.
 	pub fn new() -> Self {
 		Self {
-			volume: Volume::Amplitude(1.0),
+			volume: Value::Fixed(Volume::Amplitude(1.0)),
 			routes: TrackRoutes::new(),
 			effects: vec![],
 		}
 	}
 
 	/// Sets the volume of the track.
-	pub fn volume(self, volume: impl Into<Volume>) -> Self {
+	pub fn volume(self, volume: impl Into<Value<Volume>>) -> Self {
 		Self {
 			volume: volume.into(),
 			..self

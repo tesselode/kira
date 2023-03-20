@@ -3,6 +3,7 @@ use std::{collections::HashSet, error::Error, fmt::Display, sync::Arc};
 use crate::{
 	error::CommandError,
 	manager::command::{producer::CommandProducer, Command, MixerCommand},
+	parameter::Value,
 	tween::Tween,
 	Volume,
 };
@@ -56,7 +57,11 @@ impl TrackHandle {
 	}
 
 	/// Sets the (post-effects) volume of the mixer track.
-	pub fn set_volume(&self, volume: impl Into<Volume>, tween: Tween) -> Result<(), CommandError> {
+	pub fn set_volume(
+		&self,
+		volume: impl Into<Value<Volume>>,
+		tween: Tween,
+	) -> Result<(), CommandError> {
 		self.command_producer
 			.push(Command::Mixer(MixerCommand::SetTrackVolume(
 				self.id,
@@ -72,7 +77,7 @@ impl TrackHandle {
 	pub fn set_route(
 		&self,
 		to: impl Into<TrackId>,
-		volume: impl Into<Volume>,
+		volume: impl Into<Value<Volume>>,
 		tween: Tween,
 	) -> Result<(), SetRouteError> {
 		let to = to.into();

@@ -22,7 +22,9 @@ use atomic_arena::Key;
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
-	tween::{Tween, Tweener},
+	modulator::value_provider::ModulatorValueProvider,
+	parameter::{Parameter, Value},
+	tween::Tween,
 	Volume,
 };
 
@@ -75,8 +77,8 @@ impl TrackShared {
 
 pub(crate) struct Track {
 	shared: Arc<TrackShared>,
-	volume: Tweener<Volume>,
-	routes: Vec<(TrackId, Tweener<Volume>)>,
+	volume: Parameter<Volume>,
+	routes: Vec<(TrackId, Parameter<Volume>)>,
 	effects: Vec<Box<dyn Effect>>,
 	input: Frame,
 }
@@ -85,7 +87,7 @@ impl Track {
 	pub fn new(builder: TrackBuilder) -> Self {
 		Self {
 			shared: Arc::new(TrackShared::new()),
-			volume: Tweener::new(builder.volume),
+			volume: Parameter::new(builder.volume, Volume::Amplitude(1.0)),
 			routes: builder.routes.into_vec(),
 			effects: builder.effects,
 			input: Frame::ZERO,
@@ -108,15 +110,15 @@ impl Track {
 		self.shared.clone()
 	}
 
-	pub fn routes_mut(&mut self) -> &mut Vec<(TrackId, Tweener<Volume>)> {
+	pub fn routes_mut(&mut self) -> &mut Vec<(TrackId, Parameter<Volume>)> {
 		&mut self.routes
 	}
 
-	pub fn set_volume(&mut self, volume: Volume, tween: Tween) {
+	pub fn set_volume(&mut self, volume: Value<Volume>, tween: Tween) {
 		self.volume.set(volume, tween);
 	}
 
-	pub fn set_route(&mut self, to: TrackId, volume: Volume, tween: Tween) {
+	pub fn set_route(&mut self, to: TrackId, volume: Value<Volume>, tween: Tween) {
 		// TODO: determine if we should store the track routes in some
 		// other data structure like an IndexMap so we don't have to do
 		// linear search
@@ -139,14 +141,20 @@ impl Track {
 		}
 	}
 
-	pub fn process(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
-		self.volume.update(dt, clock_info_provider);
+	pub fn process(
+		&mut self,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+		modulator_value_provider: &ModulatorValueProvider,
+	) -> Frame {
+		self.volume
+			.update(dt, clock_info_provider, modulator_value_provider);
 		for (_, route) in &mut self.routes {
-			route.update(dt, clock_info_provider);
+			route.update(dt, clock_info_provider, modulator_value_provider);
 		}
 		let mut output = std::mem::replace(&mut self.input, Frame::ZERO);
 		for effect in &mut self.effects {
-			output = effect.process(output, dt, clock_info_provider);
+			output = effect.process(output, dt, clock_info_provider, modulator_value_provider);
 		}
 		output * self.volume.value().as_amplitude() as f32
 	}

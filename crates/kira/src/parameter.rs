@@ -11,20 +11,21 @@ use crate::{
 	tween::{Tween, Tweenable},
 };
 
-pub struct Parameter<T: Tweenable> {
+#[derive(Clone)]
+pub struct Parameter<T: Tweenable = f64> {
 	state: State<T>,
 	raw_value: T,
 }
 
 impl<T: Tweenable> Parameter<T> {
-	pub fn new(initial_value: Value<T>, default_value: T) -> Self {
+	pub fn new(initial_value: Value<T>, default_raw_value: T) -> Self {
 		Self {
 			state: State::Idle {
 				value: initial_value,
 			},
 			raw_value: match initial_value {
 				Value::Fixed(value) => value,
-				Value::FromModulator { .. } => default_value,
+				Value::FromModulator { .. } => default_raw_value,
 			},
 		}
 	}
@@ -90,13 +91,19 @@ impl<T: Tweenable> Parameter<T> {
 				target,
 				time,
 				tween,
-			} => target
-				.raw_value(modulator_value_provider)
-				.map(|target| T::interpolate(*start, target, tween.value(*time))),
+			} => {
+				if tween.duration.is_zero() {
+					return None;
+				}
+				target
+					.raw_value(modulator_value_provider)
+					.map(|target| T::interpolate(*start, target, tween.value(*time)))
+			}
 		}
 	}
 }
 
+#[derive(Clone)]
 enum State<T: Tweenable> {
 	Idle {
 		value: Value<T>,

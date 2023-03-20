@@ -17,14 +17,16 @@ use atomic_arena::Key;
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
-	tween::{Easing, Tween, Tweener},
+	modulator::value_provider::ModulatorValueProvider,
+	parameter::{Parameter, Value},
+	tween::{Easing, Tween},
 };
 
 use super::scene::SpatialSceneId;
 
 pub(crate) struct Emitter {
 	shared: Arc<EmitterShared>,
-	position: Tweener<Vec3>,
+	position: Parameter<Vec3>,
 	distances: EmitterDistances,
 	attenuation_function: Option<Easing>,
 	enable_spatialization: bool,
@@ -32,10 +34,10 @@ pub(crate) struct Emitter {
 }
 
 impl Emitter {
-	pub fn new(position: Vec3, settings: EmitterSettings) -> Self {
+	pub fn new(position: Value<Vec3>, settings: EmitterSettings) -> Self {
 		Self {
 			shared: Arc::new(EmitterShared::new()),
-			position: Tweener::new(position),
+			position: Parameter::new(position, Vec3::ZERO),
 			distances: settings.distances,
 			attenuation_function: settings.attenuation_function,
 			enable_spatialization: settings.enable_spatialization,
@@ -67,7 +69,7 @@ impl Emitter {
 		self.enable_spatialization
 	}
 
-	pub fn set_position(&mut self, position: Vec3, tween: Tween) {
+	pub fn set_position(&mut self, position: Value<Vec3>, tween: Tween) {
 		self.position.set(position, tween);
 	}
 
@@ -79,8 +81,14 @@ impl Emitter {
 		self.input = Frame::ZERO;
 	}
 
-	pub fn update(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider) {
-		self.position.update(dt, clock_info_provider);
+	pub fn update(
+		&mut self,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+		modulator_value_provider: &ModulatorValueProvider,
+	) {
+		self.position
+			.update(dt, clock_info_provider, modulator_value_provider);
 	}
 }
 

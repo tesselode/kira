@@ -18,13 +18,13 @@ pub use data::*;
 pub use handle::*;
 pub use settings::*;
 
-use crate::{tween::Tween, PlaybackRate, Volume};
+use crate::{parameter::Value, tween::Tween, PlaybackRate, Volume};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum Command {
-	SetVolume(Volume, Tween),
-	SetPlaybackRate(PlaybackRate, Tween),
-	SetPanning(f64, Tween),
+	SetVolume(Value<Volume>, Tween),
+	SetPlaybackRate(Value<PlaybackRate>, Tween),
+	SetPanning(Value<f64>, Tween),
 	Pause(Tween),
 	Resume(Tween),
 	Stop(Tween),

@@ -11,15 +11,17 @@ use ringbuf::HeapConsumer;
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
+	modulator::value_provider::ModulatorValueProvider,
+	parameter::{Parameter, Value},
 	track::Effect,
-	tween::{Tween, Tweener},
+	tween::Tween,
 	Volume,
 };
 
 enum Command {
 	SetKind(DistortionKind),
-	SetDrive(Volume, Tween),
-	SetMix(f64, Tween),
+	SetDrive(Value<Volume>, Tween),
+	SetMix(Value<f64>, Tween),
 }
 
 /// Different types of distortion.
@@ -49,8 +51,8 @@ impl Default for DistortionKind {
 struct Distortion {
 	command_consumer: HeapConsumer<Command>,
 	kind: DistortionKind,
-	drive: Tweener<Volume>,
-	mix: Tweener,
+	drive: Parameter<Volume>,
+	mix: Parameter,
 }
 
 impl Effect for Distortion {
@@ -64,9 +66,17 @@ impl Effect for Distortion {
 		}
 	}
 
-	fn process(&mut self, input: Frame, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
-		self.drive.update(dt, clock_info_provider);
-		self.mix.update(dt, clock_info_provider);
+	fn process(
+		&mut self,
+		input: Frame,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+		modulator_value_provider: &ModulatorValueProvider,
+	) -> Frame {
+		self.drive
+			.update(dt, clock_info_provider, modulator_value_provider);
+		self.mix
+			.update(dt, clock_info_provider, modulator_value_provider);
 		let drive = self.drive.value().as_amplitude() as f32;
 		let mut output = input * drive;
 		output = match self.kind {
