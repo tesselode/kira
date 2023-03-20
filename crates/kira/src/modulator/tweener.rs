@@ -61,7 +61,7 @@ impl Modulator for Tweener {
 		}
 	}
 
-	fn process(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider) -> f64 {
+	fn update(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider) {
 		if let State::Tweening {
 			values,
 			time,
@@ -78,6 +78,9 @@ impl Modulator for Tweener {
 				}
 			}
 		}
+	}
+
+	fn value(&self) -> f64 {
 		self.value
 	}
 

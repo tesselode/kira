@@ -23,7 +23,8 @@ fn tweening() {
 
 	// value should not be changing yet
 	for _ in 0..3 {
-		assert_eq!(tweener.process(1.0, &clock_info_provider), 0.0);
+		tweener.update(1.0, &clock_info_provider);
+		assert_eq!(tweener.value(), 0.0);
 	}
 
 	handle
@@ -37,9 +38,12 @@ fn tweening() {
 		.unwrap();
 	tweener.on_start_processing();
 
-	assert_eq!(tweener.process(1.0, &clock_info_provider), 0.5);
-	assert_eq!(tweener.process(1.0, &clock_info_provider), 1.0);
-	assert_eq!(tweener.process(1.0, &clock_info_provider), 1.0);
+	tweener.update(1.0, &clock_info_provider);
+	assert_eq!(tweener.value(), 0.5);
+	tweener.update(1.0, &clock_info_provider);
+	assert_eq!(tweener.value(), 1.0);
+	tweener.update(1.0, &clock_info_provider);
+	assert_eq!(tweener.value(), 1.0);
 }
 
 /// Tests that a Tweener with a clock time set as
@@ -86,7 +90,8 @@ fn waits_for_start_time() {
 
 	// value should not be changing yet
 	for _ in 0..3 {
-		assert_eq!(tweener.process(1.0, &clock_info_provider), 0.0);
+		tweener.update(1.0, &clock_info_provider);
+		assert_eq!(tweener.value(), 0.0);
 	}
 
 	let clock_info_provider = {
@@ -111,7 +116,8 @@ fn waits_for_start_time() {
 	// the tween is set to start at tick 2, so it should not
 	// start yet
 	for _ in 0..3 {
-		assert_eq!(tweener.process(1.0, &clock_info_provider), 0.0);
+		tweener.update(1.0, &clock_info_provider);
+		assert_eq!(tweener.value(), 0.0);
 	}
 
 	let clock_info_provider = {
@@ -136,7 +142,8 @@ fn waits_for_start_time() {
 	// a different clock reached tick 2, so the tween should not
 	// start yet
 	for _ in 0..3 {
-		assert_eq!(tweener.process(1.0, &clock_info_provider), 0.0);
+		tweener.update(1.0, &clock_info_provider);
+		assert_eq!(tweener.value(), 0.0);
 	}
 
 	let clock_info_provider = {
@@ -159,7 +166,8 @@ fn waits_for_start_time() {
 	};
 
 	// the tween should start now
-	assert_eq!(tweener.process(1.0, &clock_info_provider), 1.0);
+	tweener.update(1.0, &clock_info_provider);
+	assert_eq!(tweener.value(), 1.0);
 }
 
 fn generate_fake_modulator_id() -> ModulatorId {

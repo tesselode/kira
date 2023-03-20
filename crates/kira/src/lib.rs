@@ -28,6 +28,7 @@ mod loop_behavior;
 pub mod manager;
 pub mod modulator;
 mod output_destination;
+pub mod parameter;
 mod playback_rate;
 pub mod sound;
 pub mod spatial;

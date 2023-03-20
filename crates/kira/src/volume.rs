@@ -1,4 +1,4 @@
-use crate::tween::Tweenable;
+use crate::{parameter::Value, tween::Tweenable};
 
 /// A change in volume of a sound.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -50,6 +50,12 @@ impl Volume {
 impl From<f64> for Volume {
 	fn from(amplitude: f64) -> Self {
 		Self::Amplitude(amplitude)
+	}
+}
+
+impl From<f64> for Value<Volume> {
+	fn from(amplitude: f64) -> Self {
+		Self::Fixed(Volume::Amplitude(amplitude))
 	}
 }
 

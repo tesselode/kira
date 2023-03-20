@@ -1,4 +1,5 @@
 pub mod tweener;
+pub mod value_provider;
 
 use atomic_arena::Key;
 
@@ -20,8 +21,9 @@ pub trait Modulator: Send {
 	/// but not for every single audio sample.
 	fn on_start_processing(&mut self) {}
 
-	/// Produces the next value.
-	fn process(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider) -> f64;
+	fn update(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider);
+
+	fn value(&self) -> f64;
 
 	/// Whether the modulator can be removed from the audio context.
 	fn finished(&self) -> bool;

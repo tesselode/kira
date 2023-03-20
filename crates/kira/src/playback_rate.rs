@@ -1,4 +1,4 @@
-use crate::tween::Tweenable;
+use crate::{parameter::Value, tween::Tweenable};
 
 /// How quickly a sound is played.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -38,6 +38,12 @@ impl PlaybackRate {
 impl From<f64> for PlaybackRate {
 	fn from(factor: f64) -> Self {
 		Self::Factor(factor)
+	}
+}
+
+impl From<f64> for Value<PlaybackRate> {
+	fn from(factor: f64) -> Self {
+		Self::Fixed(PlaybackRate::Factor(factor))
 	}
 }
 

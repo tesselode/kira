@@ -27,6 +27,12 @@ impl Modulators {
 		self.modulators.controller()
 	}
 
+	pub fn get(&self, id: ModulatorId) -> Option<&dyn Modulator> {
+		self.modulators
+			.get(id.0)
+			.map(|modulator| modulator.as_ref())
+	}
+
 	pub fn get_mut(&mut self, id: ModulatorId) -> Option<&mut Box<dyn Modulator>> {
 		self.modulators.get_mut(id.0)
 	}
@@ -60,13 +66,13 @@ impl Modulators {
 			ModulatorCommand::Add(id, modulator) => self
 				.modulators
 				.insert_with_key(id.0, modulator)
-				.expect("Spatial modulator arena is full"),
+				.expect("Modulator arena is full"),
 		}
 	}
 
 	pub fn process(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider) {
 		for (_, modulator) in &mut self.modulators {
-			modulator.process(dt, clock_info_provider);
+			modulator.update(dt, clock_info_provider);
 		}
 	}
 }
