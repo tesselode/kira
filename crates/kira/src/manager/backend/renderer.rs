@@ -118,7 +118,7 @@ impl Renderer {
 		if self.fade_volume.update(
 			self.dt,
 			&ClockInfoProvider::new(&self.resources.clocks),
-			&ModulatorValueProvider::new(&self.resources.modulators),
+			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
 		) {
 			if self.state == MainPlaybackState::Pausing {
 				self.state = MainPlaybackState::Paused;
@@ -133,26 +133,26 @@ impl Renderer {
 				.process(self.dt, &ClockInfoProvider::new(&self.resources.clocks));
 			self.resources.clocks.update(
 				self.dt,
-				&ModulatorValueProvider::new(&self.resources.modulators),
+				&ModulatorValueProvider::new(&self.resources.modulators.modulators),
 			);
 		}
 		self.resources.sounds.process(
 			self.dt,
 			&ClockInfoProvider::new(&self.resources.clocks),
-			&ModulatorValueProvider::new(&self.resources.modulators),
+			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
 			&mut self.resources.mixer,
 			&mut self.resources.spatial_scenes,
 		);
 		self.resources.spatial_scenes.process(
 			self.dt,
 			&ClockInfoProvider::new(&self.resources.clocks),
-			&ModulatorValueProvider::new(&self.resources.modulators),
+			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
 			&mut self.resources.mixer,
 		);
 		let out = self.resources.mixer.process(
 			self.dt,
 			&ClockInfoProvider::new(&self.resources.clocks),
-			&ModulatorValueProvider::new(&self.resources.modulators),
+			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
 		);
 		out * self.fade_volume.value().as_amplitude() as f32
 	}

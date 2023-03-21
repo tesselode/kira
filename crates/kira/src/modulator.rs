@@ -5,6 +5,8 @@ use atomic_arena::Key;
 
 use crate::clock::clock_info::ClockInfoProvider;
 
+use self::value_provider::ModulatorValueProvider;
+
 /// Configures a modulator.
 pub trait ModulatorBuilder {
 	/// Allows the user to control the modulator from gameplay code.
@@ -21,7 +23,12 @@ pub trait Modulator: Send {
 	/// but not for every single audio sample.
 	fn on_start_processing(&mut self) {}
 
-	fn update(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider);
+	fn update(
+		&mut self,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+		modulator_value_provider: &ModulatorValueProvider,
+	);
 
 	fn value(&self) -> f64;
 

@@ -7,7 +7,10 @@ use crate::{
 		clock_info::{ClockInfo, MockClockInfoProviderBuilder},
 		ClockTime,
 	},
-	modulator::{tweener::TweenerBuilder, ModulatorBuilder, ModulatorId},
+	modulator::{
+		tweener::TweenerBuilder, value_provider::MockModulatorValueProviderBuilder,
+		ModulatorBuilder, ModulatorId,
+	},
 	tween::Tween,
 	StartTime,
 };
@@ -20,10 +23,11 @@ fn tweening() {
 	let (mut tweener, mut handle) =
 		TweenerBuilder { initial_value: 0.0 }.build(generate_fake_modulator_id());
 	let clock_info_provider = MockClockInfoProviderBuilder::new(1).build();
+	let modulator_value_provider = MockModulatorValueProviderBuilder::new(0).build();
 
 	// value should not be changing yet
 	for _ in 0..3 {
-		tweener.update(1.0, &clock_info_provider);
+		tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
 		assert_eq!(tweener.value(), 0.0);
 	}
 
@@ -38,11 +42,11 @@ fn tweening() {
 		.unwrap();
 	tweener.on_start_processing();
 
-	tweener.update(1.0, &clock_info_provider);
+	tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
 	assert_eq!(tweener.value(), 0.5);
-	tweener.update(1.0, &clock_info_provider);
+	tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
 	assert_eq!(tweener.value(), 1.0);
-	tweener.update(1.0, &clock_info_provider);
+	tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
 	assert_eq!(tweener.value(), 1.0);
 }
 
@@ -72,6 +76,7 @@ fn waits_for_start_time() {
 			.unwrap();
 		(builder.build(), clock_id_1)
 	};
+	let modulator_value_provider = MockModulatorValueProviderBuilder::new(0).build();
 
 	handle
 		.set(
@@ -90,7 +95,7 @@ fn waits_for_start_time() {
 
 	// value should not be changing yet
 	for _ in 0..3 {
-		tweener.update(1.0, &clock_info_provider);
+		tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
 		assert_eq!(tweener.value(), 0.0);
 	}
 
@@ -116,7 +121,7 @@ fn waits_for_start_time() {
 	// the tween is set to start at tick 2, so it should not
 	// start yet
 	for _ in 0..3 {
-		tweener.update(1.0, &clock_info_provider);
+		tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
 		assert_eq!(tweener.value(), 0.0);
 	}
 
@@ -142,7 +147,7 @@ fn waits_for_start_time() {
 	// a different clock reached tick 2, so the tween should not
 	// start yet
 	for _ in 0..3 {
-		tweener.update(1.0, &clock_info_provider);
+		tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
 		assert_eq!(tweener.value(), 0.0);
 	}
 
@@ -166,7 +171,7 @@ fn waits_for_start_time() {
 	};
 
 	// the tween should start now
-	tweener.update(1.0, &clock_info_provider);
+	tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
 	assert_eq!(tweener.value(), 1.0);
 }
 

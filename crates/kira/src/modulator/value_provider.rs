@@ -6,9 +6,7 @@
 
 use atomic_arena::{error::ArenaFull, Arena};
 
-use crate::manager::backend::resources::modulators::Modulators;
-
-use super::ModulatorId;
+use super::{Modulator, ModulatorId};
 
 /// Provides values of any modulator that currently exists.
 pub struct ModulatorValueProvider<'a> {
@@ -16,7 +14,7 @@ pub struct ModulatorValueProvider<'a> {
 }
 
 impl<'a> ModulatorValueProvider<'a> {
-	pub(crate) fn new(modulators: &'a Modulators) -> Self {
+	pub(crate) fn new(modulators: &'a Arena<Box<dyn Modulator>>) -> Self {
 		Self {
 			kind: ModulatorValueProviderKind::Normal { modulators },
 		}
@@ -27,7 +25,7 @@ impl<'a> ModulatorValueProvider<'a> {
 	pub fn get(&self, id: ModulatorId) -> Option<f64> {
 		match &self.kind {
 			ModulatorValueProviderKind::Normal { modulators } => {
-				modulators.get(id).map(|modulator| modulator.value())
+				modulators.get(id.0).map(|modulator| modulator.value())
 			}
 			ModulatorValueProviderKind::Mock {
 				modulator_values: modulator_info,
@@ -37,8 +35,12 @@ impl<'a> ModulatorValueProvider<'a> {
 }
 
 enum ModulatorValueProviderKind<'a> {
-	Normal { modulators: &'a Modulators },
-	Mock { modulator_values: Arena<f64> },
+	Normal {
+		modulators: &'a Arena<Box<dyn Modulator>>,
+	},
+	Mock {
+		modulator_values: Arena<f64>,
+	},
 }
 
 /// Builds a `ModulatorValueProvider` that provides fake modulator value.

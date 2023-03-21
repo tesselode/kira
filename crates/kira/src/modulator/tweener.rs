@@ -20,7 +20,7 @@ use crate::{
 	tween::{Tween, Tweenable},
 };
 
-use super::Modulator;
+use super::{value_provider::ModulatorValueProvider, Modulator};
 
 struct Tweener {
 	state: State,
@@ -61,7 +61,12 @@ impl Modulator for Tweener {
 		}
 	}
 
-	fn update(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider) {
+	fn update(
+		&mut self,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+		_modulator_value_provider: &ModulatorValueProvider,
+	) {
 		if let State::Tweening {
 			values,
 			time,
