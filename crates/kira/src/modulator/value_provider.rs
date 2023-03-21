@@ -43,7 +43,7 @@ enum ModulatorValueProviderKind<'a> {
 	},
 }
 
-/// Builds a `ModulatorValueProvider` that provides fake modulator value.
+/// Builds a `ModulatorValueProvider` that provides fake modulator values.
 ///
 /// This is mainly useful for writing tests for implementations
 /// of the [`Sound`](crate::sound::Sound) and

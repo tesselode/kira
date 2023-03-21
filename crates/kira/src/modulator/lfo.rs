@@ -4,6 +4,9 @@ mod test;
 mod builder;
 mod handle;
 
+pub use builder::*;
+pub use handle::*;
+
 use std::{
 	f64::consts::TAU,
 	sync::{
@@ -12,7 +15,6 @@ use std::{
 	},
 };
 
-pub use builder::*;
 use ringbuf::HeapConsumer;
 
 use crate::{
