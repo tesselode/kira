@@ -13,6 +13,10 @@ pub struct TweenerHandle {
 }
 
 impl TweenerHandle {
+	pub fn id(&self) -> ModulatorId {
+		self.id
+	}
+
 	pub fn set(&mut self, target: f64, tween: Tween) -> Result<(), CommandError> {
 		self.command_producer
 			.push(Command::Set { target, tween })

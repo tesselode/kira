@@ -1,3 +1,4 @@
+pub mod lfo;
 pub mod tweener;
 pub mod value_provider;
 

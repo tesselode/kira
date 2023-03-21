@@ -33,6 +33,9 @@ ogg = ["symphonia", "symphonia/ogg", "symphonia/vorbis"]
 flac = ["symphonia", "symphonia/flac"]
 wav = ["symphonia", "symphonia/wav", "symphonia/pcm"]
 
+[dev-dependencies]
+approx = "0.5.1"
+
 # docs.rs-specific configuration
 [package.metadata.docs.rs]
 # document all features
