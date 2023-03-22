@@ -16,7 +16,7 @@ use crate::{
 	manager::command::ModulatorCommand,
 	modulator::{ModulatorBuilder, ModulatorId},
 	parameter::Value,
-	sound::SoundData,
+	sound::{Sound, SoundHandle},
 	spatial::scene::{SpatialScene, SpatialSceneHandle, SpatialSceneId, SpatialSceneSettings},
 	track::{SubTrackId, Track, TrackBuilder, TrackHandle, TrackId},
 	tween::Tween,
@@ -100,19 +100,14 @@ impl<B: Backend> AudioManager<B> {
 	}
 
 	/// Plays a sound.
-	pub fn play<D: SoundData>(
-		&mut self,
-		sound_data: D,
-	) -> Result<D::Handle, PlaySoundError<D::Error>> {
+	pub fn play(&mut self, sound: Sound) -> Result<SoundHandle, PlaySoundError> {
 		while self.unused_resource_consumers.sound.pop().is_some() {}
 		let key = self
 			.resource_controllers
 			.sound_controller
 			.try_reserve()
 			.map_err(|_| PlaySoundError::SoundLimitReached)?;
-		let (sound, handle) = sound_data
-			.into_sound()
-			.map_err(PlaySoundError::IntoSoundError)?;
+		let handle = SoundHandle;
 		self.command_producer
 			.push(Command::Sound(SoundCommand::Add(key, sound)))?;
 		Ok(handle)

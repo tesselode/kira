@@ -19,7 +19,7 @@ use crate::{
 };
 
 pub(crate) enum SoundCommand {
-	Add(Key, Box<dyn Sound>),
+	Add(Key, Sound),
 }
 
 pub(crate) enum MixerCommand {

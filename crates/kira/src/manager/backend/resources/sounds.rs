@@ -9,12 +9,12 @@ use crate::{
 use super::{mixer::Mixer, spatial_scenes::SpatialScenes};
 
 pub(crate) struct Sounds {
-	sounds: Arena<Box<dyn Sound>>,
-	unused_sound_producer: HeapProducer<Box<dyn Sound>>,
+	sounds: Arena<Sound>,
+	unused_sound_producer: HeapProducer<Sound>,
 }
 
 impl Sounds {
-	pub fn new(capacity: usize, unused_sound_producer: HeapProducer<Box<dyn Sound>>) -> Self {
+	pub fn new(capacity: usize, unused_sound_producer: HeapProducer<Sound>) -> Self {
 		Self {
 			sounds: Arena::new(capacity),
 			unused_sound_producer,

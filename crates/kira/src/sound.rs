@@ -2,46 +2,36 @@
 Sources of audio.
 */
 
+mod handle;
+
+pub use handle::*;
+
 use crate::{
 	clock::clock_info::ClockInfoProvider, dsp::Frame,
 	modulator::value_provider::ModulatorValueProvider, OutputDestination,
 };
 
-/// A source of audio that is loaded, but not yet playing.
-pub trait SoundData {
-	/// Errors that can occur when starting the sound.
-	type Error;
+pub struct Sound;
 
-	/// The type that can be used to control the sound once
-	/// it has started.
-	type Handle;
+impl Sound {
+	pub fn output_destination(&mut self) -> OutputDestination {
+		todo!()
+	}
 
-	/// Converts the loaded sound into a live, playing sound
-	/// and a handle to control it.
-	#[allow(clippy::type_complexity)]
-	fn into_sound(self) -> Result<(Box<dyn Sound>, Self::Handle), Self::Error>;
-}
+	pub(crate) fn on_start_processing(&mut self) {
+		todo!()
+	}
 
-/// An actively playing sound.
-#[allow(unused_variables)]
-pub trait Sound: Send {
-	/// Returns the destination that this sound's audio should be routed to.
-	fn output_destination(&mut self) -> OutputDestination;
-
-	/// Called whenever a new batch of audio samples is requested by the backend.
-	///
-	/// This is a good place to put code that needs to run fairly frequently,
-	/// but not for every single audio sample.
-	fn on_start_processing(&mut self) {}
-
-	/// Produces the next [`Frame`] of audio.
-	fn process(
+	pub(crate) fn process(
 		&mut self,
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
-	) -> Frame;
+	) -> Frame {
+		todo!()
+	}
 
-	/// Returns `true` if the sound is finished and can be unloaded.
-	fn finished(&self) -> bool;
+	pub(crate) fn finished(&self) -> bool {
+		todo!()
+	}
 }

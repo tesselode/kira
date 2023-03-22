@@ -22,7 +22,7 @@ use self::{
 };
 
 pub(crate) struct UnusedResourceProducers {
-	pub sound: HeapProducer<Box<dyn Sound>>,
+	pub sound: HeapProducer<Sound>,
 	pub sub_track: HeapProducer<Track>,
 	pub clock: HeapProducer<Clock>,
 	pub spatial_scene: HeapProducer<SpatialScene>,
@@ -30,7 +30,7 @@ pub(crate) struct UnusedResourceProducers {
 }
 
 pub(crate) struct UnusedResourceConsumers {
-	pub sound: HeapConsumer<Box<dyn Sound>>,
+	pub sound: HeapConsumer<Sound>,
 	pub sub_track: HeapConsumer<Track>,
 	pub clock: HeapConsumer<Clock>,
 	pub spatial_scene: HeapConsumer<SpatialScene>,

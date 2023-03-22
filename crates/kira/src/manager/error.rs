@@ -10,30 +10,25 @@ use crate::error::CommandError;
 /// Errors that can occur when playing a sound.
 #[derive(Debug)]
 #[non_exhaustive]
-pub enum PlaySoundError<E> {
+pub enum PlaySoundError {
 	/// Could not play a sound because the maximum number of sounds has been reached.
 	SoundLimitReached,
-	/// An error occurred when initializing the sound.
-	IntoSoundError(E),
 	/// An error occured when sending a command to the audio thread.
 	CommandError(CommandError),
 }
 
-impl<E> Display for PlaySoundError<E> {
+impl Display for PlaySoundError {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		match self {
 			PlaySoundError::SoundLimitReached => f.write_str(
 				"Could not play a sound because the maximum number of sounds has been reached.",
 			),
-			PlaySoundError::IntoSoundError(_) => {
-				f.write_str("An error occurred when initializing the sound.")
-			}
 			PlaySoundError::CommandError(error) => error.fmt(f),
 		}
 	}
 }
 
-impl<E: std::fmt::Debug> Error for PlaySoundError<E> {
+impl Error for PlaySoundError {
 	fn source(&self) -> Option<&(dyn Error + 'static)> {
 		match self {
 			PlaySoundError::CommandError(error) => Some(error),
@@ -42,7 +37,7 @@ impl<E: std::fmt::Debug> Error for PlaySoundError<E> {
 	}
 }
 
-impl<E> From<CommandError> for PlaySoundError<E> {
+impl From<CommandError> for PlaySoundError {
 	fn from(v: CommandError) -> Self {
 		Self::CommandError(v)
 	}
