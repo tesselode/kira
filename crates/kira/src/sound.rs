@@ -4,20 +4,30 @@ Sources of audio.
 
 mod data;
 mod handle;
+mod settings;
 
 pub use data::*;
 pub use handle::*;
+pub use settings::*;
+
+use ringbuf::HeapConsumer;
 
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::{interpolate_frame, Frame},
 	modulator::value_provider::ModulatorValueProvider,
+	parameter::{Parameter, Value},
 	track::TrackId,
-	OutputDestination,
+	tween::Tween,
+	OutputDestination, PlaybackRate,
 };
+
+pub(crate) const COMMAND_CAPACITY: usize = 8;
 
 pub(crate) struct Sound {
 	data: Box<dyn SoundData>,
+	command_consumer: HeapConsumer<Command>,
+	playback_rate: Parameter<PlaybackRate>,
 	current_frame_index: usize,
 	fractional_playback_position: f64,
 	playback_state: PlaybackState,
@@ -25,9 +35,15 @@ pub(crate) struct Sound {
 }
 
 impl Sound {
-	pub fn new(data: Box<dyn SoundData>) -> Self {
+	pub fn new(
+		data: Box<dyn SoundData>,
+		settings: SoundSettings,
+		command_consumer: HeapConsumer<Command>,
+	) -> Self {
 		Self {
 			data,
+			command_consumer,
+			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate::Factor(1.0)),
 			current_frame_index: 0,
 			fractional_playback_position: 0.0,
 			playback_state: PlaybackState::Playing,
@@ -39,15 +55,25 @@ impl Sound {
 		OutputDestination::Track(TrackId::Main)
 	}
 
-	pub fn on_start_processing(&mut self) {}
+	pub fn on_start_processing(&mut self) {
+		while let Some(command) = self.command_consumer.pop() {
+			match command {
+				Command::SetPlaybackRate(target, tween) => self.playback_rate.set(target, tween),
+			}
+		}
+	}
 
 	pub fn process(
 		&mut self,
 		dt: f64,
-		_clock_info_provider: &ClockInfoProvider,
-		_modulator_value_provider: &ModulatorValueProvider,
+		clock_info_provider: &ClockInfoProvider,
+		modulator_value_provider: &ModulatorValueProvider,
 	) -> Frame {
-		self.fractional_playback_position += dt * self.data.sample_rate() as f64;
+		self.playback_rate
+			.update(dt, clock_info_provider, modulator_value_provider);
+
+		self.fractional_playback_position +=
+			dt * self.playback_rate.value().as_factor() * self.data.sample_rate() as f64;
 		while self.fractional_playback_position >= 1.0 {
 			self.fractional_playback_position -= 1.0;
 			self.advance_current_frame();
@@ -92,4 +118,8 @@ impl Sound {
 pub enum PlaybackState {
 	Playing,
 	Stopped,
+}
+
+pub(crate) enum Command {
+	SetPlaybackRate(Value<PlaybackRate>, Tween),
 }

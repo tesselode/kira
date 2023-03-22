@@ -16,7 +16,7 @@ use crate::{
 	manager::command::ModulatorCommand,
 	modulator::{ModulatorBuilder, ModulatorId},
 	parameter::Value,
-	sound::{Sound, SoundData, SoundHandle},
+	sound::{self, Sound, SoundData, SoundHandle, SoundSettings},
 	spatial::scene::{SpatialScene, SpatialSceneHandle, SpatialSceneId, SpatialSceneSettings},
 	track::{SubTrackId, Track, TrackBuilder, TrackHandle, TrackId},
 	tween::Tween,
@@ -100,18 +100,12 @@ impl<B: Backend> AudioManager<B> {
 	}
 
 	/// Plays a sound.
-	pub fn play(&mut self, data: impl SoundData + 'static) -> Result<SoundHandle, PlaySoundError> {
-		while self.unused_resource_consumers.sound.pop().is_some() {}
-		let key = self
-			.resource_controllers
-			.sound_controller
-			.try_reserve()
-			.map_err(|_| PlaySoundError::SoundLimitReached)?;
-		let sound = Sound::new(Box::new(data));
-		let handle = SoundHandle;
-		self.command_producer
-			.push(Command::Sound(SoundCommand::Add(key, sound)))?;
-		Ok(handle)
+	pub fn play(
+		&mut self,
+		data: impl SoundData + 'static,
+		settings: SoundSettings,
+	) -> Result<SoundHandle, PlaySoundError> {
+		self.play_inner(Box::new(data), settings)
 	}
 
 	/// Creates a mixer sub-track.
@@ -291,5 +285,24 @@ impl<B: Backend> AudioManager<B> {
 	/// Returns a mutable reference to this manager's backend.
 	pub fn backend_mut(&mut self) -> &mut B {
 		&mut self.backend
+	}
+
+	fn play_inner(
+		&mut self,
+		data: Box<dyn SoundData>,
+		settings: SoundSettings,
+	) -> Result<SoundHandle, PlaySoundError> {
+		while self.unused_resource_consumers.sound.pop().is_some() {}
+		let key = self
+			.resource_controllers
+			.sound_controller
+			.try_reserve()
+			.map_err(|_| PlaySoundError::SoundLimitReached)?;
+		let (command_producer, command_consumer) = HeapRb::new(sound::COMMAND_CAPACITY).split();
+		let sound = Sound::new(data, settings, command_consumer);
+		let handle = SoundHandle { command_producer };
+		self.command_producer
+			.push(Command::Sound(SoundCommand::Add(key, sound)))?;
+		Ok(handle)
 	}
 }
