@@ -1,3 +1,7 @@
+mod finite;
+
+pub use finite::*;
+
 use crate::{
 	clock::clock_info::ClockInfoProvider, dsp::Frame,
 	modulator::value_provider::ModulatorValueProvider, OutputDestination,
