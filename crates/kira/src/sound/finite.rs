@@ -9,6 +9,7 @@ use std::collections::VecDeque;
 
 pub use error::*;
 pub use handle::*;
+use ringbuf::HeapConsumer;
 pub use settings::*;
 pub use static_sound::*;
 
@@ -16,11 +17,15 @@ use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::{interpolate_frame, Frame},
 	modulator::value_provider::ModulatorValueProvider,
+	parameter::{Parameter, Value},
 	track::TrackId,
-	OutputDestination,
+	tween::Tween,
+	OutputDestination, PlaybackRate, Volume,
 };
 
 use super::Sound;
+
+const COMMAND_BUFFER_CAPACITY: usize = 8;
 
 trait FiniteSoundData: Send {
 	fn sample_rate(&mut self) -> u32;
@@ -34,6 +39,10 @@ trait FiniteSoundData: Send {
 
 struct FiniteSound {
 	data: Box<dyn FiniteSoundData>,
+	command_consumer: HeapConsumer<Command>,
+	volume: Parameter<Volume>,
+	playback_rate: Parameter<PlaybackRate>,
+	panning: Parameter<f64>,
 	buffer: VecDeque<Frame>,
 	playback_state: PlaybackState,
 	current_frame_index: usize,
@@ -41,10 +50,18 @@ struct FiniteSound {
 }
 
 impl FiniteSound {
-	fn new(mut data: Box<dyn FiniteSoundData>) -> Self {
+	fn new(
+		mut data: Box<dyn FiniteSoundData>,
+		settings: SoundSettings,
+		command_consumer: HeapConsumer<Command>,
+	) -> Self {
 		let buffer = (0..data.buffer_len()).map(|_| Frame::ZERO).collect();
 		Self {
 			data,
+			command_consumer,
+			volume: Parameter::new(settings.volume, Volume::Amplitude(1.0)),
+			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate::Factor(1.0)),
+			panning: Parameter::new(settings.panning, 0.5),
 			buffer,
 			playback_state: PlaybackState::Playing,
 			current_frame_index: 0,
@@ -71,11 +88,40 @@ impl FiniteSound {
 		self.buffer.push_back(next_frame);
 		self.update_playback_position();
 	}
+
+	fn update_parameters(
+		&mut self,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+		modulator_value_provider: &ModulatorValueProvider,
+	) {
+		self.volume
+			.update(dt, clock_info_provider, modulator_value_provider);
+		self.playback_rate
+			.update(dt, clock_info_provider, modulator_value_provider);
+		self.panning
+			.update(dt, clock_info_provider, modulator_value_provider);
+	}
 }
 
 impl Sound for FiniteSound {
 	fn output_destination(&mut self) -> OutputDestination {
 		OutputDestination::Track(TrackId::Main)
+	}
+
+	fn on_start_processing(&mut self) {
+		while let Some(command) = self.command_consumer.pop() {
+			match command {
+				Command::SetVolume(target, tween) => self.volume.set(target, tween),
+				Command::SetPlaybackRate(target, tween) => self.playback_rate.set(target, tween),
+				Command::SetPanning(target, tween) => self.panning.set(target, tween),
+				Command::Pause(_) => todo!(),
+				Command::Resume(_) => todo!(),
+				Command::Stop(_) => todo!(),
+				Command::SeekBy(_) => todo!(),
+				Command::SeekTo(_) => todo!(),
+			}
+		}
 	}
 
 	fn process(
@@ -84,7 +130,9 @@ impl Sound for FiniteSound {
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
 	) -> Frame {
-		self.fractional_playback_position += dt * self.data.sample_rate() as f64;
+		self.update_parameters(dt, clock_info_provider, modulator_value_provider);
+		self.fractional_playback_position +=
+			self.playback_rate.value().as_factor() * dt * self.data.sample_rate() as f64;
 		while self.fractional_playback_position >= 1.0 {
 			self.push_frame();
 			self.fractional_playback_position -= 1.0;
@@ -96,6 +144,8 @@ impl Sound for FiniteSound {
 			self.buffer[3],
 			self.fractional_playback_position as f32,
 		)
+		.panned(self.panning.value() as f32)
+			* self.volume.value().as_amplitude() as f32
 	}
 
 	fn finished(&self) -> bool {
@@ -108,4 +158,16 @@ impl Sound for FiniteSound {
 enum PlaybackState {
 	Playing,
 	Stopped,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum Command {
+	SetVolume(Value<Volume>, Tween),
+	SetPlaybackRate(Value<PlaybackRate>, Tween),
+	SetPanning(Value<f64>, Tween),
+	Pause(Tween),
+	Resume(Tween),
+	Stop(Tween),
+	SeekBy(f64),
+	SeekTo(f64),
 }

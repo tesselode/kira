@@ -7,12 +7,14 @@ use std::{
 	time::Duration,
 };
 
+use ringbuf::HeapRb;
+
 use crate::{
 	dsp::Frame,
 	sound::{Sound, SoundData},
 };
 
-use super::{FiniteSound, FiniteSoundData, SoundHandle, SoundSettings};
+use super::{FiniteSound, FiniteSoundData, SoundHandle, SoundSettings, COMMAND_BUFFER_CAPACITY};
 
 /// A piece of audio loaded into memory all at once.
 ///
@@ -121,15 +123,16 @@ impl StaticSoundData {
 	}
 
 	pub(super) fn split(self) -> (FiniteSound, SoundHandle) {
-		/* let (command_producer, command_consumer) = HeapRb::new(COMMAND_BUFFER_CAPACITY).split(); */
-		let sound = FiniteSound::new(Box::new(self) /* command_consumer */);
+		let (command_producer, command_consumer) = HeapRb::new(COMMAND_BUFFER_CAPACITY).split();
+		let settings = self.settings;
+		let sound = FiniteSound::new(Box::new(self), settings, command_consumer);
 		/* let shared = sound.shared(); */
 		(
 			sound,
-			SoundHandle, /*  {
-							 command_producer,
-							 shared,
-						 } */
+			SoundHandle {
+				command_producer,
+				//  shared,
+			},
 		)
 	}
 }
