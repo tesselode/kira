@@ -6,12 +6,13 @@ use crate::{
 };
 use ringbuf::{HeapConsumer, HeapProducer};
 
-use super::{sound::Shared, Command};
+use super::{sound::Shared, DecodeSchedulerCommand, SoundCommand};
 
 /// Controls a streaming sound.
 pub struct StreamingSoundHandle<Error> {
 	pub(crate) shared: Arc<Shared>,
-	pub(crate) command_producer: HeapProducer<Command>,
+	pub(crate) sound_command_producer: HeapProducer<SoundCommand>,
+	pub(crate) decode_scheduler_command_producer: HeapProducer<DecodeSchedulerCommand>,
 	pub(crate) error_consumer: HeapConsumer<Error>,
 }
 
@@ -32,8 +33,8 @@ impl<Error> StreamingSoundHandle<Error> {
 		volume: impl Into<Value<Volume>>,
 		tween: Tween,
 	) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::SetVolume(volume.into(), tween))
+		self.sound_command_producer
+			.push(SoundCommand::SetVolume(volume.into(), tween))
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
@@ -46,8 +47,8 @@ impl<Error> StreamingSoundHandle<Error> {
 		playback_rate: impl Into<Value<PlaybackRate>>,
 		tween: Tween,
 	) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::SetPlaybackRate(playback_rate.into(), tween))
+		self.sound_command_producer
+			.push(SoundCommand::SetPlaybackRate(playback_rate.into(), tween))
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
@@ -58,24 +59,24 @@ impl<Error> StreamingSoundHandle<Error> {
 		panning: impl Into<Value<f64>>,
 		tween: Tween,
 	) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::SetPanning(panning.into(), tween))
+		self.sound_command_producer
+			.push(SoundCommand::SetPanning(panning.into(), tween))
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
 	/// Fades out the sound to silence with the given tween and then
 	/// pauses playback.
 	pub fn pause(&mut self, tween: Tween) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::Pause(tween))
+		self.sound_command_producer
+			.push(SoundCommand::Pause(tween))
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
 	/// Resumes playback and fades in the sound from silence
 	/// with the given tween.
 	pub fn resume(&mut self, tween: Tween) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::Resume(tween))
+		self.sound_command_producer
+			.push(SoundCommand::Resume(tween))
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
@@ -84,22 +85,22 @@ impl<Error> StreamingSoundHandle<Error> {
 	///
 	/// Once the sound is stopped, it cannot be restarted.
 	pub fn stop(&mut self, tween: Tween) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::Stop(tween))
+		self.sound_command_producer
+			.push(SoundCommand::Stop(tween))
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
 	/// Sets the playback position to the specified time in seconds.
 	pub fn seek_to(&mut self, position: f64) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::SeekTo(position))
+		self.decode_scheduler_command_producer
+			.push(DecodeSchedulerCommand::SeekTo(position))
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
 	/// Moves the playback position by the specified amount of time in seconds.
 	pub fn seek_by(&mut self, amount: f64) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::SeekBy(amount))
+		self.decode_scheduler_command_producer
+			.push(DecodeSchedulerCommand::SeekBy(amount))
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 

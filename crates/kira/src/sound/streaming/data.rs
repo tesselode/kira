@@ -1,12 +1,14 @@
 use std::fs::File;
 use std::io::Cursor;
 use std::path::Path;
+use std::sync::Arc;
 
 use crate::sound::FromFileError;
 use crate::sound::SoundData;
 use ringbuf::HeapRb;
 
 use super::decoder::symphonia::SymphoniaDecoder;
+use super::sound::Shared;
 use super::{StreamingSoundHandle, StreamingSoundSettings};
 
 use super::{
@@ -59,21 +61,32 @@ impl<Error: Send + 'static> StreamingSoundData<Error> {
 		),
 		Error,
 	> {
-		let (command_producer, command_consumer) = HeapRb::new(COMMAND_BUFFER_CAPACITY).split();
+		let (sound_command_producer, sound_command_consumer) =
+			HeapRb::new(COMMAND_BUFFER_CAPACITY).split();
+		let (decode_scheduler_command_producer, decode_scheduler_command_consumer) =
+			HeapRb::new(COMMAND_BUFFER_CAPACITY).split();
 		let (error_producer, error_consumer) = HeapRb::new(ERROR_BUFFER_CAPACITY).split();
 		let sample_rate = self.decoder.sample_rate();
-		let (scheduler, scheduler_controller) =
-			DecodeScheduler::new(self.decoder, self.settings, error_producer)?;
-		let sound = StreamingSound::new(
-			command_consumer,
-			scheduler_controller,
+		let shared = Arc::new(Shared::new());
+		let (scheduler, frame_consumer) = DecodeScheduler::new(
+			self.decoder,
 			self.settings,
+			shared.clone(),
+			decode_scheduler_command_consumer,
+			error_producer,
+		)?;
+		let sound = StreamingSound::new(
 			sample_rate,
+			self.settings,
+			shared.clone(),
+			frame_consumer,
+			sound_command_consumer,
 			&scheduler,
 		);
 		let handle = StreamingSoundHandle {
-			shared: sound.shared(),
-			command_producer,
+			shared,
+			sound_command_producer,
+			decode_scheduler_command_producer,
 			error_consumer,
 		};
 		Ok((sound, handle, scheduler))

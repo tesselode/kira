@@ -21,13 +21,17 @@ pub use settings::*;
 use crate::{parameter::Value, tween::Tween, PlaybackRate, Volume};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) enum Command {
+pub(crate) enum SoundCommand {
 	SetVolume(Value<Volume>, Tween),
 	SetPlaybackRate(Value<PlaybackRate>, Tween),
 	SetPanning(Value<f64>, Tween),
 	Pause(Tween),
 	Resume(Tween),
 	Stop(Tween),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) enum DecodeSchedulerCommand {
 	SeekBy(f64),
 	SeekTo(f64),
 }
