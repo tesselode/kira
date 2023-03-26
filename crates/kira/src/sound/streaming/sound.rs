@@ -61,7 +61,7 @@ impl Shared {
 pub(crate) struct StreamingSound {
 	command_consumer: HeapConsumer<SoundCommand>,
 	sample_rate: u32,
-	frame_consumer: HeapConsumer<(i64, Frame)>,
+	frame_consumer: HeapConsumer<TimestampedFrame>,
 	output_destination: OutputDestination,
 	start_time: StartTime,
 	state: PlaybackState,
@@ -80,7 +80,7 @@ impl StreamingSound {
 		sample_rate: u32,
 		settings: StreamingSoundSettings,
 		shared: Arc<Shared>,
-		frame_consumer: HeapConsumer<(i64, Frame)>,
+		frame_consumer: HeapConsumer<TimestampedFrame>,
 		command_consumer: HeapConsumer<SoundCommand>,
 		scheduler: &DecodeScheduler<Error>,
 	) -> Self {
@@ -120,7 +120,7 @@ impl StreamingSound {
 		let current_frame = &mut self.current_frame;
 		let (a, b) = self.frame_consumer.as_slices();
 		let mut iter = a.iter().chain(b.iter());
-		if let Some((index, _)) = iter.nth(1) {
+		if let Some(TimestampedFrame { index, .. }) = iter.nth(1) {
 			*current_frame = *index;
 		}
 	}
@@ -133,7 +133,7 @@ impl StreamingSound {
 			*frame = iter
 				.next()
 				.copied()
-				.map(|(_, frame)| frame)
+				.map(|TimestampedFrame { frame, .. }| frame)
 				.unwrap_or(Frame::ZERO);
 		}
 		frames
@@ -267,4 +267,10 @@ impl Sound for StreamingSound {
 	fn finished(&self) -> bool {
 		self.state == PlaybackState::Stopped
 	}
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct TimestampedFrame {
+	frame: Frame,
+	index: i64,
 }

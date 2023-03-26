@@ -15,7 +15,7 @@ use crate::{
 };
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 
-use super::Shared;
+use super::{Shared, TimestampedFrame};
 
 const BUFFER_SIZE: usize = 16_384;
 const DECODER_THREAD_SLEEP_DURATION: Duration = Duration::from_millis(1);
@@ -31,9 +31,9 @@ pub(crate) struct DecodeScheduler<Error: Send + 'static> {
 	command_consumer: HeapConsumer<DecodeSchedulerCommand>,
 	sample_rate: u32,
 	loop_behavior: Option<LoopBehavior>,
-	frame_producer: HeapProducer<(i64, Frame)>,
+	frame_producer: HeapProducer<TimestampedFrame>,
 	decoded_frames: VecDeque<Frame>,
-	current_frame: i64,
+	current_frame_index: i64,
 	error_producer: HeapProducer<Error>,
 	shared: Arc<Shared>,
 }
@@ -45,12 +45,15 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		shared: Arc<Shared>,
 		command_consumer: HeapConsumer<DecodeSchedulerCommand>,
 		error_producer: HeapProducer<Error>,
-	) -> Result<(Self, HeapConsumer<(i64, Frame)>), Error> {
+	) -> Result<(Self, HeapConsumer<TimestampedFrame>), Error> {
 		let (mut frame_producer, frame_consumer) = HeapRb::new(BUFFER_SIZE).split();
 		// pre-seed the frame ringbuffer with a zero frame. this is the "previous" frame
 		// when the sound just started.
 		frame_producer
-			.push((0, Frame::ZERO))
+			.push(TimestampedFrame {
+				frame: Frame::ZERO,
+				index: 0,
+			})
 			.expect("The frame producer shouldn't be full because we just created it");
 		let sample_rate = decoder.sample_rate();
 		let mut scheduler = Self {
@@ -60,7 +63,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 			loop_behavior: settings.loop_behavior,
 			frame_producer,
 			decoded_frames: VecDeque::new(),
-			current_frame: 0,
+			current_frame_index: 0,
 			error_producer,
 			shared,
 		};
@@ -69,7 +72,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 	}
 
 	pub fn current_frame(&self) -> i64 {
-		self.current_frame
+		self.current_frame_index
 	}
 
 	pub fn start(mut self) {
@@ -107,15 +110,21 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		// those first
 		if let Some(frame) = self.decoded_frames.pop_front() {
 			self.frame_producer
-				.push((self.current_frame, frame))
+				.push(TimestampedFrame {
+					frame,
+					index: self.current_frame_index,
+				})
 				.expect("Frame producer should not be full because we just checked that");
-			self.current_frame += 1;
+			self.current_frame_index += 1;
 		// otherwise, if the current position is negative, push silence
-		} else if self.current_frame < 0 {
+		} else if self.current_frame_index < 0 {
 			self.frame_producer
-				.push((self.current_frame, Frame::ZERO))
+				.push(TimestampedFrame {
+					frame: Frame::ZERO,
+					index: self.current_frame_index,
+				})
 				.expect("Frame producer should not be full because we just checked that");
-			self.current_frame += 1;
+			self.current_frame_index += 1;
 		// otherwise, decode some new frames
 		} else {
 			let reached_end_of_file = self.decoder.decode(&mut self.decoded_frames)?;
@@ -148,11 +157,11 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 
 	fn seek_to_index(&mut self, index: i64) -> Result<(), Error> {
 		if index < 0 {
-			self.current_frame = index;
+			self.current_frame_index = index;
 			self.decoder.seek(0)?;
 		} else {
 			let desired_index = index.try_into().expect("can't convert i64 to u64");
-			self.current_frame = self
+			self.current_frame_index = self
 				.decoder
 				.seek(desired_index)?
 				.try_into()

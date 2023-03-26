@@ -9,7 +9,9 @@ pub(crate) trait Decoder: Send {
 
 	fn sample_rate(&self) -> u32;
 
-	fn decode(&mut self, frames: &mut VecDeque<Frame>) -> Result<bool, Self::Error>;
+	fn decode(&mut self, frames: &mut VecDeque<Frame>) -> Result<ReachedEndOfAudio, Self::Error>;
 
 	fn seek(&mut self, index: u64) -> Result<u64, Self::Error>;
 }
+
+type ReachedEndOfAudio = bool;
