@@ -18,7 +18,7 @@ use crate::{
 	dsp::Frame,
 	modulator::value_provider::ModulatorValueProvider,
 	parameter::{Parameter, Value},
-	sound::Sound,
+	sound::{util::create_volume_fade_parameter, Sound},
 	tween::Tween,
 	LoopBehavior, OutputDestination, PlaybackRate, StartTime, Volume,
 };
@@ -62,7 +62,7 @@ impl StaticSound {
 			volume: Parameter::new(settings.volume, Volume::Amplitude(1.0)),
 			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate::Factor(1.0)),
 			panning: Parameter::new(settings.panning, 0.5),
-			volume_fade: create_volume_fade_parameter(settings),
+			volume_fade: create_volume_fade_parameter(settings.fade_in_tween),
 			shared: Arc::new(Shared {
 				state: AtomicU8::new(PlaybackState::Playing as u8),
 				position: AtomicU64::new(position.to_bits()),
@@ -380,18 +380,5 @@ fn starting_frame_index(settings: StaticSoundSettings, data: &StaticSoundData) -
 		(position_seconds * data.sample_rate as f64) as i64 - 1
 	} else {
 		(settings.start_position * data.sample_rate as f64) as i64
-	}
-}
-
-fn create_volume_fade_parameter(settings: StaticSoundSettings) -> Parameter<Volume> {
-	if let Some(tween) = settings.fade_in_tween {
-		let mut tweenable = Parameter::new(
-			Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)),
-			Volume::Decibels(Volume::MIN_DECIBELS),
-		);
-		tweenable.set(Value::Fixed(Volume::Decibels(0.0)), tween);
-		tweenable
-	} else {
-		Parameter::new(Value::Fixed(Volume::Decibels(0.0)), Volume::Decibels(0.0))
 	}
 }

@@ -13,7 +13,7 @@ use crate::{
 	dsp::{interpolate_frame, Frame},
 	modulator::value_provider::ModulatorValueProvider,
 	parameter::{Parameter, Value},
-	sound::{static_sound::PlaybackState, Sound},
+	sound::{static_sound::PlaybackState, util::create_volume_fade_parameter, Sound},
 	tween::Tween,
 	OutputDestination, PlaybackRate, StartTime, Volume,
 };
@@ -101,16 +101,7 @@ impl StreamingSound {
 			} else {
 				WhenToStart::Now
 			},
-			volume_fade: if let Some(tween) = settings.fade_in_tween {
-				let mut tweenable = Parameter::new(
-					Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)),
-					Volume::Decibels(Volume::MIN_DECIBELS),
-				);
-				tweenable.set(Value::Fixed(Volume::Decibels(0.0)), tween);
-				tweenable
-			} else {
-				Parameter::new(Value::Fixed(Volume::Decibels(0.0)), Volume::Decibels(0.0))
-			},
+			volume_fade: create_volume_fade_parameter(settings.fade_in_tween),
 			current_frame,
 			fractional_position: 0.0,
 			volume: Parameter::new(settings.volume, Volume::Amplitude(1.0)),

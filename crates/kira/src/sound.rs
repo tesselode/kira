@@ -7,6 +7,7 @@ mod error;
 pub mod static_sound;
 #[cfg(all(feature = "symphonia", not(target_arch = "wasm32")))]
 pub mod streaming;
+mod util;
 
 #[cfg(feature = "symphonia")]
 pub use error::*;
