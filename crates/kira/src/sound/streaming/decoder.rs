@@ -1,7 +1,5 @@
 pub(crate) mod symphonia;
 
-use std::collections::VecDeque;
-
 use crate::dsp::Frame;
 
 pub(crate) trait Decoder: Send {
@@ -9,9 +7,14 @@ pub(crate) trait Decoder: Send {
 
 	fn sample_rate(&self) -> u32;
 
-	fn decode(&mut self, frames: &mut VecDeque<Frame>) -> Result<ReachedEndOfAudio, Self::Error>;
+	fn decode(&mut self) -> Result<DecodeResponse, Self::Error>;
 
-	fn seek(&mut self, index: u64) -> Result<u64, Self::Error>;
+	fn seek(&mut self, index: u64) -> Result<SeekedToIndex, Self::Error>;
 }
 
-type ReachedEndOfAudio = bool;
+pub(crate) enum DecodeResponse {
+	DecodedFrames(Vec<Frame>),
+	ReachedEndOfAudio,
+}
+
+type SeekedToIndex = u64;

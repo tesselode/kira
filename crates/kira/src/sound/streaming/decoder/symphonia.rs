@@ -1,5 +1,3 @@
-use std::collections::VecDeque;
-
 use crate::{dsp::Frame, sound::FromFileError};
 use symphonia::core::{
 	audio::{AudioBuffer, AudioBufferRef, Signal},
@@ -10,6 +8,8 @@ use symphonia::core::{
 	probe::Hint,
 	sample::Sample,
 };
+
+use super::DecodeResponse;
 
 pub(crate) struct SymphoniaDecoder {
 	format_reader: Box<dyn FormatReader>,
@@ -56,23 +56,25 @@ impl super::Decoder for SymphoniaDecoder {
 		self.sample_rate
 	}
 
-	fn decode(&mut self, frames: &mut VecDeque<Frame>) -> Result<bool, Self::Error> {
+	fn decode(&mut self) -> Result<DecodeResponse, Self::Error> {
 		match self.format_reader.next_packet() {
 			Ok(packet) => {
 				let buffer = self.decoder.decode(&packet)?;
-				load_frames_from_buffer_ref(frames, &buffer)?;
+				Ok(DecodeResponse::DecodedFrames(load_frames_from_buffer_ref(
+					&buffer,
+				)?))
 			}
 			Err(error) => match error {
 				symphonia::core::errors::Error::IoError(error) => {
 					if error.kind() == std::io::ErrorKind::UnexpectedEof {
-						return Ok(true);
+						Ok(DecodeResponse::ReachedEndOfAudio)
+					} else {
+						Err(symphonia::core::errors::Error::IoError(error).into())
 					}
-					return Err(symphonia::core::errors::Error::IoError(error).into());
 				}
-				error => return Err(error.into()),
+				error => Err(error.into()),
 			},
 		}
-		Ok(false)
 	}
 
 	fn seek(&mut self, index: u64) -> Result<u64, Self::Error> {
@@ -87,43 +89,37 @@ impl super::Decoder for SymphoniaDecoder {
 	}
 }
 
-fn load_frames_from_buffer_ref(
-	frames: &mut VecDeque<Frame>,
-	buffer: &AudioBufferRef,
-) -> Result<(), FromFileError> {
+fn load_frames_from_buffer_ref(buffer: &AudioBufferRef) -> Result<Vec<Frame>, FromFileError> {
 	match buffer {
-		AudioBufferRef::U8(buffer) => load_frames_from_buffer(frames, buffer),
-		AudioBufferRef::U16(buffer) => load_frames_from_buffer(frames, buffer),
-		AudioBufferRef::U24(buffer) => load_frames_from_buffer(frames, buffer),
-		AudioBufferRef::U32(buffer) => load_frames_from_buffer(frames, buffer),
-		AudioBufferRef::S8(buffer) => load_frames_from_buffer(frames, buffer),
-		AudioBufferRef::S16(buffer) => load_frames_from_buffer(frames, buffer),
-		AudioBufferRef::S24(buffer) => load_frames_from_buffer(frames, buffer),
-		AudioBufferRef::S32(buffer) => load_frames_from_buffer(frames, buffer),
-		AudioBufferRef::F32(buffer) => load_frames_from_buffer(frames, buffer),
-		AudioBufferRef::F64(buffer) => load_frames_from_buffer(frames, buffer),
+		AudioBufferRef::U8(buffer) => load_frames_from_buffer(buffer),
+		AudioBufferRef::U16(buffer) => load_frames_from_buffer(buffer),
+		AudioBufferRef::U24(buffer) => load_frames_from_buffer(buffer),
+		AudioBufferRef::U32(buffer) => load_frames_from_buffer(buffer),
+		AudioBufferRef::S8(buffer) => load_frames_from_buffer(buffer),
+		AudioBufferRef::S16(buffer) => load_frames_from_buffer(buffer),
+		AudioBufferRef::S24(buffer) => load_frames_from_buffer(buffer),
+		AudioBufferRef::S32(buffer) => load_frames_from_buffer(buffer),
+		AudioBufferRef::F32(buffer) => load_frames_from_buffer(buffer),
+		AudioBufferRef::F64(buffer) => load_frames_from_buffer(buffer),
 	}
 }
 
-fn load_frames_from_buffer<S: Sample>(
-	frames: &mut VecDeque<Frame>,
-	buffer: &AudioBuffer<S>,
-) -> Result<(), FromFileError>
+fn load_frames_from_buffer<S: Sample>(buffer: &AudioBuffer<S>) -> Result<Vec<Frame>, FromFileError>
 where
 	f32: FromSample<S>,
 {
 	match buffer.spec().channels.count() {
-		1 => {
-			for sample in buffer.chan(0) {
-				frames.push_back(Frame::from_mono((*sample).into_sample()));
-			}
-		}
-		2 => {
-			for (left, right) in buffer.chan(0).iter().zip(buffer.chan(1).iter()) {
-				frames.push_back(Frame::new((*left).into_sample(), (*right).into_sample()));
-			}
-		}
-		_ => return Err(FromFileError::UnsupportedChannelConfiguration),
+		1 => Ok(buffer
+			.chan(0)
+			.iter()
+			.map(|sample| Frame::from_mono((*sample).into_sample()))
+			.collect()),
+		2 => Ok(buffer
+			.chan(0)
+			.iter()
+			.zip(buffer.chan(1).iter())
+			.map(|(left, right)| Frame::new((*left).into_sample(), (*right).into_sample()))
+			.collect()),
+		_ => Err(FromFileError::UnsupportedChannelConfiguration),
 	}
-	Ok(())
 }

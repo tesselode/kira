@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, time::Duration};
+use std::time::Duration;
 
 use crate::{
 	clock::{
@@ -9,7 +9,10 @@ use crate::{
 	modulator::value_provider::MockModulatorValueProviderBuilder,
 	sound::{
 		static_sound::PlaybackState,
-		streaming::{decoder::Decoder, StreamingSoundData, StreamingSoundSettings},
+		streaming::{
+			decoder::{DecodeResponse, Decoder},
+			StreamingSoundData, StreamingSoundSettings,
+		},
 		Sound,
 	},
 	tween::Tween,
@@ -42,18 +45,19 @@ impl Decoder for MockDecoder {
 		MOCK_DECODER_SAMPLE_RATE
 	}
 
-	fn decode(&mut self, frames: &mut VecDeque<Frame>) -> Result<bool, Self::Error> {
+	fn decode(&mut self) -> Result<DecodeResponse, Self::Error> {
 		if self.current_frame_index >= self.frames.len() {
-			return Ok(true);
+			return Ok(DecodeResponse::ReachedEndOfAudio);
 		}
+		let mut frames = vec![];
 		for _ in 0..MOCK_DECODER_PACKET_SIZE {
-			frames.push_back(self.frames[self.current_frame_index]);
+			frames.push(self.frames[self.current_frame_index]);
 			self.current_frame_index += 1;
 			if self.current_frame_index >= self.frames.len() {
 				break;
 			}
 		}
-		Ok(false)
+		Ok(DecodeResponse::DecodedFrames(frames))
 	}
 
 	fn seek(&mut self, index: u64) -> Result<u64, Self::Error> {

@@ -9,7 +9,10 @@ use crate::{
 	dsp::Frame,
 	sound::{
 		static_sound::PlaybackState,
-		streaming::{decoder::Decoder, DecodeSchedulerCommand, StreamingSoundSettings},
+		streaming::{
+			decoder::{DecodeResponse, Decoder},
+			DecodeSchedulerCommand, StreamingSoundSettings,
+		},
 	},
 	LoopBehavior,
 };
@@ -127,16 +130,20 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 			self.current_frame_index += 1;
 		// otherwise, decode some new frames
 		} else {
-			let reached_end_of_file = self.decoder.decode(&mut self.decoded_frames)?;
-			if reached_end_of_file {
-				// if there aren't any new frames and the sound is looping,
-				// seek back to the loop position
-				if let Some(LoopBehavior { start_position }) = self.loop_behavior {
-					self.seek_to(start_position)?;
-				// otherwise, tell the sound to finish and end the thread
-				} else {
-					self.shared.reached_end.store(true, Ordering::SeqCst);
-					return Ok(NextStep::End);
+			match self.decoder.decode()? {
+				DecodeResponse::DecodedFrames(frames) => {
+					self.decoded_frames.extend(frames.iter().copied());
+				}
+				DecodeResponse::ReachedEndOfAudio => {
+					// if there aren't any new frames and the sound is looping,
+					// seek back to the loop position
+					if let Some(LoopBehavior { start_position }) = self.loop_behavior {
+						self.seek_to(start_position)?;
+					// otherwise, tell the sound to finish and end the thread
+					} else {
+						self.shared.reached_end.store(true, Ordering::SeqCst);
+						return Ok(NextStep::End);
+					}
 				}
 			}
 		}
