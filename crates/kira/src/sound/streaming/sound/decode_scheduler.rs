@@ -8,11 +8,11 @@ use std::{
 use crate::{
 	dsp::Frame,
 	sound::{
-		static_sound::PlaybackState,
 		streaming::{
 			decoder::{DecodeResponse, Decoder},
 			DecodeSchedulerCommand, StreamingSoundSettings,
 		},
+		PlaybackState,
 	},
 	LoopBehavior,
 };

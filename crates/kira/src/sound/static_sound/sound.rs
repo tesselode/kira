@@ -18,7 +18,7 @@ use crate::{
 	dsp::Frame,
 	modulator::value_provider::ModulatorValueProvider,
 	parameter::{Parameter, Value},
-	sound::{util::create_volume_fade_parameter, Sound},
+	sound::{util::create_volume_fade_parameter, PlaybackState, Sound},
 	tween::Tween,
 	LoopBehavior, OutputDestination, PlaybackRate, StartTime, Volume,
 };
@@ -333,23 +333,6 @@ impl Sound for StaticSound {
 	fn finished(&self) -> bool {
 		self.state == PlaybackState::Stopped && self.resampler.outputting_silence()
 	}
-}
-
-/// The playback state of a sound.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum PlaybackState {
-	/// The sound is playing normally.
-	Playing,
-	/// The sound is fading out, and when the fade-out
-	/// is finished, playback will pause.
-	Pausing,
-	/// Playback is paused.
-	Paused,
-	/// The sound is fading out, and when the fade-out
-	/// is finished, playback will stop.
-	Stopping,
-	/// The sound has stopped and can no longer be resumed.
-	Stopped,
 }
 
 pub(super) struct Shared {

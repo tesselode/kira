@@ -13,7 +13,7 @@ use crate::{
 	dsp::{interpolate_frame, Frame},
 	modulator::value_provider::ModulatorValueProvider,
 	parameter::{Parameter, Value},
-	sound::{static_sound::PlaybackState, util::create_volume_fade_parameter, Sound},
+	sound::{util::create_volume_fade_parameter, PlaybackState, Sound},
 	tween::Tween,
 	OutputDestination, PlaybackRate, StartTime, Volume,
 };

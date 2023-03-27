@@ -2,9 +2,11 @@ use std::sync::Arc;
 
 use ringbuf::HeapProducer;
 
-use crate::{parameter::Value, tween::Tween, CommandError, PlaybackRate, Volume};
+use crate::{
+	parameter::Value, sound::PlaybackState, tween::Tween, CommandError, PlaybackRate, Volume,
+};
 
-use super::{sound::Shared, Command, PlaybackState};
+use super::{sound::Shared, Command};
 
 /// Controls a static sound.
 pub struct StaticSoundHandle {

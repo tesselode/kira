@@ -57,3 +57,20 @@ pub trait Sound: Send {
 	/// Returns `true` if the sound is finished and can be unloaded.
 	fn finished(&self) -> bool;
 }
+
+/// The playback state of a sound.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PlaybackState {
+	/// The sound is playing normally.
+	Playing,
+	/// The sound is fading out, and when the fade-out
+	/// is finished, playback will pause.
+	Pausing,
+	/// Playback is paused.
+	Paused,
+	/// The sound is fading out, and when the fade-out
+	/// is finished, playback will stop.
+	Stopping,
+	/// The sound has stopped and can no longer be resumed.
+	Stopped,
+}

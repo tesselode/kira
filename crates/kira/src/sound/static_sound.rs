@@ -8,7 +8,6 @@ mod sound;
 pub use data::*;
 pub use handle::*;
 pub use settings::*;
-pub use sound::PlaybackState;
 
 use crate::{parameter::Value, tween::Tween, PlaybackRate, Volume};
 

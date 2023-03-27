@@ -8,12 +8,11 @@ use crate::{
 	dsp::Frame,
 	modulator::value_provider::MockModulatorValueProviderBuilder,
 	sound::{
-		static_sound::PlaybackState,
 		streaming::{
 			decoder::{DecodeResponse, Decoder},
 			StreamingSoundData, StreamingSoundSettings,
 		},
-		Sound,
+		PlaybackState, Sound,
 	},
 	tween::Tween,
 	LoopBehavior, StartTime, Volume,
