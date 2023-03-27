@@ -9,6 +9,7 @@ pub mod static_sound;
 pub mod streaming;
 #[cfg(feature = "symphonia")]
 mod symphonia;
+mod transport;
 mod util;
 
 #[cfg(feature = "symphonia")]
