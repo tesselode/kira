@@ -12,7 +12,7 @@ use crate::{
 		PlaybackState, Sound,
 	},
 	tween::Tween,
-	LoopBehavior, StartTime, Volume,
+	StartTime, Volume,
 };
 
 use super::StaticSound;
@@ -99,7 +99,7 @@ fn reports_playback_position() {
 	for i in 0..20 {
 		assert_eq!(
 			handle.position(),
-			i.clamp(0, 9) as f64 / sound.data.sample_rate as f64
+			i.clamp(0, 10) as f64 / sound.data.sample_rate as f64
 		);
 		sound.process(
 			1.0,
@@ -551,26 +551,40 @@ fn immediate_pause_resume_and_stop_with_clock_start_time() {
 	assert!(sound.state == PlaybackState::Stopped);
 }
 
-/// Tests that a `StaticSound` can be started partway through the sound.
+/// Tests that a `StaticSound` can be played partially.
 #[test]
 #[allow(clippy::float_cmp)]
-fn start_position() {
+fn playback_region() {
 	let data = StaticSoundData {
 		sample_rate: 1,
 		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
-		settings: StaticSoundSettings::new().start_position(3.0),
+		settings: StaticSoundSettings::new().playback_region(3.0..=6.0),
 	};
 	let (mut sound, handle) = data.split();
 
-	assert_eq!(handle.position(), 3.0);
-	assert_eq!(
-		sound.process(
-			1.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
-		Frame::from_mono(3.0).panned(0.5)
-	);
+	for i in 3..=6 {
+		assert_eq!(handle.position(), i as f64);
+		assert_eq!(
+			sound.process(
+				1.0,
+				&MockClockInfoProviderBuilder::new(0).build(),
+				&MockModulatorValueProviderBuilder::new(0).build()
+			),
+			Frame::from_mono(i as f32).panned(0.5)
+		);
+		sound.on_start_processing();
+	}
+	assert_eq!(handle.state(), PlaybackState::Stopped);
+	for _ in 0..3 {
+		assert_eq!(
+			sound.process(
+				1.0,
+				&MockClockInfoProviderBuilder::new(0).build(),
+				&MockModulatorValueProviderBuilder::new(0).build()
+			),
+			Frame::ZERO
+		);
+	}
 }
 
 /// Tests that a `StaticSound` can be started with a negative position.
@@ -580,7 +594,7 @@ fn negative_start_position() {
 	let data = StaticSoundData {
 		sample_rate: 1,
 		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
-		settings: StaticSoundSettings::new().start_position(-5.0),
+		settings: StaticSoundSettings::new().playback_region(-5.0..),
 	};
 	let (mut sound, _) = data.split();
 
@@ -605,7 +619,7 @@ fn out_of_bounds_start_position() {
 	let data = StaticSoundData {
 		sample_rate: 1,
 		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
-		settings: StaticSoundSettings::new().start_position(15.0),
+		settings: StaticSoundSettings::new().playback_region(15.0..),
 	};
 	let (mut sound, _) = data.split();
 	sound.process(
@@ -613,30 +627,6 @@ fn out_of_bounds_start_position() {
 		&MockClockInfoProviderBuilder::new(0).build(),
 		&MockModulatorValueProviderBuilder::new(0).build(),
 	);
-}
-
-/// Tests that a `StaticSound` can be played backwards.
-#[test]
-#[allow(clippy::float_cmp)]
-fn reverse() {
-	let data = StaticSoundData {
-		sample_rate: 1,
-		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
-		settings: StaticSoundSettings::new().reverse(true).start_position(2.0),
-	};
-	let (mut sound, _) = data.split();
-
-	// start position should be from the end and decrease over time
-	for i in (0..=7).rev() {
-		assert_eq!(
-			sound.process(
-				1.0,
-				&MockClockInfoProviderBuilder::new(0).build(),
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
-			Frame::from_mono(i as f32).panned(0.5)
-		);
-	}
 }
 
 /// Tests that a `StaticSound` properly obeys looping behavior when
@@ -647,13 +637,11 @@ fn loops_forward() {
 	let data = StaticSoundData {
 		sample_rate: 1,
 		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
-		settings: StaticSoundSettings::new().loop_behavior(LoopBehavior {
-			start_position: 3.0,
-		}),
+		settings: StaticSoundSettings::new().loop_region(Some((3.0..6.0).into())),
 	};
 	let (mut sound, _) = data.split();
 
-	for i in 0..10 {
+	for i in 0..6 {
 		assert_eq!(
 			sound.process(
 				1.0,
@@ -666,7 +654,7 @@ fn loops_forward() {
 
 	assert_eq!(
 		sound.process(
-			3.0,
+			2.0,
 			&MockClockInfoProviderBuilder::new(0).build(),
 			&MockModulatorValueProviderBuilder::new(0).build()
 		),
@@ -674,68 +662,7 @@ fn loops_forward() {
 	);
 	assert_eq!(
 		sound.process(
-			3.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
-		Frame::from_mono(6.0).panned(0.5)
-	);
-	assert_eq!(
-		sound.process(
-			3.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
-		Frame::from_mono(9.0).panned(0.5)
-	);
-	assert_eq!(
-		sound.process(
-			3.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
-		Frame::from_mono(5.0).panned(0.5)
-	);
-}
-
-/// Tests that a `StaticSound` properly obeys looping behavior when
-/// playing backward.
-#[test]
-#[allow(clippy::float_cmp)]
-fn loops_backward() {
-	let data = StaticSoundData {
-		sample_rate: 1,
-		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
-		settings: StaticSoundSettings::new()
-			.loop_behavior(LoopBehavior {
-				start_position: 3.0,
-			})
-			.reverse(true),
-	};
-	let (mut sound, _) = data.split();
-
-	for i in (3..10).rev() {
-		assert_eq!(
-			sound.process(
-				1.0,
-				&MockClockInfoProviderBuilder::new(0).build(),
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
-			Frame::from_mono(i as f32).panned(0.5)
-		);
-	}
-
-	assert_eq!(
-		sound.process(
-			4.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
-		Frame::from_mono(9.0).panned(0.5)
-	);
-	assert_eq!(
-		sound.process(
-			4.0,
+			2.0,
 			&MockClockInfoProviderBuilder::new(0).build(),
 			&MockModulatorValueProviderBuilder::new(0).build()
 		),
@@ -743,11 +670,19 @@ fn loops_backward() {
 	);
 	assert_eq!(
 		sound.process(
-			4.0,
+			2.0,
 			&MockClockInfoProviderBuilder::new(0).build(),
 			&MockModulatorValueProviderBuilder::new(0).build()
 		),
-		Frame::from_mono(8.0).panned(0.5)
+		Frame::from_mono(4.0).panned(0.5)
+	);
+	assert_eq!(
+		sound.process(
+			2.0,
+			&MockClockInfoProviderBuilder::new(0).build(),
+			&MockModulatorValueProviderBuilder::new(0).build()
+		),
+		Frame::from_mono(3.0).panned(0.5)
 	);
 }
 
@@ -995,9 +930,7 @@ fn interpolates_samples_when_looping() {
 	let data = StaticSoundData {
 		sample_rate: 1,
 		frames: Arc::new([Frame::from_mono(10.0), Frame::from_mono(9.0)]),
-		settings: StaticSoundSettings::new().loop_behavior(LoopBehavior {
-			start_position: 0.0,
-		}),
+		settings: StaticSoundSettings::new().loop_region(Some((..).into())),
 	};
 	let (mut sound, _) = data.split();
 	sound.process(
@@ -1029,32 +962,13 @@ fn seek_to() {
 	expect_frame_soon(Frame::from_mono(15.0).panned(0.5), &mut sound);
 }
 
-/// Tests that a `StaticSound` can seek to a position past the end of
-/// the sound when it's looping. The resulting position should be what
-/// it would be (seek_point - duration) samples after playback reached
-/// the end of the sound if it was playing normally..
-#[test]
-fn seek_to_while_looping() {
-	let data = StaticSoundData {
-		sample_rate: 1,
-		frames: (0..100).map(|i| Frame::from_mono(i as f32)).collect(),
-		settings: StaticSoundSettings::new().loop_behavior(LoopBehavior {
-			start_position: 5.0,
-		}),
-	};
-	let (mut sound, mut handle) = data.split();
-	handle.seek_to(120.0).unwrap();
-	sound.on_start_processing();
-	expect_frame_soon(Frame::from_mono(25.0).panned(0.5), &mut sound);
-}
-
 /// Tests that a `StaticSound` can seek by an amount of time.
 #[test]
 fn seek_by() {
 	let data = StaticSoundData {
 		sample_rate: 1,
 		frames: (0..100).map(|i| Frame::from_mono(i as f32)).collect(),
-		settings: StaticSoundSettings::new().start_position(10.0),
+		settings: StaticSoundSettings::new().playback_region(10.0..),
 	};
 	let (mut sound, mut handle) = data.split();
 	handle.seek_by(5.0).unwrap();

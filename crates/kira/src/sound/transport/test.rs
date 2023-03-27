@@ -66,3 +66,22 @@ fn loop_wrapping() {
 	transport.decrement_position();
 	assert_eq!(transport.position, 3);
 }
+
+#[test]
+fn seek_loop_wrapping() {
+	let mut transport = Transport::new((0, 10), Some((2, 5)));
+	transport.seek_to(7);
+	assert_eq!(transport.position, 4);
+	transport.seek_to(0);
+	assert_eq!(transport.position, 3);
+}
+
+#[test]
+fn seek_out_of_bounds() {
+	let mut transport = Transport::new((0, 10), None);
+	transport.seek_to(-1);
+	assert!(!transport.playing);
+	let mut transport = Transport::new((0, 10), None);
+	transport.seek_to(11);
+	assert!(!transport.playing);
+}

@@ -12,6 +12,8 @@ mod symphonia;
 mod transport;
 mod util;
 
+use std::ops::{Range, RangeFrom, RangeFull, RangeInclusive};
+
 #[cfg(feature = "symphonia")]
 pub use error::*;
 
@@ -74,4 +76,87 @@ pub enum PlaybackState {
 	Stopping,
 	/// The sound has stopped and can no longer be resumed.
 	Stopped,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct PlaybackRegion {
+	pub start: f64,
+	/// inclusive
+	pub end: EndPosition,
+}
+
+impl From<RangeFrom<f64>> for PlaybackRegion {
+	fn from(range: RangeFrom<f64>) -> Self {
+		Self {
+			start: range.start,
+			end: EndPosition::EndOfAudio,
+		}
+	}
+}
+
+impl From<RangeInclusive<f64>> for PlaybackRegion {
+	fn from(range: RangeInclusive<f64>) -> Self {
+		Self {
+			start: *range.start(),
+			end: EndPosition::Custom(*range.end()),
+		}
+	}
+}
+
+impl From<RangeFull> for PlaybackRegion {
+	fn from(_: RangeFull) -> Self {
+		Self {
+			start: 0.0,
+			end: EndPosition::EndOfAudio,
+		}
+	}
+}
+
+impl Default for PlaybackRegion {
+	fn default() -> Self {
+		Self {
+			start: 0.0,
+			end: EndPosition::EndOfAudio,
+		}
+	}
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct LoopRegion {
+	pub start: f64,
+	/// exclusive
+	pub end: EndPosition,
+}
+
+impl From<RangeFrom<f64>> for LoopRegion {
+	fn from(range: RangeFrom<f64>) -> Self {
+		Self {
+			start: range.start,
+			end: EndPosition::EndOfAudio,
+		}
+	}
+}
+
+impl From<Range<f64>> for LoopRegion {
+	fn from(range: Range<f64>) -> Self {
+		Self {
+			start: range.start,
+			end: EndPosition::Custom(range.end),
+		}
+	}
+}
+
+impl From<RangeFull> for LoopRegion {
+	fn from(_: RangeFull) -> Self {
+		Self {
+			start: 0.0,
+			end: EndPosition::EndOfAudio,
+		}
+	}
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum EndPosition {
+	EndOfAudio,
+	Custom(f64),
 }

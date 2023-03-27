@@ -45,4 +45,22 @@ impl Transport {
 			self.playing = false;
 		}
 	}
+
+	pub fn seek_to(&mut self, mut position: i64) {
+		if let Some((loop_start, loop_end)) = self.loop_region {
+			if position > self.position {
+				while position >= loop_end {
+					position -= loop_end - loop_start;
+				}
+			} else {
+				while position < loop_start {
+					position += loop_end - loop_start;
+				}
+			}
+		}
+		self.position = position;
+		if self.position < self.playback_region.0 || self.position > self.playback_region.1 {
+			self.playing = false;
+		}
+	}
 }
