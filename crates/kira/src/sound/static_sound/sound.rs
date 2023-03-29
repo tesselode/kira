@@ -18,16 +18,14 @@ use crate::{
 	dsp::Frame,
 	modulator::value_provider::ModulatorValueProvider,
 	parameter::{Parameter, Value},
-	sound::{
-		transport::Transport, util::create_volume_fade_parameter, EndPosition, PlaybackState, Sound,
-	},
+	sound::{transport::Transport, util::create_volume_fade_parameter, PlaybackState, Sound},
 	tween::Tween,
-	LoopBehavior, OutputDestination, PlaybackRate, StartTime, Volume,
+	OutputDestination, PlaybackRate, StartTime, Volume,
 };
 
 use self::resampler::Resampler;
 
-use super::{data::StaticSoundData, Command, StaticSoundSettings};
+use super::{data::StaticSoundData, Command};
 
 pub(super) struct StaticSound {
 	command_consumer: HeapConsumer<Command>,
@@ -47,7 +45,12 @@ pub(super) struct StaticSound {
 impl StaticSound {
 	pub fn new(data: StaticSoundData, command_consumer: HeapConsumer<Command>) -> Self {
 		let settings = data.settings;
-		let transport = create_transport(&settings, &data);
+		let transport = Transport::new(
+			data.settings.playback_region,
+			data.settings.loop_region,
+			data.sample_rate,
+			data.frames.len(),
+		);
 		let starting_frame_index = transport.position;
 		let position = starting_frame_index as f64 / data.sample_rate as f64;
 		let mut sound = Self {
@@ -171,37 +174,6 @@ impl StaticSound {
 		let index = (position * self.data.sample_rate as f64) as i64;
 		self.seek_to_index(index);
 	}
-}
-
-fn create_transport(settings: &StaticSoundSettings, data: &StaticSoundData) -> Transport {
-	Transport::new(
-		(
-			(settings.playback_region.start * data.sample_rate as f64) as i64,
-			match settings.playback_region.end {
-				EndPosition::EndOfAudio => (data.frames.len() - 1)
-					.try_into()
-					.expect("could not convert usize to i64"),
-				EndPosition::Custom(end_position) => {
-					(end_position * data.sample_rate as f64) as i64
-				}
-			},
-		),
-		settings.loop_region.map(|loop_region| {
-			(
-				(loop_region.start * data.sample_rate as f64) as i64,
-				match loop_region.end {
-					EndPosition::EndOfAudio => data
-						.frames
-						.len()
-						.try_into()
-						.expect("could not convert usize to i64"),
-					EndPosition::Custom(end_position) => {
-						(end_position * data.sample_rate as f64) as i64
-					}
-				},
-			)
-		}),
-	)
 }
 
 impl Sound for StaticSound {

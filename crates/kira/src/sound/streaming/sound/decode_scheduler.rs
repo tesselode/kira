@@ -1,5 +1,4 @@
 use std::{
-	collections::VecDeque,
 	convert::TryInto,
 	sync::{atomic::Ordering, Arc},
 	time::Duration,
@@ -8,13 +7,10 @@ use std::{
 use crate::{
 	dsp::Frame,
 	sound::{
-		streaming::{
-			decoder::{DecodeResponse, Decoder},
-			DecodeSchedulerCommand, StreamingSoundSettings,
-		},
+		streaming::{decoder::Decoder, DecodeSchedulerCommand, StreamingSoundSettings},
+		transport::Transport,
 		PlaybackState,
 	},
-	LoopBehavior,
 };
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 
@@ -31,12 +27,11 @@ pub(crate) enum NextStep {
 
 pub(crate) struct DecodeScheduler<Error: Send + 'static> {
 	decoder: Box<dyn Decoder<Error = Error>>,
-	command_consumer: HeapConsumer<DecodeSchedulerCommand>,
 	sample_rate: u32,
-	loop_behavior: Option<LoopBehavior>,
+	transport: Transport,
+	decoded_chunk: Option<DecodedChunk>,
+	command_consumer: HeapConsumer<DecodeSchedulerCommand>,
 	frame_producer: HeapProducer<TimestampedFrame>,
-	decoded_frames: VecDeque<Frame>,
-	current_frame_index: i64,
 	error_producer: HeapProducer<Error>,
 	shared: Arc<Shared>,
 }
@@ -59,23 +54,27 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 			})
 			.expect("The frame producer shouldn't be full because we just created it");
 		let sample_rate = decoder.sample_rate();
-		let mut scheduler = Self {
+		let num_frames = decoder.num_frames();
+		let scheduler = Self {
 			decoder,
-			command_consumer,
 			sample_rate,
-			loop_behavior: settings.loop_behavior,
+			transport: Transport::new(
+				settings.playback_region,
+				settings.loop_region,
+				sample_rate,
+				num_frames,
+			),
+			decoded_chunk: None,
+			command_consumer,
 			frame_producer,
-			decoded_frames: VecDeque::new(),
-			current_frame_index: 0,
 			error_producer,
 			shared,
 		};
-		scheduler.seek_to(settings.start_position)?;
 		Ok((scheduler, frame_consumer))
 	}
 
 	pub fn current_frame(&self) -> i64 {
-		self.current_frame_index
+		self.transport.position
 	}
 
 	pub fn start(mut self) {
@@ -109,45 +108,46 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 				DecodeSchedulerCommand::SeekTo(position) => self.seek_to(position)?,
 			}
 		}
-		// if we have leftover frames from the last decode, push
-		// those first
-		if let Some(frame) = self.decoded_frames.pop_front() {
-			self.frame_producer
-				.push(TimestampedFrame {
-					frame,
-					index: self.current_frame_index,
-				})
-				.expect("Frame producer should not be full because we just checked that");
-			self.current_frame_index += 1;
-		// otherwise, if the current position is negative, push silence
-		} else if self.current_frame_index < 0 {
-			self.frame_producer
-				.push(TimestampedFrame {
-					frame: Frame::ZERO,
-					index: self.current_frame_index,
-				})
-				.expect("Frame producer should not be full because we just checked that");
-			self.current_frame_index += 1;
-		// otherwise, decode some new frames
-		} else {
-			match self.decoder.decode()? {
-				DecodeResponse::DecodedFrames(frames) => {
-					self.decoded_frames.extend(frames.iter().copied());
-				}
-				DecodeResponse::ReachedEndOfAudio => {
-					// if there aren't any new frames and the sound is looping,
-					// seek back to the loop position
-					if let Some(LoopBehavior { start_position }) = self.loop_behavior {
-						self.seek_to(start_position)?;
-					// otherwise, tell the sound to finish and end the thread
-					} else {
-						self.shared.reached_end.store(true, Ordering::SeqCst);
-						return Ok(NextStep::End);
-					}
-				}
-			}
+		let frame = self.frame_at_index(self.transport.position)?;
+		self.frame_producer
+			.push(TimestampedFrame {
+				frame,
+				index: self.transport.position,
+			})
+			.expect("could not push frame to frame producer");
+		self.transport.increment_position();
+		if !self.transport.playing {
+			self.shared.reached_end.store(true, Ordering::SeqCst);
+			return Ok(NextStep::End);
 		}
 		Ok(NextStep::Continue)
+	}
+
+	fn frame_at_index(&mut self, index: i64) -> Result<Frame, Error> {
+		if index < 0 {
+			return Ok(Frame::ZERO);
+		}
+		let index: usize = index.try_into().expect("could not convert i64 into usize");
+		match self
+			.decoded_chunk
+			.as_ref()
+			.and_then(|chunk| chunk.frame_at_index(index))
+		{
+			Some(frame) => Ok(frame),
+			None => {
+				let new_chunk_start_index = self.decoder.seek(index)?;
+				let frames = self.decoder.decode()?;
+				let chunk = DecodedChunk {
+					start_index: new_chunk_start_index,
+					frames,
+				};
+				let frame = chunk
+					.frame_at_index(index)
+					.expect("did not get expected frame after seeking decoder");
+				self.decoded_chunk = Some(chunk);
+				Ok(frame)
+			}
+		}
 	}
 
 	fn seek_to(&mut self, position: f64) -> Result<(), Error> {
@@ -163,17 +163,21 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 	}
 
 	fn seek_to_index(&mut self, index: i64) -> Result<(), Error> {
-		if index < 0 {
-			self.current_frame_index = index;
-			self.decoder.seek(0)?;
-		} else {
-			let desired_index = index.try_into().expect("can't convert i64 to u64");
-			self.current_frame_index = self
-				.decoder
-				.seek(desired_index)?
-				.try_into()
-				.expect("sound is too long, cannot convert u64 to i64");
-		}
+		self.transport.seek_to(index);
 		Ok(())
+	}
+}
+
+struct DecodedChunk {
+	pub start_index: usize,
+	pub frames: Vec<Frame>,
+}
+
+impl DecodedChunk {
+	fn frame_at_index(&self, index: usize) -> Option<Frame> {
+		if index < self.start_index {
+			return None;
+		}
+		self.frames.get(index - self.start_index).copied()
 	}
 }

@@ -1,3 +1,7 @@
+use std::convert::TryInto;
+
+use super::{EndPosition, LoopRegion, PlaybackRegion};
+
 #[cfg(test)]
 mod test;
 
@@ -13,7 +17,30 @@ pub struct Transport {
 }
 
 impl Transport {
-	pub fn new(playback_region: (i64, i64), loop_region: Option<(i64, i64)>) -> Self {
+	pub fn new(
+		playback_region: PlaybackRegion,
+		loop_region: Option<LoopRegion>,
+		sample_rate: u32,
+		num_frames: usize,
+	) -> Self {
+		let playback_start = (playback_region.start * sample_rate as f64) as i64;
+		let playback_end = match playback_region.end {
+			EndPosition::EndOfAudio => (num_frames - 1)
+				.try_into()
+				.expect("could not convert usize to i64"),
+			EndPosition::Custom(end_position) => (end_position * sample_rate as f64) as i64,
+		};
+		let playback_region = (playback_start, playback_end);
+		let loop_region = loop_region.map(|loop_region| {
+			let loop_start = (loop_region.start * sample_rate as f64) as i64;
+			let loop_end = match loop_region.end {
+				EndPosition::EndOfAudio => num_frames
+					.try_into()
+					.expect("could not convert usize to i64"),
+				EndPosition::Custom(end_position) => (end_position * sample_rate as f64) as i64,
+			};
+			(loop_start, loop_end)
+		});
 		Self {
 			position: playback_region.0,
 			playback_region,

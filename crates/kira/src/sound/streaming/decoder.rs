@@ -7,14 +7,11 @@ pub(crate) trait Decoder: Send {
 
 	fn sample_rate(&self) -> u32;
 
-	fn decode(&mut self) -> Result<DecodeResponse, Self::Error>;
+	fn num_frames(&self) -> usize;
 
-	fn seek(&mut self, index: u64) -> Result<SeekedToIndex, Self::Error>;
+	fn decode(&mut self) -> Result<Vec<Frame>, Self::Error>;
+
+	fn seek(&mut self, index: usize) -> Result<SeekedToIndex, Self::Error>;
 }
 
-pub(crate) enum DecodeResponse {
-	DecodedFrames(Vec<Frame>),
-	ReachedEndOfAudio,
-}
-
-type SeekedToIndex = u64;
+type SeekedToIndex = usize;

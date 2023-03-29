@@ -8,14 +8,11 @@ use crate::{
 	dsp::Frame,
 	modulator::value_provider::MockModulatorValueProviderBuilder,
 	sound::{
-		streaming::{
-			decoder::{DecodeResponse, Decoder},
-			StreamingSoundData, StreamingSoundSettings,
-		},
+		streaming::{decoder::Decoder, StreamingSoundData, StreamingSoundSettings},
 		PlaybackState, Sound,
 	},
 	tween::Tween,
-	LoopBehavior, StartTime, Volume,
+	StartTime, Volume,
 };
 
 use super::{decode_scheduler::NextStep, StreamingSound};
@@ -44,10 +41,11 @@ impl Decoder for MockDecoder {
 		MOCK_DECODER_SAMPLE_RATE
 	}
 
-	fn decode(&mut self) -> Result<DecodeResponse, Self::Error> {
-		if self.current_frame_index >= self.frames.len() {
-			return Ok(DecodeResponse::ReachedEndOfAudio);
-		}
+	fn num_frames(&self) -> usize {
+		self.frames.len()
+	}
+
+	fn decode(&mut self) -> Result<Vec<Frame>, Self::Error> {
 		let mut frames = vec![];
 		for _ in 0..MOCK_DECODER_PACKET_SIZE {
 			frames.push(self.frames[self.current_frame_index]);
@@ -56,15 +54,15 @@ impl Decoder for MockDecoder {
 				break;
 			}
 		}
-		Ok(DecodeResponse::DecodedFrames(frames))
+		Ok(frames)
 	}
 
-	fn seek(&mut self, index: u64) -> Result<u64, Self::Error> {
+	fn seek(&mut self, index: usize) -> Result<usize, Self::Error> {
 		// seek to the beginning of the "packet" to simulate
 		// seeking behavior with real decoders
-		let index = (index as f64 / MOCK_DECODER_PACKET_SIZE as f64) as u64
-			* MOCK_DECODER_PACKET_SIZE as u64;
-		self.current_frame_index = index as usize;
+		let index =
+			(index as f64 / MOCK_DECODER_PACKET_SIZE as f64) as usize * MOCK_DECODER_PACKET_SIZE;
+		self.current_frame_index = index;
 		Ok(index)
 	}
 }
@@ -141,7 +139,7 @@ fn waits_for_samples() {
 		assert_eq!(handle.position(), 0.0);
 	}
 
-	for _ in 0..4 {
+	for _ in 0..3 {
 		scheduler.run().unwrap();
 	}
 
@@ -676,25 +674,39 @@ fn immediate_pause_resume_and_stop_with_clock_start_time() {
 /// Tests that a `StreamingSound` can be started partway through the sound.
 #[test]
 #[allow(clippy::float_cmp)]
-fn start_position() {
+fn playback_region() {
 	let data = StreamingSoundData {
 		decoder: Box::new(MockDecoder::new(
 			(0..10).map(|i| Frame::from_mono(i as f32)).collect(),
 		)),
-		settings: StreamingSoundSettings::new().start_position(3.0),
+		settings: StreamingSoundSettings::new().playback_region(3.0..=6.0),
 	};
 	let (mut sound, handle, mut scheduler) = data.split().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
 
-	assert_eq!(handle.position(), 3.0);
-	assert_eq!(
-		sound.process(
-			1.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
-		Frame::from_mono(3.0).panned(0.5)
-	);
+	for i in 3..=6 {
+		assert_eq!(handle.position(), i as f64);
+		assert_eq!(
+			sound.process(
+				1.0,
+				&MockClockInfoProviderBuilder::new(0).build(),
+				&MockModulatorValueProviderBuilder::new(0).build()
+			),
+			Frame::from_mono(i as f32).panned(0.5)
+		);
+		sound.on_start_processing();
+	}
+	for _ in 0..3 {
+		assert_eq!(
+			sound.process(
+				1.0,
+				&MockClockInfoProviderBuilder::new(0).build(),
+				&MockModulatorValueProviderBuilder::new(0).build()
+			),
+			Frame::ZERO
+		);
+		assert_eq!(handle.state(), PlaybackState::Stopped);
+	}
 }
 
 /// Tests that a `StreamingSound` can be started with a negative position.
@@ -705,7 +717,7 @@ fn negative_start_position() {
 		decoder: Box::new(MockDecoder::new(
 			(0..10).map(|i| Frame::from_mono(i as f32)).collect(),
 		)),
-		settings: StreamingSoundSettings::new().start_position(-5.0),
+		settings: StreamingSoundSettings::new().playback_region(-5.0..),
 	};
 	let (mut sound, _, mut scheduler) = data.split().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
@@ -732,14 +744,12 @@ fn loops_forward() {
 		decoder: Box::new(MockDecoder::new(
 			(0..10).map(|i| Frame::from_mono(i as f32)).collect(),
 		)),
-		settings: StreamingSoundSettings::new().loop_behavior(LoopBehavior {
-			start_position: 3.0,
-		}),
+		settings: StreamingSoundSettings::new().loop_region(Some((3.0..6.0).into())),
 	};
 	let (mut sound, _, mut scheduler) = data.split().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
 
-	for i in 0..10 {
+	for i in 0..6 {
 		assert_eq!(
 			sound.process(
 				1.0,
@@ -752,7 +762,7 @@ fn loops_forward() {
 
 	assert_eq!(
 		sound.process(
-			3.0,
+			2.0,
 			&MockClockInfoProviderBuilder::new(0).build(),
 			&MockModulatorValueProviderBuilder::new(0).build()
 		),
@@ -760,27 +770,27 @@ fn loops_forward() {
 	);
 	assert_eq!(
 		sound.process(
-			3.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
-		Frame::from_mono(6.0).panned(0.5)
-	);
-	assert_eq!(
-		sound.process(
-			3.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
-		Frame::from_mono(9.0).panned(0.5)
-	);
-	assert_eq!(
-		sound.process(
-			3.0,
+			2.0,
 			&MockClockInfoProviderBuilder::new(0).build(),
 			&MockModulatorValueProviderBuilder::new(0).build()
 		),
 		Frame::from_mono(5.0).panned(0.5)
+	);
+	assert_eq!(
+		sound.process(
+			2.0,
+			&MockClockInfoProviderBuilder::new(0).build(),
+			&MockModulatorValueProviderBuilder::new(0).build()
+		),
+		Frame::from_mono(4.0).panned(0.5)
+	);
+	assert_eq!(
+		sound.process(
+			2.0,
+			&MockClockInfoProviderBuilder::new(0).build(),
+			&MockModulatorValueProviderBuilder::new(0).build()
+		),
+		Frame::from_mono(3.0).panned(0.5)
 	);
 }
 
@@ -1034,9 +1044,7 @@ fn interpolates_samples_when_looping() {
 			Frame::from_mono(10.0),
 			Frame::from_mono(9.0),
 		])),
-		settings: StreamingSoundSettings::new().loop_behavior(LoopBehavior {
-			start_position: 0.0,
-		}),
+		settings: StreamingSoundSettings::new().loop_region(Some((..).into())),
 	};
 	let (mut sound, _, mut scheduler) = data.split().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
@@ -1080,7 +1088,7 @@ fn seek_by() {
 		decoder: Box::new(MockDecoder::new(
 			(0..100).map(|i| Frame::from_mono(i as f32)).collect(),
 		)),
-		settings: StreamingSoundSettings::new().start_position(10.0),
+		settings: StreamingSoundSettings::new().playback_region(10.0..),
 	};
 	let (mut sound, mut handle, mut scheduler) = data.split().unwrap();
 	handle.seek_by(5.0).unwrap();

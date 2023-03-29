@@ -12,6 +12,8 @@ pub enum FromFileError {
 	NoDefaultTrack,
 	/// Could not determine the sample rate of the audio.
 	UnknownSampleRate,
+	/// Could not determine the duration of the audio.
+	UnknownDuration,
 	/// The audio uses an unsupported channel configuration. Only
 	/// mono and stereo audio is supported.
 	UnsupportedChannelConfiguration,
@@ -29,6 +31,9 @@ impl Display for FromFileError {
 			}
 			FromFileError::UnknownSampleRate => {
 				f.write_str("Could not detect the sample rate of the audio")
+			}
+			FromFileError::UnknownDuration => {
+				f.write_str("Could not detect the duration of the audio")
 			}
 			FromFileError::UnsupportedChannelConfiguration => {
 				f.write_str("Only mono and stereo audio is supported")

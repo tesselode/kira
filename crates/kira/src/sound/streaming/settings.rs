@@ -1,6 +1,8 @@
 use crate::{
-	parameter::Value, tween::Tween, LoopBehavior, OutputDestination, PlaybackRate, StartTime,
-	Volume,
+	parameter::Value,
+	sound::{LoopRegion, PlaybackRegion},
+	tween::Tween,
+	OutputDestination, PlaybackRate, StartTime, Volume,
 };
 
 /// Settings for a streaming sound.
@@ -9,8 +11,10 @@ use crate::{
 pub struct StreamingSoundSettings {
 	/// When the instance should start playing.
 	pub start_time: StartTime,
-	/// The initial playback position of the sound (in seconds).
-	pub start_position: f64,
+	/// The portion of the sound that should be played.
+	pub playback_region: PlaybackRegion,
+	/// The portion of the sound that should be looped.
+	pub loop_region: Option<LoopRegion>,
 	/// The volume of the sound.
 	pub volume: Value<Volume>,
 	/// The playback rate of the sound.
@@ -21,8 +25,6 @@ pub struct StreamingSoundSettings {
 	/// The panning of the sound, where 0 is hard left
 	/// and 1 is hard right.
 	pub panning: Value<f64>,
-	/// The looping behavior of the sound.
-	pub loop_behavior: Option<LoopBehavior>,
 	/// The destination that this sound should be routed to.
 	pub output_destination: OutputDestination,
 	/// An optional fade-in from silence.
@@ -34,11 +36,11 @@ impl StreamingSoundSettings {
 	pub fn new() -> Self {
 		Self {
 			start_time: StartTime::Immediate,
-			start_position: 0.0,
+			playback_region: PlaybackRegion::default(),
+			loop_region: None,
 			volume: Value::Fixed(Volume::Amplitude(1.0)),
 			playback_rate: Value::Fixed(PlaybackRate::Factor(1.0)),
 			panning: Value::Fixed(0.5),
-			loop_behavior: None,
 			output_destination: OutputDestination::default(),
 			fade_in_tween: None,
 		}
@@ -52,10 +54,18 @@ impl StreamingSoundSettings {
 		}
 	}
 
-	/// Sets the initial playback position of the sound (in seconds).
-	pub fn start_position(self, start_position: f64) -> Self {
+	/// Sets the portion of the sound that should be played.
+	pub fn playback_region(self, playback_region: impl Into<PlaybackRegion>) -> Self {
 		Self {
-			start_position,
+			playback_region: playback_region.into(),
+			..self
+		}
+	}
+
+	/// Sets the portion of the sound that should be looped.
+	pub fn loop_region(self, loop_region: impl Into<Option<LoopRegion>>) -> Self {
+		Self {
+			loop_region: loop_region.into(),
 			..self
 		}
 	}
@@ -84,14 +94,6 @@ impl StreamingSoundSettings {
 	pub fn panning(self, panning: impl Into<Value<f64>>) -> Self {
 		Self {
 			panning: panning.into(),
-			..self
-		}
-	}
-
-	/// Sets the looping behavior of the sound.
-	pub fn loop_behavior(self, loop_behavior: impl Into<Option<LoopBehavior>>) -> Self {
-		Self {
-			loop_behavior: loop_behavior.into(),
 			..self
 		}
 	}

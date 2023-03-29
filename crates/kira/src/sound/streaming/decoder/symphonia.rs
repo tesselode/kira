@@ -1,4 +1,9 @@
-use crate::sound::{symphonia::load_frames_from_buffer_ref, FromFileError};
+use std::convert::TryInto;
+
+use crate::{
+	dsp::Frame,
+	sound::{symphonia::load_frames_from_buffer_ref, FromFileError},
+};
 use symphonia::core::{
 	codecs::Decoder,
 	formats::{FormatReader, SeekMode, SeekTo},
@@ -6,12 +11,11 @@ use symphonia::core::{
 	probe::Hint,
 };
 
-use super::DecodeResponse;
-
 pub(crate) struct SymphoniaDecoder {
 	format_reader: Box<dyn FormatReader>,
 	decoder: Box<dyn Decoder>,
 	sample_rate: u32,
+	num_frames: usize,
 	track_id: u32,
 }
 
@@ -35,12 +39,19 @@ impl SymphoniaDecoder {
 			.codec_params
 			.sample_rate
 			.ok_or(FromFileError::UnknownSampleRate)?;
+		let num_frames = default_track
+			.codec_params
+			.n_frames
+			.ok_or(FromFileError::UnknownSampleRate)?
+			.try_into()
+			.expect("could not convert u64 into usize");
 		let decoder = codecs.make(&default_track.codec_params, &Default::default())?;
 		let track_id = default_track.id;
 		Ok(Self {
 			format_reader,
 			decoder,
 			sample_rate,
+			num_frames,
 			track_id,
 		})
 	}
@@ -53,35 +64,27 @@ impl super::Decoder for SymphoniaDecoder {
 		self.sample_rate
 	}
 
-	fn decode(&mut self) -> Result<DecodeResponse, Self::Error> {
-		match self.format_reader.next_packet() {
-			Ok(packet) => {
-				let buffer = self.decoder.decode(&packet)?;
-				Ok(DecodeResponse::DecodedFrames(load_frames_from_buffer_ref(
-					&buffer,
-				)?))
-			}
-			Err(error) => match error {
-				symphonia::core::errors::Error::IoError(error) => {
-					if error.kind() == std::io::ErrorKind::UnexpectedEof {
-						Ok(DecodeResponse::ReachedEndOfAudio)
-					} else {
-						Err(symphonia::core::errors::Error::IoError(error).into())
-					}
-				}
-				error => Err(error.into()),
-			},
-		}
+	fn num_frames(&self) -> usize {
+		self.num_frames
 	}
 
-	fn seek(&mut self, index: u64) -> Result<u64, Self::Error> {
+	fn decode(&mut self) -> Result<Vec<Frame>, Self::Error> {
+		let packet = self.format_reader.next_packet()?;
+		let buffer = self.decoder.decode(&packet)?;
+		load_frames_from_buffer_ref(&buffer)
+	}
+
+	fn seek(&mut self, index: usize) -> Result<usize, Self::Error> {
 		let seeked_to = self.format_reader.seek(
 			SeekMode::Accurate,
 			SeekTo::TimeStamp {
-				ts: index,
+				ts: index.try_into().expect("could not convert usize into u64"),
 				track_id: self.track_id,
 			},
 		)?;
-		Ok(seeked_to.actual_ts)
+		Ok(seeked_to
+			.actual_ts
+			.try_into()
+			.expect("could not convert u64 into usize"))
 	}
 }
