@@ -24,7 +24,6 @@ pub mod clock;
 mod clock_speed;
 pub mod dsp;
 mod error;
-mod loop_behavior;
 pub mod manager;
 pub mod modulator;
 mod output_destination;
@@ -39,7 +38,6 @@ mod volume;
 
 pub use clock_speed::*;
 pub use error::*;
-pub use loop_behavior::*;
 pub use output_destination::*;
 pub use playback_rate::*;
 pub use start_time::*;
