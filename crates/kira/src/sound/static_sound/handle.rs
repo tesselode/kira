@@ -3,7 +3,10 @@ use std::sync::Arc;
 use ringbuf::HeapProducer;
 
 use crate::{
-	parameter::Value, sound::PlaybackState, tween::Tween, CommandError, PlaybackRate, Volume,
+	parameter::Value,
+	sound::{LoopRegion, PlaybackRegion, PlaybackState},
+	tween::Tween,
+	CommandError, PlaybackRate, Volume,
 };
 
 use super::{sound::Shared, Command};
@@ -59,6 +62,26 @@ impl StaticSoundHandle {
 	) -> Result<(), CommandError> {
 		self.command_producer
 			.push(Command::SetPanning(panning.into(), tween))
+			.map_err(|_| CommandError::CommandQueueFull)
+	}
+
+	/// Sets the playback region of the sound.
+	pub fn set_playback_region(
+		&mut self,
+		playback_region: impl Into<PlaybackRegion>,
+	) -> Result<(), CommandError> {
+		self.command_producer
+			.push(Command::SetPlaybackRegion(playback_region.into()))
+			.map_err(|_| CommandError::CommandQueueFull)
+	}
+
+	/// Sets the loop region of the sound.
+	pub fn set_loop_region(
+		&mut self,
+		loop_region: impl Into<Option<LoopRegion>>,
+	) -> Result<(), CommandError> {
+		self.command_producer
+			.push(Command::SetLoopRegion(loop_region.into()))
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 

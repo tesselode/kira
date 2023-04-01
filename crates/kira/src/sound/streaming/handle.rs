@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
 use crate::{
-	parameter::Value, sound::PlaybackState, tween::Tween, CommandError, PlaybackRate, Volume,
+	parameter::Value,
+	sound::{LoopRegion, PlaybackRegion, PlaybackState},
+	tween::Tween,
+	CommandError, PlaybackRate, Volume,
 };
 use ringbuf::{HeapConsumer, HeapProducer};
 
@@ -60,6 +63,27 @@ impl<Error> StreamingSoundHandle<Error> {
 	) -> Result<(), CommandError> {
 		self.sound_command_producer
 			.push(SoundCommand::SetPanning(panning.into(), tween))
+			.map_err(|_| CommandError::CommandQueueFull)
+	}
+
+	pub fn set_playback_region(
+		&mut self,
+		playback_region: impl Into<PlaybackRegion>,
+	) -> Result<(), CommandError> {
+		self.decode_scheduler_command_producer
+			.push(DecodeSchedulerCommand::SetPlaybackRegion(
+				playback_region.into(),
+			))
+			.map_err(|_| CommandError::CommandQueueFull)
+	}
+
+	/// Sets the loop region of the sound.
+	pub fn set_loop_region(
+		&mut self,
+		loop_region: impl Into<Option<LoopRegion>>,
+	) -> Result<(), CommandError> {
+		self.decode_scheduler_command_producer
+			.push(DecodeSchedulerCommand::SetLoopRegion(loop_region.into()))
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 

@@ -203,6 +203,16 @@ impl Sound for StaticSound {
 					self.playback_rate.set(playback_rate, tween)
 				}
 				Command::SetPanning(panning, tween) => self.panning.set(panning, tween),
+				Command::SetPlaybackRegion(playback_region) => self.transport.set_playback_region(
+					playback_region,
+					self.data.sample_rate,
+					self.data.frames.len(),
+				),
+				Command::SetLoopRegion(loop_region) => self.transport.set_loop_region(
+					loop_region,
+					self.data.sample_rate,
+					self.data.frames.len(),
+				),
 				Command::Pause(tween) => self.pause(tween),
 				Command::Resume(tween) => self.resume(tween),
 				Command::Stop(tween) => self.stop(tween),

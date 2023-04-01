@@ -56,6 +56,40 @@ impl Transport {
 		}
 	}
 
+	pub fn set_playback_region(
+		&mut self,
+		playback_region: PlaybackRegion,
+		sample_rate: u32,
+		num_frames: usize,
+	) {
+		let playback_start = (playback_region.start * sample_rate as f64) as i64;
+		let playback_end = match playback_region.end {
+			EndPosition::EndOfAudio => (num_frames - 1)
+				.try_into()
+				.expect("could not convert usize to i64"),
+			EndPosition::Custom(end_position) => (end_position * sample_rate as f64) as i64,
+		};
+		self.playback_region = (playback_start, playback_end);
+	}
+
+	pub fn set_loop_region(
+		&mut self,
+		loop_region: Option<LoopRegion>,
+		sample_rate: u32,
+		num_frames: usize,
+	) {
+		self.loop_region = loop_region.map(|loop_region| {
+			let loop_start = (loop_region.start * sample_rate as f64) as i64;
+			let loop_end = match loop_region.end {
+				EndPosition::EndOfAudio => num_frames
+					.try_into()
+					.expect("could not convert usize to i64"),
+				EndPosition::Custom(end_position) => (end_position * sample_rate as f64) as i64,
+			};
+			(loop_start, loop_end)
+		});
+	}
+
 	pub fn increment_position(&mut self) {
 		self.position += 1;
 		if let Some((loop_start, loop_end)) = self.loop_region {

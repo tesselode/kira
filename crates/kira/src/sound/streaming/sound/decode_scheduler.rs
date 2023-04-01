@@ -28,6 +28,7 @@ pub(crate) enum NextStep {
 pub(crate) struct DecodeScheduler<Error: Send + 'static> {
 	decoder: Box<dyn Decoder<Error = Error>>,
 	sample_rate: u32,
+	num_frames: usize,
 	transport: Transport,
 	decoded_chunk: Option<DecodedChunk>,
 	command_consumer: HeapConsumer<DecodeSchedulerCommand>,
@@ -58,6 +59,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		let scheduler = Self {
 			decoder,
 			sample_rate,
+			num_frames,
 			transport: Transport::new(
 				settings.playback_region,
 				settings.loop_region,
@@ -105,6 +107,12 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		// check for seek commands
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
+				DecodeSchedulerCommand::SetPlaybackRegion(playback_region) => self
+					.transport
+					.set_playback_region(playback_region, self.sample_rate, self.num_frames),
+				DecodeSchedulerCommand::SetLoopRegion(loop_region) => self
+					.transport
+					.set_loop_region(loop_region, self.sample_rate, self.num_frames),
 				DecodeSchedulerCommand::SeekBy(amount) => self.seek_by(amount)?,
 				DecodeSchedulerCommand::SeekTo(position) => self.seek_to(position)?,
 			}
