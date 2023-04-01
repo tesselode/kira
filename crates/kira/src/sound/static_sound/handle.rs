@@ -4,7 +4,7 @@ use ringbuf::HeapProducer;
 
 use crate::{
 	parameter::Value,
-	sound::{LoopRegion, PlaybackRegion, PlaybackState},
+	sound::{IntoOptionalLoopRegion, PlaybackRegion, PlaybackState},
 	tween::Tween,
 	CommandError, PlaybackRate, Volume,
 };
@@ -78,10 +78,12 @@ impl StaticSoundHandle {
 	/// Sets the loop region of the sound.
 	pub fn set_loop_region(
 		&mut self,
-		loop_region: impl Into<Option<LoopRegion>>,
+		loop_region: impl IntoOptionalLoopRegion,
 	) -> Result<(), CommandError> {
 		self.command_producer
-			.push(Command::SetLoopRegion(loop_region.into()))
+			.push(Command::SetLoopRegion(
+				loop_region.into_optional_loop_region(),
+			))
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 

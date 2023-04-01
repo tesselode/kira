@@ -1,6 +1,6 @@
 use crate::{
 	parameter::Value,
-	sound::{LoopRegion, PlaybackRegion},
+	sound::{IntoOptionalLoopRegion, LoopRegion, PlaybackRegion},
 	tween::Tween,
 	OutputDestination, PlaybackRate, StartTime, Volume,
 };
@@ -66,9 +66,9 @@ impl StreamingSoundSettings {
 	}
 
 	/// Sets the portion of the sound that should be looped.
-	pub fn loop_region(self, loop_region: impl Into<Option<LoopRegion>>) -> Self {
+	pub fn loop_region(self, loop_region: impl IntoOptionalLoopRegion) -> Self {
 		Self {
-			loop_region: loop_region.into(),
+			loop_region: loop_region.into_optional_loop_region(),
 			..self
 		}
 	}

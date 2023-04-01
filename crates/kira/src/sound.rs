@@ -155,6 +155,43 @@ impl From<RangeFull> for LoopRegion {
 	}
 }
 
+pub trait IntoOptionalLoopRegion {
+	fn into_optional_loop_region(self) -> Option<LoopRegion>;
+}
+
+impl IntoOptionalLoopRegion for RangeFrom<f64> {
+	fn into_optional_loop_region(self) -> Option<LoopRegion> {
+		Some(LoopRegion {
+			start: self.start,
+			end: EndPosition::EndOfAudio,
+		})
+	}
+}
+
+impl IntoOptionalLoopRegion for Range<f64> {
+	fn into_optional_loop_region(self) -> Option<LoopRegion> {
+		Some(LoopRegion {
+			start: self.start,
+			end: EndPosition::Custom(self.end),
+		})
+	}
+}
+
+impl IntoOptionalLoopRegion for RangeFull {
+	fn into_optional_loop_region(self) -> Option<LoopRegion> {
+		Some(LoopRegion {
+			start: 0.0,
+			end: EndPosition::EndOfAudio,
+		})
+	}
+}
+
+impl IntoOptionalLoopRegion for Option<LoopRegion> {
+	fn into_optional_loop_region(self) -> Option<LoopRegion> {
+		self
+	}
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum EndPosition {
 	EndOfAudio,
