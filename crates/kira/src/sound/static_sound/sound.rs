@@ -48,6 +48,7 @@ impl StaticSound {
 		let transport = Transport::new(
 			data.settings.playback_region,
 			data.settings.loop_region,
+			data.settings.reverse,
 			data.sample_rate,
 			data.frames.len(),
 		);
@@ -113,6 +114,14 @@ impl StaticSound {
 		);
 	}
 
+	fn is_playing_backwards(&self) -> bool {
+		let mut is_playing_backwards = self.playback_rate.value().as_factor().is_sign_negative();
+		if self.data.settings.reverse {
+			is_playing_backwards = !is_playing_backwards
+		}
+		is_playing_backwards
+	}
+
 	/// Updates the current frame index by 1 and pushes a new sample to the resampler.
 	fn update_position(&mut self) {
 		if matches!(self.state, PlaybackState::Paused | PlaybackState::Stopped) {
@@ -121,7 +130,7 @@ impl StaticSound {
 			return;
 		}
 		self.push_frame_to_resampler();
-		if self.playback_rate.value().as_factor().is_sign_negative() {
+		if self.is_playing_backwards() {
 			self.transport.decrement_position();
 		} else {
 			self.transport.increment_position();

@@ -15,6 +15,8 @@ pub struct StreamingSoundSettings {
 	pub playback_region: PlaybackRegion,
 	/// The portion of the sound that should be looped.
 	pub loop_region: Option<LoopRegion>,
+	/// Whether the sound should be played in reverse.
+	pub reverse: bool,
 	/// The volume of the sound.
 	pub volume: Value<Volume>,
 	/// The playback rate of the sound.
@@ -38,6 +40,7 @@ impl StreamingSoundSettings {
 			start_time: StartTime::Immediate,
 			playback_region: PlaybackRegion::default(),
 			loop_region: None,
+			reverse: false,
 			volume: Value::Fixed(Volume::Amplitude(1.0)),
 			playback_rate: Value::Fixed(PlaybackRate::Factor(1.0)),
 			panning: Value::Fixed(0.5),
@@ -68,6 +71,11 @@ impl StreamingSoundSettings {
 			loop_region: loop_region.into(),
 			..self
 		}
+	}
+
+	/// Sets whether the sound should be played in reverse.
+	pub fn reverse(self, reverse: bool) -> Self {
+		Self { reverse, ..self }
 	}
 
 	/// Sets the volume of the sound.

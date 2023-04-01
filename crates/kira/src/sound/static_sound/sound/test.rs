@@ -979,6 +979,28 @@ fn seek_by() {
 	expect_frame_soon(Frame::from_mono(20.0).panned(0.5), &mut sound);
 }
 
+/// Tests that a `StaticSound` can play in reverse.
+#[test]
+fn reverse() {
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
+		settings: StaticSoundSettings::new().reverse(true),
+	};
+	let (mut sound, _) = data.split();
+
+	for i in (4..=9).rev() {
+		assert_eq!(
+			sound.process(
+				1.0,
+				&MockClockInfoProviderBuilder::new(0).build(),
+				&MockModulatorValueProviderBuilder::new(0).build()
+			),
+			Frame::from_mono(i as f32).panned(0.5)
+		);
+	}
+}
+
 fn expect_frame_soon(expected_frame: Frame, sound: &mut StaticSound) {
 	const NUM_SAMPLES_TO_WAIT: usize = 10;
 	for _ in 0..NUM_SAMPLES_TO_WAIT {

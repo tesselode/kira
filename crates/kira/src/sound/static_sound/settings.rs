@@ -15,6 +15,8 @@ pub struct StaticSoundSettings {
 	pub playback_region: PlaybackRegion,
 	/// The portion of the sound that should be looped.
 	pub loop_region: Option<LoopRegion>,
+	/// Whether the sound should be played in reverse.
+	pub reverse: bool,
 	/// The volume of the sound.
 	pub volume: Value<Volume>,
 	/// The playback rate of the sound.
@@ -37,6 +39,7 @@ impl StaticSoundSettings {
 		Self {
 			start_time: StartTime::default(),
 			playback_region: PlaybackRegion::default(),
+			reverse: false,
 			loop_region: None,
 			volume: Value::Fixed(Volume::Amplitude(1.0)),
 			playback_rate: Value::Fixed(PlaybackRate::Factor(1.0)),
@@ -60,6 +63,11 @@ impl StaticSoundSettings {
 			playback_region: playback_region.into(),
 			..self
 		}
+	}
+
+	/// Sets whether the sound should be played in reverse.
+	pub fn reverse(self, reverse: bool) -> Self {
+		Self { reverse, ..self }
 	}
 
 	/// Sets the portion of the sound that should be looped.
