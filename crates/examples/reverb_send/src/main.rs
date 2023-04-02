@@ -5,7 +5,6 @@ use kira::{
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	track::{effect::reverb::ReverbBuilder, TrackBuilder, TrackRoutes},
 	tween::Tween,
-	LoopBehavior,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -27,9 +26,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 	let sound = StaticSoundData::from_file(
 		"crates/examples/assets/blip.ogg",
 		StaticSoundSettings::new()
-			.loop_behavior(LoopBehavior {
-				start_position: 0.0,
-			})
+			.loop_region(0.0..)
 			.output_destination(&sfx),
 	)?;
 	manager.play(sound)?;
