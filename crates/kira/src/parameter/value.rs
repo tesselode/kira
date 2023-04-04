@@ -45,6 +45,12 @@ where
 	}
 }
 
+impl From<f32> for Value<f32> {
+	fn from(value: f32) -> Self {
+		Self::Fixed(value)
+	}
+}
+
 impl From<f64> for Value<f64> {
 	fn from(value: f64) -> Self {
 		Self::Fixed(value)
@@ -106,6 +112,17 @@ impl<T> ModulatorMapping<T> {
 			amount = amount.min(1.0);
 		}
 		T::interpolate(self.output_range.0, self.output_range.1, amount)
+	}
+}
+
+impl Default for ModulatorMapping<f32> {
+	fn default() -> Self {
+		Self {
+			input_range: (0.0, 1.0),
+			output_range: (0.0, 1.0),
+			clamp_bottom: false,
+			clamp_top: false,
+		}
 	}
 }
 
