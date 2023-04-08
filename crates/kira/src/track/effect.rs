@@ -2,7 +2,7 @@
 
 pub mod delay;
 pub mod distortion;
-pub mod equalizer;
+pub mod eq_filter;
 pub mod filter;
 pub mod panning_control;
 pub mod reverb;
