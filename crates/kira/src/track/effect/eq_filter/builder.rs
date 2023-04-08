@@ -1,6 +1,10 @@
+use ringbuf::HeapRb;
+
 use crate::{parameter::Value, track::effect::EffectBuilder};
 
-use super::{EqFilter, EqFilterKind};
+use super::{EqFilter, EqFilterHandle, EqFilterKind};
+
+const COMMAND_CAPACITY: usize = 8;
 
 pub struct EqFilterBuilder {
 	pub kind: EqFilterKind,
@@ -26,9 +30,13 @@ impl EqFilterBuilder {
 }
 
 impl EffectBuilder for EqFilterBuilder {
-	type Handle = ();
+	type Handle = EqFilterHandle;
 
 	fn build(self) -> (Box<dyn crate::track::effect::Effect>, Self::Handle) {
-		(Box::new(EqFilter::new(self)), ())
+		let (command_producer, command_consumer) = HeapRb::new(COMMAND_CAPACITY).split();
+		(
+			Box::new(EqFilter::new(self, command_consumer)),
+			EqFilterHandle { command_producer },
+		)
 	}
 }

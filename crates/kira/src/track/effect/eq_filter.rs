@@ -1,21 +1,29 @@
 // Code is based on https://cytomic.com/files/dsp/SvfLinearTrapOptimised2.pdf
 
 mod builder;
+mod handle;
 
 pub use builder::*;
+pub use handle::*;
+
+use ringbuf::HeapConsumer;
 
 use std::f32::consts::PI;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider, dsp::Frame,
-	modulator::value_provider::ModulatorValueProvider, parameter::Parameter,
+	clock::clock_info::ClockInfoProvider,
+	dsp::Frame,
+	modulator::value_provider::ModulatorValueProvider,
+	parameter::{Parameter, Value},
+	tween::Tween,
 };
 
 use super::Effect;
 
 const MIN_Q: f32 = 0.01;
 
-pub struct EqFilter {
+struct EqFilter {
+	command_consumer: HeapConsumer<Command>,
 	kind: EqFilterKind,
 	frequency: Parameter<f32>,
 	gain: Parameter<f32>,
@@ -25,8 +33,9 @@ pub struct EqFilter {
 }
 
 impl EqFilter {
-	pub fn new(builder: EqFilterBuilder) -> Self {
+	fn new(builder: EqFilterBuilder, command_consumer: HeapConsumer<Command>) -> Self {
 		Self {
+			command_consumer,
 			kind: builder.kind,
 			frequency: Parameter::new(builder.frequency, 500.0),
 			gain: Parameter::new(builder.gain, 0.0),
@@ -104,6 +113,16 @@ impl EqFilter {
 }
 
 impl Effect for EqFilter {
+	fn on_start_processing(&mut self) {
+		while let Some(command) = self.command_consumer.pop() {
+			match command {
+				Command::SetFrequency(target, tween) => self.frequency.set(target, tween),
+				Command::SetGain(target, tween) => self.gain.set(target, tween),
+				Command::SetQ(target, tween) => self.q.set(target, tween),
+			}
+		}
+	}
+
 	fn process(
 		&mut self,
 		input: Frame,
@@ -148,4 +167,10 @@ struct Coefficients {
 	m0: f32,
 	m1: f32,
 	m2: f32,
+}
+
+enum Command {
+	SetFrequency(Value<f32>, Tween),
+	SetGain(Value<f32>, Tween),
+	SetQ(Value<f32>, Tween),
 }
