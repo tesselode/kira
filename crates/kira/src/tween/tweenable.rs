@@ -10,6 +10,12 @@ pub trait Tweenable: Copy {
 	fn interpolate(a: Self, b: Self, amount: f64) -> Self;
 }
 
+impl Tweenable for f32 {
+	fn interpolate(a: Self, b: Self, amount: f64) -> Self {
+		a + (b - a) * amount as f32
+	}
+}
+
 impl Tweenable for f64 {
 	fn interpolate(a: Self, b: Self, amount: f64) -> Self {
 		a + (b - a) * amount
