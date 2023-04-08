@@ -1,5 +1,6 @@
 //! Modifies audio signals.
 
+pub mod compressor;
 pub mod delay;
 pub mod distortion;
 pub mod eq_filter;
