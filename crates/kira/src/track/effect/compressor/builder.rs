@@ -15,10 +15,10 @@ pub struct CompressorBuilder {
 impl CompressorBuilder {
 	pub fn new() -> Self {
 		Self {
-			threshold: Value::Fixed(-12.0),
-			ratio: Value::Fixed(2.0),
-			attack_speed: Value::Fixed(1.0),
-			release_speed: Value::Fixed(1.0),
+			threshold: Value::Fixed(-24.0),
+			ratio: Value::Fixed(8.0),
+			attack_speed: Value::Fixed(0.01),
+			release_speed: Value::Fixed(0.0001),
 		}
 	}
 
