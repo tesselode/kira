@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::{
 	parameter::Value,
 	track::effect::{Effect, EffectBuilder},
@@ -8,17 +10,22 @@ use super::Compressor;
 pub struct CompressorBuilder {
 	pub threshold: Value<f32>,
 	pub ratio: Value<f32>,
-	pub attack_speed: Value<f32>,
-	pub release_speed: Value<f32>,
+	pub attack_duration: Value<Duration>,
+	pub release_duration: Value<Duration>,
 }
 
 impl CompressorBuilder {
+	pub const DEFAULT_THRESHOLD: f32 = -24.0;
+	pub const DEFAULT_RATIO: f32 = 8.0;
+	pub const DEFAULT_ATTACK_DURATION: Duration = Duration::from_millis(10);
+	pub const DEFAULT_RELEASE_DURATION: Duration = Duration::from_millis(100);
+
 	pub fn new() -> Self {
 		Self {
-			threshold: Value::Fixed(-24.0),
-			ratio: Value::Fixed(8.0),
-			attack_speed: Value::Fixed(0.01),
-			release_speed: Value::Fixed(0.0001),
+			threshold: Value::Fixed(Self::DEFAULT_THRESHOLD),
+			ratio: Value::Fixed(Self::DEFAULT_RATIO),
+			attack_duration: Value::Fixed(Self::DEFAULT_ATTACK_DURATION),
+			release_duration: Value::Fixed(Self::DEFAULT_RELEASE_DURATION),
 		}
 	}
 
@@ -36,16 +43,16 @@ impl CompressorBuilder {
 		}
 	}
 
-	pub fn attack_speed(self, attack_speed: impl Into<Value<f32>>) -> Self {
+	pub fn attack_duration(self, attack_duration: impl Into<Value<Duration>>) -> Self {
 		Self {
-			attack_speed: attack_speed.into(),
+			attack_duration: attack_duration.into(),
 			..self
 		}
 	}
 
-	pub fn release_speed(self, release_speed: impl Into<Value<f32>>) -> Self {
+	pub fn release_duration(self, release_duration: impl Into<Value<Duration>>) -> Self {
 		Self {
-			release_speed: release_speed.into(),
+			release_duration: release_duration.into(),
 			..self
 		}
 	}

@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use glam::{Quat, Vec3};
 
 /// A trait for types that can be used with a [`Tweener`](super::Tweener).
@@ -31,5 +33,13 @@ impl Tweenable for Vec3 {
 impl Tweenable for Quat {
 	fn interpolate(a: Self, b: Self, amount: f64) -> Self {
 		a.slerp(b, amount as f32)
+	}
+}
+
+impl Tweenable for Duration {
+	fn interpolate(a: Self, b: Self, amount: f64) -> Self {
+		let a_secs = a.as_secs_f64();
+		let b_secs = b.as_secs_f64();
+		Duration::from_secs_f64(a_secs + (b_secs - a_secs) * amount)
 	}
 }
