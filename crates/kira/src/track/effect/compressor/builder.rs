@@ -12,21 +12,21 @@ use super::{Compressor, CompressorHandle};
 const COMMAND_CAPACITY: usize = 8;
 
 pub struct CompressorBuilder {
-	pub threshold: Value<f32>,
-	pub ratio: Value<f32>,
+	pub threshold: Value<f64>,
+	pub ratio: Value<f64>,
 	pub attack_duration: Value<Duration>,
 	pub release_duration: Value<Duration>,
-	pub makeup_gain: Value<f32>,
-	pub mix: Value<f32>,
+	pub makeup_gain: Value<f64>,
+	pub mix: Value<f64>,
 }
 
 impl CompressorBuilder {
-	pub const DEFAULT_THRESHOLD: f32 = 0.0;
-	pub const DEFAULT_RATIO: f32 = 1.0;
+	pub const DEFAULT_THRESHOLD: f64 = 0.0;
+	pub const DEFAULT_RATIO: f64 = 1.0;
 	pub const DEFAULT_ATTACK_DURATION: Duration = Duration::from_millis(10);
 	pub const DEFAULT_RELEASE_DURATION: Duration = Duration::from_millis(100);
-	pub const DEFAULT_MAKEUP_GAIN: f32 = 0.0;
-	pub const DEFAULT_MIX: f32 = 1.0;
+	pub const DEFAULT_MAKEUP_GAIN: f64 = 0.0;
+	pub const DEFAULT_MIX: f64 = 1.0;
 
 	pub fn new() -> Self {
 		Self {
@@ -39,14 +39,14 @@ impl CompressorBuilder {
 		}
 	}
 
-	pub fn threshold(self, threshold: impl Into<Value<f32>>) -> Self {
+	pub fn threshold(self, threshold: impl Into<Value<f64>>) -> Self {
 		Self {
 			threshold: threshold.into(),
 			..self
 		}
 	}
 
-	pub fn ratio(self, ratio: impl Into<Value<f32>>) -> Self {
+	pub fn ratio(self, ratio: impl Into<Value<f64>>) -> Self {
 		Self {
 			ratio: ratio.into(),
 			..self
@@ -67,14 +67,14 @@ impl CompressorBuilder {
 		}
 	}
 
-	pub fn makeup_gain(self, makeup_gain: impl Into<Value<f32>>) -> Self {
+	pub fn makeup_gain(self, makeup_gain: impl Into<Value<f64>>) -> Self {
 		Self {
 			makeup_gain: makeup_gain.into(),
 			..self
 		}
 	}
 
-	pub fn mix(self, mix: impl Into<Value<f32>>) -> Self {
+	pub fn mix(self, mix: impl Into<Value<f64>>) -> Self {
 		Self {
 			mix: mix.into(),
 			..self

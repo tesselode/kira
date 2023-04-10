@@ -13,7 +13,7 @@ pub struct CompressorHandle {
 impl CompressorHandle {
 	pub fn set_threshold(
 		&mut self,
-		threshold: impl Into<Value<f32>>,
+		threshold: impl Into<Value<f64>>,
 		tween: Tween,
 	) -> Result<(), CommandError> {
 		self.command_producer
@@ -23,7 +23,7 @@ impl CompressorHandle {
 
 	pub fn set_ratio(
 		&mut self,
-		ratio: impl Into<Value<f32>>,
+		ratio: impl Into<Value<f64>>,
 		tween: Tween,
 	) -> Result<(), CommandError> {
 		self.command_producer
@@ -53,7 +53,7 @@ impl CompressorHandle {
 
 	pub fn set_makeup_gain(
 		&mut self,
-		makeup_gain: impl Into<Value<f32>>,
+		makeup_gain: impl Into<Value<f64>>,
 		tween: Tween,
 	) -> Result<(), CommandError> {
 		self.command_producer
@@ -67,7 +67,7 @@ impl CompressorHandle {
 	/// be heard.
 	pub fn set_mix(
 		&mut self,
-		mix: impl Into<Value<f32>>,
+		mix: impl Into<Value<f64>>,
 		tween: Tween,
 	) -> Result<(), CommandError> {
 		self.command_producer

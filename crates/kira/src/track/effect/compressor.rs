@@ -22,12 +22,12 @@ use super::Effect;
 
 struct Compressor {
 	command_consumer: HeapConsumer<Command>,
-	threshold: Parameter<f32>,
-	ratio: Parameter<f32>,
+	threshold: Parameter,
+	ratio: Parameter,
 	attack_duration: Parameter<Duration>,
 	release_duration: Parameter<Duration>,
-	makeup_gain: Parameter<f32>,
-	mix: Parameter<f32>,
+	makeup_gain: Parameter,
+	mix: Parameter,
 	envelope_follower: [f32; 2],
 }
 
@@ -93,8 +93,8 @@ impl Effect for Compressor {
 		self.mix
 			.update(dt, clock_info_provider, modulator_value_provider);
 
-		let threshold = self.threshold.value();
-		let ratio = self.ratio.value();
+		let threshold = self.threshold.value() as f32;
+		let ratio = self.ratio.value() as f32;
 		let attack_duration = self.attack_duration.value();
 		let release_duration = self.release_duration.value();
 
@@ -109,28 +109,29 @@ impl Effect for Compressor {
 			} else {
 				attack_duration
 			};
-			let speed = (-1.0 / (duration.as_secs_f64() / dt)).exp() as f32;
-			*envelope_follower = over_dbfs[i] + speed * (*envelope_follower - over_dbfs[i]);
+			let speed = (-1.0 / (duration.as_secs_f64() / dt)).exp();
+			*envelope_follower = over_dbfs[i] + speed as f32 * (*envelope_follower - over_dbfs[i]);
 		}
 		let gain_reduction = self
 			.envelope_follower
 			.map(|envelope_follower| envelope_follower * ((1.0 / ratio) - 1.0));
 		let amplitude = gain_reduction.map(|gain_reduction| 10.0f32.powf(gain_reduction / 20.0));
+		let makeup_gain_linear = 10.0f32.powf(self.makeup_gain.value() as f32 / 20.0);
 		let output = Frame {
 			left: amplitude[0] * input.left,
 			right: amplitude[1] * input.right,
-		} * 10.0f32.powf(self.makeup_gain.value() / 20.0);
+		} * makeup_gain_linear;
 
-		let mix = self.mix.value();
+		let mix = self.mix.value() as f32;
 		output * mix.sqrt() + input * (1.0 - mix).sqrt()
 	}
 }
 
 enum Command {
-	SetThreshold(Value<f32>, Tween),
-	SetRatio(Value<f32>, Tween),
+	SetThreshold(Value<f64>, Tween),
+	SetRatio(Value<f64>, Tween),
 	SetAttackDuration(Value<Duration>, Tween),
 	SetReleaseDuration(Value<Duration>, Tween),
-	SetMakeupGain(Value<f32>, Tween),
-	SetMix(Value<f32>, Tween),
+	SetMakeupGain(Value<f64>, Tween),
+	SetMix(Value<f64>, Tween),
 }
