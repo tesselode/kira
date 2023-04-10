@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::{
 	modulator::{value_provider::ModulatorValueProvider, ModulatorId},
 	tween::Tweenable,
@@ -65,6 +67,12 @@ impl From<mint::Vector3<f32>> for Value<mint::Vector3<f32>> {
 
 impl From<mint::Quaternion<f32>> for Value<mint::Quaternion<f32>> {
 	fn from(value: mint::Quaternion<f32>) -> Self {
+		Self::Fixed(value)
+	}
+}
+
+impl From<Duration> for Value<Duration> {
+	fn from(value: Duration) -> Self {
 		Self::Fixed(value)
 	}
 }
