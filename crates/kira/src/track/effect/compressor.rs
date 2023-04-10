@@ -26,6 +26,8 @@ struct Compressor {
 	ratio: Parameter<f32>,
 	attack_duration: Parameter<Duration>,
 	release_duration: Parameter<Duration>,
+	makeup_gain: Parameter<f32>,
+	mix: Parameter<f32>,
 	envelope_follower: [f32; 2],
 }
 
@@ -43,6 +45,11 @@ impl Compressor {
 				builder.release_duration,
 				CompressorBuilder::DEFAULT_RELEASE_DURATION,
 			),
+			makeup_gain: Parameter::new(
+				builder.makeup_gain,
+				CompressorBuilder::DEFAULT_MAKEUP_GAIN,
+			),
+			mix: Parameter::new(builder.mix, CompressorBuilder::DEFAULT_MIX),
 			envelope_follower: [0.0; 2],
 		}
 	}
@@ -60,6 +67,8 @@ impl Effect for Compressor {
 				Command::SetReleaseDuration(target, tween) => {
 					self.release_duration.set(target, tween)
 				}
+				Command::SetMakeupGain(target, tween) => self.makeup_gain.set(target, tween),
+				Command::SetMix(target, tween) => self.mix.set(target, tween),
 			}
 		}
 	}
@@ -78,6 +87,10 @@ impl Effect for Compressor {
 		self.attack_duration
 			.update(dt, clock_info_provider, modulator_value_provider);
 		self.release_duration
+			.update(dt, clock_info_provider, modulator_value_provider);
+		self.makeup_gain
+			.update(dt, clock_info_provider, modulator_value_provider);
+		self.mix
 			.update(dt, clock_info_provider, modulator_value_provider);
 
 		let threshold = self.threshold.value();
@@ -103,10 +116,13 @@ impl Effect for Compressor {
 			.envelope_follower
 			.map(|envelope_follower| envelope_follower * ((1.0 / ratio) - 1.0));
 		let amplitude = gain_reduction.map(|gain_reduction| 10.0f32.powf(gain_reduction / 20.0));
-		Frame {
+		let output = Frame {
 			left: amplitude[0] * input.left,
-			right: amplitude[0] * input.right,
-		}
+			right: amplitude[1] * input.right,
+		} * 10.0f32.powf(self.makeup_gain.value() / 20.0);
+
+		let mix = self.mix.value();
+		output * mix.sqrt() + input * (1.0 - mix).sqrt()
 	}
 }
 
@@ -115,4 +131,6 @@ enum Command {
 	SetRatio(Value<f32>, Tween),
 	SetAttackDuration(Value<Duration>, Tween),
 	SetReleaseDuration(Value<Duration>, Tween),
+	SetMakeupGain(Value<f32>, Tween),
+	SetMix(Value<f32>, Tween),
 }
