@@ -1,19 +1,27 @@
 // Loosely based on https://www.musicdsp.org/en/latest/Effects/204-simple-compressor-class-c.html
 
 mod builder;
+mod handle;
+
+pub use builder::*;
+pub use handle::*;
+
+use ringbuf::HeapConsumer;
 
 use std::time::Duration;
 
-pub use builder::*;
-
 use crate::{
-	clock::clock_info::ClockInfoProvider, dsp::Frame,
-	modulator::value_provider::ModulatorValueProvider, parameter::Parameter,
+	clock::clock_info::ClockInfoProvider,
+	dsp::Frame,
+	modulator::value_provider::ModulatorValueProvider,
+	parameter::{Parameter, Value},
+	tween::Tween,
 };
 
 use super::Effect;
 
 struct Compressor {
+	command_consumer: HeapConsumer<Command>,
 	threshold: Parameter<f32>,
 	ratio: Parameter<f32>,
 	attack_duration: Parameter<Duration>,
@@ -22,8 +30,9 @@ struct Compressor {
 }
 
 impl Compressor {
-	fn new(builder: CompressorBuilder) -> Self {
+	fn new(builder: CompressorBuilder, command_consumer: HeapConsumer<Command>) -> Self {
 		Self {
+			command_consumer,
 			threshold: Parameter::new(builder.threshold, CompressorBuilder::DEFAULT_THRESHOLD),
 			ratio: Parameter::new(builder.ratio, CompressorBuilder::DEFAULT_RATIO),
 			attack_duration: Parameter::new(
@@ -40,6 +49,21 @@ impl Compressor {
 }
 
 impl Effect for Compressor {
+	fn on_start_processing(&mut self) {
+		while let Some(command) = self.command_consumer.pop() {
+			match command {
+				Command::SetThreshold(target, tween) => self.threshold.set(target, tween),
+				Command::SetRatio(target, tween) => self.ratio.set(target, tween),
+				Command::SetAttackDuration(target, tween) => {
+					self.attack_duration.set(target, tween)
+				}
+				Command::SetReleaseDuration(target, tween) => {
+					self.release_duration.set(target, tween)
+				}
+			}
+		}
+	}
+
 	fn process(
 		&mut self,
 		input: Frame,
@@ -84,4 +108,11 @@ impl Effect for Compressor {
 			right: amplitude[0] * input.right,
 		}
 	}
+}
+
+enum Command {
+	SetThreshold(Value<f32>, Tween),
+	SetRatio(Value<f32>, Tween),
+	SetAttackDuration(Value<Duration>, Tween),
+	SetReleaseDuration(Value<Duration>, Tween),
 }
