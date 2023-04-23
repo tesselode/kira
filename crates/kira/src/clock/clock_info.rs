@@ -1,4 +1,4 @@
-//! Contains types for reporting information about clocks.s
+//! Contains types for reporting information about clocks.
 //!
 //! You'll only need these types if you're creating implementations
 //! of the [`Sound`](crate::sound::Sound) or
