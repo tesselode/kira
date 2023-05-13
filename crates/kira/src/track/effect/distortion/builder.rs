@@ -1,8 +1,8 @@
 use ringbuf::HeapRb;
 
 use crate::{
-	parameter::{Parameter, Value},
 	track::effect::{Effect, EffectBuilder},
+	tween::{Parameter, Value},
 	Volume,
 };
 

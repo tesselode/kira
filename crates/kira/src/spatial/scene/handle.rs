@@ -10,11 +10,11 @@ use ringbuf::HeapConsumer;
 
 use crate::{
 	manager::command::{producer::CommandProducer, Command, SpatialSceneCommand},
-	parameter::Value,
 	spatial::{
 		emitter::{Emitter, EmitterHandle, EmitterId, EmitterSettings},
 		listener::{Listener, ListenerHandle, ListenerId, ListenerSettings},
 	},
+	tween::Value,
 };
 
 use self::error::AddEmitterError;

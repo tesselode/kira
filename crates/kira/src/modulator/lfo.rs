@@ -19,8 +19,7 @@ use ringbuf::HeapConsumer;
 
 use crate::{
 	clock::clock_info::ClockInfoProvider,
-	parameter::{Parameter, Value},
-	tween::Tween,
+	tween::{Parameter, Tween, Value},
 };
 
 use super::{value_provider::ModulatorValueProvider, Modulator};

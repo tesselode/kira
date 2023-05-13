@@ -1,4 +1,4 @@
-use crate::{parameter::Value, Volume};
+use crate::{tween::Value, Volume};
 
 use super::{effect::EffectBuilder, routes::TrackRoutes, Effect};
 

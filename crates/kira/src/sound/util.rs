@@ -1,6 +1,5 @@
 use crate::{
-	parameter::{Parameter, Value},
-	tween::Tween,
+	tween::{Parameter, Tween, Value},
 	Volume,
 };
 

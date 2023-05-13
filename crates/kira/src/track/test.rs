@@ -4,8 +4,7 @@ use crate::{
 	clock::clock_info::{ClockInfoProvider, MockClockInfoProviderBuilder},
 	dsp::Frame,
 	modulator::value_provider::{MockModulatorValueProviderBuilder, ModulatorValueProvider},
-	parameter::Value,
-	tween::Tween,
+	tween::{Tween, Value},
 	Volume,
 };
 

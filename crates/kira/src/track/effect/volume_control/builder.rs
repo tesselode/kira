@@ -1,6 +1,6 @@
 use ringbuf::HeapRb;
 
-use crate::{parameter::Value, track::effect::EffectBuilder, Volume};
+use crate::{track::effect::EffectBuilder, tween::Value, Volume};
 
 use super::{VolumeControl, VolumeControlHandle};
 

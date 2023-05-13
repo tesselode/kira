@@ -1,8 +1,8 @@
 use ringbuf::HeapRb;
 
 use crate::{
-	parameter::Value,
 	track::effect::{Effect, EffectBuilder},
+	tween::Value,
 };
 
 use super::{Reverb, ReverbHandle};

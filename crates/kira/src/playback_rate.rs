@@ -1,7 +1,4 @@
-use crate::{
-	parameter::{ModulatorMapping, Value},
-	tween::Tweenable,
-};
+use crate::tween::{ModulatorMapping, Tweenable, Value};
 
 /// How quickly a sound is played.
 #[derive(Debug, Clone, Copy, PartialEq)]

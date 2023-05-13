@@ -3,8 +3,7 @@ use std::sync::Arc;
 use crate::{
 	error::CommandError,
 	manager::command::{producer::CommandProducer, ClockCommand, Command},
-	parameter::Value,
-	tween::Tween,
+	tween::{Tween, Value},
 	ClockSpeed,
 };
 

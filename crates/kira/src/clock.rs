@@ -19,8 +19,7 @@ use atomic_arena::Key;
 
 use crate::{
 	modulator::value_provider::ModulatorValueProvider,
-	parameter::{Parameter, Value},
-	tween::Tween,
+	tween::{Parameter, Tween, Value},
 	ClockSpeed,
 };
 

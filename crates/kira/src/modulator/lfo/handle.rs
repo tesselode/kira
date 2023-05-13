@@ -2,7 +2,11 @@ use std::sync::{atomic::Ordering, Arc};
 
 use ringbuf::HeapProducer;
 
-use crate::{modulator::ModulatorId, parameter::Value, tween::Tween, CommandError};
+use crate::{
+	modulator::ModulatorId,
+	tween::{Tween, Value},
+	CommandError,
+};
 
 use super::{Command, LfoShared};
 

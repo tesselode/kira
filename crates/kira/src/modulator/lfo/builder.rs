@@ -4,7 +4,7 @@ use ringbuf::HeapRb;
 
 use crate::{
 	modulator::{Modulator, ModulatorBuilder, ModulatorId},
-	parameter::Value,
+	tween::Value,
 };
 
 use super::{handle::LfoHandle, Lfo, LfoShared, Waveform};

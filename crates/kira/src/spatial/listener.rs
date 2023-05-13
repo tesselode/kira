@@ -16,9 +16,8 @@ use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
 	modulator::value_provider::ModulatorValueProvider,
-	parameter::{Parameter, Value},
 	track::TrackId,
-	tween::{Tween, Tweenable},
+	tween::{Parameter, Tween, Tweenable, Value},
 	Volume,
 };
 

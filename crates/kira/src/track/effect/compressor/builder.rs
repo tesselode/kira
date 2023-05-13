@@ -3,8 +3,8 @@ use std::time::Duration;
 use ringbuf::HeapRb;
 
 use crate::{
-	parameter::Value,
 	track::effect::{Effect, EffectBuilder},
+	tween::Value,
 };
 
 use super::{Compressor, CompressorHandle};

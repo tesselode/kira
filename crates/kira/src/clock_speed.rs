@@ -1,4 +1,4 @@
-use crate::{parameter::Value, tween::Tweenable};
+use crate::tween::{Tweenable, Value};
 
 /// The rate that a [clock](crate::clock) ticks at.
 #[derive(Debug, Clone, Copy, PartialEq)]

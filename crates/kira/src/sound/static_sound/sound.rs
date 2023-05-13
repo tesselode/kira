@@ -17,9 +17,8 @@ use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
 	dsp::Frame,
 	modulator::value_provider::ModulatorValueProvider,
-	parameter::{Parameter, Value},
 	sound::{transport::Transport, util::create_volume_fade_parameter, PlaybackState, Sound},
-	tween::Tween,
+	tween::{Parameter, Tween, Value},
 	OutputDestination, PlaybackRate, StartTime, Volume,
 };
 

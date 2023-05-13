@@ -9,8 +9,8 @@ use crate::{
 	dsp::Frame,
 	manager::command::MixerCommand,
 	modulator::value_provider::ModulatorValueProvider,
-	parameter::Parameter,
 	track::{SubTrackId, Track, TrackBuilder, TrackId},
+	tween::Parameter,
 	Volume,
 };
 

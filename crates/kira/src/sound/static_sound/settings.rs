@@ -1,7 +1,6 @@
 use crate::{
-	parameter::Value,
 	sound::{IntoOptionalRegion, Region},
-	tween::Tween,
+	tween::{Tween, Value},
 	OutputDestination, PlaybackRate, StartTime, Volume,
 };
 

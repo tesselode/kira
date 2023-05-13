@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-	parameter::{Parameter, Value},
+	tween::{Parameter, Value},
 	Volume,
 };
 

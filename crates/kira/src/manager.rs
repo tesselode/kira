@@ -15,11 +15,10 @@ use crate::{
 	error::CommandError,
 	manager::command::ModulatorCommand,
 	modulator::{ModulatorBuilder, ModulatorId},
-	parameter::Value,
 	sound::SoundData,
 	spatial::scene::{SpatialScene, SpatialSceneHandle, SpatialSceneId, SpatialSceneSettings},
 	track::{SubTrackId, Track, TrackBuilder, TrackHandle, TrackId},
-	tween::Tween,
+	tween::{Tween, Value},
 	ClockSpeed,
 };
 

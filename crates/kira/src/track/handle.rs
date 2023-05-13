@@ -3,8 +3,7 @@ use std::{collections::HashSet, error::Error, fmt::Display, sync::Arc};
 use crate::{
 	error::CommandError,
 	manager::command::{producer::CommandProducer, Command, MixerCommand},
-	parameter::Value,
-	tween::Tween,
+	tween::{Tween, Value},
 	Volume,
 };
 

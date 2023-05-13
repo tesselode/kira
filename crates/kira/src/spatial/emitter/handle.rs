@@ -2,8 +2,7 @@ use std::sync::Arc;
 
 use crate::{
 	manager::command::{producer::CommandProducer, Command, SpatialSceneCommand},
-	parameter::Value,
-	tween::Tween,
+	tween::{Tween, Value},
 	CommandError,
 };
 

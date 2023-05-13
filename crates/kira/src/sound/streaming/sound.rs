@@ -12,9 +12,8 @@ use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
 	dsp::{interpolate_frame, Frame},
 	modulator::value_provider::ModulatorValueProvider,
-	parameter::{Parameter, Value},
 	sound::{util::create_volume_fade_parameter, PlaybackState, Sound},
-	tween::Tween,
+	tween::{Parameter, Tween, Value},
 	OutputDestination, PlaybackRate, StartTime, Volume,
 };
 use ringbuf::HeapConsumer;

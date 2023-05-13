@@ -1,6 +1,6 @@
 use ringbuf::HeapRb;
 
-use crate::{parameter::Value, track::effect::EffectBuilder};
+use crate::{track::effect::EffectBuilder, tween::Value};
 
 use super::{PanningControl, PanningControlHandle};
 

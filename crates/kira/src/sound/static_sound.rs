@@ -9,7 +9,10 @@ pub use data::*;
 pub use handle::*;
 pub use settings::*;
 
-use crate::{parameter::Value, tween::Tween, PlaybackRate, Volume};
+use crate::{
+	tween::{Tween, Value},
+	PlaybackRate, Volume,
+};
 
 use super::Region;
 

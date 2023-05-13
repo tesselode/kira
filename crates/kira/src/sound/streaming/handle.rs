@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
 use crate::{
-	parameter::Value,
 	sound::{IntoOptionalRegion, PlaybackState, Region},
-	tween::Tween,
+	tween::{Tween, Value},
 	CommandError, PlaybackRate, Volume,
 };
 use ringbuf::{HeapConsumer, HeapProducer};

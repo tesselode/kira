@@ -10,7 +10,7 @@ use crate::{
 	dsp::Frame,
 	manager::{command::Command, MainPlaybackState},
 	modulator::value_provider::ModulatorValueProvider,
-	parameter::{Parameter, Value},
+	tween::{Parameter, Value},
 	Volume,
 };
 

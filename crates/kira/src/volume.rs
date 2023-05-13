@@ -1,7 +1,4 @@
-use crate::{
-	parameter::{ModulatorMapping, Value},
-	tween::Tweenable,
-};
+use crate::tween::{ModulatorMapping, Tweenable, Value};
 
 /// A change in volume of a sound.
 #[derive(Debug, Clone, Copy, PartialEq)]

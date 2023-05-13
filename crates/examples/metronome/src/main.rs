@@ -2,8 +2,8 @@ use std::{error::Error, time::Duration};
 
 use kira::{
 	manager::{backend::cpal::CpalBackend, AudioManager, AudioManagerSettings},
-	parameter::Value,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+	tween::Value,
 	ClockSpeed, PlaybackRate, StartTime,
 };
 

@@ -1,6 +1,9 @@
 use ringbuf::HeapProducer;
 
-use crate::{parameter::Value, tween::Tween, CommandError, Volume};
+use crate::{
+	tween::{Tween, Value},
+	CommandError, Volume,
+};
 
 use super::{Command, DistortionKind};
 

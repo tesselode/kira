@@ -14,8 +14,7 @@ use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
 	modulator::value_provider::ModulatorValueProvider,
-	parameter::{Parameter, Value},
-	tween::Tween,
+	tween::{Parameter, Tween, Value},
 };
 
 use super::Effect;

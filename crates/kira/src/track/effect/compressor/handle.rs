@@ -2,7 +2,10 @@ use std::time::Duration;
 
 use ringbuf::HeapProducer;
 
-use crate::{parameter::Value, tween::Tween, CommandError};
+use crate::{
+	tween::{Tween, Value},
+	CommandError,
+};
 
 use super::Command;
 

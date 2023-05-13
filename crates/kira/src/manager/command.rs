@@ -6,7 +6,6 @@ use glam::{Quat, Vec3};
 use crate::{
 	clock::{Clock, ClockId},
 	modulator::{Modulator, ModulatorId},
-	parameter::Value,
 	sound::Sound,
 	spatial::{
 		emitter::{Emitter, EmitterId},
@@ -14,7 +13,7 @@ use crate::{
 		scene::{SpatialScene, SpatialSceneId},
 	},
 	track::{SubTrackId, Track, TrackId},
-	tween::Tween,
+	tween::{Tween, Value},
 	ClockSpeed, Volume,
 };
 

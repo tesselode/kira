@@ -12,9 +12,8 @@ use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::{interpolate_frame, Frame},
 	modulator::value_provider::ModulatorValueProvider,
-	parameter::{Parameter, Value},
 	track::Effect,
-	tween::Tween,
+	tween::{Parameter, Tween, Value},
 	Volume,
 };
 
