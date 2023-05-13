@@ -59,13 +59,7 @@ impl StaticSoundData {
 
 	/// Loads an audio file into a [`StaticSoundData`].
 	#[cfg(not(target_arch = "wasm32"))]
-	#[cfg_attr(
-		docsrs,
-		doc(cfg(all(
-			any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav"),
-			not(wasm32)
-		)))
-	)]
+	#[cfg_attr(docsrs, doc(cfg(all(feature = "symphonia", not(wasm32)))))]
 	pub fn from_file(
 		path: impl AsRef<std::path::Path>,
 		settings: StaticSoundSettings,
@@ -74,10 +68,7 @@ impl StaticSoundData {
 	}
 
 	/// Loads a cursor wrapping audio file data into a [`StaticSoundData`].
-	#[cfg_attr(
-		docsrs,
-		doc(cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav")))
-	)]
+	#[cfg_attr(docsrs, doc(cfg(feature = "symphonia")))]
 	pub fn from_cursor<T: AsRef<[u8]> + Send + Sync + 'static>(
 		cursor: Cursor<T>,
 		settings: StaticSoundSettings,

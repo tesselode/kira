@@ -1,8 +1,9 @@
+#[cfg(feature = "symphonia")]
 pub(crate) mod symphonia;
 
 use crate::dsp::Frame;
 
-pub(crate) trait Decoder: Send {
+pub trait Decoder: Send {
 	type Error;
 
 	fn sample_rate(&self) -> u32;

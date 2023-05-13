@@ -4,10 +4,10 @@ v0.8 todo:
 	- Potential use cases:
 		- Exotic audio formats
 		- Loading from compressed resource packs?
-- Spatial audio:
-	- Doppler effect
-	- Reverb
 
 Future:
 
 - Plugin system?
+- Spatial audio:
+	- Doppler effect
+	- Link emitter distance to effects

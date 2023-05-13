@@ -7,7 +7,6 @@ use crate::sound::FromFileError;
 use crate::sound::SoundData;
 use ringbuf::HeapRb;
 
-use super::decoder::symphonia::SymphoniaDecoder;
 use super::sound::Shared;
 use super::{StreamingSoundHandle, StreamingSoundSettings};
 
@@ -26,27 +25,45 @@ pub struct StreamingSoundData<Error: Send + 'static = FromFileError> {
 	pub settings: StreamingSoundSettings,
 }
 
+impl<Error: Send> StreamingSoundData<Error> {
+	pub fn from_decoder(
+		decoder: impl Decoder<Error = Error> + 'static,
+		settings: StreamingSoundSettings,
+	) -> Self {
+		Self {
+			decoder: Box::new(decoder),
+			settings,
+		}
+	}
+}
+
 impl StreamingSoundData<FromFileError> {
+	#[cfg(feature = "symphonia")]
 	/// Creates a [`StreamingSoundData`] for an audio file.
 	pub fn from_file(
 		path: impl AsRef<Path>,
 		settings: StreamingSoundSettings,
 	) -> Result<StreamingSoundData<FromFileError>, FromFileError> {
-		Ok(StreamingSoundData {
-			decoder: Box::new(SymphoniaDecoder::new(Box::new(File::open(path)?))?),
+		use super::symphonia::SymphoniaDecoder;
+
+		Ok(Self::from_decoder(
+			SymphoniaDecoder::new(Box::new(File::open(path)?))?,
 			settings,
-		})
+		))
 	}
 
+	#[cfg(feature = "symphonia")]
 	/// Creates a [`StreamingSoundData`] for a cursor wrapping audio file data.
 	pub fn from_cursor<T: AsRef<[u8]> + Send + Sync + 'static>(
 		cursor: Cursor<T>,
 		settings: StreamingSoundSettings,
 	) -> Result<StreamingSoundData<FromFileError>, FromFileError> {
-		Ok(StreamingSoundData {
-			decoder: Box::new(SymphoniaDecoder::new(Box::new(cursor))?),
+		use super::symphonia::SymphoniaDecoder;
+
+		Ok(Self::from_decoder(
+			SymphoniaDecoder::new(Box::new(cursor))?,
 			settings,
-		})
+		))
 	}
 }
 

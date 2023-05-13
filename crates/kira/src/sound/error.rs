@@ -3,10 +3,7 @@ use std::fmt::Display;
 /// Errors that can occur when loading or streaming an audio file.
 #[derive(Debug)]
 #[non_exhaustive]
-#[cfg_attr(
-	docsrs,
-	doc(cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav")))
-)]
+#[cfg_attr(docsrs, doc(cfg(feature = "symphonia")))]
 pub enum FromFileError {
 	/// Could not determine the default audio track in the file.
 	NoDefaultTrack,

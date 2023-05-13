@@ -5,7 +5,7 @@ Sources of audio.
 #[cfg(feature = "symphonia")]
 mod error;
 pub mod static_sound;
-#[cfg(all(feature = "symphonia", not(target_arch = "wasm32")))]
+#[cfg(not(target_arch = "wasm32"))]
 pub mod streaming;
 #[cfg(feature = "symphonia")]
 mod symphonia;
