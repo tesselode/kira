@@ -9,11 +9,13 @@ use crate::{
 
 use super::Command;
 
+/// Controls a compressor.
 pub struct CompressorHandle {
 	pub(super) command_producer: HeapProducer<Command>,
 }
 
 impl CompressorHandle {
+	/// Sets the volume above which volume will start to be decreased (in dBFS).
 	pub fn set_threshold(
 		&mut self,
 		threshold: impl Into<Value<f64>>,
@@ -24,6 +26,11 @@ impl CompressorHandle {
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
+	/// Sets how much the signal will be compressed.
+	///
+	/// A ratio of `2.0` (or 2 to 1) means an increase of 3dB will
+	/// become an increase of 1.5dB. Ratios between `0.0` and `1.0`
+	/// will actually expand the audio.
 	pub fn set_ratio(
 		&mut self,
 		ratio: impl Into<Value<f64>>,
@@ -34,6 +41,8 @@ impl CompressorHandle {
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
+	/// Sets how much time it takes for the volume attenuation to ramp up once
+	/// the input volume exceeds the threshold.
 	pub fn set_attack_duration(
 		&mut self,
 		attack_duration: impl Into<Value<Duration>>,
@@ -44,6 +53,8 @@ impl CompressorHandle {
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
+	/// Sets how much time it takes for the volume attenuation to relax once
+	/// the input volume dips below the threshold.
 	pub fn set_release_duration(
 		&mut self,
 		release_duration: impl Into<Value<Duration>>,
@@ -54,6 +65,11 @@ impl CompressorHandle {
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
+	/// Sets the amount to change the volume after processing (in dB).
+	///
+	/// This can be used to compensate for the decrease in volume resulting
+	/// from compression. This is only applied to the wet signal, nto the
+	/// dry signal.
 	pub fn set_makeup_gain(
 		&mut self,
 		makeup_gain: impl Into<Value<f64>>,

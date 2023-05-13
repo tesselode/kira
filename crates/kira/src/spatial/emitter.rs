@@ -1,3 +1,5 @@
+//! Produces audio in a 3D space.
+
 mod distances;
 mod handle;
 mod settings;

@@ -1,3 +1,5 @@
+//! Receives audio in a 3D space.
+
 mod handle;
 mod settings;
 

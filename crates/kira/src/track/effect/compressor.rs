@@ -1,3 +1,5 @@
+//! Reduces (or increases) the dynamic range of audio.
+
 // Loosely based on https://www.musicdsp.org/en/latest/Effects/204-simple-compressor-class-c.html
 
 mod builder;

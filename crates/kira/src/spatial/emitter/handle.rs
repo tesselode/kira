@@ -24,6 +24,7 @@ impl EmitterHandle {
 		self.id
 	}
 
+	/// Sets the position that audio is produced from.
 	pub fn set_position(
 		&mut self,
 		position: impl Into<Value<mint::Vector3<f32>>>,

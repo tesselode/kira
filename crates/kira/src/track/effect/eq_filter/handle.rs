@@ -7,12 +7,14 @@ use crate::{
 
 use super::Command;
 
+/// Controls an EQ filter.
 pub struct EqFilterHandle {
 	pub(super) command_producer: HeapProducer<Command>,
 }
 
 impl EqFilterHandle {
-	/// Sets the frequency of the filter (in hertz).
+	/// Sets the "center" or "corner" of the frequency range to adjust in Hz
+	/// (for bell or shelf curves, respectively).
 	pub fn set_frequency(
 		&mut self,
 		frequency: impl Into<Value<f64>>,
@@ -23,7 +25,7 @@ impl EqFilterHandle {
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
-	/// Sets the gain of the filter (in hertz).
+	/// Sets the volume adjustment for frequencies in the specified range (in decibels).
 	pub fn set_gain(
 		&mut self,
 		gain: impl Into<Value<f64>>,
@@ -34,7 +36,10 @@ impl EqFilterHandle {
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
-	/// Sets the q value of the filter (in hertz).
+	/// Sets the width of the frequency range to adjust.
+	///
+	/// A higher Q value results in a narrower range of frequencies being adjusted.
+	/// The value should be greater than `0.0`.
 	pub fn set_q(&mut self, q: impl Into<Value<f64>>, tween: Tween) -> Result<(), CommandError> {
 		self.command_producer
 			.push(Command::SetQ(q.into(), tween))

@@ -97,15 +97,21 @@ where
 	}
 }
 
+/// A transformation from a modulator's value to a parameter value.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ModulatorMapping<T> {
+	/// A range of values from a modulator.
 	pub input_range: (f64, f64),
+	/// The corresponding range of values of the parameter.
 	pub output_range: (T, T),
+	/// Whether values should be prevented from being less than the bottom of the output range.
 	pub clamp_bottom: bool,
+	/// Whether values should be prevented from being greater than the top of the output range.
 	pub clamp_top: bool,
 }
 
 impl<T> ModulatorMapping<T> {
+	/// Converts a `ModulatorMapping<T>` to a `ModulatorMapping<T2>`.
 	pub fn to_<T2: From<T>>(self) -> ModulatorMapping<T2> {
 		ModulatorMapping {
 			input_range: self.input_range,
@@ -115,6 +121,7 @@ impl<T> ModulatorMapping<T> {
 		}
 	}
 
+	/// Transforms an input value to an output value using this mapping.
 	pub fn map(self, input: f64) -> T
 	where
 		T: Tweenable,

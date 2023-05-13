@@ -1,8 +1,11 @@
 use std::ops::RangeInclusive;
 
+/// The distances from a listener at which an emitter is loudest and quietest.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct EmitterDistances {
+	/// The distance from a listener at which an emitter outputs at full volume.
 	pub min_distance: f32,
+	/// The distance from a listener at which an emitter becomes inaudible.
 	pub max_distance: f32,
 }
 

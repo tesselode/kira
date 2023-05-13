@@ -24,6 +24,7 @@ impl ListenerHandle {
 		self.id
 	}
 
+	/// Sets the location of the listener in the spatial scene.
 	pub fn set_position(
 		&mut self,
 		position: impl Into<Value<mint::Vector3<f32>>>,
@@ -35,6 +36,7 @@ impl ListenerHandle {
 		))
 	}
 
+	/// Sets the rotation of the listener.
 	pub fn set_orientation(
 		&mut self,
 		orientation: impl Into<Value<mint::Quaternion<f32>>>,

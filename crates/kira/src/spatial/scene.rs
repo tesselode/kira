@@ -1,3 +1,5 @@
+//! A 3D space that audio travels through.
+
 mod handle;
 mod settings;
 

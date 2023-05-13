@@ -11,6 +11,15 @@ use crate::{
 	tween::{Tween, Tweenable},
 };
 
+/// Manages and updates a value that can be smoothly transitioned
+/// and linked to modulators.
+///
+/// You'll only need to use this if you're creating your own
+/// [`Sound`](crate::sound::Sound), [`Effect`](crate::track::effect::Effect),
+/// or [`Modulator`](crate::modulator::Modulator) implementations. If you
+/// want to adjust a parameter of something from gameplay code (such as the
+/// volume of a sound or the speed of a clock), use the functions on that
+/// object's handle.
 #[derive(Clone)]
 pub struct Parameter<T: Tweenable = f64> {
 	state: State<T>,
@@ -18,6 +27,10 @@ pub struct Parameter<T: Tweenable = f64> {
 }
 
 impl<T: Tweenable> Parameter<T> {
+	/// Creates a new [`Parameter`] with an initial [`Value`].
+	///
+	/// The `default_raw_value` is used if the parameter is linked to a modulator
+	/// that doesn't exist.
 	pub fn new(initial_value: Value<T>, default_raw_value: T) -> Self {
 		Self {
 			state: State::Idle {
@@ -30,10 +43,12 @@ impl<T: Tweenable> Parameter<T> {
 		}
 	}
 
+	/// Returns the current actual value of the parameter.
 	pub fn value(&self) -> T {
 		self.raw_value
 	}
 
+	/// Starts a transition from the current value to the target value.
 	pub fn set(&mut self, target: Value<T>, tween: Tween) {
 		self.state = State::Tweening {
 			start: self.value(),
@@ -43,6 +58,10 @@ impl<T: Tweenable> Parameter<T> {
 		};
 	}
 
+	/// Updates any in-progress transitions and keeps the value up-to-date
+	/// with any linked modulators.
+	///
+	/// Returns `true` if a transition just finished after this update.
 	pub fn update(
 		&mut self,
 		dt: f64,

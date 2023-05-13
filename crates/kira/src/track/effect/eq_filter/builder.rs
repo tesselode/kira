@@ -6,14 +6,24 @@ use super::{EqFilter, EqFilterHandle, EqFilterKind};
 
 const COMMAND_CAPACITY: usize = 8;
 
+/// Configures an EQ filter.
 pub struct EqFilterBuilder {
+	/// The shape of the frequency adjustment curve.
 	pub kind: EqFilterKind,
+	/// The "center" or "corner" of the frequency range to adjust in Hz
+	/// (for bell or shelf curves, respectively).
 	pub frequency: Value<f64>,
+	/// The volume adjustment for frequencies in the specified range (in decibels).
 	pub gain: Value<f64>,
+	/// The width of the frequency range to adjust.
+	///
+	/// A higher Q value results in a narrower range of frequencies being adjusted.
+	/// The value should be greater than `0.0`.
 	pub q: Value<f64>,
 }
 
 impl EqFilterBuilder {
+	/// Creates a new `EqFilterBuilder`.
 	pub fn new(
 		kind: EqFilterKind,
 		frequency: impl Into<Value<f64>>,

@@ -1,3 +1,5 @@
+//! Adjusts the volume of a frequency range of a sound.
+
 // Code is based on https://cytomic.com/files/dsp/SvfLinearTrapOptimised2.pdf
 
 mod builder;
@@ -152,10 +154,14 @@ impl Effect for EqFilter {
 	}
 }
 
+/// The shape of the frequency adjustment curve.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum EqFilterKind {
+	/// Frequencies around the user-defined frequency are adjusted.
 	Bell,
+	/// Frequencies around and lower than the user-defined frequency are adjusted.
 	LowShelf,
+	/// Frequencies around and higher than the user-defined frequency are adjusted.
 	HighShelf,
 }
 
