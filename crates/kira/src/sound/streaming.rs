@@ -15,7 +15,7 @@ pub use settings::*;
 
 use crate::{parameter::Value, tween::Tween, PlaybackRate, Volume};
 
-use super::{LoopRegion, PlaybackRegion};
+use super::Region;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum SoundCommand {
@@ -29,8 +29,8 @@ pub(crate) enum SoundCommand {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum DecodeSchedulerCommand {
-	SetPlaybackRegion(PlaybackRegion),
-	SetLoopRegion(Option<LoopRegion>),
+	SetPlaybackRegion(Region),
+	SetLoopRegion(Option<Region>),
 	SeekBy(f64),
 	SeekTo(f64),
 }

@@ -11,15 +11,15 @@ pub use settings::*;
 
 use crate::{parameter::Value, tween::Tween, PlaybackRate, Volume};
 
-use super::{LoopRegion, PlaybackRegion};
+use super::Region;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Command {
 	SetVolume(Value<Volume>, Tween),
 	SetPlaybackRate(Value<PlaybackRate>, Tween),
 	SetPanning(Value<f64>, Tween),
-	SetPlaybackRegion(PlaybackRegion),
-	SetLoopRegion(Option<LoopRegion>),
+	SetPlaybackRegion(Region),
+	SetLoopRegion(Option<Region>),
 	Pause(Tween),
 	Resume(Tween),
 	Stop(Tween),

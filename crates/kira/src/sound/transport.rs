@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 
-use super::{EndPosition, LoopRegion, PlaybackRegion};
+use super::{EndPosition, Region};
 
 #[cfg(test)]
 mod test;
@@ -19,8 +19,8 @@ pub struct Transport {
 
 impl Transport {
 	pub fn new(
-		playback_region: PlaybackRegion,
-		loop_region: Option<LoopRegion>,
+		playback_region: Region,
+		loop_region: Option<Region>,
 		reverse: bool,
 		sample_rate: u32,
 		num_frames: usize,
@@ -58,7 +58,7 @@ impl Transport {
 
 	pub fn set_playback_region(
 		&mut self,
-		playback_region: PlaybackRegion,
+		playback_region: Region,
 		sample_rate: u32,
 		num_frames: usize,
 	) {
@@ -74,7 +74,7 @@ impl Transport {
 
 	pub fn set_loop_region(
 		&mut self,
-		loop_region: Option<LoopRegion>,
+		loop_region: Option<Region>,
 		sample_rate: u32,
 		num_frames: usize,
 	) {

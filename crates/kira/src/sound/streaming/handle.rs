@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::{
 	parameter::Value,
-	sound::{IntoOptionalLoopRegion, PlaybackRegion, PlaybackState},
+	sound::{IntoOptionalRegion, PlaybackState, Region},
 	tween::Tween,
 	CommandError, PlaybackRate, Volume,
 };
@@ -68,7 +68,7 @@ impl<Error> StreamingSoundHandle<Error> {
 
 	pub fn set_playback_region(
 		&mut self,
-		playback_region: impl Into<PlaybackRegion>,
+		playback_region: impl Into<Region>,
 	) -> Result<(), CommandError> {
 		self.decode_scheduler_command_producer
 			.push(DecodeSchedulerCommand::SetPlaybackRegion(
@@ -80,7 +80,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	/// Sets the loop region of the sound.
 	pub fn set_loop_region(
 		&mut self,
-		loop_region: impl IntoOptionalLoopRegion,
+		loop_region: impl IntoOptionalRegion,
 	) -> Result<(), CommandError> {
 		self.decode_scheduler_command_producer
 			.push(DecodeSchedulerCommand::SetLoopRegion(

@@ -79,13 +79,12 @@ pub enum PlaybackState {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct PlaybackRegion {
+pub struct Region {
 	pub start: f64,
-	/// inclusive
 	pub end: EndPosition,
 }
 
-impl From<RangeFrom<f64>> for PlaybackRegion {
+impl From<RangeFrom<f64>> for Region {
 	fn from(range: RangeFrom<f64>) -> Self {
 		Self {
 			start: range.start,
@@ -94,50 +93,7 @@ impl From<RangeFrom<f64>> for PlaybackRegion {
 	}
 }
 
-impl From<RangeInclusive<f64>> for PlaybackRegion {
-	fn from(range: RangeInclusive<f64>) -> Self {
-		Self {
-			start: *range.start(),
-			end: EndPosition::Custom(*range.end()),
-		}
-	}
-}
-
-impl From<RangeFull> for PlaybackRegion {
-	fn from(_: RangeFull) -> Self {
-		Self {
-			start: 0.0,
-			end: EndPosition::EndOfAudio,
-		}
-	}
-}
-
-impl Default for PlaybackRegion {
-	fn default() -> Self {
-		Self {
-			start: 0.0,
-			end: EndPosition::EndOfAudio,
-		}
-	}
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct LoopRegion {
-	pub start: f64,
-	/// exclusive
-	pub end: EndPosition,
-}
-
-impl From<RangeFrom<f64>> for LoopRegion {
-	fn from(range: RangeFrom<f64>) -> Self {
-		Self {
-			start: range.start,
-			end: EndPosition::EndOfAudio,
-		}
-	}
-}
-
-impl From<Range<f64>> for LoopRegion {
+impl From<Range<f64>> for Region {
 	fn from(range: Range<f64>) -> Self {
 		Self {
 			start: range.start,
@@ -146,7 +102,16 @@ impl From<Range<f64>> for LoopRegion {
 	}
 }
 
-impl From<RangeFull> for LoopRegion {
+impl From<RangeInclusive<f64>> for Region {
+	fn from(range: RangeInclusive<f64>) -> Self {
+		Self {
+			start: *range.start(),
+			end: EndPosition::Custom(*range.end()),
+		}
+	}
+}
+
+impl From<RangeFull> for Region {
 	fn from(_: RangeFull) -> Self {
 		Self {
 			start: 0.0,
@@ -155,39 +120,57 @@ impl From<RangeFull> for LoopRegion {
 	}
 }
 
-pub trait IntoOptionalLoopRegion {
-	fn into_optional_loop_region(self) -> Option<LoopRegion>;
+impl Default for Region {
+	fn default() -> Self {
+		Self {
+			start: 0.0,
+			end: EndPosition::EndOfAudio,
+		}
+	}
 }
 
-impl IntoOptionalLoopRegion for RangeFrom<f64> {
-	fn into_optional_loop_region(self) -> Option<LoopRegion> {
-		Some(LoopRegion {
+pub trait IntoOptionalRegion {
+	fn into_optional_loop_region(self) -> Option<Region>;
+}
+
+impl IntoOptionalRegion for RangeFrom<f64> {
+	fn into_optional_loop_region(self) -> Option<Region> {
+		Some(Region {
 			start: self.start,
 			end: EndPosition::EndOfAudio,
 		})
 	}
 }
 
-impl IntoOptionalLoopRegion for Range<f64> {
-	fn into_optional_loop_region(self) -> Option<LoopRegion> {
-		Some(LoopRegion {
+impl IntoOptionalRegion for Range<f64> {
+	fn into_optional_loop_region(self) -> Option<Region> {
+		Some(Region {
 			start: self.start,
 			end: EndPosition::Custom(self.end),
 		})
 	}
 }
 
-impl IntoOptionalLoopRegion for RangeFull {
-	fn into_optional_loop_region(self) -> Option<LoopRegion> {
-		Some(LoopRegion {
+impl IntoOptionalRegion for RangeInclusive<f64> {
+	fn into_optional_loop_region(self) -> Option<Region> {
+		Some(Region {
+			start: *self.start(),
+			end: EndPosition::Custom(*self.end()),
+		})
+	}
+}
+
+impl IntoOptionalRegion for RangeFull {
+	fn into_optional_loop_region(self) -> Option<Region> {
+		Some(Region {
 			start: 0.0,
 			end: EndPosition::EndOfAudio,
 		})
 	}
 }
 
-impl IntoOptionalLoopRegion for Option<LoopRegion> {
-	fn into_optional_loop_region(self) -> Option<LoopRegion> {
+impl IntoOptionalRegion for Option<Region> {
+	fn into_optional_loop_region(self) -> Option<Region> {
 		self
 	}
 }

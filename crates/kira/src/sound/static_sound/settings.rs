@@ -1,6 +1,6 @@
 use crate::{
 	parameter::Value,
-	sound::{IntoOptionalLoopRegion, LoopRegion, PlaybackRegion},
+	sound::{IntoOptionalRegion, Region},
 	tween::Tween,
 	OutputDestination, PlaybackRate, StartTime, Volume,
 };
@@ -12,9 +12,9 @@ pub struct StaticSoundSettings {
 	/// When the sound should start playing.
 	pub start_time: StartTime,
 	/// The portion of the sound that should be played.
-	pub playback_region: PlaybackRegion,
+	pub playback_region: Region,
 	/// The portion of the sound that should be looped.
-	pub loop_region: Option<LoopRegion>,
+	pub loop_region: Option<Region>,
 	/// Whether the sound should be played in reverse.
 	pub reverse: bool,
 	/// The volume of the sound.
@@ -38,7 +38,7 @@ impl StaticSoundSettings {
 	pub fn new() -> Self {
 		Self {
 			start_time: StartTime::default(),
-			playback_region: PlaybackRegion::default(),
+			playback_region: Region::default(),
 			reverse: false,
 			loop_region: None,
 			volume: Value::Fixed(Volume::Amplitude(1.0)),
@@ -58,7 +58,7 @@ impl StaticSoundSettings {
 	}
 
 	/// Sets the portion of the sound that should be played.
-	pub fn playback_region(self, playback_region: impl Into<PlaybackRegion>) -> Self {
+	pub fn playback_region(self, playback_region: impl Into<Region>) -> Self {
 		Self {
 			playback_region: playback_region.into(),
 			..self
@@ -71,7 +71,7 @@ impl StaticSoundSettings {
 	}
 
 	/// Sets the portion of the sound that should be looped.
-	pub fn loop_region(self, loop_region: impl IntoOptionalLoopRegion) -> Self {
+	pub fn loop_region(self, loop_region: impl IntoOptionalRegion) -> Self {
 		Self {
 			loop_region: loop_region.into_optional_loop_region(),
 			..self
