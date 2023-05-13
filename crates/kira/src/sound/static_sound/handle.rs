@@ -74,7 +74,7 @@ impl StaticSoundHandle {
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
-	/// Sets the loop region of the sound.
+	/// Sets the portion of the sound that will play in a loop.
 	pub fn set_loop_region(
 		&mut self,
 		loop_region: impl IntoOptionalRegion,

@@ -10,6 +10,7 @@ use crate::{
 
 use super::{Command, LfoShared};
 
+/// Controls an LFO modulator.
 pub struct LfoHandle {
 	pub(super) id: ModulatorId,
 	pub(super) command_producer: HeapProducer<Command>,
@@ -17,10 +18,12 @@ pub struct LfoHandle {
 }
 
 impl LfoHandle {
+	/// Returns the unique identifier for the modulator.
 	pub fn id(&self) -> ModulatorId {
 		self.id
 	}
 
+	/// Sets how quickly the value oscillates.
 	pub fn set_frequency(
 		&mut self,
 		target: impl Into<Value<f64>>,
@@ -34,6 +37,10 @@ impl LfoHandle {
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
+	/// Sets how much the value oscillates.
+	///
+	/// An amplitude of `2.0` means the modulator will reach a maximum
+	/// value of `2.0` and a minimum value of `-2.0`.
 	pub fn set_amplitude(
 		&mut self,
 		target: impl Into<Value<f64>>,
@@ -47,6 +54,10 @@ impl LfoHandle {
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
+	/// Sets a constant value that the modulator is offset by.
+	///
+	/// An LFO with an offset of `1.0` and an amplitude of `0.5` will reach
+	/// a maximum value of `1.5` and a minimum value of `0.5`.
 	pub fn set_offset(
 		&mut self,
 		target: impl Into<Value<f64>>,

@@ -2,7 +2,6 @@ mod handle;
 mod settings;
 
 pub use handle::*;
-use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 pub use settings::*;
 
 use std::sync::{
@@ -11,6 +10,7 @@ use std::sync::{
 };
 
 use atomic_arena::{Arena, Controller, Key};
+use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 
 use crate::{
 	clock::clock_info::ClockInfoProvider, manager::backend::resources::mixer::Mixer,

@@ -50,6 +50,9 @@ pub trait Sound: Send {
 	fn on_start_processing(&mut self) {}
 
 	/// Produces the next [`Frame`] of audio.
+	///
+	/// `dt` is the time that's elapsed since the previous round of
+	/// processing (in seconds).
 	fn process(
 		&mut self,
 		dt: f64,
@@ -78,9 +81,12 @@ pub enum PlaybackState {
 	Stopped,
 }
 
+/// A portion of audio.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Region {
+	/// The starting time of the region (in seconds).
 	pub start: f64,
+	/// The ending time of the region.
 	pub end: EndPosition,
 }
 
@@ -129,7 +135,9 @@ impl Default for Region {
 	}
 }
 
+/// A trait for types that can be converted into an `Option<Region>`.
 pub trait IntoOptionalRegion {
+	/// Converts the type into an `Option<Region>`.
 	fn into_optional_loop_region(self) -> Option<Region>;
 }
 
@@ -175,8 +183,11 @@ impl IntoOptionalRegion for Option<Region> {
 	}
 }
 
+/// The ending time of a region of audio.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum EndPosition {
+	/// The end of the audio data.
 	EndOfAudio,
+	/// A user-defined time in seconds.
 	Custom(f64),
 }

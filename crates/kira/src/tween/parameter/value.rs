@@ -5,16 +5,22 @@ use crate::{
 	tween::Tweenable,
 };
 
+/// A value that a parameter can be linked to.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Value<T> {
+	/// A fixed value.
 	Fixed(T),
+	/// The value of a [`modulator`](crate::modulator).
 	FromModulator {
+		/// The modulator to link to.
 		id: ModulatorId,
+		/// How the modulator's value should be converted to the parameter's value.
 		mapping: ModulatorMapping<T>,
 	},
 }
 
 impl<T> Value<T> {
+	/// Creates a `Value::FromModulator` from a modulator ID or handle.
 	pub fn from_modulator(id: impl Into<ModulatorId>, mapping: ModulatorMapping<T>) -> Self {
 		Self::FromModulator {
 			id: id.into(),
@@ -22,6 +28,7 @@ impl<T> Value<T> {
 		}
 	}
 
+	/// Converts a `Value<T>` to a `Value<T2>`.
 	pub fn to_<T2: From<T>>(self) -> Value<T2> {
 		match self {
 			Value::Fixed(value) => Value::Fixed(value.into()),

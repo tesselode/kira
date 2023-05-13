@@ -8,7 +8,9 @@ use super::{Tweener, TweenerHandle, TweenerShared};
 
 const COMMAND_CAPACITY: usize = 8;
 
+/// Configures a tweener.
 pub struct TweenerBuilder {
+	/// The initial value of the tweener.
 	pub initial_value: f64,
 }
 

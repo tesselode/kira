@@ -1,9 +1,7 @@
 v0.8 todo:
 
-- Expose `Decoder` trait for non-Symphonia-based streaming sounds
-	- Potential use cases:
-		- Exotic audio formats
-		- Loading from compressed resource packs?
+- Add `LfoHandle::set_waveform`
+- Consider sealing `IntoOptionalRegion`
 
 Future:
 

@@ -26,6 +26,7 @@ pub struct StreamingSoundData<Error: Send + 'static = FromFileError> {
 }
 
 impl<Error: Send> StreamingSoundData<Error> {
+	/// Creates a [`StreamingSoundData`] for a [`Decoder`].
 	pub fn from_decoder(
 		decoder: impl Decoder<Error = Error> + 'static,
 		settings: StreamingSoundSettings,

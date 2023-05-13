@@ -3,7 +3,6 @@ mod handle;
 mod settings;
 
 pub use distances::*;
-use glam::Vec3;
 pub use handle::*;
 pub use settings::*;
 
@@ -13,6 +12,7 @@ use std::sync::{
 };
 
 use atomic_arena::Key;
+use glam::Vec3;
 
 use crate::{
 	clock::clock_info::ClockInfoProvider,

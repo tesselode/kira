@@ -6,6 +6,7 @@ use crate::{modulator::ModulatorId, tween::Tween, CommandError};
 
 use super::{command::Command, TweenerShared};
 
+/// Controls a tweener.
 pub struct TweenerHandle {
 	pub(super) id: ModulatorId,
 	pub(super) command_producer: HeapProducer<Command>,
@@ -13,10 +14,13 @@ pub struct TweenerHandle {
 }
 
 impl TweenerHandle {
+	/// Returns the unique identifier for the modulator.
 	pub fn id(&self) -> ModulatorId {
 		self.id
 	}
 
+	/// Starts a transition from the current value to a target value with
+	/// the given tween.
 	pub fn set(&mut self, target: f64, tween: Tween) -> Result<(), CommandError> {
 		self.command_producer
 			.push(Command::Set { target, tween })

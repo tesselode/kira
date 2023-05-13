@@ -1,3 +1,5 @@
+//! Oscillates back and forth.
+
 #[cfg(test)]
 mod test;
 
@@ -91,12 +93,23 @@ impl Modulator for Lfo {
 	}
 }
 
+/// Describes an oscillation pattern.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Waveform {
+	/// The value moves back and forth smoothly.
 	Sine,
+	/// The value moves back and forth at a constant speed.
 	Triangle,
+	/// The value moves gradually in one direction, then abruptly jumps in the other.
 	Saw,
-	Pulse { width: f64 },
+	/// The value jumps back and forth between two values.
+	Pulse {
+		/// The ratio between how much time the oscillator spends on one value vs. the other.
+		///
+		/// This should be a number between `0.0` and `1.0`. A value of `0.5` means the oscillator
+		/// spends an equal amount of time at both values.
+		width: f64,
+	},
 }
 
 impl Waveform {

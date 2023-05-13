@@ -1,3 +1,5 @@
+//! Smoothly transitions values to other values.
+
 mod builder;
 mod command;
 mod handle;

@@ -1,7 +1,6 @@
 mod handle;
 mod settings;
 
-use glam::{Quat, Vec3};
 pub use handle::*;
 pub use settings::*;
 
@@ -11,6 +10,7 @@ use std::sync::{
 };
 
 use atomic_arena::{Arena, Key};
+use glam::{Quat, Vec3};
 
 use crate::{
 	clock::clock_info::ClockInfoProvider,

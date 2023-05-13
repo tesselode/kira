@@ -39,9 +39,9 @@ pub trait Effect: Send + Sync {
 	fn on_start_processing(&mut self) {}
 
 	/// Transforms an input [`Frame`].
-	/// - `input` is the input audio
-	/// - `dt` is the time that's elapsed since the previous round of
-	/// processing (in seconds)
+	///
+	/// `dt` is the time that's elapsed since the previous round of
+	/// processing (in seconds).
 	fn process(
 		&mut self,
 		input: Frame,

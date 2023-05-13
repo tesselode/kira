@@ -3,13 +3,17 @@ use crate::{
 	track::{SubTrackId, TrackHandle, TrackId},
 };
 
+/// Where a source of audio should be routed to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum OutputDestination {
+	/// A mixer track.
 	Track(TrackId),
+	/// An emitter in a spatial scene.
 	Emitter(EmitterId),
 }
 
 impl OutputDestination {
+	/// Route audio to the main mixer track.
 	pub const MAIN_TRACK: Self = Self::Track(TrackId::Main);
 }
 

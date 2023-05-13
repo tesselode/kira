@@ -1,3 +1,5 @@
+//! Global values that parameters (like volume and playback rate) can be linked to.
+
 pub mod lfo;
 pub mod tweener;
 pub mod value_provider;
@@ -17,6 +19,7 @@ pub trait ModulatorBuilder {
 	fn build(self, id: ModulatorId) -> (Box<dyn Modulator>, Self::Handle);
 }
 
+/// Produces a stream of values that a parameter can be linked to.
 pub trait Modulator: Send {
 	/// Called whenever a new batch of audio samples is requested by the backend.
 	///
@@ -24,6 +27,10 @@ pub trait Modulator: Send {
 	/// but not for every single audio sample.
 	fn on_start_processing(&mut self) {}
 
+	/// Updates the modulator.
+	///
+	/// `dt` is the time that's elapsed since the previous round of
+	/// processing (in seconds).
 	fn update(
 		&mut self,
 		dt: f64,
@@ -31,11 +38,13 @@ pub trait Modulator: Send {
 		modulator_value_provider: &ModulatorValueProvider,
 	);
 
+	/// Returns the current output of the modulator.
 	fn value(&self) -> f64;
 
 	/// Whether the modulator can be removed from the audio context.
 	fn finished(&self) -> bool;
 }
 
+/// A unique identifier for a modulator.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ModulatorId(pub(crate) Key);
