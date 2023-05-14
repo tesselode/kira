@@ -1,4 +1,9 @@
 //! The main entrypoint for controlling audio from gameplay code.
+//!
+//! In order to play audio, you'll need to create an [`AudioManager`].
+//! The [`AudioManager`] keeps track of playing sounds and manages other
+//! resources like clocks, mixer tracks, and spatial scenes. Once the
+//! [`AudioManager`] is dropped, its audio output will be stopped.
 
 pub mod backend;
 pub(crate) mod command;
@@ -73,7 +78,36 @@ pub struct AudioManager<B: Backend = DefaultBackend> {
 }
 
 impl<B: Backend> AudioManager<B> {
-	/// Creates a new [`AudioManager`].
+	/**
+	Creates a new [`AudioManager`].
+
+	# Examples
+
+	Create an [`AudioManager`] using the [`DefaultBackend`] and the
+	default settings:
+
+	```no_run
+	use kira::manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend};
+
+	let audio_manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+
+	Create an [`AudioManager`] with a reverb effect on the main mixer track:
+
+	```no_run
+	use kira::{
+		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		track::{TrackBuilder, effect::reverb::ReverbBuilder},
+	};
+
+	let audio_manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings {
+		main_track_builder: TrackBuilder::new().with_effect(ReverbBuilder::new()),
+		..Default::default()
+	})?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
 	pub fn new(settings: AudioManagerSettings<B>) -> Result<Self, B::Error> {
 		let (mut backend, sample_rate) = B::setup(settings.backend_settings)?;
 		let (command_producer, command_consumer) =
@@ -98,7 +132,26 @@ impl<B: Backend> AudioManager<B> {
 		})
 	}
 
-	/// Plays a sound.
+	/**
+	Plays a sound.
+
+	# Examples
+
+	```no_run
+	# use kira::{
+	# 	manager::{
+	# 		AudioManager, AudioManagerSettings,
+	# 		backend::DefaultBackend,
+	# 	},
+	# };
+	use kira::sound::static_sound::{StaticSoundData, StaticSoundSettings};
+
+	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let sound_data = StaticSoundData::from_file("sound.ogg", StaticSoundSettings::default())?;
+	manager.play(sound_data)?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
 	pub fn play<D: SoundData>(
 		&mut self,
 		sound_data: D,
@@ -142,7 +195,25 @@ impl<B: Backend> AudioManager<B> {
 		Ok(handle)
 	}
 
-	/// Creates a clock.
+	/**
+	Creates a clock.
+
+	# Examples
+
+	```no_run
+	# use kira::{
+	# 	manager::{
+	# 		AudioManager, AudioManagerSettings,
+	# 		backend::DefaultBackend,
+	# 	},
+	# };
+	use kira::ClockSpeed;
+
+	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let clock = manager.add_clock(ClockSpeed::TicksPerMinute(120.0))?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
 	pub fn add_clock(
 		&mut self,
 		speed: impl Into<Value<ClockSpeed>>,
@@ -196,7 +267,25 @@ impl<B: Backend> AudioManager<B> {
 		Ok(handle)
 	}
 
-	/// Creates a modulator.
+	/**
+	Creates a modulator.
+
+	# Examples
+
+	```no_run
+	# use kira::{
+	# 	manager::{
+	# 		AudioManager, AudioManagerSettings,
+	# 		backend::DefaultBackend,
+	# 	},
+	# };
+	use kira::modulator::lfo::LfoBuilder;
+
+	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let modulator = manager.add_modulator(LfoBuilder::new())?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
 	pub fn add_modulator<Builder: ModulatorBuilder>(
 		&mut self,
 		builder: Builder,
@@ -214,17 +303,101 @@ impl<B: Backend> AudioManager<B> {
 		Ok(handle)
 	}
 
-	/// Fades out and pauses all audio.
+	/**
+	Fades out and pauses all audio.
+
+	# Examples
+
+	Pause audio immediately:
+
+	```no_run
+	# use kira::{
+	# 	manager::{
+	# 		AudioManager, AudioManagerSettings,
+	# 		backend::DefaultBackend,
+	# 	},
+	# };
+	use kira::tween::Tween;
+
+	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	manager.pause(Tween::default())?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+
+	Fade out audio for 3 seconds and then pause:
+
+	```no_run
+	# use kira::{
+	# 	manager::{
+	# 		AudioManager, AudioManagerSettings,
+	# 		backend::DefaultBackend,
+	# 	},
+	# };
+	use kira::tween::Tween;
+	use std::time::Duration;
+
+	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	manager.pause(Tween {
+		duration: Duration::from_secs(3),
+		..Default::default()
+	})?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
 	pub fn pause(&self, fade_out_tween: Tween) -> Result<(), CommandError> {
 		self.command_producer.push(Command::Pause(fade_out_tween))
 	}
 
-	/// Resumes and fades in all audio.
+	/**
+	Resumes and fades in all audio.
+
+	# Examples
+
+	Resume audio with a 3-second fade-in:
+
+	```no_run
+	# use kira::{
+	# 	manager::{
+	# 		AudioManager, AudioManagerSettings,
+	# 		backend::DefaultBackend,
+	# 	},
+	# };
+	use kira::tween::Tween;
+	use std::time::Duration;
+
+	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	manager.resume(Tween {
+		duration: Duration::from_secs(3),
+		..Default::default()
+	})?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
 	pub fn resume(&self, fade_out_tween: Tween) -> Result<(), CommandError> {
 		self.command_producer.push(Command::Resume(fade_out_tween))
 	}
 
-	/// Returns a handle to the main mixer track.
+	/**
+	Returns a handle to the main mixer track.
+
+	# Examples
+
+	Use the main track handle to adjust the volume of all audio:
+
+	```no_run
+	# use kira::{
+	# 	manager::{
+	# 		AudioManager, AudioManagerSettings,
+	# 		backend::DefaultBackend,
+	# 	},
+	# };
+	use kira::tween::Tween;
+
+	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	manager.main_track().set_volume(0.5, Tween::default())?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
 	pub fn main_track(&self) -> TrackHandle {
 		TrackHandle {
 			id: TrackId::Main,
