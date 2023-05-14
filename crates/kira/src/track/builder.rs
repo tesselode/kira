@@ -45,6 +45,15 @@ impl TrackBuilder {
 		self.effects.push(effect);
 		handle
 	}
+
+	/// Adds an effect to the track and returns the [`TrackBuilder`].
+	///
+	/// If you need to modify the effect later, use [`add_effect`](Self::add_effect),
+	/// which returns the effect handle.
+	pub fn with_effect<B: EffectBuilder>(mut self, builder: B) -> Self {
+		self.add_effect(builder);
+		self
+	}
 }
 
 impl Default for TrackBuilder {
