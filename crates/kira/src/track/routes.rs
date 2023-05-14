@@ -13,10 +13,22 @@ use super::TrackId;
 pub struct TrackRoutes(pub(crate) HashMap<TrackId, Value<Volume>>);
 
 impl TrackRoutes {
-	/// Creates a new [`TrackRoutes`] with the default settings.
-	///
-	/// By default, a mixer track will send its output to the
-	/// main mixer track at full volume.
+	/**
+	Creates a new [`TrackRoutes`] with the default settings.
+
+	By default, a mixer track will send its output to the
+	main mixer track at full volume.
+
+	# Examples
+
+	```
+	# use kira::track::{TrackId, TrackRoutes};
+	assert_eq!(
+		TrackRoutes::new(),
+		TrackRoutes::empty().with_route(TrackId::Main, 1.0),
+	)
+	```
+	*/
 	pub fn new() -> Self {
 		Self::parent(TrackId::Main)
 	}
@@ -30,8 +42,27 @@ impl TrackRoutes {
 		Self(HashMap::new())
 	}
 
-	/// Creates a new [`TrackRoutes`] with a single route to the
-	/// specified track.
+	/**
+	Creates a new [`TrackRoutes`] with a single route to the
+	specified track.
+
+	# Examples
+
+	```no_run
+	use kira::{
+		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		track::{TrackBuilder, TrackRoutes},
+	};
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let track = manager.add_sub_track(TrackBuilder::default())?;
+	assert_eq!(
+		TrackRoutes::parent(&track),
+		TrackRoutes::empty().with_route(&track, 1.0),
+	);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
 	pub fn parent(track: impl Into<TrackId>) -> Self {
 		Self({
 			let mut routes = HashMap::new();
