@@ -1,5 +1,17 @@
 /*!
 Sources of audio.
+
+Any type that implements [`SoundData`] can be played using
+[`AudioManager::play`](crate::manager::AudioManager::play). Kira comes with two
+[`SoundData`] implementations:
+
+- [`StaticSoundData`](static_sound::StaticSoundData), which loads an entire chunk of audio
+into memory
+- [`StreamingSoundData`](streaming::StreamingSoundData), which streams audio from a file or cursor
+(only available on desktop platforms)
+
+These two sound types should cover most use cases, but if you need something else, you can
+create your own types that implement the [`SoundData`] and [`Sound`] traits.
 */
 
 #[cfg(feature = "symphonia")]
@@ -33,14 +45,24 @@ pub trait SoundData {
 
 	/// Converts the loaded sound into a live, playing sound
 	/// and a handle to control it.
+	///
+	/// The [`Sound`] implementation will be sent to the audio renderer
+	/// for playback, and the handle will be returned to the user by
+	/// [`AudioManager::play`](crate::manager::AudioManager::play).
 	#[allow(clippy::type_complexity)]
 	fn into_sound(self) -> Result<(Box<dyn Sound>, Self::Handle), Self::Error>;
 }
 
 /// An actively playing sound.
+///
+/// For performance reasons, the methods of this trait should not allocate
+/// or deallocate memory.
 #[allow(unused_variables)]
 pub trait Sound: Send {
 	/// Returns the destination that this sound's audio should be routed to.
+	///
+	/// This will typically be set by the user with a settings struct that's passed
+	/// to the [`SoundData`] implementor.
 	fn output_destination(&mut self) -> OutputDestination;
 
 	/// Called whenever a new batch of audio samples is requested by the backend.
@@ -61,6 +83,10 @@ pub trait Sound: Send {
 	) -> Frame;
 
 	/// Returns `true` if the sound is finished and can be unloaded.
+	///
+	/// For finite sounds, this will typically be when playback has reached the
+	/// end of the sound. For infinite sounds, this will typically be when the
+	/// handle for the sound is dropped.
 	fn finished(&self) -> bool;
 }
 

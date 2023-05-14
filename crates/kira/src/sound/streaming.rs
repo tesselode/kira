@@ -1,4 +1,27 @@
-//! Decodes data gradually from an audio file.
+/*!
+Decodes data gradually from an audio file.
+
+To play a streaming sound, pass a [`StreamingSoundData`] to
+[`AudioManager::play`](crate::manager::AudioManager::play).
+
+```no_run
+use kira::{
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	sound::streaming::{StreamingSoundData, StreamingSoundSettings},
+};
+
+let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let sound_data = StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?;
+manager.play(sound_data)?;
+# Result::<(), Box<dyn std::error::Error>>::Ok(())
+```
+
+Streaming sounds use less memory than static sounds, but they use more
+CPU, and they can have delays when starting or seeking.
+*/
 
 #![cfg_attr(docsrs, doc(cfg(not(wasm32))))]
 

@@ -28,7 +28,68 @@ impl<Error> StreamingSoundHandle<Error> {
 		self.shared.position()
 	}
 
-	/// Sets the volume of the sound (as a factor of the original volume).
+	/**
+	Sets the volume of the sound.
+
+	# Examples
+
+	Set the volume of the sound as a factor immediately:
+
+	```no_run
+	# use kira::{
+	# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+	# 	sound::streaming::{StreamingSoundData, StreamingSoundSettings},
+	# };
+	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+	use kira::tween::Tween;
+
+	sound.set_volume(0.5, Tween::default())?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+
+	Smoothly transition the volume to a target value in decibels:
+
+	```no_run
+	# use kira::{
+	# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+	# 	sound::streaming::{StreamingSoundData, StreamingSoundSettings},
+	# };
+	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+	use kira::tween::Tween;
+	use std::time::Duration;
+
+	sound.set_volume(kira::Volume::Decibels(-6.0), Tween {
+		duration: Duration::from_secs(3),
+		..Default::default()
+	})?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+
+	Link the volume to a modulator, smoothly transitioning from the current value:
+
+	```no_run
+	use kira::{
+		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		sound::streaming::{StreamingSoundData, StreamingSoundSettings},
+		modulator::tweener::TweenerBuilder,
+		tween::Tween,
+	};
+	use std::time::Duration;
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let tweener = manager.add_modulator(TweenerBuilder {
+		initial_value: 0.5,
+	})?;
+	let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+	sound.set_volume(&tweener, Tween {
+		duration: Duration::from_secs(3),
+		..Default::default()
+	})?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
 	pub fn set_volume(
 		&mut self,
 		volume: impl Into<Value<Volume>>,
@@ -39,10 +100,71 @@ impl<Error> StreamingSoundHandle<Error> {
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
-	/// Sets the playback rate of the sound.
-	///
-	/// Changing the playback rate will change both the speed
-	/// and pitch of the sound.
+	/**
+	Sets the playback rate of the sound.
+
+	Changing the playback rate will change both the speed
+	and pitch of the sound.
+
+	# Examples
+
+	Set the playback rate of the sound as a factor immediately:
+
+	```no_run
+	# use kira::{
+	# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+	# 	sound::streaming::{StreamingSoundData, StreamingSoundSettings},
+	# };
+	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+	use kira::tween::Tween;
+
+	sound.set_playback_rate(0.5, Tween::default())?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+
+	Smoothly transition the playback rate to a target value in semitones:
+
+	```no_run
+	# use kira::{
+	# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+	# 	sound::streaming::{StreamingSoundData, StreamingSoundSettings},
+	# };
+	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+	use kira::tween::Tween;
+	use std::time::Duration;
+
+	sound.set_playback_rate(kira::PlaybackRate::Semitones(-2.0), Tween {
+		duration: Duration::from_secs(3),
+		..Default::default()
+	})?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+
+	Link the playback rate to a modulator, smoothly transitioning from the current value:
+
+	```no_run
+	use kira::{
+		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		sound::streaming::{StreamingSoundData, StreamingSoundSettings},
+		modulator::tweener::TweenerBuilder,
+		tween::Tween,
+	};
+	use std::time::Duration;
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let tweener = manager.add_modulator(TweenerBuilder {
+		initial_value: 0.5,
+	})?;
+	let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+	sound.set_playback_rate(&tweener, Tween {
+		duration: Duration::from_secs(3),
+		..Default::default()
+	})?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
 	pub fn set_playback_rate(
 		&mut self,
 		playback_rate: impl Into<Value<PlaybackRate>>,
@@ -53,8 +175,54 @@ impl<Error> StreamingSoundHandle<Error> {
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
-	/// Sets the panning of the sound, where `0.0` is hard left,
-	/// `0.5` is center, and `1.0` is hard right.
+	/**
+	Sets the panning of the sound, where `0.0` is hard left,
+	`0.5` is center, and `1.0` is hard right.
+
+	# Examples
+
+	Smoothly transition the panning to a target value:
+
+	```no_run
+	# use kira::{
+	# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+	# 	sound::streaming::{StreamingSoundData, StreamingSoundSettings},
+	# };
+	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+	use kira::tween::Tween;
+	use std::time::Duration;
+
+	sound.set_panning(0.25, Tween {
+		duration: Duration::from_secs(3),
+		..Default::default()
+	})?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+
+	Link the panning to a modulator, smoothly transitioning from the current value:
+
+	```no_run
+	use kira::{
+		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		sound::streaming::{StreamingSoundData, StreamingSoundSettings},
+		modulator::tweener::TweenerBuilder,
+		tween::Tween,
+	};
+	use std::time::Duration;
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let tweener = manager.add_modulator(TweenerBuilder {
+		initial_value: 0.25,
+	})?;
+	let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+	sound.set_panning(&tweener, Tween {
+		duration: Duration::from_secs(3),
+		..Default::default()
+	})?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
 	pub fn set_panning(
 		&mut self,
 		panning: impl Into<Value<f64>>,
@@ -65,7 +233,37 @@ impl<Error> StreamingSoundHandle<Error> {
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
-	/// Sets the portion of the sound that will be played.
+	/**
+	Sets the portion of the sound that should be played.
+
+	# Examples
+
+	Set the sound to play from 3 seconds in to the end:
+
+	```no_run
+	# use kira::{
+	# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+	# 	sound::streaming::{StreamingSoundData, StreamingSoundSettings},
+	# };
+	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+	sound.set_playback_region(3.0..)?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+
+	Set the sound to play from 2 to 4 seconds:
+
+	```no_run
+	# use kira::{
+	# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+	# 	sound::streaming::{StreamingSoundData, StreamingSoundSettings},
+	# };
+	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+	sound.set_playback_region(2.0..4.0)?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
 	pub fn set_playback_region(
 		&mut self,
 		playback_region: impl Into<Region>,
@@ -77,7 +275,50 @@ impl<Error> StreamingSoundHandle<Error> {
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
-	/// Sets the portion of the sound that will play in a loop.
+	/**
+	Sets the portion of the sound that will play in a loop.
+
+	# Examples
+
+	Set the sound to loop the portion from 3 seconds in to the end:
+
+	```no_run
+	# use kira::{
+	# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+	# 	sound::streaming::{StreamingSoundData, StreamingSoundSettings},
+	# };
+	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+	sound.set_loop_region(3.0..)?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+
+	Set the sound to loop the portion from 2 to 4 seconds:
+
+	```no_run
+	# use kira::{
+	# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+	# 	sound::streaming::{StreamingSoundData, StreamingSoundSettings},
+	# };
+	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+	sound.set_loop_region(2.0..4.0)?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+
+	Set a sound that was previously looping to stop looping:
+
+	```no_run
+	# use kira::{
+	# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+	# 	sound::streaming::{StreamingSoundData, StreamingSoundSettings},
+	# };
+	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+	sound.set_loop_region(None)?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
 	pub fn set_loop_region(
 		&mut self,
 		loop_region: impl IntoOptionalRegion,

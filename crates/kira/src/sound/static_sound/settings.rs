@@ -48,7 +48,27 @@ impl StaticSoundSettings {
 		}
 	}
 
-	/// Sets when the sound should start playing.
+	/**
+	Sets when the sound should start playing.
+
+	# Examples
+
+	Configuring a sound to start 4 ticks after a clock's current time:
+
+	```no_run
+	use kira::{
+		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		sound::static_sound::{StaticSoundData, StaticSoundSettings},
+		ClockSpeed,
+	};
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let clock_handle = manager.add_clock(ClockSpeed::TicksPerMinute(120.0))?;
+	let settings = StaticSoundSettings::new().start_time(clock_handle.time() + 4);
+	let sound = StaticSoundData::from_file("sound.ogg", settings);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
 	pub fn start_time(self, start_time: impl Into<StartTime>) -> Self {
 		Self {
 			start_time: start_time.into(),
@@ -56,7 +76,25 @@ impl StaticSoundSettings {
 		}
 	}
 
-	/// Sets the portion of the sound that should be played.
+	/**
+	Sets the portion of the sound that should be played.
+
+	# Examples
+
+	Configure a sound to play from 3 seconds in to the end:
+
+	```
+	# use kira::sound::static_sound::StaticSoundSettings;
+	let settings = StaticSoundSettings::new().playback_region(3.0..);
+	```
+
+	Configure a sound to play from 2 to 4 seconds:
+
+	```
+	# use kira::sound::static_sound::StaticSoundSettings;
+	let settings = StaticSoundSettings::new().playback_region(2.0..4.0);
+	```
+	*/
 	pub fn playback_region(self, playback_region: impl Into<Region>) -> Self {
 		Self {
 			playback_region: playback_region.into(),
@@ -69,7 +107,25 @@ impl StaticSoundSettings {
 		Self { reverse, ..self }
 	}
 
-	/// Sets the portion of the sound that should be looped.
+	/**
+	Sets the portion of the sound that should be looped.
+
+	# Examples
+
+	Configure a sound to loop the portion from 3 seconds in to the end:
+
+	```
+	# use kira::sound::static_sound::StaticSoundSettings;
+	let settings = StaticSoundSettings::new().loop_region(3.0..);
+	```
+
+	Configure a sound to loop the portion from 2 to 4 seconds:
+
+	```
+	# use kira::sound::static_sound::StaticSoundSettings;
+	let settings = StaticSoundSettings::new().loop_region(2.0..4.0);
+	```
+	*/
 	pub fn loop_region(self, loop_region: impl IntoOptionalRegion) -> Self {
 		Self {
 			loop_region: loop_region.into_optional_loop_region(),
@@ -77,7 +133,42 @@ impl StaticSoundSettings {
 		}
 	}
 
-	/// Sets the volume of the sound.
+	/**
+	Sets the volume of the sound.
+
+	# Examples
+
+	Set the volume as a factor:
+
+	```
+	# use kira::sound::static_sound::StaticSoundSettings;
+	let settings = StaticSoundSettings::new().volume(0.5);
+	```
+
+	Set the volume as a gain in decibels:
+
+	```
+	# use kira::sound::static_sound::StaticSoundSettings;
+	let settings = StaticSoundSettings::new().volume(kira::Volume::Decibels(-6.0));
+	```
+
+	Link the volume to a modulator:
+
+	```no_run
+	use kira::{
+		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		modulator::tweener::TweenerBuilder,
+		sound::static_sound::{StaticSoundSettings},
+	};
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let tweener = manager.add_modulator(TweenerBuilder {
+		initial_value: 0.5,
+	})?;
+	let settings = StaticSoundSettings::new().volume(&tweener);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
 	pub fn volume(self, volume: impl Into<Value<Volume>>) -> Self {
 		Self {
 			volume: volume.into(),
@@ -85,10 +176,45 @@ impl StaticSoundSettings {
 		}
 	}
 
-	/// Sets the playback rate of the sound.
-	///
-	/// Changing the playback rate will change both the speed
-	/// and the pitch of the sound.
+	/**
+	Sets the playback rate of the sound.
+
+	Changing the playback rate will change both the speed
+	and the pitch of the sound.
+
+	# Examples
+
+	Set the playback rate as a factor:
+
+	```
+	# use kira::sound::static_sound::StaticSoundSettings;
+	let settings = StaticSoundSettings::new().playback_rate(0.5);
+	```
+
+	Set the playback rate as a change in semitones:
+
+	```
+	# use kira::sound::static_sound::StaticSoundSettings;
+	let settings = StaticSoundSettings::new().playback_rate(kira::PlaybackRate::Semitones(-2.0));
+	```
+
+	Link the playback rate to a modulator:
+
+	```no_run
+	use kira::{
+		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		modulator::tweener::TweenerBuilder,
+		sound::static_sound::{StaticSoundSettings},
+	};
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let tweener = manager.add_modulator(TweenerBuilder {
+		initial_value: 0.5,
+	})?;
+	let settings = StaticSoundSettings::new().playback_rate(&tweener);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
 	pub fn playback_rate(self, playback_rate: impl Into<Value<PlaybackRate>>) -> Self {
 		Self {
 			playback_rate: playback_rate.into(),
@@ -96,8 +222,36 @@ impl StaticSoundSettings {
 		}
 	}
 
-	/// Sets the panning of the sound, where 0 is hard left
-	/// and 1 is hard right.
+	/**
+	Sets the panning of the sound, where 0 is hard left
+	and 1 is hard right.
+
+	# Examples
+
+	Set the panning to a static value:
+
+	```
+	# use kira::sound::static_sound::StaticSoundSettings;
+	let settings = StaticSoundSettings::new().panning(0.25);
+	```
+
+	Link the panning to a modulator:
+
+	```no_run
+	use kira::{
+		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		modulator::tweener::TweenerBuilder,
+		sound::static_sound::{StaticSoundSettings},
+	};
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let tweener = manager.add_modulator(TweenerBuilder {
+		initial_value: 0.25,
+	})?;
+	let settings = StaticSoundSettings::new().panning(&tweener);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
 	pub fn panning(self, panning: impl Into<Value<f64>>) -> Self {
 		Self {
 			panning: panning.into(),
@@ -105,7 +259,46 @@ impl StaticSoundSettings {
 		}
 	}
 
-	/// Sets the destination that this sound should be routed to.
+	/**
+	Sets the destination that this sound should be routed to.
+
+	# Examples
+
+	Set the output destination of a sound to a mixer track:
+
+	```no_run
+	use kira::{
+		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		track::TrackBuilder,
+		sound::static_sound::{StaticSoundSettings},
+	};
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let sub_track = manager.add_sub_track(TrackBuilder::new())?;
+	let settings = StaticSoundSettings::new().output_destination(&sub_track);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+
+	Set the output destination of a sound to an emitter in a spatial scene:
+
+	```no_run
+	use kira::{
+		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		spatial::{scene::SpatialSceneSettings, emitter::EmitterSettings},
+		sound::static_sound::{StaticSoundSettings},
+	};
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let mut scene = manager.add_spatial_scene(SpatialSceneSettings::default())?;
+	let emitter = scene.add_emitter(mint::Vector3 {
+		x: 0.0,
+		y: 0.0,
+		z: 0.0,
+	}, EmitterSettings::default())?;
+	let settings = StaticSoundSettings::new().output_destination(&emitter);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
 	pub fn output_destination(self, output_destination: impl Into<OutputDestination>) -> Self {
 		Self {
 			output_destination: output_destination.into(),
