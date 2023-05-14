@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use glam::{Quat, Vec3};
 
-/// A trait for types that can be used with a [`Tweener`](super::Tweener).
+/// A trait for types that can be smoothly interpolated.
 pub trait Tweenable: Copy {
 	/// Returns an linearly interpolated value between `a` and `b`.
 	///
