@@ -1,4 +1,13 @@
-//! Modifies audio signals.
+/*!
+Modifies audio signals.
+
+Any type that implements [`EffectBuilder`] can be added to a mixer track by
+using [`TrackBuilder::add_effect`](super::TrackBuilder::add_effect). Kira
+comes with a number of commonly used effects.
+
+If needed, you can create custom effects by implementing the [`EffectBuilder`]
+and [`Effect`] traits.
+*/
 
 pub mod compressor;
 pub mod delay;
