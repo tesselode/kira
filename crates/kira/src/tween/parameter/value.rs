@@ -66,15 +66,21 @@ impl From<f64> for Value<f64> {
 	}
 }
 
-impl From<mint::Vector3<f32>> for Value<mint::Vector3<f32>> {
-	fn from(value: mint::Vector3<f32>) -> Self {
-		Self::Fixed(value)
+impl<T> From<T> for Value<mint::Vector3<f32>>
+where
+	T: Into<mint::Vector3<f32>>,
+{
+	fn from(value: T) -> Self {
+		Self::Fixed(value.into())
 	}
 }
 
-impl From<mint::Quaternion<f32>> for Value<mint::Quaternion<f32>> {
-	fn from(value: mint::Quaternion<f32>) -> Self {
-		Self::Fixed(value)
+impl<T> From<T> for Value<mint::Quaternion<f32>>
+where
+	T: Into<mint::Quaternion<f32>>,
+{
+	fn from(value: T) -> Self {
+		Self::Fixed(value.into())
 	}
 }
 
