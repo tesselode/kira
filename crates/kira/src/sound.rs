@@ -24,7 +24,7 @@ mod symphonia;
 mod transport;
 mod util;
 
-use std::ops::{Range, RangeFrom, RangeFull, RangeInclusive};
+use std::ops::{Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive};
 
 #[cfg(feature = "symphonia")]
 pub use error::*;
@@ -143,6 +143,24 @@ impl From<RangeInclusive<f64>> for Region {
 	}
 }
 
+impl From<RangeTo<f64>> for Region {
+	fn from(range: RangeTo<f64>) -> Self {
+		Self {
+			start: 0.0,
+			end: EndPosition::Custom(range.end),
+		}
+	}
+}
+
+impl From<RangeToInclusive<f64>> for Region {
+	fn from(range: RangeToInclusive<f64>) -> Self {
+		Self {
+			start: 0.0,
+			end: EndPosition::Custom(range.end),
+		}
+	}
+}
+
 impl From<RangeFull> for Region {
 	fn from(_: RangeFull) -> Self {
 		Self {
@@ -190,6 +208,24 @@ impl IntoOptionalRegion for RangeInclusive<f64> {
 		Some(Region {
 			start: *self.start(),
 			end: EndPosition::Custom(*self.end()),
+		})
+	}
+}
+
+impl IntoOptionalRegion for RangeTo<f64> {
+	fn into_optional_loop_region(self) -> Option<Region> {
+		Some(Region {
+			start: 0.0,
+			end: EndPosition::Custom(self.end),
+		})
+	}
+}
+
+impl IntoOptionalRegion for RangeToInclusive<f64> {
+	fn into_optional_loop_region(self) -> Option<Region> {
+		Some(Region {
+			start: 0.0,
+			end: EndPosition::Custom(self.end),
 		})
 	}
 }
