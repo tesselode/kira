@@ -15,6 +15,9 @@ pub struct EmitterSettings {
 	/// Whether the emitter's output should be panned left or right depending on its
 	/// direction from the listener.
 	pub enable_spatialization: bool,
+	/// Whether the emitter should be kept alive until all sounds are finished
+	/// playing on it even if the handle is dropped.
+	pub persist_until_sounds_finish: bool,
 }
 
 impl EmitterSettings {
@@ -24,6 +27,7 @@ impl EmitterSettings {
 			distances: EmitterDistances::default(),
 			attenuation_function: Some(Easing::Linear),
 			enable_spatialization: true,
+			persist_until_sounds_finish: false,
 		}
 	}
 
@@ -50,6 +54,15 @@ impl EmitterSettings {
 	pub fn enable_spatialization(self, enable_spatialization: bool) -> Self {
 		Self {
 			enable_spatialization,
+			..self
+		}
+	}
+
+	/// Sets whether the emitter should be kept alive until all sounds are finished
+	/// playing on it even if the handle is dropped.
+	pub fn persist_until_sounds_finish(self, persist_until_sounds_finish: bool) -> Self {
+		Self {
+			persist_until_sounds_finish,
 			..self
 		}
 	}

@@ -82,10 +82,7 @@ impl SpatialScene {
 		if self.unused_emitter_producer.is_full() {
 			return;
 		}
-		for (_, emitter) in self
-			.emitters
-			.drain_filter(|emitter| emitter.shared().is_marked_for_removal())
-		{
+		for (_, emitter) in self.emitters.drain_filter(|emitter| emitter.finished()) {
 			if self.unused_emitter_producer.push(emitter).is_err() {
 				panic!("Unused emitter producer is full")
 			}
@@ -133,7 +130,7 @@ impl SpatialScene {
 			}
 		}
 		for (_, emitter) in &mut self.emitters {
-			emitter.reset_input();
+			emitter.after_process();
 		}
 	}
 

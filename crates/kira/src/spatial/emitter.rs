@@ -31,7 +31,10 @@ pub(crate) struct Emitter {
 	distances: EmitterDistances,
 	attenuation_function: Option<Easing>,
 	enable_spatialization: bool,
+	persist_until_sounds_finish: bool,
 	input: Frame,
+	used_this_frame: bool,
+	finished: bool,
 }
 
 impl Emitter {
@@ -42,7 +45,10 @@ impl Emitter {
 			distances: settings.distances,
 			attenuation_function: settings.attenuation_function,
 			enable_spatialization: settings.enable_spatialization,
+			persist_until_sounds_finish: settings.persist_until_sounds_finish,
 			input: Frame::ZERO,
+			used_this_frame: false,
+			finished: false,
 		}
 	}
 
@@ -70,16 +76,25 @@ impl Emitter {
 		self.enable_spatialization
 	}
 
+	pub fn finished(&self) -> bool {
+		self.finished
+	}
+
 	pub fn set_position(&mut self, position: Value<Vec3>, tween: Tween) {
 		self.position.set(position, tween);
 	}
 
 	pub fn add_input(&mut self, input: Frame) {
 		self.input += input;
+		self.used_this_frame = true;
 	}
 
-	pub fn reset_input(&mut self) {
+	pub fn after_process(&mut self) {
+		if self.should_be_finished() {
+			self.finished = true;
+		}
 		self.input = Frame::ZERO;
+		self.used_this_frame = false;
 	}
 
 	pub fn update(
@@ -90,6 +105,16 @@ impl Emitter {
 	) {
 		self.position
 			.update(dt, clock_info_provider, modulator_value_provider);
+	}
+
+	fn should_be_finished(&self) -> bool {
+		if !self.shared.is_marked_for_removal() {
+			return false;
+		}
+		if self.persist_until_sounds_finish && self.used_this_frame {
+			return false;
+		}
+		true
 	}
 }
 
