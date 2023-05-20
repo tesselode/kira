@@ -52,6 +52,9 @@ impl SpatialSceneHandle {
 	}
 
 	/// Adds a listener to the scene.
+	///
+	/// An unrotated listener should face in the negative Z direction with
+	/// positive X to the right and positive Y up.
 	pub fn add_listener(
 		&mut self,
 		position: impl Into<Value<mint::Vector3<f32>>>,

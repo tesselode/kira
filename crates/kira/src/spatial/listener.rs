@@ -6,9 +6,12 @@ mod settings;
 pub use handle::*;
 pub use settings::*;
 
-use std::sync::{
-	atomic::{AtomicBool, Ordering},
-	Arc,
+use std::{
+	f32::consts::FRAC_PI_8,
+	sync::{
+		atomic::{AtomicBool, Ordering},
+		Arc,
+	},
 };
 
 use atomic_arena::{Arena, Key};
@@ -26,6 +29,7 @@ use crate::{
 use super::{emitter::Emitter, scene::SpatialSceneId};
 
 const EAR_DISTANCE: f32 = 0.1;
+const EAR_ANGLE_FROM_HEAD: f32 = FRAC_PI_8;
 const MIN_EAR_AMPLITUDE: f32 = 0.5;
 
 pub(crate) struct Listener {
@@ -97,9 +101,7 @@ impl Listener {
 			if emitter.enable_spatialization() {
 				emitter_output = emitter_output.as_mono();
 				let (left_ear_position, right_ear_position) = self.ear_positions();
-				let orientation = self.orientation.value();
-				let left_ear_direction = orientation * Vec3::NEG_X;
-				let right_ear_direction = orientation * Vec3::X;
+				let (left_ear_direction, right_ear_direction) = self.ear_directions();
 				let emitter_direction_relative_to_left_ear =
 					(emitter.position() - left_ear_position).normalize_or_zero();
 				let emitter_direction_relative_to_right_ear =
@@ -123,6 +125,17 @@ impl Listener {
 		let orientation = self.orientation.value();
 		let left = position + orientation * (Vec3::NEG_X * EAR_DISTANCE);
 		let right = position + orientation * (Vec3::X * EAR_DISTANCE);
+		(left, right)
+	}
+
+	fn ear_directions(&self) -> (Vec3, Vec3) {
+		let left_ear_direction_relative_to_head =
+			Quat::from_rotation_y(-EAR_ANGLE_FROM_HEAD) * Vec3::NEG_X;
+		let right_ear_direction_relative_to_head =
+			Quat::from_rotation_y(EAR_ANGLE_FROM_HEAD) * Vec3::X;
+		let orientation = self.orientation.value();
+		let left = orientation * left_ear_direction_relative_to_head;
+		let right = orientation * right_ear_direction_relative_to_head;
 		(left, right)
 	}
 }

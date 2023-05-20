@@ -37,6 +37,9 @@ impl ListenerHandle {
 	}
 
 	/// Sets the rotation of the listener.
+	///
+	/// An unrotated listener should face in the negative Z direction with
+	/// positive X to the right and positive Y up.
 	pub fn set_orientation(
 		&mut self,
 		orientation: impl Into<Value<mint::Quaternion<f32>>>,
