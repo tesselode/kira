@@ -28,6 +28,10 @@ pub struct LfoBuilder {
 	/// An LFO with an offset of `1.0` and an amplitude of `0.5` will reach
 	/// a maximum value of `1.5` and a minimum value of `0.5`.
 	pub offset: Value<f64>,
+	/// The phase the LFO should start at (in radians).
+	///
+	/// This determines when in the oscillation the modulator will start.
+	pub starting_phase: f64,
 }
 
 impl LfoBuilder {
@@ -70,6 +74,16 @@ impl LfoBuilder {
 			..self
 		}
 	}
+
+	/// Sets the phase the LFO should start at (in radians).
+	///
+	/// This determines when in the oscillation the modulator will start.
+	pub fn starting_phase(self, starting_phase: f64) -> Self {
+		Self {
+			starting_phase,
+			..self
+		}
+	}
 }
 
 impl Default for LfoBuilder {
@@ -79,6 +93,7 @@ impl Default for LfoBuilder {
 			frequency: Value::Fixed(2.0),
 			amplitude: Value::Fixed(1.0),
 			offset: Value::Fixed(0.0),
+			starting_phase: 0.0,
 		}
 	}
 }

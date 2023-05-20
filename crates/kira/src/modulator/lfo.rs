@@ -50,7 +50,7 @@ impl Lfo {
 			offset: Parameter::new(builder.offset, 0.0),
 			command_consumer,
 			shared,
-			phase: 0.0,
+			phase: builder.starting_phase / TAU,
 			value: 0.0,
 		}
 	}
@@ -60,9 +60,11 @@ impl Modulator for Lfo {
 	fn on_start_processing(&mut self) {
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
+				Command::SetWaveform { waveform } => self.waveform = waveform,
 				Command::SetFrequency { target, tween } => self.frequency.set(target, tween),
 				Command::SetAmplitude { target, tween } => self.amplitude.set(target, tween),
 				Command::SetOffset { target, tween } => self.offset.set(target, tween),
+				Command::SetPhase { phase } => self.phase = phase / TAU,
 			}
 		}
 	}
@@ -130,9 +132,11 @@ impl Waveform {
 }
 
 enum Command {
+	SetWaveform { waveform: Waveform },
 	SetFrequency { target: Value<f64>, tween: Tween },
 	SetAmplitude { target: Value<f64>, tween: Tween },
 	SetOffset { target: Value<f64>, tween: Tween },
+	SetPhase { phase: f64 },
 }
 
 struct LfoShared {

@@ -8,7 +8,7 @@ use crate::{
 	CommandError,
 };
 
-use super::{Command, LfoShared};
+use super::{Command, LfoShared, Waveform};
 
 /// Controls an LFO modulator.
 pub struct LfoHandle {
@@ -21,6 +21,13 @@ impl LfoHandle {
 	/// Returns the unique identifier for the modulator.
 	pub fn id(&self) -> ModulatorId {
 		self.id
+	}
+
+	/// Sets the oscillation pattern.
+	pub fn set_waveform(&mut self, waveform: Waveform) -> Result<(), CommandError> {
+		self.command_producer
+			.push(Command::SetWaveform { waveform })
+			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
 	/// Sets how quickly the value oscillates.
@@ -68,6 +75,13 @@ impl LfoHandle {
 				target: target.into(),
 				tween,
 			})
+			.map_err(|_| CommandError::CommandQueueFull)
+	}
+
+	/// Sets the phase of the LFO (in radians).
+	pub fn set_phase(&mut self, phase: f64) -> Result<(), CommandError> {
+		self.command_producer
+			.push(Command::SetPhase { phase })
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 }

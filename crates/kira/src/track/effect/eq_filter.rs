@@ -117,6 +117,7 @@ impl Effect for EqFilter {
 	fn on_start_processing(&mut self) {
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
+				Command::SetKind(kind) => self.kind = kind,
 				Command::SetFrequency(target, tween) => self.frequency.set(target, tween),
 				Command::SetGain(target, tween) => self.gain.set(target, tween),
 				Command::SetQ(target, tween) => self.q.set(target, tween),
@@ -175,6 +176,7 @@ struct Coefficients {
 }
 
 enum Command {
+	SetKind(EqFilterKind),
 	SetFrequency(Value<f64>, Tween),
 	SetGain(Value<f64>, Tween),
 	SetQ(Value<f64>, Tween),

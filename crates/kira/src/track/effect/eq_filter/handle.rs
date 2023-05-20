@@ -5,7 +5,7 @@ use crate::{
 	CommandError,
 };
 
-use super::Command;
+use super::{Command, EqFilterKind};
 
 /// Controls an EQ filter.
 pub struct EqFilterHandle {
@@ -13,6 +13,13 @@ pub struct EqFilterHandle {
 }
 
 impl EqFilterHandle {
+	/// Sets the shape of the frequency adjustment curve.
+	pub fn set_kind(&mut self, kind: EqFilterKind) -> Result<(), CommandError> {
+		self.command_producer
+			.push(Command::SetKind(kind))
+			.map_err(|_| CommandError::CommandQueueFull)
+	}
+
 	/// Sets the "center" or "corner" of the frequency range to adjust in Hz
 	/// (for bell or shelf curves, respectively).
 	pub fn set_frequency(
