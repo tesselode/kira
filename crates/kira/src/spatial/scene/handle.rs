@@ -66,6 +66,16 @@ impl SpatialSceneHandle {
 		self.add_listener_inner(position.to_(), orientation.to_(), settings)
 	}
 
+	/// Returns the number of emitters in the scene.
+	pub fn num_emitters(&self) -> usize {
+		self.emitter_controller.len()
+	}
+
+	/// Returns the number of listeners in the scene.
+	pub fn num_listeners(&self) -> usize {
+		self.listener_controller.len()
+	}
+
 	fn add_emitter_inner(
 		&mut self,
 		position: Value<glam::Vec3>,
