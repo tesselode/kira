@@ -12,6 +12,7 @@ use super::{handle::LfoHandle, Lfo, LfoShared, Waveform};
 const COMMAND_CAPACITY: usize = 8;
 
 /// Configures an LFO modulator.
+#[non_exhaustive]
 pub struct LfoBuilder {
 	/// The oscillation pattern.
 	pub waveform: Waveform,

@@ -7,6 +7,7 @@ use super::{EqFilter, EqFilterHandle, EqFilterKind};
 const COMMAND_CAPACITY: usize = 8;
 
 /// Configures an EQ filter.
+#[non_exhaustive]
 pub struct EqFilterBuilder {
 	/// The shape of the frequency adjustment curve.
 	pub kind: EqFilterKind,

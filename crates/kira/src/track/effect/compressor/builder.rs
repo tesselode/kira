@@ -12,6 +12,7 @@ use super::{Compressor, CompressorHandle};
 const COMMAND_CAPACITY: usize = 8;
 
 /// Configures a compressor.
+#[non_exhaustive]
 pub struct CompressorBuilder {
 	/// The volume above which volume will start to be decreased (in dBFS).
 	pub threshold: Value<f64>,

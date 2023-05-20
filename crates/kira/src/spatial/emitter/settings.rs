@@ -4,6 +4,7 @@ use super::EmitterDistances;
 
 /// Settings for an emitter.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[non_exhaustive]
 pub struct EmitterSettings {
 	/// The distances from a listener at which the emitter is loudest and quietest.
 	pub distances: EmitterDistances,
