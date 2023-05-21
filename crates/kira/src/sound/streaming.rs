@@ -38,10 +38,10 @@ pub use settings::*;
 
 use crate::{
 	tween::{Tween, Value},
-	PlaybackRate, Volume,
+	Volume,
 };
 
-use super::Region;
+use super::{PlaybackRate, Region};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum SoundCommand {

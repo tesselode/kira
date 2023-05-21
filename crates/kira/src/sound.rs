@@ -16,6 +16,7 @@ create your own types that implement the [`SoundData`] and [`Sound`] traits.
 
 #[cfg(feature = "symphonia")]
 mod error;
+mod playback_rate;
 pub mod static_sound;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod streaming;
@@ -28,6 +29,7 @@ use std::ops::{Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToIncl
 
 #[cfg(feature = "symphonia")]
 pub use error::*;
+pub use playback_rate::*;
 
 use crate::{
 	clock::clock_info::ClockInfoProvider, dsp::Frame,

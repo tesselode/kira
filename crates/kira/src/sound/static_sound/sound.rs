@@ -17,9 +17,12 @@ use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
 	dsp::Frame,
 	modulator::value_provider::ModulatorValueProvider,
-	sound::{transport::Transport, util::create_volume_fade_parameter, PlaybackState, Sound},
+	sound::{
+		transport::Transport, util::create_volume_fade_parameter, PlaybackRate, PlaybackState,
+		Sound,
+	},
 	tween::{Parameter, Tween, Value},
-	OutputDestination, PlaybackRate, StartTime, Volume,
+	OutputDestination, StartTime, Volume,
 };
 
 use self::resampler::Resampler;

@@ -3,9 +3,9 @@ use std::sync::Arc;
 use ringbuf::HeapProducer;
 
 use crate::{
-	sound::{IntoOptionalRegion, PlaybackState, Region},
+	sound::{IntoOptionalRegion, PlaybackRate, PlaybackState, Region},
 	tween::{Tween, Value},
-	CommandError, PlaybackRate, Volume,
+	CommandError, Volume,
 };
 
 use super::{sound::Shared, Command};
@@ -131,10 +131,13 @@ impl StaticSoundHandle {
 	# };
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	# let mut sound = manager.play(StaticSoundData::from_file("sound.ogg", StaticSoundSettings::default())?)?;
-	use kira::tween::Tween;
+	use kira::{
+		tween::Tween,
+		sound::PlaybackRate,
+	};
 	use std::time::Duration;
 
-	sound.set_playback_rate(kira::PlaybackRate::Semitones(-2.0), Tween {
+	sound.set_playback_rate(PlaybackRate::Semitones(-2.0), Tween {
 		duration: Duration::from_secs(3),
 		..Default::default()
 	})?;

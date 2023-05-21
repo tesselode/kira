@@ -1,7 +1,7 @@
 use crate::{
-	sound::{IntoOptionalRegion, Region},
+	sound::{IntoOptionalRegion, PlaybackRate, Region},
 	tween::{Tween, Value},
-	OutputDestination, PlaybackRate, StartTime, Volume,
+	OutputDestination, StartTime, Volume,
 };
 
 /// Settings for a static sound.
@@ -195,7 +195,8 @@ impl StaticSoundSettings {
 
 	```
 	# use kira::sound::static_sound::StaticSoundSettings;
-	let settings = StaticSoundSettings::new().playback_rate(kira::PlaybackRate::Semitones(-2.0));
+	use kira::sound::PlaybackRate;
+	let settings = StaticSoundSettings::new().playback_rate(PlaybackRate::Semitones(-2.0));
 	```
 
 	Link the playback rate to a modulator:

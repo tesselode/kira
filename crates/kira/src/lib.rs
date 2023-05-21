@@ -206,7 +206,6 @@ mod error;
 pub mod manager;
 pub mod modulator;
 mod output_destination;
-mod playback_rate;
 pub mod sound;
 pub mod spatial;
 mod start_time;
@@ -216,6 +215,5 @@ mod volume;
 
 pub use error::*;
 pub use output_destination::*;
-pub use playback_rate::*;
 pub use start_time::*;
 pub use volume::*;
