@@ -1,15 +1,15 @@
 # Kira
 
-#### [crates.io](https://crates.io/crates/kira) | [docs](https://docs.rs/kira/) | [book](https://tesselode.github.io/kira/)
+#### [crates.io](https://crates.io/crates/kira) | [docs](https://docs.rs/kira/) | [examples](https://github.com/tesselode/kira-examples)
 
 Kira is a backend-agnostic library to create expressive audio for games. It
-provides parameters for smoothly adjusting properties of sounds, a flexible
-mixer for applying effects to audio, and a clock system for precisely timing
-audio events.
+provides tweens for smoothly adjusting properties of sounds, a flexible mixer
+for applying effects to audio, a clock system for precisely timing audio events,
+and spatial audio support.
 
 ## Examples
 
-### Playing a sound multiple times simultaneously
+Playing a sound multiple times simultaneously:
 
 ```rust
 use kira::{
@@ -29,7 +29,7 @@ manager.play(sound_data.clone())?;
 // Cloning the sound data will not use any extra memory.
 ```
 
-### Gradually speeding up a sound over time
+Gradually speeding up a sound over time:
 
 ```rust
 use std::time::Duration;
@@ -56,9 +56,8 @@ sound.set_playback_rate(
 );
 ```
 
-### Playing a sound with a low-pass filter applied
-
-This makes the audio sound muffled.
+Playing a sound with a low-pass filter applied (this makes the audio sound
+muffled):
 
 ```rust
 use kira::{
@@ -83,12 +82,12 @@ let track = manager.add_sub_track({
 // Play the sound on the track.
 let sound_data = StaticSoundData::from_file(
 	"sound.ogg",
-	StaticSoundSettings::new().track(&track),
+	StaticSoundSettings::new().output_destination(&track),
 )?;
 manager.play(sound_data)?;
 ```
 
-### Playing sounds in time with a musical beat
+Playing sounds in time with a musical beat:
 
 ```rust
 use kira::{
@@ -97,7 +96,7 @@ use kira::{
 		backend::cpal::CpalBackend,
 	},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
-	ClockSpeed,
+	clock::ClockSpeed,
 };
 
 const TEMPO: f64 = 120.0;
@@ -126,7 +125,7 @@ clock.start()?;
 ## Platform support
 
 Kira is mainly meant for desktop platforms. Most testing has occurred on
-Windows, but it has been used successfully used on Linux.
+Windows, but it has been used successfully used on Mac and Linux.
 
 Kira can also be used in wasm environments with the following limitations:
 
@@ -139,21 +138,11 @@ If you'd like to help improve wasm support, please reach out!
 
 Features I'd like to have:
 
-- More mixer effects (EQ, compressor, better reverb, etc.)
 - C API
-- 3d audio
-
-## Running the example crates
-
-To run one of the examples, run this command from the root directory of the
-repo:
-
-```
-cargo run -p [example_name]
-```
-
-Where `[example_name]` is the name of one of the folders in crates/examples
-(besides the "assets" folder).
+- Spatial audio features:
+  - Doppler effect
+  - Reverb
+  - Filtering
 
 ## Contributing
 
