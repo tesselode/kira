@@ -7,10 +7,10 @@ use crate::{
 	},
 	modulator::value_provider::MockModulatorValueProviderBuilder,
 	tween::{Tween, Value},
-	ClockSpeed, StartTime,
+	StartTime,
 };
 
-use super::Clock;
+use super::{Clock, ClockSpeed};
 
 /// Tests that a `Clock` is stopped when it's first created.
 #[test]

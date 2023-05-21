@@ -4,7 +4,7 @@ use atomic_arena::Key;
 use glam::{Quat, Vec3};
 
 use crate::{
-	clock::{Clock, ClockId},
+	clock::{Clock, ClockId, ClockSpeed},
 	modulator::{Modulator, ModulatorId},
 	sound::Sound,
 	spatial::{
@@ -14,7 +14,7 @@ use crate::{
 	},
 	track::{SubTrackId, Track, TrackId},
 	tween::{Tween, Value},
-	ClockSpeed, Volume,
+	Volume,
 };
 
 pub(crate) enum SoundCommand {

@@ -4,10 +4,9 @@ use crate::{
 	error::CommandError,
 	manager::command::{producer::CommandProducer, ClockCommand, Command},
 	tween::{Tween, Value},
-	ClockSpeed,
 };
 
-use super::{ClockId, ClockShared, ClockTime};
+use super::{ClockId, ClockShared, ClockSpeed, ClockTime};
 
 /// Controls a clock.
 ///

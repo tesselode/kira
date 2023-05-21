@@ -111,7 +111,7 @@ use kira::{
 		backend::cpal::CpalBackend,
 	},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
-	ClockSpeed,
+	clock::ClockSpeed,
 };
 
 const TEMPO: f64 = 120.0;
@@ -201,7 +201,6 @@ and compile times for games.
 #![allow(clippy::tabs_in_doc_comments)]
 
 pub mod clock;
-mod clock_speed;
 pub mod dsp;
 mod error;
 pub mod manager;
@@ -215,7 +214,6 @@ pub mod track;
 pub mod tween;
 mod volume;
 
-pub use clock_speed::*;
 pub use error::*;
 pub use output_destination::*;
 pub use playback_rate::*;

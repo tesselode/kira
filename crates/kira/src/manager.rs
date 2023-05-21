@@ -16,7 +16,7 @@ pub use settings::*;
 use std::{collections::HashSet, sync::Arc};
 
 use crate::{
-	clock::{Clock, ClockHandle, ClockId},
+	clock::{Clock, ClockHandle, ClockId, ClockSpeed},
 	error::CommandError,
 	manager::command::ModulatorCommand,
 	modulator::{ModulatorBuilder, ModulatorId},
@@ -24,7 +24,6 @@ use crate::{
 	spatial::scene::{SpatialScene, SpatialSceneHandle, SpatialSceneId, SpatialSceneSettings},
 	track::{SubTrackId, Track, TrackBuilder, TrackHandle, TrackId},
 	tween::{Tween, Value},
-	ClockSpeed,
 };
 
 use self::{
@@ -206,8 +205,8 @@ impl<B: Backend> AudioManager<B> {
 	# 		AudioManager, AudioManagerSettings,
 	# 		backend::DefaultBackend,
 	# 	},
+	# 	clock::ClockSpeed
 	# };
-	use kira::ClockSpeed;
 
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	let clock = manager.add_clock(ClockSpeed::TicksPerMinute(120.0))?;

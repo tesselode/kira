@@ -1,10 +1,11 @@
 use std::{error::Error, time::Duration};
 
 use kira::{
+	clock::ClockSpeed,
 	manager::{backend::cpal::CpalBackend, AudioManager, AudioManagerSettings},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	tween::Value,
-	ClockSpeed, PlaybackRate, StartTime,
+	PlaybackRate, StartTime,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {

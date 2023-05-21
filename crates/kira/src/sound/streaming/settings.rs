@@ -59,7 +59,7 @@ impl StreamingSoundSettings {
 	use kira::{
 		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
 		sound::streaming::{StreamingSoundData, StreamingSoundSettings},
-		ClockSpeed,
+		clock::ClockSpeed,
 	};
 
 	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;

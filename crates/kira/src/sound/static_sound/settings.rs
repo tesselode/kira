@@ -59,7 +59,7 @@ impl StaticSoundSettings {
 	use kira::{
 		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
 		sound::static_sound::{StaticSoundData, StaticSoundSettings},
-		ClockSpeed,
+		clock::ClockSpeed,
 	};
 
 	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;

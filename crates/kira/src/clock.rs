@@ -10,7 +10,7 @@ use kira::{
 		AudioManager, AudioManagerSettings,
 		backend::cpal::CpalBackend,
 	},
-	ClockSpeed,
+	clock::ClockSpeed,
 };
 
 let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
@@ -34,13 +34,13 @@ or [`StreamingSoundSettings::start_time`](crate::sound::streaming::StreamingSoun
 
 ```no_run
 use kira::{
-	clock::ClockTime,
+	clock::{ClockTime, ClockSpeed},
 	manager::{
 		AudioManager, AudioManagerSettings,
 		backend::cpal::CpalBackend,
 	},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
-	StartTime, ClockSpeed,
+	StartTime,
 };
 
 let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
@@ -61,13 +61,13 @@ the `start_time` function.
 
 ```no_run
 # use kira::{
-# 	clock::ClockTime,
+# 	clock::{ClockTime, ClockSpeed},
 # 	manager::{
 # 	 	AudioManager, AudioManagerSettings,
 # 		backend::cpal::CpalBackend,
 # 	},
 # 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
-# 	ClockSpeed, StartTime,
+# 	StartTime,
 # };
 #
 # let mut manager = AudioManager::<CpalBackend>::new(
@@ -95,7 +95,7 @@ use kira::{
 		backend::cpal::CpalBackend,
 	},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
-	ClockSpeed,
+	clock::ClockSpeed,
 };
 
 # let mut manager = AudioManager::<CpalBackend>::new(
@@ -126,7 +126,8 @@ use kira::{
 	},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	tween::Tween,
-	ClockSpeed, StartTime,
+	clock::ClockSpeed,
+	StartTime,
 };
 
 let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
@@ -149,12 +150,14 @@ clock.start()?;
 */
 
 pub mod clock_info;
+mod clock_speed;
 mod handle;
 mod time;
 
 #[cfg(test)]
 mod test;
 
+pub use clock_speed::*;
 pub use handle::*;
 pub use time::*;
 
@@ -168,7 +171,6 @@ use atomic_arena::Key;
 use crate::{
 	modulator::value_provider::ModulatorValueProvider,
 	tween::{Parameter, Tween, Value},
-	ClockSpeed,
 };
 
 use self::clock_info::ClockInfoProvider;
