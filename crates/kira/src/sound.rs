@@ -16,6 +16,7 @@ create your own types that implement the [`SoundData`] and [`Sound`] traits.
 
 #[cfg(feature = "symphonia")]
 mod error;
+mod playback_position;
 mod playback_rate;
 pub mod static_sound;
 #[cfg(not(target_arch = "wasm32"))]
@@ -29,6 +30,7 @@ use std::ops::{Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToIncl
 
 #[cfg(feature = "symphonia")]
 pub use error::*;
+pub use playback_position::*;
 pub use playback_rate::*;
 
 use crate::{
@@ -113,52 +115,52 @@ pub enum PlaybackState {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Region {
 	/// The starting time of the region (in seconds).
-	pub start: f64,
+	pub start: PlaybackPosition,
 	/// The ending time of the region.
 	pub end: EndPosition,
 }
 
-impl From<RangeFrom<f64>> for Region {
-	fn from(range: RangeFrom<f64>) -> Self {
+impl<T: Into<PlaybackPosition>> From<RangeFrom<T>> for Region {
+	fn from(range: RangeFrom<T>) -> Self {
 		Self {
-			start: range.start,
+			start: range.start.into(),
 			end: EndPosition::EndOfAudio,
 		}
 	}
 }
 
-impl From<Range<f64>> for Region {
-	fn from(range: Range<f64>) -> Self {
+impl<T: Into<PlaybackPosition>> From<Range<T>> for Region {
+	fn from(range: Range<T>) -> Self {
 		Self {
-			start: range.start,
-			end: EndPosition::Custom(range.end),
+			start: range.start.into(),
+			end: EndPosition::Custom(range.end.into()),
 		}
 	}
 }
 
-impl From<RangeInclusive<f64>> for Region {
-	fn from(range: RangeInclusive<f64>) -> Self {
+impl<T: Into<PlaybackPosition> + Copy> From<RangeInclusive<T>> for Region {
+	fn from(range: RangeInclusive<T>) -> Self {
 		Self {
-			start: *range.start(),
-			end: EndPosition::Custom(*range.end()),
+			start: (*range.start()).into(),
+			end: EndPosition::Custom((*range.end()).into()),
 		}
 	}
 }
 
-impl From<RangeTo<f64>> for Region {
-	fn from(range: RangeTo<f64>) -> Self {
+impl<T: Into<PlaybackPosition>> From<RangeTo<T>> for Region {
+	fn from(range: RangeTo<T>) -> Self {
 		Self {
-			start: 0.0,
-			end: EndPosition::Custom(range.end),
+			start: PlaybackPosition::Samples(0),
+			end: EndPosition::Custom(range.end.into()),
 		}
 	}
 }
 
-impl From<RangeToInclusive<f64>> for Region {
-	fn from(range: RangeToInclusive<f64>) -> Self {
+impl<T: Into<PlaybackPosition>> From<RangeToInclusive<T>> for Region {
+	fn from(range: RangeToInclusive<T>) -> Self {
 		Self {
-			start: 0.0,
-			end: EndPosition::Custom(range.end),
+			start: PlaybackPosition::Samples(0),
+			end: EndPosition::Custom(range.end.into()),
 		}
 	}
 }
@@ -166,7 +168,7 @@ impl From<RangeToInclusive<f64>> for Region {
 impl From<RangeFull> for Region {
 	fn from(_: RangeFull) -> Self {
 		Self {
-			start: 0.0,
+			start: PlaybackPosition::Samples(0),
 			end: EndPosition::EndOfAudio,
 		}
 	}
@@ -175,7 +177,7 @@ impl From<RangeFull> for Region {
 impl Default for Region {
 	fn default() -> Self {
 		Self {
-			start: 0.0,
+			start: PlaybackPosition::Samples(0),
 			end: EndPosition::EndOfAudio,
 		}
 	}
@@ -187,57 +189,9 @@ pub trait IntoOptionalRegion {
 	fn into_optional_loop_region(self) -> Option<Region>;
 }
 
-impl IntoOptionalRegion for RangeFrom<f64> {
+impl<T: Into<Region>> IntoOptionalRegion for T {
 	fn into_optional_loop_region(self) -> Option<Region> {
-		Some(Region {
-			start: self.start,
-			end: EndPosition::EndOfAudio,
-		})
-	}
-}
-
-impl IntoOptionalRegion for Range<f64> {
-	fn into_optional_loop_region(self) -> Option<Region> {
-		Some(Region {
-			start: self.start,
-			end: EndPosition::Custom(self.end),
-		})
-	}
-}
-
-impl IntoOptionalRegion for RangeInclusive<f64> {
-	fn into_optional_loop_region(self) -> Option<Region> {
-		Some(Region {
-			start: *self.start(),
-			end: EndPosition::Custom(*self.end()),
-		})
-	}
-}
-
-impl IntoOptionalRegion for RangeTo<f64> {
-	fn into_optional_loop_region(self) -> Option<Region> {
-		Some(Region {
-			start: 0.0,
-			end: EndPosition::Custom(self.end),
-		})
-	}
-}
-
-impl IntoOptionalRegion for RangeToInclusive<f64> {
-	fn into_optional_loop_region(self) -> Option<Region> {
-		Some(Region {
-			start: 0.0,
-			end: EndPosition::Custom(self.end),
-		})
-	}
-}
-
-impl IntoOptionalRegion for RangeFull {
-	fn into_optional_loop_region(self) -> Option<Region> {
-		Some(Region {
-			start: 0.0,
-			end: EndPosition::EndOfAudio,
-		})
+		Some(self.into())
 	}
 }
 
@@ -253,5 +207,5 @@ pub enum EndPosition {
 	/// The end of the audio data.
 	EndOfAudio,
 	/// A user-defined time in seconds.
-	Custom(f64),
+	Custom(PlaybackPosition),
 }

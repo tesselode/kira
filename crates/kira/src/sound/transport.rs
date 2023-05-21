@@ -25,21 +25,21 @@ impl Transport {
 		sample_rate: u32,
 		num_frames: usize,
 	) -> Self {
-		let playback_start = (playback_region.start * sample_rate as f64) as i64;
+		let playback_start = playback_region.start.into_samples(sample_rate);
 		let playback_end = match playback_region.end {
 			EndPosition::EndOfAudio => (num_frames - 1)
 				.try_into()
 				.expect("could not convert usize to i64"),
-			EndPosition::Custom(end_position) => (end_position * sample_rate as f64) as i64,
+			EndPosition::Custom(end_position) => end_position.into_samples(sample_rate),
 		};
 		let playback_region = (playback_start, playback_end);
 		let loop_region = loop_region.map(|loop_region| {
-			let loop_start = (loop_region.start * sample_rate as f64) as i64;
+			let loop_start = loop_region.start.into_samples(sample_rate);
 			let loop_end = match loop_region.end {
 				EndPosition::EndOfAudio => num_frames
 					.try_into()
 					.expect("could not convert usize to i64"),
-				EndPosition::Custom(end_position) => (end_position * sample_rate as f64) as i64,
+				EndPosition::Custom(end_position) => end_position.into_samples(sample_rate),
 			};
 			(loop_start, loop_end)
 		});
@@ -62,12 +62,12 @@ impl Transport {
 		sample_rate: u32,
 		num_frames: usize,
 	) {
-		let playback_start = (playback_region.start * sample_rate as f64) as i64;
+		let playback_start = playback_region.start.into_samples(sample_rate);
 		let playback_end = match playback_region.end {
 			EndPosition::EndOfAudio => (num_frames - 1)
 				.try_into()
 				.expect("could not convert usize to i64"),
-			EndPosition::Custom(end_position) => (end_position * sample_rate as f64) as i64,
+			EndPosition::Custom(end_position) => end_position.into_samples(sample_rate),
 		};
 		self.playback_region = (playback_start, playback_end);
 	}
@@ -79,12 +79,12 @@ impl Transport {
 		num_frames: usize,
 	) {
 		self.loop_region = loop_region.map(|loop_region| {
-			let loop_start = (loop_region.start * sample_rate as f64) as i64;
+			let loop_start = loop_region.start.into_samples(sample_rate);
 			let loop_end = match loop_region.end {
 				EndPosition::EndOfAudio => num_frames
 					.try_into()
 					.expect("could not convert usize to i64"),
-				EndPosition::Custom(end_position) => (end_position * sample_rate as f64) as i64,
+				EndPosition::Custom(end_position) => end_position.into_samples(sample_rate),
 			};
 			(loop_start, loop_end)
 		});
