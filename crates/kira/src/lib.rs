@@ -138,6 +138,40 @@ clock.start()?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
+## Features
+
+The Kira crate has the following feature flags, all of which are enabled by
+default:
+
+- `cpal` - enables the cpal backend and makes it the default for audio managers.
+This allows Kira to talk to the operating system to output audio. Most users should
+leave this enabled.
+- `symphonia` - allows loading and streaming audio from common audio formats,
+like MP3 and WAV.
+	- `mp3` - enables support for loading and streaming MP3 audio (enables the
+	`symphonia` feature automatically)
+	- `ogg` - enables support for loading and streaming OGG audio (enables the
+	`symphonia` feature automatically)
+	- `flac` - enables support for loading and streaming FLAC audio (enables the
+	`symphonia` feature automatically)
+	- `wav` - enables support for loading and streaming WAV audio (enables the
+	`symphonia` feature automatically)
+
+## Loading other audio file formats
+
+Kira will be able to load any audio format that Symphonia supports with its
+current enabled features. For example, to add support for AAC files, you can
+add `symphonia` to your Cargo.toml with the `aac` feature:
+
+```toml
+symphonia = { version = "0.5.2", features = ["aac"] }
+```
+
+Kira's `mp3`, `ogg`, `flac`, and `wav` feature flags are provided for convenience.
+
+See the [symphonia documentation](https://github.com/pdeljanov/Symphonia#formats-demuxers)
+for a list of supported container formats and codecs.
+
 ## Performance using the `dev` profile
 
 By default, Rust programs run with the `dev` profile are not optimized. This can
