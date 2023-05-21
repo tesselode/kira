@@ -5,7 +5,6 @@ use super::backend::Backend;
 /// Specifies how many of each resource type an audio context
 /// can have.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[non_exhaustive]
 pub struct Capacities {
 	/// The number of commands that be sent to the renderer at a time.
 	///
