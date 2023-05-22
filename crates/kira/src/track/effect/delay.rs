@@ -11,15 +11,16 @@ use ringbuf::HeapConsumer;
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::{interpolate_frame, Frame},
+	modulator::value_provider::ModulatorValueProvider,
 	track::Effect,
-	tween::{Tween, Tweener},
+	tween::{Parameter, Tween, Value},
 	Volume,
 };
 
 enum Command {
-	SetDelayTime(f64, Tween),
-	SetFeedback(Volume, Tween),
-	SetMix(f64, Tween),
+	SetDelayTime(Value<f64>, Tween),
+	SetFeedback(Value<Volume>, Tween),
+	SetMix(Value<f64>, Tween),
 }
 
 #[derive(Debug, Clone)]
@@ -36,9 +37,9 @@ enum DelayState {
 
 struct Delay {
 	command_consumer: HeapConsumer<Command>,
-	delay_time: Tweener,
-	feedback: Tweener<Volume>,
-	mix: Tweener,
+	delay_time: Parameter,
+	feedback: Parameter<Volume>,
+	mix: Parameter,
 	state: DelayState,
 	feedback_effects: Vec<Box<dyn Effect>>,
 }
@@ -48,9 +49,9 @@ impl Delay {
 	fn new(builder: DelayBuilder, command_consumer: HeapConsumer<Command>) -> Self {
 		Self {
 			command_consumer,
-			delay_time: Tweener::new(builder.delay_time),
-			feedback: Tweener::new(builder.feedback),
-			mix: Tweener::new(builder.mix),
+			delay_time: Parameter::new(builder.delay_time, 0.5),
+			feedback: Parameter::new(builder.feedback, Volume::Amplitude(0.5)),
+			mix: Parameter::new(builder.mix, 0.5),
 			state: DelayState::Uninitialized {
 				buffer_length: builder.buffer_length,
 			},
@@ -105,16 +106,25 @@ impl Effect for Delay {
 		}
 	}
 
-	fn process(&mut self, input: Frame, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
+	fn process(
+		&mut self,
+		input: Frame,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+		modulator_value_provider: &ModulatorValueProvider,
+	) -> Frame {
 		if let DelayState::Initialized {
 			buffer,
 			write_position,
 			..
 		} = &mut self.state
 		{
-			self.delay_time.update(dt, clock_info_provider);
-			self.feedback.update(dt, clock_info_provider);
-			self.mix.update(dt, clock_info_provider);
+			self.delay_time
+				.update(dt, clock_info_provider, modulator_value_provider);
+			self.feedback
+				.update(dt, clock_info_provider, modulator_value_provider);
+			self.mix
+				.update(dt, clock_info_provider, modulator_value_provider);
 
 			// get the read position (in samples)
 			let mut read_position = *write_position as f32 - (self.delay_time.value() / dt) as f32;
@@ -140,7 +150,7 @@ impl Effect for Delay {
 				fraction,
 			);
 			for effect in &mut self.feedback_effects {
-				output = effect.process(output, dt, clock_info_provider);
+				output = effect.process(output, dt, clock_info_provider, modulator_value_provider);
 			}
 
 			// write output audio to the buffer

@@ -8,7 +8,6 @@ use kira::{
 		AudioManager, AudioManagerSettings, Capacities,
 	},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
-	LoopBehavior,
 };
 
 fn create_test_sound(num_samples: usize) -> StaticSoundData {
@@ -21,10 +20,8 @@ fn create_test_sound(num_samples: usize) -> StaticSoundData {
 	}
 	StaticSoundData {
 		sample_rate: SAMPLE_RATE,
-		frames: Arc::new(frames),
-		settings: StaticSoundSettings::new().loop_behavior(LoopBehavior {
-			start_position: 0.0,
-		}),
+		frames: Arc::from(frames),
+		settings: StaticSoundSettings::new().loop_region(0.0..),
 	}
 }
 

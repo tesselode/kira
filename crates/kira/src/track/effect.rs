@@ -1,13 +1,27 @@
-//! Modifies audio signals.
+/*!
+Modifies audio signals.
 
+Any type that implements [`EffectBuilder`] can be added to a mixer track by
+using [`TrackBuilder::add_effect`](super::TrackBuilder::add_effect). Kira
+comes with a number of commonly used effects.
+
+If needed, you can create custom effects by implementing the [`EffectBuilder`]
+and [`Effect`] traits.
+*/
+
+pub mod compressor;
 pub mod delay;
 pub mod distortion;
+pub mod eq_filter;
 pub mod filter;
 pub mod panning_control;
 pub mod reverb;
 pub mod volume_control;
 
-use crate::{clock::clock_info::ClockInfoProvider, dsp::Frame};
+use crate::{
+	clock::clock_info::ClockInfoProvider, dsp::Frame,
+	modulator::value_provider::ModulatorValueProvider,
+};
 
 /// Configures an effect.
 pub trait EffectBuilder {
@@ -19,6 +33,9 @@ pub trait EffectBuilder {
 }
 
 /// Receives input audio from a mixer track and outputs modified audio.
+///
+/// For performance reasons, avoid allocating and deallocating in any methods
+/// of this trait besides [`on_change_sample_rate`](Effect::on_change_sample_rate).
 #[allow(unused_variables)]
 pub trait Effect: Send + Sync {
 	/// Called when the effect is first sent to the renderer.
@@ -34,8 +51,14 @@ pub trait Effect: Send + Sync {
 	fn on_start_processing(&mut self) {}
 
 	/// Transforms an input [`Frame`].
-	/// - `input` is the input audio
-	/// - `dt` is the time that's elapsed since the previous round of
-	/// processing (in seconds)
-	fn process(&mut self, input: Frame, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame;
+	///
+	/// `dt` is the time that's elapsed since the previous round of
+	/// processing (in seconds).
+	fn process(
+		&mut self,
+		input: Frame,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+		modulator_value_provider: &ModulatorValueProvider,
+	) -> Frame;
 }

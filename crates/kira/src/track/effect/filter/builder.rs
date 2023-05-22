@@ -1,6 +1,9 @@
 use ringbuf::HeapRb;
 
-use crate::track::effect::{Effect, EffectBuilder};
+use crate::{
+	track::effect::{Effect, EffectBuilder},
+	tween::Value,
+};
 
 use super::{Filter, FilterHandle, FilterMode};
 
@@ -13,17 +16,17 @@ pub struct FilterBuilder {
 	/// The frequencies that the filter will remove.
 	pub mode: FilterMode,
 	/// The cutoff frequency of the filter (in hertz).
-	pub cutoff: f64,
+	pub cutoff: Value<f64>,
 	/// The resonance of the filter.
 	///
 	/// The resonance is a feedback effect that produces
 	/// a distinctive "ringing" sound.
-	pub resonance: f64,
+	pub resonance: Value<f64>,
 	/// How much dry (unprocessed) signal should be blended
 	/// with the wet (processed) signal. `0.0` means
 	/// only the dry signal will be heard. `1.0` means
 	/// only the wet signal will be heard.
-	pub mix: f64,
+	pub mix: Value<f64>,
 }
 
 impl FilterBuilder {
@@ -38,21 +41,30 @@ impl FilterBuilder {
 	}
 
 	/// Sets the cutoff frequency of the filter (in hertz).
-	pub fn cutoff(self, cutoff: f64) -> Self {
-		Self { cutoff, ..self }
+	pub fn cutoff(self, cutoff: impl Into<Value<f64>>) -> Self {
+		Self {
+			cutoff: cutoff.into(),
+			..self
+		}
 	}
 
 	/// Sets the resonance of the filter.
-	pub fn resonance(self, resonance: f64) -> Self {
-		Self { resonance, ..self }
+	pub fn resonance(self, resonance: impl Into<Value<f64>>) -> Self {
+		Self {
+			resonance: resonance.into(),
+			..self
+		}
 	}
 
 	/// Sets how much dry (unprocessed) signal should be blended
 	/// with the wet (processed) signal. `0.0` means only the dry
 	/// signal will be heard. `1.0` means only the wet signal will
 	/// be heard.
-	pub fn mix(self, mix: f64) -> Self {
-		Self { mix, ..self }
+	pub fn mix(self, mix: impl Into<Value<f64>>) -> Self {
+		Self {
+			mix: mix.into(),
+			..self
+		}
 	}
 }
 
@@ -60,9 +72,9 @@ impl Default for FilterBuilder {
 	fn default() -> Self {
 		Self {
 			mode: FilterMode::LowPass,
-			cutoff: 1000.0,
-			resonance: 0.0,
-			mix: 1.0,
+			cutoff: Value::Fixed(1000.0),
+			resonance: Value::Fixed(0.0),
+			mix: Value::Fixed(1.0),
 		}
 	}
 }

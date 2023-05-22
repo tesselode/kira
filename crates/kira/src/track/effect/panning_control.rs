@@ -11,25 +11,26 @@ use ringbuf::HeapConsumer;
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
-	tween::{Tween, Tweener},
+	modulator::value_provider::ModulatorValueProvider,
+	tween::{Parameter, Tween, Value},
 };
 
 use super::Effect;
 
 enum Command {
-	SetPanning(f64, Tween),
+	SetPanning(Value<f64>, Tween),
 }
 
 struct PanningControl {
 	command_consumer: HeapConsumer<Command>,
-	panning: Tweener,
+	panning: Parameter,
 }
 
 impl PanningControl {
 	fn new(builder: PanningControlBuilder, command_consumer: HeapConsumer<Command>) -> Self {
 		Self {
 			command_consumer,
-			panning: Tweener::new(builder.0),
+			panning: Parameter::new(builder.0, 0.5),
 		}
 	}
 }
@@ -43,8 +44,15 @@ impl Effect for PanningControl {
 		}
 	}
 
-	fn process(&mut self, input: Frame, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
-		self.panning.update(dt, clock_info_provider);
+	fn process(
+		&mut self,
+		input: Frame,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+		modulator_value_provider: &ModulatorValueProvider,
+	) -> Frame {
+		self.panning
+			.update(dt, clock_info_provider, modulator_value_provider);
 		input.panned(self.panning.value() as f32)
 	}
 }

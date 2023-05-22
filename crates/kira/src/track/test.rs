@@ -3,7 +3,8 @@ use std::time::Duration;
 use crate::{
 	clock::clock_info::{ClockInfoProvider, MockClockInfoProviderBuilder},
 	dsp::Frame,
-	tween::Tween,
+	modulator::value_provider::{MockModulatorValueProviderBuilder, ModulatorValueProvider},
+	tween::{Tween, Value},
 	Volume,
 };
 
@@ -18,7 +19,11 @@ fn volume() {
 	let mut track = Track::new(TrackBuilder::new().volume(0.5));
 	track.add_input(Frame::from_mono(1.0));
 	assert_eq!(
-		track.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+		track.process(
+			1.0,
+			&MockClockInfoProviderBuilder::new(0).build(),
+			&MockModulatorValueProviderBuilder::new(0).build()
+		),
 		Frame::from_mono(0.5)
 	);
 }
@@ -29,7 +34,7 @@ fn volume() {
 fn set_volume() {
 	let mut track = Track::new(TrackBuilder::new());
 	track.set_volume(
-		Volume::Amplitude(0.5),
+		Value::Fixed(Volume::Amplitude(0.5)),
 		Tween {
 			duration: Duration::ZERO,
 			..Default::default()
@@ -37,7 +42,11 @@ fn set_volume() {
 	);
 	track.add_input(Frame::from_mono(1.0));
 	assert_eq!(
-		track.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+		track.process(
+			1.0,
+			&MockClockInfoProviderBuilder::new(0).build(),
+			&MockModulatorValueProviderBuilder::new(0).build()
+		),
 		Frame::from_mono(0.5)
 	);
 }
@@ -53,7 +62,11 @@ fn effects() {
 	});
 	track.add_input(Frame::from_mono(1.0));
 	assert_eq!(
-		track.process(1.0, &MockClockInfoProviderBuilder::new(0).build()),
+		track.process(
+			1.0,
+			&MockClockInfoProviderBuilder::new(0).build(),
+			&MockModulatorValueProviderBuilder::new(0).build()
+		),
 		Frame::from_mono(0.75)
 	);
 }
@@ -77,6 +90,7 @@ impl Effect for MockEffect {
 		input: Frame,
 		_dt: f64,
 		_clock_info_provider: &ClockInfoProvider,
+		_modulator_value_provider: &ModulatorValueProvider,
 	) -> Frame {
 		match self {
 			MockEffect::Add(frame) => input + *frame,

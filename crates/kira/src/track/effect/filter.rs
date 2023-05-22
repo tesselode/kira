@@ -12,15 +12,16 @@ use std::f64::consts::PI;
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
+	modulator::value_provider::ModulatorValueProvider,
 	track::Effect,
-	tween::{Tween, Tweener},
+	tween::{Parameter, Tween, Value},
 };
 
 enum Command {
 	SetMode(FilterMode),
-	SetCutoff(f64, Tween),
-	SetResonance(f64, Tween),
-	SetMix(f64, Tween),
+	SetCutoff(Value<f64>, Tween),
+	SetResonance(Value<f64>, Tween),
+	SetMix(Value<f64>, Tween),
 }
 
 // This filter code is based on the filter code from baseplug:
@@ -42,9 +43,9 @@ pub enum FilterMode {
 struct Filter {
 	command_consumer: HeapConsumer<Command>,
 	mode: FilterMode,
-	cutoff: Tweener,
-	resonance: Tweener,
-	mix: Tweener,
+	cutoff: Parameter,
+	resonance: Parameter,
+	mix: Parameter,
 	ic1eq: Frame,
 	ic2eq: Frame,
 }
@@ -55,9 +56,9 @@ impl Filter {
 		Self {
 			command_consumer,
 			mode: builder.mode,
-			cutoff: Tweener::new(builder.cutoff),
-			resonance: Tweener::new(builder.resonance),
-			mix: Tweener::new(builder.mix),
+			cutoff: Parameter::new(builder.cutoff, 1000.0),
+			resonance: Parameter::new(builder.resonance, 0.0),
+			mix: Parameter::new(builder.mix, 1.0),
 			ic1eq: Frame::ZERO,
 			ic2eq: Frame::ZERO,
 		}
@@ -76,10 +77,19 @@ impl Effect for Filter {
 		}
 	}
 
-	fn process(&mut self, input: Frame, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
-		self.cutoff.update(dt, clock_info_provider);
-		self.resonance.update(dt, clock_info_provider);
-		self.mix.update(dt, clock_info_provider);
+	fn process(
+		&mut self,
+		input: Frame,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+		modulator_value_provider: &ModulatorValueProvider,
+	) -> Frame {
+		self.cutoff
+			.update(dt, clock_info_provider, modulator_value_provider);
+		self.resonance
+			.update(dt, clock_info_provider, modulator_value_provider);
+		self.mix
+			.update(dt, clock_info_provider, modulator_value_provider);
 		let sample_rate = 1.0 / dt;
 		let g = (PI * (self.cutoff.value() / sample_rate)).tan();
 		let k = 2.0 - (1.9 * self.resonance.value().min(1.0).max(0.0));

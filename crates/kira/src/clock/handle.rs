@@ -3,11 +3,10 @@ use std::sync::Arc;
 use crate::{
 	error::CommandError,
 	manager::command::{producer::CommandProducer, ClockCommand, Command},
-	tween::Tween,
-	ClockSpeed,
+	tween::{Tween, Value},
 };
 
-use super::{ClockId, ClockShared, ClockTime};
+use super::{ClockId, ClockShared, ClockSpeed, ClockTime};
 
 /// Controls a clock.
 ///
@@ -49,7 +48,7 @@ impl ClockHandle {
 	/// Sets the speed of the clock.
 	pub fn set_speed(
 		&self,
-		speed: impl Into<ClockSpeed>,
+		speed: impl Into<Value<ClockSpeed>>,
 		tween: Tween,
 	) -> Result<(), CommandError> {
 		self.command_producer

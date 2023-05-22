@@ -4,6 +4,7 @@ use ringbuf::HeapProducer;
 use crate::{
 	clock::{clock_info::ClockInfoProvider, Clock, ClockId},
 	manager::command::ClockCommand,
+	modulator::value_provider::ModulatorValueProvider,
 };
 
 pub(crate) struct Clocks {
@@ -91,14 +92,14 @@ impl Clocks {
 		}
 	}
 
-	pub(crate) fn update(&mut self, dt: f64) {
+	pub(crate) fn update(&mut self, dt: f64, modulator_value_provider: &ModulatorValueProvider) {
 		for id in &self.clock_ids {
 			let mut clock = self
 				.clocks
 				.get(id.0)
 				.cloned()
 				.expect("clock IDs and clocks are out of sync");
-			clock.update(dt, &ClockInfoProvider::new(self));
+			clock.update(dt, &ClockInfoProvider::new(self), modulator_value_provider);
 			*self
 				.clocks
 				.get_mut(id.0)

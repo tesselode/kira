@@ -3,15 +3,14 @@ use std::fmt::Display;
 /// Errors that can occur when loading or streaming an audio file.
 #[derive(Debug)]
 #[non_exhaustive]
-#[cfg_attr(
-	docsrs,
-	doc(cfg(any(feature = "mp3", feature = "ogg", feature = "flac", feature = "wav")))
-)]
+#[cfg_attr(docsrs, doc(cfg(feature = "symphonia")))]
 pub enum FromFileError {
 	/// Could not determine the default audio track in the file.
 	NoDefaultTrack,
 	/// Could not determine the sample rate of the audio.
 	UnknownSampleRate,
+	/// Could not determine the duration of the audio.
+	UnknownDuration,
 	/// The audio uses an unsupported channel configuration. Only
 	/// mono and stereo audio is supported.
 	UnsupportedChannelConfiguration,
@@ -29,6 +28,9 @@ impl Display for FromFileError {
 			}
 			FromFileError::UnknownSampleRate => {
 				f.write_str("Could not detect the sample rate of the audio")
+			}
+			FromFileError::UnknownDuration => {
+				f.write_str("Could not detect the duration of the audio")
 			}
 			FromFileError::UnsupportedChannelConfiguration => {
 				f.write_str("Only mono and stereo audio is supported")

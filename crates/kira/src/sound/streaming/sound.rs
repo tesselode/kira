@@ -4,30 +4,39 @@ pub(crate) mod decode_scheduler;
 mod test;
 
 use std::sync::{
-	atomic::{AtomicU64, AtomicU8, Ordering},
+	atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering},
 	Arc,
 };
 
 use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
 	dsp::{interpolate_frame, Frame},
-	sound::{static_sound::PlaybackState, Sound},
-	track::TrackId,
-	tween::{Tween, Tweener},
-	PlaybackRate, StartTime, Volume,
+	modulator::value_provider::ModulatorValueProvider,
+	sound::{util::create_volume_fade_parameter, PlaybackRate, PlaybackState, Sound},
+	tween::{Parameter, Tween, Value},
+	OutputDestination, StartTime, Volume,
 };
 use ringbuf::HeapConsumer;
 
-use super::{Command, StreamingSoundSettings};
+use super::{SoundCommand, StreamingSoundSettings};
 
-use self::decode_scheduler::{DecodeScheduler, DecodeSchedulerController};
+use self::decode_scheduler::DecodeScheduler;
 
 pub(crate) struct Shared {
 	state: AtomicU8,
 	position: AtomicU64,
+	reached_end: AtomicBool,
 }
 
 impl Shared {
+	pub fn new() -> Self {
+		Self {
+			position: AtomicU64::new(0.0f64.to_bits()),
+			state: AtomicU8::new(PlaybackState::Playing as u8),
+			reached_end: AtomicBool::new(false),
+		}
+	}
+
 	pub fn state(&self) -> PlaybackState {
 		match self.state.load(Ordering::SeqCst) {
 			0 => PlaybackState::Playing,
@@ -42,40 +51,48 @@ impl Shared {
 	pub fn position(&self) -> f64 {
 		f64::from_bits(self.position.load(Ordering::SeqCst))
 	}
+
+	pub fn reached_end(&self) -> bool {
+		self.reached_end.load(Ordering::SeqCst)
+	}
 }
 
 pub(crate) struct StreamingSound {
-	command_consumer: HeapConsumer<Command>,
+	command_consumer: HeapConsumer<SoundCommand>,
 	sample_rate: u32,
-	scheduler_controller: DecodeSchedulerController,
-	track: TrackId,
+	frame_consumer: HeapConsumer<TimestampedFrame>,
+	output_destination: OutputDestination,
 	start_time: StartTime,
 	state: PlaybackState,
 	when_to_start: WhenToStart,
-	volume_fade: Tweener<Volume>,
+	volume_fade: Parameter<Volume>,
 	current_frame: i64,
 	fractional_position: f64,
-	volume: Tweener<Volume>,
-	playback_rate: Tweener<PlaybackRate>,
-	panning: Tweener,
+	volume: Parameter<Volume>,
+	playback_rate: Parameter<PlaybackRate>,
+	panning: Parameter,
 	shared: Arc<Shared>,
 }
 
 impl StreamingSound {
 	pub fn new<Error: Send + 'static>(
-		command_consumer: HeapConsumer<Command>,
-		scheduler_controller: DecodeSchedulerController,
-		settings: StreamingSoundSettings,
 		sample_rate: u32,
+		settings: StreamingSoundSettings,
+		shared: Arc<Shared>,
+		frame_consumer: HeapConsumer<TimestampedFrame>,
+		command_consumer: HeapConsumer<SoundCommand>,
 		scheduler: &DecodeScheduler<Error>,
 	) -> Self {
 		let current_frame = scheduler.current_frame();
 		let start_position = current_frame as f64 / sample_rate as f64;
+		shared
+			.position
+			.store(start_position.to_bits(), Ordering::SeqCst);
 		Self {
 			command_consumer,
 			sample_rate,
-			scheduler_controller,
-			track: settings.track,
+			frame_consumer,
+			output_destination: settings.output_destination,
 			start_time: settings.start_time,
 			state: PlaybackState::Playing,
 			when_to_start: if matches!(settings.start_time, StartTime::ClockTime(..)) {
@@ -83,27 +100,14 @@ impl StreamingSound {
 			} else {
 				WhenToStart::Now
 			},
-			volume_fade: if let Some(tween) = settings.fade_in_tween {
-				let mut tweenable = Tweener::new(Volume::Decibels(Volume::MIN_DECIBELS));
-				tweenable.set(Volume::Decibels(0.0), tween);
-				tweenable
-			} else {
-				Tweener::new(Volume::Decibels(0.0))
-			},
+			volume_fade: create_volume_fade_parameter(settings.fade_in_tween),
 			current_frame,
 			fractional_position: 0.0,
-			volume: Tweener::new(settings.volume),
-			playback_rate: Tweener::new(settings.playback_rate),
-			panning: Tweener::new(settings.panning),
-			shared: Arc::new(Shared {
-				position: AtomicU64::new(start_position.to_bits()),
-				state: AtomicU8::new(PlaybackState::Playing as u8),
-			}),
+			volume: Parameter::new(settings.volume, Volume::Amplitude(1.0)),
+			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate::Factor(1.0)),
+			panning: Parameter::new(settings.panning, 0.5),
+			shared,
 		}
-	}
-
-	pub fn shared(&self) -> Arc<Shared> {
-		self.shared.clone()
 	}
 
 	fn set_state(&mut self, state: PlaybackState) {
@@ -113,22 +117,22 @@ impl StreamingSound {
 
 	fn update_current_frame(&mut self) {
 		let current_frame = &mut self.current_frame;
-		let (a, b) = self.scheduler_controller.frame_consumer_mut().as_slices();
+		let (a, b) = self.frame_consumer.as_slices();
 		let mut iter = a.iter().chain(b.iter());
-		if let Some((index, _)) = iter.nth(1) {
+		if let Some(TimestampedFrame { index, .. }) = iter.nth(1) {
 			*current_frame = *index;
 		}
 	}
 
 	fn next_frames(&mut self) -> [Frame; 4] {
 		let mut frames = [Frame::ZERO; 4];
-		let (a, b) = self.scheduler_controller.frame_consumer_mut().as_slices();
+		let (a, b) = self.frame_consumer.as_slices();
 		let mut iter = a.iter().chain(b.iter());
 		for frame in &mut frames {
 			*frame = iter
 				.next()
 				.copied()
-				.map(|(_, frame)| frame)
+				.map(|TimestampedFrame { frame, .. }| frame)
 				.unwrap_or(Frame::ZERO);
 		}
 		frames
@@ -141,36 +145,25 @@ impl StreamingSound {
 	fn pause(&mut self, tween: Tween) {
 		self.set_state(PlaybackState::Pausing);
 		self.volume_fade
-			.set(Volume::Decibels(Volume::MIN_DECIBELS), tween);
+			.set(Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)), tween);
 	}
 
 	fn resume(&mut self, tween: Tween) {
 		self.set_state(PlaybackState::Playing);
-		self.volume_fade.set(Volume::Decibels(0.0), tween);
+		self.volume_fade
+			.set(Value::Fixed(Volume::Decibels(0.0)), tween);
 	}
 
 	fn stop(&mut self, tween: Tween) {
 		self.set_state(PlaybackState::Stopping);
 		self.volume_fade
-			.set(Volume::Decibels(Volume::MIN_DECIBELS), tween);
-	}
-
-	fn seek_to_index(&mut self, index: i64) {
-		self.scheduler_controller.seek(index);
-	}
-
-	fn seek_to(&mut self, position: f64) {
-		self.seek_to_index((position * self.sample_rate as f64).round() as i64);
-	}
-
-	fn seek_by(&mut self, amount: f64) {
-		self.seek_to(self.position() + amount);
+			.set(Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)), tween);
 	}
 }
 
 impl Sound for StreamingSound {
-	fn track(&mut self) -> TrackId {
-		self.track
+	fn output_destination(&mut self) -> OutputDestination {
+		self.output_destination
 	}
 
 	fn on_start_processing(&mut self) {
@@ -180,26 +173,35 @@ impl Sound for StreamingSound {
 			.store(self.position().to_bits(), Ordering::SeqCst);
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
-				Command::SetVolume(volume, tween) => self.volume.set(volume, tween),
-				Command::SetPlaybackRate(playback_rate, tween) => {
+				SoundCommand::SetVolume(volume, tween) => self.volume.set(volume, tween),
+				SoundCommand::SetPlaybackRate(playback_rate, tween) => {
 					self.playback_rate.set(playback_rate, tween)
 				}
-				Command::SetPanning(panning, tween) => self.panning.set(panning, tween),
-				Command::Pause(tween) => self.pause(tween),
-				Command::Resume(tween) => self.resume(tween),
-				Command::Stop(tween) => self.stop(tween),
-				Command::SeekBy(amount) => self.seek_by(amount),
-				Command::SeekTo(position) => self.seek_to(position),
+				SoundCommand::SetPanning(panning, tween) => self.panning.set(panning, tween),
+				SoundCommand::Pause(tween) => self.pause(tween),
+				SoundCommand::Resume(tween) => self.resume(tween),
+				SoundCommand::Stop(tween) => self.stop(tween),
 			}
 		}
 	}
 
-	fn process(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
-		// update tweeners
-		self.volume.update(dt, clock_info_provider);
-		self.playback_rate.update(dt, clock_info_provider);
-		self.panning.update(dt, clock_info_provider);
-		if self.volume_fade.update(dt, clock_info_provider) {
+	fn process(
+		&mut self,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+		modulator_value_provider: &ModulatorValueProvider,
+	) -> Frame {
+		// update parameters
+		self.volume
+			.update(dt, clock_info_provider, modulator_value_provider);
+		self.playback_rate
+			.update(dt, clock_info_provider, modulator_value_provider);
+		self.panning
+			.update(dt, clock_info_provider, modulator_value_provider);
+		if self
+			.volume_fade
+			.update(dt, clock_info_provider, modulator_value_provider)
+		{
 			match self.state {
 				PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
 				PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),
@@ -236,9 +238,7 @@ impl Sound for StreamingSound {
 		// pause playback while waiting for audio data. the first frame
 		// in the ringbuffer is the previous frame, so we need to make
 		// sure there's at least 2 before we continue playing.
-		if self.scheduler_controller.frame_consumer_mut().len() < 2
-			&& !self.scheduler_controller.finished()
-		{
+		if self.frame_consumer.len() < 2 && !self.shared.reached_end() {
 			return Frame::ZERO;
 		}
 		let next_frames = self.next_frames();
@@ -253,11 +253,9 @@ impl Sound for StreamingSound {
 			self.sample_rate as f64 * self.playback_rate.value().as_factor() * dt;
 		while self.fractional_position >= 1.0 {
 			self.fractional_position -= 1.0;
-			self.scheduler_controller.frame_consumer_mut().pop();
+			self.frame_consumer.pop();
 		}
-		if self.scheduler_controller.finished()
-			&& self.scheduler_controller.frame_consumer_mut().is_empty()
-		{
+		if self.shared.reached_end() && self.frame_consumer.is_empty() {
 			self.set_state(PlaybackState::Stopped);
 		}
 		(out * self.volume_fade.value().as_amplitude() as f32
@@ -268,4 +266,10 @@ impl Sound for StreamingSound {
 	fn finished(&self) -> bool {
 		self.state == PlaybackState::Stopped
 	}
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct TimestampedFrame {
+	frame: Frame,
+	index: i64,
 }

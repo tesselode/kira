@@ -8,7 +8,7 @@ use super::StaticSoundData;
 fn duration() {
 	let static_sound = StaticSoundData {
 		sample_rate: 1,
-		frames: Arc::new(vec![Frame::from_mono(0.0); 4]),
+		frames: Arc::new([Frame::from_mono(0.0); 4]),
 		settings: Default::default(),
 	};
 	assert_eq!(static_sound.duration(), Duration::from_secs(4));

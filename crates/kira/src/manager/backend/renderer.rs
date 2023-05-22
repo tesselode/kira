@@ -9,7 +9,8 @@ use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
 	manager::{command::Command, MainPlaybackState},
-	tween::Tweener,
+	modulator::value_provider::ModulatorValueProvider,
+	tween::{Parameter, Value},
 	Volume,
 };
 
@@ -42,7 +43,7 @@ pub struct Renderer {
 	resources: Resources,
 	command_consumer: HeapConsumer<Command>,
 	state: MainPlaybackState,
-	fade_volume: Tweener<Volume>,
+	fade_volume: Parameter<Volume>,
 }
 
 impl Renderer {
@@ -57,7 +58,7 @@ impl Renderer {
 			resources,
 			command_consumer,
 			state: MainPlaybackState::Playing,
-			fade_volume: Tweener::new(Volume::Decibels(0.0)),
+			fade_volume: Parameter::new(Value::Fixed(Volume::Decibels(0.0)), Volume::Decibels(0.0)),
 		}
 	}
 
@@ -78,26 +79,35 @@ impl Renderer {
 		self.resources.sounds.on_start_processing();
 		self.resources.mixer.on_start_processing();
 		self.resources.clocks.on_start_processing();
+		self.resources.spatial_scenes.on_start_processing();
+		self.resources.modulators.on_start_processing();
 
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
 				Command::Sound(command) => self.resources.sounds.run_command(command),
 				Command::Mixer(command) => self.resources.mixer.run_command(command),
 				Command::Clock(command) => self.resources.clocks.run_command(command),
+				Command::SpatialScene(command) => {
+					self.resources.spatial_scenes.run_command(command)
+				}
+				Command::Modulator(command) => self.resources.modulators.run_command(command),
 				Command::Pause(fade_out_tween) => {
 					self.state = MainPlaybackState::Pausing;
 					self.shared
 						.state
 						.store(MainPlaybackState::Pausing as u8, Ordering::SeqCst);
-					self.fade_volume
-						.set(Volume::Decibels(Volume::MIN_DECIBELS), fade_out_tween);
+					self.fade_volume.set(
+						Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)),
+						fade_out_tween,
+					);
 				}
 				Command::Resume(fade_in_tween) => {
 					self.state = MainPlaybackState::Playing;
 					self.shared
 						.state
 						.store(MainPlaybackState::Playing as u8, Ordering::SeqCst);
-					self.fade_volume.set(Volume::Decibels(0.0), fade_in_tween);
+					self.fade_volume
+						.set(Value::Fixed(Volume::Decibels(0.0)), fade_in_tween);
 				}
 			}
 		}
@@ -105,30 +115,45 @@ impl Renderer {
 
 	/// Produces the next [`Frame`] of audio.
 	pub fn process(&mut self) -> Frame {
-		if self
-			.fade_volume
-			.update(self.dt, &ClockInfoProvider::new(&self.resources.clocks))
-		{
+		if self.fade_volume.update(
+			self.dt,
+			&ClockInfoProvider::new(&self.resources.clocks),
+			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
+		) {
 			if self.state == MainPlaybackState::Pausing {
 				self.state = MainPlaybackState::Paused;
 			}
 		}
-
 		if self.state == MainPlaybackState::Paused {
 			return Frame::ZERO;
 		}
 		if self.state == MainPlaybackState::Playing {
-			self.resources.clocks.update(self.dt);
+			self.resources
+				.modulators
+				.process(self.dt, &ClockInfoProvider::new(&self.resources.clocks));
+			self.resources.clocks.update(
+				self.dt,
+				&ModulatorValueProvider::new(&self.resources.modulators.modulators),
+			);
 		}
 		self.resources.sounds.process(
 			self.dt,
 			&ClockInfoProvider::new(&self.resources.clocks),
+			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
+			&mut self.resources.mixer,
+			&mut self.resources.spatial_scenes,
+		);
+		self.resources.spatial_scenes.process(
+			self.dt,
+			&ClockInfoProvider::new(&self.resources.clocks),
+			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
 			&mut self.resources.mixer,
 		);
-		let out = self
-			.resources
-			.mixer
-			.process(self.dt, &ClockInfoProvider::new(&self.resources.clocks));
+		let out = self.resources.mixer.process(
+			self.dt,
+			&ClockInfoProvider::new(&self.resources.clocks),
+			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
+		);
 		out * self.fade_volume.value().as_amplitude() as f32
 	}
 }

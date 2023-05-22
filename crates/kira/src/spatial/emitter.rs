@@ -1,0 +1,153 @@
+//! Produces audio in a 3D space.
+
+mod distances;
+mod handle;
+mod settings;
+
+pub use distances::*;
+pub use handle::*;
+pub use settings::*;
+
+use std::sync::{
+	atomic::{AtomicBool, Ordering},
+	Arc,
+};
+
+use atomic_arena::Key;
+use glam::Vec3;
+
+use crate::{
+	clock::clock_info::ClockInfoProvider,
+	dsp::Frame,
+	modulator::value_provider::ModulatorValueProvider,
+	tween::{Easing, Parameter, Tween, Value},
+};
+
+use super::scene::SpatialSceneId;
+
+pub(crate) struct Emitter {
+	shared: Arc<EmitterShared>,
+	position: Parameter<Vec3>,
+	distances: EmitterDistances,
+	attenuation_function: Option<Easing>,
+	enable_spatialization: bool,
+	persist_until_sounds_finish: bool,
+	input: Frame,
+	used_this_frame: bool,
+	finished: bool,
+}
+
+impl Emitter {
+	pub fn new(position: Value<Vec3>, settings: EmitterSettings) -> Self {
+		Self {
+			shared: Arc::new(EmitterShared::new()),
+			position: Parameter::new(position, Vec3::ZERO),
+			distances: settings.distances,
+			attenuation_function: settings.attenuation_function,
+			enable_spatialization: settings.enable_spatialization,
+			persist_until_sounds_finish: settings.persist_until_sounds_finish,
+			input: Frame::ZERO,
+			used_this_frame: false,
+			finished: false,
+		}
+	}
+
+	pub fn output(&self) -> Frame {
+		self.input
+	}
+
+	pub fn shared(&self) -> Arc<EmitterShared> {
+		self.shared.clone()
+	}
+
+	pub fn position(&self) -> Vec3 {
+		self.position.value()
+	}
+
+	pub fn distances(&self) -> EmitterDistances {
+		self.distances
+	}
+
+	pub fn attenuation_function(&self) -> Option<Easing> {
+		self.attenuation_function
+	}
+
+	pub fn enable_spatialization(&self) -> bool {
+		self.enable_spatialization
+	}
+
+	pub fn finished(&self) -> bool {
+		self.finished
+	}
+
+	pub fn set_position(&mut self, position: Value<Vec3>, tween: Tween) {
+		self.position.set(position, tween);
+	}
+
+	pub fn add_input(&mut self, input: Frame) {
+		self.input += input;
+		self.used_this_frame = true;
+	}
+
+	pub fn after_process(&mut self) {
+		if self.should_be_finished() {
+			self.finished = true;
+		}
+		self.input = Frame::ZERO;
+		self.used_this_frame = false;
+	}
+
+	pub fn update(
+		&mut self,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+		modulator_value_provider: &ModulatorValueProvider,
+	) {
+		self.position
+			.update(dt, clock_info_provider, modulator_value_provider);
+	}
+
+	fn should_be_finished(&self) -> bool {
+		if !self.shared.is_marked_for_removal() {
+			return false;
+		}
+		if self.persist_until_sounds_finish && self.used_this_frame {
+			return false;
+		}
+		true
+	}
+}
+
+/// A unique identifier for an emitter.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct EmitterId {
+	pub(crate) key: Key,
+	pub(crate) scene_id: SpatialSceneId,
+}
+
+impl EmitterId {
+	/// Returns the ID of the spatial scene this emitter belongs to.
+	pub fn scene(&self) -> SpatialSceneId {
+		self.scene_id
+	}
+}
+
+pub(crate) struct EmitterShared {
+	removed: AtomicBool,
+}
+
+impl EmitterShared {
+	pub fn new() -> Self {
+		Self {
+			removed: AtomicBool::new(false),
+		}
+	}
+
+	pub fn is_marked_for_removal(&self) -> bool {
+		self.removed.load(Ordering::SeqCst)
+	}
+
+	pub fn mark_for_removal(&self) {
+		self.removed.store(true, Ordering::SeqCst);
+	}
+}

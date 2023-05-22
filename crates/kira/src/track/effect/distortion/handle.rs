@@ -1,6 +1,9 @@
 use ringbuf::HeapProducer;
 
-use crate::{tween::Tween, CommandError, Volume};
+use crate::{
+	tween::{Tween, Value},
+	CommandError, Volume,
+};
 
 use super::{Command, DistortionKind};
 
@@ -20,7 +23,7 @@ impl DistortionHandle {
 	/// Sets how much distortion should be applied.
 	pub fn set_drive(
 		&mut self,
-		drive: impl Into<Volume>,
+		drive: impl Into<Value<Volume>>,
 		tween: Tween,
 	) -> Result<(), CommandError> {
 		self.command_producer
@@ -32,9 +35,13 @@ impl DistortionHandle {
 	/// with the wet (processed) signal. `0.0` means only the dry
 	/// signal will be heard. `1.0` means only the wet signal will
 	/// be heard.
-	pub fn set_mix(&mut self, mix: f64, tween: Tween) -> Result<(), CommandError> {
+	pub fn set_mix(
+		&mut self,
+		mix: impl Into<Value<f64>>,
+		tween: Tween,
+	) -> Result<(), CommandError> {
 		self.command_producer
-			.push(Command::SetMix(mix, tween))
+			.push(Command::SetMix(mix.into(), tween))
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 }

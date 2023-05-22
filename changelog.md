@@ -1,3 +1,51 @@
+# v0.8.0
+
+## Spatial audio
+
+The main highlight of this release: Kira now supports 3D positional audio! This
+is a simple implementation of 3D audio that only support volume attenuation
+based on distance and panning based on direction. Doppler effect and
+distance-based filtering and reverb are not supported yet.
+
+This is meant to be an MVP of positional audio. Please give it a try and let me
+know what improvements you'd like to see so I can gauge what expansions to this
+API should look like.
+
+## Modulators
+
+Modulators are globally available streams of values that parameters like volume
+and playback rate can be linked to. These are useful for controlling multiple
+parameters with one value and using more complex modulations, like LFOs.
+
+For anyone who's made implementations of traits in previous versions of Kira,
+keep in mind that `Tweener` was renamed to `Parameter`, and now `Tweener` is the
+name of a modulator implementation that comes with Kira.
+
+## New effects
+
+Two new effects were added: compressor and EQ filter. The compressor adjusts the
+volume of audio to make louder parts quieter. An EQ filter a single band of a
+parametric EQ useful for adjusting the volume of frequencies of sound.
+
+## Playback region/loop region settings
+
+The `start_position` setting for static and streaming sounds has been replaced
+with a `playback_region` setting which lets you specify an end position for the
+sound as well as a start position. The `loop_behavior` setting has been replaced
+with `loop_region`, which lets you specify an end point for the loop. You can
+now change the `loop_region` after the sound is created using the
+`set_loop_region` function on the sound's handle.
+
+## Other changes
+
+- `StaticSoundData::frames` is now an `Arc[Frame]` instead of `Arc<Vec<Frame>>`
+- Exposed the `Decoder` trait for streaming sounds
+- Moved `PlaybackState` to the sound module
+- Streaming sounds now support reverse playback
+- Added `TrackBuilder::with_effect`
+- Moved `ClockSpeed` to the `clock` module
+- Moved `PlaybackRate` to the `sound` module
+
 # v0.7.3 - March 18, 2023
 
 - Fix compile error on WASM targets

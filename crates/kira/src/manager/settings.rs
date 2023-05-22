@@ -17,6 +17,10 @@ pub struct Capacities {
 	pub sub_track_capacity: usize,
 	/// The maximum number of clocks that can exist at a time.
 	pub clock_capacity: usize,
+	/// The maximum number of spatial scenes that can exist at a time.
+	pub spatial_scene_capacity: usize,
+	/// The maximum number of modulators that can exist at a time.
+	pub modulator_capacity: usize,
 }
 
 impl Default for Capacities {
@@ -26,6 +30,8 @@ impl Default for Capacities {
 			sound_capacity: 128,
 			sub_track_capacity: 128,
 			clock_capacity: 8,
+			spatial_scene_capacity: 8,
+			modulator_capacity: 16,
 		}
 	}
 }

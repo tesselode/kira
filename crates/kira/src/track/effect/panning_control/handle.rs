@@ -1,6 +1,9 @@
 use ringbuf::HeapProducer;
 
-use crate::{tween::Tween, CommandError};
+use crate::{
+	tween::{Tween, Value},
+	CommandError,
+};
 
 use super::Command;
 
@@ -11,9 +14,13 @@ pub struct PanningControlHandle {
 
 impl PanningControlHandle {
 	/// Sets the panning adjustment to apply to input audio.
-	pub fn set_panning(&mut self, panning: f64, tween: Tween) -> Result<(), CommandError> {
+	pub fn set_panning(
+		&mut self,
+		panning: impl Into<Value<f64>>,
+		tween: Tween,
+	) -> Result<(), CommandError> {
 		self.command_producer
-			.push(Command::SetPanning(panning, tween))
+			.push(Command::SetPanning(panning.into(), tween))
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 }

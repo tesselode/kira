@@ -1,12 +1,163 @@
-//! Precise timing for audio events.
+/*!
+Precise timing for audio events.
+
+Clocks can be used to set the start times of sounds and tweens. To create a
+clock, use [`AudioManager::add_clock`](crate::manager::AudioManager::add_clock).
+
+```no_run
+use kira::{
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	clock::ClockSpeed,
+};
+
+let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
+clock.start()?;
+# Result::<(), Box<dyn std::error::Error>>::Ok(())
+```
+
+You can specify the speed of the clock as seconds per tick, ticks per second, or
+ticks per minute.
+
+Clocks are stopped when you first create them, so be sure to explicitly call
+[`ClockHandle::start`] when you want the clock to start ticking.
+
+## Starting sounds on clock ticks
+
+Sounds can be set to only start playing when a clock has ticked a certain
+number of times. You can configure this using
+[`StaticSoundSettings::start_time`](crate::sound::static_sound::StaticSoundSettings::start_time)
+or [`StreamingSoundSettings::start_time`](crate::sound::streaming::StreamingSoundSettings::start_time).
+
+```no_run
+use kira::{
+	clock::{ClockTime, ClockSpeed},
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+	StartTime,
+};
+
+let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
+manager.play(StaticSoundData::from_file(
+	"sound.ogg",
+	StaticSoundSettings::new().start_time(StartTime::ClockTime(ClockTime {
+		clock: clock.id(),
+		ticks: 4,
+	})),
+)?)?;
+clock.start()?;
+# Result::<(), Box<dyn std::error::Error>>::Ok(())
+```
+
+As a shorthand, you can pass the [`ClockTime`] directly into
+the `start_time` function.
+
+```no_run
+# use kira::{
+# 	clock::{ClockTime, ClockSpeed},
+# 	manager::{
+# 	 	AudioManager, AudioManagerSettings,
+# 		backend::cpal::CpalBackend,
+# 	},
+# 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+# 	StartTime,
+# };
+#
+# let mut manager = AudioManager::<CpalBackend>::new(
+# 	AudioManagerSettings::default(),
+# )?;
+# let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
+manager.play(StaticSoundData::from_file(
+	"sound.ogg",
+	StaticSoundSettings::new().start_time(ClockTime {
+		clock: clock.id(),
+		ticks: 4,
+	}),
+)?)?;
+# clock.start()?;
+# Result::<(), Box<dyn std::error::Error>>::Ok(())
+```
+
+As an even shorter hand, you can use [`ClockHandle::time`] to get the clock's
+current [`ClockTime`], and then add to it to get a time in the future:
+
+```no_run
+use kira::{
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+	clock::ClockSpeed,
+};
+
+# let mut manager = AudioManager::<CpalBackend>::new(
+# 	AudioManagerSettings::default(),
+# )?;
+# let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
+manager.play(StaticSoundData::from_file(
+	"sound.ogg",
+	StaticSoundSettings::new().start_time(clock.time() + 4),
+)?)?;
+# clock.start()?;
+# Result::<(), Box<dyn std::error::Error>>::Ok(())
+```
+
+## Starting tweens on clock ticks
+
+You can also use clocks to set the start time of tweens. In this example, we set
+the playback rate of a sound to start tweening when a clock reaches its third
+tick.
+
+```no_run
+use std::time::Duration;
+
+use kira::{
+	manager::{
+		AudioManager, AudioManagerSettings,
+		backend::cpal::CpalBackend,
+	},
+	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+	tween::Tween,
+	clock::ClockSpeed,
+	StartTime,
+};
+
+let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
+let mut sound = manager.play(StaticSoundData::from_file(
+	"sound.ogg",
+	StaticSoundSettings::default(),
+)?)?;
+sound.set_playback_rate(
+	0.5,
+	Tween {
+		start_time: StartTime::ClockTime(clock.time() + 3),
+		duration: Duration::from_secs(2),
+		..Default::default()
+	},
+)?;
+clock.start()?;
+# Result::<(), Box<dyn std::error::Error>>::Ok(())
+```
+*/
 
 pub mod clock_info;
+mod clock_speed;
 mod handle;
 mod time;
 
 #[cfg(test)]
 mod test;
 
+pub use clock_speed::*;
 pub use handle::*;
 pub use time::*;
 
@@ -18,8 +169,8 @@ use std::sync::{
 use atomic_arena::Key;
 
 use crate::{
-	tween::{Tween, Tweener},
-	ClockSpeed,
+	modulator::value_provider::ModulatorValueProvider,
+	tween::{Parameter, Tween, Value},
 };
 
 use self::clock_info::ClockInfoProvider;
@@ -79,16 +230,16 @@ enum State {
 pub(crate) struct Clock {
 	shared: Arc<ClockShared>,
 	ticking: bool,
-	speed: Tweener<ClockSpeed>,
+	speed: Parameter<ClockSpeed>,
 	state: State,
 }
 
 impl Clock {
-	pub(crate) fn new(speed: ClockSpeed) -> Self {
+	pub(crate) fn new(speed: Value<ClockSpeed>) -> Self {
 		Self {
 			shared: Arc::new(ClockShared::new()),
 			ticking: false,
-			speed: Tweener::new(speed),
+			speed: Parameter::new(speed, ClockSpeed::TicksPerMinute(120.0)),
 			state: State::NotStarted,
 		}
 	}
@@ -97,7 +248,7 @@ impl Clock {
 		self.shared.clone()
 	}
 
-	pub(crate) fn set_speed(&mut self, speed: ClockSpeed, tween: Tween) {
+	pub(crate) fn set_speed(&mut self, speed: Value<ClockSpeed>, tween: Tween) {
 		self.speed.set(speed, tween);
 	}
 
@@ -139,8 +290,10 @@ impl Clock {
 		&mut self,
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
+		modulator_value_provider: &ModulatorValueProvider,
 	) -> Option<u64> {
-		self.speed.update(dt, clock_info_provider);
+		self.speed
+			.update(dt, clock_info_provider, modulator_value_provider);
 		if !self.ticking {
 			return None;
 		}

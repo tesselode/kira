@@ -1,8 +1,9 @@
 //! Contains types for reporting information about clocks.
 //!
 //! You'll only need these types if you're creating implementations
-//! of the [`Sound`](crate::sound::Sound) or
-//! [`Effect`](crate::track::effect::Effect) traits. If you want
+//! of the [`Sound`](crate::sound::Sound),
+//! [`Effect`](crate::track::effect::Effect), or
+//! [`Modulator`](crate::modulator::Modulator) traits. If you want
 //! to access information about clocks from gameplay code, use
 //! a [`ClockHandle`](crate::clock::ClockHandle).
 

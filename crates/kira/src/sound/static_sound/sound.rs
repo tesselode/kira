@@ -16,15 +16,18 @@ use ringbuf::HeapConsumer;
 use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
 	dsp::Frame,
-	sound::Sound,
-	track::TrackId,
-	tween::{Tween, Tweener},
-	LoopBehavior, PlaybackRate, StartTime, Volume,
+	modulator::value_provider::ModulatorValueProvider,
+	sound::{
+		transport::Transport, util::create_volume_fade_parameter, PlaybackRate, PlaybackState,
+		Sound,
+	},
+	tween::{Parameter, Tween, Value},
+	OutputDestination, StartTime, Volume,
 };
 
 use self::resampler::Resampler;
 
-use super::{data::StaticSoundData, Command, StaticSoundSettings};
+use super::{data::StaticSoundData, Command};
 
 pub(super) struct StaticSound {
 	command_consumer: HeapConsumer<Command>,
@@ -32,19 +35,26 @@ pub(super) struct StaticSound {
 	state: PlaybackState,
 	when_to_start: WhenToStart,
 	resampler: Resampler,
-	current_frame_index: i64,
+	transport: Transport,
 	fractional_position: f64,
-	volume: Tweener<Volume>,
-	playback_rate: Tweener<PlaybackRate>,
-	panning: Tweener,
-	volume_fade: Tweener<Volume>,
+	volume: Parameter<Volume>,
+	playback_rate: Parameter<PlaybackRate>,
+	panning: Parameter,
+	volume_fade: Parameter<Volume>,
 	shared: Arc<Shared>,
 }
 
 impl StaticSound {
 	pub fn new(data: StaticSoundData, command_consumer: HeapConsumer<Command>) -> Self {
 		let settings = data.settings;
-		let starting_frame_index = starting_frame_index(settings, &data);
+		let transport = Transport::new(
+			data.settings.playback_region,
+			data.settings.loop_region,
+			data.settings.reverse,
+			data.sample_rate,
+			data.frames.len(),
+		);
+		let starting_frame_index = transport.position;
 		let position = starting_frame_index as f64 / data.sample_rate as f64;
 		let mut sound = Self {
 			command_consumer,
@@ -56,12 +66,12 @@ impl StaticSound {
 				WhenToStart::Now
 			},
 			resampler: Resampler::new(starting_frame_index),
-			current_frame_index: starting_frame_index,
+			transport,
 			fractional_position: 0.0,
-			volume: Tweener::new(settings.volume),
-			playback_rate: Tweener::new(settings.playback_rate),
-			panning: Tweener::new(settings.panning),
-			volume_fade: create_volume_fade_tweener(settings),
+			volume: Parameter::new(settings.volume, Volume::Amplitude(1.0)),
+			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate::Factor(1.0)),
+			panning: Parameter::new(settings.panning, 0.5),
+			volume_fade: create_volume_fade_parameter(settings.fade_in_tween),
 			shared: Arc::new(Shared {
 				state: AtomicU8::new(PlaybackState::Playing as u8),
 				position: AtomicU64::new(position.to_bits()),
@@ -86,118 +96,59 @@ impl StaticSound {
 
 	fn pause(&mut self, fade_out_tween: Tween) {
 		self.set_state(PlaybackState::Pausing);
-		self.volume_fade
-			.set(Volume::Decibels(Volume::MIN_DECIBELS), fade_out_tween);
+		self.volume_fade.set(
+			Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)),
+			fade_out_tween,
+		);
 	}
 
 	fn resume(&mut self, fade_in_tween: Tween) {
 		self.set_state(PlaybackState::Playing);
-		self.volume_fade.set(Volume::Decibels(0.0), fade_in_tween);
+		self.volume_fade
+			.set(Value::Fixed(Volume::Decibels(0.0)), fade_in_tween);
 	}
 
 	fn stop(&mut self, fade_out_tween: Tween) {
 		self.set_state(PlaybackState::Stopping);
-		self.volume_fade
-			.set(Volume::Decibels(Volume::MIN_DECIBELS), fade_out_tween);
+		self.volume_fade.set(
+			Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)),
+			fade_out_tween,
+		);
 	}
 
-	fn playback_rate(&self) -> f64 {
+	fn is_playing_backwards(&self) -> bool {
+		let mut is_playing_backwards = self.playback_rate.value().as_factor().is_sign_negative();
 		if self.data.settings.reverse {
-			-self.playback_rate.value().as_factor()
-		} else {
-			self.playback_rate.value().as_factor()
+			is_playing_backwards = !is_playing_backwards
 		}
-	}
-
-	/// Increments the playback position by 1 sample. Returns `true` if the end
-	/// of the sound was reached.
-	fn increment_position(&mut self) -> bool {
-		let max_frame_index = (self.data.frames.len() - 1)
-			.try_into()
-			.expect("sound is too long, cannot convert usize to i64");
-		if let Some(LoopBehavior { start_position }) = self.data.settings.loop_behavior {
-			let start_position = (start_position * self.data.sample_rate as f64) as i64;
-			if self.current_frame_index >= max_frame_index {
-				self.current_frame_index = start_position;
-			} else {
-				self.current_frame_index += 1;
-			}
-		} else {
-			if self.current_frame_index >= max_frame_index {
-				return true;
-			} else {
-				self.current_frame_index += 1;
-			}
-		}
-		false
-	}
-
-	/// Decrements the playback position by 1 sample. Returns `true` if the end
-	/// of the sound was reached (which in this case would be sample -1).
-	fn decrement_position(&mut self) -> bool {
-		let max_frame_index = (self.data.frames.len() - 1)
-			.try_into()
-			.expect("sound is too long, cannot convert usize to i64");
-		if let Some(LoopBehavior { start_position }) = self.data.settings.loop_behavior {
-			let start_position = (start_position * self.data.sample_rate as f64) as i64;
-			if self.current_frame_index <= start_position {
-				self.current_frame_index = max_frame_index;
-			} else {
-				self.current_frame_index -= 1;
-			}
-		} else {
-			if self.current_frame_index == 0 {
-				return true;
-			} else {
-				self.current_frame_index -= 1;
-			}
-		}
-		false
+		is_playing_backwards
 	}
 
 	/// Updates the current frame index by 1 and pushes a new sample to the resampler.
 	fn update_position(&mut self) {
 		if matches!(self.state, PlaybackState::Paused | PlaybackState::Stopped) {
 			self.resampler
-				.push_frame(Frame::ZERO, self.current_frame_index);
+				.push_frame(Frame::ZERO, self.transport.position);
 			return;
 		}
 		self.push_frame_to_resampler();
-		let reached_end_of_sound = if self.playback_rate().is_sign_negative() {
-			self.decrement_position()
+		if self.is_playing_backwards() {
+			self.transport.decrement_position();
 		} else {
-			self.increment_position()
-		};
-		if reached_end_of_sound {
+			self.transport.increment_position();
+		}
+		if !self.transport.playing {
 			self.set_state(PlaybackState::Stopped);
 		}
 	}
 
 	fn seek_to_index(&mut self, index: i64) {
-		self.current_frame_index = index;
-		let num_frames: i64 = self
-			.data
-			.frames
-			.len()
-			.try_into()
-			.expect("sound is too long, cannot convert usize to i64");
-		// if the seek index is past the end of the sound and the sound is
-		// looping, wrap the seek point back into the sound
-		if let Some(LoopBehavior { start_position }) = self.data.settings.loop_behavior {
-			let start_position = (start_position * self.data.sample_rate as f64) as i64;
-			while self.current_frame_index >= num_frames {
-				self.current_frame_index -= num_frames - start_position;
-			}
-		// otherwise, stop the sound
-		} else if self.current_frame_index >= num_frames {
-			self.set_state(PlaybackState::Stopped);
-		}
+		self.transport.seek_to(index);
 		// if the sound is playing, push a frame to the resample buffer
 		// to make sure it doesn't get skipped
-		if matches!(self.state, PlaybackState::Paused | PlaybackState::Stopped) {
-			return;
+		if !matches!(self.state, PlaybackState::Paused | PlaybackState::Stopped) {
+			self.push_frame_to_resampler();
 		}
-		self.push_frame_to_resampler();
 	}
 
 	fn push_frame_to_resampler(&mut self) {
@@ -207,11 +158,12 @@ impl StaticSound {
 			.len()
 			.try_into()
 			.expect("sound is too long, cannot convert usize to i64");
-		let frame = if self.current_frame_index < 0 || self.current_frame_index >= num_frames {
+		let frame = if self.transport.position < 0 || self.transport.position >= num_frames {
 			Frame::ZERO
 		} else {
 			let frame_index: usize = self
-				.current_frame_index
+				.transport
+				.position
 				.try_into()
 				.expect("cannot convert i64 into usize");
 			(self.data.frames[frame_index]
@@ -219,11 +171,11 @@ impl StaticSound {
 				* self.volume.value().as_amplitude() as f32)
 				.panned(self.panning.value() as f32)
 		};
-		self.resampler.push_frame(frame, self.current_frame_index);
+		self.resampler.push_frame(frame, self.transport.position);
 	}
 
 	fn seek_by(&mut self, amount: f64) {
-		let current_position = self.current_frame_index as f64 / self.data.sample_rate as f64;
+		let current_position = self.transport.position as f64 / self.data.sample_rate as f64;
 		let position = current_position + amount;
 		let index = (position * self.data.sample_rate as f64) as i64;
 		self.seek_to_index(index);
@@ -236,8 +188,8 @@ impl StaticSound {
 }
 
 impl Sound for StaticSound {
-	fn track(&mut self) -> TrackId {
-		self.data.settings.track
+	fn output_destination(&mut self) -> OutputDestination {
+		self.data.settings.output_destination
 	}
 
 	fn on_start_processing(&mut self) {
@@ -253,6 +205,16 @@ impl Sound for StaticSound {
 					self.playback_rate.set(playback_rate, tween)
 				}
 				Command::SetPanning(panning, tween) => self.panning.set(panning, tween),
+				Command::SetPlaybackRegion(playback_region) => self.transport.set_playback_region(
+					playback_region,
+					self.data.sample_rate,
+					self.data.frames.len(),
+				),
+				Command::SetLoopRegion(loop_region) => self.transport.set_loop_region(
+					loop_region,
+					self.data.sample_rate,
+					self.data.frames.len(),
+				),
 				Command::Pause(tween) => self.pause(tween),
 				Command::Resume(tween) => self.resume(tween),
 				Command::Stop(tween) => self.stop(tween),
@@ -266,12 +228,23 @@ impl Sound for StaticSound {
 		}
 	}
 
-	fn process(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
-		// update tweeners
-		self.volume.update(dt, clock_info_provider);
-		self.playback_rate.update(dt, clock_info_provider);
-		self.panning.update(dt, clock_info_provider);
-		if self.volume_fade.update(dt, clock_info_provider) {
+	fn process(
+		&mut self,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+		modulator_value_provider: &ModulatorValueProvider,
+	) -> Frame {
+		// update parameters
+		self.volume
+			.update(dt, clock_info_provider, modulator_value_provider);
+		self.playback_rate
+			.update(dt, clock_info_provider, modulator_value_provider);
+		self.panning
+			.update(dt, clock_info_provider, modulator_value_provider);
+		if self
+			.volume_fade
+			.update(dt, clock_info_provider, modulator_value_provider)
+		{
 			match self.state {
 				PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
 				PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),
@@ -305,7 +278,8 @@ impl Sound for StaticSound {
 
 		// play back audio
 		let out = self.resampler.get(self.fractional_position as f32);
-		self.fractional_position += self.data.sample_rate as f64 * self.playback_rate().abs() * dt;
+		self.fractional_position +=
+			self.data.sample_rate as f64 * self.playback_rate.value().as_factor().abs() * dt;
 		while self.fractional_position >= 1.0 {
 			self.fractional_position -= 1.0;
 			self.update_position();
@@ -316,23 +290,6 @@ impl Sound for StaticSound {
 	fn finished(&self) -> bool {
 		self.state == PlaybackState::Stopped && self.resampler.outputting_silence()
 	}
-}
-
-/// The playback state of a sound.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum PlaybackState {
-	/// The sound is playing normally.
-	Playing,
-	/// The sound is fading out, and when the fade-out
-	/// is finished, playback will pause.
-	Pausing,
-	/// Playback is paused.
-	Paused,
-	/// The sound is fading out, and when the fade-out
-	/// is finished, playback will stop.
-	Stopping,
-	/// The sound has stopped and can no longer be resumed.
-	Stopped,
 }
 
 pub(super) struct Shared {
@@ -354,24 +311,5 @@ impl Shared {
 
 	pub fn position(&self) -> f64 {
 		f64::from_bits(self.position.load(Ordering::SeqCst))
-	}
-}
-
-fn starting_frame_index(settings: StaticSoundSettings, data: &StaticSoundData) -> i64 {
-	if settings.reverse {
-		let position_seconds = data.duration().as_secs_f64() - settings.start_position;
-		(position_seconds * data.sample_rate as f64) as i64 - 1
-	} else {
-		(settings.start_position * data.sample_rate as f64) as i64
-	}
-}
-
-fn create_volume_fade_tweener(settings: StaticSoundSettings) -> Tweener<Volume> {
-	if let Some(tween) = settings.fade_in_tween {
-		let mut tweenable = Tweener::new(Volume::Decibels(Volume::MIN_DECIBELS));
-		tweenable.set(Volume::Decibels(0.0), tween);
-		tweenable
-	} else {
-		Tweener::new(Volume::Decibels(0.0))
 	}
 }

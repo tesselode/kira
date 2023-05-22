@@ -11,26 +11,27 @@ use ringbuf::HeapConsumer;
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
-	tween::{Tween, Tweener},
+	modulator::value_provider::ModulatorValueProvider,
+	tween::{Parameter, Tween, Value},
 	Volume,
 };
 
 use super::Effect;
 
 enum Command {
-	SetVolume(Volume, Tween),
+	SetVolume(Value<Volume>, Tween),
 }
 
 struct VolumeControl {
 	command_consumer: HeapConsumer<Command>,
-	volume: Tweener<Volume>,
+	volume: Parameter<Volume>,
 }
 
 impl VolumeControl {
 	fn new(builder: VolumeControlBuilder, command_consumer: HeapConsumer<Command>) -> Self {
 		Self {
 			command_consumer,
-			volume: Tweener::new(builder.0),
+			volume: Parameter::new(builder.0, Volume::Amplitude(1.0)),
 		}
 	}
 }
@@ -44,8 +45,15 @@ impl Effect for VolumeControl {
 		}
 	}
 
-	fn process(&mut self, input: Frame, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
-		self.volume.update(dt, clock_info_provider);
+	fn process(
+		&mut self,
+		input: Frame,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+		modulator_value_provider: &ModulatorValueProvider,
+	) -> Frame {
+		self.volume
+			.update(dt, clock_info_provider, modulator_value_provider);
 		input * self.volume.value().as_amplitude() as f32
 	}
 }
