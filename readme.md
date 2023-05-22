@@ -15,13 +15,13 @@ Playing a sound multiple times simultaneously:
 use kira::{
 	manager::{
 		AudioManager, AudioManagerSettings,
-		backend::cpal::CpalBackend,
+		backend::DefaultBackend,
 	},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 };
 
 // Create an audio manager. This plays sounds and manages resources.
-let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 let sound_data = StaticSoundData::from_file("sound.ogg", StaticSoundSettings::default())?;
 manager.play(sound_data.clone())?;
 // After a couple seconds...
@@ -37,13 +37,13 @@ use std::time::Duration;
 use kira::{
 	manager::{
 		AudioManager, AudioManagerSettings,
-		backend::cpal::CpalBackend,
+		backend::DefaultBackend,
 	},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	tween::Tween,
 };
 
-let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 let sound_data = StaticSoundData::from_file("sound.ogg", StaticSoundSettings::new())?;
 let mut sound = manager.play(sound_data)?;
 // Start smoothly adjusting the playback rate parameter.
@@ -63,7 +63,7 @@ muffled):
 use kira::{
 	manager::{
 		AudioManager, AudioManagerSettings,
-		backend::cpal::CpalBackend,
+		backend::DefaultBackend,
 	},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	track::{
@@ -72,7 +72,7 @@ use kira::{
 	},
 };
 
-let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 // Create a mixer sub-track with a filter.
 let track = manager.add_sub_track({
 	let mut builder = TrackBuilder::new();
@@ -93,7 +93,7 @@ Playing sounds in time with a musical beat:
 use kira::{
 	manager::{
 		AudioManager, AudioManagerSettings,
-		backend::cpal::CpalBackend,
+		backend::DefaultBackend,
 	},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	clock::ClockSpeed,
@@ -101,7 +101,7 @@ use kira::{
 
 const TEMPO: f64 = 120.0;
 
-let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 // Create a clock that ticks 120 times per second. In this case,
 // each tick is one musical beat. We can use a tick to represent any
 // arbitrary amount of time.

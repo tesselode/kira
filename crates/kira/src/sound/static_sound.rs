@@ -8,12 +8,12 @@ To play a static sound, pass a [`StaticSoundData`] to
 use kira::{
 	manager::{
 		AudioManager, AudioManagerSettings,
-		backend::cpal::CpalBackend,
+		backend::DefaultBackend,
 	},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 };
 
-let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 let sound_data = StaticSoundData::from_file("sound.ogg", StaticSoundSettings::default())?;
 manager.play(sound_data)?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())

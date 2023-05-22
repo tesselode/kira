@@ -15,12 +15,12 @@ sub-tracks. To add a sub-track, use `AudioManager::add_sub_track`.
 use kira::{
 	manager::{
 		AudioManager, AudioManagerSettings,
-		backend::cpal::CpalBackend,
+		backend::DefaultBackend,
 	},
 	track::TrackBuilder,
 };
 
-let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 let track = manager.add_sub_track(TrackBuilder::default())?;
 # Result::<(), Box<dyn Error>>::Ok(())
 ```
@@ -34,13 +34,13 @@ the same option.
 use kira::{
 	manager::{
 		AudioManager, AudioManagerSettings,
-		backend::cpal::CpalBackend,
+		backend::DefaultBackend,
 	},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	track::TrackBuilder,
 };
 
-let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 let track = manager.add_sub_track(TrackBuilder::default())?;
 manager.play(StaticSoundData::from_file(
 	"sound.ogg",
@@ -67,7 +67,7 @@ remove high frequencies from sounds, making them sound muffled.
 use kira::{
 	manager::{
 		AudioManager, AudioManagerSettings,
-		backend::cpal::CpalBackend,
+		backend::DefaultBackend,
 	},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	track::{
@@ -76,7 +76,7 @@ use kira::{
 	},
 };
 
-let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 let track = manager.add_sub_track(
 	TrackBuilder::new()
 		.with_effect(FilterBuilder::new().cutoff(1000.0))
@@ -95,13 +95,13 @@ after the track has been created.
 # use kira::{
 # 	manager::{
 #     AudioManager, AudioManagerSettings,
-#     backend::cpal::CpalBackend,
+#     backend::DefaultBackend,
 #   },
 # 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 # 	track::{effect::filter::FilterBuilder, TrackBuilder},
 # 	tween::Tween,
 # };
-# let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 let mut filter;
 let track = manager.add_sub_track({
 	let mut builder = TrackBuilder::new();
@@ -146,12 +146,12 @@ We can set up the `sounds` and `player_sounds` hierarchy using `TrackRoutes`.
 use kira::{
 	manager::{
 		AudioManager, AudioManagerSettings,
-		backend::cpal::CpalBackend,
+		backend::DefaultBackend,
 	},
 	track::{TrackRoutes, TrackBuilder},
 };
 
-let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 let sounds = manager.add_sub_track(TrackBuilder::default())?;
 let player_sounds = manager.add_sub_track(
 	TrackBuilder::new().routes(TrackRoutes::parent(&sounds)),
@@ -208,7 +208,7 @@ Here's what this looks like in practice:
 use kira::{
 	manager::{
 		AudioManager, AudioManagerSettings,
-		backend::cpal::CpalBackend,
+		backend::DefaultBackend,
 	},
 	track::{
 		TrackRoutes, TrackBuilder,
@@ -216,7 +216,7 @@ use kira::{
 	},
 };
 
-let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 // 1.
 let reverb = manager.add_sub_track({
 	let mut builder = TrackBuilder::new();

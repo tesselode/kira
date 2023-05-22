@@ -8,12 +8,12 @@ To play a streaming sound, pass a [`StreamingSoundData`] to
 use kira::{
 	manager::{
 		AudioManager, AudioManagerSettings,
-		backend::cpal::CpalBackend,
+		backend::DefaultBackend,
 	},
 	sound::streaming::{StreamingSoundData, StreamingSoundSettings},
 };
 
-let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 let sound_data = StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?;
 manager.play(sound_data)?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())

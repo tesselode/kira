@@ -8,12 +8,12 @@ clock, use [`AudioManager::add_clock`](crate::manager::AudioManager::add_clock).
 use kira::{
 	manager::{
 		AudioManager, AudioManagerSettings,
-		backend::cpal::CpalBackend,
+		backend::DefaultBackend,
 	},
 	clock::ClockSpeed,
 };
 
-let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
 clock.start()?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
@@ -37,13 +37,13 @@ use kira::{
 	clock::{ClockTime, ClockSpeed},
 	manager::{
 		AudioManager, AudioManagerSettings,
-		backend::cpal::CpalBackend,
+		backend::DefaultBackend,
 	},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	StartTime,
 };
 
-let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
 manager.play(StaticSoundData::from_file(
 	"sound.ogg",
@@ -64,13 +64,13 @@ the `start_time` function.
 # 	clock::{ClockTime, ClockSpeed},
 # 	manager::{
 # 	 	AudioManager, AudioManagerSettings,
-# 		backend::cpal::CpalBackend,
+# 		backend::DefaultBackend,
 # 	},
 # 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 # 	StartTime,
 # };
 #
-# let mut manager = AudioManager::<CpalBackend>::new(
+# let mut manager = AudioManager::<DefaultBackend>::new(
 # 	AudioManagerSettings::default(),
 # )?;
 # let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
@@ -92,13 +92,13 @@ current [`ClockTime`], and then add to it to get a time in the future:
 use kira::{
 	manager::{
 		AudioManager, AudioManagerSettings,
-		backend::cpal::CpalBackend,
+		backend::DefaultBackend,
 	},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	clock::ClockSpeed,
 };
 
-# let mut manager = AudioManager::<CpalBackend>::new(
+# let mut manager = AudioManager::<DefaultBackend>::new(
 # 	AudioManagerSettings::default(),
 # )?;
 # let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
@@ -122,7 +122,7 @@ use std::time::Duration;
 use kira::{
 	manager::{
 		AudioManager, AudioManagerSettings,
-		backend::cpal::CpalBackend,
+		backend::DefaultBackend,
 	},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	tween::Tween,
@@ -130,7 +130,7 @@ use kira::{
 	StartTime,
 };
 
-let mut manager = AudioManager::<CpalBackend>::new(AudioManagerSettings::default())?;
+let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
 let mut sound = manager.play(StaticSoundData::from_file(
 	"sound.ogg",
