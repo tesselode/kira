@@ -3,7 +3,6 @@ use std::io::Cursor;
 use std::path::Path;
 use std::sync::Arc;
 
-use crate::sound::FromFileError;
 use crate::sound::SoundData;
 use ringbuf::HeapRb;
 
@@ -19,7 +18,7 @@ const COMMAND_BUFFER_CAPACITY: usize = 8;
 const ERROR_BUFFER_CAPACITY: usize = 8;
 
 /// A streaming sound that is not playing yet.
-pub struct StreamingSoundData<Error: Send + 'static = FromFileError> {
+pub struct StreamingSoundData<Error: Send + 'static> {
 	pub(crate) decoder: Box<dyn Decoder<Error = Error>>,
 	/// Settings for the streaming sound.
 	pub settings: StreamingSoundSettings,
@@ -38,13 +37,13 @@ impl<Error: Send> StreamingSoundData<Error> {
 	}
 }
 
-impl StreamingSoundData<FromFileError> {
-	#[cfg(feature = "symphonia")]
+#[cfg(feature = "symphonia")]
+impl StreamingSoundData<crate::sound::FromFileError> {
 	/// Creates a [`StreamingSoundData`] for an audio file.
 	pub fn from_file(
 		path: impl AsRef<Path>,
 		settings: StreamingSoundSettings,
-	) -> Result<StreamingSoundData<FromFileError>, FromFileError> {
+	) -> Result<StreamingSoundData<crate::sound::FromFileError>, crate::sound::FromFileError> {
 		use super::symphonia::SymphoniaDecoder;
 
 		Ok(Self::from_decoder(
@@ -58,7 +57,7 @@ impl StreamingSoundData<FromFileError> {
 	pub fn from_cursor<T: AsRef<[u8]> + Send + Sync + 'static>(
 		cursor: Cursor<T>,
 		settings: StreamingSoundSettings,
-	) -> Result<StreamingSoundData<FromFileError>, FromFileError> {
+	) -> Result<StreamingSoundData<crate::sound::FromFileError>, crate::sound::FromFileError> {
 		use super::symphonia::SymphoniaDecoder;
 
 		Ok(Self::from_decoder(
