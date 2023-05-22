@@ -13,9 +13,11 @@ jobs:
       - uses: actions/checkout@v2
       - name: install cpal dependencies
         run: sudo apt-get install libasound2-dev
+      - name: run tests (desktop - all features)
+        run: cargo test -p kira
       - name: run tests (desktop - no features)
-        run: cargo test -p kira --no-default-features
+        run: cargo test -p kira --no-default-features --lib
       - name: run tests (desktop - with cpal feature)
-        run: cargo test -p kira --no-default-features --features=cpal
+        run: cargo test -p kira --no-default-features --features=cpal --lib
       - name: run tests (desktop - with mp3 feature)
-        run: cargo test -p kira --no-default-features --features=mp3
+        run: cargo test -p kira --no-default-features --features=mp3 --lib
