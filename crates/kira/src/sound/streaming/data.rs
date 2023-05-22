@@ -1,6 +1,3 @@
-use std::fs::File;
-use std::io::Cursor;
-use std::path::Path;
 use std::sync::Arc;
 
 use crate::sound::SoundData;
@@ -41,9 +38,11 @@ impl<Error: Send> StreamingSoundData<Error> {
 impl StreamingSoundData<crate::sound::FromFileError> {
 	/// Creates a [`StreamingSoundData`] for an audio file.
 	pub fn from_file(
-		path: impl AsRef<Path>,
+		path: impl AsRef<std::path::Path>,
 		settings: StreamingSoundSettings,
 	) -> Result<StreamingSoundData<crate::sound::FromFileError>, crate::sound::FromFileError> {
+		use std::fs::File;
+
 		use super::symphonia::SymphoniaDecoder;
 
 		Ok(Self::from_decoder(
@@ -55,7 +54,7 @@ impl StreamingSoundData<crate::sound::FromFileError> {
 	#[cfg(feature = "symphonia")]
 	/// Creates a [`StreamingSoundData`] for a cursor wrapping audio file data.
 	pub fn from_cursor<T: AsRef<[u8]> + Send + Sync + 'static>(
-		cursor: Cursor<T>,
+		cursor: std::io::Cursor<T>,
 		settings: StreamingSoundSettings,
 	) -> Result<StreamingSoundData<crate::sound::FromFileError>, crate::sound::FromFileError> {
 		use super::symphonia::SymphoniaDecoder;
