@@ -1,4 +1,4 @@
-# v0.8.0
+# v0.8.0 - May 21, 2023
 
 ## Spatial audio
 
