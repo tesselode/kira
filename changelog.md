@@ -1,3 +1,8 @@
+# v0.8.1 - May 26, 2023
+
+- Added `StaticSoundData::from_media_source`
+- Added `StreamingSoundData::from_media_source`
+
 # v0.8.0 - May 21, 2023
 
 ## Spatial audio
