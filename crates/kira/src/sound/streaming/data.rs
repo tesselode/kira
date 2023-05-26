@@ -51,7 +51,6 @@ impl StreamingSoundData<crate::sound::FromFileError> {
 		))
 	}
 
-	#[cfg(feature = "symphonia")]
 	/// Creates a [`StreamingSoundData`] for a cursor wrapping audio file data.
 	pub fn from_cursor<T: AsRef<[u8]> + Send + Sync + 'static>(
 		cursor: std::io::Cursor<T>,
@@ -61,6 +60,20 @@ impl StreamingSoundData<crate::sound::FromFileError> {
 
 		Ok(Self::from_decoder(
 			SymphoniaDecoder::new(Box::new(cursor))?,
+			settings,
+		))
+	}
+
+	/// Creates a [`StreamingSoundData`] for a type that implements Symphonia's
+	/// [`MediaSource`](symphonia::core::io::MediaSource) trait.
+	pub fn from_media_source(
+		media_source: impl symphonia::core::io::MediaSource + 'static,
+		settings: StreamingSoundSettings,
+	) -> Result<StreamingSoundData<crate::sound::FromFileError>, crate::sound::FromFileError> {
+		use super::symphonia::SymphoniaDecoder;
+
+		Ok(Self::from_decoder(
+			SymphoniaDecoder::new(Box::new(media_source))?,
 			settings,
 		))
 	}

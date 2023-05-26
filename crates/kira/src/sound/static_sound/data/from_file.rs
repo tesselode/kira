@@ -9,7 +9,36 @@ use crate::sound::{
 use super::StaticSoundData;
 
 impl StaticSoundData {
-	fn from_media_source(
+	/// Loads an audio file into a [`StaticSoundData`].
+	#[cfg(not(target_arch = "wasm32"))]
+	#[cfg_attr(docsrs, doc(cfg(all(feature = "symphonia", not(wasm32)))))]
+	pub fn from_file(
+		path: impl AsRef<std::path::Path>,
+		settings: StaticSoundSettings,
+	) -> Result<Self, FromFileError> {
+		Self::from_media_source(std::fs::File::open(path)?, settings)
+	}
+
+	/// Loads a cursor wrapping audio file data into a [`StaticSoundData`].
+	#[cfg_attr(docsrs, doc(cfg(feature = "symphonia")))]
+	pub fn from_cursor<T: AsRef<[u8]> + Send + Sync + 'static>(
+		cursor: Cursor<T>,
+		settings: StaticSoundSettings,
+	) -> Result<StaticSoundData, FromFileError> {
+		Self::from_media_source(cursor, settings)
+	}
+
+	/// Loads an audio file from a type that implements Symphonia's [`MediaSource`]
+	/// trait.
+	#[cfg_attr(docsrs, doc(cfg(feature = "symphonia")))]
+	pub fn from_media_source(
+		media_source: impl MediaSource + 'static,
+		settings: StaticSoundSettings,
+	) -> Result<Self, FromFileError> {
+		Self::from_boxed_media_source(Box::new(media_source), settings)
+	}
+
+	fn from_boxed_media_source(
 		media_source: Box<dyn MediaSource>,
 		settings: StaticSoundSettings,
 	) -> Result<Self, FromFileError> {
@@ -55,24 +84,5 @@ impl StaticSoundData {
 			frames: frames.into(),
 			settings,
 		})
-	}
-
-	/// Loads an audio file into a [`StaticSoundData`].
-	#[cfg(not(target_arch = "wasm32"))]
-	#[cfg_attr(docsrs, doc(cfg(all(feature = "symphonia", not(wasm32)))))]
-	pub fn from_file(
-		path: impl AsRef<std::path::Path>,
-		settings: StaticSoundSettings,
-	) -> Result<Self, FromFileError> {
-		Self::from_media_source(Box::new(std::fs::File::open(path)?), settings)
-	}
-
-	/// Loads a cursor wrapping audio file data into a [`StaticSoundData`].
-	#[cfg_attr(docsrs, doc(cfg(feature = "symphonia")))]
-	pub fn from_cursor<T: AsRef<[u8]> + Send + Sync + 'static>(
-		cursor: Cursor<T>,
-		settings: StaticSoundSettings,
-	) -> Result<StaticSoundData, FromFileError> {
-		Self::from_media_source(Box::new(cursor), settings)
 	}
 }
