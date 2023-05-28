@@ -1,3 +1,12 @@
+# v0.8.2 - May 27, 2023
+
+- Fix errors when streaming some ogg files
+
+Known issues:
+
+- Seeking can cause errors with short ogg files
+- Reverse playback of ogg files results in garbled sound
+
 # v0.8.1 - May 26, 2023
 
 - Added `StaticSoundData::from_media_source`

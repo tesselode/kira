@@ -30,6 +30,7 @@ pub(crate) struct DecodeScheduler<Error: Send + 'static> {
 	sample_rate: u32,
 	num_frames: usize,
 	transport: Transport,
+	decoder_current_frame_index: usize,
 	decoded_chunk: Option<DecodedChunk>,
 	command_consumer: HeapConsumer<DecodeSchedulerCommand>,
 	frame_producer: HeapProducer<TimestampedFrame>,
@@ -67,6 +68,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 				sample_rate,
 				num_frames,
 			),
+			decoder_current_frame_index: 0,
 			decoded_chunk: None,
 			command_consumer,
 			frame_producer,
@@ -141,24 +143,33 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 			return Ok(Frame::ZERO);
 		}
 		let index: usize = index.try_into().expect("could not convert i64 into usize");
-		match self
-			.decoded_chunk
-			.as_ref()
-			.and_then(|chunk| chunk.frame_at_index(index))
-		{
-			Some(frame) => Ok(frame),
-			None => {
-				let new_chunk_start_index = self.decoder.seek(index)?;
-				let frames = self.decoder.decode()?;
-				let chunk = DecodedChunk {
-					start_index: new_chunk_start_index,
-					frames,
-				};
-				let frame = chunk
-					.frame_at_index(index)
-					.expect("did not get expected frame after seeking decoder");
-				self.decoded_chunk = Some(chunk);
-				Ok(frame)
+		// if the requested frame is already loaded, return it
+		if let Some(chunk) = &self.decoded_chunk {
+			if let Some(frame) = chunk.frame_at_index(index) {
+				return Ok(frame);
+			}
+		}
+		/*
+			otherwise, seek to the requested index and decode chunks sequentially
+			until we get the frame we want. just because we seek to an index does
+			not mean the next decoded chunk will have the frame we want (or any frame
+			at all, for that matter), so we may need to decode multiple chunks to
+			get the frame we care about.
+		*/
+		if index < self.decoder_current_frame_index {
+			self.decoder_current_frame_index = self.decoder.seek(index)?;
+		}
+		loop {
+			let decoded_chunk = DecodedChunk {
+				start_index: self.decoder_current_frame_index,
+				frames: self.decoder.decode()?,
+			};
+			self.decoder_current_frame_index += decoded_chunk.frames.len();
+			self.decoded_chunk = Some(decoded_chunk);
+			if let Some(chunk) = &self.decoded_chunk {
+				if let Some(frame) = chunk.frame_at_index(index) {
+					return Ok(frame);
+				}
 			}
 		}
 	}
@@ -177,6 +188,11 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 
 	fn seek_to_index(&mut self, index: i64) -> Result<(), Error> {
 		self.transport.seek_to(index);
+		self.decoder_current_frame_index = self.decoder.seek(if index < 0 {
+			0
+		} else {
+			index.try_into().expect("could not convert i64 into usize")
+		})?;
 		Ok(())
 	}
 }
