@@ -1097,30 +1097,6 @@ fn seek_by() {
 	expect_frame_soon(Frame::from_mono(20.0).panned(0.5), &mut sound);
 }
 
-/// Tests that a `StreamingSound` can play in reverse.
-#[test]
-fn reverse() {
-	let data = StreamingSoundData {
-		decoder: Box::new(MockDecoder::new(
-			(0..10).map(|i| Frame::from_mono(i as f32)).collect(),
-		)),
-		settings: StreamingSoundSettings::new().reverse(true),
-	};
-	let (mut sound, _, mut scheduler) = data.split().unwrap();
-	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
-
-	for i in (4..=9).rev() {
-		assert_eq!(
-			sound.process(
-				1.0,
-				&MockClockInfoProviderBuilder::new(0).build(),
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
-			Frame::from_mono(i as f32).panned(0.5)
-		);
-	}
-}
-
 fn expect_frame_soon(expected_frame: Frame, sound: &mut StreamingSound) {
 	const NUM_SAMPLES_TO_WAIT: usize = 10;
 	for _ in 0..NUM_SAMPLES_TO_WAIT {

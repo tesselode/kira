@@ -250,7 +250,7 @@ impl Sound for StreamingSound {
 			self.fractional_position as f32,
 		);
 		self.fractional_position +=
-			self.sample_rate as f64 * self.playback_rate.value().as_factor() * dt;
+			self.sample_rate as f64 * self.playback_rate.value().as_factor().max(0.0) * dt;
 		while self.fractional_position >= 1.0 {
 			self.fractional_position -= 1.0;
 			self.frame_consumer.pop();

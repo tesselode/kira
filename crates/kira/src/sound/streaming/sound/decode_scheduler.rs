@@ -64,7 +64,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 			transport: Transport::new(
 				settings.playback_region,
 				settings.loop_region,
-				settings.reverse,
+				false,
 				sample_rate,
 				num_frames,
 			),
@@ -126,11 +126,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 				index: self.transport.position,
 			})
 			.expect("could not push frame to frame producer");
-		if self.transport.reverse {
-			self.transport.decrement_position()
-		} else {
-			self.transport.increment_position();
-		}
+		self.transport.increment_position();
 		if !self.transport.playing {
 			self.shared.reached_end.store(true, Ordering::SeqCst);
 			return Ok(NextStep::End);
