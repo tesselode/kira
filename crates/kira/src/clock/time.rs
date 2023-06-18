@@ -1,4 +1,7 @@
-use std::ops::{Add, AddAssign, Sub, SubAssign};
+use std::{
+	cmp::Ordering,
+	ops::{Add, AddAssign, Sub, SubAssign},
+};
 
 use super::ClockId;
 
@@ -42,5 +45,11 @@ impl Sub<u64> for ClockTime {
 impl SubAssign<u64> for ClockTime {
 	fn sub_assign(&mut self, ticks: u64) {
 		self.ticks -= ticks;
+	}
+}
+
+impl PartialOrd for ClockTime {
+	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+		(self.clock == other.clock).then(|| self.ticks.cmp(&other.ticks))
 	}
 }
