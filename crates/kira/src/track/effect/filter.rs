@@ -29,6 +29,7 @@ enum Command {
 
 /// The frequencies that the filter will remove.
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum FilterMode {
 	/// Removes frequencies above the cutoff frequency.
 	LowPass,

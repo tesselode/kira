@@ -157,6 +157,7 @@ impl Effect for EqFilter {
 
 /// The shape of the frequency adjustment curve.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum EqFilterKind {
 	/// Frequencies around the user-defined frequency are adjusted.
 	Bell,

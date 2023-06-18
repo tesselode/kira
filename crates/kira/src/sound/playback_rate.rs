@@ -2,6 +2,7 @@ use crate::tween::{ModulatorMapping, Tweenable, Value};
 
 /// How quickly a sound is played.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum PlaybackRate {
 	/// The sound is played at a speed factor of the
 	/// original playback rate.

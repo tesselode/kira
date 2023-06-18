@@ -5,6 +5,7 @@ use super::backend::Backend;
 /// Specifies how many of each resource type an audio context
 /// can have.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Capacities {
 	/// The number of commands that be sent to the renderer at a time.
 	///

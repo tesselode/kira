@@ -33,6 +33,12 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: -p kira --no-default-features --features=mp3
           name: desktop - with mp3 feature
+      - name: clippy (desktop - with all features)
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: -p kira --all-features
+          name: desktop - with all features
       - name: clippy (wasm32 - no features)
         uses: actions-rs/clippy-check@v1
         with:
@@ -51,3 +57,9 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: -p kira --no-default-features --features=mp3 --target=wasm32-unknown-unknown
           name: wasm32 - with mp3 feature
+      - name: clippy (wasm32 - with all features)
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: -p kira --all-features
+          name: wasm32 - with all features

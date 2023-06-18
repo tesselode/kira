@@ -3,6 +3,7 @@ mod test;
 
 /// A point in time in a piece of audio.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum PlaybackPosition {
 	/// The time in seconds.
 	Seconds(f64),

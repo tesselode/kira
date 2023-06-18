@@ -96,6 +96,7 @@ pub trait Sound: Send {
 
 /// The playback state of a sound.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum PlaybackState {
 	/// The sound is playing normally.
 	Playing,
@@ -113,6 +114,7 @@ pub enum PlaybackState {
 
 /// A portion of audio.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Region {
 	/// The starting time of the region (in seconds).
 	pub start: PlaybackPosition,
@@ -203,6 +205,7 @@ impl IntoOptionalRegion for Option<Region> {
 
 /// The ending time of a region of audio.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum EndPosition {
 	/// The end of the audio data.
 	EndOfAudio,

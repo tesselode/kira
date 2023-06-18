@@ -140,22 +140,38 @@ clock.start()?;
 
 ## Features
 
-The Kira crate has the following feature flags, all of which are enabled by
-default:
+The Kira crate has the following feature flags:
 
-- `cpal` - enables the cpal backend and makes it the default for audio managers.
-This allows Kira to talk to the operating system to output audio. Most users should
-leave this enabled.
-- `symphonia` - allows loading and streaming audio from common audio formats,
-like MP3 and WAV.
-	- `mp3` - enables support for loading and streaming MP3 audio (enables the
-	`symphonia` feature automatically)
-	- `ogg` - enables support for loading and streaming OGG audio (enables the
-	`symphonia` feature automatically)
-	- `flac` - enables support for loading and streaming FLAC audio (enables the
-	`symphonia` feature automatically)
-	- `wav` - enables support for loading and streaming WAV audio (enables the
-	`symphonia` feature automatically)
+- `cpal` (enabled by default) - enables the cpal backend and makes it the default for
+audio managers. This allows Kira to talk to the operating system to output audio. Most
+users should leave this enabled.
+- `symphonia` (enabled by default) - allows loading and streaming audio from common
+audio formats, like MP3 and WAV.
+	- `mp3` (enabled by default) - enables support for loading and streaming MP3 audio (enables
+	the `symphonia` feature automatically)
+	- `ogg` (enabled by default) - enables support for loading and streaming OGG audio (enables
+	the `symphonia` feature automatically)
+	- `flac` (enabled by default) - enables support for loading and streaming FLAC audio (enables
+	the `symphonia` feature automatically)
+	- `wav` (enabled by default) - enables support for loading and streaming WAV audio (enables
+	the `symphonia` feature automatically)
+- `serde` - adds `Serialize` and `Deserialize` implementations for the following types:
+	- [`Capacities`](crate::manager::Capacities)
+	- [`ClockSpeed`](crate::clock::ClockSpeed)
+	- [`DistortionKind`](crate::track::effect::distortion::DistortionKind)
+	- [`Easing`](crate::tween::Easing)
+	- [`EndPosition`](crate::sound::EndPosition)
+	- [`EqFilterKind`](crate::track::effect::eq_filter::EqFilterKind)
+	- [`FilterMode`](crate::track::effect::filter::FilterMode)
+	- [`Frame`](crate::dsp::Frame)
+	- [`MainPlaybackState`](crate::manager::MainPlaybackState)
+	- [`ModulatorMapping`](crate::tween::ModulatorMapping)
+	- [`PlaybackPosition`](crate::sound::PlaybackPosition)
+	- [`PlaybackRate`](crate::sound::PlaybackRate)
+	- [`PlaybackState`](crate::sound::PlaybackState)
+	- [`Region`](crate::sound::Region)
+	- [`Volume`](crate::Volume)
+	- [`Waveform`](crate::modulator::lfo::Waveform)
 
 ## Loading other audio file formats
 

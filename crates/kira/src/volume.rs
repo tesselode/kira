@@ -2,6 +2,7 @@ use crate::tween::{ModulatorMapping, Tweenable, Value};
 
 /// A change in volume of a sound.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Volume {
 	/// All samples are multiplied by the specified factor.
 	Amplitude(f64),

@@ -2,6 +2,7 @@ use crate::tween::{Tweenable, Value};
 
 /// The rate that a [clock](crate::clock) ticks at.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ClockSpeed {
 	/// The clock ticks every x seconds.
 	SecondsPerTick(f64),

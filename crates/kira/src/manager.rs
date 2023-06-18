@@ -45,6 +45,7 @@ use self::{
 
 /// The playback state for all audio.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum MainPlaybackState {
 	/// Audio is playing normally.
 	Playing,

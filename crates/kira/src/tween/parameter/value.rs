@@ -105,6 +105,7 @@ where
 
 /// A transformation from a modulator's value to a parameter value.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ModulatorMapping<T> {
 	/// A range of values from a modulator.
 	pub input_range: (f64, f64),

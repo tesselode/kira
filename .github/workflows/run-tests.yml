@@ -14,7 +14,7 @@ jobs:
       - name: install cpal dependencies
         run: sudo apt-get install libasound2-dev
       - name: run tests (desktop - all features)
-        run: cargo test -p kira
+        run: cargo test -p kira --all-features
       - name: run tests (desktop - no features)
         run: cargo test -p kira --no-default-features --lib
       - name: run tests (desktop - with cpal feature)

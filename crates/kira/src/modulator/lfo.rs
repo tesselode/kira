@@ -97,6 +97,7 @@ impl Modulator for Lfo {
 
 /// Describes an oscillation pattern.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Waveform {
 	/// The value moves back and forth smoothly.
 	Sine,
