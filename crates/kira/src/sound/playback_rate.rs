@@ -36,6 +36,12 @@ impl PlaybackRate {
 	}
 }
 
+impl Default for PlaybackRate {
+	fn default() -> Self {
+		Self::Factor(1.0)
+	}
+}
+
 impl From<f64> for PlaybackRate {
 	fn from(factor: f64) -> Self {
 		Self::Factor(factor)

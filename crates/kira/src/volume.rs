@@ -48,6 +48,12 @@ impl Volume {
 	}
 }
 
+impl Default for Volume {
+	fn default() -> Self {
+		Self::Amplitude(1.0)
+	}
+}
+
 impl From<f64> for Volume {
 	fn from(amplitude: f64) -> Self {
 		Self::Amplitude(amplitude)
