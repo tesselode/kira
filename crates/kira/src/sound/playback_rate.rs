@@ -1,3 +1,6 @@
+#[cfg(feature = "rand")]
+mod rand;
+
 use crate::tween::{ModulatorMapping, Tweenable, Value};
 
 /// How quickly a sound is played.

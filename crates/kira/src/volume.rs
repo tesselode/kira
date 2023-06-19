@@ -1,3 +1,6 @@
+#[cfg(feature = "rand")]
+mod rand;
+
 use crate::tween::{ModulatorMapping, Tweenable, Value};
 
 /// A change in volume of a sound.
