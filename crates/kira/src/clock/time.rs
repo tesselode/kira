@@ -5,7 +5,13 @@ use std::{
 
 use super::ClockId;
 
-/// An instant in time associated with a clock.
+/**
+An instant in time associated with a clock.
+
+`ClockTime`s implement [`PartialOrd`]. They can be compared as long
+as both times are associated with the same clock. If the clocks are
+different, `a.cmp(b)` will return `None`.
+*/
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ClockTime {
 	/// The clock this time is associated with.
