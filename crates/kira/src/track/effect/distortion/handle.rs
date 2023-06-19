@@ -2,7 +2,7 @@ use ringbuf::HeapProducer;
 
 use crate::{
 	tween::{Tween, Value},
-	CommandError, Volume,
+	CommandError, Decibels,
 };
 
 use super::{Command, DistortionKind};
@@ -23,7 +23,7 @@ impl DistortionHandle {
 	/// Sets how much distortion should be applied.
 	pub fn set_drive(
 		&mut self,
-		drive: impl Into<Value<Volume>>,
+		drive: impl Into<Value<Decibels>>,
 		tween: Tween,
 	) -> Result<(), CommandError> {
 		self.command_producer

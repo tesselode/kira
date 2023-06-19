@@ -11,7 +11,7 @@ use crate::{
 	manager::{command::Command, MainPlaybackState},
 	modulator::value_provider::ModulatorValueProvider,
 	tween::{Parameter, Value},
-	Volume,
+	Amplitude, Decibels,
 };
 
 use super::resources::Resources;
@@ -43,7 +43,7 @@ pub struct Renderer {
 	resources: Resources,
 	command_consumer: HeapConsumer<Command>,
 	state: MainPlaybackState,
-	fade_volume: Parameter<Volume>,
+	fade_volume: Parameter<Decibels>,
 }
 
 impl Renderer {
@@ -58,7 +58,7 @@ impl Renderer {
 			resources,
 			command_consumer,
 			state: MainPlaybackState::Playing,
-			fade_volume: Parameter::new(Value::Fixed(Volume::Decibels(0.0)), Volume::Decibels(0.0)),
+			fade_volume: Parameter::new(Value::Fixed(Decibels(0.0)), Decibels(0.0)),
 		}
 	}
 
@@ -96,10 +96,8 @@ impl Renderer {
 					self.shared
 						.state
 						.store(MainPlaybackState::Pausing as u8, Ordering::SeqCst);
-					self.fade_volume.set(
-						Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)),
-						fade_out_tween,
-					);
+					self.fade_volume
+						.set(Value::Fixed(Decibels::MIN), fade_out_tween);
 				}
 				Command::Resume(fade_in_tween) => {
 					self.state = MainPlaybackState::Playing;
@@ -107,7 +105,7 @@ impl Renderer {
 						.state
 						.store(MainPlaybackState::Playing as u8, Ordering::SeqCst);
 					self.fade_volume
-						.set(Value::Fixed(Volume::Decibels(0.0)), fade_in_tween);
+						.set(Value::Fixed(Decibels(0.0)), fade_in_tween);
 				}
 			}
 		}
@@ -154,6 +152,6 @@ impl Renderer {
 			&ClockInfoProvider::new(&self.resources.clocks),
 			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
 		);
-		out * self.fade_volume.value().as_amplitude() as f32
+		out * Amplitude::from(self.fade_volume.value()).0 as f32
 	}
 }

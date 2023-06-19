@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
 	tween::{Parameter, Value},
-	Volume,
+	Decibels,
 };
 
 use super::TrackId;
@@ -10,7 +10,7 @@ use super::TrackId;
 /// Defines how the output of a mixer sub-track will be
 /// fed into the input of other mixer tracks.
 #[derive(Debug, Clone, PartialEq)]
-pub struct TrackRoutes(pub(crate) HashMap<TrackId, Value<Volume>>);
+pub struct TrackRoutes(pub(crate) HashMap<TrackId, Value<Decibels>>);
 
 impl TrackRoutes {
 	/**
@@ -66,7 +66,7 @@ impl TrackRoutes {
 	pub fn parent(track: impl Into<TrackId>) -> Self {
 		Self({
 			let mut routes = HashMap::new();
-			routes.insert(track.into(), Value::Fixed(Volume::Amplitude(1.0)));
+			routes.insert(track.into(), Value::Fixed(Decibels(0.0)));
 			routes
 		})
 	}
@@ -76,7 +76,7 @@ impl TrackRoutes {
 	pub fn with_route(
 		mut self,
 		track: impl Into<TrackId>,
-		volume: impl Into<Value<Volume>>,
+		volume: impl Into<Value<Decibels>>,
 	) -> Self {
 		self.0.insert(track.into(), volume.into());
 		self
@@ -88,10 +88,10 @@ impl TrackRoutes {
 		self
 	}
 
-	pub(crate) fn into_vec(self) -> Vec<(TrackId, Parameter<Volume>)> {
+	pub(crate) fn into_vec(self) -> Vec<(TrackId, Parameter<Decibels>)> {
 		self.0
 			.iter()
-			.map(|(id, value)| (*id, Parameter::new(*value, Volume::Amplitude(1.0))))
+			.map(|(id, value)| (*id, Parameter::new(*value, Decibels(0.0))))
 			.collect()
 	}
 }

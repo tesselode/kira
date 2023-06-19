@@ -1,4 +1,4 @@
-use crate::{tween::Value, Volume};
+use crate::{tween::Value, Decibels};
 
 use super::{effect::EffectBuilder, routes::TrackRoutes, Effect};
 
@@ -6,7 +6,7 @@ use super::{effect::EffectBuilder, routes::TrackRoutes, Effect};
 #[non_exhaustive]
 pub struct TrackBuilder {
 	/// The volume of the track.
-	pub(crate) volume: Value<Volume>,
+	pub(crate) volume: Value<Decibels>,
 	/// How the output of this track should be routed
 	/// to other mixer tracks.
 	pub(crate) routes: TrackRoutes,
@@ -19,7 +19,7 @@ impl TrackBuilder {
 	/// Creates a new [`TrackBuilder`] with the default settings.
 	pub fn new() -> Self {
 		Self {
-			volume: Value::Fixed(Volume::Amplitude(1.0)),
+			volume: Value::Fixed(Decibels(0.0)),
 			routes: TrackRoutes::new(),
 			effects: vec![],
 		}
@@ -41,7 +41,7 @@ impl TrackBuilder {
 
 	```
 	# use kira::track::TrackBuilder;
-	let builder = TrackBuilder::new().volume(kira::Volume::Decibels(-6.0));
+	let builder = TrackBuilder::new().volume(kira::Decibels(-6.0));
 	```
 
 	Link the volume to a modulator:
@@ -61,7 +61,7 @@ impl TrackBuilder {
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
-	pub fn volume(self, volume: impl Into<Value<Volume>>) -> Self {
+	pub fn volume(self, volume: impl Into<Value<Decibels>>) -> Self {
 		Self {
 			volume: volume.into(),
 			..self

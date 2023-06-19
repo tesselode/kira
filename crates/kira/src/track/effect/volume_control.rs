@@ -13,25 +13,25 @@ use crate::{
 	dsp::Frame,
 	modulator::value_provider::ModulatorValueProvider,
 	tween::{Parameter, Tween, Value},
-	Volume,
+	Amplitude, Decibels,
 };
 
 use super::Effect;
 
 enum Command {
-	SetVolume(Value<Volume>, Tween),
+	SetVolume(Value<Decibels>, Tween),
 }
 
 struct VolumeControl {
 	command_consumer: HeapConsumer<Command>,
-	volume: Parameter<Volume>,
+	volume: Parameter<Decibels>,
 }
 
 impl VolumeControl {
 	fn new(builder: VolumeControlBuilder, command_consumer: HeapConsumer<Command>) -> Self {
 		Self {
 			command_consumer,
-			volume: Parameter::new(builder.0, Volume::Amplitude(1.0)),
+			volume: Parameter::new(builder.0, Decibels(0.0)),
 		}
 	}
 }
@@ -54,6 +54,6 @@ impl Effect for VolumeControl {
 	) -> Frame {
 		self.volume
 			.update(dt, clock_info_provider, modulator_value_provider);
-		input * self.volume.value().as_amplitude() as f32
+		input * Amplitude::from(self.volume.value()).0 as f32
 	}
 }

@@ -2,7 +2,7 @@ use ringbuf::HeapProducer;
 
 use crate::{
 	tween::{Tween, Value},
-	CommandError, Volume,
+	CommandError, Decibels,
 };
 
 use super::Command;
@@ -16,7 +16,7 @@ impl VolumeControlHandle {
 	/// Sets the volume adjustment to apply to input audio.
 	pub fn set_volume(
 		&mut self,
-		volume: impl Into<Value<Volume>>,
+		volume: impl Into<Value<Decibels>>,
 		tween: Tween,
 	) -> Result<(), CommandError> {
 		self.command_producer

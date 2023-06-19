@@ -1,17 +1,14 @@
 use crate::{
 	tween::{Parameter, Tween, Value},
-	Volume,
+	Decibels,
 };
 
-pub fn create_volume_fade_parameter(fade_in_tween: Option<Tween>) -> Parameter<Volume> {
+pub fn create_volume_fade_parameter(fade_in_tween: Option<Tween>) -> Parameter<Decibels> {
 	if let Some(tween) = fade_in_tween {
-		let mut tweenable = Parameter::new(
-			Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)),
-			Volume::Decibels(Volume::MIN_DECIBELS),
-		);
-		tweenable.set(Value::Fixed(Volume::Decibels(0.0)), tween);
+		let mut tweenable = Parameter::new(Value::Fixed(Decibels::MIN), Decibels::MIN);
+		tweenable.set(Value::Fixed(Decibels(0.0)), tween);
 		tweenable
 	} else {
-		Parameter::new(Value::Fixed(Volume::Decibels(0.0)), Volume::Decibels(0.0))
+		Parameter::new(Value::Fixed(Decibels(0.0)), Decibels(0.0))
 	}
 }

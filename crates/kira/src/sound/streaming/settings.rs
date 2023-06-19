@@ -1,7 +1,7 @@
 use crate::{
 	sound::{IntoOptionalRegion, PlaybackRate, Region},
 	tween::{Tween, Value},
-	OutputDestination, StartTime, Volume,
+	Decibels, OutputDestination, StartTime,
 };
 
 /// Settings for a streaming sound.
@@ -15,7 +15,7 @@ pub struct StreamingSoundSettings {
 	/// The portion of the sound that should be looped.
 	pub loop_region: Option<Region>,
 	/// The volume of the sound.
-	pub volume: Value<Volume>,
+	pub volume: Value<Decibels>,
 	/// The playback rate of the sound.
 	///
 	/// Changing the playback rate will change both the speed
@@ -37,7 +37,7 @@ impl StreamingSoundSettings {
 			start_time: StartTime::Immediate,
 			playback_region: Region::default(),
 			loop_region: None,
-			volume: Value::Fixed(Volume::Amplitude(1.0)),
+			volume: Value::Fixed(Decibels(0.0)),
 			playback_rate: Value::Fixed(PlaybackRate::Factor(1.0)),
 			panning: Value::Fixed(0.5),
 			output_destination: OutputDestination::default(),
@@ -141,7 +141,7 @@ impl StreamingSoundSettings {
 
 	```
 	# use kira::sound::streaming::StreamingSoundSettings;
-	let settings = StreamingSoundSettings::new().volume(kira::Volume::Decibels(-6.0));
+	let settings = StreamingSoundSettings::new().volume(kira::Decibels(-6.0));
 	```
 
 	Link the volume to a modulator:
@@ -161,7 +161,7 @@ impl StreamingSoundSettings {
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
-	pub fn volume(self, volume: impl Into<Value<Volume>>) -> Self {
+	pub fn volume(self, volume: impl Into<Value<Decibels>>) -> Self {
 		Self {
 			volume: volume.into(),
 			..self

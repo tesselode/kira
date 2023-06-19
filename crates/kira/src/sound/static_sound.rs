@@ -34,14 +34,14 @@ pub use settings::*;
 
 use crate::{
 	tween::{Tween, Value},
-	Volume,
+	Decibels,
 };
 
 use super::{PlaybackRate, Region};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Command {
-	SetVolume(Value<Volume>, Tween),
+	SetVolume(Value<Decibels>, Tween),
 	SetPlaybackRate(Value<PlaybackRate>, Tween),
 	SetPanning(Value<f64>, Tween),
 	SetPlaybackRegion(Region),

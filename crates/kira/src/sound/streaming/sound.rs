@@ -14,7 +14,7 @@ use crate::{
 	modulator::value_provider::ModulatorValueProvider,
 	sound::{util::create_volume_fade_parameter, PlaybackRate, PlaybackState, Sound},
 	tween::{Parameter, Tween, Value},
-	OutputDestination, StartTime, Volume,
+	Amplitude, Decibels, OutputDestination, StartTime,
 };
 use ringbuf::HeapConsumer;
 
@@ -65,10 +65,10 @@ pub(crate) struct StreamingSound {
 	start_time: StartTime,
 	state: PlaybackState,
 	when_to_start: WhenToStart,
-	volume_fade: Parameter<Volume>,
+	volume_fade: Parameter<Decibels>,
 	current_frame: i64,
 	fractional_position: f64,
-	volume: Parameter<Volume>,
+	volume: Parameter<Decibels>,
 	playback_rate: Parameter<PlaybackRate>,
 	panning: Parameter,
 	shared: Arc<Shared>,
@@ -103,7 +103,7 @@ impl StreamingSound {
 			volume_fade: create_volume_fade_parameter(settings.fade_in_tween),
 			current_frame,
 			fractional_position: 0.0,
-			volume: Parameter::new(settings.volume, Volume::Amplitude(1.0)),
+			volume: Parameter::new(settings.volume, Decibels(0.0)),
 			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate::Factor(1.0)),
 			panning: Parameter::new(settings.panning, 0.5),
 			shared,
@@ -144,20 +144,17 @@ impl StreamingSound {
 
 	fn pause(&mut self, tween: Tween) {
 		self.set_state(PlaybackState::Pausing);
-		self.volume_fade
-			.set(Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)), tween);
+		self.volume_fade.set(Value::Fixed(Decibels::MIN), tween);
 	}
 
 	fn resume(&mut self, tween: Tween) {
 		self.set_state(PlaybackState::Playing);
-		self.volume_fade
-			.set(Value::Fixed(Volume::Decibels(0.0)), tween);
+		self.volume_fade.set(Value::Fixed(Decibels(0.0)), tween);
 	}
 
 	fn stop(&mut self, tween: Tween) {
 		self.set_state(PlaybackState::Stopping);
-		self.volume_fade
-			.set(Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)), tween);
+		self.volume_fade.set(Value::Fixed(Decibels::MIN), tween);
 	}
 }
 
@@ -258,8 +255,8 @@ impl Sound for StreamingSound {
 		if self.shared.reached_end() && self.frame_consumer.is_empty() {
 			self.set_state(PlaybackState::Stopped);
 		}
-		(out * self.volume_fade.value().as_amplitude() as f32
-			* self.volume.value().as_amplitude() as f32)
+		(out * Amplitude::from(self.volume_fade.value()).0 as f32
+			* Amplitude::from(self.volume.value()).0 as f32)
 			.panned(self.panning.value() as f32)
 	}
 

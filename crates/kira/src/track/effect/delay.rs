@@ -14,12 +14,12 @@ use crate::{
 	modulator::value_provider::ModulatorValueProvider,
 	track::Effect,
 	tween::{Parameter, Tween, Value},
-	Volume,
+	Amplitude, Decibels,
 };
 
 enum Command {
 	SetDelayTime(Value<f64>, Tween),
-	SetFeedback(Value<Volume>, Tween),
+	SetFeedback(Value<Decibels>, Tween),
 	SetMix(Value<f64>, Tween),
 }
 
@@ -38,7 +38,7 @@ enum DelayState {
 struct Delay {
 	command_consumer: HeapConsumer<Command>,
 	delay_time: Parameter,
-	feedback: Parameter<Volume>,
+	feedback: Parameter<Decibels>,
 	mix: Parameter,
 	state: DelayState,
 	feedback_effects: Vec<Box<dyn Effect>>,
@@ -50,7 +50,7 @@ impl Delay {
 		Self {
 			command_consumer,
 			delay_time: Parameter::new(builder.delay_time, 0.5),
-			feedback: Parameter::new(builder.feedback, Volume::Amplitude(0.5)),
+			feedback: Parameter::new(builder.feedback, Decibels(-6.0)),
 			mix: Parameter::new(builder.mix, 0.5),
 			state: DelayState::Uninitialized {
 				buffer_length: builder.buffer_length,
@@ -156,7 +156,8 @@ impl Effect for Delay {
 			// write output audio to the buffer
 			*write_position += 1;
 			*write_position %= buffer.len();
-			buffer[*write_position] = input + output * self.feedback.value().as_amplitude() as f32;
+			buffer[*write_position] =
+				input + output * Amplitude::from(self.feedback.value()).0 as f32;
 
 			let mix = self.mix.value() as f32;
 			output * mix.sqrt() + input * (1.0 - mix).sqrt()

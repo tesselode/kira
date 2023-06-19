@@ -11,7 +11,7 @@ use crate::{
 	modulator::value_provider::ModulatorValueProvider,
 	track::{SubTrackId, Track, TrackBuilder, TrackId},
 	tween::Parameter,
-	Volume,
+	Amplitude, Decibels,
 };
 
 pub(crate) struct Mixer {
@@ -19,7 +19,7 @@ pub(crate) struct Mixer {
 	main_track: Track,
 	sub_tracks: Arena<Track>,
 	sub_track_ids: Vec<SubTrackId>,
-	dummy_routes: Vec<(TrackId, Parameter<Volume>)>,
+	dummy_routes: Vec<(TrackId, Parameter<Decibels>)>,
 	unused_track_producer: HeapProducer<Track>,
 }
 
@@ -146,7 +146,7 @@ impl Mixer {
 					TrackId::Sub(id) => self.sub_tracks.get_mut(id.0),
 				};
 				if let Some(destination_track) = destination_track {
-					destination_track.add_input(output * amount.value().as_amplitude() as f32);
+					destination_track.add_input(output * Amplitude::from(amount.value()).0 as f32);
 				}
 			}
 			// borrow the track again and give it back its routes

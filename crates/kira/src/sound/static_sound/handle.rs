@@ -5,7 +5,7 @@ use ringbuf::HeapProducer;
 use crate::{
 	sound::{IntoOptionalRegion, PlaybackRate, PlaybackState, Region},
 	tween::{Tween, Value},
-	CommandError, Volume,
+	CommandError, Decibels,
 };
 
 use super::{sound::Shared, Command};
@@ -59,7 +59,7 @@ impl StaticSoundHandle {
 	use kira::tween::Tween;
 	use std::time::Duration;
 
-	sound.set_volume(kira::Volume::Decibels(-6.0), Tween {
+	sound.set_volume(kira::Decibels(-6.0), Tween {
 		duration: Duration::from_secs(3),
 		..Default::default()
 	})?;
@@ -91,7 +91,7 @@ impl StaticSoundHandle {
 	*/
 	pub fn set_volume(
 		&mut self,
-		volume: impl Into<Value<Volume>>,
+		volume: impl Into<Value<Decibels>>,
 		tween: Tween,
 	) -> Result<(), CommandError> {
 		self.command_producer

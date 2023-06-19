@@ -14,7 +14,7 @@ use crate::{
 	},
 	track::{SubTrackId, Track, TrackId},
 	tween::{Tween, Value},
-	Volume,
+	Decibels,
 };
 
 pub(crate) enum SoundCommand {
@@ -23,11 +23,11 @@ pub(crate) enum SoundCommand {
 
 pub(crate) enum MixerCommand {
 	AddSubTrack(SubTrackId, Track),
-	SetTrackVolume(TrackId, Value<Volume>, Tween),
+	SetTrackVolume(TrackId, Value<Decibels>, Tween),
 	SetTrackRoutes {
 		from: TrackId,
 		to: TrackId,
-		volume: Value<Volume>,
+		volume: Value<Decibels>,
 		tween: Tween,
 	},
 }

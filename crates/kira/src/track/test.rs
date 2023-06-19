@@ -5,7 +5,7 @@ use crate::{
 	dsp::Frame,
 	modulator::value_provider::{MockModulatorValueProviderBuilder, ModulatorValueProvider},
 	tween::{Tween, Value},
-	Volume,
+	Amplitude, Decibels,
 };
 
 use super::{
@@ -34,7 +34,7 @@ fn volume() {
 fn set_volume() {
 	let mut track = Track::new(TrackBuilder::new());
 	track.set_volume(
-		Value::Fixed(Volume::Amplitude(0.5)),
+		Value::Fixed(Decibels(-6.0)),
 		Tween {
 			duration: Duration::ZERO,
 			..Default::default()
@@ -47,7 +47,7 @@ fn set_volume() {
 			&MockClockInfoProviderBuilder::new(0).build(),
 			&MockModulatorValueProviderBuilder::new(0).build()
 		),
-		Frame::from_mono(0.5)
+		Frame::from_mono(Amplitude::from(Decibels(-6.0)).0 as f32)
 	);
 }
 

@@ -4,7 +4,7 @@ use crate::{
 	error::CommandError,
 	manager::command::{producer::CommandProducer, Command, MixerCommand},
 	tween::{Tween, Value},
-	Volume,
+	Decibels,
 };
 
 use super::{TrackId, TrackShared};
@@ -58,7 +58,7 @@ impl TrackHandle {
 	/// Sets the (post-effects) volume of the mixer track.
 	pub fn set_volume(
 		&self,
-		volume: impl Into<Value<Volume>>,
+		volume: impl Into<Value<Decibels>>,
 		tween: Tween,
 	) -> Result<(), CommandError> {
 		self.command_producer
@@ -76,7 +76,7 @@ impl TrackHandle {
 	pub fn set_route(
 		&self,
 		to: impl Into<TrackId>,
-		volume: impl Into<Value<Volume>>,
+		volume: impl Into<Value<Decibels>>,
 		tween: Tween,
 	) -> Result<(), SetRouteError> {
 		let to = to.into();

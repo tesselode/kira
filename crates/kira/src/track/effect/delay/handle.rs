@@ -2,7 +2,7 @@ use ringbuf::HeapProducer;
 
 use crate::{
 	tween::{Tween, Value},
-	CommandError, Volume,
+	CommandError, Decibels,
 };
 
 use super::Command;
@@ -27,7 +27,7 @@ impl DelayHandle {
 	/// Sets the amount of feedback.
 	pub fn set_feedback(
 		&mut self,
-		feedback: impl Into<Value<Volume>>,
+		feedback: impl Into<Value<Decibels>>,
 		tween: Tween,
 	) -> Result<(), CommandError> {
 		self.command_producer

@@ -273,7 +273,7 @@ use crate::{
 	dsp::Frame,
 	modulator::value_provider::ModulatorValueProvider,
 	tween::{Parameter, Tween, Value},
-	Volume,
+	Amplitude, Decibels,
 };
 
 use self::effect::Effect;
@@ -325,8 +325,8 @@ impl TrackShared {
 
 pub(crate) struct Track {
 	shared: Arc<TrackShared>,
-	volume: Parameter<Volume>,
-	routes: Vec<(TrackId, Parameter<Volume>)>,
+	volume: Parameter<Decibels>,
+	routes: Vec<(TrackId, Parameter<Decibels>)>,
 	effects: Vec<Box<dyn Effect>>,
 	input: Frame,
 }
@@ -335,7 +335,7 @@ impl Track {
 	pub fn new(builder: TrackBuilder) -> Self {
 		Self {
 			shared: Arc::new(TrackShared::new()),
-			volume: Parameter::new(builder.volume, Volume::Amplitude(1.0)),
+			volume: Parameter::new(builder.volume, Decibels(0.0)),
 			routes: builder.routes.into_vec(),
 			effects: builder.effects,
 			input: Frame::ZERO,
@@ -358,15 +358,15 @@ impl Track {
 		self.shared.clone()
 	}
 
-	pub fn routes_mut(&mut self) -> &mut Vec<(TrackId, Parameter<Volume>)> {
+	pub fn routes_mut(&mut self) -> &mut Vec<(TrackId, Parameter<Decibels>)> {
 		&mut self.routes
 	}
 
-	pub fn set_volume(&mut self, volume: Value<Volume>, tween: Tween) {
+	pub fn set_volume(&mut self, volume: Value<Decibels>, tween: Tween) {
 		self.volume.set(volume, tween);
 	}
 
-	pub fn set_route(&mut self, to: TrackId, volume: Value<Volume>, tween: Tween) {
+	pub fn set_route(&mut self, to: TrackId, volume: Value<Decibels>, tween: Tween) {
 		// TODO: determine if we should store the track routes in some
 		// other data structure like an IndexMap so we don't have to do
 		// linear search
@@ -404,6 +404,6 @@ impl Track {
 		for effect in &mut self.effects {
 			output = effect.process(output, dt, clock_info_provider, modulator_value_provider);
 		}
-		output * self.volume.value().as_amplitude() as f32
+		output * Amplitude::from(self.volume.value()).0 as f32
 	}
 }

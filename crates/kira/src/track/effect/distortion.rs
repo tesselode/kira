@@ -14,12 +14,12 @@ use crate::{
 	modulator::value_provider::ModulatorValueProvider,
 	track::Effect,
 	tween::{Parameter, Tween, Value},
-	Volume,
+	Amplitude, Decibels,
 };
 
 enum Command {
 	SetKind(DistortionKind),
-	SetDrive(Value<Volume>, Tween),
+	SetDrive(Value<Decibels>, Tween),
 	SetMix(Value<f64>, Tween),
 }
 
@@ -51,7 +51,7 @@ impl Default for DistortionKind {
 struct Distortion {
 	command_consumer: HeapConsumer<Command>,
 	kind: DistortionKind,
-	drive: Parameter<Volume>,
+	drive: Parameter<Decibels>,
 	mix: Parameter,
 }
 
@@ -77,7 +77,7 @@ impl Effect for Distortion {
 			.update(dt, clock_info_provider, modulator_value_provider);
 		self.mix
 			.update(dt, clock_info_provider, modulator_value_provider);
-		let drive = self.drive.value().as_amplitude() as f32;
+		let drive = Amplitude::from(self.drive.value()).0 as f32;
 		let mut output = input * drive;
 		output = match self.kind {
 			DistortionKind::HardClip => Frame::new(

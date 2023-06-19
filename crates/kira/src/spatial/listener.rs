@@ -23,7 +23,7 @@ use crate::{
 	modulator::value_provider::ModulatorValueProvider,
 	track::TrackId,
 	tween::{Parameter, Tween, Tweenable, Value},
-	Volume,
+	Amplitude, Decibels,
 };
 
 use super::{emitter::Emitter, scene::SpatialSceneId};
@@ -89,12 +89,12 @@ impl Listener {
 				let relative_distance = emitter.distances().relative_distance(distance);
 				let relative_volume =
 					attenuation_function.apply((1.0 - relative_distance).into()) as f32;
-				let amplitude = Tweenable::interpolate(
-					Volume::Decibels(Volume::MIN_DECIBELS),
-					Volume::Decibels(0.0),
+				let amplitude = Amplitude::from(Tweenable::interpolate(
+					Decibels::MIN,
+					Decibels(0.0),
 					relative_volume.into(),
-				)
-				.as_amplitude() as f32;
+				))
+				.0 as f32;
 				emitter_output *= amplitude;
 			}
 			// apply spatialization

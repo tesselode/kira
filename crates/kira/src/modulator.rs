@@ -84,9 +84,9 @@ use kira::{
 # 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
 # 	modulator::tweener::TweenerBuilder,
 # 	track::{TrackBuilder, effect::filter::FilterBuilder},
-	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+# 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 # 	tween::{ModulatorMapping, Value},
-	Volume,
+# 	Amplitude, Decibels,
 };
 
 # let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
@@ -103,7 +103,7 @@ manager.play(StaticSoundData::from_file("piano.ogg", piano_settings)?)?;
 let drums_settings = StaticSoundSettings::new()
 	.volume(Value::from_modulator(&tweener, ModulatorMapping {
 		input_range: (0.0, 1.0),
-		output_range: (Volume::Amplitude(1.0), Volume::Amplitude(0.0)),
+		output_range: (Decibels(0.0), Decibels::MIN),
 		..Default::default()
 	}));
 manager.play(StaticSoundData::from_file("drums.ogg", drums_settings)?)?;
@@ -123,7 +123,7 @@ Once the player goes underwater, we can smoothly transition the tweener's value 
 # 	track::{TrackBuilder, effect::filter::FilterBuilder},
 # 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 # 	tween::{ModulatorMapping, Value},
-# 	Volume,
+# 	Amplitude, Decibels,
 # };
 use kira::tween::Tween;
 use std::time::Duration;
@@ -143,7 +143,7 @@ use std::time::Duration;
 # let drums_settings = StaticSoundSettings::new()
 # 	.volume(Value::from_modulator(&tweener, ModulatorMapping {
 # 		input_range: (0.0, 1.0),
-# 		output_range: (Volume::Amplitude(1.0), Volume::Amplitude(0.0)),
+# 		output_range: (Decibels(0.0), Decibels::MIN),
 # 		..Default::default()
 # 	}));
 # manager.play(StaticSoundData::from_file("drums.ogg", drums_settings)?)?;

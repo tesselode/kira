@@ -3,7 +3,7 @@ use ringbuf::HeapRb;
 use crate::{
 	track::effect::{Effect, EffectBuilder},
 	tween::{Parameter, Value},
-	Volume,
+	Decibels,
 };
 
 use super::{handle::DistortionHandle, Distortion, DistortionKind};
@@ -18,7 +18,7 @@ pub struct DistortionBuilder {
 	pub kind: DistortionKind,
 	/// The factor to multiply the signal by before applying
 	/// the distortion.
-	pub drive: Value<Volume>,
+	pub drive: Value<Decibels>,
 	/// How much dry (unprocessed) signal should be blended
 	/// with the wet (processed) signal. `0.0` means
 	/// only the dry signal will be heard. `1.0` means
@@ -39,7 +39,7 @@ impl DistortionBuilder {
 
 	/// Sets the factor to multiply the signal by before applying
 	/// the distortion.
-	pub fn drive(self, drive: impl Into<Value<Volume>>) -> Self {
+	pub fn drive(self, drive: impl Into<Value<Decibels>>) -> Self {
 		Self {
 			drive: drive.into(),
 			..self
@@ -62,7 +62,7 @@ impl Default for DistortionBuilder {
 	fn default() -> Self {
 		Self {
 			kind: Default::default(),
-			drive: Value::Fixed(Volume::Amplitude(1.0)),
+			drive: Value::Fixed(Decibels(0.0)),
 			mix: Value::Fixed(1.0),
 		}
 	}
@@ -77,7 +77,7 @@ impl EffectBuilder for DistortionBuilder {
 			Box::new(Distortion {
 				command_consumer,
 				kind: self.kind,
-				drive: Parameter::new(self.drive, Volume::Amplitude(1.0)),
+				drive: Parameter::new(self.drive, Decibels(0.0)),
 				mix: Parameter::new(self.mix, 1.0),
 			}),
 			DistortionHandle { command_producer },

@@ -12,7 +12,7 @@ use crate::{
 		PlaybackState, Sound,
 	},
 	tween::Tween,
-	StartTime, Volume,
+	Amplitude, Decibels, StartTime,
 };
 
 use super::{decode_scheduler::NextStep, StreamingSound};
@@ -245,7 +245,7 @@ fn pauses_and_resumes_with_fades() {
 	// allow for a few samples of delay because of the resampling, but the
 	// sound should fade out soon.
 	expect_frame_soon(
-		Frame::from_mono(Volume::Decibels(-15.0).as_amplitude() as f32).panned(0.5),
+		Frame::from_mono(Amplitude::from(Decibels(-15.0)).0 as f32).panned(0.5),
 		&mut sound,
 	);
 	assert_eq!(
@@ -254,7 +254,7 @@ fn pauses_and_resumes_with_fades() {
 			&MockClockInfoProviderBuilder::new(0).build(),
 			&MockModulatorValueProviderBuilder::new(0).build()
 		),
-		Frame::from_mono(Volume::Decibels(-30.0).as_amplitude() as f32).panned(0.5)
+		Frame::from_mono(Amplitude::from(Decibels(-30.0)).0 as f32).panned(0.5)
 	);
 	assert_eq!(
 		sound.process(
@@ -262,7 +262,7 @@ fn pauses_and_resumes_with_fades() {
 			&MockClockInfoProviderBuilder::new(0).build(),
 			&MockModulatorValueProviderBuilder::new(0).build()
 		),
-		Frame::from_mono(Volume::Decibels(-45.0).as_amplitude() as f32).panned(0.5)
+		Frame::from_mono(Amplitude::from(Decibels(-45.0)).0 as f32).panned(0.5)
 	);
 	sound.process(
 		1.0,
@@ -297,7 +297,7 @@ fn pauses_and_resumes_with_fades() {
 	// allow for a few samples of delay because of the resampling, but the
 	// sound should fade back in soon.
 	expect_frame_soon(
-		Frame::from_mono(Volume::Decibels(-45.0).as_amplitude() as f32).panned(0.5),
+		Frame::from_mono(Amplitude::from(Decibels(-45.0)).0 as f32).panned(0.5),
 		&mut sound,
 	);
 	assert_eq!(sound.state, PlaybackState::Playing);
@@ -307,7 +307,7 @@ fn pauses_and_resumes_with_fades() {
 			&MockClockInfoProviderBuilder::new(0).build(),
 			&MockModulatorValueProviderBuilder::new(0).build()
 		),
-		Frame::from_mono(Volume::Decibels(-30.0).as_amplitude() as f32).panned(0.5)
+		Frame::from_mono(Amplitude::from(Decibels(-30.0)).0 as f32).panned(0.5)
 	);
 	assert_eq!(sound.state, PlaybackState::Playing);
 	assert_eq!(
@@ -316,7 +316,7 @@ fn pauses_and_resumes_with_fades() {
 			&MockClockInfoProviderBuilder::new(0).build(),
 			&MockModulatorValueProviderBuilder::new(0).build()
 		),
-		Frame::from_mono(Volume::Decibels(-15.0).as_amplitude() as f32).panned(0.5)
+		Frame::from_mono(Amplitude::from(Decibels(-15.0)).0 as f32).panned(0.5)
 	);
 	assert_eq!(sound.state, PlaybackState::Playing);
 
@@ -363,7 +363,7 @@ fn stops_with_fade_out() {
 	// allow for a few samples of delay because of the resampling, but the
 	// sound should fade out soon.
 	expect_frame_soon(
-		Frame::from_mono(Volume::Decibels(-15.0).as_amplitude() as f32).panned(0.5),
+		Frame::from_mono(Amplitude::from(Decibels(-15.0)).0 as f32).panned(0.5),
 		&mut sound,
 	);
 	assert_eq!(
@@ -372,7 +372,7 @@ fn stops_with_fade_out() {
 			&MockClockInfoProviderBuilder::new(0).build(),
 			&MockModulatorValueProviderBuilder::new(0).build()
 		),
-		Frame::from_mono(Volume::Decibels(-30.0).as_amplitude() as f32).panned(0.5)
+		Frame::from_mono(Amplitude::from(Decibels(-30.0)).0 as f32).panned(0.5)
 	);
 	assert_eq!(
 		sound.process(
@@ -380,7 +380,7 @@ fn stops_with_fade_out() {
 			&MockClockInfoProviderBuilder::new(0).build(),
 			&MockModulatorValueProviderBuilder::new(0).build()
 		),
-		Frame::from_mono(Volume::Decibels(-45.0).as_amplitude() as f32).panned(0.5)
+		Frame::from_mono(Amplitude::from(Decibels(-45.0)).0 as f32).panned(0.5)
 	);
 	sound.process(
 		1.0,

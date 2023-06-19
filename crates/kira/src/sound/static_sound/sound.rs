@@ -22,7 +22,7 @@ use crate::{
 		Sound,
 	},
 	tween::{Parameter, Tween, Value},
-	OutputDestination, StartTime, Volume,
+	Amplitude, Decibels, OutputDestination, StartTime,
 };
 
 use self::resampler::Resampler;
@@ -37,10 +37,10 @@ pub(super) struct StaticSound {
 	resampler: Resampler,
 	transport: Transport,
 	fractional_position: f64,
-	volume: Parameter<Volume>,
+	volume: Parameter<Decibels>,
 	playback_rate: Parameter<PlaybackRate>,
 	panning: Parameter,
-	volume_fade: Parameter<Volume>,
+	volume_fade: Parameter<Decibels>,
 	shared: Arc<Shared>,
 }
 
@@ -68,7 +68,7 @@ impl StaticSound {
 			resampler: Resampler::new(starting_frame_index),
 			transport,
 			fractional_position: 0.0,
-			volume: Parameter::new(settings.volume, Volume::Amplitude(1.0)),
+			volume: Parameter::new(settings.volume, Decibels(0.0)),
 			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate::Factor(1.0)),
 			panning: Parameter::new(settings.panning, 0.5),
 			volume_fade: create_volume_fade_parameter(settings.fade_in_tween),
@@ -96,24 +96,20 @@ impl StaticSound {
 
 	fn pause(&mut self, fade_out_tween: Tween) {
 		self.set_state(PlaybackState::Pausing);
-		self.volume_fade.set(
-			Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)),
-			fade_out_tween,
-		);
+		self.volume_fade
+			.set(Value::Fixed(Decibels::MIN), fade_out_tween);
 	}
 
 	fn resume(&mut self, fade_in_tween: Tween) {
 		self.set_state(PlaybackState::Playing);
 		self.volume_fade
-			.set(Value::Fixed(Volume::Decibels(0.0)), fade_in_tween);
+			.set(Value::Fixed(Decibels(0.0)), fade_in_tween);
 	}
 
 	fn stop(&mut self, fade_out_tween: Tween) {
 		self.set_state(PlaybackState::Stopping);
-		self.volume_fade.set(
-			Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)),
-			fade_out_tween,
-		);
+		self.volume_fade
+			.set(Value::Fixed(Decibels::MIN), fade_out_tween);
 	}
 
 	fn is_playing_backwards(&self) -> bool {
@@ -167,8 +163,8 @@ impl StaticSound {
 				.try_into()
 				.expect("cannot convert i64 into usize");
 			(self.data.frames[frame_index]
-				* self.volume_fade.value().as_amplitude() as f32
-				* self.volume.value().as_amplitude() as f32)
+				* Amplitude::from(self.volume_fade.value()).0 as f32
+				* Amplitude::from(self.volume.value()).0 as f32)
 				.panned(self.panning.value() as f32)
 		};
 		self.resampler.push_frame(frame, self.transport.position);

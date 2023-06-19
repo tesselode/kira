@@ -3,7 +3,7 @@ use ringbuf::HeapRb;
 use crate::{
 	track::effect::{Effect, EffectBuilder},
 	tween::Value,
-	Volume,
+	Decibels,
 };
 
 use super::{Delay, DelayHandle};
@@ -16,7 +16,7 @@ pub struct DelayBuilder {
 	/// The delay time (in seconds).
 	pub(super) delay_time: Value<f64>,
 	/// The amount of feedback.
-	pub(super) feedback: Value<Volume>,
+	pub(super) feedback: Value<Decibels>,
 	/// The amount of audio the delay can store (in seconds).
 	/// This affects the maximum delay time.
 	pub(super) buffer_length: f64,
@@ -44,7 +44,7 @@ impl DelayBuilder {
 	}
 
 	/// Sets the amount of feedback.
-	pub fn feedback(self, feedback: impl Into<Value<Volume>>) -> Self {
+	pub fn feedback(self, feedback: impl Into<Value<Decibels>>) -> Self {
 		Self {
 			feedback: feedback.into(),
 			..self
@@ -82,7 +82,7 @@ impl Default for DelayBuilder {
 	fn default() -> Self {
 		Self {
 			delay_time: Value::Fixed(0.5),
-			feedback: Value::Fixed(Volume::Amplitude(0.5)),
+			feedback: Value::Fixed(Decibels(-6.0)),
 			buffer_length: 10.0,
 			feedback_effects: vec![],
 			mix: Value::Fixed(0.5),
