@@ -1,9 +1,16 @@
+# v0.8.4 - June 19, 2023
+
+- Add `serde` feature
+- Implement `PartialOrd` for `ClockTime`
+- Implement `Default` for `Volume` and `PlaybackRate`
+
 # v0.8.3 - May 28, 2023
 
-This release removes reverse playback support for streaming sounds. There's pretty
-serious issues with garbled audio when streaming an mp3 or ogg file backwards,
-and based the initial investigation, these issues won't be trivial to fix.
-This feature may return in the future, but for now, you should not rely on it.
+This release removes reverse playback support for streaming sounds. There's
+pretty serious issues with garbled audio when streaming an mp3 or ogg file
+backwards, and based the initial investigation, these issues won't be trivial to
+fix. This feature may return in the future, but for now, you should not rely on
+it.
 
 # v0.8.2 - May 27, 2023
 
