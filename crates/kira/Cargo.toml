@@ -34,6 +34,7 @@ mp3 = ["symphonia", "symphonia/mp3"]
 ogg = ["symphonia", "symphonia/ogg", "symphonia/vorbis"]
 flac = ["symphonia", "symphonia/flac"]
 wav = ["symphonia", "symphonia/wav", "symphonia/pcm"]
+android_shared_stdcxx = ["cpal/oboe-shared-stdcxx"]
 
 [dev-dependencies]
 approx = "0.5.1"
