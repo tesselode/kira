@@ -172,6 +172,9 @@ audio formats, like MP3 and WAV.
 	- [`Region`](crate::sound::Region)
 	- [`Volume`](crate::Volume)
 	- [`Waveform`](crate::modulator::lfo::Waveform)
+- `assert_no_alloc` - uses the [`assert_no_alloc`](https://crates.io/crates/assert_no_alloc) crate
+to cause panics if memory is allocated or deallocated on the audio thread. This is mainly useful
+for people developing Kira itself.
 
 ## Loading other audio file formats
 

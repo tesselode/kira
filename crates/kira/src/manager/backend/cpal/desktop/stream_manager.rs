@@ -131,16 +131,12 @@ impl StreamManager {
 		let stream = device.build_output_stream(
 			config,
 			move |data: &mut [f32], _| {
-				renderer_wrapper.on_start_processing();
-				for frame in data.chunks_exact_mut(channels as usize) {
-					let out = renderer_wrapper.process();
-					if channels == 1 {
-						frame[0] = (out.left + out.right) / 2.0;
-					} else {
-						frame[0] = out.left;
-						frame[1] = out.right;
-					}
-				}
+				#[cfg(feature = "assert_no_alloc")]
+				assert_no_alloc::assert_no_alloc(|| {
+					process_renderer(&mut renderer_wrapper, data, channels);
+				});
+				#[cfg(not(feature = "assert_no_alloc"))]
+				process_renderer(&mut renderer_wrapper, data, channels);
 			},
 			move |error| {
 				stream_error_producer
@@ -189,4 +185,17 @@ fn device_name(device: &Device) -> String {
 	device
 		.name()
 		.unwrap_or_else(|_| "device name unavailable".to_string())
+}
+
+fn process_renderer(renderer_wrapper: &mut RendererWrapper, data: &mut [f32], channels: u16) {
+	renderer_wrapper.on_start_processing();
+	for frame in data.chunks_exact_mut(channels as usize) {
+		let out = renderer_wrapper.process();
+		if channels == 1 {
+			frame[0] = (out.left + out.right) / 2.0;
+		} else {
+			frame[0] = out.left;
+			frame[1] = out.right;
+		}
+	}
 }
