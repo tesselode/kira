@@ -193,11 +193,18 @@ impl Sound for StaticSound {
 	}
 
 	fn on_start_processing(&mut self) {
-		let last_played_frame_position = self.resampler.current_frame_index();
-		self.shared.position.store(
-			(last_played_frame_position as f64 / self.data.sample_rate as f64).to_bits(),
-			Ordering::SeqCst,
-		);
+		// Update our reported position if we aren't paused.
+		// If the sound is paused but the user seeks around, we'll repeatedly report
+		// where we *were*, but not where we now are.
+		if !matches!(self.state, PlaybackState::Paused) {
+			let last_played_frame_position = self.resampler.current_frame_index();
+
+			self.shared.position.store(
+				(last_played_frame_position as f64 / self.data.sample_rate as f64).to_bits(),
+				Ordering::SeqCst,
+			);
+		}
+
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
 				Command::SetVolume(volume, tween) => self.volume.set(volume, tween),
