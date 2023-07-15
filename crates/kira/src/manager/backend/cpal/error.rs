@@ -10,9 +10,9 @@ pub enum Error {
 	NoDefaultOutputDevice,
 	/// An error occurred when getting the default output configuration.
 	DefaultStreamConfigError(DefaultStreamConfigError),
-	/// An error occured when building the audio stream.
+	/// An error occurred when building the audio stream.
 	BuildStreamError(BuildStreamError),
-	/// An error occured when starting the audio stream.
+	/// An error occurred when starting the audio stream.
 	PlayStreamError(PlayStreamError),
 }
 

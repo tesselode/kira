@@ -15,7 +15,7 @@ pub enum PlaySoundError<E> {
 	SoundLimitReached,
 	/// An error occurred when initializing the sound.
 	IntoSoundError(E),
-	/// An error occured when sending a command to the audio thread.
+	/// An error occurred when sending a command to the audio thread.
 	CommandError(CommandError),
 }
 
@@ -54,7 +54,7 @@ impl<E> From<CommandError> for PlaySoundError<E> {
 pub enum AddSubTrackError {
 	/// Could not add a sub-track because the maximum number of sub-tracks has been reached.
 	SubTrackLimitReached,
-	/// An error occured when sending a command to the audio thread.
+	/// An error occurred when sending a command to the audio thread.
 	CommandError(CommandError),
 }
 
@@ -88,7 +88,7 @@ impl From<CommandError> for AddSubTrackError {
 pub enum AddClockError {
 	/// Could not add a clock because the maximum number of clocks has been reached.
 	ClockLimitReached,
-	/// An error occured when sending a command to the audio thread.
+	/// An error occurred when sending a command to the audio thread.
 	CommandError(CommandError),
 }
 
@@ -124,7 +124,7 @@ impl From<CommandError> for AddClockError {
 pub enum AddSpatialSceneError {
 	/// Could not add a spatial scene because the maximum number of spatial scenes has been reached.
 	SpatialSceneLimitReached,
-	/// An error occured when sending a command to the audio thread.
+	/// An error occurred when sending a command to the audio thread.
 	CommandError(CommandError),
 }
 
@@ -160,7 +160,7 @@ impl From<CommandError> for AddSpatialSceneError {
 pub enum AddModulatorError {
 	/// Could not add a modulator because the maximum number of modulators has been reached.
 	ModulatorLimitReached,
-	/// An error occured when sending a command to the audio thread.
+	/// An error occurred when sending a command to the audio thread.
 	CommandError(CommandError),
 }
 
