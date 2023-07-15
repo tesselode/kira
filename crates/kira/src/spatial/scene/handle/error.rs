@@ -11,7 +11,7 @@ use crate::CommandError;
 pub enum AddEmitterError {
 	/// Could not add a emitter because the maximum number of emitters has been reached.
 	EmitterLimitReached,
-	/// An error occured when sending a command to the audio thread.
+	/// An error occurred when sending a command to the audio thread.
 	CommandError(CommandError),
 }
 
@@ -47,7 +47,7 @@ impl From<CommandError> for AddEmitterError {
 pub enum AddListenerError {
 	/// Could not add a listener because the maximum number of listeners has been reached.
 	ListenerLimitReached,
-	/// An error occured when sending a command to the audio thread.
+	/// An error occurred when sending a command to the audio thread.
 	CommandError(CommandError),
 }
 
