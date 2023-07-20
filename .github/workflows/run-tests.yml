@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: install cpal dependencies
         run: sudo apt-get install libasound2-dev
       - name: run tests (desktop - all features)
