@@ -66,7 +66,7 @@ now change the `loop_region` after the sound is created using the
 
 ## Other changes
 
-- `StaticSoundData::frames` is now an `Arc[Frame]` instead of `Arc<Vec<Frame>>`
+- `StaticSoundData::frames` is now an `Arc<[Frame]>` instead of `Arc<Vec<Frame>>`
 - Exposed the `Decoder` trait for streaming sounds
 - Moved `PlaybackState` to the sound module
 - Streaming sounds now support reverse playback
