@@ -1,6 +1,7 @@
 mod error;
 
 pub use error::*;
+
 use glam::{Quat, Vec3};
 
 use std::sync::Arc;
@@ -16,8 +17,6 @@ use crate::{
 	},
 	tween::Value,
 };
-
-use self::error::AddEmitterError;
 
 use super::{SpatialSceneId, SpatialSceneShared};
 

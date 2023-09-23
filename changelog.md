@@ -1,3 +1,9 @@
+# v0.8.5 - September 22, 2023
+
+- Fix `kira::spatial::scene::AddEmitterError` not being publicly available
+- Fix some typos in the documentation
+- Add the `assert_no_alloc` feature
+
 # v0.8.4 - June 19, 2023
 
 - Add `serde` feature
