@@ -3,6 +3,7 @@
 - Fix `kira::spatial::scene::AddEmitterError` not being publicly available
 - Fix some typos in the documentation
 - Add the `assert_no_alloc` feature
+- Fix garbage audio getting sent to surround sound channels
 
 # v0.8.4 - June 19, 2023
 

@@ -196,6 +196,14 @@ fn process_renderer(renderer_wrapper: &mut RendererWrapper, data: &mut [f32], ch
 		} else {
 			frame[0] = out.left;
 			frame[1] = out.right;
+			/*
+				if there's more channels, send silence to them. if we don't,
+				we might get bad sounds outputted to those channels.
+				(https://github.com/tesselode/kira/issues/50)
+			*/
+			for channel in frame.iter_mut().skip(2) {
+				*channel = 0.0;
+			}
 		}
 	}
 }
