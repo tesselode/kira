@@ -176,7 +176,7 @@ pub trait ModulatorBuilder {
 }
 
 /// Produces a stream of values that a parameter can be linked to.
-pub trait Modulator: Send {
+pub trait Modulator: Send + Sync {
 	/// Called whenever a new batch of audio samples is requested by the backend.
 	///
 	/// This is a good place to put code that needs to run fairly frequently,

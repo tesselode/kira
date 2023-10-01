@@ -62,7 +62,7 @@ pub trait SoundData {
 /// For performance reasons, the methods of this trait should not allocate
 /// or deallocate memory.
 #[allow(unused_variables)]
-pub trait Sound: Send {
+pub trait Sound: Send + Sync {
 	/// Returns the destination that this sound's audio should be routed to.
 	///
 	/// This will typically be set by the user with a settings struct that's passed
