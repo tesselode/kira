@@ -3,6 +3,7 @@ use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	Device, Stream, StreamConfig,
 };
+use send_wrapper::SendWrapper;
 
 use super::{CpalBackendSettings, Error};
 
@@ -20,7 +21,7 @@ enum State {
 /// A backend that uses [cpal](https://crates.io/crates/cpal) to
 /// connect a [`Renderer`] to the operating system's audio driver.
 pub struct CpalBackend {
-	state: State,
+	state: SendWrapper<State>,
 }
 
 impl Backend for CpalBackend {
@@ -40,7 +41,7 @@ impl Backend for CpalBackend {
 		let sample_rate = config.sample_rate.0;
 		Ok((
 			Self {
-				state: State::Uninitialized { device, config },
+				state: SendWrapper::new(State::Uninitialized { device, config }),
 			},
 			sample_rate,
 		))
@@ -48,7 +49,7 @@ impl Backend for CpalBackend {
 
 	fn start(&mut self, mut renderer: Renderer) -> Result<(), Self::Error> {
 		if let State::Uninitialized { device, config } =
-			std::mem::replace(&mut self.state, State::Empty)
+			std::mem::replace(&mut *self.state, State::Empty)
 		{
 			let channels = config.channels;
 			let stream = device.build_output_stream(
@@ -69,7 +70,7 @@ impl Backend for CpalBackend {
 				None,
 			)?;
 			stream.play()?;
-			self.state = State::Initialized { _stream: stream };
+			self.state = SendWrapper::new(State::Initialized { _stream: stream });
 		} else {
 			panic!("Cannot initialize the backend multiple times")
 		}
