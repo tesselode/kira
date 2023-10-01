@@ -28,6 +28,9 @@ version = "0.15.1"
 optional = true
 features = ["wasm-bindgen"]
 
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+send_wrapper = "0.6.0"
+
 [features]
 default = ["cpal", "mp3", "ogg", "flac", "wav"]
 mp3 = ["symphonia", "symphonia/mp3"]
