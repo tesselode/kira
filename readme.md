@@ -125,7 +125,7 @@ clock.start()?;
 ## Platform support
 
 Kira is mainly meant for desktop platforms. Most testing has occurred on
-Windows, but it has been used successfully used on Mac and Linux.
+Windows, but it has been used successfully on Mac and Linux.
 
 Kira can also be used in wasm environments with the following limitations:
 
