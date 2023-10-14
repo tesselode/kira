@@ -21,6 +21,14 @@ enum State {
 	},
 }
 
+/// Settings for the [`cpal`] backend.
+#[derive(Default)]
+pub struct CpalBackendSettings {
+	/// The output audio device to use. If [`None`], the default output
+	/// device will be used.
+	pub device: Option<Device>,
+}
+
 /// A backend that uses [cpal](https://crates.io/crates/cpal) to
 /// connect a [`Renderer`] to the operating system's audio driver.
 pub struct CpalBackend {
@@ -28,15 +36,18 @@ pub struct CpalBackend {
 }
 
 impl Backend for CpalBackend {
-	type Settings = ();
+	type Settings = CpalBackendSettings;
 
 	type Error = Error;
 
-	fn setup(_settings: Self::Settings) -> Result<(Self, u32), Self::Error> {
+	fn setup(settings: Self::Settings) -> Result<(Self, u32), Self::Error> {
 		let host = cpal::default_host();
-		let device = host
-			.default_output_device()
-			.ok_or(Error::NoDefaultOutputDevice)?;
+		let device = if let Some(device) = settings.device {
+			device
+		} else {
+			host.default_output_device()
+				.ok_or(Error::NoDefaultOutputDevice)?
+		};
 		let config = device.default_output_config()?.config();
 		let sample_rate = config.sample_rate.0;
 		Ok((
