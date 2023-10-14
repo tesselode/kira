@@ -8,9 +8,9 @@ pub use error::*;
 #[cfg(target_arch = "wasm32")]
 mod wasm;
 #[cfg(target_arch = "wasm32")]
-pub use wasm::CpalBackend;
+pub use wasm::{CpalBackend, CpalBackendSettings};
 
 #[cfg(not(target_arch = "wasm32"))]
 mod desktop;
 #[cfg(not(target_arch = "wasm32"))]
-pub use desktop::CpalBackend;
+pub use desktop::{CpalBackend, CpalBackendSettings};
