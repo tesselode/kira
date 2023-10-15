@@ -8,7 +8,7 @@ use cpal::{
 	Device, StreamConfig,
 };
 
-use super::Error;
+use super::{CpalBackendSettings, Error};
 
 enum State {
 	Empty,
@@ -19,14 +19,6 @@ enum State {
 	Initialized {
 		stream_manager_controller: StreamManagerController,
 	},
-}
-
-/// Settings for the [`cpal`] backend.
-#[derive(Default)]
-pub struct CpalBackendSettings {
-	/// The output audio device to use. If [`None`], the default output
-	/// device will be used.
-	pub device: Option<Device>,
 }
 
 /// A backend that uses [cpal](https://crates.io/crates/cpal) to
