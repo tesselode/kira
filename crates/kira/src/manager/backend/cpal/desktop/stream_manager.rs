@@ -50,6 +50,7 @@ pub(super) struct StreamManager {
 	state: State,
 	device_name: String,
 	sample_rate: u32,
+	custom_device: bool,
 }
 
 impl StreamManager {
@@ -57,6 +58,7 @@ impl StreamManager {
 		renderer: Renderer,
 		device: Device,
 		config: StreamConfig,
+		custom_device: bool,
 	) -> StreamManagerController {
 		let should_drop = Arc::new(AtomicBool::new(false));
 		let should_drop_clone = should_drop.clone();
@@ -65,6 +67,7 @@ impl StreamManager {
 				state: State::Idle { renderer },
 				device_name: device_name(&device),
 				sample_rate: config.sample_rate.0,
+				custom_device,
 			};
 			stream_manager.start_stream(&device, &config).unwrap();
 			loop {
@@ -95,17 +98,19 @@ impl StreamManager {
 					self.start_stream(&device, &config).unwrap();
 				}
 			}
-			// check for device changes
+			// check for device changes if a custom device hasn't been specified
 			// Disabled on macos due to audio artifacts that seem to occur when the device is
 			// queried while playing.
 			// see: https://github.com/tesselode/kira/issues/38
 			#[cfg(not(target_os = "macos"))]
-			if let Ok((device, config)) = default_device_and_config() {
-				let device_name = device_name(&device);
-				let sample_rate = config.sample_rate.0;
-				if device_name != self.device_name || sample_rate != self.sample_rate {
-					self.stop_stream();
-					self.start_stream(&device, &config).unwrap();
+			if !self.custom_device {
+				if let Ok((device, config)) = default_device_and_config() {
+					let device_name = device_name(&device);
+					let sample_rate = config.sample_rate.0;
+					if device_name != self.device_name || sample_rate != self.sample_rate {
+						self.stop_stream();
+						self.start_stream(&device, &config).unwrap();
+					}
 				}
 			}
 		}
