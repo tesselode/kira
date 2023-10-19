@@ -5,7 +5,7 @@ use stream_manager::{StreamManager, StreamManagerController};
 use crate::manager::backend::{Backend, Renderer};
 use cpal::{
 	traits::{DeviceTrait, HostTrait},
-	Device, StreamConfig,
+	BufferSize, Device, StreamConfig,
 };
 
 use super::{CpalBackendSettings, Error};
@@ -27,6 +27,7 @@ pub struct CpalBackend {
 	state: State,
 	/// Whether the device was specified by the user.
 	custom_device: bool,
+	buffer_size: BufferSize,
 }
 
 impl Backend for CpalBackend {
@@ -53,6 +54,7 @@ impl Backend for CpalBackend {
 			Self {
 				state: State::Uninitialized { device, config },
 				custom_device,
+				buffer_size: settings.buffer_size,
 			},
 			sample_rate,
 		))
@@ -67,6 +69,7 @@ impl Backend for CpalBackend {
 					device,
 					config,
 					self.custom_device,
+					self.buffer_size,
 				),
 			};
 		} else {

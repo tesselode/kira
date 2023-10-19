@@ -11,7 +11,7 @@ use std::{
 use crate::manager::backend::Renderer;
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
-	Device, Stream, StreamConfig, StreamError,
+	BufferSize, Device, Stream, StreamConfig, StreamError,
 };
 use ringbuf::{HeapConsumer, HeapRb};
 
@@ -51,14 +51,16 @@ pub(super) struct StreamManager {
 	device_name: String,
 	sample_rate: u32,
 	custom_device: bool,
+	buffer_size: BufferSize,
 }
 
 impl StreamManager {
 	pub fn start(
 		renderer: Renderer,
 		device: Device,
-		config: StreamConfig,
+		mut config: StreamConfig,
 		custom_device: bool,
+		buffer_size: BufferSize,
 	) -> StreamManagerController {
 		let should_drop = Arc::new(AtomicBool::new(false));
 		let should_drop_clone = should_drop.clone();
@@ -68,8 +70,9 @@ impl StreamManager {
 				device_name: device_name(&device),
 				sample_rate: config.sample_rate.0,
 				custom_device,
+				buffer_size,
 			};
-			stream_manager.start_stream(&device, &config).unwrap();
+			stream_manager.start_stream(&device, &mut config).unwrap();
 			loop {
 				std::thread::sleep(CHECK_STREAM_INTERVAL);
 				if should_drop.load(Ordering::SeqCst) {
@@ -93,9 +96,9 @@ impl StreamManager {
 			// check for device disconnection
 			if let Some(StreamError::DeviceNotAvailable) = stream_error_consumer.pop() {
 				self.stop_stream();
-				if let Ok((device, config)) = default_device_and_config() {
+				if let Ok((device, mut config)) = default_device_and_config() {
 					// TODO: gracefully handle errors that occur in this function
-					self.start_stream(&device, &config).unwrap();
+					self.start_stream(&device, &mut config).unwrap();
 				}
 			}
 			// check for device changes if a custom device hasn't been specified
@@ -104,25 +107,26 @@ impl StreamManager {
 			// see: https://github.com/tesselode/kira/issues/38
 			#[cfg(not(target_os = "macos"))]
 			if !self.custom_device {
-				if let Ok((device, config)) = default_device_and_config() {
+				if let Ok((device, mut config)) = default_device_and_config() {
 					let device_name = device_name(&device);
 					let sample_rate = config.sample_rate.0;
 					if device_name != self.device_name || sample_rate != self.sample_rate {
 						self.stop_stream();
-						self.start_stream(&device, &config).unwrap();
+						self.start_stream(&device, &mut config).unwrap();
 					}
 				}
 			}
 		}
 	}
 
-	fn start_stream(&mut self, device: &Device, config: &StreamConfig) -> Result<(), Error> {
+	fn start_stream(&mut self, device: &Device, config: &mut StreamConfig) -> Result<(), Error> {
 		let mut renderer =
 			if let State::Idle { renderer } = std::mem::replace(&mut self.state, State::Empty) {
 				renderer
 			} else {
 				panic!("trying to start a stream when the stream manager is not idle");
 			};
+		config.buffer_size = self.buffer_size; // this won't change anything if the buffer size is BufferSize::Default
 		let device_name = device_name(device);
 		let sample_rate = config.sample_rate.0;
 		if sample_rate != self.sample_rate {
