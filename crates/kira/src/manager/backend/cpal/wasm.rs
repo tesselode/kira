@@ -4,7 +4,7 @@ use cpal::{
 	Device, Stream, StreamConfig,
 };
 
-use super::Error;
+use super::{CpalBackendSettings, Error};
 
 enum State {
 	Empty,
@@ -24,15 +24,18 @@ pub struct CpalBackend {
 }
 
 impl Backend for CpalBackend {
-	type Settings = ();
+	type Settings = CpalBackendSettings;
 
 	type Error = Error;
 
 	fn setup(_settings: Self::Settings) -> Result<(Self, u32), Self::Error> {
 		let host = cpal::default_host();
-		let device = host
-			.default_output_device()
-			.ok_or(Error::NoDefaultOutputDevice)?;
+		let device = if let Some(device) = settings.device {
+			device
+		} else {
+			host.default_output_device()
+				.ok_or(Error::NoDefaultOutputDevice)?
+		};
 		let config = device.default_output_config()?.config();
 		let sample_rate = config.sample_rate.0;
 		Ok((

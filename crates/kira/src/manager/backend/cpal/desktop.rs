@@ -5,10 +5,10 @@ use stream_manager::{StreamManager, StreamManagerController};
 use crate::manager::backend::{Backend, Renderer};
 use cpal::{
 	traits::{DeviceTrait, HostTrait},
-	Device, StreamConfig,
+	BufferSize, Device, StreamConfig,
 };
 
-use super::Error;
+use super::{CpalBackendSettings, Error};
 
 enum State {
 	Empty,
@@ -25,23 +25,36 @@ enum State {
 /// connect a [`Renderer`] to the operating system's audio driver.
 pub struct CpalBackend {
 	state: State,
+	/// Whether the device was specified by the user.
+	custom_device: bool,
+	buffer_size: BufferSize,
 }
 
 impl Backend for CpalBackend {
-	type Settings = ();
+	type Settings = CpalBackendSettings;
 
 	type Error = Error;
 
-	fn setup(_settings: Self::Settings) -> Result<(Self, u32), Self::Error> {
+	fn setup(settings: Self::Settings) -> Result<(Self, u32), Self::Error> {
 		let host = cpal::default_host();
-		let device = host
-			.default_output_device()
-			.ok_or(Error::NoDefaultOutputDevice)?;
+
+		let (device, custom_device) = if let Some(device) = settings.device {
+			(device, true)
+		} else {
+			(
+				host.default_output_device()
+					.ok_or(Error::NoDefaultOutputDevice)?,
+				false,
+			)
+		};
+
 		let config = device.default_output_config()?.config();
 		let sample_rate = config.sample_rate.0;
 		Ok((
 			Self {
 				state: State::Uninitialized { device, config },
+				custom_device,
+				buffer_size: settings.buffer_size,
 			},
 			sample_rate,
 		))
@@ -51,7 +64,13 @@ impl Backend for CpalBackend {
 		let state = std::mem::replace(&mut self.state, State::Empty);
 		if let State::Uninitialized { device, config } = state {
 			self.state = State::Initialized {
-				stream_manager_controller: StreamManager::start(renderer, device, config),
+				stream_manager_controller: StreamManager::start(
+					renderer,
+					device,
+					config,
+					self.custom_device,
+					self.buffer_size,
+				),
 			};
 		} else {
 			panic!("Cannot initialize the backend multiple times")
