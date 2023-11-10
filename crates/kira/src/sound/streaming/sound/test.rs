@@ -22,14 +22,24 @@ const MOCK_DECODER_PACKET_SIZE: usize = 3;
 
 struct MockDecoder {
 	frames: Vec<Frame>,
+	num_frames: Option<usize>,
 	current_frame_index: usize,
 }
 
 impl MockDecoder {
 	fn new(frames: Vec<Frame>) -> Self {
 		Self {
+			num_frames: Some(frames.len()),
 			frames,
 			current_frame_index: 0,
+		}
+	}
+
+	fn new_infinite(frames: Vec<Frame>) -> Self {
+		Self {
+			num_frames: None,
+			frames,
+			current_frame_index: 0
 		}
 	}
 }
@@ -42,7 +52,7 @@ impl Decoder for MockDecoder {
 	}
 
 	fn num_frames(&self) -> Option<usize> {
-		Some(self.frames.len())
+		self.num_frames
 	}
 
 	fn decode(&mut self) -> Result<Vec<Frame>, Self::Error> {
@@ -792,6 +802,26 @@ fn loops_forward() {
 		),
 		Frame::from_mono(3.0).panned(0.5)
 	);
+}
+
+#[test]
+fn position() {
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(1.0); 10])),
+		settings: StreamingSoundSettings::new().volume(0.5),
+	};
+
+	assert_eq!(data.duration(), Some(Duration::from_secs(10)));
+}
+
+#[test]
+fn position_unknown() {
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new_infinite(vec![Frame::from_mono(1.0); 10])),
+		settings: StreamingSoundSettings::new().volume(0.5),
+	};
+
+	assert_eq!(data.duration(), None);
 }
 
 /// Tests that the volume of a `StreamingSound` can be adjusted.

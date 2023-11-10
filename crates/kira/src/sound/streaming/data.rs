@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use crate::sound::SoundData;
 use ringbuf::HeapRb;
@@ -31,6 +32,13 @@ impl<Error: Send> StreamingSoundData<Error> {
 			decoder: Box::new(decoder),
 			settings,
 		}
+	}
+
+	/// Returns the duration of the audio.
+	pub fn duration(&self) -> Option<Duration> {
+		self.decoder.num_frames().map(|num_frames| {
+			Duration::from_secs_f64(num_frames as f64 / self.decoder.sample_rate() as f64)
+		})
 	}
 }
 
