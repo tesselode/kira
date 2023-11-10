@@ -12,7 +12,7 @@ pub trait Decoder: Send {
 	fn sample_rate(&self) -> u32;
 
 	/// Returns the total number of samples of audio.
-	fn num_frames(&self) -> usize;
+	fn num_frames(&self) -> Option<usize>;
 
 	/// Decodes the next chunk of audio.
 	fn decode(&mut self) -> Result<Vec<Frame>, Self::Error>;

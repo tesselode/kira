@@ -52,7 +52,7 @@ impl StaticSound {
 			data.settings.loop_region,
 			data.settings.reverse,
 			data.sample_rate,
-			data.frames.len(),
+			Some(data.frames.len()),
 		);
 		let starting_frame_index = transport.position;
 		let position = starting_frame_index as f64 / data.sample_rate as f64;
@@ -208,12 +208,12 @@ impl Sound for StaticSound {
 				Command::SetPlaybackRegion(playback_region) => self.transport.set_playback_region(
 					playback_region,
 					self.data.sample_rate,
-					self.data.frames.len(),
+					Some(self.data.frames.len()),
 				),
 				Command::SetLoopRegion(loop_region) => self.transport.set_loop_region(
 					loop_region,
 					self.data.sample_rate,
-					self.data.frames.len(),
+					Some(self.data.frames.len()),
 				),
 				Command::Pause(tween) => self.pause(tween),
 				Command::Resume(tween) => self.resume(tween),

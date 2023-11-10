@@ -41,8 +41,8 @@ impl Decoder for MockDecoder {
 		MOCK_DECODER_SAMPLE_RATE
 	}
 
-	fn num_frames(&self) -> usize {
-		self.frames.len()
+	fn num_frames(&self) -> Option<usize> {
+		Some(self.frames.len())
 	}
 
 	fn decode(&mut self) -> Result<Vec<Frame>, Self::Error> {

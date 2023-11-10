@@ -5,11 +5,12 @@ use super::{EndPosition, Region};
 #[cfg(test)]
 mod test;
 
+#[derive(Debug)]
 pub struct Transport {
 	pub position: i64,
 	/// The start and end frames of the sound that should be played. The upper bound
 	/// is *inclusive*.
-	pub playback_region: (i64, i64),
+	pub playback_region: (i64, Option<i64>),
 	/// The start and end frames of the sound that should be looped. The upper bound
 	/// is *exclusive*.
 	pub loop_region: Option<(i64, i64)>,
@@ -23,29 +24,32 @@ impl Transport {
 		loop_region: Option<Region>,
 		reverse: bool,
 		sample_rate: u32,
-		num_frames: usize,
+		num_frames: Option<usize>,
 	) -> Self {
 		let playback_start = playback_region.start.into_samples(sample_rate);
 		let playback_end = match playback_region.end {
-			EndPosition::EndOfAudio => (num_frames - 1)
+			EndPosition::EndOfAudio => num_frames.map(|num_frames| (num_frames - 1)
 				.try_into()
-				.expect("could not convert usize to i64"),
-			EndPosition::Custom(end_position) => end_position.into_samples(sample_rate),
+				.expect("could not convert usize to i64")),
+			EndPosition::Custom(end_position) => Some(end_position.into_samples(sample_rate)),
 		};
 		let playback_region = (playback_start, playback_end);
-		let loop_region = loop_region.map(|loop_region| {
-			let loop_start = loop_region.start.into_samples(sample_rate);
-			let loop_end = match loop_region.end {
-				EndPosition::EndOfAudio => num_frames
-					.try_into()
-					.expect("could not convert usize to i64"),
-				EndPosition::Custom(end_position) => end_position.into_samples(sample_rate),
-			};
-			(loop_start, loop_end)
+		let loop_region = loop_region.and_then(|loop_region| {
+			num_frames.map(|num_frames| {
+				let loop_start = loop_region.start.into_samples(sample_rate);
+				let loop_end = match loop_region.end {
+					EndPosition::EndOfAudio => num_frames
+						.try_into()
+						.expect("could not convert usize to i64"),
+					EndPosition::Custom(end_position) => end_position.into_samples(sample_rate),
+				};
+				(loop_start, loop_end)
+			})
 		});
 		Self {
+			// Reverse play is only possible for sounds of known size
 			position: if reverse {
-				playback_region.1
+				playback_region.1.expect("can only play sounds of known size reverse")
 			} else {
 				playback_region.0
 			},
@@ -60,14 +64,14 @@ impl Transport {
 		&mut self,
 		playback_region: Region,
 		sample_rate: u32,
-		num_frames: usize,
+		num_frames: Option<usize>,
 	) {
 		let playback_start = playback_region.start.into_samples(sample_rate);
 		let playback_end = match playback_region.end {
-			EndPosition::EndOfAudio => (num_frames - 1)
+			EndPosition::EndOfAudio => num_frames.map(|num_frames| (num_frames - 1)
 				.try_into()
-				.expect("could not convert usize to i64"),
-			EndPosition::Custom(end_position) => end_position.into_samples(sample_rate),
+				.expect("could not convert usize to i64")),
+			EndPosition::Custom(end_position) => Some(end_position.into_samples(sample_rate)),
 		};
 		self.playback_region = (playback_start, playback_end);
 	}
@@ -76,17 +80,19 @@ impl Transport {
 		&mut self,
 		loop_region: Option<Region>,
 		sample_rate: u32,
-		num_frames: usize,
+		num_frames: Option<usize>,
 	) {
-		self.loop_region = loop_region.map(|loop_region| {
-			let loop_start = loop_region.start.into_samples(sample_rate);
-			let loop_end = match loop_region.end {
-				EndPosition::EndOfAudio => num_frames
-					.try_into()
-					.expect("could not convert usize to i64"),
-				EndPosition::Custom(end_position) => end_position.into_samples(sample_rate),
-			};
-			(loop_start, loop_end)
+		self.loop_region = loop_region.and_then(|loop_region| {
+			num_frames.map(|num_frames| {
+				let loop_start = loop_region.start.into_samples(sample_rate);
+				let loop_end = match loop_region.end {
+					EndPosition::EndOfAudio => num_frames
+						.try_into()
+						.expect("could not convert usize to i64"),
+					EndPosition::Custom(end_position) => end_position.into_samples(sample_rate),
+				};
+				(loop_start, loop_end)
+			})
 		});
 	}
 
@@ -97,8 +103,11 @@ impl Transport {
 				self.position -= loop_end - loop_start;
 			}
 		}
-		if self.position > self.playback_region.1 {
-			self.playing = false;
+		// Never end without knowing playback end
+		if let Some(end_position) = self.playback_region.1 {
+			if self.position > end_position {
+				self.playing = false;
+			}
 		}
 	}
 
@@ -127,7 +136,7 @@ impl Transport {
 			}
 		}
 		self.position = position;
-		if self.position < self.playback_region.0 || self.position > self.playback_region.1 {
+		if self.position < self.playback_region.0 || self.playback_region.1.is_some() && self.position > self.playback_region.1.unwrap() {
 			self.playing = false;
 		}
 	}

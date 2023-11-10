@@ -28,7 +28,7 @@ pub(crate) enum NextStep {
 pub(crate) struct DecodeScheduler<Error: Send + 'static> {
 	decoder: Box<dyn Decoder<Error = Error>>,
 	sample_rate: u32,
-	num_frames: usize,
+	num_frames: Option<usize>,
 	transport: Transport,
 	decoder_current_frame_index: usize,
 	decoded_chunk: Option<DecodedChunk>,

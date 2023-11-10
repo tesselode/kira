@@ -15,7 +15,7 @@ pub(crate) struct SymphoniaDecoder {
 	format_reader: Box<dyn FormatReader>,
 	decoder: Box<dyn Decoder>,
 	sample_rate: u32,
-	num_frames: usize,
+	num_frames: Option<usize>,
 	track_id: u32,
 }
 
@@ -42,9 +42,7 @@ impl SymphoniaDecoder {
 		let num_frames = default_track
 			.codec_params
 			.n_frames
-			.ok_or(FromFileError::UnknownSampleRate)?
-			.try_into()
-			.expect("could not convert u64 into usize");
+			.map(|frames| frames.try_into().expect("could not convert u64 into usize"));
 		let decoder = codecs.make(&default_track.codec_params, &Default::default())?;
 		let track_id = default_track.id;
 		Ok(Self {
@@ -64,7 +62,7 @@ impl super::Decoder for SymphoniaDecoder {
 		self.sample_rate
 	}
 
-	fn num_frames(&self) -> usize {
+	fn num_frames(&self) -> Option<usize> {
 		self.num_frames
 	}
 
