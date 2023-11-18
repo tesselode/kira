@@ -134,8 +134,7 @@ impl StreamManager {
 		}
 		self.device_name = device_name;
 		self.sample_rate = sample_rate;
-		let (renderer_wrapper, renderer_consumer) = RendererWrapper::new(renderer);
-		let mut renderer_wrapper = renderer_wrapper;
+		let (mut renderer_wrapper, renderer_consumer) = RendererWrapper::new(renderer);
 
 		let (mut stream_error_producer, stream_error_consumer) = HeapRb::new(1).split();
 		let channels = config.channels;
