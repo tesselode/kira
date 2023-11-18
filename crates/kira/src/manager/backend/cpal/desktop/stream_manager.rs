@@ -52,6 +52,7 @@ pub(super) struct StreamManager {
 	sample_rate: u32,
 	custom_device: bool,
 	buffer_size: BufferSize,
+	process_command_interval: usize,
 }
 
 impl StreamManager {
@@ -61,6 +62,7 @@ impl StreamManager {
 		mut config: StreamConfig,
 		custom_device: bool,
 		buffer_size: BufferSize,
+		process_command_interval: usize,
 	) -> StreamManagerController {
 		let should_drop = Arc::new(AtomicBool::new(false));
 		let should_drop_clone = should_drop.clone();
@@ -71,6 +73,7 @@ impl StreamManager {
 				sample_rate: config.sample_rate.0,
 				custom_device,
 				buffer_size,
+				process_command_interval,
 			};
 			stream_manager.start_stream(&device, &mut config).unwrap();
 			loop {
@@ -138,15 +141,27 @@ impl StreamManager {
 
 		let (mut stream_error_producer, stream_error_consumer) = HeapRb::new(1).split();
 		let channels = config.channels;
+		let process_command_interval = self.process_command_interval;
+
 		let stream = device.build_output_stream(
 			config,
 			move |data: &mut [f32], _| {
 				#[cfg(feature = "assert_no_alloc")]
 				assert_no_alloc::assert_no_alloc(|| {
-					process_renderer(&mut renderer_wrapper, data, channels);
+					process_renderer(
+						&mut renderer_wrapper,
+						data,
+						channels,
+						process_command_interval,
+					);
 				});
 				#[cfg(not(feature = "assert_no_alloc"))]
-				process_renderer(&mut renderer_wrapper, data, channels);
+				process_renderer(
+					&mut renderer_wrapper,
+					data,
+					channels,
+					process_command_interval,
+				);
 			},
 			move |error| {
 				stream_error_producer
@@ -155,6 +170,7 @@ impl StreamManager {
 			},
 			None,
 		)?;
+
 		stream.play()?;
 		self.state = State::Running {
 			stream,
@@ -197,10 +213,17 @@ fn device_name(device: &Device) -> String {
 		.unwrap_or_else(|_| "device name unavailable".to_string())
 }
 
-fn process_renderer(renderer_wrapper: &mut RendererWrapper, data: &mut [f32], channels: u16) {
-	for frame in data.chunks_exact_mut(channels as usize) {
-		// process pending commands
-		renderer_wrapper.on_start_processing();
+fn process_renderer(
+	renderer_wrapper: &mut RendererWrapper,
+	data: &mut [f32],
+	channels: u16,
+	process_command_interval: usize,
+) {
+	for (i, frame) in data.chunks_exact_mut(channels as usize).enumerate() {
+		if i % process_command_interval == 0 {
+			// process pending commands
+			renderer_wrapper.on_start_processing();
+		}
 
 		let out = renderer_wrapper.process();
 		if channels == 1 {

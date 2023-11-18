@@ -28,6 +28,8 @@ pub struct CpalBackend {
 	/// Whether the device was specified by the user.
 	custom_device: bool,
 	buffer_size: BufferSize,
+	/// The number of audio frames processed before the next pending command update.
+	process_command_interval: usize,
 }
 
 impl Backend for CpalBackend {
@@ -55,6 +57,7 @@ impl Backend for CpalBackend {
 				state: State::Uninitialized { device, config },
 				custom_device,
 				buffer_size: settings.buffer_size,
+				process_command_interval: settings.process_command_interval.get(),
 			},
 			sample_rate,
 		))
@@ -70,6 +73,7 @@ impl Backend for CpalBackend {
 					config,
 					self.custom_device,
 					self.buffer_size,
+					self.process_command_interval,
 				),
 			};
 		} else {

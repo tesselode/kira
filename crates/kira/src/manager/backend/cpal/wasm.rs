@@ -11,6 +11,7 @@ enum State {
 	Uninitialized {
 		device: Device,
 		config: StreamConfig,
+		process_command_interval: usize,
 	},
 	Initialized {
 		_stream: Stream,
@@ -40,22 +41,33 @@ impl Backend for CpalBackend {
 		let sample_rate = config.sample_rate.0;
 		Ok((
 			Self {
-				state: State::Uninitialized { device, config },
+				state: State::Uninitialized {
+					device,
+					config,
+					process_command_interval: settings.process_command_interval.get(),
+				},
 			},
 			sample_rate,
 		))
 	}
 
 	fn start(&mut self, mut renderer: Renderer) -> Result<(), Self::Error> {
-		if let State::Uninitialized { device, config } =
-			std::mem::replace(&mut self.state, State::Empty)
+		if let State::Uninitialized {
+			device,
+			config,
+			process_command_interval,
+		} = std::mem::replace(&mut self.state, State::Empty)
 		{
 			let channels = config.channels;
 			let stream = device.build_output_stream(
 				&config,
 				move |data: &mut [f32], _| {
-					renderer.on_start_processing();
-					for frame in data.chunks_exact_mut(channels as usize) {
+					for (i, frame) in data.chunks_exact_mut(channels as usize).enumerate() {
+						if i % process_command_interval == 0 {
+							// process pending commands
+							renderer.on_start_processing();
+						}
+
 						let out = renderer.process();
 						if channels == 1 {
 							frame[0] = (out.left + out.right) / 2.0;

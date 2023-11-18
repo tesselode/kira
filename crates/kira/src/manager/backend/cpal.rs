@@ -3,6 +3,8 @@
 #![cfg_attr(docsrs, doc(cfg(feature = "cpal")))]
 
 mod error;
+use std::num::NonZeroUsize;
+
 use cpal::{BufferSize, Device};
 pub use error::*;
 
@@ -18,6 +20,8 @@ pub struct CpalBackendSettings {
 	/// with the [`cpal::SupportedBufferSize`] range provided by the [`cpal::SupportedStreamConfig`]
 	/// API.
 	pub buffer_size: BufferSize,
+	/// The number of audio frames processed before the next pending command update.
+	pub process_command_interval: NonZeroUsize,
 }
 
 impl Default for CpalBackendSettings {
@@ -25,6 +29,7 @@ impl Default for CpalBackendSettings {
 		Self {
 			device: None,
 			buffer_size: BufferSize::Default,
+			process_command_interval: NonZeroUsize::new(1).unwrap(),
 		}
 	}
 }
