@@ -134,7 +134,9 @@ impl StreamManager {
 		}
 		self.device_name = device_name;
 		self.sample_rate = sample_rate;
-		let (mut renderer_wrapper, renderer_consumer) = RendererWrapper::new(renderer);
+		let (renderer_wrapper, renderer_consumer) = RendererWrapper::new(renderer);
+		let mut renderer_wrapper = renderer_wrapper;
+
 		let (mut stream_error_producer, stream_error_consumer) = HeapRb::new(1).split();
 		let channels = config.channels;
 		let stream = device.build_output_stream(
@@ -197,8 +199,10 @@ fn device_name(device: &Device) -> String {
 }
 
 fn process_renderer(renderer_wrapper: &mut RendererWrapper, data: &mut [f32], channels: u16) {
-	renderer_wrapper.on_start_processing();
 	for frame in data.chunks_exact_mut(channels as usize) {
+		// process pending commands
+		renderer_wrapper.on_start_processing();
+
 		let out = renderer_wrapper.process();
 		if channels == 1 {
 			frame[0] = (out.left + out.right) / 2.0;
