@@ -28,7 +28,7 @@ impl Backend for CpalBackend {
 
 	type Error = Error;
 
-	fn setup(_settings: Self::Settings) -> Result<(Self, u32), Self::Error> {
+	fn setup(settings: Self::Settings) -> Result<(Self, u32), Self::Error> {
 		let host = cpal::default_host();
 		let device = if let Some(device) = settings.device {
 			device
