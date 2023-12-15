@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use crate::sound::SoundData;
 use ringbuf::HeapRb;
@@ -36,6 +36,13 @@ impl<Error: Send> StreamingSoundData<Error> {
 
 #[cfg(feature = "symphonia")]
 impl StreamingSoundData<crate::sound::FromFileError> {
+	/// Returns the duration of the audio.
+	pub fn duration(&self) -> Duration {
+		Duration::from_secs_f64(
+			self.decoder.num_frames() as f64 / self.decoder.sample_rate() as f64,
+		)
+	}
+
 	/// Creates a [`StreamingSoundData`] for an audio file.
 	pub fn from_file(
 		path: impl AsRef<std::path::Path>,
