@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod test;
+
 use std::{sync::Arc, time::Duration};
 
 use crate::sound::SoundData;
@@ -34,15 +37,17 @@ impl<Error: Send> StreamingSoundData<Error> {
 	}
 }
 
-#[cfg(feature = "symphonia")]
-impl StreamingSoundData<crate::sound::FromFileError> {
+impl<T: Send> StreamingSoundData<T> {
 	/// Returns the duration of the audio.
 	pub fn duration(&self) -> Duration {
 		Duration::from_secs_f64(
 			self.decoder.num_frames() as f64 / self.decoder.sample_rate() as f64,
 		)
 	}
+}
 
+#[cfg(feature = "symphonia")]
+impl StreamingSoundData<crate::sound::FromFileError> {
 	/// Creates a [`StreamingSoundData`] for an audio file.
 	pub fn from_file(
 		path: impl AsRef<std::path::Path>,
