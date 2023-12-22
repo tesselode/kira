@@ -28,6 +28,10 @@ version = "0.15.1"
 optional = true
 features = ["wasm-bindgen"]
 
+[target.'cfg(target_os = "android")'.dependencies.cpal]
+version = "0.15.1"
+features = ["oboe-shared-stdcxx"]
+
 [features]
 default = ["cpal", "mp3", "ogg", "flac", "wav"]
 mp3 = ["symphonia", "symphonia/mp3"]
