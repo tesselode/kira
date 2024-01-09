@@ -156,7 +156,14 @@ impl<B: Backend> AudioManager<B> {
 		&mut self,
 		sound_data: D,
 	) -> Result<D::Handle, PlaySoundError<D::Error>> {
-		while self.unused_resource_consumers.sound.pop().is_some() {}
+		while self
+			.unused_resource_consumers
+			.sound
+			.lock()
+			.expect("unused resource consumer mutex poisoned")
+			.pop()
+			.is_some()
+		{}
 		let key = self
 			.resource_controllers
 			.sound_controller
@@ -175,7 +182,12 @@ impl<B: Backend> AudioManager<B> {
 		&mut self,
 		builder: TrackBuilder,
 	) -> Result<TrackHandle, AddSubTrackError> {
-		while self.unused_resource_consumers.sub_track.pop().is_some() {}
+		let unused_sub_track_consumer = &mut self
+			.unused_resource_consumers
+			.sub_track
+			.lock()
+			.expect("unused resource consumer mutex poisoned");
+		while unused_sub_track_consumer.pop().is_some() {}
 		let id = SubTrackId(
 			self.resource_controllers
 				.sub_track_controller
@@ -218,7 +230,12 @@ impl<B: Backend> AudioManager<B> {
 		&mut self,
 		speed: impl Into<Value<ClockSpeed>>,
 	) -> Result<ClockHandle, AddClockError> {
-		while self.unused_resource_consumers.clock.pop().is_some() {}
+		let unused_clock_consumer = &mut self
+			.unused_resource_consumers
+			.clock
+			.lock()
+			.expect("unused resource consumer mutex poisoned");
+		while unused_clock_consumer.pop().is_some() {}
 		let id = ClockId(
 			self.resource_controllers
 				.clock_controller
@@ -241,7 +258,12 @@ impl<B: Backend> AudioManager<B> {
 		&mut self,
 		settings: SpatialSceneSettings,
 	) -> Result<SpatialSceneHandle, AddSpatialSceneError> {
-		while self.unused_resource_consumers.spatial_scene.pop().is_some() {}
+		let unused_spatial_scene_consumer = &mut self
+			.unused_resource_consumers
+			.spatial_scene
+			.lock()
+			.expect("unused resource consumer mutex poisoned");
+		while unused_spatial_scene_consumer.pop().is_some() {}
 		let id = SpatialSceneId(
 			self.resource_controllers
 				.spatial_scene_controller
@@ -290,7 +312,12 @@ impl<B: Backend> AudioManager<B> {
 		&mut self,
 		builder: Builder,
 	) -> Result<Builder::Handle, AddModulatorError> {
-		while self.unused_resource_consumers.modulator.pop().is_some() {}
+		let unused_modulator_consumer = &mut self
+			.unused_resource_consumers
+			.modulator
+			.lock()
+			.expect("unused resource consumer mutex poisoned");
+		while unused_modulator_consumer.pop().is_some() {}
 		let id = ModulatorId(
 			self.resource_controllers
 				.modulator_controller
