@@ -159,7 +159,7 @@ impl<B: Backend> AudioManager<B> {
 		while self
 			.unused_resource_consumers
 			.sound
-			.lock()
+			.get_mut()
 			.expect("unused resource consumer mutex poisoned")
 			.pop()
 			.is_some()
@@ -185,7 +185,7 @@ impl<B: Backend> AudioManager<B> {
 		let unused_sub_track_consumer = &mut self
 			.unused_resource_consumers
 			.sub_track
-			.lock()
+			.get_mut()
 			.expect("unused resource consumer mutex poisoned");
 		while unused_sub_track_consumer.pop().is_some() {}
 		let id = SubTrackId(
@@ -233,7 +233,7 @@ impl<B: Backend> AudioManager<B> {
 		let unused_clock_consumer = &mut self
 			.unused_resource_consumers
 			.clock
-			.lock()
+			.get_mut()
 			.expect("unused resource consumer mutex poisoned");
 		while unused_clock_consumer.pop().is_some() {}
 		let id = ClockId(
@@ -261,7 +261,7 @@ impl<B: Backend> AudioManager<B> {
 		let unused_spatial_scene_consumer = &mut self
 			.unused_resource_consumers
 			.spatial_scene
-			.lock()
+			.get_mut()
 			.expect("unused resource consumer mutex poisoned");
 		while unused_spatial_scene_consumer.pop().is_some() {}
 		let id = SpatialSceneId(
@@ -315,7 +315,7 @@ impl<B: Backend> AudioManager<B> {
 		let unused_modulator_consumer = &mut self
 			.unused_resource_consumers
 			.modulator
-			.lock()
+			.get_mut()
 			.expect("unused resource consumer mutex poisoned");
 		while unused_modulator_consumer.pop().is_some() {}
 		let id = ModulatorId(

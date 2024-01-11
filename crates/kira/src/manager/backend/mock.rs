@@ -1,12 +1,14 @@
 //! Useful for testing and benchmarking.
 
+use std::sync::Mutex;
+
 use crate::dsp::Frame;
 
 use super::{Backend, Renderer};
 
 enum State {
 	Uninitialized,
-	Initialized { renderer: Renderer },
+	Initialized { renderer: Mutex<Renderer> },
 }
 
 /// Settings for the mock backend.
@@ -37,7 +39,10 @@ impl MockBackend {
 	pub fn set_sample_rate(&mut self, sample_rate: u32) {
 		self.sample_rate = sample_rate;
 		if let State::Initialized { renderer } = &mut self.state {
-			renderer.on_change_sample_rate(sample_rate);
+			renderer
+				.get_mut()
+				.expect("mutex poisoned")
+				.on_change_sample_rate(sample_rate);
 		}
 	}
 
@@ -45,7 +50,10 @@ impl MockBackend {
 	/// callback of the [`Renderer`].
 	pub fn on_start_processing(&mut self) {
 		if let State::Initialized { renderer } = &mut self.state {
-			renderer.on_start_processing();
+			renderer
+				.get_mut()
+				.expect("mutex poisoned")
+				.on_start_processing();
 		} else {
 			panic!("backend is not initialized")
 		}
@@ -54,7 +62,7 @@ impl MockBackend {
 	/// Calls the [`process`](Renderer::process) callback of the [`Renderer`].
 	pub fn process(&mut self) -> Frame {
 		if let State::Initialized { renderer } = &mut self.state {
-			renderer.process()
+			renderer.get_mut().expect("mutex poisoned").process()
 		} else {
 			panic!("backend is not initialized")
 		}
@@ -77,7 +85,9 @@ impl Backend for MockBackend {
 	}
 
 	fn start(&mut self, renderer: Renderer) -> Result<(), Self::Error> {
-		self.state = State::Initialized { renderer };
+		self.state = State::Initialized {
+			renderer: Mutex::new(renderer),
+		};
 		Ok(())
 	}
 }
