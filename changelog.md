@@ -1,3 +1,12 @@
+# v0.8.6 - January 13, 2024
+
+- Fix a typo in the readme
+- Add `StreamingSoundData::duration`
+- Make `AudioManager`s `Sync` if the backend is `Sync`
+- Make the `CpalBackend` `Sync` on wasm targets
+- Make the `MockBackend` `Sync`
+- Update `glam` to v0.25.0
+
 # v0.8.5 - September 22, 2023
 
 - Fix `kira::spatial::scene::AddEmitterError` not being publicly available
