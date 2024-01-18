@@ -3,7 +3,7 @@ mod test;
 
 use std::{sync::Arc, time::Duration};
 
-use crate::sound::{CommonSoundController, SoundData};
+use crate::sound::{CommonSoundController, CommonSoundSettings, SoundData};
 use ringbuf::HeapRb;
 
 use super::sound::Shared;
@@ -140,6 +140,16 @@ impl<Error: Send + 'static> SoundData for StreamingSoundData<Error> {
 	type Error = Error;
 
 	type Handle = StreamingSoundHandle<Error>;
+
+	fn common_settings(&self) -> CommonSoundSettings {
+		CommonSoundSettings {
+			start_time: self.settings.start_time,
+			volume: self.settings.volume,
+			panning: self.settings.panning,
+			output_destination: self.settings.output_destination,
+			fade_in_tween: self.settings.fade_in_tween,
+		}
+	}
 
 	#[allow(clippy::type_complexity)]
 	fn into_sound(

@@ -14,7 +14,7 @@ use ringbuf::HeapRb;
 
 use crate::{
 	dsp::Frame,
-	sound::{CommonSoundController, Sound, SoundData},
+	sound::{CommonSoundController, CommonSoundSettings, Sound, SoundData},
 };
 
 use super::{handle::StaticSoundHandle, sound::StaticSound, StaticSoundSettings};
@@ -80,6 +80,16 @@ impl SoundData for StaticSoundData {
 	type Error = ();
 
 	type Handle = StaticSoundHandle;
+
+	fn common_settings(&self) -> CommonSoundSettings {
+		CommonSoundSettings {
+			start_time: self.settings.start_time,
+			volume: self.settings.volume,
+			panning: self.settings.panning,
+			output_destination: self.settings.output_destination,
+			fade_in_tween: self.settings.fade_in_tween,
+		}
+	}
 
 	#[allow(clippy::type_complexity)]
 	fn into_sound(

@@ -14,7 +14,7 @@ These two sound types should cover most use cases, but if you need something els
 create your own types that implement the [`SoundData`] and [`Sound`] traits.
 */
 
-mod common_controller;
+mod common;
 #[cfg(feature = "symphonia")]
 mod error;
 mod playback_position;
@@ -30,7 +30,7 @@ pub(crate) mod wrapper;
 
 use std::ops::{Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive};
 
-pub use common_controller::*;
+pub use common::*;
 #[cfg(feature = "symphonia")]
 pub use error::*;
 pub use playback_position::*;
@@ -49,6 +49,9 @@ pub trait SoundData {
 	/// The type that can be used to control the sound once
 	/// it has started.
 	type Handle;
+
+	/// Returns the common settings for this sound.
+	fn common_settings(&self) -> CommonSoundSettings;
 
 	/// Converts the loaded sound into a live, playing sound
 	/// and a handle to control it.
