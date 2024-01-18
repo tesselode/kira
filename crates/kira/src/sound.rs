@@ -19,9 +19,9 @@ mod common;
 mod error;
 mod playback_position;
 mod playback_rate;
-pub mod static_sound;
+/* pub mod static_sound;
 #[cfg(not(target_arch = "wasm32"))]
-pub mod streaming;
+pub mod streaming; */
 #[cfg(feature = "symphonia")]
 mod symphonia;
 mod transport;
@@ -38,7 +38,7 @@ pub use playback_rate::*;
 
 use crate::{
 	clock::clock_info::ClockInfoProvider, dsp::Frame,
-	modulator::value_provider::ModulatorValueProvider, OutputDestination,
+	modulator::value_provider::ModulatorValueProvider,
 };
 
 /// A source of audio that is loaded, but not yet playing.
@@ -72,11 +72,10 @@ pub trait SoundData {
 /// or deallocate memory.
 #[allow(unused_variables)]
 pub trait Sound: Send {
-	/// Returns the destination that this sound's audio should be routed to.
+	/// Returns the sample rate of the sound (in Hz).
 	///
-	/// This will typically be set by the user with a settings struct that's passed
-	/// to the [`SoundData`] implementor.
-	fn output_destination(&mut self) -> OutputDestination;
+	/// This can change over time to affect a sound's playback rate.
+	fn sample_rate(&self) -> f64;
 
 	/// Called whenever a new batch of audio samples is requested by the backend.
 	///
@@ -85,12 +84,8 @@ pub trait Sound: Send {
 	fn on_start_processing(&mut self) {}
 
 	/// Produces the next [`Frame`] of audio.
-	///
-	/// `dt` is the time that's elapsed since the previous round of
-	/// processing (in seconds).
 	fn process(
 		&mut self,
-		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
 	) -> Frame;

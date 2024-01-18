@@ -72,10 +72,10 @@ impl Sounds {
 		scenes: &mut SpatialScenes,
 	) {
 		for (_, sound_wrapper) in &mut self.sound_wrappers {
-			match sound_wrapper.sound.output_destination() {
+			match sound_wrapper.output_destination() {
 				OutputDestination::Track(track_id) => {
 					if let Some(track) = mixer.track_mut(track_id) {
-						track.add_input(sound_wrapper.sound.process(
+						track.add_input(sound_wrapper.process(
 							dt,
 							clock_info_provider,
 							modulator_value_provider,
@@ -85,7 +85,7 @@ impl Sounds {
 				OutputDestination::Emitter(emitter_id) => {
 					if let Some(scene) = scenes.get_mut(emitter_id.scene_id) {
 						if let Some(emitter) = scene.emitter_mut(emitter_id) {
-							emitter.add_input(sound_wrapper.sound.process(
+							emitter.add_input(sound_wrapper.process(
 								dt,
 								clock_info_provider,
 								modulator_value_provider,

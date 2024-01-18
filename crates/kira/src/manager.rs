@@ -169,14 +169,13 @@ impl<B: Backend> AudioManager<B> {
 			.sound_controller
 			.try_reserve()
 			.map_err(|_| PlaySoundError::SoundLimitReached)?;
+		let settings = sound_data.common_settings();
 		let (sound, handle) = sound_data
 			.into_sound(CommonSoundController {})
 			.map_err(PlaySoundError::IntoSoundError)?;
+		let sound_wrapper = SoundWrapper::new(sound, settings);
 		self.command_producer
-			.push(Command::Sound(SoundCommand::Add(
-				key,
-				SoundWrapper { sound },
-			)))?;
+			.push(Command::Sound(SoundCommand::Add(key, sound_wrapper)))?;
 		Ok(handle)
 	}
 
