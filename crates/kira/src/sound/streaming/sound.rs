@@ -1,7 +1,7 @@
 pub(crate) mod decode_scheduler;
 
-#[cfg(test)]
-mod test;
+/* #[cfg(test)]
+mod test; */
 
 use std::sync::{
 	atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering},

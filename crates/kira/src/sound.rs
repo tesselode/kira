@@ -14,6 +14,7 @@ These two sound types should cover most use cases, but if you need something els
 create your own types that implement the [`SoundData`] and [`Sound`] traits.
 */
 
+mod common_controller;
 #[cfg(feature = "symphonia")]
 mod error;
 mod playback_position;
@@ -29,6 +30,7 @@ pub(crate) mod wrapper;
 
 use std::ops::{Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive};
 
+pub use common_controller::*;
 #[cfg(feature = "symphonia")]
 pub use error::*;
 pub use playback_position::*;
@@ -55,7 +57,10 @@ pub trait SoundData {
 	/// for playback, and the handle will be returned to the user by
 	/// [`AudioManager::play`](crate::manager::AudioManager::play).
 	#[allow(clippy::type_complexity)]
-	fn into_sound(self) -> Result<(Box<dyn Sound>, Self::Handle), Self::Error>;
+	fn into_sound(
+		self,
+		common_controller: CommonSoundController,
+	) -> Result<(Box<dyn Sound>, Self::Handle), Self::Error>;
 }
 
 /// An actively playing sound.

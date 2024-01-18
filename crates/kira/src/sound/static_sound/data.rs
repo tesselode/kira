@@ -14,7 +14,7 @@ use ringbuf::HeapRb;
 
 use crate::{
 	dsp::Frame,
-	sound::{Sound, SoundData},
+	sound::{CommonSoundController, Sound, SoundData},
 };
 
 use super::{handle::StaticSoundHandle, sound::StaticSound, StaticSoundSettings};
@@ -58,13 +58,17 @@ impl StaticSoundData {
 		self.with_settings(f(self.settings))
 	}
 
-	pub(super) fn split(self) -> (StaticSound, StaticSoundHandle) {
+	pub(super) fn split(
+		self,
+		common_controller: CommonSoundController,
+	) -> (StaticSound, StaticSoundHandle) {
 		let (command_producer, command_consumer) = HeapRb::new(COMMAND_BUFFER_CAPACITY).split();
 		let sound = StaticSound::new(self, command_consumer);
 		let shared = sound.shared();
 		(
 			sound,
 			StaticSoundHandle {
+				common_controller,
 				command_producer,
 				shared,
 			},
@@ -78,8 +82,11 @@ impl SoundData for StaticSoundData {
 	type Handle = StaticSoundHandle;
 
 	#[allow(clippy::type_complexity)]
-	fn into_sound(self) -> Result<(Box<dyn Sound>, Self::Handle), Self::Error> {
-		let (sound, handle) = self.split();
+	fn into_sound(
+		self,
+		common_controller: CommonSoundController,
+	) -> Result<(Box<dyn Sound>, Self::Handle), Self::Error> {
+		let (sound, handle) = self.split(common_controller);
 		Ok((Box::new(sound), handle))
 	}
 }

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
-	sound::{IntoOptionalRegion, PlaybackRate, PlaybackState, Region},
+	sound::{CommonSoundController, IntoOptionalRegion, PlaybackRate, PlaybackState, Region},
 	tween::{Tween, Value},
 	CommandError, Volume,
 };
@@ -12,6 +12,7 @@ use super::{sound::Shared, DecodeSchedulerCommand, SoundCommand};
 /// Controls a streaming sound.
 pub struct StreamingSoundHandle<Error> {
 	pub(crate) shared: Arc<Shared>,
+	pub(super) common_controller: CommonSoundController,
 	pub(crate) sound_command_producer: HeapProducer<SoundCommand>,
 	pub(crate) decode_scheduler_command_producer: HeapProducer<DecodeSchedulerCommand>,
 	pub(crate) error_consumer: HeapConsumer<Error>,

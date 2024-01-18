@@ -3,7 +3,7 @@ mod test;
 
 use std::{sync::Arc, time::Duration};
 
-use crate::sound::SoundData;
+use crate::sound::{CommonSoundController, SoundData};
 use ringbuf::HeapRb;
 
 use super::sound::Shared;
@@ -94,6 +94,7 @@ impl StreamingSoundData<crate::sound::FromFileError> {
 impl<Error: Send + 'static> StreamingSoundData<Error> {
 	pub(crate) fn split(
 		self,
+		common_controller: CommonSoundController,
 	) -> Result<
 		(
 			StreamingSound,
@@ -126,6 +127,7 @@ impl<Error: Send + 'static> StreamingSoundData<Error> {
 		);
 		let handle = StreamingSoundHandle {
 			shared,
+			common_controller,
 			sound_command_producer,
 			decode_scheduler_command_producer,
 			error_consumer,
@@ -140,8 +142,11 @@ impl<Error: Send + 'static> SoundData for StreamingSoundData<Error> {
 	type Handle = StreamingSoundHandle<Error>;
 
 	#[allow(clippy::type_complexity)]
-	fn into_sound(self) -> Result<(Box<dyn crate::sound::Sound>, Self::Handle), Self::Error> {
-		let (sound, handle, scheduler) = self.split()?;
+	fn into_sound(
+		self,
+		common_controller: CommonSoundController,
+	) -> Result<(Box<dyn crate::sound::Sound>, Self::Handle), Self::Error> {
+		let (sound, handle, scheduler) = self.split(common_controller)?;
 		scheduler.start();
 		Ok((Box::new(sound), handle))
 	}
