@@ -20,7 +20,7 @@ use crate::{
 	error::CommandError,
 	manager::command::ModulatorCommand,
 	modulator::{ModulatorBuilder, ModulatorId},
-	sound::SoundData,
+	sound::{wrapper::SoundWrapper, SoundData},
 	spatial::scene::{SpatialScene, SpatialSceneHandle, SpatialSceneId, SpatialSceneSettings},
 	track::{SubTrackId, Track, TrackBuilder, TrackHandle, TrackId},
 	tween::{Tween, Value},
@@ -173,7 +173,10 @@ impl<B: Backend> AudioManager<B> {
 			.into_sound()
 			.map_err(PlaySoundError::IntoSoundError)?;
 		self.command_producer
-			.push(Command::Sound(SoundCommand::Add(key, sound)))?;
+			.push(Command::Sound(SoundCommand::Add(
+				key,
+				SoundWrapper { sound },
+			)))?;
 		Ok(handle)
 	}
 
