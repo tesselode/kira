@@ -3,7 +3,7 @@ use std::sync::Arc;
 use ringbuf::HeapProducer;
 
 use crate::{
-	sound::{IntoOptionalRegion, PlaybackRate, PlaybackState, Region},
+	sound::{CommonSoundController, IntoOptionalRegion, PlaybackRate, PlaybackState, Region},
 	tween::{Tween, Value},
 	CommandError, Volume,
 };
@@ -12,6 +12,7 @@ use super::{sound::Shared, Command};
 
 /// Controls a static sound.
 pub struct StaticSoundHandle {
+	pub(super) common_controller: CommonSoundController,
 	pub(super) command_producer: HeapProducer<Command>,
 	pub(super) shared: Arc<Shared>,
 }
@@ -19,7 +20,7 @@ pub struct StaticSoundHandle {
 impl StaticSoundHandle {
 	/// Returns the current playback state of the sound.
 	pub fn state(&self) -> PlaybackState {
-		self.shared.state()
+		self.common_controller.state()
 	}
 
 	/// Returns the current playback position of the sound (in seconds).
@@ -94,9 +95,7 @@ impl StaticSoundHandle {
 		volume: impl Into<Value<Volume>>,
 		tween: Tween,
 	) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::SetVolume(volume.into(), tween))
-			.map_err(|_| CommandError::CommandQueueFull)
+		self.common_controller.set_volume(volume, tween)
 	}
 
 	/**
@@ -230,9 +229,7 @@ impl StaticSoundHandle {
 		panning: impl Into<Value<f64>>,
 		tween: Tween,
 	) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::SetPanning(panning.into(), tween))
-			.map_err(|_| CommandError::CommandQueueFull)
+		self.common_controller.set_panning(panning, tween)
 	}
 
 	/**
@@ -333,17 +330,13 @@ impl StaticSoundHandle {
 	/// Fades out the sound to silence with the given tween and then
 	/// pauses playback.
 	pub fn pause(&mut self, tween: Tween) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::Pause(tween))
-			.map_err(|_| CommandError::CommandQueueFull)
+		self.common_controller.pause(tween)
 	}
 
 	/// Resumes playback and fades in the sound from silence
 	/// with the given tween.
 	pub fn resume(&mut self, tween: Tween) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::Resume(tween))
-			.map_err(|_| CommandError::CommandQueueFull)
+		self.common_controller.resume(tween)
 	}
 
 	/// Fades out the sound to silence with the given tween and then
@@ -351,9 +344,7 @@ impl StaticSoundHandle {
 	///
 	/// Once the sound is stopped, it cannot be restarted.
 	pub fn stop(&mut self, tween: Tween) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::Stop(tween))
-			.map_err(|_| CommandError::CommandQueueFull)
+		self.common_controller.stop(tween)
 	}
 
 	/// Sets the playback position to the specified time in seconds.

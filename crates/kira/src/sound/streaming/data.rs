@@ -3,7 +3,7 @@ mod test;
 
 use std::{sync::Arc, time::Duration};
 
-use crate::sound::SoundData;
+use crate::sound::{CommonSoundController, CommonSoundSettings, SoundData};
 use ringbuf::HeapRb;
 
 use super::sound::Shared;
@@ -94,6 +94,7 @@ impl StreamingSoundData<crate::sound::FromFileError> {
 impl<Error: Send + 'static> StreamingSoundData<Error> {
 	pub(crate) fn split(
 		self,
+		common_controller: CommonSoundController,
 	) -> Result<
 		(
 			StreamingSound,
@@ -126,11 +127,39 @@ impl<Error: Send + 'static> StreamingSoundData<Error> {
 		);
 		let handle = StreamingSoundHandle {
 			shared,
+			common_controller,
 			sound_command_producer,
 			decode_scheduler_command_producer,
 			error_consumer,
 		};
 		Ok((sound, handle, scheduler))
+	}
+
+	#[cfg(test)]
+	pub(crate) fn split_without_handle(
+		self,
+	) -> Result<(StreamingSound, DecodeScheduler<Error>), Error> {
+		let (_, sound_command_consumer) = HeapRb::new(COMMAND_BUFFER_CAPACITY).split();
+		let (_, decode_scheduler_command_consumer) = HeapRb::new(COMMAND_BUFFER_CAPACITY).split();
+		let (error_producer, _) = HeapRb::new(ERROR_BUFFER_CAPACITY).split();
+		let sample_rate = self.decoder.sample_rate();
+		let shared = Arc::new(Shared::new());
+		let (scheduler, frame_consumer) = DecodeScheduler::new(
+			self.decoder,
+			self.settings,
+			shared.clone(),
+			decode_scheduler_command_consumer,
+			error_producer,
+		)?;
+		let sound = StreamingSound::new(
+			sample_rate,
+			self.settings,
+			shared.clone(),
+			frame_consumer,
+			sound_command_consumer,
+			&scheduler,
+		);
+		Ok((sound, scheduler))
 	}
 }
 
@@ -139,9 +168,22 @@ impl<Error: Send + 'static> SoundData for StreamingSoundData<Error> {
 
 	type Handle = StreamingSoundHandle<Error>;
 
+	fn common_settings(&self) -> CommonSoundSettings {
+		CommonSoundSettings {
+			start_time: self.settings.start_time,
+			volume: self.settings.volume,
+			panning: self.settings.panning,
+			output_destination: self.settings.output_destination,
+			fade_in_tween: self.settings.fade_in_tween,
+		}
+	}
+
 	#[allow(clippy::type_complexity)]
-	fn into_sound(self) -> Result<(Box<dyn crate::sound::Sound>, Self::Handle), Self::Error> {
-		let (sound, handle, scheduler) = self.split()?;
+	fn into_sound(
+		self,
+		common_controller: CommonSoundController,
+	) -> Result<(Box<dyn crate::sound::Sound>, Self::Handle), Self::Error> {
+		let (sound, handle, scheduler) = self.split(common_controller)?;
 		scheduler.start();
 		Ok((Box::new(sound), handle))
 	}

@@ -1,3 +1,4 @@
+#[cfg(test)]
 pub(crate) mod mock;
 #[cfg(feature = "symphonia")]
 pub(crate) mod symphonia;
