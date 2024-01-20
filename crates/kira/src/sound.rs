@@ -25,7 +25,6 @@ pub mod streaming; */
 #[cfg(feature = "symphonia")]
 mod symphonia;
 mod transport;
-mod util;
 pub(crate) mod wrapper;
 
 use std::ops::{Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive};

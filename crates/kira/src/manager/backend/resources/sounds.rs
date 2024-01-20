@@ -28,7 +28,7 @@ impl Sounds {
 
 	pub fn on_start_processing(&mut self) {
 		for (_, sound_wrapper) in &mut self.sound_wrappers {
-			sound_wrapper.sound.on_start_processing();
+			sound_wrapper.on_start_processing();
 		}
 		self.remove_unused_sounds();
 	}
@@ -39,7 +39,7 @@ impl Sounds {
 		}
 		for (_, sound_wrapper) in self
 			.sound_wrappers
-			.drain_filter(|sound_wrapper| sound_wrapper.sound.finished())
+			.drain_filter(|sound_wrapper| sound_wrapper.finished())
 		{
 			if self
 				.unused_sound_wrapper_producer
@@ -60,6 +60,31 @@ impl Sounds {
 				.sound_wrappers
 				.insert_with_key(key, sound)
 				.expect("Sound arena is full"),
+			SoundCommand::SetVolume(key, volume, tween) => {
+				if let Some(sound_wrapper) = self.sound_wrappers.get_mut(key) {
+					sound_wrapper.set_volume(volume, tween);
+				}
+			}
+			SoundCommand::SetPanning(key, panning, tween) => {
+				if let Some(sound_wrapper) = self.sound_wrappers.get_mut(key) {
+					sound_wrapper.set_panning(panning, tween);
+				}
+			}
+			SoundCommand::Pause(key, tween) => {
+				if let Some(sound_wrapper) = self.sound_wrappers.get_mut(key) {
+					sound_wrapper.pause(tween);
+				}
+			}
+			SoundCommand::Resume(key, tween) => {
+				if let Some(sound_wrapper) = self.sound_wrappers.get_mut(key) {
+					sound_wrapper.resume(tween);
+				}
+			}
+			SoundCommand::Stop(key, tween) => {
+				if let Some(sound_wrapper) = self.sound_wrappers.get_mut(key) {
+					sound_wrapper.stop(tween);
+				}
+			}
 		}
 	}
 

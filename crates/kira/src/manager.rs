@@ -20,7 +20,10 @@ use crate::{
 	error::CommandError,
 	manager::command::ModulatorCommand,
 	modulator::{ModulatorBuilder, ModulatorId},
-	sound::{wrapper::SoundWrapper, CommonSoundController, SoundData},
+	sound::{
+		wrapper::{SoundWrapper, SoundWrapperShared},
+		CommonSoundController, SoundData,
+	},
 	spatial::scene::{SpatialScene, SpatialSceneHandle, SpatialSceneId, SpatialSceneSettings},
 	track::{SubTrackId, Track, TrackBuilder, TrackHandle, TrackId},
 	tween::{Tween, Value},
@@ -170,10 +173,16 @@ impl<B: Backend> AudioManager<B> {
 			.try_reserve()
 			.map_err(|_| PlaySoundError::SoundLimitReached)?;
 		let settings = sound_data.common_settings();
+		let shared = SoundWrapperShared::new();
+		let common_controller = CommonSoundController {
+			key,
+			command_producer: self.command_producer.clone(),
+			shared: shared.clone(),
+		};
 		let (sound, handle) = sound_data
-			.into_sound(CommonSoundController {})
+			.into_sound(common_controller)
 			.map_err(PlaySoundError::IntoSoundError)?;
-		let sound_wrapper = SoundWrapper::new(sound, settings);
+		let sound_wrapper = SoundWrapper::new(sound, settings, shared);
 		self.command_producer
 			.push(Command::Sound(SoundCommand::Add(key, sound_wrapper)))?;
 		Ok(handle)
