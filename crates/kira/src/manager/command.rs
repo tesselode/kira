@@ -6,7 +6,7 @@ use glam::{Quat, Vec3};
 use crate::{
 	clock::{Clock, ClockId, ClockSpeed},
 	modulator::{Modulator, ModulatorId},
-	sound::Sound,
+	sound::wrapper::SoundWrapper,
 	spatial::{
 		emitter::{Emitter, EmitterId},
 		listener::{Listener, ListenerId},
@@ -18,7 +18,12 @@ use crate::{
 };
 
 pub(crate) enum SoundCommand {
-	Add(Key, Box<dyn Sound>),
+	Add(Key, SoundWrapper),
+	SetVolume(Key, Value<Volume>, Tween),
+	SetPanning(Key, Value<f64>, Tween),
+	Pause(Key, Tween),
+	Resume(Key, Tween),
+	Stop(Key, Tween),
 }
 
 pub(crate) enum MixerCommand {

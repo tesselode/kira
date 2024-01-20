@@ -9,7 +9,6 @@ use crate::{
 	sound::{
 		streaming::{decoder::Decoder, DecodeSchedulerCommand, StreamingSoundSettings},
 		transport::Transport,
-		PlaybackState,
 	},
 };
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
@@ -46,15 +45,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		command_consumer: HeapConsumer<DecodeSchedulerCommand>,
 		error_producer: HeapProducer<Error>,
 	) -> Result<(Self, HeapConsumer<TimestampedFrame>), Error> {
-		let (mut frame_producer, frame_consumer) = HeapRb::new(BUFFER_SIZE).split();
-		// pre-seed the frame ringbuffer with a zero frame. this is the "previous" frame
-		// when the sound just started.
-		frame_producer
-			.push(TimestampedFrame {
-				frame: Frame::ZERO,
-				index: 0,
-			})
-			.expect("The frame producer shouldn't be full because we just created it");
+		let (frame_producer, frame_consumer) = HeapRb::new(BUFFER_SIZE).split();
 		let sample_rate = decoder.sample_rate();
 		let num_frames = decoder.num_frames();
 		let scheduler = Self {
@@ -99,7 +90,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 
 	pub fn run(&mut self) -> Result<NextStep, Error> {
 		// if the sound was manually stopped, end the thread
-		if self.shared.state() == PlaybackState::Stopped {
+		if self.shared.stopped.load(Ordering::SeqCst) {
 			return Ok(NextStep::End);
 		}
 		// if the frame ringbuffer is full, sleep for a bit
@@ -132,6 +123,18 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 			return Ok(NextStep::End);
 		}
 		Ok(NextStep::Continue)
+	}
+
+	pub fn seek_to(&mut self, position: f64) -> Result<(), Error> {
+		let index = (position * self.sample_rate as f64).round() as i64;
+		self.seek_to_index(index)?;
+		Ok(())
+	}
+
+	pub fn seek_by(&mut self, amount: f64) -> Result<(), Error> {
+		let position = self.shared.position() + amount;
+		self.seek_to(position)?;
+		Ok(())
 	}
 
 	fn frame_at_index(&mut self, index: i64) -> Result<Frame, Error> {
@@ -168,18 +171,6 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 				}
 			}
 		}
-	}
-
-	fn seek_to(&mut self, position: f64) -> Result<(), Error> {
-		let index = (position * self.sample_rate as f64).round() as i64;
-		self.seek_to_index(index)?;
-		Ok(())
-	}
-
-	fn seek_by(&mut self, amount: f64) -> Result<(), Error> {
-		let position = self.shared.position() + amount;
-		self.seek_to(position)?;
-		Ok(())
 	}
 
 	fn seek_to_index(&mut self, index: i64) -> Result<(), Error> {

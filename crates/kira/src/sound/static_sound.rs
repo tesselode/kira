@@ -32,23 +32,15 @@ pub use data::*;
 pub use handle::*;
 pub use settings::*;
 
-use crate::{
-	tween::{Tween, Value},
-	Volume,
-};
+use crate::tween::{Tween, Value};
 
 use super::{PlaybackRate, Region};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Command {
-	SetVolume(Value<Volume>, Tween),
 	SetPlaybackRate(Value<PlaybackRate>, Tween),
-	SetPanning(Value<f64>, Tween),
 	SetPlaybackRegion(Region),
 	SetLoopRegion(Option<Region>),
-	Pause(Tween),
-	Resume(Tween),
-	Stop(Tween),
 	SeekBy(f64),
 	SeekTo(f64),
 }

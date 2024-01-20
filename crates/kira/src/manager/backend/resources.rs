@@ -13,7 +13,7 @@ use crate::{
 	clock::Clock,
 	manager::settings::Capacities,
 	modulator::Modulator,
-	sound::Sound,
+	sound::wrapper::SoundWrapper,
 	spatial::scene::SpatialScene,
 	track::{Track, TrackBuilder},
 };
@@ -24,7 +24,7 @@ use self::{
 };
 
 pub(crate) struct UnusedResourceProducers {
-	pub sound: HeapProducer<Box<dyn Sound>>,
+	pub sound: HeapProducer<SoundWrapper>,
 	pub sub_track: HeapProducer<Track>,
 	pub clock: HeapProducer<Clock>,
 	pub spatial_scene: HeapProducer<SpatialScene>,
@@ -32,7 +32,7 @@ pub(crate) struct UnusedResourceProducers {
 }
 
 pub(crate) struct UnusedResourceConsumers {
-	pub sound: Mutex<HeapConsumer<Box<dyn Sound>>>,
+	pub sound: Mutex<HeapConsumer<SoundWrapper>>,
 	pub sub_track: Mutex<HeapConsumer<Track>>,
 	pub clock: Mutex<HeapConsumer<Clock>>,
 	pub spatial_scene: Mutex<HeapConsumer<SpatialScene>>,
@@ -42,7 +42,7 @@ pub(crate) struct UnusedResourceConsumers {
 pub(crate) fn create_unused_resource_channels(
 	capacities: Capacities,
 ) -> (UnusedResourceProducers, UnusedResourceConsumers) {
-	let (unused_sound_producer, unused_sound_consumer) =
+	let (unused_sound_wrapper_producer, unused_sound_consumer) =
 		HeapRb::new(capacities.sound_capacity).split();
 	let (unused_sub_track_producer, unused_sub_track_consumer) =
 		HeapRb::new(capacities.sub_track_capacity).split();
@@ -54,7 +54,7 @@ pub(crate) fn create_unused_resource_channels(
 		HeapRb::new(capacities.modulator_capacity).split();
 	(
 		UnusedResourceProducers {
-			sound: unused_sound_producer,
+			sound: unused_sound_wrapper_producer,
 			sub_track: unused_sub_track_producer,
 			clock: unused_clock_producer,
 			spatial_scene: unused_spatial_scene_producer,
