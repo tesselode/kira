@@ -14,6 +14,7 @@ These two sound types should cover most use cases, but if you need something els
 create your own types that implement the [`SoundData`] and [`Sound`] traits.
 */
 
+mod common;
 #[cfg(feature = "symphonia")]
 mod error;
 mod playback_position;
@@ -24,10 +25,11 @@ pub mod streaming;
 #[cfg(feature = "symphonia")]
 mod symphonia;
 mod transport;
-mod util;
+pub(crate) mod wrapper;
 
 use std::ops::{Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive};
 
+pub use common::*;
 #[cfg(feature = "symphonia")]
 pub use error::*;
 pub use playback_position::*;
@@ -35,7 +37,7 @@ pub use playback_rate::*;
 
 use crate::{
 	clock::clock_info::ClockInfoProvider, dsp::Frame,
-	modulator::value_provider::ModulatorValueProvider, OutputDestination,
+	modulator::value_provider::ModulatorValueProvider,
 };
 
 /// A source of audio that is loaded, but not yet playing.
@@ -47,6 +49,9 @@ pub trait SoundData {
 	/// it has started.
 	type Handle;
 
+	/// Returns the common settings for this sound.
+	fn common_settings(&self) -> CommonSoundSettings;
+
 	/// Converts the loaded sound into a live, playing sound
 	/// and a handle to control it.
 	///
@@ -54,7 +59,10 @@ pub trait SoundData {
 	/// for playback, and the handle will be returned to the user by
 	/// [`AudioManager::play`](crate::manager::AudioManager::play).
 	#[allow(clippy::type_complexity)]
-	fn into_sound(self) -> Result<(Box<dyn Sound>, Self::Handle), Self::Error>;
+	fn into_sound(
+		self,
+		common_controller: CommonSoundController,
+	) -> Result<(Box<dyn Sound>, Self::Handle), Self::Error>;
 }
 
 /// An actively playing sound.
@@ -63,11 +71,10 @@ pub trait SoundData {
 /// or deallocate memory.
 #[allow(unused_variables)]
 pub trait Sound: Send {
-	/// Returns the destination that this sound's audio should be routed to.
+	/// Returns the sample rate of the sound (in Hz).
 	///
-	/// This will typically be set by the user with a settings struct that's passed
-	/// to the [`SoundData`] implementor.
-	fn output_destination(&mut self) -> OutputDestination;
+	/// This can change over time to affect a sound's playback rate.
+	fn sample_rate(&self) -> f64;
 
 	/// Called whenever a new batch of audio samples is requested by the backend.
 	///
@@ -76,12 +83,8 @@ pub trait Sound: Send {
 	fn on_start_processing(&mut self) {}
 
 	/// Produces the next [`Frame`] of audio.
-	///
-	/// `dt` is the time that's elapsed since the previous round of
-	/// processing (in seconds).
 	fn process(
 		&mut self,
-		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
 	) -> Frame;
@@ -92,6 +95,9 @@ pub trait Sound: Send {
 	/// end of the sound. For infinite sounds, this will typically be when the
 	/// handle for the sound is dropped.
 	fn finished(&self) -> bool;
+
+	/// Called when a sound is manually stopped.
+	fn on_stop(&mut self) {}
 }
 
 /// The playback state of a sound.

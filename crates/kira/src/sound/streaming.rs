@@ -36,21 +36,13 @@ pub use decoder::*;
 pub use handle::*;
 pub use settings::*;
 
-use crate::{
-	tween::{Tween, Value},
-	Volume,
-};
+use crate::tween::{Tween, Value};
 
 use super::{PlaybackRate, Region};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum SoundCommand {
-	SetVolume(Value<Volume>, Tween),
 	SetPlaybackRate(Value<PlaybackRate>, Tween),
-	SetPanning(Value<f64>, Tween),
-	Pause(Tween),
-	Resume(Tween),
-	Stop(Tween),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
