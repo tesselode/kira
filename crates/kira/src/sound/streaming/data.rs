@@ -134,6 +134,33 @@ impl<Error: Send + 'static> StreamingSoundData<Error> {
 		};
 		Ok((sound, handle, scheduler))
 	}
+
+	#[cfg(test)]
+	pub(crate) fn split_without_handle(
+		self,
+	) -> Result<(StreamingSound, DecodeScheduler<Error>), Error> {
+		let (_, sound_command_consumer) = HeapRb::new(COMMAND_BUFFER_CAPACITY).split();
+		let (_, decode_scheduler_command_consumer) = HeapRb::new(COMMAND_BUFFER_CAPACITY).split();
+		let (error_producer, _) = HeapRb::new(ERROR_BUFFER_CAPACITY).split();
+		let sample_rate = self.decoder.sample_rate();
+		let shared = Arc::new(Shared::new());
+		let (scheduler, frame_consumer) = DecodeScheduler::new(
+			self.decoder,
+			self.settings,
+			shared.clone(),
+			decode_scheduler_command_consumer,
+			error_producer,
+		)?;
+		let sound = StreamingSound::new(
+			sample_rate,
+			self.settings,
+			shared.clone(),
+			frame_consumer,
+			sound_command_consumer,
+			&scheduler,
+		);
+		Ok((sound, scheduler))
+	}
 }
 
 impl<Error: Send + 'static> SoundData for StreamingSoundData<Error> {

@@ -96,7 +96,10 @@ impl SoundWrapper {
 		{
 			match self.state {
 				PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
-				PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),
+				PlaybackState::Stopping => {
+					self.set_state(PlaybackState::Stopped);
+					self.sound.on_stop();
+				}
 				_ => {}
 			}
 		}

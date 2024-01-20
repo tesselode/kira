@@ -20,8 +20,8 @@ mod error;
 mod playback_position;
 mod playback_rate;
 pub mod static_sound;
-/* #[cfg(not(target_arch = "wasm32"))]
-pub mod streaming; */
+#[cfg(not(target_arch = "wasm32"))]
+pub mod streaming;
 #[cfg(feature = "symphonia")]
 mod symphonia;
 mod transport;
@@ -95,6 +95,9 @@ pub trait Sound: Send {
 	/// end of the sound. For infinite sounds, this will typically be when the
 	/// handle for the sound is dropped.
 	fn finished(&self) -> bool;
+
+	/// Called when a sound is manually stopped.
+	fn on_stop(&mut self) {}
 }
 
 /// The playback state of a sound.
