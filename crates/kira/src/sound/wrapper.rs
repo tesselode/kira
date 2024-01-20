@@ -128,7 +128,7 @@ impl SoundWrapper {
 			WhenToStart::Never => return Frame::ZERO,
 		}
 
-		// play back audio
+		// collect audio output from the underlying sound
 		self.time_since_last_frame += dt;
 		while self.time_since_last_frame >= 1.0 / self.sound.sample_rate() {
 			self.time_since_last_frame -= 1.0 / self.sound.sample_rate();
@@ -139,6 +139,12 @@ impl SoundWrapper {
 				.sound
 				.process(clock_info_provider, modulator_value_provider);
 		}
+
+		if self.sound.finished() {
+			self.set_state(PlaybackState::Stopped);
+		}
+
+		// play back audio
 		interpolate_frame(
 			self.resample_buffer[0],
 			self.resample_buffer[1],

@@ -32,10 +32,7 @@ pub use data::*;
 pub use handle::*;
 pub use settings::*;
 
-use crate::{
-	tween::{Tween, Value},
-	Volume,
-};
+use crate::tween::{Tween, Value};
 
 use super::{PlaybackRate, Region};
 
