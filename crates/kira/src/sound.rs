@@ -19,8 +19,8 @@ mod common;
 mod error;
 mod playback_position;
 mod playback_rate;
-/* pub mod static_sound;
-#[cfg(not(target_arch = "wasm32"))]
+pub mod static_sound;
+/* #[cfg(not(target_arch = "wasm32"))]
 pub mod streaming; */
 #[cfg(feature = "symphonia")]
 mod symphonia;

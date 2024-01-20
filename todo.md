@@ -1,11 +1,2 @@
-v0.8 todo:
-
-- Consider sealing `IntoOptionalRegion`
-- Tweak spatial sound defaults
-
-Future:
-
-- Plugin system?
-- Spatial audio:
-  - Doppler effect
-  - Link emitter distance to effects
+- Re-add tests for sound playback position reporting
+- Make sure sounds report their state as stopped when they're finished
