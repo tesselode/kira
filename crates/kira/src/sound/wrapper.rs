@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod test;
+
 use std::sync::{
 	atomic::{AtomicU8, Ordering},
 	Arc,
