@@ -33,11 +33,10 @@ impl StaticSound {
 	pub fn new(data: StaticSoundData, command_consumer: HeapConsumer<Command>) -> Self {
 		let settings = data.settings;
 		let transport = Transport::new(
-			data.settings.playback_region,
+			data.frames.len() as i64,
 			data.settings.loop_region,
 			data.settings.reverse,
 			data.sample_rate,
-			data.frames.len(),
 		);
 		let starting_frame_index = transport.position;
 		let position = starting_frame_index as f64 / data.sample_rate as f64;
@@ -104,11 +103,6 @@ impl Sound for StaticSound {
 				Command::SetPlaybackRate(playback_rate, tween) => {
 					self.playback_rate.set(playback_rate, tween)
 				}
-				Command::SetPlaybackRegion(playback_region) => self.transport.set_playback_region(
-					playback_region,
-					self.data.sample_rate,
-					self.data.frames.len(),
-				),
 				Command::SetLoopRegion(loop_region) => self.transport.set_loop_region(
 					loop_region,
 					self.data.sample_rate,

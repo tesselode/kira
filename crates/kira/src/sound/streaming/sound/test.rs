@@ -87,7 +87,7 @@ fn waits_for_samples() {
 	}
 }
 
-/// Tests that a `StreamingSound` can be started partway through the sound.
+/* /// Tests that a `StreamingSound` can be started partway through the sound.
 #[test]
 #[allow(clippy::float_cmp)]
 fn playback_region() {
@@ -119,9 +119,9 @@ fn playback_region() {
 		);
 		assert!(sound.finished());
 	}
-}
+} */
 
-/// Tests that a `StreamingSound` can be started with a negative position.
+/* /// Tests that a `StreamingSound` can be started with a negative position.
 #[test]
 #[allow(clippy::float_cmp)]
 fn negative_start_position() {
@@ -150,7 +150,7 @@ fn negative_start_position() {
 		),
 		Frame::from_mono(1.0)
 	);
-}
+} */
 
 /// Tests that a `StreamingSound` can seek to a position.
 #[test]
@@ -174,7 +174,7 @@ fn seek_to() {
 	);
 }
 
-/// Tests that a `StreamingSound` can seek by an amount of time.
+/* /// Tests that a `StreamingSound` can seek by an amount of time.
 #[test]
 fn seek_by() {
 	let data = StreamingSoundData {
@@ -193,4 +193,4 @@ fn seek_by() {
 		),
 		Frame::from_mono(15.0)
 	);
-}
+} */

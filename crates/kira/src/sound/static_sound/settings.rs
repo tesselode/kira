@@ -10,8 +10,6 @@ use crate::{
 pub struct StaticSoundSettings {
 	/// When the sound should start playing.
 	pub start_time: StartTime,
-	/// The portion of the sound that should be played.
-	pub playback_region: Region,
 	/// The portion of the sound that should be looped.
 	pub loop_region: Option<Region>,
 	/// Whether the sound should be played in reverse.
@@ -37,7 +35,6 @@ impl StaticSoundSettings {
 	pub fn new() -> Self {
 		Self {
 			start_time: StartTime::default(),
-			playback_region: Region::default(),
 			reverse: false,
 			loop_region: None,
 			volume: Value::Fixed(Volume::Amplitude(1.0)),
@@ -72,32 +69,6 @@ impl StaticSoundSettings {
 	pub fn start_time(self, start_time: impl Into<StartTime>) -> Self {
 		Self {
 			start_time: start_time.into(),
-			..self
-		}
-	}
-
-	/**
-	Sets the portion of the sound that should be played.
-
-	# Examples
-
-	Configure a sound to play from 3 seconds in to the end:
-
-	```
-	# use kira::sound::static_sound::StaticSoundSettings;
-	let settings = StaticSoundSettings::new().playback_region(3.0..);
-	```
-
-	Configure a sound to play from 2 to 4 seconds:
-
-	```
-	# use kira::sound::static_sound::StaticSoundSettings;
-	let settings = StaticSoundSettings::new().playback_region(2.0..4.0);
-	```
-	*/
-	pub fn playback_region(self, playback_region: impl Into<Region>) -> Self {
-		Self {
-			playback_region: playback_region.into(),
 			..self
 		}
 	}
