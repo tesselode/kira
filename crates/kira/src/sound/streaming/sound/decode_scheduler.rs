@@ -28,6 +28,7 @@ pub(crate) struct DecodeScheduler<Error: Send + 'static> {
 	decoder: Box<dyn Decoder<Error = Error>>,
 	sample_rate: u32,
 	num_frames: usize,
+	slice: Option<(i64, i64)>,
 	transport: Transport,
 	decoder_current_frame_index: usize,
 	decoded_chunk: Option<DecodedChunk>,
@@ -40,6 +41,7 @@ pub(crate) struct DecodeScheduler<Error: Send + 'static> {
 impl<Error: Send + 'static> DecodeScheduler<Error> {
 	pub fn new(
 		decoder: Box<dyn Decoder<Error = Error>>,
+		slice: Option<(i64, i64)>,
 		settings: StreamingSoundSettings,
 		shared: Arc<Shared>,
 		command_consumer: HeapConsumer<DecodeSchedulerCommand>,
@@ -52,6 +54,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 			decoder,
 			sample_rate,
 			num_frames,
+			slice,
 			transport: Transport::new(num_frames as i64, settings.loop_region, false, sample_rate),
 			decoder_current_frame_index: 0,
 			decoded_chunk: None,
@@ -129,6 +132,15 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 	}
 
 	fn frame_at_index(&mut self, index: i64) -> Result<Frame, Error> {
+		let start = self.slice.map(|(start, _)| start).unwrap_or(0);
+		let end = self
+			.slice
+			.map(|(_, end)| end)
+			.unwrap_or(self.num_frames as i64);
+		if index < 0 || index >= end - start {
+			return Ok(Frame::ZERO);
+		}
+		let index = start + index;
 		if index < 0 {
 			return Ok(Frame::ZERO);
 		}
