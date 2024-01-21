@@ -61,10 +61,10 @@ impl StaticSoundData {
 	pub fn slice(&self, region: impl IntoOptionalRegion) -> Self {
 		let mut new = self.clone();
 		new.slice = region.into_optional_region().map(|Region { start, end }| {
-			let start = start.into_samples(self.sample_rate) as usize;
+			let start = start.into_samples(self.sample_rate);
 			let end = match end {
 				EndPosition::EndOfAudio => self.frames.len(),
-				EndPosition::Custom(end) => end.into_samples(self.sample_rate) as usize,
+				EndPosition::Custom(end) => end.into_samples(self.sample_rate),
 			};
 			(start, end)
 		});

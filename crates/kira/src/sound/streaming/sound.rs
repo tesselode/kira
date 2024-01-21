@@ -66,7 +66,7 @@ pub(crate) struct StreamingSound {
 	state: PlaybackState,
 	when_to_start: WhenToStart,
 	volume_fade: Parameter<Volume>,
-	current_frame: i64,
+	current_frame: usize,
 	fractional_position: f64,
 	volume: Parameter<Volume>,
 	playback_rate: Parameter<PlaybackRate>,
@@ -271,5 +271,5 @@ impl Sound for StreamingSound {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) struct TimestampedFrame {
 	frame: Frame,
-	index: i64,
+	index: usize,
 }

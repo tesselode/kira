@@ -28,7 +28,7 @@ fn stops_at_start_when_playing_backwards() {
 		assert!(transport.playing);
 		transport.decrement_position();
 	}
-	assert_eq!(transport.position, -1);
+	assert_eq!(transport.position, 0);
 	assert!(!transport.playing);
 }
 
@@ -101,18 +101,7 @@ fn seek_loop_wrapping() {
 
 #[test]
 fn seek_out_of_bounds() {
-	let mut transport = Transport {
-		position: 0,
-		loop_region: None,
-		playing: true,
-	};
-	transport.seek_to(-1, 10);
-	assert!(!transport.playing);
-	let mut transport = Transport {
-		position: 0,
-		loop_region: None,
-		playing: true,
-	};
-	transport.seek_to(11, 10);
+	let mut transport = Transport::new(5, None, false, 1, 10);
+	transport.seek_to(10, 10);
 	assert!(!transport.playing);
 }

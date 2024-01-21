@@ -658,33 +658,6 @@ fn start_position() {
 	}
 }
 
-/// Tests that a `StreamingSound` can be started with a negative position.
-#[test]
-#[allow(clippy::float_cmp)]
-fn negative_start_position() {
-	let data = StreamingSoundData {
-		decoder: Box::new(MockDecoder::new(
-			(0..10).map(|i| Frame::from_mono(i as f32)).collect(),
-		)),
-		settings: StreamingSoundSettings::new().start_position(-5.0),
-		slice: None,
-	};
-	let (mut sound, _, mut scheduler) = data.split().unwrap();
-	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
-
-	for _ in 0..5 {
-		assert_eq!(
-			sound.process(
-				1.0,
-				&MockClockInfoProviderBuilder::new(0).build(),
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
-			Frame::ZERO
-		);
-	}
-	expect_frame_soon(Frame::from_mono(1.0), &mut sound);
-}
-
 /// Tests that a `StreamingSound` properly obeys looping behavior when
 /// playing forward.
 #[test]
