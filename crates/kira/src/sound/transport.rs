@@ -4,21 +4,21 @@ use super::{EndPosition, Region};
 mod test;
 
 pub struct Transport {
-	pub num_frames: i64,
-	pub position: i64,
+	pub num_frames: usize,
+	pub position: usize,
 	/// The start and end frames of the sound that should be looped. The upper bound
 	/// is *exclusive*.
-	pub loop_region: Option<(i64, i64)>,
+	pub loop_region: Option<(usize, usize)>,
 	pub playing: bool,
 }
 
 impl Transport {
 	pub fn new(
-		num_frames: i64,
+		num_frames: usize,
 		loop_region: Option<Region>,
 		reverse: bool,
 		sample_rate: u32,
-		start_position: i64,
+		start_position: usize,
 	) -> Self {
 		let loop_region = loop_region.map(|loop_region| {
 			let loop_start = loop_region.start.into_samples(sample_rate);
@@ -44,7 +44,7 @@ impl Transport {
 		&mut self,
 		loop_region: Option<Region>,
 		sample_rate: u32,
-		num_frames: i64,
+		num_frames: usize,
 	) {
 		self.loop_region = loop_region.map(|loop_region| {
 			let loop_start = loop_region.start.into_samples(sample_rate);
@@ -69,18 +69,19 @@ impl Transport {
 	}
 
 	pub fn decrement_position(&mut self) {
-		self.position -= 1;
 		if let Some((loop_start, loop_end)) = self.loop_region {
-			while self.position < loop_start {
+			while self.position <= loop_start {
 				self.position += loop_end - loop_start;
 			}
 		}
-		if self.position < 0 {
+		if self.position == 0 {
 			self.playing = false;
+		} else {
+			self.position -= 1;
 		}
 	}
 
-	pub fn seek_to(&mut self, mut position: i64) {
+	pub fn seek_to(&mut self, mut position: usize) {
 		if let Some((loop_start, loop_end)) = self.loop_region {
 			if position > self.position {
 				while position >= loop_end {
@@ -93,7 +94,7 @@ impl Transport {
 			}
 		}
 		self.position = position;
-		if self.position < 0 || self.position >= self.num_frames {
+		if self.position >= self.num_frames {
 			self.playing = false;
 		}
 	}

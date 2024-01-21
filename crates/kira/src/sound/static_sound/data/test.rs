@@ -78,6 +78,5 @@ fn sliced_frame() {
 	for i in 0..2 {
 		assert_eq!(static_sound.frame(i), Frame::from_mono(3.0 + i as f32));
 	}
-	assert_eq!(static_sound.frame(-1), Frame::ZERO);
 	assert_eq!(static_sound.frame(2), Frame::ZERO);
 }

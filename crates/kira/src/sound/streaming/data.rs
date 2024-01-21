@@ -22,7 +22,7 @@ pub struct StreamingSoundData<Error: Send + 'static> {
 	pub(crate) decoder: Box<dyn Decoder<Error = Error>>,
 	/// Settings for the streaming sound.
 	pub settings: StreamingSoundSettings,
-	pub slice: Option<(i64, i64)>,
+	pub slice: Option<(usize, usize)>,
 }
 
 impl<Error: Send> StreamingSoundData<Error> {
@@ -40,10 +40,10 @@ impl<Error: Send> StreamingSoundData<Error> {
 }
 
 impl<T: Send> StreamingSoundData<T> {
-	pub fn num_frames(&self) -> i64 {
+	pub fn num_frames(&self) -> usize {
 		self.slice
 			.map(|(start, end)| end - start)
-			.unwrap_or(self.decoder.num_frames() as i64)
+			.unwrap_or(self.decoder.num_frames())
 	}
 
 	/// Returns the duration of the audio.
@@ -56,7 +56,7 @@ impl<T: Send> StreamingSoundData<T> {
 		let slice = (
 			start.into_samples(self.decoder.sample_rate()),
 			match end {
-				EndPosition::EndOfAudio => self.decoder.num_frames() as i64,
+				EndPosition::EndOfAudio => self.decoder.num_frames(),
 				EndPosition::Custom(end) => end.into_samples(self.decoder.sample_rate()),
 			},
 		);
