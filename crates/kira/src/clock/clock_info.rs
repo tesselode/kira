@@ -9,7 +9,7 @@
 
 use atomic_arena::{error::ArenaFull, Arena};
 
-use crate::{manager::backend::resources::clocks::Clocks, StartTime};
+use crate::manager::backend::resources::clocks::Clocks;
 
 use super::{ClockId, ClockTime};
 
@@ -51,19 +51,15 @@ impl<'a> ClockInfoProvider<'a> {
 
 	/// Returns whether something with the given start time should
 	/// start now, later, or never given the current state of the clocks.
-	pub fn when_to_start(&self, start_time: StartTime) -> WhenToStart {
-		if let StartTime::ClockTime(ClockTime { clock, ticks }) = start_time {
-			if let Some(clock_info) = self.get(clock) {
-				if clock_info.ticking && clock_info.ticks >= ticks {
-					WhenToStart::Now
-				} else {
-					WhenToStart::Later
-				}
+	pub fn when_to_start(&self, ClockTime { clock, ticks }: ClockTime) -> WhenToStart {
+		if let Some(clock_info) = self.get(clock) {
+			if clock_info.ticking && clock_info.ticks >= ticks {
+				WhenToStart::Now
 			} else {
-				WhenToStart::Never
+				WhenToStart::Later
 			}
 		} else {
-			WhenToStart::Now
+			WhenToStart::Never
 		}
 	}
 }

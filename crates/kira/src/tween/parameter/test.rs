@@ -43,7 +43,36 @@ fn tweening() {
 	assert_eq!(parameter.value(), 1.0);
 }
 
-/// Tests that a Parameter with a clock time set as
+/// Tests that a `Parameter` with a delayed start time waits for
+/// that time before it begins tweening.
+#[test]
+#[allow(clippy::float_cmp)]
+fn waits_for_delay() {
+	let clock_info_provider = MockClockInfoProviderBuilder::new(0).build();
+	let modulator_value_provider = MockModulatorValueProviderBuilder::new(0).build();
+
+	let mut parameter = Parameter::new(Value::Fixed(0.0), 0.0);
+	parameter.set(
+		Value::Fixed(1.0),
+		Tween {
+			start_time: StartTime::Delayed(Duration::from_secs(2)),
+			duration: Duration::from_secs(1),
+			..Default::default()
+		},
+	);
+
+	// value should not be changing yet
+	for _ in 0..2 {
+		assert_eq!(parameter.value(), 0.0);
+		assert!(!parameter.update(1.0, &clock_info_provider, &modulator_value_provider));
+	}
+
+	// the tween should start now
+	assert!(parameter.update(1.0, &clock_info_provider, &modulator_value_provider));
+	assert_eq!(parameter.value(), 1.0);
+}
+
+/// Tests that a `Parameter` with a clock time set as
 /// the start time waits for that time before it
 /// begins tweening.
 #[test]
