@@ -7,9 +7,12 @@ mod handle;
 #[cfg(test)]
 mod test;
 
-use std::sync::{
-	atomic::{AtomicBool, Ordering},
-	Arc,
+use std::{
+	sync::{
+		atomic::{AtomicBool, Ordering},
+		Arc,
+	},
+	time::Duration,
 };
 
 pub use builder::*;
@@ -20,6 +23,7 @@ use ringbuf::HeapConsumer;
 use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
 	tween::{Tween, Tweenable},
+	StartTime,
 };
 
 use super::{value_provider::ModulatorValueProvider, Modulator};
@@ -75,14 +79,30 @@ impl Modulator for Tweener {
 			tween,
 		} = &mut self.state
 		{
-			if clock_info_provider.when_to_start(tween.start_time) == WhenToStart::Now {
-				*time += dt;
-				if *time >= tween.duration.as_secs_f64() {
-					self.value = values.1;
-					self.state = State::Idle;
-				} else {
-					self.value = Tweenable::interpolate(values.0, values.1, tween.value(*time));
+			let started = match &mut tween.start_time {
+				StartTime::Immediate => true,
+				StartTime::Delayed(time_remaining) => {
+					if time_remaining.is_zero() {
+						true
+					} else {
+						*time_remaining =
+							time_remaining.saturating_sub(Duration::from_secs_f64(dt));
+						false
+					}
 				}
+				StartTime::ClockTime(clock_time) => {
+					clock_info_provider.when_to_start(*clock_time) == WhenToStart::Now
+				}
+			};
+			if !started {
+				return;
+			}
+			*time += dt;
+			if *time >= tween.duration.as_secs_f64() {
+				self.value = values.1;
+				self.state = State::Idle;
+			} else {
+				self.value = Tweenable::interpolate(values.0, values.1, tween.value(*time));
 			}
 		}
 	}
