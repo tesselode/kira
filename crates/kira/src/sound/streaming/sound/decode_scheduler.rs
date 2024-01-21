@@ -52,13 +52,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 			decoder,
 			sample_rate,
 			num_frames,
-			transport: Transport::new(
-				settings.playback_region,
-				settings.loop_region,
-				false,
-				sample_rate,
-				num_frames,
-			),
+			transport: Transport::new(num_frames as i64, settings.loop_region, false, sample_rate),
 			decoder_current_frame_index: 0,
 			decoded_chunk: None,
 			command_consumer,
@@ -100,9 +94,6 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		// check for seek commands
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
-				DecodeSchedulerCommand::SetPlaybackRegion(playback_region) => self
-					.transport
-					.set_playback_region(playback_region, self.sample_rate, self.num_frames),
 				DecodeSchedulerCommand::SetLoopRegion(loop_region) => self
 					.transport
 					.set_loop_region(loop_region, self.sample_rate, self.num_frames),

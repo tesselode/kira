@@ -39,7 +39,6 @@ use super::{PlaybackRate, Region};
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Command {
 	SetPlaybackRate(Value<PlaybackRate>, Tween),
-	SetPlaybackRegion(Region),
 	SetLoopRegion(Option<Region>),
 	SeekBy(f64),
 	SeekTo(f64),

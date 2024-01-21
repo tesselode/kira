@@ -47,7 +47,6 @@ pub(crate) enum SoundCommand {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum DecodeSchedulerCommand {
-	SetPlaybackRegion(Region),
 	SetLoopRegion(Option<Region>),
 	SeekBy(f64),
 	SeekTo(f64),

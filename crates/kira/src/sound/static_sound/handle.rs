@@ -3,7 +3,7 @@ use std::sync::Arc;
 use ringbuf::HeapProducer;
 
 use crate::{
-	sound::{CommonSoundController, IntoOptionalRegion, PlaybackRate, PlaybackState, Region},
+	sound::{CommonSoundController, IntoOptionalRegion, PlaybackRate, PlaybackState},
 	tween::{Tween, Value},
 	CommandError, Volume,
 };
@@ -230,46 +230,6 @@ impl StaticSoundHandle {
 		tween: Tween,
 	) -> Result<(), CommandError> {
 		self.common_controller.set_panning(panning, tween)
-	}
-
-	/**
-	Sets the portion of the sound that should be played.
-
-	# Examples
-
-	Set the sound to play from 3 seconds in to the end:
-
-	```no_run
-	# use kira::{
-	# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
-	# 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
-	# };
-	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	# let mut sound = manager.play(StaticSoundData::from_file("sound.ogg", StaticSoundSettings::default())?)?;
-	sound.set_playback_region(3.0..)?;
-	# Result::<(), Box<dyn std::error::Error>>::Ok(())
-	```
-
-	Set the sound to play from 2 to 4 seconds:
-
-	```no_run
-	# use kira::{
-	# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
-	# 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
-	# };
-	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	# let mut sound = manager.play(StaticSoundData::from_file("sound.ogg", StaticSoundSettings::default())?)?;
-	sound.set_playback_region(2.0..4.0)?;
-	# Result::<(), Box<dyn std::error::Error>>::Ok(())
-	```
-	*/
-	pub fn set_playback_region(
-		&mut self,
-		playback_region: impl Into<Region>,
-	) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::SetPlaybackRegion(playback_region.into()))
-			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
 	/**
