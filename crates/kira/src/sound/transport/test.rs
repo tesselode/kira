@@ -6,7 +6,6 @@ fn stops_at_end() {
 		position: 2,
 		playback_region: (2, 4),
 		loop_region: None,
-		reverse: false,
 		playing: true,
 	};
 	for i in 2..=4 {
@@ -24,7 +23,6 @@ fn stops_at_start_when_playing_backwards() {
 		position: 2,
 		playback_region: (2, 4),
 		loop_region: None,
-		reverse: false,
 		playing: true,
 	};
 	transport.position = 4;
@@ -43,7 +41,6 @@ fn loops() {
 		position: 0,
 		playback_region: (0, 10),
 		loop_region: Some((2, 5)),
-		reverse: false,
 		playing: true,
 	};
 	for i in 0..5 {
@@ -64,7 +61,6 @@ fn loops_when_playing_backward() {
 		position: 0,
 		playback_region: (0, 10),
 		loop_region: Some((2, 5)),
-		reverse: false,
 		playing: true,
 	};
 	transport.position = 10;
@@ -86,7 +82,6 @@ fn loop_wrapping() {
 		position: 0,
 		playback_region: (0, 10),
 		loop_region: Some((2, 5)),
-		reverse: false,
 		playing: true,
 	};
 	transport.position = 6;
@@ -103,7 +98,6 @@ fn seek_loop_wrapping() {
 		position: 0,
 		playback_region: (0, 10),
 		loop_region: Some((2, 5)),
-		reverse: false,
 		playing: true,
 	};
 	transport.seek_to(7);
@@ -118,7 +112,6 @@ fn seek_out_of_bounds() {
 		position: 0,
 		playback_region: (0, 10),
 		loop_region: None,
-		reverse: false,
 		playing: true,
 	};
 	transport.seek_to(-1);
@@ -127,7 +120,6 @@ fn seek_out_of_bounds() {
 		position: 0,
 		playback_region: (0, 10),
 		loop_region: None,
-		reverse: false,
 		playing: true,
 	};
 	transport.seek_to(11);

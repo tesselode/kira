@@ -13,7 +13,6 @@ pub struct Transport {
 	/// The start and end frames of the sound that should be looped. The upper bound
 	/// is *exclusive*.
 	pub loop_region: Option<(i64, i64)>,
-	pub reverse: bool,
 	pub playing: bool,
 }
 
@@ -51,7 +50,6 @@ impl Transport {
 			},
 			playback_region,
 			loop_region,
-			reverse,
 			playing: true,
 		}
 	}
