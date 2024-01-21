@@ -33,7 +33,7 @@ pub struct StaticSoundData {
 	pub frames: Arc<[Frame]>,
 	/// Settings for the sound.
 	pub settings: StaticSoundSettings,
-	pub slice: Option<(i64, i64)>,
+	pub slice: Option<(usize, usize)>,
 }
 
 impl StaticSoundData {
@@ -59,7 +59,7 @@ impl StaticSoundData {
 		let slice = (
 			start.into_samples(self.sample_rate),
 			match end {
-				EndPosition::EndOfAudio => self.frames.len() as i64,
+				EndPosition::EndOfAudio => self.frames.len() as usize,
 				EndPosition::Custom(end) => end.into_samples(self.sample_rate),
 			},
 		);
@@ -69,26 +69,23 @@ impl StaticSoundData {
 		}
 	}
 
-	pub fn frame(&self, index: i64) -> Frame {
+	pub fn frame(&self, index: usize) -> Frame {
 		let start = self.slice.map(|(start, _)| start).unwrap_or(0);
-		let end = self
-			.slice
-			.map(|(_, end)| end)
-			.unwrap_or(self.frames.len() as i64);
-		if index < 0 || index >= end - start {
+		let end = self.slice.map(|(_, end)| end).unwrap_or(self.frames.len());
+		if index >= end - start {
 			return Frame::ZERO;
 		}
 		let absolute_index = start + index;
-		if absolute_index < 0 || absolute_index >= self.frames.len() as i64 {
+		if absolute_index >= self.frames.len() {
 			return Frame::ZERO;
 		}
-		self.frames[absolute_index as usize]
+		self.frames[absolute_index]
 	}
 
-	pub fn num_frames(&self) -> i64 {
+	pub fn num_frames(&self) -> usize {
 		self.slice
 			.map(|(start, end)| end - start)
-			.unwrap_or(self.frames.len() as i64)
+			.unwrap_or(self.frames.len())
 	}
 
 	/// Returns the duration of the audio.

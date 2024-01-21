@@ -49,7 +49,7 @@ pub(crate) struct StreamingSound {
 	command_consumer: HeapConsumer<SoundCommand>,
 	sample_rate: u32,
 	frame_consumer: HeapConsumer<TimestampedFrame>,
-	current_frame: i64,
+	current_frame: usize,
 	playback_rate: Parameter<PlaybackRate>,
 	shared: Arc<Shared>,
 }
@@ -141,5 +141,5 @@ impl Sound for StreamingSound {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) struct TimestampedFrame {
 	frame: Frame,
-	index: i64,
+	index: usize,
 }
