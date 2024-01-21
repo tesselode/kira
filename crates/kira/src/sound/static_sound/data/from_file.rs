@@ -83,6 +83,7 @@ impl StaticSoundData {
 			sample_rate,
 			frames: frames.into(),
 			settings,
+			slice: None,
 		})
 	}
 }

@@ -99,7 +99,7 @@ impl StaticSoundSettings {
 	*/
 	pub fn loop_region(self, loop_region: impl IntoOptionalRegion) -> Self {
 		Self {
-			loop_region: loop_region.into_optional_loop_region(),
+			loop_region: loop_region.into_optional_region(),
 			..self
 		}
 	}

@@ -25,6 +25,7 @@ fn plays_all_samples() {
 			Frame::from_mono(3.0),
 		]),
 		settings: StaticSoundSettings::new(),
+		slice: None,
 	};
 	let (_, heap_consumer) = HeapRb::new(1).split();
 	let mut sound = StaticSound::new(data, heap_consumer);
@@ -130,6 +131,7 @@ fn seek_to() {
 		sample_rate: 1,
 		frames: (0..100).map(|i| Frame::from_mono(i as f32)).collect(),
 		settings: StaticSoundSettings::new(),
+		slice: None,
 	};
 	let (_, heap_consumer) = HeapRb::new(1).split();
 	let mut sound = StaticSound::new(data, heap_consumer);
@@ -172,6 +174,7 @@ fn reverse() {
 		sample_rate: 1,
 		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
 		settings: StaticSoundSettings::new().reverse(true),
+		slice: None,
 	};
 	let (_, heap_consumer) = HeapRb::new(1).split();
 	let mut sound = StaticSound::new(data, heap_consumer);

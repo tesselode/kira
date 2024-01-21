@@ -283,7 +283,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	) -> Result<(), CommandError> {
 		self.decode_scheduler_command_producer
 			.push(DecodeSchedulerCommand::SetLoopRegion(
-				loop_region.into_optional_loop_region(),
+				loop_region.into_optional_region(),
 			))
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
