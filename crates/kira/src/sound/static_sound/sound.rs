@@ -3,9 +3,12 @@ mod resampler;
 #[cfg(test)]
 mod test;
 
-use std::sync::{
-	atomic::{AtomicU64, AtomicU8, Ordering},
-	Arc,
+use std::{
+	sync::{
+		atomic::{AtomicU64, AtomicU8, Ordering},
+		Arc,
+	},
+	time::Duration,
 };
 
 use ringbuf::HeapConsumer;
@@ -30,7 +33,7 @@ pub(super) struct StaticSound {
 	command_consumer: HeapConsumer<Command>,
 	data: StaticSoundData,
 	state: PlaybackState,
-	when_to_start: WhenToStart,
+	start_time: StartTime,
 	resampler: Resampler,
 	transport: Transport,
 	fractional_position: f64,
@@ -57,11 +60,7 @@ impl StaticSound {
 			command_consumer,
 			data,
 			state: PlaybackState::Playing,
-			when_to_start: if matches!(settings.start_time, StartTime::ClockTime(..)) {
-				WhenToStart::Later
-			} else {
-				WhenToStart::Now
-			},
+			start_time: settings.start_time,
 			resampler: Resampler::new(starting_frame_index),
 			transport,
 			fractional_position: 0.0,
@@ -235,28 +234,30 @@ impl Sound for StaticSound {
 			}
 		}
 
-		// for sounds waiting on a clock, check if it's ready to start
-		match self.when_to_start {
-			WhenToStart::Now => {}
-			// if the sound is waiting for a start time, check the clock info
-			// provider for a change in that status
-			WhenToStart::Later => {
-				self.when_to_start =
-					clock_info_provider.when_to_start(self.data.settings.start_time);
-				match self.when_to_start {
-					WhenToStart::Now => {}
-					// if the sound is still waiting, return silence
-					WhenToStart::Later => return Frame::ZERO,
-					// if we learn that the sound will never start,
-					// stop the sound and return silence
+		// check if the sound has started
+		let started = match &mut self.start_time {
+			StartTime::Immediate => true,
+			StartTime::Delayed(time_remaining) => {
+				if time_remaining.is_zero() {
+					true
+				} else {
+					*time_remaining = time_remaining.saturating_sub(Duration::from_secs_f64(dt));
+					false
+				}
+			}
+			StartTime::ClockTime(clock_time) => {
+				match clock_info_provider.when_to_start(*clock_time) {
+					WhenToStart::Now => true,
+					WhenToStart::Later => false,
 					WhenToStart::Never => {
-						self.stop(Tween::default());
-						return Frame::ZERO;
+						self.set_state(PlaybackState::Stopped);
+						false
 					}
 				}
 			}
-			// if we already know the sound will never start, output silence
-			WhenToStart::Never => return Frame::ZERO,
+		};
+		if !started {
+			return Frame::ZERO;
 		}
 
 		// play back audio
