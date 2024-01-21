@@ -1,5 +1,5 @@
 use crate::{
-	sound::{IntoOptionalRegion, PlaybackRate, Region},
+	sound::{IntoOptionalRegion, PlaybackPosition, PlaybackRate, Region},
 	tween::{Tween, Value},
 	OutputDestination, StartTime, Volume,
 };
@@ -10,6 +10,8 @@ use crate::{
 pub struct StaticSoundSettings {
 	/// When the sound should start playing.
 	pub start_time: StartTime,
+	/// Where in the sound playback should start.
+	pub start_position: PlaybackPosition,
 	/// The portion of the sound that should be looped.
 	pub loop_region: Option<Region>,
 	/// Whether the sound should be played in reverse.
@@ -35,6 +37,7 @@ impl StaticSoundSettings {
 	pub fn new() -> Self {
 		Self {
 			start_time: StartTime::default(),
+			start_position: PlaybackPosition::Samples(0),
 			reverse: false,
 			loop_region: None,
 			volume: Value::Fixed(Volume::Amplitude(1.0)),
@@ -69,6 +72,33 @@ impl StaticSoundSettings {
 	pub fn start_time(self, start_time: impl Into<StartTime>) -> Self {
 		Self {
 			start_time: start_time.into(),
+			..self
+		}
+	}
+
+	/**
+	Sets where in the sound playback should start.
+
+	# Examples
+
+	Configure a sound to start 1 second into the audio data:
+
+	```
+	# use kira::sound::static_sound::StaticSoundSettings;
+	let settings = StaticSoundSettings::new().start_position(1.0);
+	```
+
+	Configure a sound to start 50 samples into the audio data:
+
+	```
+	# use kira::sound::static_sound::StaticSoundSettings;
+	# use kira::sound::PlaybackPosition;
+	let settings = StaticSoundSettings::new().start_position(PlaybackPosition::Samples(50));
+	```
+	*/
+	pub fn start_position(self, start_position: impl Into<PlaybackPosition>) -> Self {
+		Self {
+			start_position: start_position.into(),
 			..self
 		}
 	}

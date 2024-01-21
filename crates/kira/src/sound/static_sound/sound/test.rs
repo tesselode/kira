@@ -43,14 +43,15 @@ fn plays_all_samples() {
 	assert!(sound.finished());
 }
 
-/* /// Tests that a `StaticSound` can be played partially.
+/// Tests that a `StaticSound` can be started in the middle.
 #[test]
 #[allow(clippy::float_cmp)]
-fn playback_region() {
+fn start_position() {
 	let data = StaticSoundData {
 		sample_rate: 1,
 		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
-		settings: StaticSoundSettings::new().playback_region(3.0..=6.0),
+		settings: StaticSoundSettings::new().start_position(3.0),
+		slice: None,
 	};
 	let (_, heap_consumer) = HeapRb::new(1).split();
 	let mut sound = StaticSound::new(data, heap_consumer);
@@ -64,49 +65,9 @@ fn playback_region() {
 			Frame::from_mono(i as f32).panned(0.5)
 		);
 	}
-	for _ in 0..3 {
-		assert_eq!(
-			sound.process(
-				&MockClockInfoProviderBuilder::new(0).build(),
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
-			Frame::ZERO
-		);
-		assert!(sound.finished());
-	}
-} */
+}
 
-/* /// Tests that a `StaticSound` can be started with a negative position.
-#[test]
-#[allow(clippy::float_cmp)]
-fn negative_start_position() {
-	let data = StaticSoundData {
-		sample_rate: 1,
-		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
-		settings: StaticSoundSettings::new().playback_region(-4.0..),
-	};
-	let (_, heap_consumer) = HeapRb::new(1).split();
-	let mut sound = StaticSound::new(data, heap_consumer);
-
-	for _ in 0..5 {
-		assert_eq!(
-			sound.process(
-				&MockClockInfoProviderBuilder::new(0).build(),
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
-			Frame::ZERO
-		);
-	}
-	assert_eq!(
-		sound.process(
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
-		Frame::from_mono(1.0)
-	);
-} */
-
-/* /// Tests that starting a `StaticSound` past the end of the sound
+/// Tests that starting a `StaticSound` past the end of the sound
 /// will not cause a panic.
 #[test]
 #[allow(clippy::float_cmp)]
@@ -114,7 +75,8 @@ fn out_of_bounds_start_position() {
 	let data = StaticSoundData {
 		sample_rate: 1,
 		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
-		settings: StaticSoundSettings::new().playback_region(15.0..),
+		settings: StaticSoundSettings::new().start_position(15.0),
+		slice: None,
 	};
 	let (_, heap_consumer) = HeapRb::new(1).split();
 	let mut sound = StaticSound::new(data, heap_consumer);
@@ -122,7 +84,7 @@ fn out_of_bounds_start_position() {
 		&MockClockInfoProviderBuilder::new(0).build(),
 		&MockModulatorValueProviderBuilder::new(0).build(),
 	);
-} */
+}
 
 /// Tests that a `StaticSound` can seek to a position.
 #[test]
@@ -146,13 +108,14 @@ fn seek_to() {
 	);
 }
 
-/* /// Tests that a `StaticSound` can seek by an amount of time.
+/// Tests that a `StaticSound` can seek by an amount of time.
 #[test]
 fn seek_by() {
 	let data = StaticSoundData {
 		sample_rate: 1,
 		frames: (0..100).map(|i| Frame::from_mono(i as f32)).collect(),
-		settings: StaticSoundSettings::new().playback_region(10.0..),
+		settings: StaticSoundSettings::new().start_position(10.0),
+		slice: None,
 	};
 	let (_, heap_consumer) = HeapRb::new(1).split();
 	let mut sound = StaticSound::new(data, heap_consumer);
@@ -165,7 +128,7 @@ fn seek_by() {
 		),
 		Frame::from_mono(15.0)
 	);
-} */
+}
 
 /// Tests that a `StaticSound` can play in reverse.
 #[test]
