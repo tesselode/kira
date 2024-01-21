@@ -53,10 +53,10 @@ impl<Error: Send> StreamingSoundData<Error> {
 
 	pub fn slice(mut self, region: impl IntoOptionalRegion) -> Self {
 		self.slice = region.into_optional_region().map(|Region { start, end }| {
-			let start = start.into_samples(self.decoder.sample_rate()) as usize;
+			let start = start.into_samples(self.decoder.sample_rate());
 			let end = match end {
 				EndPosition::EndOfAudio => self.decoder.num_frames(),
-				EndPosition::Custom(end) => end.into_samples(self.decoder.sample_rate()) as usize,
+				EndPosition::Custom(end) => end.into_samples(self.decoder.sample_rate()),
 			};
 			(start, end)
 		});

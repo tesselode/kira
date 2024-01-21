@@ -585,31 +585,6 @@ fn start_position() {
 	}
 }
 
-/// Tests that a `StaticSound` can be started with a negative position.
-#[test]
-#[allow(clippy::float_cmp)]
-fn negative_start_position() {
-	let data = StaticSoundData {
-		sample_rate: 1,
-		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
-		settings: StaticSoundSettings::new().start_position(-5.0),
-		slice: None,
-	};
-	let (mut sound, _) = data.split();
-
-	for _ in 0..5 {
-		assert_eq!(
-			sound.process(
-				1.0,
-				&MockClockInfoProviderBuilder::new(0).build(),
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
-			Frame::ZERO
-		);
-	}
-	expect_frame_soon(Frame::from_mono(1.0), &mut sound);
-}
-
 /// Tests that starting a `StaticSound` past the end of the sound
 /// will not cause a panic.
 #[test]

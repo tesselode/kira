@@ -3,12 +3,9 @@ mod resampler;
 #[cfg(test)]
 mod test;
 
-use std::{
-	convert::TryInto,
-	sync::{
-		atomic::{AtomicU64, AtomicU8, Ordering},
-		Arc,
-	},
+use std::sync::{
+	atomic::{AtomicU64, AtomicU8, Ordering},
+	Arc,
 };
 
 use ringbuf::HeapConsumer;
@@ -142,7 +139,7 @@ impl StaticSound {
 		}
 	}
 
-	fn seek_to_index(&mut self, index: i64) {
+	fn seek_to_index(&mut self, index: usize) {
 		self.transport.seek_to(index, self.data.num_frames());
 		// if the sound is playing, push a frame to the resample buffer
 		// to make sure it doesn't get skipped
@@ -152,19 +149,11 @@ impl StaticSound {
 	}
 
 	fn push_frame_to_resampler(&mut self) {
-		let num_frames: i64 = self
-			.data
-			.num_frames()
-			.try_into()
-			.expect("sound is too long, cannot convert usize to i64");
-		let frame = if self.transport.position < 0 || self.transport.position >= num_frames {
+		let num_frames = self.data.num_frames();
+		let frame = if self.transport.position >= num_frames {
 			Frame::ZERO
 		} else {
-			let frame_index: usize = self
-				.transport
-				.position
-				.try_into()
-				.expect("cannot convert i64 into usize");
+			let frame_index: usize = self.transport.position;
 			(self.data.frame_at_index(frame_index).unwrap_or_default()
 				* self.volume_fade.value().as_amplitude() as f32
 				* self.volume.value().as_amplitude() as f32)
@@ -176,12 +165,12 @@ impl StaticSound {
 	fn seek_by(&mut self, amount: f64) {
 		let current_position = self.transport.position as f64 / self.data.sample_rate as f64;
 		let position = current_position + amount;
-		let index = (position * self.data.sample_rate as f64) as i64;
+		let index = (position * self.data.sample_rate as f64) as usize;
 		self.seek_to_index(index);
 	}
 
 	fn seek_to(&mut self, position: f64) {
-		let index = (position * self.data.sample_rate as f64) as i64;
+		let index = (position * self.data.sample_rate as f64) as usize;
 		self.seek_to_index(index);
 	}
 }
