@@ -69,19 +69,19 @@ impl StaticSound {
 		}
 	}
 
-	fn seek_to_index(&mut self, index: i64) {
+	fn seek_to_index(&mut self, index: usize) {
 		self.transport.seek_to(index);
 	}
 
 	fn seek_by(&mut self, amount: f64) {
 		let current_position = self.transport.position as f64 / self.data.sample_rate as f64;
 		let position = current_position + amount;
-		let index = (position * self.data.sample_rate as f64) as i64;
+		let index = (position * self.data.sample_rate as f64) as usize;
 		self.seek_to_index(index);
 	}
 
 	fn seek_to(&mut self, position: f64) {
-		let index = (position * self.data.sample_rate as f64) as i64;
+		let index = (position * self.data.sample_rate as f64) as usize;
 		self.seek_to_index(index);
 	}
 }
