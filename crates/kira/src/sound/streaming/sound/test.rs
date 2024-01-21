@@ -20,6 +20,7 @@ fn plays_all_samples() {
 			Frame::from_mono(3.0),
 		])),
 		settings: StreamingSoundSettings::new(),
+		slice: None,
 	};
 	let (mut sound, mut scheduler) = data.split_without_handle().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
@@ -49,6 +50,7 @@ fn waits_for_samples() {
 			(1..=10).map(|i| Frame::from_mono(i as f32)).collect(),
 		)),
 		settings: StreamingSoundSettings::default(),
+		slice: None,
 	};
 	let (mut sound, mut scheduler) = data.split_without_handle().unwrap();
 
@@ -160,6 +162,7 @@ fn seek_to() {
 			(0..100).map(|i| Frame::from_mono(i as f32)).collect(),
 		)),
 		settings: StreamingSoundSettings::new(),
+		slice: None,
 	};
 	let (mut sound, mut scheduler) = data.split_without_handle().unwrap();
 

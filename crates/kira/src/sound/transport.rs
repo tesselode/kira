@@ -1,12 +1,10 @@
-use std::convert::TryInto;
-
 use super::{EndPosition, Region};
 
 #[cfg(test)]
 mod test;
 
 pub struct Transport {
-	pub duration: i64,
+	pub num_frames: i64,
 	pub position: i64,
 	/// The start and end frames of the sound that should be looped. The upper bound
 	/// is *exclusive*.
@@ -16,7 +14,7 @@ pub struct Transport {
 
 impl Transport {
 	pub fn new(
-		duration: i64,
+		num_frames: i64,
 		loop_region: Option<Region>,
 		reverse: bool,
 		sample_rate: u32,
@@ -24,14 +22,14 @@ impl Transport {
 		let loop_region = loop_region.map(|loop_region| {
 			let loop_start = loop_region.start.into_samples(sample_rate);
 			let loop_end = match loop_region.end {
-				EndPosition::EndOfAudio => duration,
+				EndPosition::EndOfAudio => num_frames,
 				EndPosition::Custom(end_position) => end_position.into_samples(sample_rate),
 			};
 			(loop_start, loop_end)
 		});
 		Self {
-			duration,
-			position: if reverse { duration - 1 } else { 0 },
+			num_frames,
+			position: if reverse { num_frames - 1 } else { 0 },
 			loop_region,
 			playing: true,
 		}
@@ -41,14 +39,12 @@ impl Transport {
 		&mut self,
 		loop_region: Option<Region>,
 		sample_rate: u32,
-		num_frames: usize,
+		num_frames: i64,
 	) {
 		self.loop_region = loop_region.map(|loop_region| {
 			let loop_start = loop_region.start.into_samples(sample_rate);
 			let loop_end = match loop_region.end {
-				EndPosition::EndOfAudio => num_frames
-					.try_into()
-					.expect("could not convert usize to i64"),
+				EndPosition::EndOfAudio => num_frames,
 				EndPosition::Custom(end_position) => end_position.into_samples(sample_rate),
 			};
 			(loop_start, loop_end)
@@ -62,7 +58,7 @@ impl Transport {
 				self.position -= loop_end - loop_start;
 			}
 		}
-		if self.position >= self.duration {
+		if self.position >= self.num_frames {
 			self.playing = false;
 		}
 	}
@@ -92,7 +88,7 @@ impl Transport {
 			}
 		}
 		self.position = position;
-		if self.position < 0 || self.position >= self.duration {
+		if self.position < 0 || self.position >= self.num_frames {
 			self.playing = false;
 		}
 	}
