@@ -210,6 +210,44 @@ fn stops_with_fade_out() {
 	}
 }
 
+/// Tests that a `SoundWrapper` with a delayed start time waits for
+/// that time before it begins tweening.
+#[test]
+#[allow(clippy::float_cmp)]
+fn waits_for_delay() {
+	let clock_info_provider = MockClockInfoProviderBuilder::new(0).build();
+	let modulator_value_provider = MockModulatorValueProviderBuilder::new(0).build();
+
+	let shared = SoundWrapperShared::new();
+	let mut sound_wrapper = SoundWrapper::new(
+		Box::new(MockSound),
+		CommonSoundSettings {
+			start_time: StartTime::Delayed(Duration::from_secs(100)),
+			volume: 1.0.into(),
+			panning: 0.5.into(),
+			output_destination: Default::default(),
+			fade_in_tween: None,
+		},
+		shared,
+	);
+
+	// sound should not be playing yet
+	for _ in 0..100 {
+		assert_eq!(
+			sound_wrapper.process(1.0, &clock_info_provider, &modulator_value_provider),
+			Frame::from_mono(0.0)
+		);
+	}
+
+	// the sound should start now
+	expect_frame_soon(
+		Frame::from_mono(1.0),
+		&mut sound_wrapper,
+		&clock_info_provider,
+		&modulator_value_provider,
+	);
+}
+
 /// Tests that a `SoundWrapper` will wait for its start clock time
 /// when appropriate.
 #[test]

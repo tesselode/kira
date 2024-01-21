@@ -3,12 +3,15 @@ mod test;
 
 mod value;
 
+use std::time::Duration;
+
 pub use value::*;
 
 use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
 	modulator::value_provider::ModulatorValueProvider,
 	tween::{Tween, Tweenable},
+	StartTime,
 };
 
 /// Manages and updates a value that can be smoothly transitioned
@@ -87,7 +90,22 @@ impl<T: Tweenable> Parameter<T> {
 			..
 		} = &mut self.state
 		{
-			if clock_info_provider.when_to_start(tween.start_time) != WhenToStart::Now {
+			let started = match &mut tween.start_time {
+				StartTime::Immediate => true,
+				StartTime::Delayed(time_remaining) => {
+					if time_remaining.is_zero() {
+						true
+					} else {
+						*time_remaining =
+							time_remaining.saturating_sub(Duration::from_secs_f64(dt));
+						false
+					}
+				}
+				StartTime::ClockTime(clock_time) => {
+					clock_info_provider.when_to_start(*clock_time) == WhenToStart::Now
+				}
+			};
+			if !started {
 				return false;
 			}
 			*time += dt;
