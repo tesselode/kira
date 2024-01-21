@@ -1,9 +1,12 @@
 #[cfg(test)]
 mod test;
 
-use std::sync::{
-	atomic::{AtomicU8, Ordering},
-	Arc,
+use std::{
+	sync::{
+		atomic::{AtomicU8, Ordering},
+		Arc,
+	},
+	time::Duration,
 };
 
 use crate::{
@@ -20,7 +23,6 @@ pub(crate) struct SoundWrapper {
 	sound: Box<dyn Sound>,
 	state: PlaybackState,
 	start_time: StartTime,
-	when_to_start: WhenToStart,
 	volume: Parameter<Volume>,
 	panning: Parameter,
 	volume_fade: Parameter<Volume>,
@@ -40,11 +42,6 @@ impl SoundWrapper {
 			sound,
 			state: PlaybackState::Playing,
 			start_time: settings.start_time,
-			when_to_start: if matches!(settings.start_time, StartTime::ClockTime(..)) {
-				WhenToStart::Later
-			} else {
-				WhenToStart::Now
-			},
 			volume: Parameter::new(settings.volume, Volume::Amplitude(1.0)),
 			panning: Parameter::new(settings.panning, 0.5),
 			volume_fade: {
@@ -108,27 +105,30 @@ impl SoundWrapper {
 			return Frame::ZERO;
 		}
 
-		// for sounds waiting on a clock, check if it's ready to start
-		match self.when_to_start {
-			WhenToStart::Now => {}
-			// if the sound is waiting for a start time, check the clock info
-			// provider for a change in that status
-			WhenToStart::Later => {
-				self.when_to_start = clock_info_provider.when_to_start(self.start_time);
-				match self.when_to_start {
-					WhenToStart::Now => {}
-					// if the sound is still waiting, return silence
-					WhenToStart::Later => return Frame::ZERO,
-					// if we learn that the sound will never start,
-					// stop the sound and return silence
+		// check if the sound has started
+		let started = match &mut self.start_time {
+			StartTime::Immediate => true,
+			StartTime::Delayed(time_remaining) => {
+				if time_remaining.is_zero() {
+					true
+				} else {
+					*time_remaining = time_remaining.saturating_sub(Duration::from_secs_f64(dt));
+					false
+				}
+			}
+			StartTime::ClockTime(clock_time) => {
+				match clock_info_provider.when_to_start(*clock_time) {
+					WhenToStart::Now => true,
+					WhenToStart::Later => false,
 					WhenToStart::Never => {
 						self.stop(Tween::default());
-						return Frame::ZERO;
+						false
 					}
 				}
 			}
-			// if we already know the sound will never start, output silence
-			WhenToStart::Never => return Frame::ZERO,
+		};
+		if !started {
+			return Frame::ZERO;
 		}
 
 		// collect audio output from the underlying sound
