@@ -34,6 +34,7 @@ impl StaticSound {
 			data.settings.loop_region,
 			data.settings.reverse,
 			data.sample_rate,
+			data.settings.start_position.into_samples(data.sample_rate),
 		);
 		let starting_frame_index = transport.position;
 		let position = starting_frame_index as f64 / data.sample_rate as f64;

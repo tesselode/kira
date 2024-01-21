@@ -4,7 +4,7 @@ use super::Transport;
 
 #[test]
 fn stops_at_end() {
-	let mut transport = Transport::new(4, None, false, 1);
+	let mut transport = Transport::new(4, None, false, 1, 0);
 	for i in 0..4 {
 		assert_eq!(transport.position, i);
 		assert!(transport.playing);
@@ -16,7 +16,7 @@ fn stops_at_end() {
 
 #[test]
 fn stops_at_start_when_playing_backwards() {
-	let mut transport = Transport::new(4, None, true, 1);
+	let mut transport = Transport::new(4, None, true, 1, 0);
 	for i in (0..4).rev() {
 		assert_eq!(transport.position, i);
 		assert!(transport.playing);
@@ -24,6 +24,18 @@ fn stops_at_start_when_playing_backwards() {
 	}
 	assert_eq!(transport.position, -1);
 	assert!(!transport.playing);
+}
+
+#[test]
+fn start_position() {
+	let transport = Transport::new(4, None, false, 1, 3);
+	assert_eq!(transport.position, 3);
+}
+
+#[test]
+fn start_position_reverse() {
+	let transport = Transport::new(4, None, true, 1, 2);
+	assert_eq!(transport.position, 1);
 }
 
 #[test]
@@ -36,6 +48,7 @@ fn loops() {
 		}),
 		false,
 		1,
+		0,
 	);
 	for i in 0..5 {
 		assert_eq!(transport.position, i);
@@ -59,6 +72,7 @@ fn loops_when_playing_backward() {
 		}),
 		true,
 		1,
+		0,
 	);
 	for i in (2..10).rev() {
 		assert_eq!(transport.position, i);
@@ -82,6 +96,7 @@ fn loop_wrapping() {
 		}),
 		false,
 		1,
+		0,
 	);
 	transport.position = 6;
 	transport.increment_position();
@@ -101,6 +116,7 @@ fn seek_loop_wrapping() {
 		}),
 		false,
 		1,
+		0,
 	);
 	transport.seek_to(7);
 	assert_eq!(transport.position, 4);
@@ -110,10 +126,10 @@ fn seek_loop_wrapping() {
 
 #[test]
 fn seek_out_of_bounds() {
-	let mut transport = Transport::new(10, None, false, 1);
+	let mut transport = Transport::new(10, None, false, 1, 0);
 	transport.seek_to(-1);
 	assert!(!transport.playing);
-	let mut transport = Transport::new(10, None, false, 1);
+	let mut transport = Transport::new(10, None, false, 1, 0);
 	transport.seek_to(11);
 	assert!(!transport.playing);
 }
