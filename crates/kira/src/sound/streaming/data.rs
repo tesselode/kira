@@ -3,7 +3,7 @@ mod test;
 
 use std::{sync::Arc, time::Duration};
 
-use crate::sound::{CommonSoundController, CommonSoundSettings, SoundData};
+use crate::sound::{CommonSoundController, CommonSoundSettings, EndPosition, Region, SoundData};
 use ringbuf::HeapRb;
 
 use super::sound::Shared;
@@ -22,6 +22,7 @@ pub struct StreamingSoundData<Error: Send + 'static> {
 	pub(crate) decoder: Box<dyn Decoder<Error = Error>>,
 	/// Settings for the streaming sound.
 	pub settings: StreamingSoundSettings,
+	pub slice: Option<(i64, i64)>,
 }
 
 impl<Error: Send> StreamingSoundData<Error> {
@@ -33,16 +34,36 @@ impl<Error: Send> StreamingSoundData<Error> {
 		Self {
 			decoder: Box::new(decoder),
 			settings,
+			slice: None,
 		}
 	}
 }
 
 impl<T: Send> StreamingSoundData<T> {
+	pub fn num_frames(&self) -> i64 {
+		self.slice
+			.map(|(start, end)| end - start)
+			.unwrap_or(self.decoder.num_frames() as i64)
+	}
+
 	/// Returns the duration of the audio.
 	pub fn duration(&self) -> Duration {
-		Duration::from_secs_f64(
-			self.decoder.num_frames() as f64 / self.decoder.sample_rate() as f64,
-		)
+		Duration::from_secs_f64(self.num_frames() as f64 / self.decoder.sample_rate() as f64)
+	}
+
+	pub fn sliced(self, region: impl Into<Region>) -> Self {
+		let Region { start, end } = region.into();
+		let slice = (
+			start.into_samples(self.decoder.sample_rate()),
+			match end {
+				EndPosition::EndOfAudio => self.decoder.num_frames() as i64,
+				EndPosition::Custom(end) => end.into_samples(self.decoder.sample_rate()),
+			},
+		);
+		Self {
+			slice: Some(slice),
+			..self
+		}
 	}
 }
 
@@ -112,6 +133,7 @@ impl<Error: Send + 'static> StreamingSoundData<Error> {
 		let shared = Arc::new(Shared::new());
 		let (scheduler, frame_consumer) = DecodeScheduler::new(
 			self.decoder,
+			self.slice,
 			self.settings,
 			shared.clone(),
 			decode_scheduler_command_consumer,
@@ -146,6 +168,7 @@ impl<Error: Send + 'static> StreamingSoundData<Error> {
 		let shared = Arc::new(Shared::new());
 		let (scheduler, frame_consumer) = DecodeScheduler::new(
 			self.decoder,
+			self.slice,
 			self.settings,
 			shared.clone(),
 			decode_scheduler_command_consumer,

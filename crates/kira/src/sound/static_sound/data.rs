@@ -14,7 +14,7 @@ use ringbuf::HeapRb;
 
 use crate::{
 	dsp::Frame,
-	sound::{CommonSoundController, CommonSoundSettings, Sound, SoundData},
+	sound::{CommonSoundController, CommonSoundSettings, EndPosition, Region, Sound, SoundData},
 };
 
 use super::{handle::StaticSoundHandle, sound::StaticSound, StaticSoundSettings};
@@ -33,14 +33,10 @@ pub struct StaticSoundData {
 	pub frames: Arc<[Frame]>,
 	/// Settings for the sound.
 	pub settings: StaticSoundSettings,
+	pub slice: Option<(i64, i64)>,
 }
 
 impl StaticSoundData {
-	/// Returns the duration of the audio.
-	pub fn duration(&self) -> Duration {
-		Duration::from_secs_f64(self.frames.len() as f64 / self.sample_rate as f64)
-	}
-
 	/// Returns a clone of the `StaticSoundData` with the specified settings.
 	pub fn with_settings(&self, settings: StaticSoundSettings) -> Self {
 		Self {
@@ -56,6 +52,48 @@ impl StaticSoundData {
 		f: impl FnOnce(StaticSoundSettings) -> StaticSoundSettings,
 	) -> Self {
 		self.with_settings(f(self.settings))
+	}
+
+	pub fn sliced(&self, region: impl Into<Region>) -> Self {
+		let Region { start, end } = region.into();
+		let slice = (
+			start.into_samples(self.sample_rate),
+			match end {
+				EndPosition::EndOfAudio => self.frames.len() as i64,
+				EndPosition::Custom(end) => end.into_samples(self.sample_rate),
+			},
+		);
+		Self {
+			slice: Some(slice),
+			..self.clone()
+		}
+	}
+
+	pub fn frame(&self, index: i64) -> Frame {
+		let start = self.slice.map(|(start, _)| start).unwrap_or(0);
+		let end = self
+			.slice
+			.map(|(_, end)| end)
+			.unwrap_or(self.frames.len() as i64);
+		if index < 0 || index >= end - start {
+			return Frame::ZERO;
+		}
+		let absolute_index = start + index;
+		if absolute_index < 0 || absolute_index >= self.frames.len() as i64 {
+			return Frame::ZERO;
+		}
+		self.frames[absolute_index as usize]
+	}
+
+	pub fn num_frames(&self) -> i64 {
+		self.slice
+			.map(|(start, end)| end - start)
+			.unwrap_or(self.frames.len() as i64)
+	}
+
+	/// Returns the duration of the audio.
+	pub fn duration(&self) -> Duration {
+		Duration::from_secs_f64(self.num_frames() as f64 / self.sample_rate as f64)
 	}
 
 	pub(super) fn split(

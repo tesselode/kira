@@ -281,9 +281,7 @@ impl StaticSoundHandle {
 		loop_region: impl IntoOptionalRegion,
 	) -> Result<(), CommandError> {
 		self.command_producer
-			.push(Command::SetLoopRegion(
-				loop_region.into_optional_loop_region(),
-			))
+			.push(Command::SetLoopRegion(loop_region.into_optional_region()))
 			.map_err(|_| CommandError::CommandQueueFull)
 	}
 
