@@ -15,7 +15,6 @@ use crate::{
 };
 
 pub(crate) struct Mixer {
-	sample_rate: u32,
 	main_track: Track,
 	sub_tracks: Arena<Track>,
 	sub_track_ids: Vec<SubTrackId>,
@@ -31,7 +30,6 @@ impl Mixer {
 		main_track_builder: TrackBuilder,
 	) -> Self {
 		Self {
-			sample_rate,
 			main_track: {
 				let mut track = Track::new(main_track_builder);
 				track.init_effects(sample_rate);
@@ -57,8 +55,7 @@ impl Mixer {
 
 	pub fn run_command(&mut self, command: MixerCommand) {
 		match command {
-			MixerCommand::AddSubTrack(id, mut track) => {
-				track.init_effects(self.sample_rate);
+			MixerCommand::AddSubTrack(id, track) => {
 				self.sub_tracks
 					.insert_with_key(id.0, track)
 					.expect("Sub-track arena is full");

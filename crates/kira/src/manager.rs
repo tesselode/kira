@@ -13,7 +13,10 @@ mod settings;
 use ringbuf::HeapRb;
 pub use settings::*;
 
-use std::{collections::HashSet, sync::Arc};
+use std::{
+	collections::HashSet,
+	sync::{atomic::Ordering, Arc},
+};
 
 use crate::{
 	clock::{Clock, ClockHandle, ClockId, ClockSpeed},
@@ -195,7 +198,8 @@ impl<B: Backend> AudioManager<B> {
 				.map_err(|_| AddSubTrackError::SubTrackLimitReached)?,
 		);
 		let existing_routes = builder.routes.0.keys().copied().collect();
-		let sub_track = Track::new(builder);
+		let mut sub_track = Track::new(builder);
+		sub_track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
 		let handle = TrackHandle {
 			id: TrackId::Sub(id),
 			shared: Some(sub_track.shared()),

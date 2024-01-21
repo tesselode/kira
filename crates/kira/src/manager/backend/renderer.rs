@@ -1,5 +1,5 @@
 use std::sync::{
-	atomic::{AtomicU8, Ordering},
+	atomic::{AtomicU32, AtomicU8, Ordering},
 	Arc,
 };
 
@@ -17,13 +17,15 @@ use crate::{
 use super::resources::Resources;
 
 pub(crate) struct RendererShared {
-	pub(super) state: AtomicU8,
+	pub(crate) state: AtomicU8,
+	pub(crate) sample_rate: AtomicU32,
 }
 
 impl RendererShared {
-	pub fn new() -> Self {
+	pub fn new(sample_rate: u32) -> Self {
 		Self {
 			state: AtomicU8::new(MainPlaybackState::Playing as u8),
+			sample_rate: AtomicU32::new(sample_rate),
 		}
 	}
 
@@ -54,7 +56,7 @@ impl Renderer {
 	) -> Self {
 		Self {
 			dt: 1.0 / sample_rate as f64,
-			shared: Arc::new(RendererShared::new()),
+			shared: Arc::new(RendererShared::new(sample_rate)),
 			resources,
 			command_consumer,
 			state: MainPlaybackState::Playing,
@@ -70,6 +72,7 @@ impl Renderer {
 	/// audio output changes.
 	pub fn on_change_sample_rate(&mut self, sample_rate: u32) {
 		self.dt = 1.0 / sample_rate as f64;
+		self.shared.sample_rate.store(sample_rate, Ordering::SeqCst);
 		self.resources.mixer.on_change_sample_rate(sample_rate);
 	}
 
