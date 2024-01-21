@@ -18,6 +18,7 @@ impl Transport {
 		loop_region: Option<Region>,
 		reverse: bool,
 		sample_rate: u32,
+		start_position: i64,
 	) -> Self {
 		let loop_region = loop_region.map(|loop_region| {
 			let loop_start = loop_region.start.into_samples(sample_rate);
@@ -29,7 +30,11 @@ impl Transport {
 		});
 		Self {
 			num_frames,
-			position: if reverse { num_frames - 1 } else { 0 },
+			position: if reverse {
+				num_frames - 1 - start_position
+			} else {
+				start_position
+			},
 			loop_region,
 			playing: true,
 		}
