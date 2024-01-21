@@ -89,15 +89,16 @@ fn waits_for_samples() {
 	}
 }
 
-/* /// Tests that a `StreamingSound` can be started partway through the sound.
+/// Tests that a `StreamingSound` can be started partway through the sound.
 #[test]
 #[allow(clippy::float_cmp)]
-fn playback_region() {
+fn start_position() {
 	let data = StreamingSoundData {
 		decoder: Box::new(MockDecoder::new(
 			(0..10).map(|i| Frame::from_mono(i as f32)).collect(),
 		)),
-		settings: StreamingSoundSettings::new().playback_region(3.0..=6.0),
+		settings: StreamingSoundSettings::new().start_position(3.0),
+		slice: None,
 	};
 	let (mut sound, mut scheduler) = data.split_without_handle().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
@@ -111,48 +112,7 @@ fn playback_region() {
 			Frame::from_mono(i as f32).panned(0.5)
 		);
 	}
-	for _ in 0..3 {
-		assert_eq!(
-			sound.process(
-				&MockClockInfoProviderBuilder::new(0).build(),
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
-			Frame::ZERO
-		);
-		assert!(sound.finished());
-	}
-} */
-
-/* /// Tests that a `StreamingSound` can be started with a negative position.
-#[test]
-#[allow(clippy::float_cmp)]
-fn negative_start_position() {
-	let data = StreamingSoundData {
-		decoder: Box::new(MockDecoder::new(
-			(0..10).map(|i| Frame::from_mono(i as f32)).collect(),
-		)),
-		settings: StreamingSoundSettings::new().playback_region(-4.0..),
-	};
-	let (mut sound, mut scheduler) = data.split_without_handle().unwrap();
-	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
-
-	for _ in 0..5 {
-		assert_eq!(
-			sound.process(
-				&MockClockInfoProviderBuilder::new(0).build(),
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
-			Frame::ZERO
-		);
-	}
-	assert_eq!(
-		sound.process(
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
-		Frame::from_mono(1.0)
-	);
-} */
+}
 
 /// Tests that a `StreamingSound` can seek to a position.
 #[test]
@@ -177,14 +137,15 @@ fn seek_to() {
 	);
 }
 
-/* /// Tests that a `StreamingSound` can seek by an amount of time.
+/// Tests that a `StreamingSound` can seek by an amount of time.
 #[test]
 fn seek_by() {
 	let data = StreamingSoundData {
 		decoder: Box::new(MockDecoder::new(
 			(0..100).map(|i| Frame::from_mono(i as f32)).collect(),
 		)),
-		settings: StreamingSoundSettings::new().playback_region(10.0..),
+		settings: StreamingSoundSettings::new().start_position(10.0),
+		slice: None,
 	};
 	let (mut sound, mut scheduler) = data.split_without_handle().unwrap();
 	scheduler.seek_by(5.0).unwrap();
@@ -196,4 +157,4 @@ fn seek_by() {
 		),
 		Frame::from_mono(15.0)
 	);
-} */
+}
