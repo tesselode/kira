@@ -122,9 +122,9 @@ pub enum PlaybackState {
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Region {
-	/// The starting time of the region (in seconds).
+	/// The starting time of the region.
 	pub start: PlaybackPosition,
-	/// The ending time of the region.
+	/// The ending time of the region (exclusive).
 	pub end: EndPosition,
 }
 
@@ -194,17 +194,17 @@ impl Default for Region {
 /// A trait for types that can be converted into an `Option<Region>`.
 pub trait IntoOptionalRegion {
 	/// Converts the type into an `Option<Region>`.
-	fn into_optional_loop_region(self) -> Option<Region>;
+	fn into_optional_region(self) -> Option<Region>;
 }
 
 impl<T: Into<Region>> IntoOptionalRegion for T {
-	fn into_optional_loop_region(self) -> Option<Region> {
+	fn into_optional_region(self) -> Option<Region> {
 		Some(self.into())
 	}
 }
 
 impl IntoOptionalRegion for Option<Region> {
-	fn into_optional_loop_region(self) -> Option<Region> {
+	fn into_optional_region(self) -> Option<Region> {
 		self
 	}
 }

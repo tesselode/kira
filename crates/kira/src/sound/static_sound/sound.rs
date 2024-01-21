@@ -1,12 +1,9 @@
 #[cfg(test)]
 mod test;
 
-use std::{
-	convert::TryInto,
-	sync::{
-		atomic::{AtomicU64, Ordering},
-		Arc,
-	},
+use std::sync::{
+	atomic::{AtomicU64, Ordering},
+	Arc,
 };
 
 use ringbuf::HeapConsumer;
@@ -33,7 +30,7 @@ impl StaticSound {
 	pub fn new(data: StaticSoundData, command_consumer: HeapConsumer<Command>) -> Self {
 		let settings = data.settings;
 		let transport = Transport::new(
-			data.frames.len() as i64,
+			data.num_frames(),
 			data.settings.loop_region,
 			data.settings.reverse,
 			data.sample_rate,
@@ -106,7 +103,7 @@ impl Sound for StaticSound {
 				Command::SetLoopRegion(loop_region) => self.transport.set_loop_region(
 					loop_region,
 					self.data.sample_rate,
-					self.data.frames.len(),
+					self.data.num_frames(),
 				),
 				Command::SeekBy(amount) => {
 					self.seek_by(amount);
@@ -135,22 +132,7 @@ impl Sound for StaticSound {
 		);
 
 		// play back audio
-		let num_frames: i64 = self
-			.data
-			.frames
-			.len()
-			.try_into()
-			.expect("sound is too long, cannot convert usize to i64");
-		let out = if self.transport.position < 0 || self.transport.position >= num_frames {
-			Frame::ZERO
-		} else {
-			let frame_index: usize = self
-				.transport
-				.position
-				.try_into()
-				.expect("cannot convert i64 into usize");
-			self.data.frames[frame_index]
-		};
+		let out = self.data.frame(self.transport.position);
 		self.update_position();
 		out
 	}

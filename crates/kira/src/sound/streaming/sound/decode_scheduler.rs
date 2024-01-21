@@ -96,7 +96,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 			match command {
 				DecodeSchedulerCommand::SetLoopRegion(loop_region) => self
 					.transport
-					.set_loop_region(loop_region, self.sample_rate, self.num_frames),
+					.set_loop_region(loop_region, self.sample_rate, self.num_frames as i64),
 				DecodeSchedulerCommand::SeekBy(amount) => self.seek_by(amount)?,
 				DecodeSchedulerCommand::SeekTo(position) => self.seek_to(position)?,
 			}
