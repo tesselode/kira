@@ -1,5 +1,4 @@
 use std::{
-	convert::TryInto,
 	sync::{atomic::Ordering, Arc},
 	time::Duration,
 };
@@ -28,7 +27,7 @@ pub(crate) struct DecodeScheduler<Error: Send + 'static> {
 	decoder: Box<dyn Decoder<Error = Error>>,
 	sample_rate: u32,
 	num_frames: usize,
-	slice: Option<(i64, i64)>,
+	slice: Option<(usize, usize)>,
 	transport: Transport,
 	decoder_current_frame_index: usize,
 	decoded_chunk: Option<DecodedChunk>,
@@ -41,7 +40,7 @@ pub(crate) struct DecodeScheduler<Error: Send + 'static> {
 impl<Error: Send + 'static> DecodeScheduler<Error> {
 	pub fn new(
 		decoder: Box<dyn Decoder<Error = Error>>,
-		slice: Option<(i64, i64)>,
+		slice: Option<(usize, usize)>,
 		settings: StreamingSoundSettings,
 		shared: Arc<Shared>,
 		command_consumer: HeapConsumer<DecodeSchedulerCommand>,
@@ -56,7 +55,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 			num_frames,
 			slice,
 			transport: Transport::new(
-				num_frames as i64,
+				num_frames,
 				settings.loop_region,
 				false,
 				sample_rate,
@@ -72,7 +71,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		Ok((scheduler, frame_consumer))
 	}
 
-	pub fn current_frame(&self) -> i64 {
+	pub fn current_frame(&self) -> usize {
 		self.transport.position
 	}
 
@@ -105,7 +104,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 			match command {
 				DecodeSchedulerCommand::SetLoopRegion(loop_region) => self
 					.transport
-					.set_loop_region(loop_region, self.sample_rate, self.num_frames as i64),
+					.set_loop_region(loop_region, self.sample_rate, self.num_frames),
 				DecodeSchedulerCommand::SeekBy(amount) => self.seek_by(amount)?,
 				DecodeSchedulerCommand::SeekTo(position) => self.seek_to(position)?,
 			}
@@ -126,7 +125,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 	}
 
 	pub fn seek_to(&mut self, position: f64) -> Result<(), Error> {
-		let index = (position * self.sample_rate as f64).round() as i64;
+		let index = (position * self.sample_rate as f64).round() as usize;
 		self.seek_to_index(index)?;
 		Ok(())
 	}
@@ -137,20 +136,13 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		Ok(())
 	}
 
-	fn frame_at_index(&mut self, index: i64) -> Result<Frame, Error> {
+	fn frame_at_index(&mut self, index: usize) -> Result<Frame, Error> {
 		let start = self.slice.map(|(start, _)| start).unwrap_or(0);
-		let end = self
-			.slice
-			.map(|(_, end)| end)
-			.unwrap_or(self.num_frames as i64);
-		if index < 0 || index >= end - start {
+		let end = self.slice.map(|(_, end)| end).unwrap_or(self.num_frames);
+		if index >= end - start {
 			return Ok(Frame::ZERO);
 		}
 		let index = start + index;
-		if index < 0 {
-			return Ok(Frame::ZERO);
-		}
-		let index: usize = index.try_into().expect("could not convert i64 into usize");
 		// if the requested frame is already loaded, return it
 		if let Some(chunk) = &self.decoded_chunk {
 			if let Some(frame) = chunk.frame_at_index(index) {
@@ -182,13 +174,9 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		}
 	}
 
-	fn seek_to_index(&mut self, index: i64) -> Result<(), Error> {
+	fn seek_to_index(&mut self, index: usize) -> Result<(), Error> {
 		self.transport.seek_to(index);
-		self.decoder_current_frame_index = self.decoder.seek(if index < 0 {
-			0
-		} else {
-			index.try_into().expect("could not convert i64 into usize")
-		})?;
+		self.decoder_current_frame_index = self.decoder.seek(index)?;
 		Ok(())
 	}
 }

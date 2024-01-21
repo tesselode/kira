@@ -8,13 +8,13 @@ pub enum PlaybackPosition {
 	/// The time in seconds.
 	Seconds(f64),
 	/// The time in samples (individual audio data points).
-	Samples(i64),
+	Samples(usize),
 }
 
 impl PlaybackPosition {
-	pub(crate) fn into_samples(self, sample_rate: u32) -> i64 {
+	pub(crate) fn into_samples(self, sample_rate: u32) -> usize {
 		match self {
-			PlaybackPosition::Seconds(seconds) => (seconds * sample_rate as f64).round() as i64,
+			PlaybackPosition::Seconds(seconds) => (seconds * sample_rate as f64).round() as usize,
 			PlaybackPosition::Samples(samples) => samples,
 		}
 	}
