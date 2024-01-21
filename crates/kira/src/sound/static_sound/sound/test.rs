@@ -487,12 +487,6 @@ fn stops_if_depending_on_missing_clock() {
 		&clock_info_provider,
 		&MockModulatorValueProviderBuilder::new(0).build(),
 	);
-	// the sound needs one extra process call to go from Stopping to Stopped
-	sound.process(
-		1.0,
-		&clock_info_provider,
-		&MockModulatorValueProviderBuilder::new(0).build(),
-	);
 	sound.on_start_processing();
 	assert_eq!(handle.state(), PlaybackState::Stopped);
 }
