@@ -11,7 +11,7 @@ use atomic_arena::{error::ArenaFull, Arena};
 
 use crate::{manager::backend::resources::clocks::Clocks, StartTime};
 
-use super::{ClockId, ClockTime};
+use super::{ClockId, ClockTime, State};
 
 /// Information about the current state of a [clock](super).
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -41,9 +41,18 @@ impl<'a> ClockInfoProvider<'a> {
 	pub fn get(&self, id: ClockId) -> Option<ClockInfo> {
 		match &self.kind {
 			ClockInfoProviderKind::Normal { clocks } => clocks.get(id).map(|clock| ClockInfo {
-				ticking: clock.shared.ticking(),
-				ticks: clock.shared.ticks(),
-				fractional_position: clock.shared.fractional_position(),
+				ticking: clock.ticking(),
+				ticks: match clock.state() {
+					State::NotStarted => 0,
+					State::Started { ticks, .. } => ticks,
+				},
+				fractional_position: match clock.state() {
+					State::NotStarted => 0.0,
+					State::Started {
+						fractional_position,
+						..
+					} => fractional_position,
+				},
 			}),
 			ClockInfoProviderKind::Mock { clock_info } => clock_info.get(id.0).copied(),
 		}
