@@ -218,7 +218,7 @@ impl ClockShared {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum State {
+pub(crate) enum State {
 	NotStarted,
 	Started {
 		ticks: u64,
@@ -246,6 +246,14 @@ impl Clock {
 
 	pub(crate) fn shared(&self) -> Arc<ClockShared> {
 		self.shared.clone()
+	}
+
+	pub(crate) fn state(&self) -> State {
+		self.state
+	}
+
+	pub(crate) fn ticking(&self) -> bool {
+		self.ticking
 	}
 
 	pub(crate) fn set_speed(&mut self, speed: Value<ClockSpeed>, tween: Tween) {
