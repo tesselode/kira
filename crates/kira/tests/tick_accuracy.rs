@@ -1,0 +1,100 @@
+use kira::{
+	clock::{clock_info::WhenToStart, ClockHandle, ClockSpeed, ClockTime},
+	dsp::Frame,
+	manager::{
+		backend::mock::{MockBackend, MockBackendSettings},
+		AudioManager, AudioManagerSettings,
+	},
+	track::{
+		effect::{Effect, EffectBuilder},
+		TrackBuilder,
+	},
+};
+
+const SAMPLE_RATE: u32 = 48_000;
+const TICKS_PER_SECOND: f64 = 1000.0;
+const EVENT_TIME_TICKS: u64 = 500;
+
+struct TestEffect {
+	clock: ClockHandle,
+	ticks: u64,
+	frames: u32,
+}
+
+impl Effect for TestEffect {
+	fn process(
+		&mut self,
+		input: Frame,
+		_dt: f64,
+		clock_info_provider: &kira::clock::clock_info::ClockInfoProvider,
+		_modulator_value_provider: &kira::modulator::value_provider::ModulatorValueProvider,
+	) -> Frame {
+		self.frames += 1;
+		if let WhenToStart::Now = clock_info_provider.when_to_start(ClockTime {
+			clock: self.clock.id(),
+			ticks: self.ticks,
+		}) {
+			assert_eq!(self.ticks % EVENT_TIME_TICKS, 0);
+			assert_eq!(
+				self.frames % (SAMPLE_RATE / (TICKS_PER_SECOND as u32 / EVENT_TIME_TICKS as u32)),
+				0
+			);
+			self.ticks += EVENT_TIME_TICKS;
+		}
+		input
+	}
+}
+
+struct TestEffectHandle;
+
+struct TestEffectBuilder {
+	clock: ClockHandle,
+}
+
+impl EffectBuilder for TestEffectBuilder {
+	type Handle = TestEffectHandle;
+
+	fn build(self) -> (Box<dyn Effect>, Self::Handle) {
+		(
+			Box::new(TestEffect {
+				clock: self.clock,
+				ticks: EVENT_TIME_TICKS,
+				frames: 0,
+			}),
+			TestEffectHandle {},
+		)
+	}
+}
+
+#[test]
+fn tick_accuracy() {
+	let mut manager = AudioManager::<MockBackend>::new(AudioManagerSettings {
+		backend_settings: MockBackendSettings {
+			sample_rate: SAMPLE_RATE,
+		},
+		..Default::default()
+	})
+	.unwrap();
+
+	let clock = manager
+		.add_clock(ClockSpeed::TicksPerSecond(TICKS_PER_SECOND))
+		.unwrap();
+	clock.start().unwrap();
+
+	let _effect_handle;
+	let _track = manager
+		.add_sub_track({
+			let mut builder = TrackBuilder::new();
+			_effect_handle = builder.add_effect(TestEffectBuilder { clock });
+			builder
+		})
+		.unwrap();
+
+	let backend = manager.backend_mut();
+	for i in 0..480000 {
+		if i % 512 == 0 {
+			backend.on_start_processing();
+		}
+		backend.process();
+	}
+}
