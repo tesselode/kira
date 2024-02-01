@@ -1,3 +1,7 @@
+# v0.8.7 - January 31, 2024
+
+- Fix `ClockInfoProvider` having poor timing resolution
+
 # v0.8.6 - January 13, 2024
 
 - Fix a typo in the readme
