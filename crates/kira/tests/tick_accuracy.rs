@@ -1,3 +1,12 @@
+/// This test checks, if the clock ticks are frame-accurate.
+/// It does so by starting a clock with given `TICKS_PER_SECOND` and running `backend.on_start_processing()` at a number of frames that isn't a divider of `TICKS_PER_SECOND`.
+/// This is to prevent regressions, such as fixed by commit 2c596af.
+///
+/// Then an effect is added that counts the number of processed frames and checks every `EVENT_TIME_TICKS` (by calling `clock_info_provider.when_to_start`), if the counted number of frames is correct.
+/// Here, one has to take care that `TICKS_PER_SECOND` is divisible by `EVENT_TIME_TICKS` and `SAMPLE_RATE` is divisible by `TICKS_PER_SECOND / EVENT_TIME_TICKS`.
+/// Otherwise the test is incorrect.
+///
+/// In the current setting we expect a tick every 24000 frames.
 use kira::{
 	clock::{clock_info::WhenToStart, ClockHandle, ClockSpeed, ClockTime},
 	dsp::Frame,
@@ -34,7 +43,6 @@ impl Effect for TestEffect {
 			clock: self.clock.id(),
 			ticks: self.ticks,
 		}) {
-			assert_eq!(self.ticks % EVENT_TIME_TICKS, 0);
 			assert_eq!(
 				self.frames % (SAMPLE_RATE / (TICKS_PER_SECOND as u32 / EVENT_TIME_TICKS as u32)),
 				0
