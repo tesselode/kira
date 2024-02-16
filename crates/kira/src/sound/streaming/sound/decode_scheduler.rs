@@ -39,7 +39,7 @@ pub(crate) struct DecodeScheduler<Error: Send + 'static> {
 
 impl<Error: Send + 'static> DecodeScheduler<Error> {
 	pub fn new(
-		decoder: Box<dyn Decoder<Error = Error>>,
+		mut decoder: Box<dyn Decoder<Error = Error>>,
 		slice: Option<(usize, usize)>,
 		settings: StreamingSoundSettings,
 		shared: Arc<Shared>,
@@ -49,6 +49,8 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		let (frame_producer, frame_consumer) = HeapRb::new(BUFFER_SIZE).split();
 		let sample_rate = decoder.sample_rate();
 		let num_frames = decoder.num_frames();
+		let start_sample = settings.start_position.into_samples(sample_rate);
+		let decoder_current_frame_index = decoder.seek(start_sample)?;
 		let scheduler = Self {
 			decoder,
 			sample_rate,
@@ -59,9 +61,9 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 				settings.loop_region,
 				false,
 				sample_rate,
-				settings.start_position.into_samples(sample_rate),
+				start_sample,
 			),
-			decoder_current_frame_index: 0,
+			decoder_current_frame_index,
 			decoded_chunk: None,
 			command_consumer,
 			frame_producer,
