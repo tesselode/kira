@@ -40,7 +40,7 @@ pub(crate) struct DecodeScheduler<Error: Send + 'static> {
 
 impl<Error: Send + 'static> DecodeScheduler<Error> {
 	pub fn new(
-		decoder: Box<dyn Decoder<Error = Error>>,
+		mut decoder: Box<dyn Decoder<Error = Error>>,
 		slice: Option<(usize, usize)>,
 		settings: StreamingSoundSettings,
 		shared: Arc<Shared>,
@@ -62,7 +62,8 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		} else {
 			decoder.num_frames()
 		};
-		let start_position = settings.start_position.into_samples(decoder.sample_rate());
+		let start_position = settings.start_position.into_samples(sample_rate);
+		let decoder_current_frame_index = decoder.seek(start_position)?;
 		let scheduler = Self {
 			decoder,
 			sample_rate,
@@ -75,7 +76,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 				sample_rate,
 				num_frames,
 			),
-			decoder_current_frame_index: 0,
+			decoder_current_frame_index,
 			decoded_chunk: None,
 			command_consumer,
 			frame_producer,
