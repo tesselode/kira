@@ -97,10 +97,6 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		if self.shared.stopped.load(Ordering::SeqCst) {
 			return Ok(NextStep::End);
 		}
-		// if the frame ringbuffer is full, sleep for a bit
-		if self.frame_producer.is_full() {
-			return Ok(NextStep::Wait);
-		}
 		// check for seek commands
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
@@ -110,6 +106,10 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 				DecodeSchedulerCommand::SeekBy(amount) => self.seek_by(amount)?,
 				DecodeSchedulerCommand::SeekTo(position) => self.seek_to(position)?,
 			}
+		}
+		// if the frame ringbuffer is full, sleep for a bit
+		if self.frame_producer.is_full() {
+			return Ok(NextStep::Wait);
 		}
 		let frame = self.frame_at_index(self.transport.position)?;
 		self.frame_producer
