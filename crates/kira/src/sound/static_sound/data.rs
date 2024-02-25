@@ -59,7 +59,7 @@ impl StaticSoundData {
 		let slice = (
 			start.into_samples(self.sample_rate),
 			match end {
-				EndPosition::EndOfAudio => self.frames.len() as usize,
+				EndPosition::EndOfAudio => self.frames.len(),
 				EndPosition::Custom(end) => end.into_samples(self.sample_rate),
 			},
 		);
