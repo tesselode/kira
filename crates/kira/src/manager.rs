@@ -179,8 +179,6 @@ impl<B: Backend> AudioManager<B> {
 		let shared = SoundWrapperShared::new();
 		let (command_writer, command_reader) = sound::wrapper::command_writers_and_readers();
 		let common_controller = CommonSoundController {
-			key,
-			command_producer: self.command_producer.clone(),
 			shared: shared.clone(),
 			command_writers: command_writer,
 		};

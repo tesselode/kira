@@ -1,10 +1,7 @@
 use std::sync::atomic::Ordering;
 
-use atomic_arena::Key;
-
 use crate::{
 	command::ValueChangeCommand,
-	manager::command::producer::CommandProducer,
 	tween::{Tween, Value},
 	OutputDestination, StartTime, Volume,
 };
@@ -18,8 +15,6 @@ use super::{
 };
 
 pub struct CommonSoundController {
-	pub(crate) key: Key,
-	pub(crate) command_producer: CommandProducer,
 	pub(crate) shared: SoundWrapperShared,
 	pub(crate) command_writers: CommandWriters,
 }
