@@ -24,6 +24,7 @@ use crate::{
 	manager::command::ModulatorCommand,
 	modulator::{ModulatorBuilder, ModulatorId},
 	sound::{
+		self,
 		wrapper::{SoundWrapper, SoundWrapperShared},
 		CommonSoundController, SoundData,
 	},
@@ -177,15 +178,17 @@ impl<B: Backend> AudioManager<B> {
 			.map_err(|_| PlaySoundError::SoundLimitReached)?;
 		let settings = sound_data.common_settings();
 		let shared = SoundWrapperShared::new();
+		let (command_writer, command_reader) = sound::wrapper::command_writers_and_readers();
 		let common_controller = CommonSoundController {
 			key,
 			command_producer: self.command_producer.clone(),
 			shared: shared.clone(),
+			command_writers: command_writer,
 		};
 		let (sound, handle) = sound_data
 			.into_sound(common_controller)
 			.map_err(PlaySoundError::IntoSoundError)?;
-		let sound_wrapper = SoundWrapper::new(sound, settings, shared);
+		let sound_wrapper = SoundWrapper::new(sound, settings, shared, command_reader);
 		self.command_producer
 			.push(Command::Sound(SoundCommand::Add(key, sound_wrapper)))?;
 		Ok(handle)

@@ -8,6 +8,7 @@ use crate::{
 	dsp::Frame,
 	modulator::value_provider::{MockModulatorValueProviderBuilder, ModulatorValueProvider},
 	sound::{
+		self,
 		wrapper::{SoundWrapper, SoundWrapperShared},
 		CommonSoundSettings, PlaybackState, Sound,
 	},
@@ -21,6 +22,7 @@ use crate::{
 #[allow(clippy::float_cmp)]
 fn pauses_and_resumes_with_fades() {
 	let shared = SoundWrapperShared::new();
+	let (_, command_reader) = sound::wrapper::command_writers_and_readers();
 	let mut sound_wrapper = SoundWrapper::new(
 		Box::new(MockSound),
 		CommonSoundSettings {
@@ -31,6 +33,7 @@ fn pauses_and_resumes_with_fades() {
 			fade_in_tween: None,
 		},
 		shared,
+		command_reader,
 	);
 
 	expect_frame_soon(
@@ -141,6 +144,7 @@ fn pauses_and_resumes_with_fades() {
 #[allow(clippy::float_cmp)]
 fn stops_with_fade_out() {
 	let shared = SoundWrapperShared::new();
+	let (_, command_reader) = sound::wrapper::command_writers_and_readers();
 	let mut sound_wrapper = SoundWrapper::new(
 		Box::new(MockSound),
 		CommonSoundSettings {
@@ -151,6 +155,7 @@ fn stops_with_fade_out() {
 			fade_in_tween: None,
 		},
 		shared,
+		command_reader,
 	);
 
 	expect_frame_soon(
@@ -219,6 +224,7 @@ fn waits_for_delay() {
 	let modulator_value_provider = MockModulatorValueProviderBuilder::new(0).build();
 
 	let shared = SoundWrapperShared::new();
+	let (_, command_reader) = sound::wrapper::command_writers_and_readers();
 	let mut sound_wrapper = SoundWrapper::new(
 		Box::new(MockSound),
 		CommonSoundSettings {
@@ -229,6 +235,7 @@ fn waits_for_delay() {
 			fade_in_tween: None,
 		},
 		shared,
+		command_reader,
 	);
 
 	// sound should not be playing yet
@@ -273,6 +280,7 @@ fn waits_for_start_time() {
 	};
 
 	let shared = SoundWrapperShared::new();
+	let (_, command_reader) = sound::wrapper::command_writers_and_readers();
 	let mut sound_wrapper = SoundWrapper::new(
 		Box::new(MockSound),
 		CommonSoundSettings {
@@ -286,6 +294,7 @@ fn waits_for_start_time() {
 			fade_in_tween: None,
 		},
 		shared,
+		command_reader,
 	);
 
 	// the sound should not be playing yet
@@ -413,6 +422,7 @@ fn stops_if_depending_on_missing_clock() {
 	};
 
 	let shared = SoundWrapperShared::new();
+	let (_, command_reader) = sound::wrapper::command_writers_and_readers();
 	let mut sound_wrapper = SoundWrapper::new(
 		Box::new(MockSound),
 		CommonSoundSettings {
@@ -426,6 +436,7 @@ fn stops_if_depending_on_missing_clock() {
 			fade_in_tween: None,
 		},
 		shared,
+		command_reader,
 	);
 
 	sound_wrapper.process(
@@ -470,6 +481,7 @@ fn immediate_pause_resume_and_stop_with_clock_start_time() {
 	};
 
 	let shared = SoundWrapperShared::new();
+	let (_, command_reader) = sound::wrapper::command_writers_and_readers();
 	let mut sound_wrapper = SoundWrapper::new(
 		Box::new(MockSound),
 		CommonSoundSettings {
@@ -483,6 +495,7 @@ fn immediate_pause_resume_and_stop_with_clock_start_time() {
 			fade_in_tween: None,
 		},
 		shared,
+		command_reader,
 	);
 
 	sound_wrapper.pause(Tween {
@@ -524,6 +537,7 @@ fn immediate_pause_resume_and_stop_with_clock_start_time() {
 #[allow(clippy::float_cmp)]
 fn volume() {
 	let shared = SoundWrapperShared::new();
+	let (_, command_reader) = sound::wrapper::command_writers_and_readers();
 	let mut sound_wrapper = SoundWrapper::new(
 		Box::new(MockSound),
 		CommonSoundSettings {
@@ -534,6 +548,7 @@ fn volume() {
 			fade_in_tween: None,
 		},
 		shared,
+		command_reader,
 	);
 
 	expect_frame_soon(
@@ -549,6 +564,7 @@ fn volume() {
 #[test]
 fn set_volume() {
 	let shared = SoundWrapperShared::new();
+	let (_, command_reader) = sound::wrapper::command_writers_and_readers();
 	let mut sound_wrapper = SoundWrapper::new(
 		Box::new(MockSound),
 		CommonSoundSettings {
@@ -559,6 +575,7 @@ fn set_volume() {
 			fade_in_tween: None,
 		},
 		shared,
+		command_reader,
 	);
 
 	expect_frame_soon(
@@ -587,6 +604,7 @@ fn set_volume() {
 #[allow(clippy::float_cmp)]
 fn panning() {
 	let shared = SoundWrapperShared::new();
+	let (_, command_reader) = sound::wrapper::command_writers_and_readers();
 	let mut sound_wrapper = SoundWrapper::new(
 		Box::new(MockSound),
 		CommonSoundSettings {
@@ -597,6 +615,7 @@ fn panning() {
 			fade_in_tween: None,
 		},
 		shared,
+		command_reader,
 	);
 
 	expect_frame_soon(
@@ -612,6 +631,7 @@ fn panning() {
 #[test]
 fn set_panning() {
 	let shared = SoundWrapperShared::new();
+	let (_, command_reader) = sound::wrapper::command_writers_and_readers();
 	let mut sound_wrapper = SoundWrapper::new(
 		Box::new(MockSound),
 		CommonSoundSettings {
@@ -622,6 +642,7 @@ fn set_panning() {
 			fade_in_tween: None,
 		},
 		shared,
+		command_reader,
 	);
 
 	expect_frame_soon(

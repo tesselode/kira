@@ -254,6 +254,7 @@ and compile times for games.
 #![allow(clippy::tabs_in_doc_comments)]
 
 pub mod clock;
+pub mod command;
 pub mod dsp;
 mod error;
 pub mod manager;

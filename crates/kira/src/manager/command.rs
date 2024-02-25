@@ -19,8 +19,6 @@ use crate::{
 
 pub(crate) enum SoundCommand {
 	Add(Key, SoundWrapper),
-	SetVolume(Key, Value<Volume>, Tween),
-	SetPanning(Key, Value<f64>, Tween),
 	Pause(Key, Tween),
 	Resume(Key, Tween),
 	Stop(Key, Tween),

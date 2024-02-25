@@ -60,16 +60,6 @@ impl Sounds {
 				.sound_wrappers
 				.insert_with_key(key, sound)
 				.expect("Sound arena is full"),
-			SoundCommand::SetVolume(key, volume, tween) => {
-				if let Some(sound_wrapper) = self.sound_wrappers.get_mut(key) {
-					sound_wrapper.set_volume(volume, tween);
-				}
-			}
-			SoundCommand::SetPanning(key, panning, tween) => {
-				if let Some(sound_wrapper) = self.sound_wrappers.get_mut(key) {
-					sound_wrapper.set_panning(panning, tween);
-				}
-			}
 			SoundCommand::Pause(key, tween) => {
 				if let Some(sound_wrapper) = self.sound_wrappers.get_mut(key) {
 					sound_wrapper.pause(tween);

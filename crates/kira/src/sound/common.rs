@@ -3,17 +3,22 @@ use std::sync::atomic::Ordering;
 use atomic_arena::Key;
 
 use crate::{
+	command::ValueChangeCommand,
 	manager::command::{producer::CommandProducer, Command, SoundCommand},
 	tween::{Tween, Value},
 	CommandError, OutputDestination, StartTime, Volume,
 };
 
-use super::{wrapper::SoundWrapperShared, PlaybackState};
+use super::{
+	wrapper::{CommandWriters, SoundWrapperShared},
+	PlaybackState,
+};
 
 pub struct CommonSoundController {
 	pub(crate) key: Key,
 	pub(crate) command_producer: CommandProducer,
 	pub(crate) shared: SoundWrapperShared,
+	pub(crate) command_writers: CommandWriters,
 }
 
 impl CommonSoundController {
@@ -30,34 +35,24 @@ impl CommonSoundController {
 	}
 
 	/// Sets the volume of the sound.
-	pub fn set_volume(
-		&mut self,
-		volume: impl Into<Value<Volume>>,
-		tween: Tween,
-	) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::Sound(SoundCommand::SetVolume(
-				self.key,
-				volume.into(),
+	pub fn set_volume(&mut self, volume: impl Into<Value<Volume>>, tween: Tween) {
+		self.command_writers
+			.volume_change
+			.write(ValueChangeCommand {
+				target: volume.into(),
 				tween,
-			)))
-			.map_err(|_| CommandError::CommandQueueFull)
+			});
 	}
 
 	/// Sets the panning of the sound, where `0.0` is hard left,
 	///	`0.5` is center, and `1.0` is hard right.
-	pub fn set_panning(
-		&mut self,
-		panning: impl Into<Value<f64>>,
-		tween: Tween,
-	) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::Sound(SoundCommand::SetPanning(
-				self.key,
-				panning.into(),
+	pub fn set_panning(&mut self, panning: impl Into<Value<f64>>, tween: Tween) {
+		self.command_writers
+			.panning_change
+			.write(ValueChangeCommand {
+				target: panning.into(),
 				tween,
-			)))
-			.map_err(|_| CommandError::CommandQueueFull)
+			});
 	}
 
 	/// Fades out the sound to silence with the given tween and then

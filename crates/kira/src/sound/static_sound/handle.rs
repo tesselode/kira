@@ -90,11 +90,7 @@ impl StaticSoundHandle {
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
-	pub fn set_volume(
-		&mut self,
-		volume: impl Into<Value<Volume>>,
-		tween: Tween,
-	) -> Result<(), CommandError> {
+	pub fn set_volume(&mut self, volume: impl Into<Value<Volume>>, tween: Tween) {
 		self.common_controller.set_volume(volume, tween)
 	}
 
@@ -224,11 +220,7 @@ impl StaticSoundHandle {
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
-	pub fn set_panning(
-		&mut self,
-		panning: impl Into<Value<f64>>,
-		tween: Tween,
-	) -> Result<(), CommandError> {
+	pub fn set_panning(&mut self, panning: impl Into<Value<f64>>, tween: Tween) {
 		self.common_controller.set_panning(panning, tween)
 	}
 

@@ -11,6 +11,7 @@ use std::{
 
 use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
+	command::{command_writer_and_reader, CommandReader, CommandWriter, ValueChangeCommand},
 	dsp::{interpolate_frame, Frame},
 	modulator::value_provider::ModulatorValueProvider,
 	tween::{Parameter, Tween, Value},
@@ -30,6 +31,7 @@ pub(crate) struct SoundWrapper {
 	time_since_last_frame: f64,
 	resample_buffer: [Frame; 4],
 	shared: SoundWrapperShared,
+	command_readers: CommandReaders,
 }
 
 impl SoundWrapper {
@@ -37,6 +39,7 @@ impl SoundWrapper {
 		sound: Box<dyn Sound>,
 		settings: CommonSoundSettings,
 		shared: SoundWrapperShared,
+		command_reader: CommandReaders,
 	) -> Self {
 		Self {
 			sound,
@@ -61,6 +64,7 @@ impl SoundWrapper {
 			time_since_last_frame: 0.0,
 			resample_buffer: [Frame::from_mono(0.0); 4],
 			shared,
+			command_readers: command_reader,
 		}
 	}
 
@@ -73,6 +77,16 @@ impl SoundWrapper {
 	}
 
 	pub fn on_start_processing(&mut self) {
+		if let Some(ValueChangeCommand { target, tween }) =
+			self.command_readers.volume_change.read().copied()
+		{
+			self.set_volume(target, tween);
+		}
+		if let Some(ValueChangeCommand { target, tween }) =
+			self.command_readers.panning_change.read().copied()
+		{
+			self.set_panning(target, tween);
+		}
 		self.sound.on_start_processing();
 	}
 
@@ -207,4 +221,29 @@ impl SoundWrapperShared {
 			state: Arc::new(AtomicU8::new(PlaybackState::Playing as u8)),
 		}
 	}
+}
+
+pub(crate) struct CommandWriters {
+	pub volume_change: CommandWriter<ValueChangeCommand<Volume>>,
+	pub panning_change: CommandWriter<ValueChangeCommand<f64>>,
+}
+
+pub(crate) struct CommandReaders {
+	pub volume_change: CommandReader<ValueChangeCommand<Volume>>,
+	pub panning_change: CommandReader<ValueChangeCommand<f64>>,
+}
+
+pub(crate) fn command_writers_and_readers() -> (CommandWriters, CommandReaders) {
+	let (volume_change_writer, volume_change_reader) = command_writer_and_reader();
+	let (panning_change_writer, panning_change_reader) = command_writer_and_reader();
+	(
+		CommandWriters {
+			volume_change: volume_change_writer,
+			panning_change: panning_change_writer,
+		},
+		CommandReaders {
+			volume_change: volume_change_reader,
+			panning_change: panning_change_reader,
+		},
+	)
 }
