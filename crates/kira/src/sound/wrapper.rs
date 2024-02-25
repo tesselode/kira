@@ -87,6 +87,15 @@ impl SoundWrapper {
 		{
 			self.set_panning(target, tween);
 		}
+		if let Some(PlaybackStateChangeCommand { kind, fade_tween }) =
+			self.command_readers.playback_state_change.read().copied()
+		{
+			match kind {
+				PlaybackStateChangeCommandKind::Pause => self.pause(fade_tween),
+				PlaybackStateChangeCommandKind::Resume => self.resume(fade_tween),
+				PlaybackStateChangeCommandKind::Stop => self.stop(fade_tween),
+			}
+		}
 		self.sound.on_start_processing();
 	}
 
@@ -226,24 +235,42 @@ impl SoundWrapperShared {
 pub(crate) struct CommandWriters {
 	pub volume_change: CommandWriter<ValueChangeCommand<Volume>>,
 	pub panning_change: CommandWriter<ValueChangeCommand<f64>>,
+	pub playback_state_change: CommandWriter<PlaybackStateChangeCommand>,
 }
 
 pub(crate) struct CommandReaders {
 	pub volume_change: CommandReader<ValueChangeCommand<Volume>>,
 	pub panning_change: CommandReader<ValueChangeCommand<f64>>,
+	pub playback_state_change: CommandReader<PlaybackStateChangeCommand>,
 }
 
 pub(crate) fn command_writers_and_readers() -> (CommandWriters, CommandReaders) {
 	let (volume_change_writer, volume_change_reader) = command_writer_and_reader();
 	let (panning_change_writer, panning_change_reader) = command_writer_and_reader();
+	let (playback_state_change_writer, playback_state_change_reader) = command_writer_and_reader();
 	(
 		CommandWriters {
 			volume_change: volume_change_writer,
 			panning_change: panning_change_writer,
+			playback_state_change: playback_state_change_writer,
 		},
 		CommandReaders {
 			volume_change: volume_change_reader,
 			panning_change: panning_change_reader,
+			playback_state_change: playback_state_change_reader,
 		},
 	)
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct PlaybackStateChangeCommand {
+	pub kind: PlaybackStateChangeCommandKind,
+	pub fade_tween: Tween,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) enum PlaybackStateChangeCommandKind {
+	Pause,
+	Resume,
+	Stop,
 }

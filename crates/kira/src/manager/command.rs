@@ -17,13 +17,6 @@ use crate::{
 	Volume,
 };
 
-pub(crate) enum SoundCommand {
-	Add(Key, SoundWrapper),
-	Pause(Key, Tween),
-	Resume(Key, Tween),
-	Stop(Key, Tween),
-}
-
 pub(crate) enum MixerCommand {
 	AddSubTrack(SubTrackId, Track),
 	SetTrackVolume(TrackId, Value<Volume>, Tween),
@@ -57,7 +50,7 @@ pub(crate) enum ModulatorCommand {
 }
 
 pub(crate) enum Command {
-	Sound(SoundCommand),
+	AddSound(Key, SoundWrapper),
 	Mixer(MixerCommand),
 	Clock(ClockCommand),
 	SpatialScene(SpatialSceneCommand),

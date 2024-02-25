@@ -279,13 +279,13 @@ impl StaticSoundHandle {
 
 	/// Fades out the sound to silence with the given tween and then
 	/// pauses playback.
-	pub fn pause(&mut self, tween: Tween) -> Result<(), CommandError> {
+	pub fn pause(&mut self, tween: Tween) {
 		self.common_controller.pause(tween)
 	}
 
 	/// Resumes playback and fades in the sound from silence
 	/// with the given tween.
-	pub fn resume(&mut self, tween: Tween) -> Result<(), CommandError> {
+	pub fn resume(&mut self, tween: Tween) {
 		self.common_controller.resume(tween)
 	}
 
@@ -293,7 +293,7 @@ impl StaticSoundHandle {
 	/// stops playback.
 	///
 	/// Once the sound is stopped, it cannot be restarted.
-	pub fn stop(&mut self, tween: Tween) -> Result<(), CommandError> {
+	pub fn stop(&mut self, tween: Tween) {
 		self.common_controller.stop(tween)
 	}
 

@@ -1,10 +1,9 @@
-use atomic_arena::{Arena, Controller};
+use atomic_arena::{Arena, Controller, Key};
 use ringbuf::HeapProducer;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider, manager::command::SoundCommand,
-	modulator::value_provider::ModulatorValueProvider, sound::wrapper::SoundWrapper,
-	OutputDestination,
+	clock::clock_info::ClockInfoProvider, modulator::value_provider::ModulatorValueProvider,
+	sound::wrapper::SoundWrapper, OutputDestination,
 };
 
 use super::{mixer::Mixer, spatial_scenes::SpatialScenes};
@@ -54,28 +53,10 @@ impl Sounds {
 		}
 	}
 
-	pub fn run_command(&mut self, command: SoundCommand) {
-		match command {
-			SoundCommand::Add(key, sound) => self
-				.sound_wrappers
-				.insert_with_key(key, sound)
-				.expect("Sound arena is full"),
-			SoundCommand::Pause(key, tween) => {
-				if let Some(sound_wrapper) = self.sound_wrappers.get_mut(key) {
-					sound_wrapper.pause(tween);
-				}
-			}
-			SoundCommand::Resume(key, tween) => {
-				if let Some(sound_wrapper) = self.sound_wrappers.get_mut(key) {
-					sound_wrapper.resume(tween);
-				}
-			}
-			SoundCommand::Stop(key, tween) => {
-				if let Some(sound_wrapper) = self.sound_wrappers.get_mut(key) {
-					sound_wrapper.stop(tween);
-				}
-			}
-		}
+	pub fn add(&mut self, key: Key, sound_wrapper: SoundWrapper) {
+		self.sound_wrappers
+			.insert_with_key(key, sound_wrapper)
+			.expect("Sound arena is full")
 	}
 
 	pub fn process(

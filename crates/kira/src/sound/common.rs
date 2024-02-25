@@ -4,13 +4,16 @@ use atomic_arena::Key;
 
 use crate::{
 	command::ValueChangeCommand,
-	manager::command::{producer::CommandProducer, Command, SoundCommand},
+	manager::command::producer::CommandProducer,
 	tween::{Tween, Value},
-	CommandError, OutputDestination, StartTime, Volume,
+	OutputDestination, StartTime, Volume,
 };
 
 use super::{
-	wrapper::{CommandWriters, SoundWrapperShared},
+	wrapper::{
+		CommandWriters, PlaybackStateChangeCommand, PlaybackStateChangeCommandKind,
+		SoundWrapperShared,
+	},
 	PlaybackState,
 };
 
@@ -57,28 +60,37 @@ impl CommonSoundController {
 
 	/// Fades out the sound to silence with the given tween and then
 	/// pauses playback.
-	pub fn pause(&mut self, tween: Tween) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::Sound(SoundCommand::Pause(self.key, tween)))
-			.map_err(|_| CommandError::CommandQueueFull)
+	pub fn pause(&mut self, tween: Tween) {
+		self.command_writers
+			.playback_state_change
+			.write(PlaybackStateChangeCommand {
+				kind: PlaybackStateChangeCommandKind::Pause,
+				fade_tween: tween,
+			})
 	}
 
 	/// Resumes playback and fades in the sound from silence
 	/// with the given tween.
-	pub fn resume(&mut self, tween: Tween) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::Sound(SoundCommand::Resume(self.key, tween)))
-			.map_err(|_| CommandError::CommandQueueFull)
+	pub fn resume(&mut self, tween: Tween) {
+		self.command_writers
+			.playback_state_change
+			.write(PlaybackStateChangeCommand {
+				kind: PlaybackStateChangeCommandKind::Resume,
+				fade_tween: tween,
+			})
 	}
 
 	/// Fades out the sound to silence with the given tween and then
 	/// stops playback.
 	///
 	/// Once the sound is stopped, it cannot be restarted.
-	pub fn stop(&mut self, tween: Tween) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::Sound(SoundCommand::Stop(self.key, tween)))
-			.map_err(|_| CommandError::CommandQueueFull)
+	pub fn stop(&mut self, tween: Tween) {
+		self.command_writers
+			.playback_state_change
+			.write(PlaybackStateChangeCommand {
+				kind: PlaybackStateChangeCommandKind::Stop,
+				fade_tween: tween,
+			})
 	}
 }
 

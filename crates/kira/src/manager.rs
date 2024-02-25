@@ -42,8 +42,7 @@ use self::{
 		Backend, DefaultBackend, Renderer, RendererShared,
 	},
 	command::{
-		producer::CommandProducer, ClockCommand, Command, MixerCommand, SoundCommand,
-		SpatialSceneCommand,
+		producer::CommandProducer, ClockCommand, Command, MixerCommand, SpatialSceneCommand,
 	},
 	error::{
 		AddClockError, AddModulatorError, AddSpatialSceneError, AddSubTrackError, PlaySoundError,
@@ -190,7 +189,7 @@ impl<B: Backend> AudioManager<B> {
 			.map_err(PlaySoundError::IntoSoundError)?;
 		let sound_wrapper = SoundWrapper::new(sound, settings, shared, command_reader);
 		self.command_producer
-			.push(Command::Sound(SoundCommand::Add(key, sound_wrapper)))?;
+			.push(Command::AddSound(key, sound_wrapper))?;
 		Ok(handle)
 	}
 

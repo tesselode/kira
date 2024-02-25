@@ -87,7 +87,9 @@ impl Renderer {
 
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
-				Command::Sound(command) => self.resources.sounds.run_command(command),
+				Command::AddSound(key, sound_wrapper) => {
+					self.resources.sounds.add(key, sound_wrapper)
+				}
 				Command::Mixer(command) => self.resources.mixer.run_command(command),
 				Command::Clock(command) => self.resources.clocks.run_command(command),
 				Command::SpatialScene(command) => {
