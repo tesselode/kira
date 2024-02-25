@@ -1,20 +1,19 @@
 use std::sync::Arc;
 
-use ringbuf::HeapProducer;
-
 use crate::{
+	command::ValueChangeCommand,
 	sound::{CommonSoundController, IntoOptionalRegion, PlaybackRate, PlaybackState},
 	tween::{Tween, Value},
-	CommandError, Volume,
+	Volume,
 };
 
-use super::{sound::Shared, Command};
+use super::{sound::Shared, CommandWriters, SeekCommand, SetLoopRegionCommand};
 
 /// Controls a static sound.
 pub struct StaticSoundHandle {
 	pub(super) common_controller: CommonSoundController,
-	pub(super) command_producer: HeapProducer<Command>,
 	pub(super) shared: Arc<Shared>,
+	pub(super) command_writers: CommandWriters,
 }
 
 impl StaticSoundHandle {
@@ -166,10 +165,13 @@ impl StaticSoundHandle {
 		&mut self,
 		playback_rate: impl Into<Value<PlaybackRate>>,
 		tween: Tween,
-	) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::SetPlaybackRate(playback_rate.into(), tween))
-			.map_err(|_| CommandError::CommandQueueFull)
+	) {
+		self.command_writers
+			.playback_rate_change
+			.write(ValueChangeCommand {
+				target: playback_rate.into(),
+				tween,
+			})
 	}
 
 	/**
@@ -268,13 +270,10 @@ impl StaticSoundHandle {
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
-	pub fn set_loop_region(
-		&mut self,
-		loop_region: impl IntoOptionalRegion,
-	) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::SetLoopRegion(loop_region.into_optional_region()))
-			.map_err(|_| CommandError::CommandQueueFull)
+	pub fn set_loop_region(&mut self, loop_region: impl IntoOptionalRegion) {
+		self.command_writers
+			.set_loop_region
+			.write(SetLoopRegionCommand(loop_region.into_optional_region()))
 	}
 
 	/// Fades out the sound to silence with the given tween and then
@@ -298,16 +297,12 @@ impl StaticSoundHandle {
 	}
 
 	/// Sets the playback position to the specified time in seconds.
-	pub fn seek_to(&mut self, position: f64) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::SeekTo(position))
-			.map_err(|_| CommandError::CommandQueueFull)
+	pub fn seek_to(&mut self, position: f64) {
+		self.command_writers.seek.write(SeekCommand::To(position))
 	}
 
 	/// Moves the playback position by the specified amount of time in seconds.
-	pub fn seek_by(&mut self, amount: f64) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::SeekBy(amount))
-			.map_err(|_| CommandError::CommandQueueFull)
+	pub fn seek_by(&mut self, amount: f64) {
+		self.command_writers.seek.write(SeekCommand::By(amount))
 	}
 }

@@ -32,3 +32,31 @@ pub struct ValueChangeCommand<T> {
 	pub target: Value<T>,
 	pub tween: Tween,
 }
+
+#[macro_export]
+macro_rules! command_writers_and_readers {
+	{$($field_name:ident: $type:ty),*} => {
+		paste::paste! {
+			struct CommandWriters {
+				$($field_name: CommandWriter<$type>),*
+			}
+
+			struct CommandReaders {
+				$($field_name: CommandReader<$type>),*
+			}
+
+			fn command_writers_and_readers() -> (CommandWriters, CommandReaders) {
+				$(let ([<$field_name _writer>], [<$field_name _reader>]) = $crate::command::command_writer_and_reader();)*
+
+				(
+					CommandWriters {
+						$($field_name: [<$field_name _writer>]),*
+					},
+					CommandReaders {
+						$($field_name: [<$field_name _reader>]),*
+					},
+				)
+			}
+		}
+	};
+}

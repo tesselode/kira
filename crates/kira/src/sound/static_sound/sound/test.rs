@@ -1,13 +1,11 @@
 use std::sync::Arc;
 
-use ringbuf::HeapRb;
-
 use crate::{
 	clock::clock_info::MockClockInfoProviderBuilder,
 	dsp::Frame,
 	modulator::value_provider::MockModulatorValueProviderBuilder,
 	sound::{
-		static_sound::{StaticSoundData, StaticSoundSettings},
+		static_sound::{command_writers_and_readers, StaticSoundData, StaticSoundSettings},
 		Sound,
 	},
 };
@@ -27,8 +25,8 @@ fn plays_all_samples() {
 		settings: StaticSoundSettings::new(),
 		slice: None,
 	};
-	let (_, heap_consumer) = HeapRb::new(1).split();
-	let mut sound = StaticSound::new(data, heap_consumer);
+	let (_, command_readers) = command_writers_and_readers();
+	let mut sound = StaticSound::new(data, command_readers);
 
 	for i in 1..=3 {
 		assert!(!sound.finished());
@@ -53,8 +51,8 @@ fn start_position() {
 		settings: StaticSoundSettings::new().start_position(3.0),
 		slice: None,
 	};
-	let (_, heap_consumer) = HeapRb::new(1).split();
-	let mut sound = StaticSound::new(data, heap_consumer);
+	let (_, command_readers) = command_writers_and_readers();
+	let mut sound = StaticSound::new(data, command_readers);
 
 	for i in 3..=6 {
 		assert_eq!(
@@ -78,8 +76,8 @@ fn out_of_bounds_start_position() {
 		settings: StaticSoundSettings::new().start_position(15.0),
 		slice: None,
 	};
-	let (_, heap_consumer) = HeapRb::new(1).split();
-	let mut sound = StaticSound::new(data, heap_consumer);
+	let (_, command_readers) = command_writers_and_readers();
+	let mut sound = StaticSound::new(data, command_readers);
 	sound.process(
 		&MockClockInfoProviderBuilder::new(0).build(),
 		&MockModulatorValueProviderBuilder::new(0).build(),
@@ -95,8 +93,8 @@ fn seek_to() {
 		settings: StaticSoundSettings::new(),
 		slice: None,
 	};
-	let (_, heap_consumer) = HeapRb::new(1).split();
-	let mut sound = StaticSound::new(data, heap_consumer);
+	let (_, command_readers) = command_writers_and_readers();
+	let mut sound = StaticSound::new(data, command_readers);
 
 	sound.seek_to(25.0);
 	assert_eq!(
@@ -117,8 +115,8 @@ fn seek_by() {
 		settings: StaticSoundSettings::new().start_position(10.0),
 		slice: None,
 	};
-	let (_, heap_consumer) = HeapRb::new(1).split();
-	let mut sound = StaticSound::new(data, heap_consumer);
+	let (_, command_readers) = command_writers_and_readers();
+	let mut sound = StaticSound::new(data, command_readers);
 
 	sound.seek_by(5.0);
 	assert_eq!(
@@ -139,8 +137,8 @@ fn reverse() {
 		settings: StaticSoundSettings::new().reverse(true),
 		slice: None,
 	};
-	let (_, heap_consumer) = HeapRb::new(1).split();
-	let mut sound = StaticSound::new(data, heap_consumer);
+	let (_, command_readers) = command_writers_and_readers();
+	let mut sound = StaticSound::new(data, command_readers);
 
 	for i in (4..=9).rev() {
 		assert_eq!(
