@@ -7,7 +7,6 @@ use ringbuf::HeapProducer;
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
-	manager::command::MixerCommand,
 	modulator::value_provider::ModulatorValueProvider,
 	track::{Route, SubTrackId, Track, TrackBuilder, TrackHandle, TrackId},
 };
@@ -50,15 +49,11 @@ impl Mixer {
 		}
 	}
 
-	pub fn run_command(&mut self, command: MixerCommand) {
-		match command {
-			MixerCommand::AddSubTrack(id, track) => {
-				self.sub_tracks
-					.insert_with_key(id.0, track)
-					.expect("Sub-track arena is full");
-				self.sub_track_ids.push(id);
-			}
-		}
+	pub fn add_sub_track(&mut self, id: SubTrackId, track: Track) {
+		self.sub_tracks
+			.insert_with_key(id.0, track)
+			.expect("Sub-track arena is full");
+		self.sub_track_ids.push(id);
 	}
 
 	pub fn on_change_sample_rate(&mut self, sample_rate: u32) {

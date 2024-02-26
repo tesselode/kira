@@ -16,10 +16,6 @@ use crate::{
 	tween::{Tween, Value},
 };
 
-pub(crate) enum MixerCommand {
-	AddSubTrack(SubTrackId, Track),
-}
-
 pub(crate) enum ClockCommand {
 	Add(ClockId, Clock),
 	SetSpeed(ClockId, Value<ClockSpeed>, Tween),
@@ -43,7 +39,7 @@ pub(crate) enum ModulatorCommand {
 
 pub(crate) enum Command {
 	AddSound(Key, SoundWrapper),
-	Mixer(MixerCommand),
+	AddSubTrack(SubTrackId, Track),
 	Clock(ClockCommand),
 	SpatialScene(SpatialSceneCommand),
 	Modulator(ModulatorCommand),

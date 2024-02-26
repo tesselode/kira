@@ -90,7 +90,9 @@ impl Renderer {
 				Command::AddSound(key, sound_wrapper) => {
 					self.resources.sounds.add(key, sound_wrapper)
 				}
-				Command::Mixer(command) => self.resources.mixer.run_command(command),
+				Command::AddSubTrack(id, sub_track) => {
+					self.resources.mixer.add_sub_track(id, sub_track)
+				}
 				Command::Clock(command) => self.resources.clocks.run_command(command),
 				Command::SpatialScene(command) => {
 					self.resources.spatial_scenes.run_command(command)

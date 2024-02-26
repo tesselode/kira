@@ -3,7 +3,6 @@ use ringbuf::HeapRb;
 use crate::{
 	clock::clock_info::MockClockInfoProviderBuilder,
 	dsp::Frame,
-	manager::command::MixerCommand,
 	modulator::value_provider::MockModulatorValueProviderBuilder,
 	track::{SubTrackId, TrackBuilder, TrackRoutes},
 };
@@ -16,21 +15,21 @@ fn parent_routing() {
 	let (mut mixer, _) = Mixer::new(100, unused_sub_track_producer, 1, TrackBuilder::new());
 	let sub_track_controller = mixer.sub_track_controller();
 	let parent_track_id = SubTrackId(sub_track_controller.try_reserve().unwrap());
-	mixer.run_command(MixerCommand::AddSubTrack(
+	mixer.add_sub_track(
 		parent_track_id,
 		TrackBuilder::new()
 			.volume(0.5)
 			.build(parent_track_id.into())
 			.0,
-	));
+	);
 	let child_track_id = SubTrackId(sub_track_controller.try_reserve().unwrap());
-	mixer.run_command(MixerCommand::AddSubTrack(
+	mixer.add_sub_track(
 		child_track_id,
 		TrackBuilder::new()
 			.routes(TrackRoutes::empty().with_route(parent_track_id, 0.5))
 			.build(parent_track_id.into())
 			.0,
-	));
+	);
 	mixer
 		.track_mut(child_track_id.into())
 		.unwrap()
@@ -51,21 +50,21 @@ fn send_routing() {
 	let (mut mixer, _) = Mixer::new(100, unused_sub_track_producer, 1, TrackBuilder::new());
 	let sub_track_controller = mixer.sub_track_controller();
 	let send_track_id = SubTrackId(sub_track_controller.try_reserve().unwrap());
-	mixer.run_command(MixerCommand::AddSubTrack(
+	mixer.add_sub_track(
 		send_track_id,
 		TrackBuilder::new()
 			.volume(0.5)
 			.build(send_track_id.into())
 			.0,
-	));
+	);
 	let other_track_id = SubTrackId(sub_track_controller.try_reserve().unwrap());
-	mixer.run_command(MixerCommand::AddSubTrack(
+	mixer.add_sub_track(
 		other_track_id,
 		TrackBuilder::new()
 			.routes(TrackRoutes::new().with_route(send_track_id, 0.5))
 			.build(other_track_id.into())
 			.0,
-	));
+	);
 	mixer
 		.track_mut(other_track_id.into())
 		.unwrap()

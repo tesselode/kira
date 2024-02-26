@@ -38,9 +38,7 @@ use self::{
 		},
 		Backend, DefaultBackend, Renderer, RendererShared,
 	},
-	command::{
-		producer::CommandProducer, ClockCommand, Command, MixerCommand, SpatialSceneCommand,
-	},
+	command::{producer::CommandProducer, ClockCommand, Command, SpatialSceneCommand},
 	error::{
 		AddClockError, AddModulatorError, AddSpatialSceneError, AddSubTrackError, PlaySoundError,
 	},
@@ -210,7 +208,7 @@ impl<B: Backend> AudioManager<B> {
 		let (mut track, handle) = builder.build(id.into());
 		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
 		self.command_producer
-			.push(Command::Mixer(MixerCommand::AddSubTrack(id, track)))?;
+			.push(Command::AddSubTrack(id, track))?;
 		Ok(handle)
 	}
 
