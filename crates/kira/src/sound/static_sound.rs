@@ -32,10 +32,7 @@ pub use data::*;
 pub use handle::*;
 pub use settings::*;
 
-use crate::{
-	command::{CommandReader, CommandWriter, ValueChangeCommand},
-	command_writers_and_readers,
-};
+use crate::{command::ValueChangeCommand, command_writers_and_readers};
 
 use super::{PlaybackRate, Region};
 

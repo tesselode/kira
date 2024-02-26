@@ -13,10 +13,7 @@ mod settings;
 use ringbuf::HeapRb;
 pub use settings::*;
 
-use std::{
-	collections::HashSet,
-	sync::{atomic::Ordering, Arc},
-};
+use std::sync::{atomic::Ordering, Arc};
 
 use crate::{
 	clock::{Clock, ClockHandle, ClockId, ClockSpeed},
@@ -29,7 +26,7 @@ use crate::{
 		CommonSoundController, SoundData,
 	},
 	spatial::scene::{SpatialScene, SpatialSceneHandle, SpatialSceneId, SpatialSceneSettings},
-	track::{SubTrackId, Track, TrackBuilder, TrackHandle, TrackId},
+	track::{SubTrackId, TrackBuilder, TrackHandle},
 	tween::{Tween, Value},
 };
 
@@ -81,6 +78,7 @@ pub struct AudioManager<B: Backend = DefaultBackend> {
 	command_producer: CommandProducer,
 	resource_controllers: ResourceControllers,
 	unused_resource_consumers: UnusedResourceConsumers,
+	main_track_handle: TrackHandle,
 }
 
 impl<B: Backend> AudioManager<B> {
@@ -120,7 +118,7 @@ impl<B: Backend> AudioManager<B> {
 			HeapRb::new(settings.capacities.command_capacity).split();
 		let (unused_resource_producers, unused_resource_consumers) =
 			create_unused_resource_channels(settings.capacities);
-		let (resources, resource_controllers) = create_resources(
+		let (resources, resource_controllers, main_track_handle) = create_resources(
 			settings.capacities,
 			settings.main_track_builder,
 			unused_resource_producers,
@@ -135,6 +133,7 @@ impl<B: Backend> AudioManager<B> {
 			command_producer: CommandProducer::new(command_producer),
 			resource_controllers,
 			unused_resource_consumers,
+			main_track_handle,
 		})
 	}
 
@@ -208,17 +207,10 @@ impl<B: Backend> AudioManager<B> {
 				.try_reserve()
 				.map_err(|_| AddSubTrackError::SubTrackLimitReached)?,
 		);
-		let existing_routes = builder.routes.0.keys().copied().collect();
-		let mut sub_track = Track::new(builder);
-		sub_track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
-		let handle = TrackHandle {
-			id: TrackId::Sub(id),
-			shared: Some(sub_track.shared()),
-			command_producer: self.command_producer.clone(),
-			existing_routes,
-		};
+		let (mut track, handle) = builder.build(id.into());
+		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
 		self.command_producer
-			.push(Command::Mixer(MixerCommand::AddSubTrack(id, sub_track)))?;
+			.push(Command::Mixer(MixerCommand::AddSubTrack(id, track)))?;
 		Ok(handle)
 	}
 
@@ -440,13 +432,8 @@ impl<B: Backend> AudioManager<B> {
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
-	pub fn main_track(&self) -> TrackHandle {
-		TrackHandle {
-			id: TrackId::Main,
-			shared: None,
-			command_producer: self.command_producer.clone(),
-			existing_routes: HashSet::new(),
-		}
+	pub fn main_track(&mut self) -> &mut TrackHandle {
+		&mut self.main_track_handle
 	}
 
 	/// Returns the current playback state of the audio.

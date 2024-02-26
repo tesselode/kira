@@ -4,19 +4,20 @@ use crate::{
 	clock::clock_info::{ClockInfoProvider, MockClockInfoProviderBuilder},
 	dsp::Frame,
 	modulator::value_provider::{MockModulatorValueProviderBuilder, ModulatorValueProvider},
+	track::TrackId,
 	tween::{Tween, Value},
 	Volume,
 };
 
 use super::{
 	effect::{Effect, EffectBuilder},
-	Track, TrackBuilder,
+	TrackBuilder,
 };
 
 /// Tests that the output volume of a track can be set.
 #[test]
 fn volume() {
-	let mut track = Track::new(TrackBuilder::new().volume(0.5));
+	let (mut track, _) = TrackBuilder::new().volume(0.5).build(TrackId::Main);
 	track.add_input(Frame::from_mono(1.0));
 	assert_eq!(
 		track.process(
@@ -32,8 +33,8 @@ fn volume() {
 /// after it's created.
 #[test]
 fn set_volume() {
-	let mut track = Track::new(TrackBuilder::new());
-	track.set_volume(
+	let (mut track, _) = TrackBuilder::new().build(TrackId::Main);
+	track.volume.set(
 		Value::Fixed(Volume::Amplitude(0.5)),
 		Tween {
 			duration: Duration::ZERO,
@@ -54,12 +55,12 @@ fn set_volume() {
 /// Tests that effects process the input signal in order.
 #[test]
 fn effects() {
-	let mut track = Track::new({
+	let (mut track, _) = {
 		let mut builder = TrackBuilder::new();
 		builder.add_effect(MockEffect::Add(Frame::from_mono(0.5)));
 		builder.add_effect(MockEffect::Mul(0.5));
-		builder
-	});
+		builder.build(TrackId::Main)
+	};
 	track.add_input(Frame::from_mono(1.0));
 	assert_eq!(
 		track.process(
