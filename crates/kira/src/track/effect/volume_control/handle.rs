@@ -1,26 +1,24 @@
-use ringbuf::HeapProducer;
-
 use crate::{
+	command::ValueChangeCommand,
 	tween::{Tween, Value},
-	CommandError, Volume,
+	Volume,
 };
 
-use super::Command;
+use super::CommandWriters;
 
 /// Controls a volume control effect.
 pub struct VolumeControlHandle {
-	pub(super) command_producer: HeapProducer<Command>,
+	pub(super) command_writers: CommandWriters,
 }
 
 impl VolumeControlHandle {
 	/// Sets the volume adjustment to apply to input audio.
-	pub fn set_volume(
-		&mut self,
-		volume: impl Into<Value<Volume>>,
-		tween: Tween,
-	) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::SetVolume(volume.into(), tween))
-			.map_err(|_| CommandError::CommandQueueFull)
+	pub fn set_volume(&mut self, volume: impl Into<Value<Volume>>, tween: Tween) {
+		self.command_writers
+			.volume_change
+			.write(ValueChangeCommand {
+				target: volume.into(),
+				tween,
+			})
 	}
 }

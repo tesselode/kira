@@ -8,21 +8,16 @@ mod handle;
 pub use builder::*;
 pub use handle::*;
 
-use ringbuf::HeapConsumer;
-
 use std::time::Duration;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider,
-	dsp::Frame,
-	modulator::value_provider::ModulatorValueProvider,
-	tween::{Parameter, Tween, Value},
+	clock::clock_info::ClockInfoProvider, command::ValueChangeCommand, command_writers_and_readers,
+	dsp::Frame, modulator::value_provider::ModulatorValueProvider, tween::Parameter,
 };
 
 use super::Effect;
 
 struct Compressor {
-	command_consumer: HeapConsumer<Command>,
 	threshold: Parameter,
 	ratio: Parameter,
 	attack_duration: Parameter<Duration>,
@@ -30,12 +25,12 @@ struct Compressor {
 	makeup_gain: Parameter,
 	mix: Parameter,
 	envelope_follower: [f32; 2],
+	command_readers: CommandReaders,
 }
 
 impl Compressor {
-	fn new(builder: CompressorBuilder, command_consumer: HeapConsumer<Command>) -> Self {
+	fn new(builder: CompressorBuilder, command_readers: CommandReaders) -> Self {
 		Self {
-			command_consumer,
 			threshold: Parameter::new(builder.threshold, CompressorBuilder::DEFAULT_THRESHOLD),
 			ratio: Parameter::new(builder.ratio, CompressorBuilder::DEFAULT_RATIO),
 			attack_duration: Parameter::new(
@@ -52,26 +47,24 @@ impl Compressor {
 			),
 			mix: Parameter::new(builder.mix, CompressorBuilder::DEFAULT_MIX),
 			envelope_follower: [0.0; 2],
+			command_readers,
 		}
 	}
 }
 
 impl Effect for Compressor {
 	fn on_start_processing(&mut self) {
-		while let Some(command) = self.command_consumer.pop() {
-			match command {
-				Command::SetThreshold(target, tween) => self.threshold.set(target, tween),
-				Command::SetRatio(target, tween) => self.ratio.set(target, tween),
-				Command::SetAttackDuration(target, tween) => {
-					self.attack_duration.set(target, tween)
-				}
-				Command::SetReleaseDuration(target, tween) => {
-					self.release_duration.set(target, tween)
-				}
-				Command::SetMakeupGain(target, tween) => self.makeup_gain.set(target, tween),
-				Command::SetMix(target, tween) => self.mix.set(target, tween),
-			}
-		}
+		self.threshold
+			.read_commands(&mut self.command_readers.threshold_change);
+		self.ratio
+			.read_commands(&mut self.command_readers.ratio_change);
+		self.attack_duration
+			.read_commands(&mut self.command_readers.attack_duration_change);
+		self.release_duration
+			.read_commands(&mut self.command_readers.release_duration_change);
+		self.makeup_gain
+			.read_commands(&mut self.command_readers.makeup_gain_change);
+		self.mix.read_commands(&mut self.command_readers.mix_change);
 	}
 
 	fn process(
@@ -128,11 +121,11 @@ impl Effect for Compressor {
 	}
 }
 
-enum Command {
-	SetThreshold(Value<f64>, Tween),
-	SetRatio(Value<f64>, Tween),
-	SetAttackDuration(Value<Duration>, Tween),
-	SetReleaseDuration(Value<Duration>, Tween),
-	SetMakeupGain(Value<f64>, Tween),
-	SetMix(Value<f64>, Tween),
-}
+command_writers_and_readers!(
+	threshold_change: ValueChangeCommand<f64>,
+	ratio_change: ValueChangeCommand<f64>,
+	attack_duration_change: ValueChangeCommand<Duration>,
+	release_duration_change: ValueChangeCommand<Duration>,
+	makeup_gain_change: ValueChangeCommand<f64>,
+	mix_change: ValueChangeCommand<f64>
+);

@@ -38,11 +38,11 @@ macro_rules! command_writers_and_readers {
 	{$($field_name:ident: $type:ty),*} => {
 		paste::paste! {
 			struct CommandWriters {
-				$($field_name: CommandWriter<$type>),*
+				$($field_name: $crate::command::CommandWriter<$type>),*
 			}
 
 			struct CommandReaders {
-				$($field_name: CommandReader<$type>),*
+				$($field_name: $crate::command::CommandReader<$type>),*
 			}
 
 			fn command_writers_and_readers() -> (CommandWriters, CommandReaders) {

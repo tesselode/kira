@@ -1,10 +1,6 @@
-use ringbuf::HeapRb;
-
 use crate::{track::effect::EffectBuilder, tween::Value};
 
-use super::{EqFilter, EqFilterHandle, EqFilterKind};
-
-const COMMAND_CAPACITY: usize = 8;
+use super::{command_writers_and_readers, EqFilter, EqFilterHandle, EqFilterKind};
 
 /// Configures an EQ filter.
 #[non_exhaustive]
@@ -44,10 +40,10 @@ impl EffectBuilder for EqFilterBuilder {
 	type Handle = EqFilterHandle;
 
 	fn build(self) -> (Box<dyn crate::track::effect::Effect>, Self::Handle) {
-		let (command_producer, command_consumer) = HeapRb::new(COMMAND_CAPACITY).split();
+		let (command_writers, command_readers) = command_writers_and_readers();
 		(
-			Box::new(EqFilter::new(self, command_consumer)),
-			EqFilterHandle { command_producer },
+			Box::new(EqFilter::new(self, command_readers)),
+			EqFilterHandle { command_writers },
 		)
 	}
 }
