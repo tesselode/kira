@@ -1,20 +1,20 @@
 use std::sync::Arc;
 
 use crate::{
+	command::ValueChangeCommand,
 	sound::{CommonSoundController, IntoOptionalRegion, PlaybackRate, PlaybackState},
 	tween::{Tween, Value},
-	CommandError, Volume,
+	Volume,
 };
-use ringbuf::{HeapConsumer, HeapProducer};
+use ringbuf::HeapConsumer;
 
-use super::{sound::Shared, DecodeSchedulerCommand, SoundCommand};
+use super::{sound::Shared, CommandWriters, SeekCommand, SetLoopRegionCommand};
 
 /// Controls a streaming sound.
 pub struct StreamingSoundHandle<Error> {
 	pub(crate) shared: Arc<Shared>,
 	pub(super) common_controller: CommonSoundController,
-	pub(crate) sound_command_producer: HeapProducer<SoundCommand>,
-	pub(crate) decode_scheduler_command_producer: HeapProducer<DecodeSchedulerCommand>,
+	pub(crate) command_writers: CommandWriters,
 	pub(crate) error_consumer: HeapConsumer<Error>,
 }
 
@@ -167,10 +167,13 @@ impl<Error> StreamingSoundHandle<Error> {
 		&mut self,
 		playback_rate: impl Into<Value<PlaybackRate>>,
 		tween: Tween,
-	) -> Result<(), CommandError> {
-		self.sound_command_producer
-			.push(SoundCommand::SetPlaybackRate(playback_rate.into(), tween))
-			.map_err(|_| CommandError::CommandQueueFull)
+	) {
+		self.command_writers
+			.playback_rate_change
+			.write(ValueChangeCommand {
+				target: playback_rate.into(),
+				tween,
+			})
 	}
 
 	/**
@@ -269,15 +272,10 @@ impl<Error> StreamingSoundHandle<Error> {
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
-	pub fn set_loop_region(
-		&mut self,
-		loop_region: impl IntoOptionalRegion,
-	) -> Result<(), CommandError> {
-		self.decode_scheduler_command_producer
-			.push(DecodeSchedulerCommand::SetLoopRegion(
-				loop_region.into_optional_region(),
-			))
-			.map_err(|_| CommandError::CommandQueueFull)
+	pub fn set_loop_region(&mut self, loop_region: impl IntoOptionalRegion) {
+		self.command_writers
+			.set_loop_region
+			.write(SetLoopRegionCommand(loop_region.into_optional_region()))
 	}
 
 	/// Fades out the sound to silence with the given tween and then
@@ -301,17 +299,13 @@ impl<Error> StreamingSoundHandle<Error> {
 	}
 
 	/// Sets the playback position to the specified time in seconds.
-	pub fn seek_to(&mut self, position: f64) -> Result<(), CommandError> {
-		self.decode_scheduler_command_producer
-			.push(DecodeSchedulerCommand::SeekTo(position))
-			.map_err(|_| CommandError::CommandQueueFull)
+	pub fn seek_to(&mut self, position: f64) {
+		self.command_writers.seek.write(SeekCommand::To(position))
 	}
 
 	/// Moves the playback position by the specified amount of time in seconds.
-	pub fn seek_by(&mut self, amount: f64) -> Result<(), CommandError> {
-		self.decode_scheduler_command_producer
-			.push(DecodeSchedulerCommand::SeekBy(amount))
-			.map_err(|_| CommandError::CommandQueueFull)
+	pub fn seek_by(&mut self, amount: f64) {
+		self.command_writers.seek.write(SeekCommand::By(amount))
 	}
 
 	/// Returns an error that occurred while decoding audio, if any.

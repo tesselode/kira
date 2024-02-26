@@ -10,6 +10,7 @@ use std::sync::{
 
 use crate::{
 	clock::clock_info::ClockInfoProvider,
+	command::ValueChangeCommand,
 	dsp::Frame,
 	modulator::value_provider::ModulatorValueProvider,
 	sound::{PlaybackRate, Sound},
@@ -17,7 +18,7 @@ use crate::{
 };
 use ringbuf::HeapConsumer;
 
-use super::{SoundCommand, StreamingSoundSettings};
+use super::{SoundCommandReaders, StreamingSoundSettings};
 
 use self::decode_scheduler::DecodeScheduler;
 
@@ -46,12 +47,12 @@ impl Shared {
 }
 
 pub(crate) struct StreamingSound {
-	command_consumer: HeapConsumer<SoundCommand>,
 	sample_rate: u32,
 	frame_consumer: HeapConsumer<TimestampedFrame>,
 	current_frame: usize,
 	playback_rate: Parameter<PlaybackRate>,
 	shared: Arc<Shared>,
+	command_readers: SoundCommandReaders,
 }
 
 impl StreamingSound {
@@ -60,8 +61,8 @@ impl StreamingSound {
 		settings: StreamingSoundSettings,
 		shared: Arc<Shared>,
 		frame_consumer: HeapConsumer<TimestampedFrame>,
-		command_consumer: HeapConsumer<SoundCommand>,
 		scheduler: &DecodeScheduler<Error>,
+		command_readers: SoundCommandReaders,
 	) -> Self {
 		let current_frame = scheduler.current_frame();
 		let start_position = current_frame as f64 / sample_rate as f64;
@@ -69,12 +70,12 @@ impl StreamingSound {
 			.position
 			.store(start_position.to_bits(), Ordering::SeqCst);
 		Self {
-			command_consumer,
 			sample_rate,
 			frame_consumer,
 			current_frame,
 			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate::Factor(1.0)),
 			shared,
+			command_readers,
 		}
 	}
 
@@ -102,12 +103,10 @@ impl Sound for StreamingSound {
 		self.shared
 			.position
 			.store(self.position().to_bits(), Ordering::SeqCst);
-		while let Some(command) = self.command_consumer.pop() {
-			match command {
-				SoundCommand::SetPlaybackRate(playback_rate, tween) => {
-					self.playback_rate.set(playback_rate, tween)
-				}
-			}
+		if let Some(ValueChangeCommand { target, tween }) =
+			self.command_readers.playback_rate_change.read().copied()
+		{
+			self.playback_rate.set(target, tween);
 		}
 	}
 

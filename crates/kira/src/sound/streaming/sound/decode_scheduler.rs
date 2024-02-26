@@ -6,7 +6,10 @@ use std::{
 use crate::{
 	dsp::Frame,
 	sound::{
-		streaming::{decoder::Decoder, DecodeSchedulerCommand, StreamingSoundSettings},
+		streaming::{
+			decoder::Decoder, DecodeSchedulerCommandReaders, SeekCommand, SetLoopRegionCommand,
+			StreamingSoundSettings,
+		},
 		transport::Transport,
 	},
 };
@@ -31,10 +34,10 @@ pub(crate) struct DecodeScheduler<Error: Send + 'static> {
 	transport: Transport,
 	decoder_current_frame_index: usize,
 	decoded_chunk: Option<DecodedChunk>,
-	command_consumer: HeapConsumer<DecodeSchedulerCommand>,
 	frame_producer: HeapProducer<TimestampedFrame>,
 	error_producer: HeapProducer<Error>,
 	shared: Arc<Shared>,
+	command_readers: DecodeSchedulerCommandReaders,
 }
 
 impl<Error: Send + 'static> DecodeScheduler<Error> {
@@ -43,8 +46,8 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		slice: Option<(usize, usize)>,
 		settings: StreamingSoundSettings,
 		shared: Arc<Shared>,
-		command_consumer: HeapConsumer<DecodeSchedulerCommand>,
 		error_producer: HeapProducer<Error>,
+		command_readers: DecodeSchedulerCommandReaders,
 	) -> Result<(Self, HeapConsumer<TimestampedFrame>), Error> {
 		let (frame_producer, frame_consumer) = HeapRb::new(BUFFER_SIZE).split();
 		let sample_rate = decoder.sample_rate();
@@ -65,10 +68,10 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 			),
 			decoder_current_frame_index,
 			decoded_chunk: None,
-			command_consumer,
 			frame_producer,
 			error_producer,
 			shared,
+			command_readers,
 		};
 		Ok((scheduler, frame_consumer))
 	}
@@ -97,14 +100,17 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		if self.shared.stopped.load(Ordering::SeqCst) {
 			return Ok(NextStep::End);
 		}
-		// check for seek commands
-		while let Some(command) = self.command_consumer.pop() {
-			match command {
-				DecodeSchedulerCommand::SetLoopRegion(loop_region) => self
-					.transport
-					.set_loop_region(loop_region, self.sample_rate, self.num_frames),
-				DecodeSchedulerCommand::SeekBy(amount) => self.seek_by(amount)?,
-				DecodeSchedulerCommand::SeekTo(position) => self.seek_to(position)?,
+		// check for commands
+		if let Some(SetLoopRegionCommand(loop_region)) =
+			self.command_readers.set_loop_region.read().copied()
+		{
+			self.transport
+				.set_loop_region(loop_region, self.sample_rate, self.num_frames);
+		}
+		if let Some(seek_command) = self.command_readers.seek.read().copied() {
+			match seek_command {
+				SeekCommand::By(amount) => self.seek_by(amount)?,
+				SeekCommand::To(position) => self.seek_to(position)?,
 			}
 		}
 		// if the frame ringbuffer is full, sleep for a bit
