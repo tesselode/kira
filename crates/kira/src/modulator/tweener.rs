@@ -1,8 +1,10 @@
 //! Smoothly transitions values to other values.
 
 mod builder;
-mod command;
 mod handle;
+
+pub use builder::*;
+pub use handle::*;
 
 #[cfg(test)]
 mod test;
@@ -15,13 +17,9 @@ use std::{
 	time::Duration,
 };
 
-pub use builder::*;
-use command::*;
-pub use handle::*;
-use ringbuf::HeapConsumer;
-
 use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
+	command_writers_and_readers,
 	tween::{Tween, Tweenable},
 	StartTime,
 };
@@ -31,20 +29,20 @@ use super::{value_provider::ModulatorValueProvider, Modulator};
 struct Tweener {
 	state: State,
 	value: f64,
-	command_consumer: HeapConsumer<Command>,
+	command_readers: CommandReaders,
 	shared: Arc<TweenerShared>,
 }
 
 impl Tweener {
 	fn new(
 		initial_value: f64,
-		command_consumer: HeapConsumer<Command>,
+		command_readers: CommandReaders,
 		shared: Arc<TweenerShared>,
 	) -> Self {
 		Self {
 			state: State::Idle,
 			value: initial_value,
-			command_consumer,
+			command_readers,
 			shared,
 		}
 	}
@@ -60,10 +58,8 @@ impl Tweener {
 
 impl Modulator for Tweener {
 	fn on_start_processing(&mut self) {
-		while let Some(command) = self.command_consumer.pop() {
-			match command {
-				Command::Set { target, tween } => self.set(target, tween),
-			}
+		if let Some(SetCommand { target, tween }) = self.command_readers.set.read().copied() {
+			self.set(target, tween);
 		}
 	}
 
@@ -135,4 +131,14 @@ impl TweenerShared {
 			removed: AtomicBool::new(false),
 		}
 	}
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct SetCommand {
+	target: f64,
+	tween: Tween,
+}
+
+command_writers_and_readers! {
+	set: SetCommand
 }

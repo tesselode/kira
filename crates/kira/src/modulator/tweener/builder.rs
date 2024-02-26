@@ -1,12 +1,8 @@
 use std::sync::Arc;
 
-use ringbuf::HeapRb;
-
 use crate::modulator::{Modulator, ModulatorBuilder, ModulatorId};
 
-use super::{Tweener, TweenerHandle, TweenerShared};
-
-const COMMAND_CAPACITY: usize = 8;
+use super::{command_writers_and_readers, Tweener, TweenerHandle, TweenerShared};
 
 /// Configures a tweener.
 pub struct TweenerBuilder {
@@ -18,17 +14,17 @@ impl ModulatorBuilder for TweenerBuilder {
 	type Handle = TweenerHandle;
 
 	fn build(self, id: ModulatorId) -> (Box<dyn Modulator>, Self::Handle) {
-		let (command_producer, command_consumer) = HeapRb::new(COMMAND_CAPACITY).split();
+		let (command_writers, command_readers) = command_writers_and_readers();
 		let shared = Arc::new(TweenerShared::new());
 		(
 			Box::new(Tweener::new(
 				self.initial_value,
-				command_consumer,
+				command_readers,
 				shared.clone(),
 			)),
 			TweenerHandle {
 				id,
-				command_producer,
+				command_writers,
 				shared,
 			},
 		)

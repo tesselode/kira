@@ -1,16 +1,14 @@
 use std::sync::{atomic::Ordering, Arc};
 
-use ringbuf::HeapProducer;
+use crate::{modulator::ModulatorId, tween::Tween};
 
-use crate::{modulator::ModulatorId, tween::Tween, CommandError};
-
-use super::{command::Command, TweenerShared};
+use super::{CommandWriters, SetCommand, TweenerShared};
 
 /// Controls a tweener.
 pub struct TweenerHandle {
 	pub(super) id: ModulatorId,
-	pub(super) command_producer: HeapProducer<Command>,
 	pub(super) shared: Arc<TweenerShared>,
+	pub(super) command_writers: CommandWriters,
 }
 
 impl TweenerHandle {
@@ -21,10 +19,8 @@ impl TweenerHandle {
 
 	/// Starts a transition from the current value to a target value with
 	/// the given tween.
-	pub fn set(&mut self, target: f64, tween: Tween) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::Set { target, tween })
-			.map_err(|_| CommandError::CommandQueueFull)
+	pub fn set(&mut self, target: f64, tween: Tween) {
+		self.command_writers.set.write(SetCommand { target, tween })
 	}
 }
 
