@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+use glam::{Quat, Vec3};
+
 use crate::{
 	modulator::{value_provider::ModulatorValueProvider, ModulatorId},
 	tween::Tweenable,
@@ -87,6 +89,40 @@ where
 impl From<Duration> for Value<Duration> {
 	fn from(value: Duration) -> Self {
 		Self::Fixed(value)
+	}
+}
+
+impl From<Value<mint::Vector3<f32>>> for Value<Vec3> {
+	fn from(value: Value<mint::Vector3<f32>>) -> Self {
+		match value {
+			Value::Fixed(value) => Value::Fixed(value.into()),
+			Value::FromModulator { id, mapping } => Value::FromModulator {
+				id,
+				mapping: ModulatorMapping {
+					input_range: mapping.input_range,
+					output_range: (mapping.output_range.0.into(), mapping.output_range.1.into()),
+					clamp_bottom: mapping.clamp_bottom,
+					clamp_top: mapping.clamp_top,
+				},
+			},
+		}
+	}
+}
+
+impl From<Value<mint::Quaternion<f32>>> for Value<Quat> {
+	fn from(value: Value<mint::Quaternion<f32>>) -> Self {
+		match value {
+			Value::Fixed(value) => Value::Fixed(value.into()),
+			Value::FromModulator { id, mapping } => Value::FromModulator {
+				id,
+				mapping: ModulatorMapping {
+					input_range: mapping.input_range,
+					output_range: (mapping.output_range.0.into(), mapping.output_range.1.into()),
+					clamp_bottom: mapping.clamp_bottom,
+					clamp_top: mapping.clamp_top,
+				},
+			},
+		}
 	}
 }
 

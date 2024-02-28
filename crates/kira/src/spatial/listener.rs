@@ -19,10 +19,12 @@ use glam::{Quat, Vec3};
 
 use crate::{
 	clock::clock_info::ClockInfoProvider,
+	command::ValueChangeCommand,
+	command_writers_and_readers,
 	dsp::Frame,
 	modulator::value_provider::ModulatorValueProvider,
 	track::TrackId,
-	tween::{Parameter, Tween, Tweenable, Value},
+	tween::{Parameter, Tweenable, Value},
 	Volume,
 };
 
@@ -37,6 +39,7 @@ pub(crate) struct Listener {
 	position: Parameter<Vec3>,
 	orientation: Parameter<Quat>,
 	track: TrackId,
+	command_readers: CommandReaders,
 }
 
 impl Listener {
@@ -44,12 +47,14 @@ impl Listener {
 		position: Value<Vec3>,
 		orientation: Value<Quat>,
 		settings: ListenerSettings,
+		command_readers: CommandReaders,
 	) -> Self {
 		Self {
 			shared: Arc::new(ListenerShared::new()),
 			position: Parameter::new(position, Vec3::ZERO),
 			orientation: Parameter::new(orientation, Quat::IDENTITY),
 			track: settings.track,
+			command_readers,
 		}
 	}
 
@@ -61,12 +66,11 @@ impl Listener {
 		self.track
 	}
 
-	pub fn set_position(&mut self, position: Value<Vec3>, tween: Tween) {
-		self.position.set(position, tween);
-	}
-
-	pub fn set_orientation(&mut self, orientation: Value<Quat>, tween: Tween) {
-		self.orientation.set(orientation, tween);
+	pub fn on_start_processing(&mut self) {
+		self.position
+			.read_commands(&mut self.command_readers.position_change);
+		self.orientation
+			.read_commands(&mut self.command_readers.orientation_change);
 	}
 
 	pub fn process(
@@ -172,4 +176,9 @@ impl ListenerShared {
 	pub fn mark_for_removal(&self) {
 		self.removed.store(true, Ordering::SeqCst);
 	}
+}
+
+command_writers_and_readers! {
+	position_change: ValueChangeCommand<Vec3>,
+	orientation_change: ValueChangeCommand<Quat>
 }
