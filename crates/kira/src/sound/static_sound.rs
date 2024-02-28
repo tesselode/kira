@@ -46,7 +46,9 @@ enum SeekCommand {
 }
 
 command_writers_and_readers!(
-	playback_rate_change: ValueChangeCommand<PlaybackRate>,
-	set_loop_region: SetLoopRegionCommand,
-	seek: SeekCommand
+	struct {
+		playback_rate_change: ValueChangeCommand<PlaybackRate>,
+		set_loop_region: SetLoopRegionCommand,
+		seek: SeekCommand
+	}
 );

@@ -11,7 +11,8 @@ use std::{
 
 use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
-	command::{command_writer_and_reader, CommandReader, CommandWriter, ValueChangeCommand},
+	command::ValueChangeCommand,
+	command_writers_and_readers,
 	dsp::{interpolate_frame, Frame},
 	modulator::value_provider::ModulatorValueProvider,
 	tween::{Parameter, Tween, Value},
@@ -232,35 +233,13 @@ impl SoundWrapperShared {
 	}
 }
 
-pub(crate) struct CommandWriters {
-	pub volume_change: CommandWriter<ValueChangeCommand<Volume>>,
-	pub panning_change: CommandWriter<ValueChangeCommand<f64>>,
-	pub playback_state_change: CommandWriter<PlaybackStateChangeCommand>,
-}
-
-pub(crate) struct CommandReaders {
-	pub volume_change: CommandReader<ValueChangeCommand<Volume>>,
-	pub panning_change: CommandReader<ValueChangeCommand<f64>>,
-	pub playback_state_change: CommandReader<PlaybackStateChangeCommand>,
-}
-
-pub(crate) fn command_writers_and_readers() -> (CommandWriters, CommandReaders) {
-	let (volume_change_writer, volume_change_reader) = command_writer_and_reader();
-	let (panning_change_writer, panning_change_reader) = command_writer_and_reader();
-	let (playback_state_change_writer, playback_state_change_reader) = command_writer_and_reader();
-	(
-		CommandWriters {
-			volume_change: volume_change_writer,
-			panning_change: panning_change_writer,
-			playback_state_change: playback_state_change_writer,
-		},
-		CommandReaders {
-			volume_change: volume_change_reader,
-			panning_change: panning_change_reader,
-			playback_state_change: playback_state_change_reader,
-		},
-	)
-}
+command_writers_and_readers!(
+	pub(crate) struct {
+		pub(crate) volume_change: ValueChangeCommand<Volume>,
+		pub(crate) panning_change: ValueChangeCommand<f64>,
+		pub(crate) playback_state_change: PlaybackStateChangeCommand
+	}
+);
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) struct PlaybackStateChangeCommand {

@@ -158,8 +158,10 @@ impl Effect for Delay {
 	}
 }
 
-command_writers_and_readers! {
-	delay_time_change: ValueChangeCommand<f64>,
-	feedback_change: ValueChangeCommand<Volume>,
-	mix_change: ValueChangeCommand<f64>
-}
+command_writers_and_readers!(
+	struct {
+		delay_time_change: ValueChangeCommand<f64>,
+		feedback_change: ValueChangeCommand<Volume>,
+		mix_change: ValueChangeCommand<f64>
+	}
+);

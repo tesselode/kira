@@ -178,7 +178,9 @@ impl ListenerShared {
 	}
 }
 
-command_writers_and_readers! {
-	position_change: ValueChangeCommand<Vec3>,
-	orientation_change: ValueChangeCommand<Quat>
-}
+command_writers_and_readers!(
+	pub(crate) struct {
+		position_change: ValueChangeCommand<Vec3>,
+		orientation_change: ValueChangeCommand<Quat>
+	}
+);

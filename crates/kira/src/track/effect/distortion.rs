@@ -84,8 +84,10 @@ impl Effect for Distortion {
 	}
 }
 
-command_writers_and_readers! {
-	kind_change: DistortionKind,
-	drive_change: ValueChangeCommand<Volume>,
-	mix_change: ValueChangeCommand<f64>
-}
+command_writers_and_readers!(
+	struct {
+		kind_change: DistortionKind,
+		drive_change: ValueChangeCommand<Volume>,
+		mix_change: ValueChangeCommand<f64>
+	}
+);

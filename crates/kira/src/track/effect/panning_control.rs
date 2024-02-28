@@ -46,6 +46,8 @@ impl Effect for PanningControl {
 	}
 }
 
-command_writers_and_readers! {
-	panning_change: ValueChangeCommand<f64>
-}
+command_writers_and_readers!(
+	struct {
+		panning_change: ValueChangeCommand<f64>
+	}
+);

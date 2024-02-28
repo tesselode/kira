@@ -103,8 +103,10 @@ impl Effect for Filter {
 }
 
 command_writers_and_readers!(
-	mode_change: FilterMode,
-	cutoff_change: ValueChangeCommand<f64>,
-	resonance_change: ValueChangeCommand<f64>,
-	mix_change: ValueChangeCommand<f64>
+	struct {
+		mode_change: FilterMode,
+		cutoff_change: ValueChangeCommand<f64>,
+		resonance_change: ValueChangeCommand<f64>,
+		mix_change: ValueChangeCommand<f64>
+	}
 );

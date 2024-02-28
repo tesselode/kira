@@ -46,6 +46,8 @@ impl Effect for VolumeControl {
 	}
 }
 
-command_writers_and_readers! {
-	volume_change: ValueChangeCommand<Volume>
-}
+command_writers_and_readers!(
+	struct {
+		volume_change: ValueChangeCommand<Volume>
+	}
+);

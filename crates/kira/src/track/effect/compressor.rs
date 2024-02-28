@@ -122,10 +122,12 @@ impl Effect for Compressor {
 }
 
 command_writers_and_readers!(
-	threshold_change: ValueChangeCommand<f64>,
-	ratio_change: ValueChangeCommand<f64>,
-	attack_duration_change: ValueChangeCommand<Duration>,
-	release_duration_change: ValueChangeCommand<Duration>,
-	makeup_gain_change: ValueChangeCommand<f64>,
-	mix_change: ValueChangeCommand<f64>
+	struct {
+		threshold_change: ValueChangeCommand<f64>,
+		ratio_change: ValueChangeCommand<f64>,
+		attack_duration_change: ValueChangeCommand<Duration>,
+		release_duration_change: ValueChangeCommand<Duration>,
+		makeup_gain_change: ValueChangeCommand<f64>,
+		mix_change: ValueChangeCommand<f64>
+	}
 );

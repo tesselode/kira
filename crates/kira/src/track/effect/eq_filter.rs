@@ -172,9 +172,11 @@ struct Coefficients {
 	m2: f64,
 }
 
-command_writers_and_readers! {
-	kind_change: EqFilterKind,
-	frequency_change: ValueChangeCommand<f64>,
-	gain_change: ValueChangeCommand<f64>,
-	q_change: ValueChangeCommand<f64>
-}
+command_writers_and_readers!(
+	struct {
+		kind_change: EqFilterKind,
+		frequency_change: ValueChangeCommand<f64>,
+		gain_change: ValueChangeCommand<f64>,
+		q_change: ValueChangeCommand<f64>
+	}
+);

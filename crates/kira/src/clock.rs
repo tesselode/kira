@@ -336,8 +336,10 @@ impl Clock {
 	}
 }
 
-command_writers_and_readers! {
-	speed_change: ValueChangeCommand<ClockSpeed>,
-	set_ticking: bool,
-	reset: ()
-}
+command_writers_and_readers!(
+	pub(crate) struct {
+		pub(crate) speed_change: ValueChangeCommand<ClockSpeed>,
+		pub(crate) set_ticking: bool,
+		pub(crate) reset: ()
+	}
+);

@@ -141,10 +141,12 @@ impl LfoShared {
 	}
 }
 
-command_writers_and_readers! {
-	waveform_change: Waveform,
-	frequency_change: ValueChangeCommand<f64>,
-	amplitude_change: ValueChangeCommand<f64>,
-	offset_change: ValueChangeCommand<f64>,
-	phase_change: f64
-}
+command_writers_and_readers!(
+	struct {
+		waveform_change: Waveform,
+		frequency_change: ValueChangeCommand<f64>,
+		amplitude_change: ValueChangeCommand<f64>,
+		offset_change: ValueChangeCommand<f64>,
+		phase_change: f64
+	}
+);

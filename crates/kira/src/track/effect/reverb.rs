@@ -189,9 +189,11 @@ impl Effect for Reverb {
 	}
 }
 
-command_writers_and_readers! {
-	feedback_change: ValueChangeCommand<f64>,
-	damping_change: ValueChangeCommand<f64>,
-	stereo_width_change: ValueChangeCommand<f64>,
-	mix_change: ValueChangeCommand<f64>
-}
+command_writers_and_readers!(
+	struct {
+		feedback_change: ValueChangeCommand<f64>,
+		damping_change: ValueChangeCommand<f64>,
+		stereo_width_change: ValueChangeCommand<f64>,
+		mix_change: ValueChangeCommand<f64>
+	}
+);

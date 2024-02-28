@@ -139,6 +139,8 @@ struct SetCommand {
 	tween: Tween,
 }
 
-command_writers_and_readers! {
-	set: SetCommand
-}
+command_writers_and_readers!(
+	struct {
+		set: SetCommand
+	}
+);
