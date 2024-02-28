@@ -24,6 +24,7 @@ use crate::{
 pub struct Parameter<T: Tweenable = f64> {
 	state: State<T>,
 	raw_value: T,
+	stagnant: bool,
 }
 
 impl<T: Tweenable> Parameter<T> {
@@ -40,6 +41,7 @@ impl<T: Tweenable> Parameter<T> {
 				Value::Fixed(value) => value,
 				Value::FromModulator { .. } => default_raw_value,
 			},
+			stagnant: matches!(initial_value, Value::Fixed(_)),
 		}
 	}
 
@@ -50,6 +52,7 @@ impl<T: Tweenable> Parameter<T> {
 
 	/// Starts a transition from the current value to the target value.
 	pub fn set(&mut self, target: Value<T>, tween: Tween) {
+		self.stagnant = false;
 		self.state = State::Tweening {
 			start: self.value(),
 			target,
@@ -68,6 +71,9 @@ impl<T: Tweenable> Parameter<T> {
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
 	) -> JustFinishedTween {
+		if self.stagnant {
+			return false;
+		}
 		let just_finished_tween = self.update_tween(dt, clock_info_provider);
 		if let Some(raw_value) = self.calculate_new_raw_value(modulator_value_provider) {
 			self.raw_value = raw_value;
@@ -92,6 +98,9 @@ impl<T: Tweenable> Parameter<T> {
 			}
 			*time += dt;
 			if *time >= tween.duration.as_secs_f64() {
+				if matches!(target, Value::Fixed(_)) {
+					self.stagnant = true;
+				}
 				self.state = State::Idle { value: *target };
 				return true;
 			}
