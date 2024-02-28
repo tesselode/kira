@@ -16,7 +16,7 @@ pub use settings::*;
 use std::sync::{atomic::Ordering, Arc};
 
 use crate::{
-	clock::{Clock, ClockHandle, ClockId, ClockSpeed},
+	clock::{self, Clock, ClockHandle, ClockId, ClockSpeed},
 	error::CommandError,
 	manager::command::ModulatorCommand,
 	modulator::{ModulatorBuilder, ModulatorId},
@@ -38,7 +38,7 @@ use self::{
 		},
 		Backend, DefaultBackend, Renderer, RendererShared,
 	},
-	command::{producer::CommandProducer, ClockCommand, Command, SpatialSceneCommand},
+	command::{producer::CommandProducer, Command, SpatialSceneCommand},
 	error::{
 		AddClockError, AddModulatorError, AddSpatialSceneError, AddSubTrackError, PlaySoundError,
 	},
@@ -247,14 +247,14 @@ impl<B: Backend> AudioManager<B> {
 				.try_reserve()
 				.map_err(|_| AddClockError::ClockLimitReached)?,
 		);
-		let clock = Clock::new(speed.into());
+		let (command_writers, command_readers) = clock::command_writers_and_readers();
+		let clock = Clock::new(speed.into(), command_readers);
 		let handle = ClockHandle {
 			id,
 			shared: clock.shared(),
-			command_producer: self.command_producer.clone(),
+			command_writers,
 		};
-		self.command_producer
-			.push(Command::Clock(ClockCommand::Add(id, clock)))?;
+		self.command_producer.push(Command::AddClock(id, clock))?;
 		Ok(handle)
 	}
 

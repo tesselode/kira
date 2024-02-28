@@ -15,7 +15,7 @@ use super::{Clock, ClockSpeed};
 /// Tests that a `Clock` is stopped when it's first created.
 #[test]
 fn initially_stopped() {
-	let mut clock = Clock::new(Value::Fixed(ClockSpeed::SecondsPerTick(1.0)));
+	let mut clock = create_clock_without_handle(Value::Fixed(ClockSpeed::SecondsPerTick(1.0)));
 	let shared = clock.shared();
 	for _ in 0..3 {
 		assert!(!shared.ticking());
@@ -32,9 +32,9 @@ fn initially_stopped() {
 /// Tests that a `Clock` ticks.
 #[test]
 fn basic_behavior() {
-	let mut clock = Clock::new(Value::Fixed(ClockSpeed::SecondsPerTick(1.0)));
+	let mut clock = create_clock_without_handle(Value::Fixed(ClockSpeed::SecondsPerTick(1.0)));
 	let shared = clock.shared();
-	clock.start();
+	clock.set_ticking(true);
 	for i in 0..3 {
 		assert!(shared.ticking());
 		assert_eq!(shared.ticks(), i);
@@ -53,9 +53,9 @@ fn basic_behavior() {
 /// Tests that a `Clock` can be paused.
 #[test]
 fn pause() {
-	let mut clock = Clock::new(Value::Fixed(ClockSpeed::SecondsPerTick(1.0)));
+	let mut clock = create_clock_without_handle(Value::Fixed(ClockSpeed::SecondsPerTick(1.0)));
 	let shared = clock.shared();
-	clock.start();
+	clock.set_ticking(true);
 	clock.update(
 		1.5,
 		&MockClockInfoProviderBuilder::new(0).build(),
@@ -63,7 +63,7 @@ fn pause() {
 	);
 	clock.on_start_processing();
 	assert_eq!(shared.ticks(), 1);
-	clock.pause();
+	clock.set_ticking(false);
 	// the clock should not be ticking
 	for _ in 0..3 {
 		clock.update(
@@ -75,7 +75,7 @@ fn pause() {
 		assert!(!shared.ticking());
 		assert_eq!(shared.ticks(), 1);
 	}
-	clock.start();
+	clock.set_ticking(true);
 	// make sure we've preserved the fractional position from before
 	// pausing
 	clock.update(
@@ -97,16 +97,17 @@ fn pause() {
 /// Tests that a `Clock` can be stopped.
 #[test]
 fn stop() {
-	let mut clock = Clock::new(Value::Fixed(ClockSpeed::SecondsPerTick(1.0)));
+	let mut clock = create_clock_without_handle(Value::Fixed(ClockSpeed::SecondsPerTick(1.0)));
 	let shared = clock.shared();
-	clock.start();
+	clock.set_ticking(true);
 	clock.update(
 		1.5,
 		&MockClockInfoProviderBuilder::new(0).build(),
 		&MockModulatorValueProviderBuilder::new(0).build(),
 	);
 	clock.on_start_processing();
-	clock.stop();
+	clock.set_ticking(false);
+	clock.reset();
 	// the clock should not be ticking
 	for _ in 0..3 {
 		clock.update(
@@ -118,7 +119,7 @@ fn stop() {
 		assert!(!shared.ticking());
 		assert_eq!(shared.ticks(), 0);
 	}
-	clock.start();
+	clock.set_ticking(true);
 	// make sure the fractional position has been reset
 	clock.update(
 		0.9,
@@ -139,10 +140,10 @@ fn stop() {
 /// Tests that the speed of a [`Clock`] can be changed after creation.
 #[test]
 fn set_speed() {
-	let mut clock = Clock::new(Value::Fixed(ClockSpeed::SecondsPerTick(1.0)));
+	let mut clock = create_clock_without_handle(Value::Fixed(ClockSpeed::SecondsPerTick(1.0)));
 	let shared = clock.shared();
-	clock.start();
-	clock.set_speed(
+	clock.set_ticking(true);
+	clock.speed.set(
 		Value::Fixed(ClockSpeed::SecondsPerTick(0.5)),
 		Tween {
 			duration: Duration::ZERO,
@@ -181,10 +182,10 @@ fn set_speed_with_clock_time_start() {
 		(builder.build(), clock_id)
 	};
 
-	let mut clock = Clock::new(Value::Fixed(ClockSpeed::SecondsPerTick(1.0)));
+	let mut clock = create_clock_without_handle(Value::Fixed(ClockSpeed::SecondsPerTick(1.0)));
 	let shared = clock.shared();
-	clock.start();
-	clock.set_speed(
+	clock.set_ticking(true);
+	clock.speed.set(
 		Value::Fixed(ClockSpeed::SecondsPerTick(0.5)),
 		Tween {
 			duration: Duration::ZERO,
@@ -242,7 +243,7 @@ fn set_speed_with_clock_time_start() {
 /// Tests that a clock correctly reports its fractional position.
 #[test]
 fn fractional_position() {
-	let mut clock = Clock::new(Value::Fixed(ClockSpeed::SecondsPerTick(1.0)));
+	let mut clock = create_clock_without_handle(Value::Fixed(ClockSpeed::SecondsPerTick(1.0)));
 	let shared = clock.shared();
 	assert_eq!(shared.fractional_position(), 0.0);
 	// the clock is not started yet, so the fractional position should remain at 0
@@ -254,7 +255,7 @@ fn fractional_position() {
 	clock.on_start_processing();
 	assert_eq!(shared.fractional_position(), 0.0);
 	// start the clock
-	clock.start();
+	clock.set_ticking(true);
 	clock.update(
 		0.5,
 		&MockClockInfoProviderBuilder::new(0).build(),
@@ -269,4 +270,9 @@ fn fractional_position() {
 	);
 	clock.on_start_processing();
 	assert_eq!(shared.fractional_position(), 0.25);
+}
+
+fn create_clock_without_handle(speed: Value<ClockSpeed>) -> Clock {
+	let (_, command_readers) = super::command_writers_and_readers();
+	Clock::new(speed, command_readers)
 }

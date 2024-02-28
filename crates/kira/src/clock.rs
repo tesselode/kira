@@ -169,8 +169,10 @@ use std::sync::{
 use atomic_arena::Key;
 
 use crate::{
+	command::ValueChangeCommand,
+	command_writers_and_readers,
 	modulator::value_provider::ModulatorValueProvider,
-	tween::{Parameter, Tween, Value},
+	tween::{Parameter, Value},
 };
 
 use self::clock_info::ClockInfoProvider;
@@ -226,21 +228,22 @@ pub(crate) enum State {
 	},
 }
 
-#[derive(Clone)]
 pub(crate) struct Clock {
 	shared: Arc<ClockShared>,
 	ticking: bool,
 	speed: Parameter<ClockSpeed>,
 	state: State,
+	command_readers: CommandReaders,
 }
 
 impl Clock {
-	pub(crate) fn new(speed: Value<ClockSpeed>) -> Self {
+	pub(crate) fn new(speed: Value<ClockSpeed>, command_readers: CommandReaders) -> Self {
 		Self {
 			shared: Arc::new(ClockShared::new()),
 			ticking: false,
 			speed: Parameter::new(speed, ClockSpeed::TicksPerMinute(120.0)),
 			state: State::NotStarted,
+			command_readers,
 		}
 	}
 
@@ -256,38 +259,26 @@ impl Clock {
 		self.ticking
 	}
 
-	pub(crate) fn set_speed(&mut self, speed: Value<ClockSpeed>, tween: Tween) {
-		self.speed.set(speed, tween);
+	pub(crate) fn set_ticking(&mut self, ticking: bool) {
+		self.ticking = ticking;
+		self.shared.ticking.store(ticking, Ordering::SeqCst);
 	}
 
-	pub(crate) fn start(&mut self) {
-		self.ticking = true;
-		self.shared.ticking.store(true, Ordering::SeqCst);
-	}
-
-	pub(crate) fn pause(&mut self) {
-		self.ticking = false;
-		self.shared.ticking.store(false, Ordering::SeqCst);
-	}
-
-	pub(crate) fn stop(&mut self) {
-		self.pause();
+	pub(crate) fn reset(&mut self) {
 		self.state = State::NotStarted;
 		self.shared.ticks.store(0, Ordering::SeqCst);
 	}
 
 	pub(crate) fn on_start_processing(&mut self) {
-		let (ticks, fractional_position) = match &self.state {
-			State::NotStarted => (0, 0.0),
-			State::Started {
-				ticks,
-				fractional_position,
-			} => (*ticks, *fractional_position),
-		};
-		self.shared.ticks.store(ticks, Ordering::SeqCst);
-		self.shared
-			.fractional_position
-			.store(fractional_position.to_bits(), Ordering::SeqCst);
+		self.speed
+			.read_commands(&mut self.command_readers.speed_change);
+		if let Some(ticking) = self.command_readers.set_ticking.read().copied() {
+			self.set_ticking(ticking);
+		}
+		if self.command_readers.reset.read().is_some() {
+			self.reset();
+		}
+		self.update_shared();
 	}
 
 	/// Updates the [`Clock`].
@@ -329,4 +320,24 @@ impl Clock {
 		}
 		new_tick_count
 	}
+
+	fn update_shared(&mut self) {
+		let (ticks, fractional_position) = match &self.state {
+			State::NotStarted => (0, 0.0),
+			State::Started {
+				ticks,
+				fractional_position,
+			} => (*ticks, *fractional_position),
+		};
+		self.shared.ticks.store(ticks, Ordering::SeqCst);
+		self.shared
+			.fractional_position
+			.store(fractional_position.to_bits(), Ordering::SeqCst);
+	}
+}
+
+command_writers_and_readers! {
+	speed_change: ValueChangeCommand<ClockSpeed>,
+	set_ticking: bool,
+	reset: ()
 }

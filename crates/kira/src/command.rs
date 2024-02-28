@@ -37,15 +37,15 @@ pub struct ValueChangeCommand<T> {
 macro_rules! command_writers_and_readers {
 	{$($field_name:ident: $type:ty),*} => {
 		paste::paste! {
-			struct CommandWriters {
+			pub(crate) struct CommandWriters {
 				$($field_name: $crate::command::CommandWriter<$type>),*
 			}
 
-			struct CommandReaders {
+			pub(crate) struct CommandReaders {
 				$($field_name: $crate::command::CommandReader<$type>),*
 			}
 
-			fn command_writers_and_readers() -> (CommandWriters, CommandReaders) {
+			pub(crate) fn command_writers_and_readers() -> (CommandWriters, CommandReaders) {
 				$(let ([<$field_name _writer>], [<$field_name _reader>]) = $crate::command::command_writer_and_reader();)*
 
 				(
