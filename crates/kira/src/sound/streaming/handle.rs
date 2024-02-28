@@ -45,7 +45,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
 	use kira::tween::Tween;
 
-	sound.set_volume(0.5, Tween::default())?;
+	sound.set_volume(0.5, Tween::default());
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
@@ -64,7 +64,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	sound.set_volume(kira::Volume::Decibels(-6.0), Tween {
 		duration: Duration::from_secs(3),
 		..Default::default()
-	})?;
+	});
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
@@ -87,7 +87,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	sound.set_volume(&tweener, Tween {
 		duration: Duration::from_secs(3),
 		..Default::default()
-	})?;
+	});
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
@@ -114,7 +114,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
 	use kira::tween::Tween;
 
-	sound.set_playback_rate(0.5, Tween::default())?;
+	sound.set_playback_rate(0.5, Tween::default());
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
@@ -136,7 +136,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	sound.set_playback_rate(PlaybackRate::Semitones(-2.0), Tween {
 		duration: Duration::from_secs(3),
 		..Default::default()
-	})?;
+	});
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
@@ -159,7 +159,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	sound.set_playback_rate(&tweener, Tween {
 		duration: Duration::from_secs(3),
 		..Default::default()
-	})?;
+	});
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
@@ -197,7 +197,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	sound.set_panning(0.25, Tween {
 		duration: Duration::from_secs(3),
 		..Default::default()
-	})?;
+	});
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
@@ -220,7 +220,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	sound.set_panning(&tweener, Tween {
 		duration: Duration::from_secs(3),
 		..Default::default()
-	})?;
+	});
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
@@ -242,7 +242,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	# };
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
-	sound.set_loop_region(3.0..)?;
+	sound.set_loop_region(3.0..);
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
@@ -255,7 +255,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	# };
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
-	sound.set_loop_region(2.0..4.0)?;
+	sound.set_loop_region(2.0..4.0);
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
@@ -268,7 +268,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	# };
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
-	sound.set_loop_region(None)?;
+	sound.set_loop_region(None);
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/

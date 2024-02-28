@@ -426,7 +426,7 @@ impl<B: Backend> AudioManager<B> {
 	use kira::tween::Tween;
 
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	manager.main_track().set_volume(0.5, Tween::default())?;
+	manager.main_track().set_volume(0.5, Tween::default());
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/

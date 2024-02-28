@@ -15,7 +15,7 @@ use kira::{
 
 let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
-clock.start()?;
+clock.start();
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
@@ -52,7 +52,7 @@ manager.play(StaticSoundData::from_file(
 		ticks: 4,
 	})),
 )?)?;
-clock.start()?;
+clock.start();
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
@@ -81,7 +81,7 @@ manager.play(StaticSoundData::from_file(
 		ticks: 4,
 	}),
 )?)?;
-# clock.start()?;
+# clock.start();
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
@@ -106,7 +106,7 @@ manager.play(StaticSoundData::from_file(
 	"sound.ogg",
 	StaticSoundSettings::new().start_time(clock.time() + 4),
 )?)?;
-# clock.start()?;
+# clock.start();
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
@@ -143,8 +143,8 @@ sound.set_playback_rate(
 		duration: Duration::from_secs(2),
 		..Default::default()
 	},
-)?;
-clock.start()?;
+);
+clock.start();
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 */
