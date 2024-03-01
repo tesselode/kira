@@ -166,7 +166,7 @@ use std::sync::{
 	Arc,
 };
 
-use atomic_arena::Key;
+use crate::arena::Key;
 
 use crate::{
 	command::ValueChangeCommand,

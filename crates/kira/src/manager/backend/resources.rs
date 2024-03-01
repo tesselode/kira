@@ -6,7 +6,7 @@ pub(crate) mod spatial_scenes;
 
 use std::sync::Mutex;
 
-use atomic_arena::Controller;
+use crate::arena::Controller;
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 
 use crate::{

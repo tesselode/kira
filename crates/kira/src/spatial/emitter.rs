@@ -13,7 +13,7 @@ use std::sync::{
 	Arc,
 };
 
-use atomic_arena::Key;
+use crate::arena::Key;
 use glam::Vec3;
 
 use crate::{

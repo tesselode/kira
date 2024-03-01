@@ -1,4 +1,4 @@
-use atomic_arena::{Arena, Controller, Key};
+use crate::arena::{Arena, Controller, Key};
 use ringbuf::HeapProducer;
 
 use crate::{
