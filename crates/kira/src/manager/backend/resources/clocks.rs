@@ -14,10 +14,10 @@ pub(crate) struct Clocks {
 }
 
 impl Clocks {
-	pub(crate) fn new(capacity: usize, unused_clock_producer: HeapProducer<Clock>) -> Self {
+	pub(crate) fn new(capacity: u16, unused_clock_producer: HeapProducer<Clock>) -> Self {
 		Self {
 			clocks: Arena::new(capacity),
-			clock_ids: Vec::with_capacity(capacity),
+			clock_ids: Vec::with_capacity(capacity as usize),
 			unused_clock_producer,
 			dummy_clock: {
 				let (_, command_readers) = clock::command_writers_and_readers();

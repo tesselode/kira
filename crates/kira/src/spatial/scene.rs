@@ -37,9 +37,9 @@ impl SpatialScene {
 		settings: SpatialSceneSettings,
 	) -> (Self, HeapConsumer<Emitter>, HeapConsumer<Listener>) {
 		let (unused_emitter_producer, unused_emitter_consumer) =
-			HeapRb::new(settings.emitter_capacity).split();
+			HeapRb::new(settings.emitter_capacity as usize).split();
 		let (unused_listener_producer, unused_listener_consumer) =
-			HeapRb::new(settings.listener_capacity).split();
+			HeapRb::new(settings.listener_capacity as usize).split();
 		(
 			Self {
 				emitters: Arena::new(settings.emitter_capacity),

@@ -43,15 +43,15 @@ pub(crate) fn create_unused_resource_channels(
 	capacities: Capacities,
 ) -> (UnusedResourceProducers, UnusedResourceConsumers) {
 	let (unused_sound_wrapper_producer, unused_sound_consumer) =
-		HeapRb::new(capacities.sound_capacity).split();
+		HeapRb::new(capacities.sound_capacity as usize).split();
 	let (unused_sub_track_producer, unused_sub_track_consumer) =
-		HeapRb::new(capacities.sub_track_capacity).split();
+		HeapRb::new(capacities.sub_track_capacity as usize).split();
 	let (unused_clock_producer, unused_clock_consumer) =
-		HeapRb::new(capacities.clock_capacity).split();
+		HeapRb::new(capacities.clock_capacity as usize).split();
 	let (unused_spatial_scene_producer, unused_spatial_scene_consumer) =
-		HeapRb::new(capacities.spatial_scene_capacity).split();
+		HeapRb::new(capacities.spatial_scene_capacity as usize).split();
 	let (unused_modulator_producer, unused_modulator_consumer) =
-		HeapRb::new(capacities.modulator_capacity).split();
+		HeapRb::new(capacities.modulator_capacity as usize).split();
 	(
 		UnusedResourceProducers {
 			sound: unused_sound_wrapper_producer,

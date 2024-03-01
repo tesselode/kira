@@ -106,7 +106,7 @@ pub struct MockClockInfoProviderBuilder {
 impl MockClockInfoProviderBuilder {
 	/// Creates a new [`MockClockInfoProviderBuilder`] with room for
 	/// the specified number of clocks.
-	pub fn new(capacity: usize) -> Self {
+	pub fn new(capacity: u16) -> Self {
 		Self {
 			clock_info: Arena::new(capacity),
 		}

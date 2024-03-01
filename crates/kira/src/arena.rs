@@ -17,8 +17,8 @@ use slot::{ArenaSlot, ArenaSlotState};
 /// A unique identifier for an item in an [`Arena`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Key {
-	index: usize,
-	generation: usize,
+	index: u16,
+	generation: u16,
 }
 
 /// A container of items that can be accessed via a [`Key`].
@@ -26,13 +26,13 @@ pub struct Key {
 pub struct Arena<T> {
 	controller: Controller,
 	slots: Vec<ArenaSlot<T>>,
-	first_occupied_slot_index: Option<usize>,
+	first_occupied_slot_index: Option<u16>,
 }
 
 impl<T> Arena<T> {
 	/// Creates a new [`Arena`] with enough space for `capacity`
 	/// number of items.
-	pub fn new(capacity: usize) -> Self {
+	pub fn new(capacity: u16) -> Self {
 		Self {
 			controller: Controller::new(capacity),
 			slots: (0..capacity).map(|_| ArenaSlot::new()).collect(),
@@ -67,7 +67,7 @@ impl<T> Arena<T> {
 	/// reserved [`Key`].
 	pub fn insert_with_key(&mut self, key: Key, data: T) -> Result<(), InsertWithKeyError> {
 		// make sure the key is valid and reserved
-		if let Some(slot) = self.slots.get(key.index) {
+		if let Some(slot) = self.slots.get(key.index as usize) {
 			if slot.generation != key.generation {
 				return Err(InsertWithKeyError::InvalidKey);
 			}
@@ -81,11 +81,11 @@ impl<T> Arena<T> {
 		// update the previous head to point to the new head
 		// as the previous occupied slot
 		if let Some(head_index) = self.first_occupied_slot_index {
-			self.slots[head_index].set_previous_occupied_slot_index(Some(key.index));
+			self.slots[head_index as usize].set_previous_occupied_slot_index(Some(key.index));
 		}
 
 		// insert the new data
-		self.slots[key.index].state = ArenaSlotState::Occupied {
+		self.slots[key.index as usize].state = ArenaSlotState::Occupied {
 			data,
 			previous_occupied_slot_index: None,
 			next_occupied_slot_index: self.first_occupied_slot_index,
@@ -106,8 +106,8 @@ impl<T> Arena<T> {
 		Ok(key)
 	}
 
-	fn remove_from_slot(&mut self, index: usize) -> Option<T> {
-		let slot = &mut self.slots[index];
+	fn remove_from_slot(&mut self, index: u16) -> Option<T> {
+		let slot = &mut self.slots[index as usize];
 		let state = std::mem::replace(&mut slot.state, ArenaSlotState::Free);
 		match state {
 			ArenaSlotState::Free => None,
@@ -121,11 +121,11 @@ impl<T> Arena<T> {
 
 				// update the pointers of the previous and next slots
 				if let Some(previous_index) = previous_occupied_slot_index {
-					self.slots[previous_index]
+					self.slots[previous_index as usize]
 						.set_next_occupied_slot_index(next_occupied_slot_index);
 				}
 				if let Some(next_index) = next_occupied_slot_index {
-					self.slots[next_index]
+					self.slots[next_index as usize]
 						.set_previous_occupied_slot_index(previous_occupied_slot_index);
 				}
 
@@ -155,7 +155,7 @@ impl<T> Arena<T> {
 		// - what should happen if you try to remove a slot
 		// with the wrong generation? currently the answer is
 		// it just returns None like normal
-		let slot = &mut self.slots[key.index];
+		let slot = &mut self.slots[key.index as usize];
 		if slot.generation != key.generation {
 			return None;
 		}
@@ -165,7 +165,7 @@ impl<T> Arena<T> {
 	/// Returns a shared reference to the item in the [`Arena`] with
 	/// the given [`Key`] if it exists. Otherwise, returns `None`.
 	pub fn get(&self, key: Key) -> Option<&T> {
-		let slot = &self.slots[key.index];
+		let slot = &self.slots[key.index as usize];
 		if slot.generation != key.generation {
 			return None;
 		}
@@ -178,7 +178,7 @@ impl<T> Arena<T> {
 	/// Returns a mutable reference to the item in the [`Arena`] with
 	/// the given [`Key`] if it exists. Otherwise, returns `None`.
 	pub fn get_mut(&mut self, key: Key) -> Option<&mut T> {
-		let slot = &mut self.slots[key.index];
+		let slot = &mut self.slots[key.index as usize];
 		if slot.generation != key.generation {
 			return None;
 		}
@@ -201,7 +201,7 @@ impl<T> Arena<T> {
 				data,
 				next_occupied_slot_index,
 				..
-			} = &self.slots[index].state
+			} = &self.slots[index as usize].state
 			{
 				let next_occupied_slot_index = next_occupied_slot_index.as_ref().copied();
 				if !f(data) {

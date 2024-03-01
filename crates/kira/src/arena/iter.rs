@@ -7,7 +7,7 @@ use crate::arena::{slot::ArenaSlotState, Arena, Key};
 ///
 /// The most recently added items will be visited first.
 pub struct Iter<'a, T> {
-	next_occupied_slot_index: Option<usize>,
+	next_occupied_slot_index: Option<u16>,
 	arena: &'a Arena<T>,
 }
 
@@ -25,7 +25,7 @@ impl<'a, T> Iterator for Iter<'a, T> {
 
 	fn next(&mut self) -> Option<Self::Item> {
 		if let Some(index) = self.next_occupied_slot_index {
-			let slot = &self.arena.slots[index];
+			let slot = &self.arena.slots[index as usize];
 			if let ArenaSlotState::Occupied {
 				data,
 				next_occupied_slot_index,
@@ -54,7 +54,7 @@ impl<'a, T> Iterator for Iter<'a, T> {
 ///
 /// The most recently added items will be visited first.
 pub struct IterMut<'a, T> {
-	next_occupied_slot_index: Option<usize>,
+	next_occupied_slot_index: Option<u16>,
 	arena: &'a mut Arena<T>,
 }
 
@@ -72,7 +72,7 @@ impl<'a, T> Iterator for IterMut<'a, T> {
 
 	fn next(&mut self) -> Option<Self::Item> {
 		if let Some(index) = self.next_occupied_slot_index {
-			let slot = &mut self.arena.slots[index];
+			let slot = &mut self.arena.slots[index as usize];
 			if let ArenaSlotState::Occupied {
 				data,
 				next_occupied_slot_index,
@@ -107,7 +107,7 @@ impl<'a, T> Iterator for IterMut<'a, T> {
 pub struct DrainFilter<'a, T, F: FnMut(&T) -> bool> {
 	arena: &'a mut Arena<T>,
 	filter: F,
-	next_occupied_slot_index: Option<usize>,
+	next_occupied_slot_index: Option<u16>,
 }
 
 impl<'a, T, F: FnMut(&T) -> bool> DrainFilter<'a, T, F> {
@@ -125,7 +125,7 @@ impl<'a, T, F: FnMut(&T) -> bool> Iterator for DrainFilter<'a, T, F> {
 
 	fn next(&mut self) -> Option<Self::Item> {
 		while let Some(index) = self.next_occupied_slot_index {
-			let slot = &mut self.arena.slots[index];
+			let slot = &mut self.arena.slots[index as usize];
 			if let ArenaSlotState::Occupied {
 				data,
 				next_occupied_slot_index,

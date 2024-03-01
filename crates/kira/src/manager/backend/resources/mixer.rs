@@ -21,7 +21,7 @@ pub(crate) struct Mixer {
 
 impl Mixer {
 	pub fn new(
-		sub_track_capacity: usize,
+		sub_track_capacity: u16,
 		unused_sub_track_producer: HeapProducer<Track>,
 		sample_rate: u32,
 		main_track_builder: TrackBuilder,
@@ -31,7 +31,7 @@ impl Mixer {
 		let mixer = Self {
 			main_track,
 			sub_tracks: Arena::new(sub_track_capacity),
-			sub_track_ids: Vec::with_capacity(sub_track_capacity),
+			sub_track_ids: Vec::with_capacity(sub_track_capacity as usize),
 			dummy_routes: vec![],
 			unused_track_producer: unused_sub_track_producer,
 		};
