@@ -1,6 +1,6 @@
 pub(crate) mod buffered;
 
-use atomic_arena::{Arena, Controller};
+use crate::arena::{Arena, Controller};
 use ringbuf::HeapProducer;
 
 use crate::{

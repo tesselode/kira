@@ -7,7 +7,7 @@
 //! to access information about clocks from gameplay code, use
 //! a [`ClockHandle`](crate::clock::ClockHandle).
 
-use atomic_arena::{error::ArenaFull, Arena};
+use crate::arena::{error::ArenaFull, Arena};
 
 use crate::{manager::backend::resources::clocks::buffered::BufferedClock, StartTime};
 
