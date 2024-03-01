@@ -13,15 +13,15 @@ pub struct Capacities {
 	/// queues up one command.
 	pub command_capacity: usize,
 	/// The maximum number of sounds that can be playing at a time.
-	pub sound_capacity: usize,
+	pub sound_capacity: u16,
 	/// The maximum number of mixer sub-tracks that can exist at a time.
-	pub sub_track_capacity: usize,
+	pub sub_track_capacity: u16,
 	/// The maximum number of clocks that can exist at a time.
-	pub clock_capacity: usize,
+	pub clock_capacity: u16,
 	/// The maximum number of spatial scenes that can exist at a time.
-	pub spatial_scene_capacity: usize,
+	pub spatial_scene_capacity: u16,
 	/// The maximum number of modulators that can exist at a time.
-	pub modulator_capacity: usize,
+	pub modulator_capacity: u16,
 }
 
 impl Default for Capacities {

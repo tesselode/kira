@@ -3,15 +3,15 @@ pub(crate) enum ArenaSlotState<T> {
 	Free,
 	Occupied {
 		data: T,
-		previous_occupied_slot_index: Option<usize>,
-		next_occupied_slot_index: Option<usize>,
+		previous_occupied_slot_index: Option<u16>,
+		next_occupied_slot_index: Option<u16>,
 	},
 }
 
 #[derive(Debug)]
 pub(crate) struct ArenaSlot<T> {
 	pub(crate) state: ArenaSlotState<T>,
-	pub(crate) generation: usize,
+	pub(crate) generation: u16,
 }
 
 impl<T> ArenaSlot<T> {
@@ -22,7 +22,7 @@ impl<T> ArenaSlot<T> {
 		}
 	}
 
-	pub(crate) fn set_previous_occupied_slot_index(&mut self, index: Option<usize>) {
+	pub(crate) fn set_previous_occupied_slot_index(&mut self, index: Option<u16>) {
 		if let ArenaSlotState::Occupied {
 			previous_occupied_slot_index,
 			..
@@ -34,7 +34,7 @@ impl<T> ArenaSlot<T> {
 		}
 	}
 
-	pub(crate) fn set_next_occupied_slot_index(&mut self, index: Option<usize>) {
+	pub(crate) fn set_next_occupied_slot_index(&mut self, index: Option<u16>) {
 		if let ArenaSlotState::Occupied {
 			next_occupied_slot_index,
 			..
