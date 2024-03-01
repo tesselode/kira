@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use crate::{
 	clock::{
 		clock_info::{ClockInfo, MockClockInfoProviderBuilder},
@@ -30,7 +28,7 @@ fn tweening() {
 	parameter.set(
 		Value::Fixed(1.0),
 		Tween {
-			duration: Duration::from_secs(2),
+			duration: 2000,
 			..Default::default()
 		},
 	);
@@ -77,7 +75,7 @@ fn waits_for_start_time() {
 				clock: clock_id_1,
 				ticks: 2,
 			}),
-			duration: Duration::from_secs(1),
+			duration: 1000,
 			..Default::default()
 		},
 	);
@@ -186,7 +184,7 @@ fn tweens_to_modulator_values() {
 			},
 		},
 		Tween {
-			duration: Duration::from_secs(1),
+			duration: 1000,
 			..Default::default()
 		},
 	);

@@ -17,67 +17,55 @@ use crate::start_time::StartTime;
 pub enum Easing {
 	/// Maintains a constant speed for the duration of the [`Tween`].
 	Linear,
-	/// Causes the [`Tween`] to start slow and speed up. A higher
-	/// value causes the [`Tween`] to speed up more dramatically.
-	InPowi(i32),
-	/// Causes the [`Tween`] to start fast and slow down. A higher
-	/// value causes the [`Tween`] to slow down more dramatically.
-	OutPowi(i32),
-	/// Causes the [`Tween`] to start slow, speed up, and then slow
-	/// back down. A higher values causes the [`Tween`] to have more
-	/// dramatic speed changes.
-	InOutPowi(i32),
-	/// Causes the [`Tween`] to start slow and speed up. A higher
-	/// value causes the [`Tween`] to speed up more dramatically.
-	///
-	/// This is similar to [`InPowi`](Easing::InPowi), but allows
-	/// for float intensity values at the cost of being more
-	/// CPU intensive.
-	InPowf(f64),
-	/// Causes the [`Tween`] to start fast and slow down. A higher
-	/// value causes the [`Tween`] to slow down more dramatically.
-	///
-	/// This is similar to [`OutPowi`](Easing::InPowi), but allows
-	/// for float intensity values at the cost of being more
-	/// CPU intensive.
-	OutPowf(f64),
-	/// Causes the [`Tween`] to start slow, speed up, and then slow
-	/// back down. A higher values causes the [`Tween`] to have more
-	/// dramatic speed changes.
-	///
-	/// This is similar to [`InOutPowi`](Easing::InPowi), but allows
-	/// for float intensity values at the cost of being more
-	/// CPU intensive.
-	InOutPowf(f64),
+	InQuad,
+	OutQuad,
+	InOutQuad,
+	InCubic,
+	OutCubic,
+	InOutCubic,
+	InQuart,
+	OutQuart,
+	InOutQuart,
+	InQuint,
+	OutQuint,
+	InOutQuint,
 }
 
 impl Easing {
-	pub(crate) fn apply(&self, mut x: f64) -> f64 {
+	pub(crate) fn apply(&self, x: f64) -> f64 {
 		match self {
 			Easing::Linear => x,
-			Easing::InPowi(power) => x.powi(*power),
-			Easing::OutPowi(power) => 1.0 - Self::InPowi(*power).apply(1.0 - x),
-			Easing::InOutPowi(power) => {
-				x *= 2.0;
-				if x < 1.0 {
-					0.5 * Self::InPowi(*power).apply(x)
-				} else {
-					x = 2.0 - x;
-					0.5 * (1.0 - Self::InPowi(*power).apply(x)) + 0.5
-				}
-			}
-			Easing::InPowf(power) => x.powf(*power),
-			Easing::OutPowf(power) => 1.0 - Self::InPowf(*power).apply(1.0 - x),
-			Easing::InOutPowf(power) => {
-				x *= 2.0;
-				if x < 1.0 {
-					0.5 * Self::InPowf(*power).apply(x)
-				} else {
-					x = 2.0 - x;
-					0.5 * (1.0 - Self::InPowf(*power).apply(x)) + 0.5
-				}
-			}
+			Easing::InQuad => in_pow(x, 2),
+			Easing::OutQuad => out_pow(x, 2),
+			Easing::InOutQuad => in_out_pow(x, 2),
+			Easing::InCubic => in_pow(x, 3),
+			Easing::OutCubic => out_pow(x, 3),
+			Easing::InOutCubic => in_out_pow(x, 3),
+			Easing::InQuart => in_pow(x, 4),
+			Easing::OutQuart => out_pow(x, 4),
+			Easing::InOutQuart => in_out_pow(x, 4),
+			Easing::InQuint => in_pow(x, 5),
+			Easing::OutQuint => out_pow(x, 5),
+			Easing::InOutQuint => in_out_pow(x, 5),
 		}
+	}
+}
+
+fn in_pow(x: f64, power: i32) -> f64 {
+	x.powi(power)
+}
+
+fn out_pow(x: f64, power: i32) -> f64 {
+	1.0 - in_pow(1.0 - x, power)
+}
+
+fn in_out_pow(mut x: f64, power: i32) -> f64 {
+	x *= 2.0;
+	if x < 1.0 {
+		0.5 * in_pow(x, power)
+	} else {
+		x = 2.0 - x;
+		0.5 * (1.0 - in_pow(x, power)) + 0.5
 	}
 }
 
@@ -92,15 +80,16 @@ impl Default for Easing {
 pub struct Tween {
 	/// When the motion starts.
 	pub start_time: StartTime,
-	/// The duration of the motion.
-	pub duration: Duration,
+	/// The duration of the motion (in milliseconds).
+	pub duration: u32,
 	/// The curve of the motion.
 	pub easing: Easing,
 }
 
 impl Tween {
 	pub(super) fn value(&self, time: f64) -> f64 {
-		self.easing.apply(time / self.duration.as_secs_f64())
+		self.easing
+			.apply(time / Duration::from_millis(self.duration as u64).as_secs_f64())
 	}
 }
 
@@ -108,7 +97,7 @@ impl Default for Tween {
 	fn default() -> Self {
 		Self {
 			start_time: StartTime::default(),
-			duration: Duration::from_millis(10),
+			duration: 10,
 			easing: Easing::Linear,
 		}
 	}

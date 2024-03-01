@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
 use crate::{
 	clock::{
@@ -131,7 +131,7 @@ fn pauses_and_resumes_with_fades() {
 
 	handle
 		.pause(Tween {
-			duration: Duration::from_secs(4),
+			duration: 4000,
 			..Default::default()
 		})
 		.unwrap();
@@ -179,7 +179,7 @@ fn pauses_and_resumes_with_fades() {
 
 	handle
 		.resume(Tween {
-			duration: Duration::from_secs(4),
+			duration: 4000,
 			..Default::default()
 		})
 		.unwrap();
@@ -244,7 +244,7 @@ fn stops_with_fade_out() {
 
 	handle
 		.stop(Tween {
-			duration: Duration::from_secs(4),
+			duration: 4000,
 			..Default::default()
 		})
 		.unwrap();
@@ -518,7 +518,7 @@ fn immediate_pause_resume_and_stop_with_clock_start_time() {
 	let (mut sound, _) = data.split();
 
 	sound.pause(Tween {
-		duration: Duration::from_secs(0),
+		duration: 0,
 		..Default::default()
 	});
 	sound.process(
@@ -529,7 +529,7 @@ fn immediate_pause_resume_and_stop_with_clock_start_time() {
 	assert!(sound.state == PlaybackState::Paused);
 
 	sound.resume(Tween {
-		duration: Duration::from_secs(0),
+		duration: 0,
 		..Default::default()
 	});
 	sound.process(
@@ -540,7 +540,7 @@ fn immediate_pause_resume_and_stop_with_clock_start_time() {
 	assert!(sound.state == PlaybackState::Playing);
 
 	sound.stop(Tween {
-		duration: Duration::from_secs(0),
+		duration: 0,
 		..Default::default()
 	});
 	sound.process(
@@ -730,7 +730,7 @@ fn set_volume() {
 		.set_volume(
 			0.5,
 			Tween {
-				duration: Duration::ZERO,
+				duration: 0,
 				..Default::default()
 			},
 		)
@@ -783,7 +783,7 @@ fn set_panning() {
 		.set_panning(
 			0.0,
 			Tween {
-				duration: Duration::ZERO,
+				duration: 0,
 				..Default::default()
 			},
 		)
@@ -854,7 +854,7 @@ fn set_playback_rate() {
 		.set_playback_rate(
 			2.0,
 			Tween {
-				duration: Duration::ZERO,
+				duration: 0,
 				..Default::default()
 			},
 		)

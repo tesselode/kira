@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use crate::{
 	clock::clock_info::{ClockInfoProvider, MockClockInfoProviderBuilder},
 	dsp::Frame,
@@ -36,7 +34,7 @@ fn set_volume() {
 	track.set_volume(
 		Value::Fixed(Volume::Amplitude(0.5)),
 		Tween {
-			duration: Duration::ZERO,
+			duration: 0,
 			..Default::default()
 		},
 	);

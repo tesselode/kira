@@ -3,6 +3,8 @@ mod test;
 
 mod value;
 
+use std::time::Duration;
+
 pub use value::*;
 
 use crate::{
@@ -97,7 +99,7 @@ impl<T: Tweenable> Parameter<T> {
 				return false;
 			}
 			*time += dt;
-			if *time >= tween.duration.as_secs_f64() {
+			if *time >= Duration::from_millis(tween.duration as u64).as_secs_f64() {
 				if matches!(target, Value::Fixed(_)) {
 					self.stagnant = true;
 				}
@@ -120,7 +122,7 @@ impl<T: Tweenable> Parameter<T> {
 				time,
 				tween,
 			} => {
-				if tween.duration.is_zero() {
+				if tween.duration == 0 {
 					return None;
 				}
 				target

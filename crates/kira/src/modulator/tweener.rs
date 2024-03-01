@@ -7,9 +7,12 @@ mod handle;
 #[cfg(test)]
 mod test;
 
-use std::sync::{
-	atomic::{AtomicBool, Ordering},
-	Arc,
+use std::{
+	sync::{
+		atomic::{AtomicBool, Ordering},
+		Arc,
+	},
+	time::Duration,
 };
 
 pub use builder::*;
@@ -77,7 +80,7 @@ impl Modulator for Tweener {
 		{
 			if clock_info_provider.when_to_start(tween.start_time) == WhenToStart::Now {
 				*time += dt;
-				if *time >= tween.duration.as_secs_f64() {
+				if *time >= Duration::from_millis(tween.duration as u64).as_secs_f64() {
 					self.value = values.1;
 					self.state = State::Idle;
 				} else {

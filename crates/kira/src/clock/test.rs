@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use crate::{
 	clock::{
 		clock_info::{ClockInfo, MockClockInfoProviderBuilder},
@@ -145,7 +143,7 @@ fn set_speed() {
 	clock.set_speed(
 		Value::Fixed(ClockSpeed::SecondsPerTick(0.5)),
 		Tween {
-			duration: Duration::ZERO,
+			duration: 0,
 			..Default::default()
 		},
 	);
@@ -187,7 +185,7 @@ fn set_speed_with_clock_time_start() {
 	clock.set_speed(
 		Value::Fixed(ClockSpeed::SecondsPerTick(0.5)),
 		Tween {
-			duration: Duration::ZERO,
+			duration: 0,
 			start_time: StartTime::ClockTime(ClockTime {
 				clock: clock_id,
 				ticks: 1,
