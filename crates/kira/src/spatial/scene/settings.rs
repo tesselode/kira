@@ -2,9 +2,9 @@
 #[non_exhaustive]
 pub struct SpatialSceneSettings {
 	/// The maximum number of emitters that can be in the scene at once.
-	pub emitter_capacity: usize,
+	pub emitter_capacity: u16,
 	/// The maximum number of listeners that can be in the scene at once.
-	pub listener_capacity: usize,
+	pub listener_capacity: u16,
 }
 
 impl SpatialSceneSettings {
@@ -17,7 +17,7 @@ impl SpatialSceneSettings {
 	}
 
 	/// Sets the maximum number of emitters that can be in the scene at once.
-	pub fn emitter_capacity(self, emitter_capacity: usize) -> Self {
+	pub fn emitter_capacity(self, emitter_capacity: u16) -> Self {
 		Self {
 			emitter_capacity,
 			..self
@@ -25,7 +25,7 @@ impl SpatialSceneSettings {
 	}
 
 	/// Sets the maximum number of listeners that can be in the scene at once.
-	pub fn listener_capacity(self, listener_capacity: usize) -> Self {
+	pub fn listener_capacity(self, listener_capacity: u16) -> Self {
 		Self {
 			listener_capacity,
 			..self

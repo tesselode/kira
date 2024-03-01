@@ -14,7 +14,7 @@ pub(crate) struct Sounds {
 }
 
 impl Sounds {
-	pub fn new(capacity: usize, unused_sound_producer: HeapProducer<Box<dyn Sound>>) -> Self {
+	pub fn new(capacity: u16, unused_sound_producer: HeapProducer<Box<dyn Sound>>) -> Self {
 		Self {
 			sounds: Arena::new(capacity),
 			unused_sound_producer,

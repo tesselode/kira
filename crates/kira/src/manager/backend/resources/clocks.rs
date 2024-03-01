@@ -19,10 +19,10 @@ pub(crate) struct Clocks {
 }
 
 impl Clocks {
-	pub(crate) fn new(capacity: usize, unused_clock_producer: HeapProducer<BufferedClock>) -> Self {
+	pub(crate) fn new(capacity: u16, unused_clock_producer: HeapProducer<BufferedClock>) -> Self {
 		Self {
 			clocks: Arena::new(capacity),
-			clock_ids: Vec::with_capacity(capacity),
+			clock_ids: Vec::with_capacity(capacity as usize),
 			unused_clock_producer,
 			dummy_clock: BufferedClock::new(Clock::new(ClockSpeed::TicksPerSecond(1.0).into())),
 		}

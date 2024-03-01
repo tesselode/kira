@@ -70,7 +70,7 @@ pub struct MockModulatorValueProviderBuilder {
 impl MockModulatorValueProviderBuilder {
 	/// Creates a new [`MockModulatorValueProviderBuilder`] with room for
 	/// the specified number of modulators.
-	pub fn new(capacity: usize) -> Self {
+	pub fn new(capacity: u16) -> Self {
 		Self {
 			modulator_values: Arena::new(capacity),
 		}
