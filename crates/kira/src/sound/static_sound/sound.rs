@@ -31,7 +31,11 @@ use super::{data::StaticSoundData, Command};
 
 pub(super) struct StaticSound {
 	command_consumer: HeapConsumer<Command>,
-	data: StaticSoundData,
+	sample_rate: u32,
+	frames: Arc<[Frame]>,
+	reverse: bool,
+	output_destination: OutputDestination,
+	start_time: StartTime,
 	state: PlaybackState,
 	when_to_start: WhenToStart,
 	resampler: Resampler,
@@ -58,7 +62,11 @@ impl StaticSound {
 		let position = starting_frame_index as f64 / data.sample_rate as f64;
 		let mut sound = Self {
 			command_consumer,
-			data,
+			sample_rate: data.sample_rate,
+			frames: data.frames,
+			reverse: data.settings.reverse,
+			output_destination: data.settings.output_destination,
+			start_time: data.settings.start_time,
 			state: PlaybackState::Playing,
 			when_to_start: if matches!(settings.start_time, StartTime::ClockTime(..)) {
 				WhenToStart::Later
@@ -118,7 +126,7 @@ impl StaticSound {
 
 	fn is_playing_backwards(&self) -> bool {
 		let mut is_playing_backwards = self.playback_rate.value().as_factor().is_sign_negative();
-		if self.data.settings.reverse {
+		if self.reverse {
 			is_playing_backwards = !is_playing_backwards
 		}
 		is_playing_backwards
@@ -153,7 +161,6 @@ impl StaticSound {
 
 	fn push_frame_to_resampler(&mut self) {
 		let num_frames: i64 = self
-			.data
 			.frames
 			.len()
 			.try_into()
@@ -166,7 +173,7 @@ impl StaticSound {
 				.position
 				.try_into()
 				.expect("cannot convert i64 into usize");
-			(self.data.frames[frame_index]
+			(self.frames[frame_index]
 				* self.volume_fade.value().as_amplitude() as f32
 				* self.volume.value().as_amplitude() as f32)
 				.panned(self.panning.value() as f32)
@@ -175,27 +182,27 @@ impl StaticSound {
 	}
 
 	fn seek_by(&mut self, amount: f64) {
-		let current_position = self.transport.position as f64 / self.data.sample_rate as f64;
+		let current_position = self.transport.position as f64 / self.sample_rate as f64;
 		let position = current_position + amount;
-		let index = (position * self.data.sample_rate as f64) as i64;
+		let index = (position * self.sample_rate as f64) as i64;
 		self.seek_to_index(index);
 	}
 
 	fn seek_to(&mut self, position: f64) {
-		let index = (position * self.data.sample_rate as f64) as i64;
+		let index = (position * self.sample_rate as f64) as i64;
 		self.seek_to_index(index);
 	}
 }
 
 impl Sound for StaticSound {
 	fn output_destination(&mut self) -> OutputDestination {
-		self.data.settings.output_destination
+		self.output_destination
 	}
 
 	fn on_start_processing(&mut self) {
 		let last_played_frame_position = self.resampler.current_frame_index();
 		self.shared.position.store(
-			(last_played_frame_position as f64 / self.data.sample_rate as f64).to_bits(),
+			(last_played_frame_position as f64 / self.sample_rate as f64).to_bits(),
 			Ordering::SeqCst,
 		);
 		while let Some(command) = self.command_consumer.pop() {
@@ -207,14 +214,13 @@ impl Sound for StaticSound {
 				Command::SetPanning(panning, tween) => self.panning.set(panning, tween),
 				Command::SetPlaybackRegion(playback_region) => self.transport.set_playback_region(
 					playback_region,
-					self.data.sample_rate,
-					self.data.frames.len(),
+					self.sample_rate,
+					self.frames.len(),
 				),
-				Command::SetLoopRegion(loop_region) => self.transport.set_loop_region(
-					loop_region,
-					self.data.sample_rate,
-					self.data.frames.len(),
-				),
+				Command::SetLoopRegion(loop_region) => {
+					self.transport
+						.set_loop_region(loop_region, self.sample_rate, self.frames.len())
+				}
 				Command::Pause(tween) => self.pause(tween),
 				Command::Resume(tween) => self.resume(tween),
 				Command::Stop(tween) => self.stop(tween),
@@ -258,8 +264,7 @@ impl Sound for StaticSound {
 			// if the sound is waiting for a start time, check the clock info
 			// provider for a change in that status
 			WhenToStart::Later => {
-				self.when_to_start =
-					clock_info_provider.when_to_start(self.data.settings.start_time);
+				self.when_to_start = clock_info_provider.when_to_start(self.start_time);
 				match self.when_to_start {
 					WhenToStart::Now => {}
 					// if the sound is still waiting, return silence
@@ -279,7 +284,7 @@ impl Sound for StaticSound {
 		// play back audio
 		let out = self.resampler.get(self.fractional_position as f32);
 		self.fractional_position +=
-			self.data.sample_rate as f64 * self.playback_rate.value().as_factor().abs() * dt;
+			self.sample_rate as f64 * self.playback_rate.value().as_factor().abs() * dt;
 		while self.fractional_position >= 1.0 {
 			self.fractional_position -= 1.0;
 			self.update_position();

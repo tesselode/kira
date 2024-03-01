@@ -99,7 +99,7 @@ fn reports_playback_position() {
 	for i in 0..20 {
 		assert_eq!(
 			handle.position(),
-			i.clamp(0, 10) as f64 / sound.data.sample_rate as f64
+			i.clamp(0, 10) as f64 / sound.sample_rate as f64
 		);
 		sound.process(
 			1.0,
