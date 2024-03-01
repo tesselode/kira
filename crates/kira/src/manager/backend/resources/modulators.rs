@@ -15,13 +15,10 @@ pub(crate) struct Modulators {
 }
 
 impl Modulators {
-	pub fn new(
-		capacity: usize,
-		unused_modulator_producer: HeapProducer<Box<dyn Modulator>>,
-	) -> Self {
+	pub fn new(capacity: u16, unused_modulator_producer: HeapProducer<Box<dyn Modulator>>) -> Self {
 		Self {
 			modulators: Arena::new(capacity),
-			modulator_ids: Vec::with_capacity(capacity),
+			modulator_ids: Vec::with_capacity(capacity as usize),
 			unused_modulator_producer,
 			dummy_modulator: Box::new(DummyModulator),
 		}

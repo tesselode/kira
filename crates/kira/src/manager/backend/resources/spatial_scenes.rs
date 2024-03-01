@@ -16,7 +16,7 @@ pub(crate) struct SpatialScenes {
 }
 
 impl SpatialScenes {
-	pub fn new(capacity: usize, unused_scene_producer: HeapProducer<SpatialScene>) -> Self {
+	pub fn new(capacity: u16, unused_scene_producer: HeapProducer<SpatialScene>) -> Self {
 		Self {
 			scenes: Arena::new(capacity),
 			unused_scene_producer,

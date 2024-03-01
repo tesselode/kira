@@ -424,54 +424,54 @@ impl<B: Backend> AudioManager<B> {
 	}
 
 	/// Returns the number of sounds that can be loaded at a time.
-	pub fn sound_capacity(&self) -> usize {
+	pub fn sound_capacity(&self) -> u16 {
 		self.resource_controllers.sound_controller.capacity()
 	}
 
 	/// Returns the number of mixer sub-tracks that can exist at a time.
-	pub fn sub_track_capacity(&self) -> usize {
+	pub fn sub_track_capacity(&self) -> u16 {
 		self.resource_controllers.sub_track_controller.capacity()
 	}
 
 	/// Returns the number of clocks that can exist at a time.
-	pub fn clock_capacity(&self) -> usize {
+	pub fn clock_capacity(&self) -> u16 {
 		self.resource_controllers.clock_controller.capacity()
 	}
 
 	/// Returns the number of spatial scenes that can exist at a time.
-	pub fn spatial_scene_capacity(&self) -> usize {
+	pub fn spatial_scene_capacity(&self) -> u16 {
 		self.resource_controllers
 			.spatial_scene_controller
 			.capacity()
 	}
 
 	/// Returns the number of modulators that can exist at a time.
-	pub fn modulator_capacity(&self) -> usize {
+	pub fn modulator_capacity(&self) -> u16 {
 		self.resource_controllers.modulator_controller.capacity()
 	}
 
 	/// Returns the number of sounds that are currently loaded.
-	pub fn num_sounds(&self) -> usize {
+	pub fn num_sounds(&self) -> u16 {
 		self.resource_controllers.sound_controller.len()
 	}
 
 	/// Returns the number of mixer sub-tracks that currently exist.
-	pub fn num_sub_tracks(&self) -> usize {
+	pub fn num_sub_tracks(&self) -> u16 {
 		self.resource_controllers.sub_track_controller.len()
 	}
 
 	/// Returns the number of clocks that currently exist.
-	pub fn num_clocks(&self) -> usize {
+	pub fn num_clocks(&self) -> u16 {
 		self.resource_controllers.clock_controller.len()
 	}
 
 	/// Returns the number of spatial scenes that currently exist.
-	pub fn num_spatial_scenes(&self) -> usize {
+	pub fn num_spatial_scenes(&self) -> u16 {
 		self.resource_controllers.spatial_scene_controller.len()
 	}
 
 	/// Returns the number of modulators that currently exist.
-	pub fn num_modulators(&self) -> usize {
+	pub fn num_modulators(&self) -> u16 {
 		self.resource_controllers.modulator_controller.len()
 	}
 

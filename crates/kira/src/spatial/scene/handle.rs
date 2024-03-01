@@ -66,12 +66,12 @@ impl SpatialSceneHandle {
 	}
 
 	/// Returns the number of emitters in the scene.
-	pub fn num_emitters(&self) -> usize {
+	pub fn num_emitters(&self) -> u16 {
 		self.emitter_controller.len()
 	}
 
 	/// Returns the number of listeners in the scene.
-	pub fn num_listeners(&self) -> usize {
+	pub fn num_listeners(&self) -> u16 {
 		self.listener_controller.len()
 	}
 
