@@ -4,7 +4,7 @@
 //! of the [`Sound`](crate::sound::Sound) or
 //! [`Effect`](crate::track::effect::Effect) traits.
 
-use atomic_arena::{error::ArenaFull, Arena};
+use crate::arena::{error::ArenaFull, Arena};
 
 use super::{Modulator, ModulatorId};
 

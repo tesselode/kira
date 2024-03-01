@@ -12,7 +12,6 @@ readme = "../../README.md"
 
 [dependencies]
 assert_no_alloc = { version = "1.1.2", optional = true }
-atomic-arena = "0.1.0"
 glam = { version = "0.27.0", features = ["mint"] }
 mint = "0.5.9"
 paste = "1.0.14"

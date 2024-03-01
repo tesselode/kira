@@ -11,7 +11,7 @@ use std::sync::{
 	Arc,
 };
 
-use atomic_arena::{Arena, Controller, Key};
+use crate::arena::{Arena, Controller, Key};
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 
 use crate::{

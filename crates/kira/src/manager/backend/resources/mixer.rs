@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod test;
 
-use atomic_arena::{Arena, Controller};
+use crate::arena::{Arena, Controller};
 use ringbuf::HeapProducer;
 
 use crate::{

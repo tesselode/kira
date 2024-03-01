@@ -14,7 +14,7 @@ use std::{
 	},
 };
 
-use atomic_arena::{Arena, Key};
+use crate::arena::{Arena, Key};
 use glam::{Quat, Vec3};
 
 use crate::{
