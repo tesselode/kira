@@ -1,6 +1,6 @@
 pub mod producer;
 
-use atomic_arena::Key;
+use crate::arena::Key;
 use glam::{Quat, Vec3};
 
 use crate::{

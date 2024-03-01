@@ -6,7 +6,7 @@ use glam::{Quat, Vec3};
 
 use std::sync::Arc;
 
-use atomic_arena::Controller;
+use crate::arena::Controller;
 use ringbuf::HeapConsumer;
 
 use crate::{

@@ -160,7 +160,7 @@ pub mod lfo;
 pub mod tweener;
 pub mod value_provider;
 
-use atomic_arena::Key;
+use crate::arena::Key;
 
 use crate::clock::clock_info::ClockInfoProvider;
 
