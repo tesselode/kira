@@ -8,7 +8,7 @@ use std::{
 	time::Duration,
 };
 
-use crate::manager::backend::Renderer;
+use crate::{dsp::Frame, manager::backend::Renderer};
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	BufferSize, Device, Stream, StreamConfig, StreamError,
@@ -20,6 +20,7 @@ use super::super::Error;
 use self::renderer_wrapper::RendererWrapper;
 
 const CHECK_STREAM_INTERVAL: Duration = Duration::from_millis(500);
+const INTERNAL_FRAME_BUFFER_LEN: usize = 1024;
 
 #[allow(clippy::large_enum_variant)]
 enum State {
@@ -137,15 +138,26 @@ impl StreamManager {
 		let (mut renderer_wrapper, renderer_consumer) = RendererWrapper::new(renderer);
 		let (mut stream_error_producer, stream_error_consumer) = HeapRb::new(1).split();
 		let channels = config.channels;
+		let mut internal_frame_buffer = vec![Frame::ZERO; INTERNAL_FRAME_BUFFER_LEN];
 		let stream = device.build_output_stream(
 			config,
 			move |data: &mut [f32], _| {
 				#[cfg(feature = "assert_no_alloc")]
 				assert_no_alloc::assert_no_alloc(|| {
-					process_renderer(&mut renderer_wrapper, data, channels);
+					process_renderer(
+						&mut renderer_wrapper,
+						data,
+						channels,
+						&mut internal_frame_buffer,
+					);
 				});
 				#[cfg(not(feature = "assert_no_alloc"))]
-				process_renderer(&mut renderer_wrapper, data, channels);
+				process_renderer(
+					&mut renderer_wrapper,
+					data,
+					channels,
+					&mut internal_frame_buffer,
+				);
 			},
 			move |error| {
 				stream_error_producer
@@ -196,22 +208,31 @@ fn device_name(device: &Device) -> String {
 		.unwrap_or_else(|_| "device name unavailable".to_string())
 }
 
-fn process_renderer(renderer_wrapper: &mut RendererWrapper, data: &mut [f32], channels: u16) {
+fn process_renderer(
+	renderer_wrapper: &mut RendererWrapper,
+	data: &mut [f32],
+	num_channels: u16,
+	internal_frame_buffer: &mut [Frame],
+) {
 	renderer_wrapper.on_start_processing();
-	for frame in data.chunks_exact_mut(channels as usize) {
-		let out = renderer_wrapper.process();
-		if channels == 1 {
-			frame[0] = (out.left + out.right) / 2.0;
-		} else {
-			frame[0] = out.left;
-			frame[1] = out.right;
-			/*
-				if there's more channels, send silence to them. if we don't,
-				we might get bad sounds outputted to those channels.
-				(https://github.com/tesselode/kira/issues/50)
-			*/
-			for channel in frame.iter_mut().skip(2) {
-				*channel = 0.0;
+	for chunk in data.chunks_mut(INTERNAL_FRAME_BUFFER_LEN) {
+		let samples = chunk.chunks_exact_mut(num_channels as usize);
+		internal_frame_buffer.fill(Frame::ZERO);
+		renderer_wrapper.process(&mut internal_frame_buffer[0..samples.len()]);
+		for (channels, internal_frame) in samples.zip(internal_frame_buffer.iter_mut()) {
+			if num_channels == 1 {
+				channels[0] = (internal_frame.left + internal_frame.right) / 2.0;
+			} else {
+				channels[0] = internal_frame.left;
+				channels[1] = internal_frame.right;
+				/*
+					if there's more channels, send silence to them. if we don't,
+					we might get bad sounds outputted to those channels.
+					(https://github.com/tesselode/kira/issues/50)
+				*/
+				for channel in channels.iter_mut().skip(2) {
+					*channel = 0.0;
+				}
 			}
 		}
 	}
