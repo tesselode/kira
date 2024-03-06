@@ -61,8 +61,13 @@ impl MockBackend {
 
 	/// Calls the [`process`](Renderer::process) callback of the [`Renderer`].
 	pub fn process(&mut self) -> Frame {
+		let frame = Frame::ZERO;
 		if let State::Initialized { renderer } = &mut self.state {
-			renderer.get_mut().expect("mutex poisoned").process()
+			renderer
+				.get_mut()
+				.expect("mutex poisoned")
+				.process(&mut [frame]);
+			frame
 		} else {
 			panic!("backend is not initialized")
 		}

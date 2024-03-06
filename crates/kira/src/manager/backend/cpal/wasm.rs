@@ -51,6 +51,7 @@ impl Backend for CpalBackend {
 		if let State::Uninitialized { device, config } =
 			std::mem::replace(&mut *self.state, State::Empty)
 		{
+			// TODO: update for changed Renderer API
 			let channels = config.channels;
 			let stream = device.build_output_stream(
 				&config,

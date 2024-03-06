@@ -116,47 +116,50 @@ impl Renderer {
 		}
 	}
 
-	/// Produces the next [`Frame`] of audio.
-	pub fn process(&mut self) -> Frame {
-		if self.fade_volume.update(
-			self.dt,
-			&ClockInfoProvider::new(&self.resources.clocks),
-			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
-		) {
-			if self.state == MainPlaybackState::Pausing {
-				self.state = MainPlaybackState::Paused;
-			}
-		}
-		if self.state == MainPlaybackState::Paused {
-			return Frame::ZERO;
-		}
-		if self.state == MainPlaybackState::Playing {
-			self.resources
-				.modulators
-				.process(self.dt, &ClockInfoProvider::new(&self.resources.clocks));
-			self.resources.clocks.update(
+	/// Produces the next [`Frame`]s of audio.
+	pub fn process(&mut self, frames: &mut [Frame]) {
+		for frame in frames {
+			if self.fade_volume.update(
 				self.dt,
+				&ClockInfoProvider::new(&self.resources.clocks),
+				&ModulatorValueProvider::new(&self.resources.modulators.modulators),
+			) {
+				if self.state == MainPlaybackState::Pausing {
+					self.state = MainPlaybackState::Paused;
+				}
+			}
+			if self.state == MainPlaybackState::Paused {
+				*frame = Frame::ZERO;
+				return;
+			}
+			if self.state == MainPlaybackState::Playing {
+				self.resources
+					.modulators
+					.process(self.dt, &ClockInfoProvider::new(&self.resources.clocks));
+				self.resources.clocks.update(
+					self.dt,
+					&ModulatorValueProvider::new(&self.resources.modulators.modulators),
+				);
+			}
+			self.resources.sounds.process(
+				self.dt,
+				&ClockInfoProvider::new(&self.resources.clocks),
+				&ModulatorValueProvider::new(&self.resources.modulators.modulators),
+				&mut self.resources.mixer,
+				&mut self.resources.spatial_scenes,
+			);
+			self.resources.spatial_scenes.process(
+				self.dt,
+				&ClockInfoProvider::new(&self.resources.clocks),
+				&ModulatorValueProvider::new(&self.resources.modulators.modulators),
+				&mut self.resources.mixer,
+			);
+			let out = self.resources.mixer.process(
+				self.dt,
+				&ClockInfoProvider::new(&self.resources.clocks),
 				&ModulatorValueProvider::new(&self.resources.modulators.modulators),
 			);
+			*frame = out * self.fade_volume.value().as_amplitude() as f32;
 		}
-		self.resources.sounds.process(
-			self.dt,
-			&ClockInfoProvider::new(&self.resources.clocks),
-			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
-			&mut self.resources.mixer,
-			&mut self.resources.spatial_scenes,
-		);
-		self.resources.spatial_scenes.process(
-			self.dt,
-			&ClockInfoProvider::new(&self.resources.clocks),
-			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
-			&mut self.resources.mixer,
-		);
-		let out = self.resources.mixer.process(
-			self.dt,
-			&ClockInfoProvider::new(&self.resources.clocks),
-			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
-		);
-		out * self.fade_volume.value().as_amplitude() as f32
 	}
 }
