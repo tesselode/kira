@@ -29,7 +29,8 @@ fn sounds(c: &mut Criterion) {
 	// a simple test case where many sounds are being played at once
 	c.bench_function("simple", |b| {
 		const SAMPLE_RATE: u32 = 48_000;
-		const NUM_SOUNDS: usize = 100_000;
+		const NUM_SOUNDS: usize = 100;
+		const BUFFER_SIZE: usize = 1024;
 		let mut manager = AudioManager::<MockBackend>::new(AudioManagerSettings {
 			capacities: Capacities {
 				command_capacity: NUM_SOUNDS,
@@ -47,7 +48,11 @@ fn sounds(c: &mut Criterion) {
 			manager.play(sound_data.clone()).unwrap();
 		}
 		manager.backend_mut().on_start_processing();
-		b.iter(|| manager.backend_mut().process());
+		b.iter(|| {
+			for _ in 0..BUFFER_SIZE {
+				manager.backend_mut().process();
+			}
+		});
 	});
 
 	// similar to "simple", but also periodically calls the
@@ -55,7 +60,8 @@ fn sounds(c: &mut Criterion) {
 	// impact on the performance
 	c.bench_function("with on_start_processing callback", |b| {
 		const SAMPLE_RATE: u32 = 48_000;
-		const NUM_SOUNDS: usize = 100_000;
+		const NUM_SOUNDS: usize = 100;
+		const BUFFER_SIZE: usize = 1024;
 		let mut manager = AudioManager::<MockBackend>::new(AudioManagerSettings {
 			capacities: Capacities {
 				command_capacity: NUM_SOUNDS,
@@ -72,14 +78,11 @@ fn sounds(c: &mut Criterion) {
 		for _ in 0..NUM_SOUNDS {
 			manager.play(sound_data.clone()).unwrap();
 		}
-		manager.backend_mut().on_start_processing();
-		let mut num_iterations = 0;
 		b.iter(|| {
-			if num_iterations % 1000 == 0 {
-				manager.backend_mut().on_start_processing();
+			manager.backend_mut().on_start_processing();
+			for _ in 0..BUFFER_SIZE {
+				manager.backend_mut().process();
 			}
-			manager.backend_mut().process();
-			num_iterations += 1;
 		});
 	});
 }
