@@ -183,7 +183,7 @@ impl SoundWrapper {
 	}
 
 	pub fn set_volume(&mut self, target: Value<Volume>, tween: Tween) {
-		self.volume_fade.set(target, tween)
+		self.volume.set(target, tween)
 	}
 
 	pub fn set_panning(&mut self, target: Value<f64>, tween: Tween) {
