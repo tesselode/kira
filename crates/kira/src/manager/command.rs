@@ -4,8 +4,8 @@ use atomic_arena::Key;
 use glam::{Quat, Vec3};
 
 use crate::{
-	clock::{Clock, ClockId, ClockSpeed},
-	modulator::{Modulator, ModulatorId},
+	clock::{ClockId, ClockSpeed},
+	modulator::ModulatorId,
 	sound::Sound,
 	spatial::{
 		emitter::{Emitter, EmitterId},
@@ -15,6 +15,10 @@ use crate::{
 	track::{SubTrackId, Track, TrackId},
 	tween::{Tween, Value},
 	Volume,
+};
+
+use super::backend::resources::{
+	clocks::buffered::BufferedClock, modulators::buffered::BufferedModulator,
 };
 
 pub(crate) enum SoundCommand {
@@ -33,7 +37,7 @@ pub(crate) enum MixerCommand {
 }
 
 pub(crate) enum ClockCommand {
-	Add(ClockId, Clock),
+	Add(ClockId, BufferedClock),
 	SetSpeed(ClockId, Value<ClockSpeed>, Tween),
 	Start(ClockId),
 	Pause(ClockId),
@@ -50,7 +54,7 @@ pub(crate) enum SpatialSceneCommand {
 }
 
 pub(crate) enum ModulatorCommand {
-	Add(ModulatorId, Box<dyn Modulator>),
+	Add(ModulatorId, BufferedModulator),
 }
 
 pub(crate) enum Command {

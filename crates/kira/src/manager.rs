@@ -31,8 +31,8 @@ use crate::{
 use self::{
 	backend::{
 		resources::{
-			create_resources, create_unused_resource_channels, ResourceControllers,
-			UnusedResourceConsumers,
+			clocks::buffered::BufferedClock, create_resources, create_unused_resource_channels,
+			modulators::buffered::BufferedModulator, ResourceControllers, UnusedResourceConsumers,
 		},
 		Backend, DefaultBackend, Renderer, RendererShared,
 	},
@@ -227,7 +227,10 @@ impl<B: Backend> AudioManager<B> {
 			command_producer: self.command_producer.clone(),
 		};
 		self.command_producer
-			.push(Command::Clock(ClockCommand::Add(id, clock)))?;
+			.push(Command::Clock(ClockCommand::Add(
+				id,
+				BufferedClock::new(clock),
+			)))?;
 		Ok(handle)
 	}
 
@@ -304,7 +307,10 @@ impl<B: Backend> AudioManager<B> {
 		);
 		let (modulator, handle) = builder.build(id);
 		self.command_producer
-			.push(Command::Modulator(ModulatorCommand::Add(id, modulator)))?;
+			.push(Command::Modulator(ModulatorCommand::Add(
+				id,
+				BufferedModulator::new(modulator),
+			)))?;
 		Ok(handle)
 	}
 

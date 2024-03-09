@@ -1,3 +1,5 @@
+pub(crate) mod buffered;
+
 use atomic_arena::{Arena, Controller};
 use ringbuf::HeapProducer;
 
@@ -7,23 +9,25 @@ use crate::{
 	modulator::{value_provider::ModulatorValueProvider, Modulator, ModulatorId},
 };
 
+use self::buffered::BufferedModulator;
+
 pub(crate) struct Modulators {
-	pub(crate) modulators: Arena<Box<dyn Modulator>>,
+	pub(crate) modulators: Arena<BufferedModulator>,
 	modulator_ids: Vec<ModulatorId>,
-	unused_modulator_producer: HeapProducer<Box<dyn Modulator>>,
-	dummy_modulator: Box<dyn Modulator>,
+	unused_modulator_producer: HeapProducer<BufferedModulator>,
+	dummy_modulator: BufferedModulator,
 }
 
 impl Modulators {
 	pub fn new(
 		capacity: usize,
-		unused_modulator_producer: HeapProducer<Box<dyn Modulator>>,
+		unused_modulator_producer: HeapProducer<BufferedModulator>,
 	) -> Self {
 		Self {
 			modulators: Arena::new(capacity),
 			modulator_ids: Vec::with_capacity(capacity),
 			unused_modulator_producer,
-			dummy_modulator: Box::new(DummyModulator),
+			dummy_modulator: BufferedModulator::new(Box::new(DummyModulator)),
 		}
 	}
 
@@ -73,6 +77,12 @@ impl Modulators {
 		}
 	}
 
+	pub fn clear_buffers(&mut self) {
+		for (_, modulator) in &mut self.modulators {
+			modulator.clear_buffer();
+		}
+	}
+
 	pub fn process(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider) {
 		for id in &self.modulator_ids {
 			let modulator = self
@@ -83,7 +93,7 @@ impl Modulators {
 			self.dummy_modulator.update(
 				dt,
 				clock_info_provider,
-				&ModulatorValueProvider::new(&self.modulators),
+				&ModulatorValueProvider::latest(&self.modulators),
 			);
 			let modulator = self
 				.modulators
