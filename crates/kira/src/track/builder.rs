@@ -3,6 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 use crate::{
 	command::command_writer_and_reader,
 	dsp::Frame,
+	manager::backend::Renderer,
 	tween::{Parameter, Value},
 	Volume,
 };
@@ -147,7 +148,7 @@ impl TrackBuilder {
 			volume_change_command_reader,
 			routes,
 			effects: self.effects,
-			input: Frame::ZERO,
+			input: vec![Frame::ZERO; Renderer::INTERNAL_BUFFER_SIZE],
 		};
 		let handle = TrackHandle {
 			id,

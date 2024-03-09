@@ -98,6 +98,7 @@ impl Mixer {
 	pub fn process(
 		&mut self,
 		dt: f64,
+		frame_index: usize,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
 	) -> Frame {
@@ -108,7 +109,12 @@ impl Mixer {
 				.sub_tracks
 				.get_mut(id.0)
 				.expect("sub track IDs and sub tracks are out of sync");
-			let output = track.process(dt, clock_info_provider, modulator_value_provider);
+			let output = track.process(
+				dt,
+				frame_index,
+				clock_info_provider,
+				modulator_value_provider,
+			);
 			// temporarily take ownership of its routes. we can't just
 			// borrow the routes because then we can't get mutable
 			// references to the other tracks
@@ -125,7 +131,8 @@ impl Mixer {
 					TrackId::Sub(id) => self.sub_tracks.get_mut(id.0),
 				};
 				if let Some(destination_track) = destination_track {
-					destination_track.add_input(output * volume.value().as_amplitude() as f32);
+					destination_track
+						.add_input(frame_index, output * volume.value().as_amplitude() as f32);
 				}
 			}
 			// borrow the track again and give it back its routes
@@ -135,7 +142,11 @@ impl Mixer {
 				.expect("sub track IDs and sub tracks are out of sync");
 			std::mem::swap(track.routes_mut(), &mut self.dummy_routes);
 		}
-		self.main_track
-			.process(dt, clock_info_provider, modulator_value_provider)
+		self.main_track.process(
+			dt,
+			frame_index,
+			clock_info_provider,
+			modulator_value_provider,
+		)
 	}
 }

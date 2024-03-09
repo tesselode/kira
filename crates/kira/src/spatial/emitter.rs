@@ -21,8 +21,9 @@ use crate::{
 	command::ValueChangeCommand,
 	command_writers_and_readers,
 	dsp::Frame,
+	manager::backend::Renderer,
 	modulator::value_provider::ModulatorValueProvider,
-	tween::{Easing, Parameter, Value},
+	tween::{Easing, Parameter, Tween, Value},
 };
 
 use super::scene::SpatialSceneId;
@@ -34,7 +35,7 @@ pub(crate) struct Emitter {
 	attenuation_function: Option<Easing>,
 	enable_spatialization: bool,
 	persist_until_sounds_finish: bool,
-	input: Frame,
+	input: Vec<Frame>,
 	used_this_frame: bool,
 	finished: bool,
 	command_readers: CommandReaders,
@@ -53,15 +54,15 @@ impl Emitter {
 			attenuation_function: settings.attenuation_function,
 			enable_spatialization: settings.enable_spatialization,
 			persist_until_sounds_finish: settings.persist_until_sounds_finish,
-			input: Frame::ZERO,
+			input: vec![Frame::ZERO; Renderer::INTERNAL_BUFFER_SIZE],
 			used_this_frame: false,
 			finished: false,
 			command_readers,
 		}
 	}
 
-	pub fn output(&self) -> Frame {
-		self.input
+	pub fn output(&self, frame_index: usize) -> Frame {
+		self.input[frame_index]
 	}
 
 	pub fn shared(&self) -> Arc<EmitterShared> {
@@ -88,21 +89,25 @@ impl Emitter {
 		self.finished
 	}
 
-	pub fn add_input(&mut self, input: Frame) {
-		self.input += input;
-		self.used_this_frame = true;
-	}
-
 	pub fn on_start_processing(&mut self) {
 		self.position
 			.read_commands(&mut self.command_readers.position_change);
 	}
 
-	pub fn after_process(&mut self) {
+	pub fn set_position(&mut self, position: Value<Vec3>, tween: Tween) {
+		self.position.set(position, tween);
+	}
+
+	pub fn add_input(&mut self, frame_index: usize, input: Frame) {
+		self.input[frame_index] += input;
+		self.used_this_frame = true;
+	}
+
+	pub fn after_process(&mut self, frame_index: usize) {
 		if self.should_be_finished() {
 			self.finished = true;
 		}
-		self.input = Frame::ZERO;
+		self.input[frame_index] = Frame::ZERO;
 		self.used_this_frame = false;
 	}
 

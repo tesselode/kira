@@ -272,8 +272,9 @@ use crate::{
 	clock::clock_info::ClockInfoProvider,
 	command::{CommandReader, ValueChangeCommand},
 	dsp::Frame,
+	manager::backend::Renderer,
 	modulator::value_provider::ModulatorValueProvider,
-	tween::Parameter,
+	tween::{Parameter, Tween, Value},
 	Volume,
 };
 
@@ -330,7 +331,7 @@ pub(crate) struct Track {
 	volume_change_command_reader: CommandReader<ValueChangeCommand<Volume>>,
 	routes: Vec<Route>,
 	effects: Vec<Box<dyn Effect>>,
-	input: Frame,
+	input: Vec<Frame>,
 }
 
 impl Track {
@@ -354,8 +355,12 @@ impl Track {
 		&mut self.routes
 	}
 
-	pub fn add_input(&mut self, input: Frame) {
-		self.input += input;
+	pub fn set_volume(&mut self, volume: Value<Volume>, tween: Tween) {
+		self.volume.set(volume, tween);
+	}
+
+	pub fn add_input(&mut self, frame_index: usize, input: Frame) {
+		self.input[frame_index] += input;
 	}
 
 	pub fn on_start_processing(&mut self) {
@@ -377,6 +382,7 @@ impl Track {
 	pub fn process(
 		&mut self,
 		dt: f64,
+		frame_index: usize,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
 	) -> Frame {
@@ -385,7 +391,7 @@ impl Track {
 		for Route { volume, .. } in &mut self.routes {
 			volume.update(dt, clock_info_provider, modulator_value_provider);
 		}
-		let mut output = std::mem::replace(&mut self.input, Frame::ZERO);
+		let mut output = std::mem::replace(&mut self.input[frame_index], Frame::ZERO);
 		for effect in &mut self.effects {
 			output = effect.process(output, dt, clock_info_provider, modulator_value_provider);
 		}

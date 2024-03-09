@@ -77,12 +77,19 @@ impl SpatialScenes {
 	pub fn process(
 		&mut self,
 		dt: f64,
+		frame_index: usize,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
 		mixer: &mut Mixer,
 	) {
 		for (_, scene) in &mut self.scenes {
-			scene.process(dt, clock_info_provider, modulator_value_provider, mixer);
+			scene.process(
+				dt,
+				frame_index,
+				clock_info_provider,
+				modulator_value_provider,
+				mixer,
+			);
 		}
 	}
 }

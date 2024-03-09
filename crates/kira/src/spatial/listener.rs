@@ -76,6 +76,7 @@ impl Listener {
 	pub fn process(
 		&mut self,
 		dt: f64,
+		frame_index: usize,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
 		emitters: &Arena<Emitter>,
@@ -86,7 +87,7 @@ impl Listener {
 			.update(dt, clock_info_provider, modulator_value_provider);
 		let mut output = Frame::ZERO;
 		for (_, emitter) in emitters {
-			let mut emitter_output = emitter.output();
+			let mut emitter_output = emitter.output(frame_index);
 			// attenuate volume
 			if let Some(attenuation_function) = emitter.attenuation_function() {
 				let distance = (emitter.position() - self.position.value()).length();

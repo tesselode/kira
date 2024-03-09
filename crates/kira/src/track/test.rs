@@ -18,10 +18,11 @@ use super::{
 #[test]
 fn volume() {
 	let (mut track, _) = TrackBuilder::new().volume(0.5).build(TrackId::Main);
-	track.add_input(Frame::from_mono(1.0));
+	track.add_input(0, Frame::from_mono(1.0));
 	assert_eq!(
 		track.process(
 			1.0,
+			0,
 			&MockClockInfoProviderBuilder::new(0).build(),
 			&MockModulatorValueProviderBuilder::new(0).build()
 		),
@@ -41,10 +42,11 @@ fn set_volume() {
 			..Default::default()
 		},
 	);
-	track.add_input(Frame::from_mono(1.0));
+	track.add_input(0, Frame::from_mono(1.0));
 	assert_eq!(
 		track.process(
 			1.0,
+			0,
 			&MockClockInfoProviderBuilder::new(0).build(),
 			&MockModulatorValueProviderBuilder::new(0).build()
 		),
@@ -61,10 +63,11 @@ fn effects() {
 		builder.add_effect(MockEffect::Mul(0.5));
 		builder.build(TrackId::Main)
 	};
-	track.add_input(Frame::from_mono(1.0));
+	track.add_input(0, Frame::from_mono(1.0));
 	assert_eq!(
 		track.process(
 			1.0,
+			0,
 			&MockClockInfoProviderBuilder::new(0).build(),
 			&MockModulatorValueProviderBuilder::new(0).build()
 		),

@@ -108,26 +108,32 @@ impl Renderer {
 				);
 			}
 
-			for (i, frame) in chunk.iter_mut().enumerate() {
+			self.resources.sounds.process(
+				self.dt,
+				chunk.len(),
+				&self.resources.clocks,
+				&self.resources.modulators,
+				&mut self.resources.mixer,
+				&mut self.resources.spatial_scenes,
+			);
+
+			for (frame_index, frame) in chunk.iter_mut().enumerate() {
 				let clock_info_provider =
-					ClockInfoProvider::indexed(&self.resources.clocks.clocks, i);
-				let modulator_value_provider =
-					ModulatorValueProvider::indexed(&self.resources.modulators.modulators, i);
-				self.resources.sounds.process(
-					self.dt,
-					&clock_info_provider,
-					&modulator_value_provider,
-					&mut self.resources.mixer,
-					&mut self.resources.spatial_scenes,
+					ClockInfoProvider::indexed(&self.resources.clocks.clocks, frame_index);
+				let modulator_value_provider = ModulatorValueProvider::indexed(
+					&self.resources.modulators.modulators,
+					frame_index,
 				);
 				self.resources.spatial_scenes.process(
 					self.dt,
+					frame_index,
 					&clock_info_provider,
 					&modulator_value_provider,
 					&mut self.resources.mixer,
 				);
 				*frame = self.resources.mixer.process(
 					self.dt,
+					frame_index,
 					&clock_info_provider,
 					&modulator_value_provider,
 				);

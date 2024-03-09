@@ -33,10 +33,11 @@ fn parent_routing() {
 	mixer
 		.track_mut(child_track_id.into())
 		.unwrap()
-		.add_input(Frame::from_mono(1.0));
+		.add_input(0, Frame::from_mono(1.0));
 	assert_eq!(
 		mixer.process(
 			1.0,
+			0,
 			&MockClockInfoProviderBuilder::new(0).build(),
 			&MockModulatorValueProviderBuilder::new(0).build()
 		),
@@ -68,10 +69,11 @@ fn send_routing() {
 	mixer
 		.track_mut(other_track_id.into())
 		.unwrap()
-		.add_input(Frame::from_mono(1.0));
+		.add_input(0, Frame::from_mono(1.0));
 	assert_eq!(
 		mixer.process(
 			1.0,
+			0,
 			&MockClockInfoProviderBuilder::new(0).build(),
 			&MockModulatorValueProviderBuilder::new(0).build()
 		),

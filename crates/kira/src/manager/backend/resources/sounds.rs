@@ -6,7 +6,7 @@ use crate::{
 	sound::wrapper::SoundWrapper, OutputDestination,
 };
 
-use super::{mixer::Mixer, spatial_scenes::SpatialScenes};
+use super::{clocks::Clocks, mixer::Mixer, modulators::Modulators, spatial_scenes::SpatialScenes};
 
 pub(crate) struct Sounds {
 	sound_wrappers: Arena<SoundWrapper>,
@@ -62,30 +62,30 @@ impl Sounds {
 	pub fn process(
 		&mut self,
 		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
+		num_frames: usize,
+		clocks: &Clocks,
+		modulators: &Modulators,
 		mixer: &mut Mixer,
 		scenes: &mut SpatialScenes,
 	) {
 		for (_, sound_wrapper) in &mut self.sound_wrappers {
-			match sound_wrapper.output_destination() {
-				OutputDestination::Track(track_id) => {
-					if let Some(track) = mixer.track_mut(track_id) {
-						track.add_input(sound_wrapper.process(
-							dt,
-							clock_info_provider,
-							modulator_value_provider,
-						));
+			for frame_index in 0..num_frames {
+				let clock_info_provider = ClockInfoProvider::indexed(&clocks.clocks, frame_index);
+				let modulator_value_provider =
+					ModulatorValueProvider::indexed(&modulators.modulators, frame_index);
+				let out =
+					sound_wrapper.process(dt, &clock_info_provider, &modulator_value_provider);
+				match sound_wrapper.output_destination() {
+					OutputDestination::Track(track_id) => {
+						if let Some(track) = mixer.track_mut(track_id) {
+							track.add_input(frame_index, out);
+						}
 					}
-				}
-				OutputDestination::Emitter(emitter_id) => {
-					if let Some(scene) = scenes.get_mut(emitter_id.scene_id) {
-						if let Some(emitter) = scene.emitter_mut(emitter_id) {
-							emitter.add_input(sound_wrapper.process(
-								dt,
-								clock_info_provider,
-								modulator_value_provider,
-							));
+					OutputDestination::Emitter(emitter_id) => {
+						if let Some(scene) = scenes.get_mut(emitter_id.scene_id) {
+							if let Some(emitter) = scene.emitter_mut(emitter_id) {
+								emitter.add_input(frame_index, out);
+							}
 						}
 					}
 				}
