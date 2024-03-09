@@ -9,9 +9,9 @@
 
 use atomic_arena::{error::ArenaFull, Arena};
 
-use crate::{manager::backend::resources::clocks::Clocks, StartTime};
+use crate::{manager::backend::resources::clocks::buffered::BufferedClock, StartTime};
 
-use super::{ClockId, ClockTime, State};
+use super::{ClockId, ClockTime};
 
 /// Information about the current state of a [clock](super).
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -30,9 +30,15 @@ pub struct ClockInfoProvider<'a> {
 }
 
 impl<'a> ClockInfoProvider<'a> {
-	pub(crate) fn new(clocks: &'a Clocks) -> Self {
+	pub(crate) fn latest(clocks: &'a Arena<BufferedClock>) -> Self {
 		Self {
-			kind: ClockInfoProviderKind::Normal { clocks },
+			kind: ClockInfoProviderKind::Latest { clocks },
+		}
+	}
+
+	pub(crate) fn indexed(clocks: &'a Arena<BufferedClock>, index: usize) -> Self {
+		Self {
+			kind: ClockInfoProviderKind::Indexed { clocks, index },
 		}
 	}
 
@@ -40,20 +46,12 @@ impl<'a> ClockInfoProvider<'a> {
 	/// exists, returns `None` otherwise.
 	pub fn get(&self, id: ClockId) -> Option<ClockInfo> {
 		match &self.kind {
-			ClockInfoProviderKind::Normal { clocks } => clocks.get(id).map(|clock| ClockInfo {
-				ticking: clock.ticking(),
-				ticks: match clock.state() {
-					State::NotStarted => 0,
-					State::Started { ticks, .. } => ticks,
-				},
-				fractional_position: match clock.state() {
-					State::NotStarted => 0.0,
-					State::Started {
-						fractional_position,
-						..
-					} => fractional_position,
-				},
-			}),
+			ClockInfoProviderKind::Latest { clocks } => {
+				clocks.get(id.0).map(|clock| clock.latest_info())
+			}
+			ClockInfoProviderKind::Indexed { clocks, index } => {
+				clocks.get(id.0).map(|clock| clock.info_at_index(*index))
+			}
 			ClockInfoProviderKind::Mock { clock_info } => clock_info.get(id.0).copied(),
 		}
 	}
@@ -78,8 +76,16 @@ impl<'a> ClockInfoProvider<'a> {
 }
 
 enum ClockInfoProviderKind<'a> {
-	Normal { clocks: &'a Clocks },
-	Mock { clock_info: Arena<ClockInfo> },
+	Latest {
+		clocks: &'a Arena<BufferedClock>,
+	},
+	Indexed {
+		clocks: &'a Arena<BufferedClock>,
+		index: usize,
+	},
+	Mock {
+		clock_info: Arena<ClockInfo>,
+	},
 }
 
 /// When something should start given the current state

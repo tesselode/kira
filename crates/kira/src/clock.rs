@@ -248,14 +248,6 @@ impl Clock {
 		self.shared.clone()
 	}
 
-	pub(crate) fn state(&self) -> State {
-		self.state
-	}
-
-	pub(crate) fn ticking(&self) -> bool {
-		self.ticking
-	}
-
 	pub(crate) fn set_speed(&mut self, speed: Value<ClockSpeed>, tween: Tween) {
 		self.speed.set(speed, tween);
 	}
@@ -276,18 +268,32 @@ impl Clock {
 		self.shared.ticks.store(0, Ordering::SeqCst);
 	}
 
-	pub(crate) fn on_start_processing(&mut self) {
-		let (ticks, fractional_position) = match &self.state {
-			State::NotStarted => (0, 0.0),
+	pub(crate) fn ticking(&self) -> bool {
+		self.ticking
+	}
+
+	pub(crate) fn ticks(&self) -> u64 {
+		match self.state {
+			State::NotStarted => 0,
+			State::Started { ticks, .. } => ticks,
+		}
+	}
+
+	pub(crate) fn fractional_position(&self) -> f64 {
+		match self.state {
+			State::NotStarted => 0.0,
 			State::Started {
-				ticks,
 				fractional_position,
-			} => (*ticks, *fractional_position),
-		};
-		self.shared.ticks.store(ticks, Ordering::SeqCst);
+				..
+			} => fractional_position,
+		}
+	}
+
+	pub(crate) fn on_start_processing(&mut self) {
+		self.shared.ticks.store(self.ticks(), Ordering::SeqCst);
 		self.shared
 			.fractional_position
-			.store(fractional_position.to_bits(), Ordering::SeqCst);
+			.store(self.fractional_position().to_bits(), Ordering::SeqCst);
 	}
 
 	/// Updates the [`Clock`].
