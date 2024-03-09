@@ -112,6 +112,7 @@ impl SpatialScene {
 	pub fn process(
 		&mut self,
 		dt: f64,
+		frame_index: usize,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
 		mixer: &mut Mixer,
@@ -121,16 +122,20 @@ impl SpatialScene {
 		}
 		for (_, listener) in &mut self.listeners {
 			if let Some(track) = mixer.track_mut(listener.track()) {
-				track.add_input(listener.process(
-					dt,
-					clock_info_provider,
-					modulator_value_provider,
-					&self.emitters,
-				));
+				track.add_input(
+					frame_index,
+					listener.process(
+						dt,
+						frame_index,
+						clock_info_provider,
+						modulator_value_provider,
+						&self.emitters,
+					),
+				);
 			}
 		}
 		for (_, emitter) in &mut self.emitters {
-			emitter.after_process();
+			emitter.after_process(frame_index);
 		}
 	}
 

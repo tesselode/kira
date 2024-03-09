@@ -271,6 +271,7 @@ use atomic_arena::Key;
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
+	manager::backend::Renderer,
 	modulator::value_provider::ModulatorValueProvider,
 	tween::{Parameter, Tween, Value},
 	Volume,
@@ -328,7 +329,7 @@ pub(crate) struct Track {
 	volume: Parameter<Volume>,
 	routes: Vec<(TrackId, Parameter<Volume>)>,
 	effects: Vec<Box<dyn Effect>>,
-	input: Frame,
+	input: Vec<Frame>,
 }
 
 impl Track {
@@ -338,7 +339,7 @@ impl Track {
 			volume: Parameter::new(builder.volume, Volume::Amplitude(1.0)),
 			routes: builder.routes.into_vec(),
 			effects: builder.effects,
-			input: Frame::ZERO,
+			input: vec![Frame::ZERO; Renderer::INTERNAL_BUFFER_SIZE],
 		}
 	}
 
@@ -379,8 +380,8 @@ impl Track {
 		}
 	}
 
-	pub fn add_input(&mut self, input: Frame) {
-		self.input += input;
+	pub fn add_input(&mut self, frame_index: usize, input: Frame) {
+		self.input[frame_index] += input;
 	}
 
 	pub fn on_start_processing(&mut self) {
@@ -392,6 +393,7 @@ impl Track {
 	pub fn process(
 		&mut self,
 		dt: f64,
+		frame_index: usize,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
 	) -> Frame {
@@ -400,7 +402,7 @@ impl Track {
 		for (_, route) in &mut self.routes {
 			route.update(dt, clock_info_provider, modulator_value_provider);
 		}
-		let mut output = std::mem::replace(&mut self.input, Frame::ZERO);
+		let mut output = std::mem::replace(&mut self.input[frame_index], Frame::ZERO);
 		for effect in &mut self.effects {
 			output = effect.process(output, dt, clock_info_provider, modulator_value_provider);
 		}
