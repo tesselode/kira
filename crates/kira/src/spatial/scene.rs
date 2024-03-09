@@ -69,13 +69,15 @@ impl SpatialScene {
 		self.emitters.get_mut(id.key)
 	}
 
-	pub fn listener_mut(&mut self, id: ListenerId) -> Option<&mut Listener> {
-		self.listeners.get_mut(id.key)
-	}
-
 	pub fn on_start_processing(&mut self) {
 		self.remove_unused_emitters();
 		self.remove_unused_listeners();
+		for (_, listener) in &mut self.listeners {
+			listener.on_start_processing();
+		}
+		for (_, emitter) in &mut self.emitters {
+			emitter.on_start_processing();
+		}
 	}
 
 	pub fn remove_unused_emitters(&mut self) {

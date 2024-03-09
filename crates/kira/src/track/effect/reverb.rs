@@ -6,14 +6,9 @@ mod handle;
 pub use builder::*;
 pub use handle::*;
 
-use ringbuf::HeapConsumer;
-
 use crate::{
-	clock::clock_info::ClockInfoProvider,
-	dsp::Frame,
-	modulator::value_provider::ModulatorValueProvider,
-	track::Effect,
-	tween::{Parameter, Tween, Value},
+	clock::clock_info::ClockInfoProvider, command::ValueChangeCommand, command_writers_and_readers,
+	dsp::Frame, modulator::value_provider::ModulatorValueProvider, track::Effect, tween::Parameter,
 };
 use all_pass::AllPassFilter;
 use comb::CombFilter;
@@ -25,13 +20,6 @@ const NUM_COMB_FILTERS: usize = 8;
 const NUM_ALL_PASS_FILTERS: usize = 4;
 const GAIN: f32 = 0.015;
 const STEREO_SPREAD: usize = 23;
-
-enum Command {
-	SetFeedback(Value<f64>, Tween),
-	SetDamping(Value<f64>, Tween),
-	SetStereoWidth(Value<f64>, Tween),
-	SetMix(Value<f64>, Tween),
-}
 
 #[derive(Debug)]
 enum ReverbState {
@@ -45,7 +33,7 @@ enum ReverbState {
 // This code is based on Freeverb by Jezar at Dreampoint, found here:
 // http://blog.bjornroche.com/2012/06/freeverb-original-public-domain-code-by.html
 struct Reverb {
-	command_consumer: HeapConsumer<Command>,
+	command_readers: CommandReaders,
 	feedback: Parameter,
 	damping: Parameter,
 	stereo_width: Parameter,
@@ -55,9 +43,9 @@ struct Reverb {
 
 impl Reverb {
 	/// Creates a new `Reverb` effect.
-	fn new(settings: ReverbBuilder, command_consumer: HeapConsumer<Command>) -> Self {
+	fn new(settings: ReverbBuilder, command_readers: CommandReaders) -> Self {
 		Self {
-			command_consumer,
+			command_readers,
 			feedback: Parameter::new(settings.feedback, 0.9),
 			damping: Parameter::new(settings.damping, 0.1),
 			stereo_width: Parameter::new(settings.stereo_width, 1.0),
@@ -141,16 +129,13 @@ impl Effect for Reverb {
 	}
 
 	fn on_start_processing(&mut self) {
-		while let Some(command) = self.command_consumer.pop() {
-			match command {
-				Command::SetFeedback(feedback, tween) => self.feedback.set(feedback, tween),
-				Command::SetDamping(damping, tween) => self.damping.set(damping, tween),
-				Command::SetStereoWidth(stereo_width, tween) => {
-					self.stereo_width.set(stereo_width, tween)
-				}
-				Command::SetMix(mix, tween) => self.mix.set(mix, tween),
-			}
-		}
+		self.feedback
+			.read_commands(&mut self.command_readers.feedback_change);
+		self.damping
+			.read_commands(&mut self.command_readers.damping_change);
+		self.stereo_width
+			.read_commands(&mut self.command_readers.stereo_width_change);
+		self.mix.read_commands(&mut self.command_readers.mix_change);
 	}
 
 	fn process(
@@ -203,3 +188,12 @@ impl Effect for Reverb {
 		}
 	}
 }
+
+command_writers_and_readers!(
+	struct {
+		feedback_change: ValueChangeCommand<f64>,
+		damping_change: ValueChangeCommand<f64>,
+		stereo_width_change: ValueChangeCommand<f64>,
+		mix_change: ValueChangeCommand<f64>
+	}
+);

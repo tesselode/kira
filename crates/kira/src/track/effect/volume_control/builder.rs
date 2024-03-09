@@ -1,10 +1,6 @@
-use ringbuf::HeapRb;
-
 use crate::{track::effect::EffectBuilder, tween::Value, Volume};
 
-use super::{VolumeControl, VolumeControlHandle};
-
-const COMMAND_CAPACITY: usize = 8;
+use super::{command_writers_and_readers, VolumeControl, VolumeControlHandle};
 
 /// Configures a volume control effect.
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -27,10 +23,10 @@ impl EffectBuilder for VolumeControlBuilder {
 	type Handle = VolumeControlHandle;
 
 	fn build(self) -> (Box<dyn crate::track::effect::Effect>, Self::Handle) {
-		let (command_producer, command_consumer) = HeapRb::new(COMMAND_CAPACITY).split();
+		let (command_writers, command_readers) = command_writers_and_readers();
 		(
-			Box::new(VolumeControl::new(self, command_consumer)),
-			VolumeControlHandle { command_producer },
+			Box::new(VolumeControl::new(self, command_readers)),
+			VolumeControlHandle { command_writers },
 		)
 	}
 }

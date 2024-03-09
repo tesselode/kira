@@ -1,12 +1,11 @@
 use std::sync::Arc;
 
 use crate::{
-	manager::command::{producer::CommandProducer, Command, SpatialSceneCommand},
+	command::ValueChangeCommand,
 	tween::{Tween, Value},
-	CommandError,
 };
 
-use super::{EmitterId, EmitterShared};
+use super::{CommandWriters, EmitterId, EmitterShared};
 
 /// Controls a emitter.
 ///
@@ -15,7 +14,7 @@ use super::{EmitterId, EmitterShared};
 pub struct EmitterHandle {
 	pub(crate) id: EmitterId,
 	pub(crate) shared: Arc<EmitterShared>,
-	pub(crate) command_producer: CommandProducer,
+	pub(crate) command_writers: CommandWriters,
 }
 
 impl EmitterHandle {
@@ -25,15 +24,14 @@ impl EmitterHandle {
 	}
 
 	/// Sets the position that audio is produced from.
-	pub fn set_position(
-		&mut self,
-		position: impl Into<Value<mint::Vector3<f32>>>,
-		tween: Tween,
-	) -> Result<(), CommandError> {
+	pub fn set_position(&mut self, position: impl Into<Value<mint::Vector3<f32>>>, tween: Tween) {
 		let position: Value<mint::Vector3<f32>> = position.into();
-		self.command_producer.push(Command::SpatialScene(
-			SpatialSceneCommand::SetEmitterPosition(self.id, position.to_(), tween),
-		))
+		self.command_writers
+			.position_change
+			.write(ValueChangeCommand {
+				target: position.into(),
+				tween,
+			})
 	}
 }
 

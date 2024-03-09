@@ -6,30 +6,22 @@ mod handle;
 pub use builder::*;
 pub use handle::*;
 
-use ringbuf::HeapConsumer;
-
 use crate::{
-	clock::clock_info::ClockInfoProvider,
-	dsp::Frame,
-	modulator::value_provider::ModulatorValueProvider,
-	tween::{Parameter, Tween, Value},
+	clock::clock_info::ClockInfoProvider, command::ValueChangeCommand, command_writers_and_readers,
+	dsp::Frame, modulator::value_provider::ModulatorValueProvider, tween::Parameter,
 };
 
 use super::Effect;
 
-enum Command {
-	SetPanning(Value<f64>, Tween),
-}
-
 struct PanningControl {
-	command_consumer: HeapConsumer<Command>,
+	command_readers: CommandReaders,
 	panning: Parameter,
 }
 
 impl PanningControl {
-	fn new(builder: PanningControlBuilder, command_consumer: HeapConsumer<Command>) -> Self {
+	fn new(builder: PanningControlBuilder, command_readers: CommandReaders) -> Self {
 		Self {
-			command_consumer,
+			command_readers,
 			panning: Parameter::new(builder.0, 0.5),
 		}
 	}
@@ -37,11 +29,8 @@ impl PanningControl {
 
 impl Effect for PanningControl {
 	fn on_start_processing(&mut self) {
-		while let Some(command) = self.command_consumer.pop() {
-			match command {
-				Command::SetPanning(panning, tween) => self.panning.set(panning, tween),
-			}
-		}
+		self.panning
+			.read_commands(&mut self.command_readers.panning_change);
 	}
 
 	fn process(
@@ -56,3 +45,9 @@ impl Effect for PanningControl {
 		input.panned(self.panning.value() as f32)
 	}
 }
+
+command_writers_and_readers!(
+	struct {
+		panning_change: ValueChangeCommand<f64>
+	}
+);

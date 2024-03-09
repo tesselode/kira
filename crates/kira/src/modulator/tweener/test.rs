@@ -31,15 +31,13 @@ fn tweening() {
 		assert_eq!(tweener.value(), 0.0);
 	}
 
-	handle
-		.set(
-			1.0,
-			Tween {
-				duration: Duration::from_secs(2),
-				..Default::default()
-			},
-		)
-		.unwrap();
+	handle.set(
+		1.0,
+		Tween {
+			duration: Duration::from_secs(2),
+			..Default::default()
+		},
+	);
 	tweener.on_start_processing();
 
 	tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
@@ -60,16 +58,14 @@ fn waits_for_delay() {
 
 	let (mut tweener, mut handle) =
 		TweenerBuilder { initial_value: 0.0 }.build(generate_fake_modulator_id());
-	handle
-		.set(
-			1.0,
-			Tween {
-				start_time: StartTime::Delayed(Duration::from_secs(2)),
-				duration: Duration::from_secs(1),
-				..Default::default()
-			},
-		)
-		.unwrap();
+	handle.set(
+		1.0,
+		Tween {
+			start_time: StartTime::Delayed(Duration::from_secs(2)),
+			duration: Duration::from_secs(1),
+			..Default::default()
+		},
+	);
 	tweener.on_start_processing();
 
 	// value should not be changing yet
@@ -111,19 +107,17 @@ fn waits_for_start_time() {
 	};
 	let modulator_value_provider = MockModulatorValueProviderBuilder::new(0).build();
 
-	handle
-		.set(
-			1.0,
-			Tween {
-				start_time: StartTime::ClockTime(ClockTime {
-					clock: clock_id_1,
-					ticks: 2,
-				}),
-				duration: Duration::from_secs(1),
-				..Default::default()
-			},
-		)
-		.unwrap();
+	handle.set(
+		1.0,
+		Tween {
+			start_time: StartTime::ClockTime(ClockTime {
+				clock: clock_id_1,
+				ticks: 2,
+			}),
+			duration: Duration::from_secs(1),
+			..Default::default()
+		},
+	);
 	tweener.on_start_processing();
 
 	// value should not be changing yet

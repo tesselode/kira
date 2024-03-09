@@ -119,7 +119,7 @@ let sound_data_2 = StaticSoundData::from_file(
 )?;
 manager.play(sound_data_2)?;
 // Start the clock.
-clock.start()?;
+clock.start();
 ```
 
 ## Platform support

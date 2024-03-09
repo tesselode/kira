@@ -17,11 +17,9 @@ use std::{
 	},
 };
 
-use ringbuf::HeapConsumer;
-
 use crate::{
-	clock::clock_info::ClockInfoProvider,
-	tween::{Parameter, Tween, Value},
+	clock::clock_info::ClockInfoProvider, command::ValueChangeCommand, command_writers_and_readers,
+	tween::Parameter,
 };
 
 use super::{value_provider::ModulatorValueProvider, Modulator};
@@ -31,42 +29,41 @@ struct Lfo {
 	frequency: Parameter,
 	amplitude: Parameter,
 	offset: Parameter,
-	command_consumer: HeapConsumer<Command>,
 	shared: Arc<LfoShared>,
 	phase: f64,
 	value: f64,
+	command_readers: CommandReaders,
 }
 
 impl Lfo {
-	fn new(
-		builder: &LfoBuilder,
-		command_consumer: HeapConsumer<Command>,
-		shared: Arc<LfoShared>,
-	) -> Self {
+	fn new(builder: &LfoBuilder, shared: Arc<LfoShared>, command_readers: CommandReaders) -> Self {
 		Self {
 			waveform: builder.waveform,
 			frequency: Parameter::new(builder.frequency, 2.0),
 			amplitude: Parameter::new(builder.amplitude, 1.0),
 			offset: Parameter::new(builder.offset, 0.0),
-			command_consumer,
 			shared,
 			phase: builder.starting_phase / TAU,
 			value: 0.0,
+			command_readers,
 		}
 	}
 }
 
 impl Modulator for Lfo {
 	fn on_start_processing(&mut self) {
-		while let Some(command) = self.command_consumer.pop() {
-			match command {
-				Command::SetWaveform { waveform } => self.waveform = waveform,
-				Command::SetFrequency { target, tween } => self.frequency.set(target, tween),
-				Command::SetAmplitude { target, tween } => self.amplitude.set(target, tween),
-				Command::SetOffset { target, tween } => self.offset.set(target, tween),
-				Command::SetPhase { phase } => self.phase = phase / TAU,
-			}
+		if let Some(waveform) = self.command_readers.waveform_change.read().copied() {
+			self.waveform = waveform;
 		}
+		if let Some(phase) = self.command_readers.phase_change.read().copied() {
+			self.phase = phase;
+		}
+		self.frequency
+			.read_commands(&mut self.command_readers.frequency_change);
+		self.amplitude
+			.read_commands(&mut self.command_readers.amplitude_change);
+		self.offset
+			.read_commands(&mut self.command_readers.offset_change);
 	}
 
 	fn update(
@@ -132,14 +129,6 @@ impl Waveform {
 	}
 }
 
-enum Command {
-	SetWaveform { waveform: Waveform },
-	SetFrequency { target: Value<f64>, tween: Tween },
-	SetAmplitude { target: Value<f64>, tween: Tween },
-	SetOffset { target: Value<f64>, tween: Tween },
-	SetPhase { phase: f64 },
-}
-
 struct LfoShared {
 	removed: AtomicBool,
 }
@@ -151,3 +140,13 @@ impl LfoShared {
 		}
 	}
 }
+
+command_writers_and_readers!(
+	struct {
+		waveform_change: Waveform,
+		frequency_change: ValueChangeCommand<f64>,
+		amplitude_change: ValueChangeCommand<f64>,
+		offset_change: ValueChangeCommand<f64>,
+		phase_change: f64
+	}
+);

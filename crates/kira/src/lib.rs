@@ -134,7 +134,7 @@ let sound_data_2 = StaticSoundData::from_file(
 )?;
 manager.play(sound_data_2)?;
 // Start the clock.
-clock.start()?;
+clock.start();
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
@@ -254,6 +254,7 @@ and compile times for games.
 #![allow(clippy::tabs_in_doc_comments)]
 
 pub mod clock;
+pub mod command;
 pub mod dsp;
 mod error;
 pub mod manager;

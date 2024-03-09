@@ -6,22 +6,16 @@ mod handle;
 pub use builder::*;
 pub use handle::*;
 
-use ringbuf::HeapConsumer;
-
 use crate::{
 	clock::clock_info::ClockInfoProvider,
+	command::ValueChangeCommand,
+	command_writers_and_readers,
 	dsp::{interpolate_frame, Frame},
 	modulator::value_provider::ModulatorValueProvider,
 	track::Effect,
-	tween::{Parameter, Tween, Value},
+	tween::Parameter,
 	Volume,
 };
-
-enum Command {
-	SetDelayTime(Value<f64>, Tween),
-	SetFeedback(Value<Volume>, Tween),
-	SetMix(Value<f64>, Tween),
-}
 
 #[derive(Debug, Clone)]
 enum DelayState {
@@ -36,19 +30,18 @@ enum DelayState {
 }
 
 struct Delay {
-	command_consumer: HeapConsumer<Command>,
 	delay_time: Parameter,
 	feedback: Parameter<Volume>,
 	mix: Parameter,
 	state: DelayState,
 	feedback_effects: Vec<Box<dyn Effect>>,
+	command_readers: CommandReaders,
 }
 
 impl Delay {
 	/// Creates a new delay effect.
-	fn new(builder: DelayBuilder, command_consumer: HeapConsumer<Command>) -> Self {
+	fn new(builder: DelayBuilder, command_readers: CommandReaders) -> Self {
 		Self {
-			command_consumer,
 			delay_time: Parameter::new(builder.delay_time, 0.5),
 			feedback: Parameter::new(builder.feedback, Volume::Amplitude(0.5)),
 			mix: Parameter::new(builder.mix, 0.5),
@@ -56,6 +49,7 @@ impl Delay {
 				buffer_length: builder.buffer_length,
 			},
 			feedback_effects: builder.feedback_effects,
+			command_readers,
 		}
 	}
 }
@@ -94,13 +88,11 @@ impl Effect for Delay {
 	}
 
 	fn on_start_processing(&mut self) {
-		while let Some(command) = self.command_consumer.pop() {
-			match command {
-				Command::SetDelayTime(delay_time, tween) => self.delay_time.set(delay_time, tween),
-				Command::SetFeedback(feedback, tween) => self.feedback.set(feedback, tween),
-				Command::SetMix(mix, tween) => self.mix.set(mix, tween),
-			}
-		}
+		self.delay_time
+			.read_commands(&mut self.command_readers.delay_time_change);
+		self.feedback
+			.read_commands(&mut self.command_readers.feedback_change);
+		self.mix.read_commands(&mut self.command_readers.mix_change);
 		for effect in &mut self.feedback_effects {
 			effect.on_start_processing();
 		}
@@ -165,3 +157,11 @@ impl Effect for Delay {
 		}
 	}
 }
+
+command_writers_and_readers!(
+	struct {
+		delay_time_change: ValueChangeCommand<f64>,
+		feedback_change: ValueChangeCommand<Volume>,
+		mix_change: ValueChangeCommand<f64>
+	}
+);

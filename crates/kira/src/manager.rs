@@ -13,22 +13,20 @@ mod settings;
 use ringbuf::HeapRb;
 pub use settings::*;
 
-use std::{
-	collections::HashSet,
-	sync::{atomic::Ordering, Arc},
-};
+use std::sync::{atomic::Ordering, Arc};
 
 use crate::{
-	clock::{Clock, ClockHandle, ClockId, ClockSpeed},
+	clock::{self, Clock, ClockHandle, ClockId, ClockSpeed},
 	error::CommandError,
 	manager::command::ModulatorCommand,
 	modulator::{ModulatorBuilder, ModulatorId},
 	sound::{
+		self,
 		wrapper::{SoundWrapper, SoundWrapperShared},
 		CommonSoundController, SoundData,
 	},
 	spatial::scene::{SpatialScene, SpatialSceneHandle, SpatialSceneId, SpatialSceneSettings},
-	track::{SubTrackId, Track, TrackBuilder, TrackHandle, TrackId},
+	track::{SubTrackId, TrackBuilder, TrackHandle},
 	tween::{Tween, Value},
 };
 
@@ -40,10 +38,7 @@ use self::{
 		},
 		Backend, DefaultBackend, Renderer, RendererShared,
 	},
-	command::{
-		producer::CommandProducer, ClockCommand, Command, MixerCommand, SoundCommand,
-		SpatialSceneCommand,
-	},
+	command::{producer::CommandProducer, Command, SpatialSceneCommand},
 	error::{
 		AddClockError, AddModulatorError, AddSpatialSceneError, AddSubTrackError, PlaySoundError,
 	},
@@ -81,6 +76,7 @@ pub struct AudioManager<B: Backend = DefaultBackend> {
 	command_producer: CommandProducer,
 	resource_controllers: ResourceControllers,
 	unused_resource_consumers: UnusedResourceConsumers,
+	main_track_handle: TrackHandle,
 }
 
 impl<B: Backend> AudioManager<B> {
@@ -120,7 +116,7 @@ impl<B: Backend> AudioManager<B> {
 			HeapRb::new(settings.capacities.command_capacity).split();
 		let (unused_resource_producers, unused_resource_consumers) =
 			create_unused_resource_channels(settings.capacities);
-		let (resources, resource_controllers) = create_resources(
+		let (resources, resource_controllers, main_track_handle) = create_resources(
 			settings.capacities,
 			settings.main_track_builder,
 			unused_resource_producers,
@@ -135,6 +131,7 @@ impl<B: Backend> AudioManager<B> {
 			command_producer: CommandProducer::new(command_producer),
 			resource_controllers,
 			unused_resource_consumers,
+			main_track_handle,
 		})
 	}
 
@@ -177,17 +174,17 @@ impl<B: Backend> AudioManager<B> {
 			.map_err(|_| PlaySoundError::SoundLimitReached)?;
 		let settings = sound_data.common_settings();
 		let shared = SoundWrapperShared::new();
+		let (command_writer, command_reader) = sound::wrapper::command_writers_and_readers();
 		let common_controller = CommonSoundController {
-			key,
-			command_producer: self.command_producer.clone(),
 			shared: shared.clone(),
+			command_writers: command_writer,
 		};
 		let (sound, handle) = sound_data
 			.into_sound(common_controller)
 			.map_err(PlaySoundError::IntoSoundError)?;
-		let sound_wrapper = SoundWrapper::new(sound, settings, shared);
+		let sound_wrapper = SoundWrapper::new(sound, settings, shared, command_reader);
 		self.command_producer
-			.push(Command::Sound(SoundCommand::Add(key, sound_wrapper)))?;
+			.push(Command::AddSound(key, sound_wrapper))?;
 		Ok(handle)
 	}
 
@@ -208,17 +205,10 @@ impl<B: Backend> AudioManager<B> {
 				.try_reserve()
 				.map_err(|_| AddSubTrackError::SubTrackLimitReached)?,
 		);
-		let existing_routes = builder.routes.0.keys().copied().collect();
-		let mut sub_track = Track::new(builder);
-		sub_track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
-		let handle = TrackHandle {
-			id: TrackId::Sub(id),
-			shared: Some(sub_track.shared()),
-			command_producer: self.command_producer.clone(),
-			existing_routes,
-		};
+		let (mut track, handle) = builder.build(id.into());
+		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
 		self.command_producer
-			.push(Command::Mixer(MixerCommand::AddSubTrack(id, sub_track)))?;
+			.push(Command::AddSubTrack(id, track))?;
 		Ok(handle)
 	}
 
@@ -257,14 +247,14 @@ impl<B: Backend> AudioManager<B> {
 				.try_reserve()
 				.map_err(|_| AddClockError::ClockLimitReached)?,
 		);
-		let clock = Clock::new(speed.into());
+		let (command_writers, command_readers) = clock::command_writers_and_readers();
+		let clock = Clock::new(speed.into(), command_readers);
 		let handle = ClockHandle {
 			id,
 			shared: clock.shared(),
-			command_producer: self.command_producer.clone(),
+			command_writers,
 		};
-		self.command_producer
-			.push(Command::Clock(ClockCommand::Add(id, clock)))?;
+		self.command_producer.push(Command::AddClock(id, clock))?;
 		Ok(handle)
 	}
 
@@ -436,17 +426,12 @@ impl<B: Backend> AudioManager<B> {
 	use kira::tween::Tween;
 
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	manager.main_track().set_volume(0.5, Tween::default())?;
+	manager.main_track().set_volume(0.5, Tween::default());
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
-	pub fn main_track(&self) -> TrackHandle {
-		TrackHandle {
-			id: TrackId::Main,
-			shared: None,
-			command_producer: self.command_producer.clone(),
-			existing_routes: HashSet::new(),
-		}
+	pub fn main_track(&mut self) -> &mut TrackHandle {
+		&mut self.main_track_handle
 	}
 
 	/// Returns the current playback state of the audio.

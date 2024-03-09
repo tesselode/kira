@@ -1,26 +1,23 @@
-use ringbuf::HeapProducer;
-
 use crate::{
+	command::ValueChangeCommand,
 	tween::{Tween, Value},
-	CommandError,
 };
 
-use super::Command;
+use super::CommandWriters;
 
 /// Controls a panning control effect.
 pub struct PanningControlHandle {
-	pub(super) command_producer: HeapProducer<Command>,
+	pub(super) command_writers: CommandWriters,
 }
 
 impl PanningControlHandle {
 	/// Sets the panning adjustment to apply to input audio.
-	pub fn set_panning(
-		&mut self,
-		panning: impl Into<Value<f64>>,
-		tween: Tween,
-	) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::SetPanning(panning.into(), tween))
-			.map_err(|_| CommandError::CommandQueueFull)
+	pub fn set_panning(&mut self, panning: impl Into<Value<f64>>, tween: Tween) {
+		self.command_writers
+			.panning_change
+			.write(ValueChangeCommand {
+				target: panning.into(),
+				tween,
+			})
 	}
 }

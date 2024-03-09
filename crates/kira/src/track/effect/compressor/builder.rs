@@ -1,15 +1,11 @@
 use std::time::Duration;
 
-use ringbuf::HeapRb;
-
 use crate::{
 	track::effect::{Effect, EffectBuilder},
 	tween::Value,
 };
 
-use super::{Compressor, CompressorHandle};
-
-const COMMAND_CAPACITY: usize = 8;
+use super::{command_writers_and_readers, Compressor, CompressorHandle};
 
 /// Configures a compressor.
 #[non_exhaustive]
@@ -133,10 +129,10 @@ impl EffectBuilder for CompressorBuilder {
 	type Handle = CompressorHandle;
 
 	fn build(self) -> (Box<dyn Effect>, Self::Handle) {
-		let (command_producer, command_consumer) = HeapRb::new(COMMAND_CAPACITY).split();
+		let (command_writers, command_readers) = command_writers_and_readers();
 		(
-			Box::new(Compressor::new(self, command_consumer)),
-			CompressorHandle { command_producer },
+			Box::new(Compressor::new(self, command_readers)),
+			CompressorHandle { command_writers },
 		)
 	}
 }

@@ -1,13 +1,9 @@
-use ringbuf::HeapRb;
-
 use crate::{
 	track::effect::{Effect, EffectBuilder},
 	tween::Value,
 };
 
-use super::{Filter, FilterHandle, FilterMode};
-
-const COMMAND_CAPACITY: usize = 8;
+use super::{command_writers_and_readers, Filter, FilterHandle, FilterMode};
 
 /// Configures a filter effect.
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -83,10 +79,10 @@ impl EffectBuilder for FilterBuilder {
 	type Handle = FilterHandle;
 
 	fn build(self) -> (Box<dyn Effect>, Self::Handle) {
-		let (command_producer, command_consumer) = HeapRb::new(COMMAND_CAPACITY).split();
+		let (command_writers, command_readers) = command_writers_and_readers();
 		(
-			Box::new(Filter::new(self, command_consumer)),
-			FilterHandle { command_producer },
+			Box::new(Filter::new(self, command_readers)),
+			FilterHandle { command_writers },
 		)
 	}
 }

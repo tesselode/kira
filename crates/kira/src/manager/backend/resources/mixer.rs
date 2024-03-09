@@ -7,18 +7,15 @@ use ringbuf::HeapProducer;
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
-	manager::command::MixerCommand,
 	modulator::value_provider::ModulatorValueProvider,
-	track::{SubTrackId, Track, TrackBuilder, TrackId},
-	tween::Parameter,
-	Volume,
+	track::{Route, SubTrackId, Track, TrackBuilder, TrackHandle, TrackId},
 };
 
 pub(crate) struct Mixer {
 	main_track: Track,
 	sub_tracks: Arena<Track>,
 	sub_track_ids: Vec<SubTrackId>,
-	dummy_routes: Vec<(TrackId, Parameter<Volume>)>,
+	dummy_routes: Vec<Route>,
 	unused_track_producer: HeapProducer<Track>,
 }
 
@@ -28,18 +25,17 @@ impl Mixer {
 		unused_sub_track_producer: HeapProducer<Track>,
 		sample_rate: u32,
 		main_track_builder: TrackBuilder,
-	) -> Self {
-		Self {
-			main_track: {
-				let mut track = Track::new(main_track_builder);
-				track.init_effects(sample_rate);
-				track
-			},
+	) -> (Self, TrackHandle) {
+		let (mut main_track, main_track_handle) = main_track_builder.build(TrackId::Main);
+		main_track.init_effects(sample_rate);
+		let mixer = Self {
+			main_track,
 			sub_tracks: Arena::new(sub_track_capacity),
 			sub_track_ids: Vec::with_capacity(sub_track_capacity),
 			dummy_routes: vec![],
 			unused_track_producer: unused_sub_track_producer,
-		}
+		};
+		(mixer, main_track_handle)
 	}
 
 	pub fn sub_track_controller(&self) -> Controller {
@@ -53,30 +49,11 @@ impl Mixer {
 		}
 	}
 
-	pub fn run_command(&mut self, command: MixerCommand) {
-		match command {
-			MixerCommand::AddSubTrack(id, track) => {
-				self.sub_tracks
-					.insert_with_key(id.0, track)
-					.expect("Sub-track arena is full");
-				self.sub_track_ids.push(id);
-			}
-			MixerCommand::SetTrackVolume(id, volume, tween) => {
-				if let Some(track) = self.track_mut(id) {
-					track.set_volume(volume, tween);
-				}
-			}
-			MixerCommand::SetTrackRoutes {
-				from,
-				to,
-				volume,
-				tween,
-			} => {
-				if let Some(track) = self.track_mut(from) {
-					track.set_route(to, volume, tween);
-				}
-			}
-		}
+	pub fn add_sub_track(&mut self, id: SubTrackId, track: Track) {
+		self.sub_tracks
+			.insert_with_key(id.0, track)
+			.expect("Sub-track arena is full");
+		self.sub_track_ids.push(id);
 	}
 
 	pub fn on_change_sample_rate(&mut self, sample_rate: u32) {
@@ -137,13 +114,18 @@ impl Mixer {
 			// references to the other tracks
 			std::mem::swap(track.routes_mut(), &mut self.dummy_routes);
 			// send the output to the destination tracks
-			for (id, amount) in &self.dummy_routes {
-				let destination_track = match id {
+			for Route {
+				destination,
+				volume,
+				..
+			} in &self.dummy_routes
+			{
+				let destination_track = match destination {
 					TrackId::Main => Some(&mut self.main_track),
 					TrackId::Sub(id) => self.sub_tracks.get_mut(id.0),
 				};
 				if let Some(destination_track) = destination_track {
-					destination_track.add_input(output * amount.value().as_amplitude() as f32);
+					destination_track.add_input(output * volume.value().as_amplitude() as f32);
 				}
 			}
 			// borrow the track again and give it back its routes

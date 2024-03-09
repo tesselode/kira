@@ -1,6 +1,16 @@
-use crate::{tween::Value, Volume};
+use std::{collections::HashMap, sync::Arc};
 
-use super::{effect::EffectBuilder, routes::TrackRoutes, Effect};
+use crate::{
+	command::command_writer_and_reader,
+	dsp::Frame,
+	tween::{Parameter, Value},
+	Volume,
+};
+
+use super::{
+	effect::EffectBuilder, routes::TrackRoutes, Effect, Route, Track, TrackHandle, TrackId,
+	TrackShared,
+};
 
 /// Configures a mixer track.
 #[non_exhaustive]
@@ -114,6 +124,38 @@ impl TrackBuilder {
 	pub fn with_effect<B: EffectBuilder>(mut self, builder: B) -> Self {
 		self.add_effect(builder);
 		self
+	}
+
+	pub(crate) fn build(self, id: TrackId) -> (Track, TrackHandle) {
+		let shared = Arc::new(TrackShared::new());
+		let (volume_change_command_writer, volume_change_command_reader) =
+			command_writer_and_reader();
+		let mut route_volume_change_command_writers = HashMap::new();
+		let mut routes = vec![];
+		for (id, volume) in &self.routes.0 {
+			let (writer, reader) = command_writer_and_reader();
+			route_volume_change_command_writers.insert(*id, writer);
+			routes.push(Route {
+				destination: *id,
+				volume: Parameter::new(*volume, Volume::Amplitude(1.0)),
+				volume_change_command_reader: reader,
+			});
+		}
+		let track = Track {
+			shared: shared.clone(),
+			volume: Parameter::new(self.volume, Volume::Amplitude(1.0)),
+			volume_change_command_reader,
+			routes,
+			effects: self.effects,
+			input: Frame::ZERO,
+		};
+		let handle = TrackHandle {
+			id,
+			shared,
+			volume_change_command_writer,
+			route_volume_change_command_writers,
+		};
+		(track, handle)
 	}
 }
 
