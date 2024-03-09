@@ -10,33 +10,34 @@ use atomic_arena::Controller;
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 
 use crate::{
-	clock::Clock,
 	manager::settings::Capacities,
-	modulator::Modulator,
 	sound::wrapper::SoundWrapper,
 	spatial::scene::SpatialScene,
 	track::{Track, TrackBuilder, TrackHandle},
 };
 
 use self::{
-	clocks::Clocks, mixer::Mixer, modulators::Modulators, sounds::Sounds,
+	clocks::{buffered::BufferedClock, Clocks},
+	mixer::Mixer,
+	modulators::{buffered::BufferedModulator, Modulators},
+	sounds::Sounds,
 	spatial_scenes::SpatialScenes,
 };
 
 pub(crate) struct UnusedResourceProducers {
 	pub sound: HeapProducer<SoundWrapper>,
 	pub sub_track: HeapProducer<Track>,
-	pub clock: HeapProducer<Clock>,
+	pub clock: HeapProducer<BufferedClock>,
 	pub spatial_scene: HeapProducer<SpatialScene>,
-	pub modulator: HeapProducer<Box<dyn Modulator>>,
+	pub modulator: HeapProducer<BufferedModulator>,
 }
 
 pub(crate) struct UnusedResourceConsumers {
 	pub sound: Mutex<HeapConsumer<SoundWrapper>>,
 	pub sub_track: Mutex<HeapConsumer<Track>>,
-	pub clock: Mutex<HeapConsumer<Clock>>,
+	pub clock: Mutex<HeapConsumer<BufferedClock>>,
 	pub spatial_scene: Mutex<HeapConsumer<SpatialScene>>,
-	pub modulator: Mutex<HeapConsumer<Box<dyn Modulator>>>,
+	pub modulator: Mutex<HeapConsumer<BufferedModulator>>,
 }
 
 pub(crate) fn create_unused_resource_channels(

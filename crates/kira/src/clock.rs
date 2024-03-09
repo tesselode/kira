@@ -251,10 +251,6 @@ impl Clock {
 		self.shared.clone()
 	}
 
-	pub(crate) fn state(&self) -> State {
-		self.state
-	}
-
 	pub(crate) fn ticking(&self) -> bool {
 		self.ticking
 	}
@@ -279,6 +275,23 @@ impl Clock {
 			self.reset();
 		}
 		self.update_shared();
+	}
+
+	pub(crate) fn ticks(&self) -> u64 {
+		match self.state {
+			State::NotStarted => 0,
+			State::Started { ticks, .. } => ticks,
+		}
+	}
+
+	pub(crate) fn fractional_position(&self) -> f64 {
+		match self.state {
+			State::NotStarted => 0.0,
+			State::Started {
+				fractional_position,
+				..
+			} => fractional_position,
+		}
 	}
 
 	/// Updates the [`Clock`].

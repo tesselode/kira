@@ -6,7 +6,9 @@
 
 use atomic_arena::{error::ArenaFull, Arena};
 
-use super::{Modulator, ModulatorId};
+use crate::manager::backend::resources::modulators::buffered::BufferedModulator;
+
+use super::ModulatorId;
 
 /// Provides values of any modulator that currently exists.
 pub struct ModulatorValueProvider<'a> {
@@ -14,9 +16,15 @@ pub struct ModulatorValueProvider<'a> {
 }
 
 impl<'a> ModulatorValueProvider<'a> {
-	pub(crate) fn new(modulators: &'a Arena<Box<dyn Modulator>>) -> Self {
+	pub(crate) fn latest(modulators: &'a Arena<BufferedModulator>) -> Self {
 		Self {
-			kind: ModulatorValueProviderKind::Normal { modulators },
+			kind: ModulatorValueProviderKind::Latest { modulators },
+		}
+	}
+
+	pub(crate) fn indexed(modulators: &'a Arena<BufferedModulator>, index: usize) -> Self {
+		Self {
+			kind: ModulatorValueProviderKind::Indexed { modulators, index },
 		}
 	}
 
@@ -24,9 +32,12 @@ impl<'a> ModulatorValueProvider<'a> {
 	/// exists, returns `None` otherwise.
 	pub fn get(&self, id: ModulatorId) -> Option<f64> {
 		match &self.kind {
-			ModulatorValueProviderKind::Normal { modulators } => {
-				modulators.get(id.0).map(|modulator| modulator.value())
-			}
+			ModulatorValueProviderKind::Latest { modulators } => modulators
+				.get(id.0)
+				.map(|modulator| modulator.latest_value()),
+			ModulatorValueProviderKind::Indexed { modulators, index } => modulators
+				.get(id.0)
+				.map(|modulator| modulator.value_at_index(*index)),
 			ModulatorValueProviderKind::Mock {
 				modulator_values: modulator_info,
 			} => modulator_info.get(id.0).copied(),
@@ -35,8 +46,12 @@ impl<'a> ModulatorValueProvider<'a> {
 }
 
 enum ModulatorValueProviderKind<'a> {
-	Normal {
-		modulators: &'a Arena<Box<dyn Modulator>>,
+	Latest {
+		modulators: &'a Arena<BufferedModulator>,
+	},
+	Indexed {
+		modulators: &'a Arena<BufferedModulator>,
+		index: usize,
 	},
 	Mock {
 		modulator_values: Arena<f64>,

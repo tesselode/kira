@@ -1,3 +1,5 @@
+pub(crate) mod buffered;
+
 use atomic_arena::{Arena, Controller};
 use ringbuf::HeapProducer;
 
@@ -6,22 +8,27 @@ use crate::{
 	modulator::value_provider::ModulatorValueProvider,
 };
 
+use self::buffered::BufferedClock;
+
 pub(crate) struct Clocks {
-	pub(crate) clocks: Arena<Clock>,
+	pub(crate) clocks: Arena<BufferedClock>,
 	clock_ids: Vec<ClockId>,
-	unused_clock_producer: HeapProducer<Clock>,
-	dummy_clock: Clock,
+	unused_clock_producer: HeapProducer<BufferedClock>,
+	dummy_clock: BufferedClock,
 }
 
 impl Clocks {
-	pub(crate) fn new(capacity: usize, unused_clock_producer: HeapProducer<Clock>) -> Self {
+	pub(crate) fn new(capacity: usize, unused_clock_producer: HeapProducer<BufferedClock>) -> Self {
 		Self {
 			clocks: Arena::new(capacity),
 			clock_ids: Vec::with_capacity(capacity),
 			unused_clock_producer,
 			dummy_clock: {
 				let (_, command_readers) = clock::command_writers_and_readers();
-				Clock::new(ClockSpeed::SecondsPerTick(1.0).into(), command_readers)
+				BufferedClock::new(Clock::new(
+					ClockSpeed::TicksPerSecond(1.0).into(),
+					command_readers,
+				))
 			},
 		}
 	}
@@ -61,11 +68,17 @@ impl Clocks {
 		}
 	}
 
-	pub(crate) fn add_clock(&mut self, id: ClockId, clock: Clock) {
+	pub(crate) fn add_clock(&mut self, id: ClockId, clock: BufferedClock) {
 		self.clocks
 			.insert_with_key(id.0, clock)
 			.expect("Clock arena is full");
 		self.clock_ids.push(id);
+	}
+
+	pub fn clear_buffers(&mut self) {
+		for (_, clock) in &mut self.clocks {
+			clock.clear_buffer();
+		}
 	}
 
 	pub(crate) fn update(&mut self, dt: f64, modulator_value_provider: &ModulatorValueProvider) {
@@ -78,7 +91,7 @@ impl Clocks {
 			);
 			self.dummy_clock.update(
 				dt,
-				&ClockInfoProvider::new(&self.clocks),
+				&ClockInfoProvider::latest(&self.clocks),
 				modulator_value_provider,
 			);
 			std::mem::swap(

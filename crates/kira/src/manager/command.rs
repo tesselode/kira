@@ -3,8 +3,8 @@ pub mod producer;
 use atomic_arena::Key;
 
 use crate::{
-	clock::{Clock, ClockId},
-	modulator::{Modulator, ModulatorId},
+	clock::ClockId,
+	modulator::ModulatorId,
 	sound::wrapper::SoundWrapper,
 	spatial::{
 		emitter::{Emitter, EmitterId},
@@ -12,7 +12,10 @@ use crate::{
 		scene::{SpatialScene, SpatialSceneId},
 	},
 	track::{SubTrackId, Track},
-	tween::Tween,
+};
+
+use super::backend::resources::{
+	clocks::buffered::BufferedClock, modulators::buffered::BufferedModulator,
 };
 
 pub(crate) enum SpatialSceneCommand {
@@ -22,13 +25,13 @@ pub(crate) enum SpatialSceneCommand {
 }
 
 pub(crate) enum ModulatorCommand {
-	Add(ModulatorId, Box<dyn Modulator>),
+	Add(ModulatorId, BufferedModulator),
 }
 
 pub(crate) enum Command {
 	AddSound(Key, SoundWrapper),
 	AddSubTrack(SubTrackId, Track),
-	AddClock(ClockId, Clock),
+	AddClock(ClockId, BufferedClock),
 	SpatialScene(SpatialSceneCommand),
 	Modulator(ModulatorCommand),
 }
