@@ -1,36 +1,26 @@
 use std::sync::{
-	atomic::{AtomicU32, AtomicU8, Ordering},
+	atomic::{AtomicU32, Ordering},
 	Arc,
 };
 
 use ringbuf::HeapConsumer;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider,
-	dsp::Frame,
-	manager::{command::Command, MainPlaybackState},
+	clock::clock_info::ClockInfoProvider, dsp::Frame, manager::command::Command,
 	modulator::value_provider::ModulatorValueProvider,
-	tween::{Parameter, Value},
-	Volume,
 };
 
 use super::resources::Resources;
 
 pub(crate) struct RendererShared {
-	pub(crate) state: AtomicU8,
 	pub(crate) sample_rate: AtomicU32,
 }
 
 impl RendererShared {
 	pub fn new(sample_rate: u32) -> Self {
 		Self {
-			state: AtomicU8::new(MainPlaybackState::Playing as u8),
 			sample_rate: AtomicU32::new(sample_rate),
 		}
-	}
-
-	pub fn state(&self) -> MainPlaybackState {
-		MainPlaybackState::from_u8(self.state.load(Ordering::SeqCst))
 	}
 }
 
@@ -44,8 +34,6 @@ pub struct Renderer {
 	shared: Arc<RendererShared>,
 	resources: Resources,
 	command_consumer: HeapConsumer<Command>,
-	state: MainPlaybackState,
-	fade_volume: Parameter<Volume>,
 }
 
 impl Renderer {
@@ -59,8 +47,6 @@ impl Renderer {
 			shared: Arc::new(RendererShared::new(sample_rate)),
 			resources,
 			command_consumer,
-			state: MainPlaybackState::Playing,
-			fade_volume: Parameter::new(Value::Fixed(Volume::Decibels(0.0)), Volume::Decibels(0.0)),
 		}
 	}
 
@@ -92,24 +78,6 @@ impl Renderer {
 					self.resources.spatial_scenes.run_command(command)
 				}
 				Command::Modulator(command) => self.resources.modulators.run_command(command),
-				Command::Pause(fade_out_tween) => {
-					self.state = MainPlaybackState::Pausing;
-					self.shared
-						.state
-						.store(MainPlaybackState::Pausing as u8, Ordering::SeqCst);
-					self.fade_volume.set(
-						Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)),
-						fade_out_tween,
-					);
-				}
-				Command::Resume(fade_in_tween) => {
-					self.state = MainPlaybackState::Playing;
-					self.shared
-						.state
-						.store(MainPlaybackState::Playing as u8, Ordering::SeqCst);
-					self.fade_volume
-						.set(Value::Fixed(Volume::Decibels(0.0)), fade_in_tween);
-				}
 			}
 		}
 
@@ -123,29 +91,14 @@ impl Renderer {
 	/// Produces the next [`Frame`]s of audio.
 	pub fn process(&mut self, frames: &mut [Frame]) {
 		for frame in frames {
-			if self.fade_volume.update(
+			self.resources.modulators.process(
 				self.dt,
 				&ClockInfoProvider::new(&self.resources.clocks.clocks),
+			);
+			self.resources.clocks.update(
+				self.dt,
 				&ModulatorValueProvider::new(&self.resources.modulators.modulators),
-			) {
-				if self.state == MainPlaybackState::Pausing {
-					self.state = MainPlaybackState::Paused;
-				}
-			}
-			if self.state == MainPlaybackState::Paused {
-				*frame = Frame::ZERO;
-				return;
-			}
-			if self.state == MainPlaybackState::Playing {
-				self.resources.modulators.process(
-					self.dt,
-					&ClockInfoProvider::new(&self.resources.clocks.clocks),
-				);
-				self.resources.clocks.update(
-					self.dt,
-					&ModulatorValueProvider::new(&self.resources.modulators.modulators),
-				);
-			}
+			);
 			self.resources.sounds.process(
 				self.dt,
 				&ClockInfoProvider::new(&self.resources.clocks.clocks),
@@ -159,12 +112,11 @@ impl Renderer {
 				&ModulatorValueProvider::new(&self.resources.modulators.modulators),
 				&mut self.resources.mixer,
 			);
-			let out = self.resources.mixer.process(
+			*frame = self.resources.mixer.process(
 				self.dt,
 				&ClockInfoProvider::new(&self.resources.clocks.clocks),
 				&ModulatorValueProvider::new(&self.resources.modulators.modulators),
 			);
-			*frame = out * self.fade_volume.value().as_amplitude() as f32;
 		}
 	}
 }
