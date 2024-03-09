@@ -1,10 +1,9 @@
 pub mod producer;
 
 use atomic_arena::Key;
-use glam::{Quat, Vec3};
 
 use crate::{
-	clock::{Clock, ClockId, ClockSpeed},
+	clock::{Clock, ClockId},
 	modulator::{Modulator, ModulatorId},
 	sound::wrapper::SoundWrapper,
 	spatial::{
@@ -12,46 +11,14 @@ use crate::{
 		listener::{Listener, ListenerId},
 		scene::{SpatialScene, SpatialSceneId},
 	},
-	track::{SubTrackId, Track, TrackId},
-	tween::{Tween, Value},
-	Volume,
+	track::{SubTrackId, Track},
+	tween::Tween,
 };
-
-pub(crate) enum SoundCommand {
-	Add(Key, SoundWrapper),
-	SetVolume(Key, Value<Volume>, Tween),
-	SetPanning(Key, Value<f64>, Tween),
-	Pause(Key, Tween),
-	Resume(Key, Tween),
-	Stop(Key, Tween),
-}
-
-pub(crate) enum MixerCommand {
-	AddSubTrack(SubTrackId, Track),
-	SetTrackVolume(TrackId, Value<Volume>, Tween),
-	SetTrackRoutes {
-		from: TrackId,
-		to: TrackId,
-		volume: Value<Volume>,
-		tween: Tween,
-	},
-}
-
-pub(crate) enum ClockCommand {
-	Add(ClockId, Clock),
-	SetSpeed(ClockId, Value<ClockSpeed>, Tween),
-	Start(ClockId),
-	Pause(ClockId),
-	Stop(ClockId),
-}
 
 pub(crate) enum SpatialSceneCommand {
 	Add(SpatialSceneId, SpatialScene),
 	AddEmitter(EmitterId, Emitter),
 	AddListener(ListenerId, Listener),
-	SetListenerPosition(ListenerId, Value<Vec3>, Tween),
-	SetListenerOrientation(ListenerId, Value<Quat>, Tween),
-	SetEmitterPosition(EmitterId, Value<Vec3>, Tween),
 }
 
 pub(crate) enum ModulatorCommand {
@@ -59,9 +26,9 @@ pub(crate) enum ModulatorCommand {
 }
 
 pub(crate) enum Command {
-	Sound(SoundCommand),
-	Mixer(MixerCommand),
-	Clock(ClockCommand),
+	AddSound(Key, SoundWrapper),
+	AddSubTrack(SubTrackId, Track),
+	AddClock(ClockId, Clock),
 	SpatialScene(SpatialSceneCommand),
 	Modulator(ModulatorCommand),
 	Pause(Tween),

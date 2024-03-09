@@ -71,27 +71,6 @@ impl SpatialScenes {
 					scene.add_listener(id, listener);
 				}
 			}
-			SpatialSceneCommand::SetListenerPosition(id, position, tween) => {
-				if let Some(scene) = self.scenes.get_mut(id.scene().0) {
-					if let Some(listener) = scene.listener_mut(id) {
-						listener.set_position(position, tween);
-					}
-				}
-			}
-			SpatialSceneCommand::SetListenerOrientation(id, orientation, tween) => {
-				if let Some(scene) = self.scenes.get_mut(id.scene().0) {
-					if let Some(listener) = scene.listener_mut(id) {
-						listener.set_orientation(orientation, tween);
-					}
-				}
-			}
-			SpatialSceneCommand::SetEmitterPosition(id, position, tween) => {
-				if let Some(scene) = self.scenes.get_mut(id.scene().0) {
-					if let Some(emitter) = scene.emitter_mut(id) {
-						emitter.set_position(position, tween);
-					}
-				}
-			}
 		}
 	}
 

@@ -6,28 +6,27 @@ use std::sync::{
 	Arc,
 };
 
-use ringbuf::HeapConsumer;
-
 use crate::{
 	clock::clock_info::ClockInfoProvider,
+	command::ValueChangeCommand,
 	dsp::Frame,
 	modulator::value_provider::ModulatorValueProvider,
 	sound::{transport::Transport, PlaybackRate, Sound},
 	tween::Parameter,
 };
 
-use super::{data::StaticSoundData, Command};
+use super::{data::StaticSoundData, CommandReaders, SeekCommand, SetLoopRegionCommand};
 
 pub(super) struct StaticSound {
-	command_consumer: HeapConsumer<Command>,
 	data: StaticSoundData,
 	transport: Transport,
 	playback_rate: Parameter<PlaybackRate>,
 	shared: Arc<Shared>,
+	command_readers: CommandReaders,
 }
 
 impl StaticSound {
-	pub fn new(data: StaticSoundData, command_consumer: HeapConsumer<Command>) -> Self {
+	pub fn new(data: StaticSoundData, command_readers: CommandReaders) -> Self {
 		let settings = data.settings;
 		let transport = Transport::new(
 			data.num_frames(),
@@ -39,13 +38,13 @@ impl StaticSound {
 		let starting_frame_index = transport.position;
 		let position = starting_frame_index as f64 / data.sample_rate as f64;
 		Self {
-			command_consumer,
 			data,
 			transport,
 			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate::Factor(1.0)),
 			shared: Arc::new(Shared {
 				position: AtomicU64::new(position.to_bits()),
 			}),
+			command_readers,
 		}
 	}
 
@@ -96,22 +95,24 @@ impl Sound for StaticSound {
 			(self.transport.position as f64 / self.data.sample_rate as f64).to_bits(),
 			Ordering::SeqCst,
 		);
-		while let Some(command) = self.command_consumer.pop() {
-			match command {
-				Command::SetPlaybackRate(playback_rate, tween) => {
-					self.playback_rate.set(playback_rate, tween)
-				}
-				Command::SetLoopRegion(loop_region) => self.transport.set_loop_region(
-					loop_region,
-					self.data.sample_rate,
-					self.data.num_frames(),
-				),
-				Command::SeekBy(amount) => {
-					self.seek_by(amount);
-				}
-				Command::SeekTo(position) => {
-					self.seek_to(position);
-				}
+		if let Some(ValueChangeCommand { target, tween }) =
+			self.command_readers.playback_rate_change.read().copied()
+		{
+			self.playback_rate.set(target, tween);
+		}
+		if let Some(SetLoopRegionCommand(loop_region)) =
+			self.command_readers.set_loop_region.read().copied()
+		{
+			self.transport.set_loop_region(
+				loop_region,
+				self.data.sample_rate,
+				self.data.num_frames(),
+			);
+		}
+		if let Some(seek_command) = self.command_readers.seek.read().copied() {
+			match seek_command {
+				SeekCommand::By(amount) => self.seek_by(amount),
+				SeekCommand::To(position) => self.seek_to(position),
 			}
 		}
 	}

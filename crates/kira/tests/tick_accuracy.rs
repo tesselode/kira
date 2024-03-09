@@ -84,10 +84,10 @@ fn tick_accuracy() {
 	})
 	.unwrap();
 
-	let clock = manager
+	let mut clock = manager
 		.add_clock(ClockSpeed::TicksPerSecond(TICKS_PER_SECOND))
 		.unwrap();
-	clock.start().unwrap();
+	clock.start();
 
 	let _effect_handle;
 	let _track = manager

@@ -36,18 +36,54 @@ pub use decoder::*;
 pub use handle::*;
 pub use settings::*;
 
-use crate::tween::{Tween, Value};
+use crate::command::{command_writer_and_reader, CommandReader, CommandWriter, ValueChangeCommand};
 
 use super::{PlaybackRate, Region};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) enum SoundCommand {
-	SetPlaybackRate(Value<PlaybackRate>, Tween),
-}
+struct SetLoopRegionCommand(Option<Region>);
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) enum DecodeSchedulerCommand {
-	SetLoopRegion(Option<Region>),
-	SeekBy(f64),
-	SeekTo(f64),
+enum SeekCommand {
+	By(f64),
+	To(f64),
+}
+
+pub(crate) struct CommandWriters {
+	playback_rate_change: CommandWriter<ValueChangeCommand<PlaybackRate>>,
+	set_loop_region: CommandWriter<SetLoopRegionCommand>,
+	seek: CommandWriter<SeekCommand>,
+}
+
+pub(crate) struct SoundCommandReaders {
+	playback_rate_change: CommandReader<ValueChangeCommand<PlaybackRate>>,
+}
+
+pub(crate) struct DecodeSchedulerCommandReaders {
+	set_loop_region: CommandReader<SetLoopRegionCommand>,
+	seek: CommandReader<SeekCommand>,
+}
+
+fn command_writers_and_readers() -> (
+	CommandWriters,
+	SoundCommandReaders,
+	DecodeSchedulerCommandReaders,
+) {
+	let (playback_rate_change_writer, playback_rate_change_reader) = command_writer_and_reader();
+	let (set_loop_region_writer, set_loop_region_reader) = command_writer_and_reader();
+	let (seek_writer, seek_reader) = command_writer_and_reader();
+	(
+		CommandWriters {
+			playback_rate_change: playback_rate_change_writer,
+			set_loop_region: set_loop_region_writer,
+			seek: seek_writer,
+		},
+		SoundCommandReaders {
+			playback_rate_change: playback_rate_change_reader,
+		},
+		DecodeSchedulerCommandReaders {
+			set_loop_region: set_loop_region_reader,
+			seek: seek_reader,
+		},
+	)
 }

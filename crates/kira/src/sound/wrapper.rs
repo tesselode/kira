@@ -11,6 +11,8 @@ use std::{
 
 use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
+	command::ValueChangeCommand,
+	command_writers_and_readers,
 	dsp::{interpolate_frame, Frame},
 	modulator::value_provider::ModulatorValueProvider,
 	tween::{Parameter, Tween, Value},
@@ -30,6 +32,7 @@ pub(crate) struct SoundWrapper {
 	time_since_last_frame: f64,
 	resample_buffer: [Frame; 4],
 	shared: SoundWrapperShared,
+	command_readers: CommandReaders,
 }
 
 impl SoundWrapper {
@@ -37,6 +40,7 @@ impl SoundWrapper {
 		sound: Box<dyn Sound>,
 		settings: CommonSoundSettings,
 		shared: SoundWrapperShared,
+		command_reader: CommandReaders,
 	) -> Self {
 		Self {
 			sound,
@@ -61,6 +65,7 @@ impl SoundWrapper {
 			time_since_last_frame: 0.0,
 			resample_buffer: [Frame::from_mono(0.0); 4],
 			shared,
+			command_readers: command_reader,
 		}
 	}
 
@@ -73,6 +78,25 @@ impl SoundWrapper {
 	}
 
 	pub fn on_start_processing(&mut self) {
+		if let Some(ValueChangeCommand { target, tween }) =
+			self.command_readers.volume_change.read().copied()
+		{
+			self.set_volume(target, tween);
+		}
+		if let Some(ValueChangeCommand { target, tween }) =
+			self.command_readers.panning_change.read().copied()
+		{
+			self.set_panning(target, tween);
+		}
+		if let Some(PlaybackStateChangeCommand { kind, fade_tween }) =
+			self.command_readers.playback_state_change.read().copied()
+		{
+			match kind {
+				PlaybackStateChangeCommandKind::Pause => self.pause(fade_tween),
+				PlaybackStateChangeCommandKind::Resume => self.resume(fade_tween),
+				PlaybackStateChangeCommandKind::Stop => self.stop(fade_tween),
+			}
+		}
 		self.sound.on_start_processing();
 	}
 
@@ -207,4 +231,25 @@ impl SoundWrapperShared {
 			state: Arc::new(AtomicU8::new(PlaybackState::Playing as u8)),
 		}
 	}
+}
+
+command_writers_and_readers!(
+	pub(crate) struct {
+		pub(crate) volume_change: ValueChangeCommand<Volume>,
+		pub(crate) panning_change: ValueChangeCommand<f64>,
+		pub(crate) playback_state_change: PlaybackStateChangeCommand
+	}
+);
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct PlaybackStateChangeCommand {
+	pub kind: PlaybackStateChangeCommandKind,
+	pub fade_tween: Tween,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) enum PlaybackStateChangeCommandKind {
+	Pause,
+	Resume,
+	Stop,
 }

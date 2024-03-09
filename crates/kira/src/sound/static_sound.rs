@@ -32,14 +32,23 @@ pub use data::*;
 pub use handle::*;
 pub use settings::*;
 
-use crate::tween::{Tween, Value};
+use crate::{command::ValueChangeCommand, command_writers_and_readers};
 
 use super::{PlaybackRate, Region};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum Command {
-	SetPlaybackRate(Value<PlaybackRate>, Tween),
-	SetLoopRegion(Option<Region>),
-	SeekBy(f64),
-	SeekTo(f64),
+struct SetLoopRegionCommand(Option<Region>);
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum SeekCommand {
+	By(f64),
+	To(f64),
 }
+
+command_writers_and_readers!(
+	struct {
+		playback_rate_change: ValueChangeCommand<PlaybackRate>,
+		set_loop_region: SetLoopRegionCommand,
+		seek: SeekCommand
+	}
+);

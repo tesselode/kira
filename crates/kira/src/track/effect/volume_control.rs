@@ -6,31 +6,22 @@ mod handle;
 pub use builder::*;
 pub use handle::*;
 
-use ringbuf::HeapConsumer;
-
 use crate::{
-	clock::clock_info::ClockInfoProvider,
-	dsp::Frame,
-	modulator::value_provider::ModulatorValueProvider,
-	tween::{Parameter, Tween, Value},
-	Volume,
+	clock::clock_info::ClockInfoProvider, command::ValueChangeCommand, command_writers_and_readers,
+	dsp::Frame, modulator::value_provider::ModulatorValueProvider, tween::Parameter, Volume,
 };
 
 use super::Effect;
 
-enum Command {
-	SetVolume(Value<Volume>, Tween),
-}
-
 struct VolumeControl {
-	command_consumer: HeapConsumer<Command>,
+	command_readers: CommandReaders,
 	volume: Parameter<Volume>,
 }
 
 impl VolumeControl {
-	fn new(builder: VolumeControlBuilder, command_consumer: HeapConsumer<Command>) -> Self {
+	fn new(builder: VolumeControlBuilder, command_readers: CommandReaders) -> Self {
 		Self {
-			command_consumer,
+			command_readers,
 			volume: Parameter::new(builder.0, Volume::Amplitude(1.0)),
 		}
 	}
@@ -38,11 +29,8 @@ impl VolumeControl {
 
 impl Effect for VolumeControl {
 	fn on_start_processing(&mut self) {
-		while let Some(command) = self.command_consumer.pop() {
-			match command {
-				Command::SetVolume(volume, tween) => self.volume.set(volume, tween),
-			}
-		}
+		self.volume
+			.read_commands(&mut self.command_readers.volume_change);
 	}
 
 	fn process(
@@ -57,3 +45,9 @@ impl Effect for VolumeControl {
 		input * self.volume.value().as_amplitude() as f32
 	}
 }
+
+command_writers_and_readers!(
+	struct {
+		volume_change: ValueChangeCommand<Volume>
+	}
+);

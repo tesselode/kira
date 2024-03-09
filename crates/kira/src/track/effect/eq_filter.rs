@@ -8,15 +8,11 @@ mod handle;
 pub use builder::*;
 pub use handle::*;
 
-use ringbuf::HeapConsumer;
-
 use std::f64::consts::PI;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider,
-	dsp::Frame,
-	modulator::value_provider::ModulatorValueProvider,
-	tween::{Parameter, Tween, Value},
+	clock::clock_info::ClockInfoProvider, command::ValueChangeCommand, command_writers_and_readers,
+	dsp::Frame, modulator::value_provider::ModulatorValueProvider, tween::Parameter,
 };
 
 use super::Effect;
@@ -24,25 +20,25 @@ use super::Effect;
 const MIN_Q: f64 = 0.01;
 
 struct EqFilter {
-	command_consumer: HeapConsumer<Command>,
 	kind: EqFilterKind,
 	frequency: Parameter,
 	gain: Parameter,
 	q: Parameter,
 	ic1eq: Frame,
 	ic2eq: Frame,
+	command_readers: CommandReaders,
 }
 
 impl EqFilter {
-	fn new(builder: EqFilterBuilder, command_consumer: HeapConsumer<Command>) -> Self {
+	fn new(builder: EqFilterBuilder, command_readers: CommandReaders) -> Self {
 		Self {
-			command_consumer,
 			kind: builder.kind,
 			frequency: Parameter::new(builder.frequency, 500.0),
 			gain: Parameter::new(builder.gain, 0.0),
 			q: Parameter::new(builder.q, 1.0),
 			ic1eq: Frame::ZERO,
 			ic2eq: Frame::ZERO,
+			command_readers,
 		}
 	}
 
@@ -115,14 +111,14 @@ impl EqFilter {
 
 impl Effect for EqFilter {
 	fn on_start_processing(&mut self) {
-		while let Some(command) = self.command_consumer.pop() {
-			match command {
-				Command::SetKind(kind) => self.kind = kind,
-				Command::SetFrequency(target, tween) => self.frequency.set(target, tween),
-				Command::SetGain(target, tween) => self.gain.set(target, tween),
-				Command::SetQ(target, tween) => self.q.set(target, tween),
-			}
+		if let Some(kind) = self.command_readers.kind_change.read().copied() {
+			self.kind = kind;
 		}
+		self.frequency
+			.read_commands(&mut self.command_readers.frequency_change);
+		self.gain
+			.read_commands(&mut self.command_readers.gain_change);
+		self.q.read_commands(&mut self.command_readers.q_change);
 	}
 
 	fn process(
@@ -176,9 +172,11 @@ struct Coefficients {
 	m2: f64,
 }
 
-enum Command {
-	SetKind(EqFilterKind),
-	SetFrequency(Value<f64>, Tween),
-	SetGain(Value<f64>, Tween),
-	SetQ(Value<f64>, Tween),
-}
+command_writers_and_readers!(
+	struct {
+		kind_change: EqFilterKind,
+		frequency_change: ValueChangeCommand<f64>,
+		gain_change: ValueChangeCommand<f64>,
+		q_change: ValueChangeCommand<f64>
+	}
+);

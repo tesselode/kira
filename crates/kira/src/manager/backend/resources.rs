@@ -15,7 +15,7 @@ use crate::{
 	modulator::Modulator,
 	sound::wrapper::SoundWrapper,
 	spatial::scene::SpatialScene,
-	track::{Track, TrackBuilder},
+	track::{Track, TrackBuilder, TrackHandle},
 };
 
 use self::{
@@ -91,10 +91,10 @@ pub(crate) fn create_resources(
 	main_track_builder: TrackBuilder,
 	unused_resource_producers: UnusedResourceProducers,
 	sample_rate: u32,
-) -> (Resources, ResourceControllers) {
+) -> (Resources, ResourceControllers, TrackHandle) {
 	let sounds = Sounds::new(capacities.sound_capacity, unused_resource_producers.sound);
 	let sound_controller = sounds.controller();
-	let mixer = Mixer::new(
+	let (mixer, main_track_handle) = Mixer::new(
 		capacities.sub_track_capacity,
 		unused_resource_producers.sub_track,
 		sample_rate,
@@ -128,5 +128,6 @@ pub(crate) fn create_resources(
 			spatial_scene_controller,
 			modulator_controller,
 		},
+		main_track_handle,
 	)
 }

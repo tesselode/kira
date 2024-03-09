@@ -5,24 +5,13 @@ mod handle;
 
 pub use builder::*;
 pub use handle::*;
-use ringbuf::HeapConsumer;
 
 use std::f64::consts::PI;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider,
-	dsp::Frame,
-	modulator::value_provider::ModulatorValueProvider,
-	track::Effect,
-	tween::{Parameter, Tween, Value},
+	clock::clock_info::ClockInfoProvider, command::ValueChangeCommand, command_writers_and_readers,
+	dsp::Frame, modulator::value_provider::ModulatorValueProvider, track::Effect, tween::Parameter,
 };
-
-enum Command {
-	SetMode(FilterMode),
-	SetCutoff(Value<f64>, Tween),
-	SetResonance(Value<f64>, Tween),
-	SetMix(Value<f64>, Tween),
-}
 
 // This filter code is based on the filter code from baseplug:
 // https://github.com/wrl/baseplug/blob/trunk/examples/svf/svf_simper.rs
@@ -42,7 +31,7 @@ pub enum FilterMode {
 }
 
 struct Filter {
-	command_consumer: HeapConsumer<Command>,
+	command_readers: CommandReaders,
 	mode: FilterMode,
 	cutoff: Parameter,
 	resonance: Parameter,
@@ -53,29 +42,29 @@ struct Filter {
 
 impl Filter {
 	/// Creates a new filter.
-	fn new(builder: FilterBuilder, command_consumer: HeapConsumer<Command>) -> Self {
+	fn new(builder: FilterBuilder, command_readers: CommandReaders) -> Self {
 		Self {
-			command_consumer,
 			mode: builder.mode,
 			cutoff: Parameter::new(builder.cutoff, 1000.0),
 			resonance: Parameter::new(builder.resonance, 0.0),
 			mix: Parameter::new(builder.mix, 1.0),
 			ic1eq: Frame::ZERO,
 			ic2eq: Frame::ZERO,
+			command_readers,
 		}
 	}
 }
 
 impl Effect for Filter {
 	fn on_start_processing(&mut self) {
-		while let Some(command) = self.command_consumer.pop() {
-			match command {
-				Command::SetMode(mode) => self.mode = mode,
-				Command::SetCutoff(cutoff, tween) => self.cutoff.set(cutoff, tween),
-				Command::SetResonance(resonance, tween) => self.resonance.set(resonance, tween),
-				Command::SetMix(mix, tween) => self.mix.set(mix, tween),
-			}
+		if let Some(mode) = self.command_readers.mode_change.read().copied() {
+			self.mode = mode;
 		}
+		self.cutoff
+			.read_commands(&mut self.command_readers.cutoff_change);
+		self.resonance
+			.read_commands(&mut self.command_readers.resonance_change);
+		self.mix.read_commands(&mut self.command_readers.mix_change);
 	}
 
 	fn process(
@@ -112,3 +101,12 @@ impl Effect for Filter {
 		output * mix.sqrt() + input * (1.0 - mix).sqrt()
 	}
 }
+
+command_writers_and_readers!(
+	struct {
+		mode_change: FilterMode,
+		cutoff_change: ValueChangeCommand<f64>,
+		resonance_change: ValueChangeCommand<f64>,
+		mix_change: ValueChangeCommand<f64>
+	}
+);

@@ -1,9 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{
-	tween::{Parameter, Value},
-	Volume,
-};
+use crate::{tween::Value, Volume};
 
 use super::TrackId;
 
@@ -86,13 +83,6 @@ impl TrackRoutes {
 	pub fn without_route(mut self, track: impl Into<TrackId>) -> Self {
 		self.0.remove(&track.into());
 		self
-	}
-
-	pub(crate) fn into_vec(self) -> Vec<(TrackId, Parameter<Volume>)> {
-		self.0
-			.iter()
-			.map(|(id, value)| (*id, Parameter::new(*value, Volume::Amplitude(1.0))))
-			.collect()
 	}
 }
 

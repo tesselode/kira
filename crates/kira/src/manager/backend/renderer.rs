@@ -79,17 +79,15 @@ impl Renderer {
 	/// Called by the backend when it's time to process
 	/// a new batch of samples.
 	pub fn on_start_processing(&mut self) {
-		self.resources.sounds.on_start_processing();
-		self.resources.mixer.on_start_processing();
-		self.resources.clocks.on_start_processing();
-		self.resources.spatial_scenes.on_start_processing();
-		self.resources.modulators.on_start_processing();
-
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
-				Command::Sound(command) => self.resources.sounds.run_command(command),
-				Command::Mixer(command) => self.resources.mixer.run_command(command),
-				Command::Clock(command) => self.resources.clocks.run_command(command),
+				Command::AddSound(key, sound_wrapper) => {
+					self.resources.sounds.add(key, sound_wrapper)
+				}
+				Command::AddSubTrack(id, sub_track) => {
+					self.resources.mixer.add_sub_track(id, sub_track)
+				}
+				Command::AddClock(id, clock) => self.resources.clocks.add_clock(id, clock),
 				Command::SpatialScene(command) => {
 					self.resources.spatial_scenes.run_command(command)
 				}
@@ -114,13 +112,19 @@ impl Renderer {
 				}
 			}
 		}
+
+		self.resources.sounds.on_start_processing();
+		self.resources.mixer.on_start_processing();
+		self.resources.clocks.on_start_processing();
+		self.resources.spatial_scenes.on_start_processing();
+		self.resources.modulators.on_start_processing();
 	}
 
 	/// Produces the next [`Frame`] of audio.
 	pub fn process(&mut self) -> Frame {
 		if self.fade_volume.update(
 			self.dt,
-			&ClockInfoProvider::new(&self.resources.clocks),
+			&ClockInfoProvider::new(&self.resources.clocks.clocks),
 			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
 		) {
 			if self.state == MainPlaybackState::Pausing {
@@ -131,9 +135,10 @@ impl Renderer {
 			return Frame::ZERO;
 		}
 		if self.state == MainPlaybackState::Playing {
-			self.resources
-				.modulators
-				.process(self.dt, &ClockInfoProvider::new(&self.resources.clocks));
+			self.resources.modulators.process(
+				self.dt,
+				&ClockInfoProvider::new(&self.resources.clocks.clocks),
+			);
 			self.resources.clocks.update(
 				self.dt,
 				&ModulatorValueProvider::new(&self.resources.modulators.modulators),
@@ -141,20 +146,20 @@ impl Renderer {
 		}
 		self.resources.sounds.process(
 			self.dt,
-			&ClockInfoProvider::new(&self.resources.clocks),
+			&ClockInfoProvider::new(&self.resources.clocks.clocks),
 			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
 			&mut self.resources.mixer,
 			&mut self.resources.spatial_scenes,
 		);
 		self.resources.spatial_scenes.process(
 			self.dt,
-			&ClockInfoProvider::new(&self.resources.clocks),
+			&ClockInfoProvider::new(&self.resources.clocks.clocks),
 			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
 			&mut self.resources.mixer,
 		);
 		let out = self.resources.mixer.process(
 			self.dt,
-			&ClockInfoProvider::new(&self.resources.clocks),
+			&ClockInfoProvider::new(&self.resources.clocks.clocks),
 			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
 		);
 		out * self.fade_volume.value().as_amplitude() as f32
