@@ -20,13 +20,12 @@ use std::{
 
 use crate::{
 	clock::{Clock, ClockHandle, ClockId, ClockSpeed},
-	error::CommandError,
 	manager::command::ModulatorCommand,
 	modulator::{ModulatorBuilder, ModulatorId},
 	sound::SoundData,
 	spatial::scene::{SpatialScene, SpatialSceneHandle, SpatialSceneId, SpatialSceneSettings},
 	track::{SubTrackId, Track, TrackBuilder, TrackHandle, TrackId},
-	tween::{Tween, Value},
+	tween::Value,
 };
 
 use self::{
@@ -45,31 +44,6 @@ use self::{
 		AddClockError, AddModulatorError, AddSpatialSceneError, AddSubTrackError, PlaySoundError,
 	},
 };
-
-/// The playback state for all audio.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum MainPlaybackState {
-	/// Audio is playing normally.
-	Playing,
-	/// Audio is fading out and will be paused when the
-	/// fade-out is finished.
-	Pausing,
-	/// Audio processing is paused and no sound is being
-	/// produced.
-	Paused,
-}
-
-impl MainPlaybackState {
-	fn from_u8(state: u8) -> Self {
-		match state {
-			0 => Self::Playing,
-			1 => Self::Pausing,
-			2 => Self::Paused,
-			_ => panic!("Not a valid MainPlaybackState"),
-		}
-	}
-}
 
 /// Controls audio from gameplay code.
 pub struct AudioManager<B: Backend = DefaultBackend> {
@@ -335,80 +309,6 @@ impl<B: Backend> AudioManager<B> {
 	}
 
 	/**
-	Fades out and pauses all audio.
-
-	# Examples
-
-	Pause audio immediately:
-
-	```no_run
-	# use kira::{
-	# 	manager::{
-	# 		AudioManager, AudioManagerSettings,
-	# 		backend::DefaultBackend,
-	# 	},
-	# };
-	use kira::tween::Tween;
-
-	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	manager.pause(Tween::default())?;
-	# Result::<(), Box<dyn std::error::Error>>::Ok(())
-	```
-
-	Fade out audio for 3 seconds and then pause:
-
-	```no_run
-	# use kira::{
-	# 	manager::{
-	# 		AudioManager, AudioManagerSettings,
-	# 		backend::DefaultBackend,
-	# 	},
-	# };
-	use kira::tween::Tween;
-	use std::time::Duration;
-
-	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	manager.pause(Tween {
-		duration: Duration::from_secs(3),
-		..Default::default()
-	})?;
-	# Result::<(), Box<dyn std::error::Error>>::Ok(())
-	```
-	*/
-	pub fn pause(&self, fade_out_tween: Tween) -> Result<(), CommandError> {
-		self.command_producer.push(Command::Pause(fade_out_tween))
-	}
-
-	/**
-	Resumes and fades in all audio.
-
-	# Examples
-
-	Resume audio with a 3-second fade-in:
-
-	```no_run
-	# use kira::{
-	# 	manager::{
-	# 		AudioManager, AudioManagerSettings,
-	# 		backend::DefaultBackend,
-	# 	},
-	# };
-	use kira::tween::Tween;
-	use std::time::Duration;
-
-	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	manager.resume(Tween {
-		duration: Duration::from_secs(3),
-		..Default::default()
-	})?;
-	# Result::<(), Box<dyn std::error::Error>>::Ok(())
-	```
-	*/
-	pub fn resume(&self, fade_out_tween: Tween) -> Result<(), CommandError> {
-		self.command_producer.push(Command::Resume(fade_out_tween))
-	}
-
-	/**
 	Returns a handle to the main mixer track.
 
 	# Examples
@@ -436,11 +336,6 @@ impl<B: Backend> AudioManager<B> {
 			command_producer: self.command_producer.clone(),
 			existing_routes: HashSet::new(),
 		}
-	}
-
-	/// Returns the current playback state of the audio.
-	pub fn state(&self) -> MainPlaybackState {
-		self.renderer_shared.state()
 	}
 
 	/// Returns the number of sounds that can be loaded at a time.

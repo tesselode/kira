@@ -59,6 +59,4 @@ pub(crate) enum Command {
 	Clock(ClockCommand),
 	SpatialScene(SpatialSceneCommand),
 	Modulator(ModulatorCommand),
-	Pause(Tween),
-	Resume(Tween),
 }
