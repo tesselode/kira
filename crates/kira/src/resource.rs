@@ -1,7 +1,7 @@
 use atomic_arena::{Arena, Controller, Key};
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 
-use crate::clock::Clock;
+use crate::{clock::Clock, modulator::Modulator};
 
 pub(crate) trait Resource {
 	type Id: ResourceId;
@@ -93,3 +93,4 @@ impl<T: Resource> Resources<T> {
 }
 
 pub type Clocks = Resources<Clock>;
+pub type Modulators = Resources<Box<dyn Modulator>>;

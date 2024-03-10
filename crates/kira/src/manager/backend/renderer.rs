@@ -90,7 +90,6 @@ impl Renderer {
 				Command::SpatialScene(command) => {
 					self.resources.spatial_scenes.run_command(command)
 				}
-				Command::Modulator(command) => self.resources.modulators.run_command(command),
 				Command::Pause(fade_out_tween) => {
 					self.state = MainPlaybackState::Pausing;
 					self.shared
@@ -124,7 +123,7 @@ impl Renderer {
 		if self.fade_volume.update(
 			self.dt,
 			&ClockInfoProvider::new(self.resources.clocks.items()),
-			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
+			&ModulatorValueProvider::new(self.resources.modulators.items()),
 		) {
 			if self.state == MainPlaybackState::Pausing {
 				self.state = MainPlaybackState::Paused;
@@ -134,35 +133,40 @@ impl Renderer {
 			return Frame::ZERO;
 		}
 		if self.state == MainPlaybackState::Playing {
-			self.resources.modulators.process(
-				self.dt,
-				&ClockInfoProvider::new(self.resources.clocks.items()),
-			);
+			self.resources
+				.modulators
+				.for_each(|modulator, other_modulators| {
+					modulator.update(
+						self.dt,
+						&ClockInfoProvider::new(self.resources.clocks.items()),
+						&ModulatorValueProvider::new(other_modulators),
+					);
+				});
 			self.resources.clocks.for_each(|clock, other_clocks| {
 				clock.update(
 					self.dt,
 					&ClockInfoProvider::new(other_clocks),
-					&ModulatorValueProvider::new(&self.resources.modulators.modulators),
+					&ModulatorValueProvider::new(self.resources.modulators.items()),
 				);
 			});
 		}
 		self.resources.sounds.process(
 			self.dt,
 			&ClockInfoProvider::new(self.resources.clocks.items()),
-			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
+			&ModulatorValueProvider::new(self.resources.modulators.items()),
 			&mut self.resources.mixer,
 			&mut self.resources.spatial_scenes,
 		);
 		self.resources.spatial_scenes.process(
 			self.dt,
 			&ClockInfoProvider::new(self.resources.clocks.items()),
-			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
+			&ModulatorValueProvider::new(self.resources.modulators.items()),
 			&mut self.resources.mixer,
 		);
 		let out = self.resources.mixer.process(
 			self.dt,
 			&ClockInfoProvider::new(self.resources.clocks.items()),
-			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
+			&ModulatorValueProvider::new(self.resources.modulators.items()),
 		);
 		out * self.fade_volume.value().as_amplitude() as f32
 	}

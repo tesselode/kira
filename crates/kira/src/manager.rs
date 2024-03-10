@@ -18,7 +18,6 @@ use std::sync::{atomic::Ordering, Arc};
 use crate::{
 	clock::{self, Clock, ClockHandle, ClockId, ClockSpeed},
 	error::CommandError,
-	manager::command::ModulatorCommand,
 	modulator::{ModulatorBuilder, ModulatorId},
 	sound::{
 		self,
@@ -337,8 +336,12 @@ impl<B: Backend> AudioManager<B> {
 				.map_err(|_| AddModulatorError::ModulatorLimitReached)?,
 		);
 		let (modulator, handle) = builder.build(id);
-		self.command_producer
-			.push(Command::Modulator(ModulatorCommand::Add(id, modulator)))?;
+		self.new_resource_producers
+			.modulator
+			.get_mut()
+			.expect("new modulator producer mutex is poisoned")
+			.push((id, modulator))
+			.unwrap_or_else(|_| panic!("new modulator producer is full"));
 		Ok(handle)
 	}
 

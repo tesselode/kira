@@ -14,7 +14,7 @@ pub struct ModulatorValueProvider<'a> {
 }
 
 impl<'a> ModulatorValueProvider<'a> {
-	pub(crate) fn new(modulators: &'a Arena<Box<dyn Modulator>>) -> Self {
+	pub(crate) fn new(modulators: &'a Arena<Option<Box<dyn Modulator>>>) -> Self {
 		Self {
 			kind: ModulatorValueProviderKind::Normal { modulators },
 		}
@@ -24,9 +24,10 @@ impl<'a> ModulatorValueProvider<'a> {
 	/// exists, returns `None` otherwise.
 	pub fn get(&self, id: ModulatorId) -> Option<f64> {
 		match &self.kind {
-			ModulatorValueProviderKind::Normal { modulators } => {
-				modulators.get(id.0).map(|modulator| modulator.value())
-			}
+			ModulatorValueProviderKind::Normal { modulators } => modulators
+				.get(id.0)
+				.and_then(|modulator| modulator.as_ref())
+				.map(|modulator| modulator.value()),
 			ModulatorValueProviderKind::Mock {
 				modulator_values: modulator_info,
 			} => modulator_info.get(id.0).copied(),
@@ -36,7 +37,7 @@ impl<'a> ModulatorValueProvider<'a> {
 
 enum ModulatorValueProviderKind<'a> {
 	Normal {
-		modulators: &'a Arena<Box<dyn Modulator>>,
+		modulators: &'a Arena<Option<Box<dyn Modulator>>>,
 	},
 	Mock {
 		modulator_values: Arena<f64>,

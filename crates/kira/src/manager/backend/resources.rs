@@ -1,5 +1,4 @@
 pub(crate) mod mixer;
-pub(crate) mod modulators;
 pub(crate) mod sounds;
 pub(crate) mod spatial_scenes;
 
@@ -11,17 +10,18 @@ use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 use crate::{
 	clock::{Clock, ClockId},
 	manager::settings::Capacities,
-	modulator::Modulator,
-	resource::Clocks,
+	modulator::{Modulator, ModulatorId},
+	resource::{Clocks, Modulators},
 	sound::wrapper::SoundWrapper,
 	spatial::scene::SpatialScene,
 	track::{Track, TrackBuilder, TrackHandle},
 };
 
-use self::{mixer::Mixer, modulators::Modulators, sounds::Sounds, spatial_scenes::SpatialScenes};
+use self::{mixer::Mixer, sounds::Sounds, spatial_scenes::SpatialScenes};
 
 pub(crate) struct NewResourceProducers {
 	pub clock: HeapProducer<(ClockId, Clock)>,
+	pub modulator: Mutex<HeapProducer<(ModulatorId, Box<dyn Modulator>)>>,
 }
 
 pub(crate) struct UnusedResourceConsumers {
@@ -65,8 +65,6 @@ pub(crate) fn create_resources(
 		HeapRb::new(capacities.sub_track_capacity).split();
 	let (unused_spatial_scene_producer, unused_spatial_scene_consumer) =
 		HeapRb::new(capacities.spatial_scene_capacity).split();
-	let (unused_modulator_producer, unused_modulator_consumer) =
-		HeapRb::new(capacities.modulator_capacity).split();
 	let sounds = Sounds::new(capacities.sound_capacity, unused_sound_producer);
 	let sound_controller = sounds.controller();
 	let (mixer, main_track_handle) = Mixer::new(
@@ -83,8 +81,8 @@ pub(crate) fn create_resources(
 		unused_spatial_scene_producer,
 	);
 	let spatial_scene_controller = spatial_scenes.controller();
-	let modulators = Modulators::new(capacities.modulator_capacity, unused_modulator_producer);
-	let modulator_controller = modulators.controller();
+	let (modulators, modulator_controller, new_modulator_producer, unused_modulator_consumer) =
+		Modulators::new(capacities.modulator_capacity);
 	(
 		Resources {
 			sounds,
@@ -102,6 +100,7 @@ pub(crate) fn create_resources(
 		},
 		NewResourceProducers {
 			clock: new_clock_producer,
+			modulator: Mutex::new(new_modulator_producer),
 		},
 		UnusedResourceConsumers {
 			sound: Mutex::new(unused_sound_consumer),

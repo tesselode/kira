@@ -162,7 +162,10 @@ pub mod value_provider;
 
 use atomic_arena::Key;
 
-use crate::clock::clock_info::ClockInfoProvider;
+use crate::{
+	clock::clock_info::ClockInfoProvider,
+	resource::{Resource, ResourceId},
+};
 
 use self::value_provider::ModulatorValueProvider;
 
@@ -204,3 +207,21 @@ pub trait Modulator: Send {
 /// A unique identifier for a modulator.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ModulatorId(pub(crate) Key);
+
+impl Resource for Box<dyn Modulator> {
+	type Id = ModulatorId;
+
+	fn on_start_processing(&mut self) {
+		self.as_mut().on_start_processing()
+	}
+
+	fn should_be_removed(&self) -> bool {
+		self.finished()
+	}
+}
+
+impl ResourceId for ModulatorId {
+	fn key(&self) -> Key {
+		self.0
+	}
+}
