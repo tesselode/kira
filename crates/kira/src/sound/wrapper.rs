@@ -9,17 +9,23 @@ use std::{
 	time::Duration,
 };
 
+use atomic_arena::Key;
+
 use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
 	command::ValueChangeCommand,
 	command_writers_and_readers,
 	dsp::{interpolate_frame, Frame},
 	modulator::value_provider::ModulatorValueProvider,
+	resource::{Resource, ResourceId},
 	tween::{Parameter, Tween, Value},
 	OutputDestination, StartTime, Volume,
 };
 
 use super::{CommonSoundSettings, PlaybackState, Sound};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) struct SoundId(pub(crate) Key);
 
 pub(crate) struct SoundWrapper {
 	sound: Box<dyn Sound>,
@@ -230,6 +236,24 @@ impl SoundWrapperShared {
 		Self {
 			state: Arc::new(AtomicU8::new(PlaybackState::Playing as u8)),
 		}
+	}
+}
+
+impl Resource for SoundWrapper {
+	type Id = SoundId;
+
+	fn on_start_processing(&mut self) {
+		self.on_start_processing()
+	}
+
+	fn should_be_removed(&self) -> bool {
+		self.finished()
+	}
+}
+
+impl ResourceId for SoundId {
+	fn key(&self) -> Key {
+		self.0
 	}
 }
 

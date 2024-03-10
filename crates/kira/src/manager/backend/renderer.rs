@@ -11,7 +11,7 @@ use crate::{
 	manager::{command::Command, MainPlaybackState},
 	modulator::value_provider::ModulatorValueProvider,
 	tween::{Parameter, Value},
-	Volume,
+	OutputDestination, Volume,
 };
 
 use super::resources::Resources;
@@ -81,9 +81,6 @@ impl Renderer {
 	pub fn on_start_processing(&mut self) {
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
-				Command::AddSound(key, sound_wrapper) => {
-					self.resources.sounds.add(key, sound_wrapper)
-				}
 				Command::AddSubTrack(id, sub_track) => {
 					self.resources.mixer.add_sub_track(id, sub_track)
 				}
@@ -150,13 +147,28 @@ impl Renderer {
 				);
 			});
 		}
-		self.resources.sounds.process(
-			self.dt,
-			&ClockInfoProvider::new(self.resources.clocks.items()),
-			&ModulatorValueProvider::new(self.resources.modulators.items()),
-			&mut self.resources.mixer,
-			&mut self.resources.spatial_scenes,
-		);
+		self.resources.sounds.for_each(|sound, _| {
+			let out = sound.process(
+				self.dt,
+				&ClockInfoProvider::new(self.resources.clocks.items()),
+				&ModulatorValueProvider::new(self.resources.modulators.items()),
+			);
+			match sound.output_destination() {
+				OutputDestination::Track(track_id) => {
+					if let Some(track) = self.resources.mixer.track_mut(track_id) {
+						track.add_input(out);
+					}
+				}
+				OutputDestination::Emitter(emitter_id) => {
+					if let Some(scene) = self.resources.spatial_scenes.get_mut(emitter_id.scene_id)
+					{
+						if let Some(emitter) = scene.emitter_mut(emitter_id) {
+							emitter.add_input(out);
+						}
+					}
+				}
+			}
+		});
 		self.resources.spatial_scenes.process(
 			self.dt,
 			&ClockInfoProvider::new(self.resources.clocks.items()),

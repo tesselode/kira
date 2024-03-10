@@ -1,5 +1,4 @@
 pub(crate) mod mixer;
-pub(crate) mod sounds;
 pub(crate) mod spatial_scenes;
 
 use std::sync::Mutex;
@@ -11,15 +10,16 @@ use crate::{
 	clock::{Clock, ClockId},
 	manager::settings::Capacities,
 	modulator::{Modulator, ModulatorId},
-	resource::{Clocks, Modulators},
-	sound::wrapper::SoundWrapper,
+	resource::{Clocks, Modulators, Sounds},
+	sound::wrapper::{SoundId, SoundWrapper},
 	spatial::scene::SpatialScene,
 	track::{Track, TrackBuilder, TrackHandle},
 };
 
-use self::{mixer::Mixer, sounds::Sounds, spatial_scenes::SpatialScenes};
+use self::{mixer::Mixer, spatial_scenes::SpatialScenes};
 
 pub(crate) struct NewResourceProducers {
+	pub sound: Mutex<HeapProducer<(SoundId, SoundWrapper)>>,
 	pub clock: HeapProducer<(ClockId, Clock)>,
 	pub modulator: Mutex<HeapProducer<(ModulatorId, Box<dyn Modulator>)>>,
 }
@@ -59,14 +59,12 @@ pub(crate) fn create_resources(
 	UnusedResourceConsumers,
 	TrackHandle,
 ) {
-	let (unused_sound_producer, unused_sound_consumer) =
-		HeapRb::new(capacities.sound_capacity).split();
 	let (unused_sub_track_producer, unused_sub_track_consumer) =
 		HeapRb::new(capacities.sub_track_capacity).split();
 	let (unused_spatial_scene_producer, unused_spatial_scene_consumer) =
 		HeapRb::new(capacities.spatial_scene_capacity).split();
-	let sounds = Sounds::new(capacities.sound_capacity, unused_sound_producer);
-	let sound_controller = sounds.controller();
+	let (sounds, sound_controller, new_sound_producer, unused_sound_consumer) =
+		Sounds::new(capacities.sound_capacity);
 	let (mixer, main_track_handle) = Mixer::new(
 		capacities.sub_track_capacity,
 		unused_sub_track_producer,
@@ -99,6 +97,7 @@ pub(crate) fn create_resources(
 			modulator_controller,
 		},
 		NewResourceProducers {
+			sound: Mutex::new(new_sound_producer),
 			clock: new_clock_producer,
 			modulator: Mutex::new(new_modulator_producer),
 		},

@@ -1,9 +1,6 @@
 pub mod producer;
 
-use atomic_arena::Key;
-
 use crate::{
-	sound::wrapper::SoundWrapper,
 	spatial::{
 		emitter::{Emitter, EmitterId},
 		listener::{Listener, ListenerId},
@@ -20,7 +17,6 @@ pub(crate) enum SpatialSceneCommand {
 }
 
 pub(crate) enum Command {
-	AddSound(Key, SoundWrapper),
 	AddSubTrack(SubTrackId, Track),
 	SpatialScene(SpatialSceneCommand),
 	Pause(Tween),

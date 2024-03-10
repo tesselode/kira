@@ -21,7 +21,7 @@ use crate::{
 	modulator::{ModulatorBuilder, ModulatorId},
 	sound::{
 		self,
-		wrapper::{SoundWrapper, SoundWrapperShared},
+		wrapper::{SoundId, SoundWrapper, SoundWrapperShared},
 		CommonSoundController, SoundData,
 	},
 	spatial::scene::{SpatialScene, SpatialSceneHandle, SpatialSceneId, SpatialSceneSettings},
@@ -170,11 +170,12 @@ impl<B: Backend> AudioManager<B> {
 			.pop()
 			.is_some()
 		{}
-		let key = self
-			.resource_controllers
-			.sound_controller
-			.try_reserve()
-			.map_err(|_| PlaySoundError::SoundLimitReached)?;
+		let id = SoundId(
+			self.resource_controllers
+				.sound_controller
+				.try_reserve()
+				.map_err(|_| PlaySoundError::SoundLimitReached)?,
+		);
 		let settings = sound_data.common_settings();
 		let shared = SoundWrapperShared::new();
 		let (command_writer, command_reader) = sound::wrapper::command_writers_and_readers();
@@ -186,8 +187,12 @@ impl<B: Backend> AudioManager<B> {
 			.into_sound(common_controller)
 			.map_err(PlaySoundError::IntoSoundError)?;
 		let sound_wrapper = SoundWrapper::new(sound, settings, shared, command_reader);
-		self.command_producer
-			.push(Command::AddSound(key, sound_wrapper))?;
+		self.new_resource_producers
+			.sound
+			.get_mut()
+			.expect("new sound producer mutex poisoned")
+			.push((id, sound_wrapper))
+			.unwrap_or_else(|_| panic!("new sound producer full"));
 		Ok(handle)
 	}
 
