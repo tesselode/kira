@@ -33,8 +33,7 @@ use crate::{
 use self::{
 	backend::{
 		resources::{
-			create_resources, create_unused_resource_channels, ResourceControllers,
-			UnusedResourceConsumers,
+			create_resources, NewResourceProducers, ResourceControllers, UnusedResourceConsumers,
 		},
 		Backend, DefaultBackend, Renderer, RendererShared,
 	},
@@ -75,6 +74,7 @@ pub struct AudioManager<B: Backend = DefaultBackend> {
 	renderer_shared: Arc<RendererShared>,
 	command_producer: CommandProducer,
 	resource_controllers: ResourceControllers,
+	new_resource_producers: NewResourceProducers,
 	unused_resource_consumers: UnusedResourceConsumers,
 	main_track_handle: TrackHandle,
 }
@@ -114,12 +114,15 @@ impl<B: Backend> AudioManager<B> {
 		let (mut backend, sample_rate) = B::setup(settings.backend_settings)?;
 		let (command_producer, command_consumer) =
 			HeapRb::new(settings.capacities.command_capacity).split();
-		let (unused_resource_producers, unused_resource_consumers) =
-			create_unused_resource_channels(settings.capacities);
-		let (resources, resource_controllers, main_track_handle) = create_resources(
+		let (
+			resources,
+			resource_controllers,
+			new_resource_producers,
+			unused_resource_consumers,
+			main_track_handle,
+		) = create_resources(
 			settings.capacities,
 			settings.main_track_builder,
-			unused_resource_producers,
 			sample_rate,
 		);
 		let renderer = Renderer::new(sample_rate, resources, command_consumer);
@@ -130,6 +133,7 @@ impl<B: Backend> AudioManager<B> {
 			renderer_shared,
 			command_producer: CommandProducer::new(command_producer),
 			resource_controllers,
+			new_resource_producers,
 			unused_resource_consumers,
 			main_track_handle,
 		})
@@ -254,7 +258,10 @@ impl<B: Backend> AudioManager<B> {
 			shared: clock.shared(),
 			command_writers,
 		};
-		self.command_producer.push(Command::AddClock(id, clock))?;
+		self.new_resource_producers
+			.clock
+			.push((id, clock))
+			.unwrap_or_else(|_| panic!("new clock producer is full"));
 		Ok(handle)
 	}
 

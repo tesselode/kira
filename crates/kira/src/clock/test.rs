@@ -6,6 +6,7 @@ use crate::{
 		ClockTime,
 	},
 	modulator::value_provider::MockModulatorValueProviderBuilder,
+	resource::Resource,
 	tween::{Tween, Value},
 	StartTime,
 };

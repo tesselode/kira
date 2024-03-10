@@ -28,7 +28,7 @@ pub struct ClockInfoProvider<'a> {
 }
 
 impl<'a> ClockInfoProvider<'a> {
-	pub(crate) fn new(clocks: &'a Arena<Clock>) -> Self {
+	pub(crate) fn new(clocks: &'a Arena<Option<Clock>>) -> Self {
 		Self {
 			kind: ClockInfoProviderKind::Normal { clocks },
 		}
@@ -38,20 +38,23 @@ impl<'a> ClockInfoProvider<'a> {
 	/// exists, returns `None` otherwise.
 	pub fn get(&self, id: ClockId) -> Option<ClockInfo> {
 		match &self.kind {
-			ClockInfoProviderKind::Normal { clocks } => clocks.get(id.0).map(|clock| ClockInfo {
-				ticking: clock.ticking(),
-				ticks: match clock.state() {
-					State::NotStarted => 0,
-					State::Started { ticks, .. } => ticks,
-				},
-				fractional_position: match clock.state() {
-					State::NotStarted => 0.0,
-					State::Started {
-						fractional_position,
-						..
-					} => fractional_position,
-				},
-			}),
+			ClockInfoProviderKind::Normal { clocks } => clocks
+				.get(id.0)
+				.and_then(|clock| clock.as_ref())
+				.map(|clock| ClockInfo {
+					ticking: clock.ticking(),
+					ticks: match clock.state() {
+						State::NotStarted => 0,
+						State::Started { ticks, .. } => ticks,
+					},
+					fractional_position: match clock.state() {
+						State::NotStarted => 0.0,
+						State::Started {
+							fractional_position,
+							..
+						} => fractional_position,
+					},
+				}),
 			ClockInfoProviderKind::Mock { clock_info } => clock_info.get(id.0).copied(),
 		}
 	}
@@ -72,7 +75,7 @@ impl<'a> ClockInfoProvider<'a> {
 }
 
 enum ClockInfoProviderKind<'a> {
-	Normal { clocks: &'a Arena<Clock> },
+	Normal { clocks: &'a Arena<Option<Clock>> },
 	Mock { clock_info: Arena<ClockInfo> },
 }
 

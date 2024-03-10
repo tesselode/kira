@@ -172,6 +172,7 @@ use crate::{
 	command::ValueChangeCommand,
 	command_writers_and_readers,
 	modulator::value_provider::ModulatorValueProvider,
+	resource::{Resource, ResourceId},
 	tween::{Parameter, Value},
 };
 
@@ -269,18 +270,6 @@ impl Clock {
 		self.shared.ticks.store(0, Ordering::SeqCst);
 	}
 
-	pub(crate) fn on_start_processing(&mut self) {
-		self.speed
-			.read_commands(&mut self.command_readers.speed_change);
-		if let Some(ticking) = self.command_readers.set_ticking.read().copied() {
-			self.set_ticking(ticking);
-		}
-		if self.command_readers.reset.read().is_some() {
-			self.reset();
-		}
-		self.update_shared();
-	}
-
 	/// Updates the [`Clock`].
 	///
 	/// If the tick count changes this update, returns `Some(tick_number)`.
@@ -333,6 +322,32 @@ impl Clock {
 		self.shared
 			.fractional_position
 			.store(fractional_position.to_bits(), Ordering::SeqCst);
+	}
+}
+
+impl Resource for Clock {
+	type Id = ClockId;
+
+	fn on_start_processing(&mut self) {
+		self.speed
+			.read_commands(&mut self.command_readers.speed_change);
+		if let Some(ticking) = self.command_readers.set_ticking.read().copied() {
+			self.set_ticking(ticking);
+		}
+		if self.command_readers.reset.read().is_some() {
+			self.reset();
+		}
+		self.update_shared();
+	}
+
+	fn should_be_removed(&self) -> bool {
+		self.shared().is_marked_for_removal()
+	}
+}
+
+impl ResourceId for ClockId {
+	fn key(&self) -> Key {
+		self.0
 	}
 }
 

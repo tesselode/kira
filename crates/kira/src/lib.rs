@@ -260,6 +260,7 @@ mod error;
 pub mod manager;
 pub mod modulator;
 mod output_destination;
+mod resource;
 pub mod sound;
 pub mod spatial;
 mod start_time;

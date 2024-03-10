@@ -87,7 +87,6 @@ impl Renderer {
 				Command::AddSubTrack(id, sub_track) => {
 					self.resources.mixer.add_sub_track(id, sub_track)
 				}
-				Command::AddClock(id, clock) => self.resources.clocks.add_clock(id, clock),
 				Command::SpatialScene(command) => {
 					self.resources.spatial_scenes.run_command(command)
 				}
@@ -124,7 +123,7 @@ impl Renderer {
 	pub fn process(&mut self) -> Frame {
 		if self.fade_volume.update(
 			self.dt,
-			&ClockInfoProvider::new(&self.resources.clocks.clocks),
+			&ClockInfoProvider::new(self.resources.clocks.items()),
 			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
 		) {
 			if self.state == MainPlaybackState::Pausing {
@@ -137,29 +136,32 @@ impl Renderer {
 		if self.state == MainPlaybackState::Playing {
 			self.resources.modulators.process(
 				self.dt,
-				&ClockInfoProvider::new(&self.resources.clocks.clocks),
+				&ClockInfoProvider::new(self.resources.clocks.items()),
 			);
-			self.resources.clocks.update(
-				self.dt,
-				&ModulatorValueProvider::new(&self.resources.modulators.modulators),
-			);
+			self.resources.clocks.for_each(|clock, other_clocks| {
+				clock.update(
+					self.dt,
+					&ClockInfoProvider::new(other_clocks),
+					&ModulatorValueProvider::new(&self.resources.modulators.modulators),
+				);
+			});
 		}
 		self.resources.sounds.process(
 			self.dt,
-			&ClockInfoProvider::new(&self.resources.clocks.clocks),
+			&ClockInfoProvider::new(self.resources.clocks.items()),
 			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
 			&mut self.resources.mixer,
 			&mut self.resources.spatial_scenes,
 		);
 		self.resources.spatial_scenes.process(
 			self.dt,
-			&ClockInfoProvider::new(&self.resources.clocks.clocks),
+			&ClockInfoProvider::new(self.resources.clocks.items()),
 			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
 			&mut self.resources.mixer,
 		);
 		let out = self.resources.mixer.process(
 			self.dt,
-			&ClockInfoProvider::new(&self.resources.clocks.clocks),
+			&ClockInfoProvider::new(self.resources.clocks.items()),
 			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
 		);
 		out * self.fade_volume.value().as_amplitude() as f32
