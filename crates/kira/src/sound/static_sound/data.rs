@@ -68,22 +68,11 @@ impl StaticSoundData {
 	}
 
 	pub fn frame(&self, index: usize) -> Frame {
-		let start = self.slice.map(|(start, _)| start).unwrap_or(0);
-		let end = self.slice.map(|(_, end)| end).unwrap_or(self.frames.len());
-		if index >= end - start {
-			return Frame::ZERO;
-		}
-		let absolute_index = start + index;
-		if absolute_index >= self.frames.len() {
-			return Frame::ZERO;
-		}
-		self.frames[absolute_index]
+		frame(&self.frames, self.slice, index)
 	}
 
 	pub fn num_frames(&self) -> usize {
-		self.slice
-			.map(|(start, end)| end - start)
-			.unwrap_or(self.frames.len())
+		num_frames(&self.frames, self.slice)
 	}
 
 	/// Returns the duration of the audio.
@@ -157,4 +146,23 @@ impl Debug for FramesDebug {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		f.write_fmt(format_args!("[{} frames]", self.len))
 	}
+}
+
+pub(super) fn frame(frames: &[Frame], slice: Option<(usize, usize)>, index: usize) -> Frame {
+	let start = slice.map(|(start, _)| start).unwrap_or(0);
+	let end = slice.map(|(_, end)| end).unwrap_or(frames.len());
+	if index >= end - start {
+		return Frame::ZERO;
+	}
+	let absolute_index = start + index;
+	if absolute_index >= frames.len() {
+		return Frame::ZERO;
+	}
+	frames[absolute_index]
+}
+
+pub(super) fn num_frames(frames: &[Frame], slice: Option<(usize, usize)>) -> usize {
+	slice
+		.map(|(start, end)| end - start)
+		.unwrap_or(frames.len())
 }

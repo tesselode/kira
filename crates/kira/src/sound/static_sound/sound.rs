@@ -15,10 +15,15 @@ use crate::{
 	tween::Parameter,
 };
 
-use super::{data::StaticSoundData, CommandReaders, SeekCommand, SetLoopRegionCommand};
+use super::{
+	data::StaticSoundData, frame, num_frames, CommandReaders, SeekCommand, SetLoopRegionCommand,
+};
 
 pub(super) struct StaticSound {
-	data: StaticSoundData,
+	sample_rate: u32,
+	frames: Arc<[Frame]>,
+	slice: Option<(usize, usize)>,
+	reverse: bool,
 	transport: Transport,
 	playback_rate: Parameter<PlaybackRate>,
 	shared: Arc<Shared>,
@@ -38,7 +43,10 @@ impl StaticSound {
 		let starting_frame_index = transport.position;
 		let position = starting_frame_index as f64 / data.sample_rate as f64;
 		Self {
-			data,
+			sample_rate: data.sample_rate,
+			frames: data.frames,
+			slice: data.slice,
+			reverse: data.settings.reverse,
 			transport,
 			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate::Factor(1.0)),
 			shared: Arc::new(Shared {
@@ -54,7 +62,7 @@ impl StaticSound {
 
 	fn is_playing_backwards(&self) -> bool {
 		let mut is_playing_backwards = self.playback_rate.value().as_factor().is_sign_negative();
-		if self.data.settings.reverse {
+		if self.reverse {
 			is_playing_backwards = !is_playing_backwards
 		}
 		is_playing_backwards
@@ -73,26 +81,26 @@ impl StaticSound {
 	}
 
 	fn seek_by(&mut self, amount: f64) {
-		let current_position = self.transport.position as f64 / self.data.sample_rate as f64;
+		let current_position = self.transport.position as f64 / self.sample_rate as f64;
 		let position = current_position + amount;
-		let index = (position * self.data.sample_rate as f64) as usize;
+		let index = (position * self.sample_rate as f64) as usize;
 		self.seek_to_index(index);
 	}
 
 	fn seek_to(&mut self, position: f64) {
-		let index = (position * self.data.sample_rate as f64) as usize;
+		let index = (position * self.sample_rate as f64) as usize;
 		self.seek_to_index(index);
 	}
 }
 
 impl Sound for StaticSound {
 	fn sample_rate(&self) -> f64 {
-		self.data.sample_rate as f64 * self.playback_rate.value().as_factor().abs()
+		self.sample_rate as f64 * self.playback_rate.value().as_factor().abs()
 	}
 
 	fn on_start_processing(&mut self) {
 		self.shared.position.store(
-			(self.transport.position as f64 / self.data.sample_rate as f64).to_bits(),
+			(self.transport.position as f64 / self.sample_rate as f64).to_bits(),
 			Ordering::SeqCst,
 		);
 		if let Some(ValueChangeCommand { target, tween }) =
@@ -105,8 +113,8 @@ impl Sound for StaticSound {
 		{
 			self.transport.set_loop_region(
 				loop_region,
-				self.data.sample_rate,
-				self.data.num_frames(),
+				self.sample_rate,
+				num_frames(&self.frames, self.slice),
 			);
 		}
 		if let Some(seek_command) = self.command_readers.seek.read().copied() {
@@ -134,7 +142,7 @@ impl Sound for StaticSound {
 		);
 
 		// play back audio
-		let out = self.data.frame(self.transport.position);
+		let out = frame(&self.frames, self.slice, self.transport.position);
 		self.update_position();
 		out
 	}
