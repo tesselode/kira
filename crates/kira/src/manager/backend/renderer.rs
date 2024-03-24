@@ -162,6 +162,6 @@ impl Renderer {
 			&ClockInfoProvider::new(&self.resources.clocks.clocks),
 			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
 		);
-		out * self.fade_volume.value().as_amplitude() as f32
+		out * self.fade_volume.value().as_amplitude()
 	}
 }

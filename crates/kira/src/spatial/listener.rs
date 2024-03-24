@@ -98,7 +98,7 @@ impl Listener {
 					Volume::Decibels(0.0),
 					relative_volume.into(),
 				)
-				.as_amplitude() as f32;
+				.as_amplitude();
 				emitter_output *= amplitude;
 			}
 			// apply spatialization

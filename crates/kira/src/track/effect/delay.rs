@@ -148,7 +148,7 @@ impl Effect for Delay {
 			// write output audio to the buffer
 			*write_position += 1;
 			*write_position %= buffer.len();
-			buffer[*write_position] = input + output * self.feedback.value().as_amplitude() as f32;
+			buffer[*write_position] = input + output * self.feedback.value().as_amplitude();
 
 			let mix = self.mix.value() as f32;
 			output * mix.sqrt() + input * (1.0 - mix).sqrt()

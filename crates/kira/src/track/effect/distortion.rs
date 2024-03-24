@@ -65,7 +65,7 @@ impl Effect for Distortion {
 			.update(dt, clock_info_provider, modulator_value_provider);
 		self.mix
 			.update(dt, clock_info_provider, modulator_value_provider);
-		let drive = self.drive.value().as_amplitude() as f32;
+		let drive = self.drive.value().as_amplitude();
 		let mut output = input * drive;
 		output = match self.kind {
 			DistortionKind::HardClip => Frame::new(

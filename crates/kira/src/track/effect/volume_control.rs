@@ -42,7 +42,7 @@ impl Effect for VolumeControl {
 	) -> Frame {
 		self.volume
 			.update(dt, clock_info_provider, modulator_value_provider);
-		input * self.volume.value().as_amplitude() as f32
+		input * self.volume.value().as_amplitude()
 	}
 }
 

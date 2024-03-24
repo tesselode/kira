@@ -5,18 +5,18 @@ use crate::tween::{ModulatorMapping, Tweenable, Value};
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Volume {
 	/// All samples are multiplied by the specified factor.
-	Amplitude(f64),
+	Amplitude(f32),
 	/// The volume is adjusted by the given number of decibels.
-	Decibels(f64),
+	Decibels(f32),
 }
 
 impl Volume {
 	/// The minimum decibel value at which a sound is considered
 	/// silent.
-	pub const MIN_DECIBELS: f64 = -60.0;
+	pub const MIN_DECIBELS: f32 = -60.0;
 
 	/// Returns the volume as an amplitude.
-	pub fn as_amplitude(&self) -> f64 {
+	pub fn as_amplitude(&self) -> f32 {
 		match self {
 			Volume::Amplitude(amplitude) => *amplitude,
 			Volume::Decibels(db) => {
@@ -29,13 +29,13 @@ impl Volume {
 				if *db <= Self::MIN_DECIBELS {
 					return 0.0;
 				}
-				10.0f64.powf(*db / 20.0)
+				10.0f32.powf(*db / 20.0)
 			}
 		}
 	}
 
 	/// Returns the volume as a difference in the number of decibels.
-	pub fn as_decibels(&self) -> f64 {
+	pub fn as_decibels(&self) -> f32 {
 		match self {
 			Volume::Amplitude(amplitude) => {
 				if *amplitude <= 0.0 {
@@ -54,8 +54,8 @@ impl Default for Volume {
 	}
 }
 
-impl From<f64> for Volume {
-	fn from(amplitude: f64) -> Self {
+impl From<f32> for Volume {
+	fn from(amplitude: f32) -> Self {
 		Self::Amplitude(amplitude)
 	}
 }
@@ -66,8 +66,8 @@ impl From<Volume> for Value<Volume> {
 	}
 }
 
-impl From<f64> for Value<Volume> {
-	fn from(amplitude: f64) -> Self {
+impl From<f32> for Value<Volume> {
+	fn from(amplitude: f32) -> Self {
 		Self::Fixed(Volume::Amplitude(amplitude))
 	}
 }
@@ -102,7 +102,7 @@ impl Default for ModulatorMapping<Volume> {
 fn test() {
 	/// A table of dB values to the corresponding amplitudes.
 	// Data gathered from https://www.silisoftware.com/tools/db.php
-	const TEST_CALCULATIONS: [(f64, f64); 6] = [
+	const TEST_CALCULATIONS: [(f32, f32); 6] = [
 		(0.0, 1.0),
 		(3.0, 1.4125375446227544),
 		(12.0, 3.9810717055349722),

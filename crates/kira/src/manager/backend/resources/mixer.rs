@@ -125,7 +125,7 @@ impl Mixer {
 					TrackId::Sub(id) => self.sub_tracks.get_mut(id.0),
 				};
 				if let Some(destination_track) = destination_track {
-					destination_track.add_input(output * volume.value().as_amplitude() as f32);
+					destination_track.add_input(output * volume.value().as_amplitude());
 				}
 			}
 			// borrow the track again and give it back its routes

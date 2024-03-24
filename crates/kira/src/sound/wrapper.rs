@@ -180,8 +180,8 @@ impl SoundWrapper {
 			(self.time_since_last_frame * self.sound.sample_rate()) as f32,
 		)
 		.panned(self.panning.value() as f32)
-			* self.volume.value().as_amplitude() as f32
-			* self.volume_fade.value().as_amplitude() as f32
+			* self.volume.value().as_amplitude()
+			* self.volume_fade.value().as_amplitude()
 	}
 
 	pub fn pause(&mut self, fade_out_tween: Tween) {

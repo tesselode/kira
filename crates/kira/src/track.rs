@@ -389,7 +389,7 @@ impl Track {
 		for effect in &mut self.effects {
 			output = effect.process(output, dt, clock_info_provider, modulator_value_provider);
 		}
-		output * self.volume.value().as_amplitude() as f32
+		output * self.volume.value().as_amplitude()
 	}
 }
 
