@@ -55,7 +55,7 @@ impl EffectBuilder for TestEffectBuilder {
 	type Handle = TestEffectHandle;
 
 	fn build(self) -> (Box<dyn Effect>, Self::Handle) {
-		let (dt_producer, dt_consumer) = HeapRb::new(100).split();
+		let (dt_producer, dt_consumer) = HeapRb::new(MockBackend::BUFFER_SIZE).split();
 		let sample_rate = Arc::new(AtomicU32::new(0));
 		(
 			Box::new(TestEffect {
@@ -88,10 +88,10 @@ fn change_sample_rate() {
 	let backend = manager.backend_mut();
 	backend.on_start_processing();
 	assert_eq!(effect_handle.sample_rate.load(Ordering::SeqCst), 100);
-	backend.process();
+	backend.process_one();
 	assert_eq!(effect_handle.dt_consumer.pop(), Some(1.0 / 100.0));
 	backend.set_sample_rate(200);
 	assert_eq!(effect_handle.sample_rate.load(Ordering::SeqCst), 200);
-	backend.process();
+	backend.process_one();
 	assert_eq!(effect_handle.dt_consumer.pop(), Some(1.0 / 200.0));
 }

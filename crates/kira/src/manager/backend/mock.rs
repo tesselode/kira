@@ -36,7 +36,7 @@ pub struct MockBackend {
 }
 
 impl MockBackend {
-	const BUFFER_SIZE: usize = 1024;
+	pub const BUFFER_SIZE: usize = 1024;
 
 	/// Changes the sample rate of the [`Renderer`].
 	pub fn set_sample_rate(&mut self, sample_rate: u32) {
@@ -70,6 +70,19 @@ impl MockBackend {
 				.get_mut()
 				.expect("mutex poisoned")
 				.process(&mut self.frames);
+		} else {
+			panic!("backend is not initialized")
+		}
+	}
+
+	pub fn process_one(&mut self) -> Frame {
+		let frame = Frame::ZERO;
+		if let State::Initialized { renderer } = &mut self.state {
+			renderer
+				.get_mut()
+				.expect("mutex poisoned")
+				.process(&mut [frame]);
+			frame
 		} else {
 			panic!("backend is not initialized")
 		}

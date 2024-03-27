@@ -103,6 +103,6 @@ fn tick_accuracy() {
 		if i % 512 == 0 {
 			backend.on_start_processing();
 		}
-		backend.process();
+		backend.process_one();
 	}
 }
