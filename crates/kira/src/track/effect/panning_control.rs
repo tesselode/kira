@@ -11,7 +11,6 @@ use ringbuf::HeapConsumer;
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
-	modulator::value_provider::ModulatorValueProvider,
 	tween::{Parameter, Tween, Value},
 };
 
@@ -44,15 +43,8 @@ impl Effect for PanningControl {
 		}
 	}
 
-	fn process(
-		&mut self,
-		input: Frame,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-	) -> Frame {
-		self.panning
-			.update(dt, clock_info_provider, modulator_value_provider);
+	fn process(&mut self, input: Frame, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
+		self.panning.update(dt, clock_info_provider);
 		input.panned(self.panning.value() as f32)
 	}
 }

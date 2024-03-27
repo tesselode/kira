@@ -5,7 +5,6 @@ use glam::{Quat, Vec3};
 
 use crate::{
 	clock::{ClockId, ClockSpeed},
-	modulator::ModulatorId,
 	sound::Sound,
 	spatial::{
 		emitter::{Emitter, EmitterId},
@@ -17,9 +16,7 @@ use crate::{
 	Volume,
 };
 
-use super::backend::resources::{
-	clocks::buffered::BufferedClock, modulators::buffered::BufferedModulator,
-};
+use super::backend::resources::clocks::buffered::BufferedClock;
 
 pub(crate) enum SoundCommand {
 	Add(Key, Box<dyn Sound>),
@@ -53,14 +50,9 @@ pub(crate) enum SpatialSceneCommand {
 	SetEmitterPosition(EmitterId, Value<Vec3>, Tween),
 }
 
-pub(crate) enum ModulatorCommand {
-	Add(ModulatorId, BufferedModulator),
-}
-
 pub(crate) enum Command {
 	Sound(SoundCommand),
 	Mixer(MixerCommand),
 	Clock(ClockCommand),
 	SpatialScene(SpatialSceneCommand),
-	Modulator(ModulatorCommand),
 }

@@ -33,10 +33,7 @@ pub use error::*;
 pub use playback_position::*;
 pub use playback_rate::*;
 
-use crate::{
-	clock::clock_info::ClockInfoProvider, dsp::Frame,
-	modulator::value_provider::ModulatorValueProvider, OutputDestination,
-};
+use crate::{clock::clock_info::ClockInfoProvider, dsp::Frame, OutputDestination};
 
 /// A source of audio that is loaded, but not yet playing.
 pub trait SoundData {
@@ -79,12 +76,7 @@ pub trait Sound: Send {
 	///
 	/// `dt` is the time that's elapsed since the previous round of
 	/// processing (in seconds).
-	fn process(
-		&mut self,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-	) -> Frame;
+	fn process(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame;
 
 	/// Returns `true` if the sound is finished and can be unloaded.
 	///

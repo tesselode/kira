@@ -6,7 +6,6 @@ use crate::{
 		ClockTime,
 	},
 	dsp::Frame,
-	modulator::value_provider::MockModulatorValueProviderBuilder,
 	sound::{
 		static_sound::{StaticSoundData, StaticSoundSettings},
 		PlaybackState, Sound,
@@ -35,11 +34,7 @@ fn plays_all_samples() {
 
 	for i in 1..=3 {
 		assert_eq!(
-			sound.process(
-				1.0,
-				&MockClockInfoProviderBuilder::new(0).build(),
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
+			sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 			Frame::from_mono(i as f32).panned(0.5)
 		);
 		assert!(!sound.finished());
@@ -49,11 +44,7 @@ fn plays_all_samples() {
 	// get silent output.
 	for _ in 0..10 {
 		assert_eq!(
-			sound.process(
-				1.0,
-				&MockClockInfoProviderBuilder::new(0).build(),
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
+			sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 			Frame::from_mono(0.0).panned(0.5)
 		);
 	}
@@ -76,11 +67,7 @@ fn reports_playback_state() {
 
 	for _ in 0..20 {
 		assert_eq!(handle.state(), sound.state);
-		sound.process(
-			1.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build(),
-		);
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build());
 	}
 }
 
@@ -101,11 +88,7 @@ fn reports_playback_position() {
 			handle.position(),
 			i.clamp(0, 10) as f64 / sound.data.sample_rate as f64
 		);
-		sound.process(
-			1.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build(),
-		);
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build());
 		sound.on_start_processing();
 	}
 }
@@ -122,11 +105,7 @@ fn pauses_and_resumes_with_fades() {
 	};
 	let (mut sound, mut handle) = data.split();
 
-	sound.process(
-		1.0,
-		&MockClockInfoProviderBuilder::new(0).build(),
-		&MockModulatorValueProviderBuilder::new(0).build(),
-	);
+	sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build());
 	assert_eq!(sound.state, PlaybackState::Playing);
 
 	handle
@@ -145,19 +124,11 @@ fn pauses_and_resumes_with_fades() {
 		&mut sound,
 	);
 	assert_eq!(
-		sound.process(
-			1.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 		Frame::from_mono(Volume::Decibels(-30.0).as_amplitude() as f32).panned(0.5)
 	);
 	assert_eq!(
-		sound.process(
-			1.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 		Frame::from_mono(Volume::Decibels(-45.0).as_amplitude() as f32).panned(0.5)
 	);
 
@@ -165,11 +136,7 @@ fn pauses_and_resumes_with_fades() {
 	let position = handle.position();
 	for _ in 0..10 {
 		assert_eq!(
-			sound.process(
-				1.0,
-				&MockClockInfoProviderBuilder::new(0).build(),
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
+			sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 			Frame::from_mono(0.0).panned(0.5)
 		);
 		sound.on_start_processing();
@@ -193,31 +160,19 @@ fn pauses_and_resumes_with_fades() {
 	);
 	assert_eq!(sound.state, PlaybackState::Playing);
 	assert_eq!(
-		sound.process(
-			1.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 		Frame::from_mono(Volume::Decibels(-30.0).as_amplitude() as f32).panned(0.5)
 	);
 	assert_eq!(sound.state, PlaybackState::Playing);
 	assert_eq!(
-		sound.process(
-			1.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 		Frame::from_mono(Volume::Decibels(-15.0).as_amplitude() as f32).panned(0.5)
 	);
 	assert_eq!(sound.state, PlaybackState::Playing);
 
 	for _ in 0..3 {
 		assert_eq!(
-			sound.process(
-				1.0,
-				&MockClockInfoProviderBuilder::new(0).build(),
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
+			sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 			Frame::from_mono(1.0).panned(0.5)
 		);
 		assert_eq!(sound.state, PlaybackState::Playing);
@@ -235,11 +190,7 @@ fn stops_with_fade_out() {
 	};
 	let (mut sound, mut handle) = data.split();
 
-	sound.process(
-		1.0,
-		&MockClockInfoProviderBuilder::new(0).build(),
-		&MockModulatorValueProviderBuilder::new(0).build(),
-	);
+	sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build());
 	assert_eq!(sound.state, PlaybackState::Playing);
 
 	handle
@@ -258,19 +209,11 @@ fn stops_with_fade_out() {
 		&mut sound,
 	);
 	assert_eq!(
-		sound.process(
-			1.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 		Frame::from_mono(Volume::Decibels(-30.0).as_amplitude() as f32).panned(0.5)
 	);
 	assert_eq!(
-		sound.process(
-			1.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 		Frame::from_mono(Volume::Decibels(-45.0).as_amplitude() as f32).panned(0.5)
 	);
 
@@ -278,11 +221,7 @@ fn stops_with_fade_out() {
 	let position = handle.position();
 	for _ in 0..3 {
 		assert_eq!(
-			sound.process(
-				1.0,
-				&MockClockInfoProviderBuilder::new(0).build(),
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
+			sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 			Frame::from_mono(0.0).panned(0.5)
 		);
 		sound.on_start_processing();
@@ -329,11 +268,7 @@ fn waits_for_start_time() {
 	// the sound should not be playing yet
 	for _ in 0..3 {
 		assert_eq!(
-			sound.process(
-				1.0,
-				&clock_info_provider,
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
+			sound.process(1.0, &clock_info_provider,),
 			Frame::from_mono(0.0)
 		);
 	}
@@ -361,11 +296,7 @@ fn waits_for_start_time() {
 	// play yet
 	for _ in 0..3 {
 		assert_eq!(
-			sound.process(
-				1.0,
-				&clock_info_provider,
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
+			sound.process(1.0, &clock_info_provider,),
 			Frame::from_mono(0.0)
 		);
 	}
@@ -393,11 +324,7 @@ fn waits_for_start_time() {
 	// not play yet
 	for _ in 0..3 {
 		assert_eq!(
-			sound.process(
-				1.0,
-				&clock_info_provider,
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
+			sound.process(1.0, &clock_info_provider,),
 			Frame::from_mono(0.0)
 		);
 	}
@@ -424,11 +351,7 @@ fn waits_for_start_time() {
 	// the sound should start playing now
 	for i in 1..10 {
 		assert_eq!(
-			sound.process(
-				1.0,
-				&clock_info_provider,
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
+			sound.process(1.0, &clock_info_provider,),
 			Frame::from_mono(i as f32).panned(0.5)
 		);
 	}
@@ -464,28 +387,16 @@ fn stops_if_depending_on_missing_clock() {
 	};
 	let (mut sound, handle) = data.split();
 
-	sound.process(
-		1.0,
-		&clock_info_provider,
-		&MockModulatorValueProviderBuilder::new(0).build(),
-	);
+	sound.process(1.0, &clock_info_provider);
 	sound.on_start_processing();
 	assert_eq!(handle.state(), PlaybackState::Playing);
 
 	// the clock is removed
 	let clock_info_provider = MockClockInfoProviderBuilder::new(1).build();
 
-	sound.process(
-		1.0,
-		&clock_info_provider,
-		&MockModulatorValueProviderBuilder::new(0).build(),
-	);
+	sound.process(1.0, &clock_info_provider);
 	// the sound needs one extra process call to go from Stopping to Stopped
-	sound.process(
-		1.0,
-		&clock_info_provider,
-		&MockModulatorValueProviderBuilder::new(0).build(),
-	);
+	sound.process(1.0, &clock_info_provider);
 	sound.on_start_processing();
 	assert_eq!(handle.state(), PlaybackState::Stopped);
 }
@@ -521,33 +432,21 @@ fn immediate_pause_resume_and_stop_with_clock_start_time() {
 		duration: Duration::from_secs(0),
 		..Default::default()
 	});
-	sound.process(
-		1.0,
-		&clock_info_provider,
-		&MockModulatorValueProviderBuilder::new(0).build(),
-	);
+	sound.process(1.0, &clock_info_provider);
 	assert!(sound.state == PlaybackState::Paused);
 
 	sound.resume(Tween {
 		duration: Duration::from_secs(0),
 		..Default::default()
 	});
-	sound.process(
-		1.0,
-		&clock_info_provider,
-		&MockModulatorValueProviderBuilder::new(0).build(),
-	);
+	sound.process(1.0, &clock_info_provider);
 	assert!(sound.state == PlaybackState::Playing);
 
 	sound.stop(Tween {
 		duration: Duration::from_secs(0),
 		..Default::default()
 	});
-	sound.process(
-		1.0,
-		&clock_info_provider,
-		&MockModulatorValueProviderBuilder::new(0).build(),
-	);
+	sound.process(1.0, &clock_info_provider);
 	assert!(sound.state == PlaybackState::Stopped);
 }
 
@@ -565,11 +464,7 @@ fn playback_region() {
 	for i in 3..=6 {
 		assert_eq!(handle.position(), i as f64);
 		assert_eq!(
-			sound.process(
-				1.0,
-				&MockClockInfoProviderBuilder::new(0).build(),
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
+			sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 			Frame::from_mono(i as f32).panned(0.5)
 		);
 		sound.on_start_processing();
@@ -577,11 +472,7 @@ fn playback_region() {
 	assert_eq!(handle.state(), PlaybackState::Stopped);
 	for _ in 0..3 {
 		assert_eq!(
-			sound.process(
-				1.0,
-				&MockClockInfoProviderBuilder::new(0).build(),
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
+			sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 			Frame::ZERO
 		);
 	}
@@ -600,11 +491,7 @@ fn negative_start_position() {
 
 	for _ in 0..5 {
 		assert_eq!(
-			sound.process(
-				1.0,
-				&MockClockInfoProviderBuilder::new(0).build(),
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
+			sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 			Frame::ZERO
 		);
 	}
@@ -622,11 +509,7 @@ fn out_of_bounds_start_position() {
 		settings: StaticSoundSettings::new().playback_region(15.0..),
 	};
 	let (mut sound, _) = data.split();
-	sound.process(
-		1.0,
-		&MockClockInfoProviderBuilder::new(0).build(),
-		&MockModulatorValueProviderBuilder::new(0).build(),
-	);
+	sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build());
 }
 
 /// Tests that a `StaticSound` properly obeys looping behavior when
@@ -643,45 +526,25 @@ fn loops_forward() {
 
 	for i in 0..6 {
 		assert_eq!(
-			sound.process(
-				1.0,
-				&MockClockInfoProviderBuilder::new(0).build(),
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
+			sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 			Frame::from_mono(i as f32).panned(0.5)
 		);
 	}
 
 	assert_eq!(
-		sound.process(
-			2.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
+		sound.process(2.0, &MockClockInfoProviderBuilder::new(0).build(),),
 		Frame::from_mono(3.0).panned(0.5)
 	);
 	assert_eq!(
-		sound.process(
-			2.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
+		sound.process(2.0, &MockClockInfoProviderBuilder::new(0).build(),),
 		Frame::from_mono(5.0).panned(0.5)
 	);
 	assert_eq!(
-		sound.process(
-			2.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
+		sound.process(2.0, &MockClockInfoProviderBuilder::new(0).build(),),
 		Frame::from_mono(4.0).panned(0.5)
 	);
 	assert_eq!(
-		sound.process(
-			2.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
+		sound.process(2.0, &MockClockInfoProviderBuilder::new(0).build(),),
 		Frame::from_mono(3.0).panned(0.5)
 	);
 }
@@ -698,11 +561,7 @@ fn volume() {
 	let (mut sound, _) = data.split();
 
 	assert_eq!(
-		sound.process(
-			1.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 		Frame::from_mono(0.5).panned(0.5)
 	);
 }
@@ -719,11 +578,7 @@ fn set_volume() {
 	let (mut sound, mut handle) = data.split();
 
 	assert_eq!(
-		sound.process(
-			1.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 		Frame::from_mono(1.0).panned(0.5)
 	);
 	handle
@@ -751,11 +606,7 @@ fn panning() {
 	let (mut sound, _) = data.split();
 
 	assert_eq!(
-		sound.process(
-			1.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 		Frame::from_mono(1.0).panned(0.0)
 	);
 }
@@ -772,11 +623,7 @@ fn set_panning() {
 	let (mut sound, mut handle) = data.split();
 
 	assert_eq!(
-		sound.process(
-			1.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 		Frame::from_mono(1.0).panned(0.5)
 	);
 	handle
@@ -804,19 +651,11 @@ fn playback_rate() {
 	let (mut sound, _) = data.split();
 
 	assert_eq!(
-		sound.process(
-			1.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 		Frame::from_mono(0.0).panned(0.5)
 	);
 	assert_eq!(
-		sound.process(
-			1.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 		Frame::from_mono(2.0).panned(0.5)
 	);
 }
@@ -834,19 +673,11 @@ fn set_playback_rate() {
 	let (mut sound, mut handle) = data.split();
 
 	assert_eq!(
-		sound.process(
-			1.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 		Frame::from_mono(0.0).panned(0.5)
 	);
 	assert_eq!(
-		sound.process(
-			1.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 		Frame::from_mono(1.0).panned(0.5)
 	);
 
@@ -862,19 +693,11 @@ fn set_playback_rate() {
 	sound.on_start_processing();
 
 	assert_eq!(
-		sound.process(
-			1.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 		Frame::from_mono(2.0).panned(0.5)
 	);
 	assert_eq!(
-		sound.process(
-			1.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
+		sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 		Frame::from_mono(4.0).panned(0.5)
 	);
 }
@@ -899,27 +722,15 @@ fn interpolates_samples() {
 	let (mut sound, _) = data.split();
 
 	assert_eq!(
-		sound.process(
-			0.5,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
+		sound.process(0.5, &MockClockInfoProviderBuilder::new(0).build(),),
 		Frame::from_mono(0.0).panned(0.5)
 	);
 	// at sample 0.5, the output should be somewhere between 0 and 1.
 	// i don't care what exactly, that's up the to the interpolation algorithm.
-	let frame = sound.process(
-		5.0,
-		&MockClockInfoProviderBuilder::new(0).build(),
-		&MockModulatorValueProviderBuilder::new(0).build(),
-	);
+	let frame = sound.process(5.0, &MockClockInfoProviderBuilder::new(0).build());
 	assert!(frame.left > 0.0 && frame.left < 1.0);
 	// at sample 5.5, the output should be between 1 and -10.
-	let frame = sound.process(
-		1.0,
-		&MockClockInfoProviderBuilder::new(0).build(),
-		&MockModulatorValueProviderBuilder::new(0).build(),
-	);
+	let frame = sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build());
 	assert!(frame.left < 0.0 && frame.left > -10.0);
 }
 
@@ -933,18 +744,10 @@ fn interpolates_samples_when_looping() {
 		settings: StaticSoundSettings::new().loop_region(Some((..).into())),
 	};
 	let (mut sound, _) = data.split();
-	sound.process(
-		1.5,
-		&MockClockInfoProviderBuilder::new(0).build(),
-		&MockModulatorValueProviderBuilder::new(0).build(),
-	);
+	sound.process(1.5, &MockClockInfoProviderBuilder::new(0).build());
 	// because we're looping back to the first sample, which is 10.0,
 	// the interpolated sample should be be tween 9.0 and 10.0
-	let frame = sound.process(
-		1.0,
-		&MockClockInfoProviderBuilder::new(0).build(),
-		&MockModulatorValueProviderBuilder::new(0).build(),
-	);
+	let frame = sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build());
 	assert!(frame.left > 9.0 && frame.left < 10.0);
 }
 
@@ -991,11 +794,7 @@ fn reverse() {
 
 	for i in (4..=9).rev() {
 		assert_eq!(
-			sound.process(
-				1.0,
-				&MockClockInfoProviderBuilder::new(0).build(),
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
+			sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build(),),
 			Frame::from_mono(i as f32).panned(0.5)
 		);
 	}
@@ -1004,11 +803,7 @@ fn reverse() {
 fn expect_frame_soon(expected_frame: Frame, sound: &mut StaticSound) {
 	const NUM_SAMPLES_TO_WAIT: usize = 10;
 	for _ in 0..NUM_SAMPLES_TO_WAIT {
-		let frame = sound.process(
-			1.0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build(),
-		);
+		let frame = sound.process(1.0, &MockClockInfoProviderBuilder::new(0).build());
 		if frame == expected_frame {
 			return;
 		}

@@ -1,4 +1,4 @@
-use crate::tween::{ModulatorMapping, Tweenable, Value};
+use crate::tween::{Tweenable, Value};
 
 /// How quickly a sound is played.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -69,17 +69,6 @@ impl Tweenable for PlaybackRate {
 			PlaybackRate::Semitones(b) => {
 				PlaybackRate::Semitones(Tweenable::interpolate(a.as_semitones(), b, amount))
 			}
-		}
-	}
-}
-
-impl Default for ModulatorMapping<PlaybackRate> {
-	fn default() -> Self {
-		Self {
-			input_range: (0.0, 1.0),
-			output_range: (PlaybackRate::Factor(0.0), PlaybackRate::Factor(1.0)),
-			clamp_bottom: false,
-			clamp_top: false,
 		}
 	}
 }

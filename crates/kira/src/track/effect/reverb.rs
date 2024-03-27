@@ -11,7 +11,6 @@ use ringbuf::HeapConsumer;
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
-	modulator::value_provider::ModulatorValueProvider,
 	track::Effect,
 	tween::{Parameter, Tween, Value},
 };
@@ -153,26 +152,16 @@ impl Effect for Reverb {
 		}
 	}
 
-	fn process(
-		&mut self,
-		input: Frame,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-	) -> Frame {
+	fn process(&mut self, input: Frame, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
 		if let ReverbState::Initialized {
 			comb_filters,
 			all_pass_filters,
 		} = &mut self.state
 		{
-			self.feedback
-				.update(dt, clock_info_provider, modulator_value_provider);
-			self.damping
-				.update(dt, clock_info_provider, modulator_value_provider);
-			self.stereo_width
-				.update(dt, clock_info_provider, modulator_value_provider);
-			self.mix
-				.update(dt, clock_info_provider, modulator_value_provider);
+			self.feedback.update(dt, clock_info_provider);
+			self.damping.update(dt, clock_info_provider);
+			self.stereo_width.update(dt, clock_info_provider);
+			self.mix.update(dt, clock_info_provider);
 
 			let feedback = self.feedback.value() as f32;
 			let damping = self.damping.value() as f32;

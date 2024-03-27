@@ -4,7 +4,6 @@ use crate::{
 	clock::clock_info::MockClockInfoProviderBuilder,
 	dsp::Frame,
 	manager::command::MixerCommand,
-	modulator::value_provider::MockModulatorValueProviderBuilder,
 	track::{SubTrackId, Track, TrackBuilder, TrackRoutes},
 };
 
@@ -32,12 +31,7 @@ fn parent_routing() {
 		.unwrap()
 		.add_input(0, Frame::from_mono(1.0));
 	assert_eq!(
-		mixer.process(
-			1.0,
-			0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
+		mixer.process(1.0, 0, &MockClockInfoProviderBuilder::new(0).build(),),
 		Frame::from_mono(0.25)
 	);
 }
@@ -62,12 +56,7 @@ fn send_routing() {
 		.unwrap()
 		.add_input(0, Frame::from_mono(1.0));
 	assert_eq!(
-		mixer.process(
-			1.0,
-			0,
-			&MockClockInfoProviderBuilder::new(0).build(),
-			&MockModulatorValueProviderBuilder::new(0).build()
-		),
+		mixer.process(1.0, 0, &MockClockInfoProviderBuilder::new(0).build(),),
 		Frame::from_mono(1.25)
 	);
 }

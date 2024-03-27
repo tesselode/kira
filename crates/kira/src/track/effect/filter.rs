@@ -12,7 +12,6 @@ use std::f64::consts::PI;
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
-	modulator::value_provider::ModulatorValueProvider,
 	track::Effect,
 	tween::{Parameter, Tween, Value},
 };
@@ -78,19 +77,10 @@ impl Effect for Filter {
 		}
 	}
 
-	fn process(
-		&mut self,
-		input: Frame,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-	) -> Frame {
-		self.cutoff
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.resonance
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.mix
-			.update(dt, clock_info_provider, modulator_value_provider);
+	fn process(&mut self, input: Frame, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
+		self.cutoff.update(dt, clock_info_provider);
+		self.resonance.update(dt, clock_info_provider);
+		self.mix.update(dt, clock_info_provider);
 		let sample_rate = 1.0 / dt;
 		let g = (PI * (self.cutoff.value() / sample_rate)).tan();
 		let k = 2.0 - (1.9 * self.resonance.value().min(1.0).max(0.0));

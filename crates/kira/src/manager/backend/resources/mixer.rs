@@ -8,7 +8,6 @@ use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
 	manager::command::MixerCommand,
-	modulator::value_provider::ModulatorValueProvider,
 	track::{SubTrackId, Track, TrackBuilder, TrackId},
 	tween::Parameter,
 	Volume,
@@ -123,7 +122,6 @@ impl Mixer {
 		dt: f64,
 		frame_index: usize,
 		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
 	) -> Frame {
 		// iterate through the sub-tracks newest to oldest
 		for id in self.sub_track_ids.iter().rev() {
@@ -132,12 +130,7 @@ impl Mixer {
 				.sub_tracks
 				.get_mut(id.0)
 				.expect("sub track IDs and sub tracks are out of sync");
-			let output = track.process(
-				dt,
-				frame_index,
-				clock_info_provider,
-				modulator_value_provider,
-			);
+			let output = track.process(dt, frame_index, clock_info_provider);
 			// temporarily take ownership of its routes. we can't just
 			// borrow the routes because then we can't get mutable
 			// references to the other tracks
@@ -160,11 +153,7 @@ impl Mixer {
 				.expect("sub track IDs and sub tracks are out of sync");
 			std::mem::swap(track.routes_mut(), &mut self.dummy_routes);
 		}
-		self.main_track.process(
-			dt,
-			frame_index,
-			clock_info_provider,
-			modulator_value_provider,
-		)
+		self.main_track
+			.process(dt, frame_index, clock_info_provider)
 	}
 }

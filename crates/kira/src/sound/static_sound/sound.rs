@@ -16,7 +16,6 @@ use ringbuf::HeapConsumer;
 use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
 	dsp::Frame,
-	modulator::value_provider::ModulatorValueProvider,
 	sound::{
 		transport::Transport, util::create_volume_fade_parameter, PlaybackRate, PlaybackState,
 		Sound,
@@ -228,23 +227,12 @@ impl Sound for StaticSound {
 		}
 	}
 
-	fn process(
-		&mut self,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-	) -> Frame {
+	fn process(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
 		// update parameters
-		self.volume
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.playback_rate
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.panning
-			.update(dt, clock_info_provider, modulator_value_provider);
-		if self
-			.volume_fade
-			.update(dt, clock_info_provider, modulator_value_provider)
-		{
+		self.volume.update(dt, clock_info_provider);
+		self.playback_rate.update(dt, clock_info_provider);
+		self.panning.update(dt, clock_info_provider);
+		if self.volume_fade.update(dt, clock_info_provider) {
 			match self.state {
 				PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
 				PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),

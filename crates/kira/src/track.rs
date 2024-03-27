@@ -272,7 +272,6 @@ use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
 	manager::backend::Renderer,
-	modulator::value_provider::ModulatorValueProvider,
 	tween::{Parameter, Tween, Value},
 	Volume,
 };
@@ -395,16 +394,14 @@ impl Track {
 		dt: f64,
 		frame_index: usize,
 		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
 	) -> Frame {
-		self.volume
-			.update(dt, clock_info_provider, modulator_value_provider);
+		self.volume.update(dt, clock_info_provider);
 		for (_, route) in &mut self.routes {
-			route.update(dt, clock_info_provider, modulator_value_provider);
+			route.update(dt, clock_info_provider);
 		}
 		let mut output = std::mem::replace(&mut self.input[frame_index], Frame::ZERO);
 		for effect in &mut self.effects {
-			output = effect.process(output, dt, clock_info_provider, modulator_value_provider);
+			output = effect.process(output, dt, clock_info_provider);
 		}
 		output * self.volume.value().as_amplitude() as f32
 	}

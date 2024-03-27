@@ -20,8 +20,6 @@ use std::{
 
 use crate::{
 	clock::{Clock, ClockHandle, ClockId, ClockSpeed},
-	manager::command::ModulatorCommand,
-	modulator::{ModulatorBuilder, ModulatorId},
 	sound::SoundData,
 	spatial::scene::{SpatialScene, SpatialSceneHandle, SpatialSceneId, SpatialSceneSettings},
 	track::{SubTrackId, Track, TrackBuilder, TrackHandle, TrackId},
@@ -32,7 +30,7 @@ use self::{
 	backend::{
 		resources::{
 			clocks::buffered::BufferedClock, create_resources, create_unused_resource_channels,
-			modulators::buffered::BufferedModulator, ResourceControllers, UnusedResourceConsumers,
+			ResourceControllers, UnusedResourceConsumers,
 		},
 		Backend, DefaultBackend, Renderer, RendererShared,
 	},
@@ -40,9 +38,7 @@ use self::{
 		producer::CommandProducer, ClockCommand, Command, MixerCommand, SoundCommand,
 		SpatialSceneCommand,
 	},
-	error::{
-		AddClockError, AddModulatorError, AddSpatialSceneError, AddSubTrackError, PlaySoundError,
-	},
+	error::{AddClockError, AddSpatialSceneError, AddSubTrackError, PlaySoundError},
 };
 
 /// Controls audio from gameplay code.
@@ -271,50 +267,6 @@ impl<B: Backend> AudioManager<B> {
 	}
 
 	/**
-	Creates a modulator.
-
-	# Examples
-
-	```no_run
-	# use kira::{
-	# 	manager::{
-	# 		AudioManager, AudioManagerSettings,
-	# 		backend::DefaultBackend,
-	# 	},
-	# };
-	use kira::modulator::lfo::LfoBuilder;
-
-	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	let modulator = manager.add_modulator(LfoBuilder::new())?;
-	# Result::<(), Box<dyn std::error::Error>>::Ok(())
-	```
-	*/
-	pub fn add_modulator<Builder: ModulatorBuilder>(
-		&mut self,
-		builder: Builder,
-	) -> Result<Builder::Handle, AddModulatorError> {
-		let unused_modulator_consumer = &mut self
-			.unused_resource_consumers
-			.modulator
-			.get_mut()
-			.expect("unused resource consumer mutex poisoned");
-		while unused_modulator_consumer.pop().is_some() {}
-		let id = ModulatorId(
-			self.resource_controllers
-				.modulator_controller
-				.try_reserve()
-				.map_err(|_| AddModulatorError::ModulatorLimitReached)?,
-		);
-		let (modulator, handle) = builder.build(id);
-		self.command_producer
-			.push(Command::Modulator(ModulatorCommand::Add(
-				id,
-				BufferedModulator::new(modulator),
-			)))?;
-		Ok(handle)
-	}
-
-	/**
 	Returns a handle to the main mixer track.
 
 	# Examples
@@ -366,11 +318,6 @@ impl<B: Backend> AudioManager<B> {
 			.capacity()
 	}
 
-	/// Returns the number of modulators that can exist at a time.
-	pub fn modulator_capacity(&self) -> usize {
-		self.resource_controllers.modulator_controller.capacity()
-	}
-
 	/// Returns the number of sounds that are currently loaded.
 	pub fn num_sounds(&self) -> usize {
 		self.resource_controllers.sound_controller.len()
@@ -389,11 +336,6 @@ impl<B: Backend> AudioManager<B> {
 	/// Returns the number of spatial scenes that currently exist.
 	pub fn num_spatial_scenes(&self) -> usize {
 		self.resource_controllers.spatial_scene_controller.len()
-	}
-
-	/// Returns the number of modulators that currently exist.
-	pub fn num_modulators(&self) -> usize {
-		self.resource_controllers.modulator_controller.len()
 	}
 
 	/// Returns a mutable reference to this manager's backend.

@@ -11,7 +11,6 @@ use ringbuf::HeapConsumer;
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::{interpolate_frame, Frame},
-	modulator::value_provider::ModulatorValueProvider,
 	track::Effect,
 	tween::{Parameter, Tween, Value},
 	Volume,
@@ -106,25 +105,16 @@ impl Effect for Delay {
 		}
 	}
 
-	fn process(
-		&mut self,
-		input: Frame,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-	) -> Frame {
+	fn process(&mut self, input: Frame, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
 		if let DelayState::Initialized {
 			buffer,
 			write_position,
 			..
 		} = &mut self.state
 		{
-			self.delay_time
-				.update(dt, clock_info_provider, modulator_value_provider);
-			self.feedback
-				.update(dt, clock_info_provider, modulator_value_provider);
-			self.mix
-				.update(dt, clock_info_provider, modulator_value_provider);
+			self.delay_time.update(dt, clock_info_provider);
+			self.feedback.update(dt, clock_info_provider);
+			self.mix.update(dt, clock_info_provider);
 
 			// get the read position (in samples)
 			let mut read_position = *write_position as f32 - (self.delay_time.value() / dt) as f32;
@@ -150,7 +140,7 @@ impl Effect for Delay {
 				fraction,
 			);
 			for effect in &mut self.feedback_effects {
-				output = effect.process(output, dt, clock_info_provider, modulator_value_provider);
+				output = effect.process(output, dt, clock_info_provider);
 			}
 
 			// write output audio to the buffer

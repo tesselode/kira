@@ -2,11 +2,11 @@ use atomic_arena::{Arena, Controller};
 use ringbuf::HeapProducer;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider, manager::command::SoundCommand,
-	modulator::value_provider::ModulatorValueProvider, sound::Sound, OutputDestination,
+	clock::clock_info::ClockInfoProvider, manager::command::SoundCommand, sound::Sound,
+	OutputDestination,
 };
 
-use super::{clocks::Clocks, mixer::Mixer, modulators::Modulators, spatial_scenes::SpatialScenes};
+use super::{clocks::Clocks, mixer::Mixer, spatial_scenes::SpatialScenes};
 
 pub(crate) struct Sounds {
 	sounds: Arena<Box<dyn Sound>>,
@@ -60,16 +60,13 @@ impl Sounds {
 		dt: f64,
 		num_frames: usize,
 		clocks: &Clocks,
-		modulators: &Modulators,
 		mixer: &mut Mixer,
 		scenes: &mut SpatialScenes,
 	) {
 		for (_, sound) in &mut self.sounds {
 			for frame_index in 0..num_frames {
 				let clock_info_provider = ClockInfoProvider::indexed(&clocks.clocks, frame_index);
-				let modulator_value_provider =
-					ModulatorValueProvider::indexed(&modulators.modulators, frame_index);
-				let out = sound.process(dt, &clock_info_provider, &modulator_value_provider);
+				let out = sound.process(dt, &clock_info_provider);
 				match sound.output_destination() {
 					OutputDestination::Track(track_id) => {
 						if let Some(track) = mixer.track_mut(track_id) {

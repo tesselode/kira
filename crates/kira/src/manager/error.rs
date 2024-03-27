@@ -153,39 +153,3 @@ impl From<CommandError> for AddSpatialSceneError {
 		Self::CommandError(v)
 	}
 }
-
-/// Errors that can occur when creating a modulator.
-#[derive(Debug)]
-#[non_exhaustive]
-pub enum AddModulatorError {
-	/// Could not add a modulator because the maximum number of modulators has been reached.
-	ModulatorLimitReached,
-	/// An error occurred when sending a command to the audio thread.
-	CommandError(CommandError),
-}
-
-impl Display for AddModulatorError {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		match self {
-			AddModulatorError::ModulatorLimitReached => f.write_str(
-				"Could not add a modulator because the maximum number of modulators has been reached.",
-			),
-			AddModulatorError::CommandError(error) => error.fmt(f),
-		}
-	}
-}
-
-impl Error for AddModulatorError {
-	fn source(&self) -> Option<&(dyn Error + 'static)> {
-		match self {
-			AddModulatorError::CommandError(error) => Some(error),
-			_ => None,
-		}
-	}
-}
-
-impl From<CommandError> for AddModulatorError {
-	fn from(v: CommandError) -> Self {
-		Self::CommandError(v)
-	}
-}

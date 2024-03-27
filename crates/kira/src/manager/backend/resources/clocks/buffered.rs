@@ -6,7 +6,6 @@ use crate::{
 		Clock, ClockShared, ClockSpeed,
 	},
 	manager::backend::Renderer,
-	modulator::value_provider::ModulatorValueProvider,
 	tween::{Tween, Value},
 };
 
@@ -55,11 +54,8 @@ impl BufferedClock {
 		&mut self,
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
 	) -> Option<u64> {
-		let new_tick = self
-			.clock
-			.update(dt, clock_info_provider, modulator_value_provider);
+		let new_tick = self.clock.update(dt, clock_info_provider);
 		self.info_buffer.push(ClockInfo {
 			ticking: self.clock.ticking(),
 			ticks: self.clock.ticks(),

@@ -11,7 +11,6 @@ use ringbuf::HeapConsumer;
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
-	modulator::value_provider::ModulatorValueProvider,
 	track::Effect,
 	tween::{Parameter, Tween, Value},
 	Volume,
@@ -66,17 +65,9 @@ impl Effect for Distortion {
 		}
 	}
 
-	fn process(
-		&mut self,
-		input: Frame,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-	) -> Frame {
-		self.drive
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.mix
-			.update(dt, clock_info_provider, modulator_value_provider);
+	fn process(&mut self, input: Frame, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
+		self.drive.update(dt, clock_info_provider);
+		self.mix.update(dt, clock_info_provider);
 		let drive = self.drive.value().as_amplitude() as f32;
 		let mut output = input * drive;
 		output = match self.kind {

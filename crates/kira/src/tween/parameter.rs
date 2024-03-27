@@ -7,7 +7,6 @@ pub use value::*;
 
 use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
-	modulator::value_provider::ModulatorValueProvider,
 	tween::{Tween, Tweenable},
 };
 
@@ -39,7 +38,6 @@ impl<T: Tweenable> Parameter<T> {
 			},
 			raw_value: match initial_value {
 				Value::Fixed(value) => value,
-				Value::FromModulator { .. } => default_raw_value,
 			},
 			stagnant: matches!(initial_value, Value::Fixed(_)),
 		}
@@ -69,13 +67,12 @@ impl<T: Tweenable> Parameter<T> {
 		&mut self,
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
 	) -> JustFinishedTween {
 		if self.stagnant {
 			return false;
 		}
 		let just_finished_tween = self.update_tween(dt, clock_info_provider);
-		if let Some(raw_value) = self.calculate_new_raw_value(modulator_value_provider) {
+		if let Some(raw_value) = self.calculate_new_raw_value() {
 			self.raw_value = raw_value;
 		}
 		just_finished_tween
@@ -108,12 +105,9 @@ impl<T: Tweenable> Parameter<T> {
 		false
 	}
 
-	fn calculate_new_raw_value(
-		&self,
-		modulator_value_provider: &ModulatorValueProvider,
-	) -> Option<T> {
+	fn calculate_new_raw_value(&self) -> Option<T> {
 		match &self.state {
-			State::Idle { value } => value.raw_value(modulator_value_provider),
+			State::Idle { value } => value.raw_value(),
 			State::Tweening {
 				start,
 				target,
@@ -124,7 +118,7 @@ impl<T: Tweenable> Parameter<T> {
 					return None;
 				}
 				target
-					.raw_value(modulator_value_provider)
+					.raw_value()
 					.map(|target| T::interpolate(*start, target, tween.value(*time)))
 			}
 		}

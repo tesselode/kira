@@ -14,10 +14,7 @@ use std::sync::{
 use atomic_arena::{Arena, Controller, Key};
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 
-use crate::{
-	clock::clock_info::ClockInfoProvider, manager::backend::resources::mixer::Mixer,
-	modulator::value_provider::ModulatorValueProvider,
-};
+use crate::{clock::clock_info::ClockInfoProvider, manager::backend::resources::mixer::Mixer};
 
 use super::{
 	emitter::{Emitter, EmitterId},
@@ -114,23 +111,17 @@ impl SpatialScene {
 		dt: f64,
 		frame_index: usize,
 		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
+
 		mixer: &mut Mixer,
 	) {
 		for (_, emitter) in &mut self.emitters {
-			emitter.update(dt, clock_info_provider, modulator_value_provider);
+			emitter.update(dt, clock_info_provider);
 		}
 		for (_, listener) in &mut self.listeners {
 			if let Some(track) = mixer.track_mut(listener.track()) {
 				track.add_input(
 					frame_index,
-					listener.process(
-						dt,
-						frame_index,
-						clock_info_provider,
-						modulator_value_provider,
-						&self.emitters,
-					),
+					listener.process(dt, frame_index, clock_info_provider, &self.emitters),
 				);
 			}
 		}

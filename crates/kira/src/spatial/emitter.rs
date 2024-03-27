@@ -20,7 +20,6 @@ use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
 	manager::backend::Renderer,
-	modulator::value_provider::ModulatorValueProvider,
 	tween::{Easing, Parameter, Tween, Value},
 };
 
@@ -98,14 +97,8 @@ impl Emitter {
 		self.used_this_frame = false;
 	}
 
-	pub fn update(
-		&mut self,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-	) {
-		self.position
-			.update(dt, clock_info_provider, modulator_value_provider);
+	pub fn update(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider) {
+		self.position.update(dt, clock_info_provider);
 	}
 
 	fn should_be_finished(&self) -> bool {

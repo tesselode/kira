@@ -257,7 +257,6 @@ pub mod clock;
 pub mod dsp;
 mod error;
 pub mod manager;
-pub mod modulator;
 mod output_destination;
 pub mod sound;
 pub mod spatial;

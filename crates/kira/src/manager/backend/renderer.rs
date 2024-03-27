@@ -5,10 +5,7 @@ use std::sync::{
 
 use ringbuf::HeapConsumer;
 
-use crate::{
-	clock::clock_info::ClockInfoProvider, dsp::Frame, manager::command::Command,
-	modulator::value_provider::ModulatorValueProvider,
-};
+use crate::{clock::clock_info::ClockInfoProvider, dsp::Frame, manager::command::Command};
 
 use super::resources::Resources;
 
@@ -71,7 +68,6 @@ impl Renderer {
 		self.resources.mixer.on_start_processing();
 		self.resources.clocks.on_start_processing();
 		self.resources.spatial_scenes.on_start_processing();
-		self.resources.modulators.on_start_processing();
 
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
@@ -81,7 +77,6 @@ impl Renderer {
 				Command::SpatialScene(command) => {
 					self.resources.spatial_scenes.run_command(command)
 				}
-				Command::Modulator(command) => self.resources.modulators.run_command(command),
 			}
 		}
 	}
@@ -89,26 +84,17 @@ impl Renderer {
 	/// Produces the next [`Frame`]s of audio.
 	pub fn process(&mut self, frames: &mut [Frame]) {
 		for chunk in frames.chunks_mut(Self::INTERNAL_BUFFER_SIZE) {
-			self.resources.modulators.clear_buffers();
 			self.resources.clocks.clear_buffers();
 			// process modulators and clocks one frame at a time to get the most
 			// accurate modulation possible
 			for _ in 0..chunk.len() {
-				self.resources.modulators.process(
-					self.dt,
-					&ClockInfoProvider::latest(&self.resources.clocks.clocks),
-				);
-				self.resources.clocks.update(
-					self.dt,
-					&ModulatorValueProvider::latest(&self.resources.modulators.modulators),
-				);
+				self.resources.clocks.update(self.dt);
 			}
 
 			self.resources.sounds.process(
 				self.dt,
 				chunk.len(),
 				&self.resources.clocks,
-				&self.resources.modulators,
 				&mut self.resources.mixer,
 				&mut self.resources.spatial_scenes,
 			);
@@ -116,23 +102,16 @@ impl Renderer {
 			for (frame_index, frame) in chunk.iter_mut().enumerate() {
 				let clock_info_provider =
 					ClockInfoProvider::indexed(&self.resources.clocks.clocks, frame_index);
-				let modulator_value_provider = ModulatorValueProvider::indexed(
-					&self.resources.modulators.modulators,
-					frame_index,
-				);
 				self.resources.spatial_scenes.process(
 					self.dt,
 					frame_index,
 					&clock_info_provider,
-					&modulator_value_provider,
 					&mut self.resources.mixer,
 				);
-				*frame = self.resources.mixer.process(
-					self.dt,
-					frame_index,
-					&clock_info_provider,
-					&modulator_value_provider,
-				);
+				*frame = self
+					.resources
+					.mixer
+					.process(self.dt, frame_index, &clock_info_provider);
 			}
 		}
 	}

@@ -6,7 +6,6 @@ use ringbuf::HeapProducer;
 use crate::{
 	clock::{clock_info::ClockInfoProvider, Clock, ClockId, ClockSpeed},
 	manager::command::ClockCommand,
-	modulator::value_provider::ModulatorValueProvider,
 };
 
 use self::buffered::BufferedClock;
@@ -100,7 +99,7 @@ impl Clocks {
 		}
 	}
 
-	pub(crate) fn update(&mut self, dt: f64, modulator_value_provider: &ModulatorValueProvider) {
+	pub(crate) fn update(&mut self, dt: f64) {
 		for id in &self.clock_ids {
 			std::mem::swap(
 				&mut self.dummy_clock,
@@ -108,11 +107,8 @@ impl Clocks {
 					.get_mut(id.0)
 					.expect("clock IDs and clocks are out of sync"),
 			);
-			self.dummy_clock.update(
-				dt,
-				&ClockInfoProvider::latest(&self.clocks),
-				modulator_value_provider,
-			);
+			self.dummy_clock
+				.update(dt, &ClockInfoProvider::latest(&self.clocks));
 			std::mem::swap(
 				&mut self.dummy_clock,
 				self.clocks

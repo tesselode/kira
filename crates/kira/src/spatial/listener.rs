@@ -20,7 +20,6 @@ use glam::{Quat, Vec3};
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
-	modulator::value_provider::ModulatorValueProvider,
 	track::TrackId,
 	tween::{Parameter, Tween, Tweenable, Value},
 	Volume,
@@ -74,13 +73,11 @@ impl Listener {
 		dt: f64,
 		frame_index: usize,
 		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
+
 		emitters: &Arena<Emitter>,
 	) -> Frame {
-		self.position
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.orientation
-			.update(dt, clock_info_provider, modulator_value_provider);
+		self.position.update(dt, clock_info_provider);
+		self.orientation.update(dt, clock_info_provider);
 		let mut output = Frame::ZERO;
 		for (_, emitter) in emitters {
 			let mut emitter_output = emitter.output(frame_index);

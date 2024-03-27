@@ -168,10 +168,7 @@ use std::sync::{
 
 use atomic_arena::Key;
 
-use crate::{
-	modulator::value_provider::ModulatorValueProvider,
-	tween::{Parameter, Tween, Value},
-};
+use crate::tween::{Parameter, Tween, Value};
 
 use self::clock_info::ClockInfoProvider;
 
@@ -304,10 +301,8 @@ impl Clock {
 		&mut self,
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
 	) -> Option<u64> {
-		self.speed
-			.update(dt, clock_info_provider, modulator_value_provider);
+		self.speed.update(dt, clock_info_provider);
 		if !self.ticking {
 			return None;
 		}

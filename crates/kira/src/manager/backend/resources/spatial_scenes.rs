@@ -4,7 +4,6 @@ use ringbuf::HeapProducer;
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	manager::command::SpatialSceneCommand,
-	modulator::value_provider::ModulatorValueProvider,
 	spatial::scene::{SpatialScene, SpatialSceneId},
 };
 
@@ -100,17 +99,11 @@ impl SpatialScenes {
 		dt: f64,
 		frame_index: usize,
 		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
+
 		mixer: &mut Mixer,
 	) {
 		for (_, scene) in &mut self.scenes {
-			scene.process(
-				dt,
-				frame_index,
-				clock_info_provider,
-				modulator_value_provider,
-				mixer,
-			);
+			scene.process(dt, frame_index, clock_info_provider, mixer);
 		}
 	}
 }

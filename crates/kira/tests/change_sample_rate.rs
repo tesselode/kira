@@ -10,7 +10,6 @@ use kira::{
 		backend::mock::{MockBackend, MockBackendSettings},
 		AudioManager, AudioManagerSettings,
 	},
-	modulator::value_provider::ModulatorValueProvider,
 	track::{
 		effect::{Effect, EffectBuilder},
 		TrackBuilder,
@@ -37,7 +36,6 @@ impl Effect for TestEffect {
 		_input: Frame,
 		dt: f64,
 		_clock_info_provider: &ClockInfoProvider,
-		_modulator_value_provider: &ModulatorValueProvider,
 	) -> Frame {
 		self.dt_producer.push(dt).unwrap();
 		Frame::ZERO

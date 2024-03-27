@@ -15,7 +15,6 @@ use std::time::Duration;
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
-	modulator::value_provider::ModulatorValueProvider,
 	tween::{Parameter, Tween, Value},
 };
 
@@ -74,25 +73,13 @@ impl Effect for Compressor {
 		}
 	}
 
-	fn process(
-		&mut self,
-		input: Frame,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-	) -> Frame {
-		self.threshold
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.ratio
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.attack_duration
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.release_duration
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.makeup_gain
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.mix
-			.update(dt, clock_info_provider, modulator_value_provider);
+	fn process(&mut self, input: Frame, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
+		self.threshold.update(dt, clock_info_provider);
+		self.ratio.update(dt, clock_info_provider);
+		self.attack_duration.update(dt, clock_info_provider);
+		self.release_duration.update(dt, clock_info_provider);
+		self.makeup_gain.update(dt, clock_info_provider);
+		self.mix.update(dt, clock_info_provider);
 
 		let threshold = self.threshold.value() as f32;
 		let ratio = self.ratio.value() as f32;

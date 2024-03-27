@@ -15,7 +15,6 @@ use std::f64::consts::PI;
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
-	modulator::value_provider::ModulatorValueProvider,
 	tween::{Parameter, Tween, Value},
 };
 
@@ -125,19 +124,10 @@ impl Effect for EqFilter {
 		}
 	}
 
-	fn process(
-		&mut self,
-		input: Frame,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-	) -> Frame {
-		self.frequency
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.gain
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.q
-			.update(dt, clock_info_provider, modulator_value_provider);
+	fn process(&mut self, input: Frame, dt: f64, clock_info_provider: &ClockInfoProvider) -> Frame {
+		self.frequency.update(dt, clock_info_provider);
+		self.gain.update(dt, clock_info_provider);
+		self.q.update(dt, clock_info_provider);
 		let Coefficients {
 			a1,
 			a2,
