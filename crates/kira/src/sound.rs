@@ -188,17 +188,17 @@ impl Default for Region {
 /// A trait for types that can be converted into an `Option<Region>`.
 pub trait IntoOptionalRegion {
 	/// Converts the type into an `Option<Region>`.
-	fn into_optional_loop_region(self) -> Option<Region>;
+	fn into_optional_region(self) -> Option<Region>;
 }
 
 impl<T: Into<Region>> IntoOptionalRegion for T {
-	fn into_optional_loop_region(self) -> Option<Region> {
+	fn into_optional_region(self) -> Option<Region> {
 		Some(self.into())
 	}
 }
 
 impl IntoOptionalRegion for Option<Region> {
-	fn into_optional_loop_region(self) -> Option<Region> {
+	fn into_optional_region(self) -> Option<Region> {
 		self
 	}
 }

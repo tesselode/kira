@@ -4,16 +4,15 @@ use super::Transport;
 fn stops_at_end() {
 	let mut transport = Transport {
 		position: 2,
-		playback_region: (2, 4),
 		loop_region: None,
 		playing: true,
 	};
-	for i in 2..=4 {
+	for i in 2..4 {
 		assert_eq!(transport.position, i);
 		assert!(transport.playing);
-		transport.increment_position();
+		transport.increment_position(4);
 	}
-	assert_eq!(transport.position, 5);
+	assert_eq!(transport.position, 4);
 	assert!(!transport.playing);
 }
 
@@ -21,17 +20,15 @@ fn stops_at_end() {
 fn stops_at_start_when_playing_backwards() {
 	let mut transport = Transport {
 		position: 2,
-		playback_region: (2, 4),
 		loop_region: None,
 		playing: true,
 	};
-	transport.position = 4;
-	for i in (2..=4).rev() {
+	for i in (0..=2).rev() {
 		assert_eq!(transport.position, i);
 		assert!(transport.playing);
 		transport.decrement_position();
 	}
-	assert_eq!(transport.position, 1);
+	assert_eq!(transport.position, -1);
 	assert!(!transport.playing);
 }
 
@@ -39,19 +36,18 @@ fn stops_at_start_when_playing_backwards() {
 fn loops() {
 	let mut transport = Transport {
 		position: 0,
-		playback_region: (0, 10),
 		loop_region: Some((2, 5)),
 		playing: true,
 	};
 	for i in 0..5 {
 		assert_eq!(transport.position, i);
 		assert!(transport.playing);
-		transport.increment_position();
+		transport.increment_position(10);
 	}
 	for i in 2..5 {
 		assert_eq!(transport.position, i);
 		assert!(transport.playing);
-		transport.increment_position();
+		transport.increment_position(10);
 	}
 }
 
@@ -59,7 +55,6 @@ fn loops() {
 fn loops_when_playing_backward() {
 	let mut transport = Transport {
 		position: 0,
-		playback_region: (0, 10),
 		loop_region: Some((2, 5)),
 		playing: true,
 	};
@@ -80,12 +75,11 @@ fn loops_when_playing_backward() {
 fn loop_wrapping() {
 	let mut transport = Transport {
 		position: 0,
-		playback_region: (0, 10),
 		loop_region: Some((2, 5)),
 		playing: true,
 	};
 	transport.position = 6;
-	transport.increment_position();
+	transport.increment_position(10);
 	assert_eq!(transport.position, 4);
 	transport.position = 1;
 	transport.decrement_position();
@@ -96,13 +90,12 @@ fn loop_wrapping() {
 fn seek_loop_wrapping() {
 	let mut transport = Transport {
 		position: 0,
-		playback_region: (0, 10),
 		loop_region: Some((2, 5)),
 		playing: true,
 	};
-	transport.seek_to(7);
+	transport.seek_to(7, 10);
 	assert_eq!(transport.position, 4);
-	transport.seek_to(0);
+	transport.seek_to(0, 10);
 	assert_eq!(transport.position, 3);
 }
 
@@ -110,18 +103,16 @@ fn seek_loop_wrapping() {
 fn seek_out_of_bounds() {
 	let mut transport = Transport {
 		position: 0,
-		playback_region: (0, 10),
 		loop_region: None,
 		playing: true,
 	};
-	transport.seek_to(-1);
+	transport.seek_to(-1, 10);
 	assert!(!transport.playing);
 	let mut transport = Transport {
 		position: 0,
-		playback_region: (0, 10),
 		loop_region: None,
 		playing: true,
 	};
-	transport.seek_to(11);
+	transport.seek_to(11, 10);
 	assert!(!transport.playing);
 }

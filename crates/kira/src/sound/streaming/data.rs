@@ -3,7 +3,7 @@ mod test;
 
 use std::{sync::Arc, time::Duration};
 
-use crate::sound::SoundData;
+use crate::sound::{EndPosition, IntoOptionalRegion, Region, SoundData};
 use ringbuf::HeapRb;
 
 use super::sound::Shared;
@@ -22,6 +22,7 @@ pub struct StreamingSoundData<Error: Send + 'static> {
 	pub(crate) decoder: Box<dyn Decoder<Error = Error>>,
 	/// Settings for the streaming sound.
 	pub settings: StreamingSoundSettings,
+	pub slice: Option<(usize, usize)>,
 }
 
 impl<Error: Send> StreamingSoundData<Error> {
@@ -33,18 +34,37 @@ impl<Error: Send> StreamingSoundData<Error> {
 		Self {
 			decoder: Box::new(decoder),
 			settings,
+			slice: None,
 		}
+	}
+
+	pub fn num_frames(&self) -> usize {
+		if let Some((start, end)) = self.slice {
+			end - start
+		} else {
+			self.decoder.num_frames()
+		}
+	}
+
+	/// Returns the duration of the audio.
+	pub fn duration(&self) -> Duration {
+		Duration::from_secs_f64(self.num_frames() as f64 / self.decoder.sample_rate() as f64)
+	}
+
+	pub fn slice(mut self, region: impl IntoOptionalRegion) -> Self {
+		self.slice = region.into_optional_region().map(|Region { start, end }| {
+			let start = start.into_samples(self.decoder.sample_rate()) as usize;
+			let end = match end {
+				EndPosition::EndOfAudio => self.decoder.num_frames(),
+				EndPosition::Custom(end) => end.into_samples(self.decoder.sample_rate()) as usize,
+			};
+			(start, end)
+		});
+		self
 	}
 }
 
-impl<T: Send> StreamingSoundData<T> {
-	/// Returns the duration of the audio.
-	pub fn duration(&self) -> Duration {
-		Duration::from_secs_f64(
-			self.decoder.num_frames() as f64 / self.decoder.sample_rate() as f64,
-		)
-	}
-}
+impl<T: Send> StreamingSoundData<T> {}
 
 #[cfg(feature = "symphonia")]
 impl StreamingSoundData<crate::sound::FromFileError> {
@@ -111,6 +131,7 @@ impl<Error: Send + 'static> StreamingSoundData<Error> {
 		let shared = Arc::new(Shared::new());
 		let (scheduler, frame_consumer) = DecodeScheduler::new(
 			self.decoder,
+			self.slice,
 			self.settings,
 			shared.clone(),
 			decode_scheduler_command_consumer,

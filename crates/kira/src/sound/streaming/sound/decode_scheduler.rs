@@ -28,6 +28,7 @@ pub(crate) enum NextStep {
 pub(crate) struct DecodeScheduler<Error: Send + 'static> {
 	decoder: Box<dyn Decoder<Error = Error>>,
 	sample_rate: u32,
+	slice: Option<(usize, usize)>,
 	num_frames: usize,
 	transport: Transport,
 	decoder_current_frame_index: usize,
@@ -41,6 +42,7 @@ pub(crate) struct DecodeScheduler<Error: Send + 'static> {
 impl<Error: Send + 'static> DecodeScheduler<Error> {
 	pub fn new(
 		decoder: Box<dyn Decoder<Error = Error>>,
+		slice: Option<(usize, usize)>,
 		settings: StreamingSoundSettings,
 		shared: Arc<Shared>,
 		command_consumer: HeapConsumer<DecodeSchedulerCommand>,
@@ -56,13 +58,19 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 			})
 			.expect("The frame producer shouldn't be full because we just created it");
 		let sample_rate = decoder.sample_rate();
-		let num_frames = decoder.num_frames();
+		let num_frames = if let Some((start, end)) = slice {
+			end - start
+		} else {
+			decoder.num_frames()
+		};
+		let start_position = settings.start_position.into_samples(decoder.sample_rate());
 		let scheduler = Self {
 			decoder,
 			sample_rate,
+			slice,
 			num_frames,
 			transport: Transport::new(
-				settings.playback_region,
+				start_position,
 				settings.loop_region,
 				false,
 				sample_rate,
@@ -109,9 +117,6 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		// check for seek commands
 		while let Some(command) = self.command_consumer.pop() {
 			match command {
-				DecodeSchedulerCommand::SetPlaybackRegion(playback_region) => self
-					.transport
-					.set_playback_region(playback_region, self.sample_rate, self.num_frames),
 				DecodeSchedulerCommand::SetLoopRegion(loop_region) => self
 					.transport
 					.set_loop_region(loop_region, self.sample_rate, self.num_frames),
@@ -126,7 +131,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 				index: self.transport.position,
 			})
 			.expect("could not push frame to frame producer");
-		self.transport.increment_position();
+		self.transport.increment_position(self.num_frames);
 		if !self.transport.playing {
 			self.shared.reached_end.store(true, Ordering::SeqCst);
 			return Ok(NextStep::End);
@@ -138,6 +143,12 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		if index < 0 {
 			return Ok(Frame::ZERO);
 		}
+		let start = self.slice.map(|(start, _)| start).unwrap_or(0);
+		let end = self.slice.map(|(_, end)| end).unwrap_or(self.num_frames);
+		if index < 0 || index >= (end - start) as i64 {
+			return Ok(Frame::ZERO);
+		}
+		let index = start as i64 + index;
 		let index: usize = index.try_into().expect("could not convert i64 into usize");
 		// if the requested frame is already loaded, return it
 		if let Some(chunk) = &self.decoded_chunk {
@@ -183,7 +194,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 	}
 
 	fn seek_to_index(&mut self, index: i64) -> Result<(), Error> {
-		self.transport.seek_to(index);
+		self.transport.seek_to(index, self.num_frames);
 		self.decoder_current_frame_index = self.decoder.seek(if index < 0 {
 			0
 		} else {

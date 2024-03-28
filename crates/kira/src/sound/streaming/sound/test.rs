@@ -27,6 +27,7 @@ fn plays_all_samples() {
 			Frame::from_mono(3.0),
 		])),
 		settings: StreamingSoundSettings::new(),
+		slice: None,
 	};
 	let (mut sound, _, mut scheduler) = data.split().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
@@ -73,6 +74,7 @@ fn waits_for_samples() {
 			(1..=10).map(|i| Frame::from_mono(i as f32)).collect(),
 		)),
 		settings: StreamingSoundSettings::default(),
+		slice: None,
 	};
 	let (mut sound, handle, mut scheduler) = data.split().unwrap();
 
@@ -127,6 +129,7 @@ fn reports_playback_state() {
 	let data = StreamingSoundData {
 		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(0.0); 10])),
 		settings: StreamingSoundSettings::new(),
+		slice: None,
 	};
 	let (mut sound, handle, mut scheduler) = data.split().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
@@ -149,6 +152,7 @@ fn reports_playback_position() {
 	let data = StreamingSoundData {
 		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(0.0); 10])),
 		settings: StreamingSoundSettings::new(),
+		slice: None,
 	};
 	let (mut sound, handle, mut scheduler) = data.split().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
@@ -172,6 +176,7 @@ fn pauses_and_resumes_with_fades() {
 	let data = StreamingSoundData {
 		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(1.0); 100])),
 		settings: StreamingSoundSettings::new(),
+		slice: None,
 	};
 	let (mut sound, mut handle, mut scheduler) = data.split().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
@@ -290,6 +295,7 @@ fn stops_with_fade_out() {
 	let data = StreamingSoundData {
 		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(1.0); 100])),
 		settings: StreamingSoundSettings::new(),
+		slice: None,
 	};
 	let (mut sound, mut handle, mut scheduler) = data.split().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
@@ -388,6 +394,7 @@ fn waits_for_start_time() {
 			clock: clock_id_1,
 			ticks: 2,
 		}),
+		slice: None,
 	};
 	let (mut sound, _, mut scheduler) = data.split().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
@@ -528,6 +535,7 @@ fn stops_if_depending_on_missing_clock() {
 			clock: clock_id,
 			ticks: 2,
 		}),
+		slice: None,
 	};
 	let (mut sound, handle, mut scheduler) = data.split().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
@@ -583,6 +591,7 @@ fn immediate_pause_resume_and_stop_with_clock_start_time() {
 			clock: clock_id,
 			ticks: 2,
 		})),
+		slice: None,
 	};
 	let (mut sound, _, mut scheduler) = data.split().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
@@ -624,12 +633,13 @@ fn immediate_pause_resume_and_stop_with_clock_start_time() {
 /// Tests that a `StreamingSound` can be started partway through the sound.
 #[test]
 #[allow(clippy::float_cmp)]
-fn playback_region() {
+fn start_position() {
 	let data = StreamingSoundData {
 		decoder: Box::new(MockDecoder::new(
 			(0..10).map(|i| Frame::from_mono(i as f32)).collect(),
 		)),
-		settings: StreamingSoundSettings::new().playback_region(3.0..=6.0),
+		settings: StreamingSoundSettings::new().start_position(3.0),
+		slice: None,
 	};
 	let (mut sound, handle, mut scheduler) = data.split().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
@@ -646,17 +656,6 @@ fn playback_region() {
 		);
 		sound.on_start_processing();
 	}
-	for _ in 0..3 {
-		assert_eq!(
-			sound.process(
-				1.0,
-				&MockClockInfoProviderBuilder::new(0).build(),
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
-			Frame::ZERO
-		);
-		assert_eq!(handle.state(), PlaybackState::Stopped);
-	}
 }
 
 /// Tests that a `StreamingSound` can be started with a negative position.
@@ -667,7 +666,8 @@ fn negative_start_position() {
 		decoder: Box::new(MockDecoder::new(
 			(0..10).map(|i| Frame::from_mono(i as f32)).collect(),
 		)),
-		settings: StreamingSoundSettings::new().playback_region(-5.0..),
+		settings: StreamingSoundSettings::new().start_position(-5.0),
+		slice: None,
 	};
 	let (mut sound, _, mut scheduler) = data.split().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
@@ -695,6 +695,7 @@ fn loops_forward() {
 			(0..10).map(|i| Frame::from_mono(i as f32)).collect(),
 		)),
 		settings: StreamingSoundSettings::new().loop_region(Some((3.0..6.0).into())),
+		slice: None,
 	};
 	let (mut sound, _, mut scheduler) = data.split().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
@@ -751,6 +752,7 @@ fn volume() {
 	let data = StreamingSoundData {
 		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(1.0); 10])),
 		settings: StreamingSoundSettings::new().volume(0.5),
+		slice: None,
 	};
 	let (mut sound, _, mut scheduler) = data.split().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
@@ -772,6 +774,7 @@ fn set_volume() {
 	let data = StreamingSoundData {
 		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(1.0); 100])),
 		settings: StreamingSoundSettings::new(),
+		slice: None,
 	};
 	let (mut sound, mut handle, mut scheduler) = data.split().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
@@ -804,6 +807,7 @@ fn panning() {
 	let data = StreamingSoundData {
 		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(1.0); 10])),
 		settings: StreamingSoundSettings::new().panning(0.0),
+		slice: None,
 	};
 	let (mut sound, _, mut scheduler) = data.split().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
@@ -825,6 +829,7 @@ fn set_panning() {
 	let data = StreamingSoundData {
 		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(1.0); 100])),
 		settings: StreamingSoundSettings::new(),
+		slice: None,
 	};
 	let (mut sound, mut handle, mut scheduler) = data.split().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
@@ -859,6 +864,7 @@ fn playback_rate() {
 			(0..10).map(|i| Frame::from_mono(i as f32)).collect(),
 		)),
 		settings: StreamingSoundSettings::new().playback_rate(2.0),
+		slice: None,
 	};
 	let (mut sound, _, mut scheduler) = data.split().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
@@ -891,6 +897,7 @@ fn set_playback_rate() {
 			(0..100).map(|i| Frame::from_mono(i as f32)).collect(),
 		)),
 		settings: StreamingSoundSettings::new(),
+		slice: None,
 	};
 	let (mut sound, mut handle, mut scheduler) = data.split().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
@@ -956,6 +963,7 @@ fn interpolates_samples() {
 			Frame::from_mono(-10.0),
 		])),
 		settings: Default::default(),
+		slice: None,
 	};
 	let (mut sound, _, mut scheduler) = data.split().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
@@ -995,6 +1003,7 @@ fn interpolates_samples_when_looping() {
 			Frame::from_mono(9.0),
 		])),
 		settings: StreamingSoundSettings::new().loop_region(Some((..).into())),
+		slice: None,
 	};
 	let (mut sound, _, mut scheduler) = data.split().unwrap();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
@@ -1022,6 +1031,7 @@ fn seek_to() {
 			(0..100).map(|i| Frame::from_mono(i as f32)).collect(),
 		)),
 		settings: StreamingSoundSettings::new(),
+		slice: None,
 	};
 	let (mut sound, mut handle, mut scheduler) = data.split().unwrap();
 
@@ -1038,7 +1048,8 @@ fn seek_by() {
 		decoder: Box::new(MockDecoder::new(
 			(0..100).map(|i| Frame::from_mono(i as f32)).collect(),
 		)),
-		settings: StreamingSoundSettings::new().playback_region(10.0..),
+		settings: StreamingSoundSettings::new().start_position(10.0),
+		slice: None,
 	};
 	let (mut sound, mut handle, mut scheduler) = data.split().unwrap();
 	handle.seek_by(5.0).unwrap();

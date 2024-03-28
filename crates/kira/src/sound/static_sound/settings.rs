@@ -1,5 +1,5 @@
 use crate::{
-	sound::{IntoOptionalRegion, PlaybackRate, Region},
+	sound::{IntoOptionalRegion, PlaybackPosition, PlaybackRate, Region},
 	tween::{Tween, Value},
 	OutputDestination, StartTime, Volume,
 };
@@ -10,8 +10,8 @@ use crate::{
 pub struct StaticSoundSettings {
 	/// When the sound should start playing.
 	pub start_time: StartTime,
-	/// The portion of the sound that should be played.
-	pub playback_region: Region,
+	/// Where in the sound playback should start.
+	pub start_position: PlaybackPosition,
 	/// The portion of the sound that should be looped.
 	pub loop_region: Option<Region>,
 	/// Whether the sound should be played in reverse.
@@ -37,7 +37,7 @@ impl StaticSoundSettings {
 	pub fn new() -> Self {
 		Self {
 			start_time: StartTime::default(),
-			playback_region: Region::default(),
+			start_position: PlaybackPosition::Seconds(0.0),
 			reverse: false,
 			loop_region: None,
 			volume: Value::Fixed(Volume::Amplitude(1.0)),
@@ -76,28 +76,10 @@ impl StaticSoundSettings {
 		}
 	}
 
-	/**
-	Sets the portion of the sound that should be played.
-
-	# Examples
-
-	Configure a sound to play from 3 seconds in to the end:
-
-	```
-	# use kira::sound::static_sound::StaticSoundSettings;
-	let settings = StaticSoundSettings::new().playback_region(3.0..);
-	```
-
-	Configure a sound to play from 2 to 4 seconds:
-
-	```
-	# use kira::sound::static_sound::StaticSoundSettings;
-	let settings = StaticSoundSettings::new().playback_region(2.0..4.0);
-	```
-	*/
-	pub fn playback_region(self, playback_region: impl Into<Region>) -> Self {
+	/// Sets where in the sound playback should start.
+	pub fn start_position(self, start_position: impl Into<PlaybackPosition>) -> Self {
 		Self {
-			playback_region: playback_region.into(),
+			start_position: start_position.into(),
 			..self
 		}
 	}
@@ -128,7 +110,7 @@ impl StaticSoundSettings {
 	*/
 	pub fn loop_region(self, loop_region: impl IntoOptionalRegion) -> Self {
 		Self {
-			loop_region: loop_region.into_optional_loop_region(),
+			loop_region: loop_region.into_optional_region(),
 			..self
 		}
 	}

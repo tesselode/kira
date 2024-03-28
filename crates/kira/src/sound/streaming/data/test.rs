@@ -10,6 +10,17 @@ fn duration() {
 	let sound = StreamingSoundData {
 		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(0.5); 4])),
 		settings: Default::default(),
+		slice: None,
 	};
 	assert_eq!(sound.duration(), Duration::from_secs(4));
+}
+
+#[test]
+fn sliced_duration() {
+	let sound = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(0.5); 4])),
+		settings: Default::default(),
+		slice: Some((2, 3)),
+	};
+	assert_eq!(sound.duration(), Duration::from_secs(1));
 }
