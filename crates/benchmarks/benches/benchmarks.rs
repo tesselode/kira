@@ -22,6 +22,7 @@ fn create_test_sound(num_samples: usize) -> StaticSoundData {
 		sample_rate: SAMPLE_RATE,
 		frames: Arc::from(frames),
 		settings: StaticSoundSettings::new().loop_region(0.0..),
+		slice: None,
 	}
 }
 

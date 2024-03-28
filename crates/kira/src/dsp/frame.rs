@@ -4,7 +4,7 @@ use std::{
 };
 
 /// A stereo audio sample.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Frame {
 	/// The sample for the left channel.

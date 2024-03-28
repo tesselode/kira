@@ -48,11 +48,11 @@ impl StaticSound {
 	pub fn new(data: StaticSoundData, command_consumer: HeapConsumer<Command>) -> Self {
 		let settings = data.settings;
 		let transport = Transport::new(
-			data.settings.playback_region,
+			data.settings.start_position.into_samples(data.sample_rate),
 			data.settings.loop_region,
 			data.settings.reverse,
 			data.sample_rate,
-			data.frames.len(),
+			data.num_frames(),
 		);
 		let starting_frame_index = transport.position;
 		let position = starting_frame_index as f64 / data.sample_rate as f64;
@@ -135,7 +135,7 @@ impl StaticSound {
 		if self.is_playing_backwards() {
 			self.transport.decrement_position();
 		} else {
-			self.transport.increment_position();
+			self.transport.increment_position(self.data.num_frames());
 		}
 		if !self.transport.playing {
 			self.set_state(PlaybackState::Stopped);
@@ -143,7 +143,7 @@ impl StaticSound {
 	}
 
 	fn seek_to_index(&mut self, index: i64) {
-		self.transport.seek_to(index);
+		self.transport.seek_to(index, self.data.num_frames());
 		// if the sound is playing, push a frame to the resample buffer
 		// to make sure it doesn't get skipped
 		if !matches!(self.state, PlaybackState::Paused | PlaybackState::Stopped) {
@@ -154,8 +154,7 @@ impl StaticSound {
 	fn push_frame_to_resampler(&mut self) {
 		let num_frames: i64 = self
 			.data
-			.frames
-			.len()
+			.num_frames()
 			.try_into()
 			.expect("sound is too long, cannot convert usize to i64");
 		let frame = if self.transport.position < 0 || self.transport.position >= num_frames {
@@ -166,7 +165,7 @@ impl StaticSound {
 				.position
 				.try_into()
 				.expect("cannot convert i64 into usize");
-			(self.data.frames[frame_index]
+			(self.data.frame_at_index(frame_index).unwrap_or_default()
 				* self.volume_fade.value().as_amplitude() as f32
 				* self.volume.value().as_amplitude() as f32)
 				.panned(self.panning.value() as f32)
@@ -205,15 +204,10 @@ impl Sound for StaticSound {
 					self.playback_rate.set(playback_rate, tween)
 				}
 				Command::SetPanning(panning, tween) => self.panning.set(panning, tween),
-				Command::SetPlaybackRegion(playback_region) => self.transport.set_playback_region(
-					playback_region,
-					self.data.sample_rate,
-					self.data.frames.len(),
-				),
 				Command::SetLoopRegion(loop_region) => self.transport.set_loop_region(
 					loop_region,
 					self.data.sample_rate,
-					self.data.frames.len(),
+					self.data.num_frames(),
 				),
 				Command::Pause(tween) => self.pause(tween),
 				Command::Resume(tween) => self.resume(tween),

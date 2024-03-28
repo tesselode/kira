@@ -28,6 +28,7 @@ fn plays_all_samples() {
 			Frame::from_mono(3.0),
 		]),
 		settings: StaticSoundSettings::new(),
+		slice: None,
 	};
 	let (mut sound, _) = data.split();
 
@@ -71,6 +72,7 @@ fn reports_playback_state() {
 		sample_rate: 1,
 		frames: Arc::new([Frame::from_mono(0.0); 10]),
 		settings: StaticSoundSettings::new(),
+		slice: None,
 	};
 	let (mut sound, handle) = data.split();
 
@@ -93,6 +95,7 @@ fn reports_playback_position() {
 		sample_rate: 1,
 		frames: Arc::new([Frame::from_mono(0.0); 10]),
 		settings: StaticSoundSettings::new(),
+		slice: None,
 	};
 	let (mut sound, handle) = data.split();
 
@@ -119,6 +122,7 @@ fn pauses_and_resumes_with_fades() {
 		sample_rate: 1,
 		frames: Arc::new([Frame::from_mono(1.0); 100]),
 		settings: StaticSoundSettings::new(),
+		slice: None,
 	};
 	let (mut sound, mut handle) = data.split();
 
@@ -232,6 +236,7 @@ fn stops_with_fade_out() {
 		sample_rate: 1,
 		frames: Arc::new([Frame::from_mono(1.0); 100]),
 		settings: StaticSoundSettings::new(),
+		slice: None,
 	};
 	let (mut sound, mut handle) = data.split();
 
@@ -323,6 +328,7 @@ fn waits_for_start_time() {
 			clock: clock_id_1,
 			ticks: 2,
 		}),
+		slice: None,
 	};
 	let (mut sound, _) = data.split();
 
@@ -461,6 +467,7 @@ fn stops_if_depending_on_missing_clock() {
 			clock: clock_id,
 			ticks: 2,
 		}),
+		slice: None,
 	};
 	let (mut sound, handle) = data.split();
 
@@ -514,6 +521,7 @@ fn immediate_pause_resume_and_stop_with_clock_start_time() {
 			clock: clock_id,
 			ticks: 2,
 		})),
+		slice: None,
 	};
 	let (mut sound, _) = data.split();
 
@@ -554,11 +562,12 @@ fn immediate_pause_resume_and_stop_with_clock_start_time() {
 /// Tests that a `StaticSound` can be played partially.
 #[test]
 #[allow(clippy::float_cmp)]
-fn playback_region() {
+fn start_position() {
 	let data = StaticSoundData {
 		sample_rate: 1,
 		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
-		settings: StaticSoundSettings::new().playback_region(3.0..=6.0),
+		settings: StaticSoundSettings::new().start_position(3.0),
+		slice: None,
 	};
 	let (mut sound, handle) = data.split();
 
@@ -574,17 +583,6 @@ fn playback_region() {
 		);
 		sound.on_start_processing();
 	}
-	assert_eq!(handle.state(), PlaybackState::Stopped);
-	for _ in 0..3 {
-		assert_eq!(
-			sound.process(
-				1.0,
-				&MockClockInfoProviderBuilder::new(0).build(),
-				&MockModulatorValueProviderBuilder::new(0).build()
-			),
-			Frame::ZERO
-		);
-	}
 }
 
 /// Tests that a `StaticSound` can be started with a negative position.
@@ -594,7 +592,8 @@ fn negative_start_position() {
 	let data = StaticSoundData {
 		sample_rate: 1,
 		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
-		settings: StaticSoundSettings::new().playback_region(-5.0..),
+		settings: StaticSoundSettings::new().start_position(-5.0),
+		slice: None,
 	};
 	let (mut sound, _) = data.split();
 
@@ -619,7 +618,8 @@ fn out_of_bounds_start_position() {
 	let data = StaticSoundData {
 		sample_rate: 1,
 		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
-		settings: StaticSoundSettings::new().playback_region(15.0..),
+		settings: StaticSoundSettings::new().start_position(15.0),
+		slice: None,
 	};
 	let (mut sound, _) = data.split();
 	sound.process(
@@ -638,6 +638,7 @@ fn loops_forward() {
 		sample_rate: 1,
 		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
 		settings: StaticSoundSettings::new().loop_region(Some((3.0..6.0).into())),
+		slice: None,
 	};
 	let (mut sound, _) = data.split();
 
@@ -694,6 +695,7 @@ fn volume() {
 		sample_rate: 1,
 		frames: Arc::new([Frame::from_mono(1.0); 10]),
 		settings: StaticSoundSettings::new().volume(0.5),
+		slice: None,
 	};
 	let (mut sound, _) = data.split();
 
@@ -715,6 +717,7 @@ fn set_volume() {
 		sample_rate: 1,
 		frames: Arc::new([Frame::from_mono(1.0); 10]),
 		settings: StaticSoundSettings::new(),
+		slice: None,
 	};
 	let (mut sound, mut handle) = data.split();
 
@@ -747,6 +750,7 @@ fn panning() {
 		sample_rate: 1,
 		frames: Arc::new([Frame::from_mono(1.0); 10]),
 		settings: StaticSoundSettings::new().panning(0.0),
+		slice: None,
 	};
 	let (mut sound, _) = data.split();
 
@@ -768,6 +772,7 @@ fn set_panning() {
 		sample_rate: 1,
 		frames: Arc::new([Frame::from_mono(1.0); 10]),
 		settings: StaticSoundSettings::new(),
+		slice: None,
 	};
 	let (mut sound, mut handle) = data.split();
 
@@ -800,6 +805,7 @@ fn playback_rate() {
 		sample_rate: 1,
 		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
 		settings: StaticSoundSettings::new().playback_rate(2.0),
+		slice: None,
 	};
 	let (mut sound, _) = data.split();
 
@@ -830,6 +836,7 @@ fn set_playback_rate() {
 		sample_rate: 1,
 		frames: (0..100).map(|i| Frame::from_mono(i as f32)).collect(),
 		settings: StaticSoundSettings::new(),
+		slice: None,
 	};
 	let (mut sound, mut handle) = data.split();
 
@@ -895,6 +902,7 @@ fn interpolates_samples() {
 			Frame::from_mono(-10.0),
 		]),
 		settings: Default::default(),
+		slice: None,
 	};
 	let (mut sound, _) = data.split();
 
@@ -931,6 +939,7 @@ fn interpolates_samples_when_looping() {
 		sample_rate: 1,
 		frames: Arc::new([Frame::from_mono(10.0), Frame::from_mono(9.0)]),
 		settings: StaticSoundSettings::new().loop_region(Some((..).into())),
+		slice: None,
 	};
 	let (mut sound, _) = data.split();
 	sound.process(
@@ -955,6 +964,7 @@ fn seek_to() {
 		sample_rate: 1,
 		frames: (0..100).map(|i| Frame::from_mono(i as f32)).collect(),
 		settings: StaticSoundSettings::new(),
+		slice: None,
 	};
 	let (mut sound, mut handle) = data.split();
 	handle.seek_to(15.0).unwrap();
@@ -968,7 +978,8 @@ fn seek_by() {
 	let data = StaticSoundData {
 		sample_rate: 1,
 		frames: (0..100).map(|i| Frame::from_mono(i as f32)).collect(),
-		settings: StaticSoundSettings::new().playback_region(10.0..),
+		settings: StaticSoundSettings::new().start_position(10.0),
+		slice: None,
 	};
 	let (mut sound, mut handle) = data.split();
 	handle.seek_by(5.0).unwrap();
@@ -986,6 +997,7 @@ fn reverse() {
 		sample_rate: 1,
 		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
 		settings: StaticSoundSettings::new().reverse(true),
+		slice: None,
 	};
 	let (mut sound, _) = data.split();
 

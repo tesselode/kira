@@ -44,7 +44,6 @@ enum Command {
 	SetVolume(Value<Volume>, Tween),
 	SetPlaybackRate(Value<PlaybackRate>, Tween),
 	SetPanning(Value<f64>, Tween),
-	SetPlaybackRegion(Region),
 	SetLoopRegion(Option<Region>),
 	Pause(Tween),
 	Resume(Tween),

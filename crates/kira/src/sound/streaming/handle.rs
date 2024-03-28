@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
-	sound::{IntoOptionalRegion, PlaybackRate, PlaybackState, Region},
+	sound::{IntoOptionalRegion, PlaybackRate, PlaybackState},
 	tween::{Tween, Value},
 	CommandError, Volume,
 };
@@ -237,48 +237,6 @@ impl<Error> StreamingSoundHandle<Error> {
 	}
 
 	/**
-	Sets the portion of the sound that should be played.
-
-	# Examples
-
-	Set the sound to play from 3 seconds in to the end:
-
-	```no_run
-	# use kira::{
-	# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
-	# 	sound::streaming::{StreamingSoundData, StreamingSoundSettings},
-	# };
-	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
-	sound.set_playback_region(3.0..)?;
-	# Result::<(), Box<dyn std::error::Error>>::Ok(())
-	```
-
-	Set the sound to play from 2 to 4 seconds:
-
-	```no_run
-	# use kira::{
-	# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
-	# 	sound::streaming::{StreamingSoundData, StreamingSoundSettings},
-	# };
-	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
-	sound.set_playback_region(2.0..4.0)?;
-	# Result::<(), Box<dyn std::error::Error>>::Ok(())
-	```
-	*/
-	pub fn set_playback_region(
-		&mut self,
-		playback_region: impl Into<Region>,
-	) -> Result<(), CommandError> {
-		self.decode_scheduler_command_producer
-			.push(DecodeSchedulerCommand::SetPlaybackRegion(
-				playback_region.into(),
-			))
-			.map_err(|_| CommandError::CommandQueueFull)
-	}
-
-	/**
 	Sets the portion of the sound that will play in a loop.
 
 	# Examples
@@ -328,7 +286,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	) -> Result<(), CommandError> {
 		self.decode_scheduler_command_producer
 			.push(DecodeSchedulerCommand::SetLoopRegion(
-				loop_region.into_optional_loop_region(),
+				loop_region.into_optional_region(),
 			))
 			.map_err(|_| CommandError::CommandQueueFull)
 	}

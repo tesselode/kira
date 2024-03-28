@@ -14,7 +14,7 @@ use ringbuf::HeapRb;
 
 use crate::{
 	dsp::Frame,
-	sound::{Sound, SoundData},
+	sound::{EndPosition, IntoOptionalRegion, Region, Sound, SoundData},
 };
 
 use super::{handle::StaticSoundHandle, sound::StaticSound, StaticSoundSettings};
@@ -33,12 +33,42 @@ pub struct StaticSoundData {
 	pub frames: Arc<[Frame]>,
 	/// Settings for the sound.
 	pub settings: StaticSoundSettings,
+	pub slice: Option<(usize, usize)>,
 }
 
 impl StaticSoundData {
+	pub fn num_frames(&self) -> usize {
+		if let Some((start, end)) = self.slice {
+			end - start
+		} else {
+			self.frames.len()
+		}
+	}
+
 	/// Returns the duration of the audio.
 	pub fn duration(&self) -> Duration {
-		Duration::from_secs_f64(self.frames.len() as f64 / self.sample_rate as f64)
+		Duration::from_secs_f64(self.num_frames() as f64 / self.sample_rate as f64)
+	}
+
+	pub fn frame_at_index(&self, index: usize) -> Option<Frame> {
+		if index >= self.num_frames() {
+			return None;
+		}
+		let start = self.slice.map(|(start, _)| start).unwrap_or_default();
+		Some(self.frames[index + start])
+	}
+
+	pub fn slice(&self, region: impl IntoOptionalRegion) -> Self {
+		let mut new = self.clone();
+		new.slice = region.into_optional_region().map(|Region { start, end }| {
+			let start = start.into_samples(self.sample_rate) as usize;
+			let end = match end {
+				EndPosition::EndOfAudio => self.frames.len(),
+				EndPosition::Custom(end) => end.into_samples(self.sample_rate) as usize,
+			};
+			(start, end)
+		});
+		new
 	}
 
 	/// Returns a clone of the `StaticSoundData` with the specified settings.
