@@ -9,6 +9,7 @@ pub use value::*;
 
 use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
+	command::{CommandReader, ValueChangeCommand},
 	modulator::value_provider::ModulatorValueProvider,
 	tween::{Tween, Tweenable},
 	StartTime,
@@ -62,6 +63,15 @@ impl<T: Tweenable> Parameter<T> {
 			time: 0.0,
 			tween,
 		};
+	}
+
+	pub fn read_command(&mut self, command_reader: &mut CommandReader<ValueChangeCommand<T>>)
+	where
+		T: Send,
+	{
+		if let Some(ValueChangeCommand { target, tween }) = command_reader.read() {
+			self.set(target, tween);
+		}
 	}
 
 	/// Updates any in-progress transitions and keeps the value up-to-date

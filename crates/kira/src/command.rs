@@ -58,3 +58,29 @@ macro_rules! command_writers_and_readers {
 		}
 	};
 }
+
+#[macro_export]
+macro_rules! read_commands_into_parameters {
+	($self:ident, $($parameter_name:ident),*$(,)?) => {
+		paste::paste! {
+			$($self.$parameter_name.read_command(&mut $self.command_readers.[<set_ $parameter_name>]);)*
+		}
+	};
+}
+
+#[macro_export]
+macro_rules! handle_param_setters {
+	($($(#[$m:meta])* $name:ident: $type:ty),*$(,)?) => {
+		paste::paste! {
+			$(
+				$(#[$m])*
+				pub fn [<set_ $name>](&mut self, $name: impl Into<$crate::tween::Value<$type>>, tween: $crate::tween::Tween) {
+					self.command_writers.[<set_ $name>].write($crate::command::ValueChangeCommand {
+						target: $name.into(),
+						tween,
+					})
+				}
+			)*
+		}
+	};
+}

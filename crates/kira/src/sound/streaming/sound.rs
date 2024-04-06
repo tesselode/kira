@@ -13,9 +13,9 @@ use std::{
 
 use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
-	command::ValueChangeCommand,
 	dsp::{interpolate_frame, Frame},
 	modulator::value_provider::ModulatorValueProvider,
+	read_commands_into_parameters,
 	sound::{util::create_volume_fade_parameter, PlaybackRate, PlaybackState, Sound},
 	tween::{Parameter, Tween, Value},
 	OutputDestination, StartTime, Volume,
@@ -159,18 +159,7 @@ impl StreamingSound {
 	}
 
 	fn read_commands(&mut self) {
-		if let Some(ValueChangeCommand { target, tween }) = self.command_readers.set_volume.read() {
-			self.volume.set(target, tween);
-		}
-		if let Some(ValueChangeCommand { target, tween }) =
-			self.command_readers.set_playback_rate.read()
-		{
-			self.playback_rate.set(target, tween);
-		}
-		if let Some(ValueChangeCommand { target, tween }) = self.command_readers.set_panning.read()
-		{
-			self.panning.set(target, tween);
-		}
+		read_commands_into_parameters!(self, volume, playback_rate, panning);
 		if let Some(tween) = self.command_readers.pause.read() {
 			self.pause(tween);
 		}

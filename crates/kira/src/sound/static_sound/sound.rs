@@ -13,9 +13,9 @@ use std::{
 
 use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
-	command::ValueChangeCommand,
 	dsp::Frame,
 	modulator::value_provider::ModulatorValueProvider,
+	read_commands_into_parameters,
 	sound::{
 		transport::Transport, util::create_volume_fade_parameter, PlaybackRate, PlaybackState,
 		Sound,
@@ -173,18 +173,7 @@ impl StaticSound {
 	}
 
 	fn read_commands(&mut self) {
-		if let Some(ValueChangeCommand { target, tween }) = self.command_readers.set_volume.read() {
-			self.volume.set(target, tween);
-		}
-		if let Some(ValueChangeCommand { target, tween }) =
-			self.command_readers.set_playback_rate.read()
-		{
-			self.playback_rate.set(target, tween);
-		}
-		if let Some(ValueChangeCommand { target, tween }) = self.command_readers.set_panning.read()
-		{
-			self.panning.set(target, tween);
-		}
+		read_commands_into_parameters!(self, volume, playback_rate, panning);
 		if let Some(loop_region) = self.command_readers.set_loop_region.read() {
 			self.transport.set_loop_region(
 				loop_region,
