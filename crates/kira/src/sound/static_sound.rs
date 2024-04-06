@@ -32,22 +32,18 @@ pub use data::*;
 pub use handle::*;
 pub use settings::*;
 
-use crate::{
-	tween::{Tween, Value},
-	Volume,
-};
+use crate::{command::ValueChangeCommand, command_writers_and_readers, tween::Tween, Volume};
 
 use super::{PlaybackRate, Region};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-enum Command {
-	SetVolume(Value<Volume>, Tween),
-	SetPlaybackRate(Value<PlaybackRate>, Tween),
-	SetPanning(Value<f64>, Tween),
-	SetLoopRegion(Option<Region>),
-	Pause(Tween),
-	Resume(Tween),
-	Stop(Tween),
-	SeekBy(f64),
-	SeekTo(f64),
+command_writers_and_readers! {
+	set_volume: ValueChangeCommand<Volume>,
+	set_playback_rate: ValueChangeCommand<PlaybackRate>,
+	set_panning: ValueChangeCommand<f64>,
+	set_loop_region: Option<Region>,
+	pause: Tween,
+	resume: Tween,
+	stop: Tween,
+	seek_by: f64,
+	seek_to: f64,
 }

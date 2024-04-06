@@ -11,10 +11,9 @@ use std::{
 	time::Duration,
 };
 
-use ringbuf::HeapConsumer;
-
 use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
+	command::ValueChangeCommand,
 	dsp::Frame,
 	modulator::value_provider::ModulatorValueProvider,
 	sound::{
@@ -27,10 +26,10 @@ use crate::{
 
 use self::resampler::Resampler;
 
-use super::{data::StaticSoundData, Command};
+use super::{data::StaticSoundData, CommandReaders};
 
 pub(super) struct StaticSound {
-	command_consumer: HeapConsumer<Command>,
+	command_readers: CommandReaders,
 	data: StaticSoundData,
 	state: PlaybackState,
 	start_time: StartTime,
@@ -45,7 +44,7 @@ pub(super) struct StaticSound {
 }
 
 impl StaticSound {
-	pub fn new(data: StaticSoundData, command_consumer: HeapConsumer<Command>) -> Self {
+	pub fn new(data: StaticSoundData, command_readers: CommandReaders) -> Self {
 		let settings = data.settings;
 		let transport = Transport::new(
 			data.settings.start_position.into_samples(data.sample_rate),
@@ -57,7 +56,7 @@ impl StaticSound {
 		let starting_frame_index = transport.position;
 		let position = starting_frame_index as f64 / data.sample_rate as f64;
 		let mut sound = Self {
-			command_consumer,
+			command_readers,
 			data,
 			state: PlaybackState::Playing,
 			start_time: settings.start_time,
@@ -172,6 +171,43 @@ impl StaticSound {
 		let index = (position * self.data.sample_rate as f64) as usize;
 		self.seek_to_index(index);
 	}
+
+	fn read_commands(&mut self) {
+		if let Some(ValueChangeCommand { target, tween }) = self.command_readers.set_volume.read() {
+			self.volume.set(target, tween);
+		}
+		if let Some(ValueChangeCommand { target, tween }) =
+			self.command_readers.set_playback_rate.read()
+		{
+			self.playback_rate.set(target, tween);
+		}
+		if let Some(ValueChangeCommand { target, tween }) = self.command_readers.set_panning.read()
+		{
+			self.panning.set(target, tween);
+		}
+		if let Some(loop_region) = self.command_readers.set_loop_region.read() {
+			self.transport.set_loop_region(
+				loop_region,
+				self.data.sample_rate,
+				self.data.num_frames(),
+			);
+		}
+		if let Some(tween) = self.command_readers.pause.read() {
+			self.pause(tween);
+		}
+		if let Some(tween) = self.command_readers.resume.read() {
+			self.resume(tween);
+		}
+		if let Some(tween) = self.command_readers.stop.read() {
+			self.stop(tween);
+		}
+		if let Some(amount) = self.command_readers.seek_by.read() {
+			self.seek_by(amount);
+		}
+		if let Some(position) = self.command_readers.seek_to.read() {
+			self.seek_to(position);
+		}
+	}
 }
 
 impl Sound for StaticSound {
@@ -185,29 +221,7 @@ impl Sound for StaticSound {
 			(last_played_frame_position as f64 / self.data.sample_rate as f64).to_bits(),
 			Ordering::SeqCst,
 		);
-		while let Some(command) = self.command_consumer.pop() {
-			match command {
-				Command::SetVolume(volume, tween) => self.volume.set(volume, tween),
-				Command::SetPlaybackRate(playback_rate, tween) => {
-					self.playback_rate.set(playback_rate, tween)
-				}
-				Command::SetPanning(panning, tween) => self.panning.set(panning, tween),
-				Command::SetLoopRegion(loop_region) => self.transport.set_loop_region(
-					loop_region,
-					self.data.sample_rate,
-					self.data.num_frames(),
-				),
-				Command::Pause(tween) => self.pause(tween),
-				Command::Resume(tween) => self.resume(tween),
-				Command::Stop(tween) => self.stop(tween),
-				Command::SeekBy(amount) => {
-					self.seek_by(amount);
-				}
-				Command::SeekTo(position) => {
-					self.seek_to(position);
-				}
-			}
-		}
+		self.read_commands();
 	}
 
 	fn process(

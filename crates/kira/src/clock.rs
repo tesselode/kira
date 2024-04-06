@@ -143,7 +143,7 @@ sound.set_playback_rate(
 		duration: Duration::from_secs(2),
 		..Default::default()
 	},
-)?;
+);
 clock.start()?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
