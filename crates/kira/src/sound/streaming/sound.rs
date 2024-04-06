@@ -13,6 +13,7 @@ use std::{
 
 use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
+	command::ValueChangeCommand,
 	dsp::{interpolate_frame, Frame},
 	modulator::value_provider::ModulatorValueProvider,
 	sound::{util::create_volume_fade_parameter, PlaybackRate, PlaybackState, Sound},
@@ -21,7 +22,7 @@ use crate::{
 };
 use ringbuf::HeapConsumer;
 
-use super::{SoundCommand, StreamingSoundSettings};
+use super::{CommandReaders, StreamingSoundSettings};
 
 use self::decode_scheduler::DecodeScheduler;
 
@@ -61,7 +62,7 @@ impl Shared {
 }
 
 pub(crate) struct StreamingSound {
-	command_consumer: HeapConsumer<SoundCommand>,
+	command_readers: CommandReaders,
 	sample_rate: u32,
 	frame_consumer: HeapConsumer<TimestampedFrame>,
 	output_destination: OutputDestination,
@@ -77,12 +78,12 @@ pub(crate) struct StreamingSound {
 }
 
 impl StreamingSound {
-	pub fn new<Error: Send + 'static>(
+	pub(super) fn new<Error: Send + 'static>(
 		sample_rate: u32,
 		settings: StreamingSoundSettings,
 		shared: Arc<Shared>,
 		frame_consumer: HeapConsumer<TimestampedFrame>,
-		command_consumer: HeapConsumer<SoundCommand>,
+		command_readers: CommandReaders,
 		scheduler: &DecodeScheduler<Error>,
 	) -> Self {
 		let current_frame = scheduler.current_frame();
@@ -91,7 +92,7 @@ impl StreamingSound {
 			.position
 			.store(start_position.to_bits(), Ordering::SeqCst);
 		Self {
-			command_consumer,
+			command_readers,
 			sample_rate,
 			frame_consumer,
 			output_destination: settings.output_destination,
@@ -156,6 +157,30 @@ impl StreamingSound {
 		self.volume_fade
 			.set(Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)), tween);
 	}
+
+	fn read_commands(&mut self) {
+		if let Some(ValueChangeCommand { target, tween }) = self.command_readers.set_volume.read() {
+			self.volume.set(target, tween);
+		}
+		if let Some(ValueChangeCommand { target, tween }) =
+			self.command_readers.set_playback_rate.read()
+		{
+			self.playback_rate.set(target, tween);
+		}
+		if let Some(ValueChangeCommand { target, tween }) = self.command_readers.set_panning.read()
+		{
+			self.panning.set(target, tween);
+		}
+		if let Some(tween) = self.command_readers.pause.read() {
+			self.pause(tween);
+		}
+		if let Some(tween) = self.command_readers.resume.read() {
+			self.resume(tween);
+		}
+		if let Some(tween) = self.command_readers.stop.read() {
+			self.stop(tween);
+		}
+	}
 }
 
 impl Sound for StreamingSound {
@@ -168,18 +193,7 @@ impl Sound for StreamingSound {
 		self.shared
 			.position
 			.store(self.position().to_bits(), Ordering::SeqCst);
-		while let Some(command) = self.command_consumer.pop() {
-			match command {
-				SoundCommand::SetVolume(volume, tween) => self.volume.set(volume, tween),
-				SoundCommand::SetPlaybackRate(playback_rate, tween) => {
-					self.playback_rate.set(playback_rate, tween)
-				}
-				SoundCommand::SetPanning(panning, tween) => self.panning.set(panning, tween),
-				SoundCommand::Pause(tween) => self.pause(tween),
-				SoundCommand::Resume(tween) => self.resume(tween),
-				SoundCommand::Stop(tween) => self.stop(tween),
-			}
-		}
+		self.read_commands();
 	}
 
 	fn process(

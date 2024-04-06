@@ -37,25 +37,78 @@ pub use handle::*;
 pub use settings::*;
 
 use crate::{
-	tween::{Tween, Value},
+	command::{command_writer_and_reader, CommandReader, CommandWriter, ValueChangeCommand},
+	tween::Tween,
 	Volume,
 };
 
 use super::{PlaybackRate, Region};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) enum SoundCommand {
-	SetVolume(Value<Volume>, Tween),
-	SetPlaybackRate(Value<PlaybackRate>, Tween),
-	SetPanning(Value<f64>, Tween),
-	Pause(Tween),
-	Resume(Tween),
-	Stop(Tween),
+pub(crate) struct CommandWriters {
+	set_volume: CommandWriter<ValueChangeCommand<Volume>>,
+	set_playback_rate: CommandWriter<ValueChangeCommand<PlaybackRate>>,
+	set_panning: CommandWriter<ValueChangeCommand<f64>>,
+	set_loop_region: CommandWriter<Option<Region>>,
+	pause: CommandWriter<Tween>,
+	resume: CommandWriter<Tween>,
+	stop: CommandWriter<Tween>,
+	seek_by: CommandWriter<f64>,
+	seek_to: CommandWriter<f64>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) enum DecodeSchedulerCommand {
-	SetLoopRegion(Option<Region>),
-	SeekBy(f64),
-	SeekTo(f64),
+pub(crate) struct CommandReaders {
+	set_volume: CommandReader<ValueChangeCommand<Volume>>,
+	set_playback_rate: CommandReader<ValueChangeCommand<PlaybackRate>>,
+	set_panning: CommandReader<ValueChangeCommand<f64>>,
+	pause: CommandReader<Tween>,
+	resume: CommandReader<Tween>,
+	stop: CommandReader<Tween>,
+}
+
+pub(crate) struct DecodeSchedulerCommandReaders {
+	set_loop_region: CommandReader<Option<Region>>,
+	seek_by: CommandReader<f64>,
+	seek_to: CommandReader<f64>,
+}
+
+fn command_writers_and_readers() -> (
+	CommandWriters,
+	CommandReaders,
+	DecodeSchedulerCommandReaders,
+) {
+	let (set_volume_writer, set_volume_reader) = command_writer_and_reader();
+	let (set_playback_rate_writer, set_playback_rate_reader) = command_writer_and_reader();
+	let (set_panning_writer, set_panning_reader) = command_writer_and_reader();
+	let (set_loop_region_writer, set_loop_region_reader) = command_writer_and_reader();
+	let (pause_writer, pause_reader) = command_writer_and_reader();
+	let (resume_writer, resume_reader) = command_writer_and_reader();
+	let (stop_writer, stop_reader) = command_writer_and_reader();
+	let (seek_by_writer, seek_by_reader) = command_writer_and_reader();
+	let (seek_to_writer, seek_to_reader) = command_writer_and_reader();
+	(
+		CommandWriters {
+			set_volume: set_volume_writer,
+			set_playback_rate: set_playback_rate_writer,
+			set_panning: set_panning_writer,
+			set_loop_region: set_loop_region_writer,
+			pause: pause_writer,
+			resume: resume_writer,
+			stop: stop_writer,
+			seek_by: seek_by_writer,
+			seek_to: seek_to_writer,
+		},
+		CommandReaders {
+			set_volume: set_volume_reader,
+			set_playback_rate: set_playback_rate_reader,
+			set_panning: set_panning_reader,
+			pause: pause_reader,
+			resume: resume_reader,
+			stop: stop_reader,
+		},
+		DecodeSchedulerCommandReaders {
+			set_loop_region: set_loop_region_reader,
+			seek_by: seek_by_reader,
+			seek_to: seek_to_reader,
+		},
+	)
 }

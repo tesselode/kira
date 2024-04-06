@@ -1,20 +1,20 @@
 use std::sync::Arc;
 
 use crate::{
+	command::ValueChangeCommand,
 	sound::{IntoOptionalRegion, PlaybackRate, PlaybackState},
 	tween::{Tween, Value},
-	CommandError, Volume,
+	Volume,
 };
-use ringbuf::{HeapConsumer, HeapProducer};
+use ringbuf::HeapConsumer;
 
-use super::{sound::Shared, DecodeSchedulerCommand, SoundCommand};
+use super::{sound::Shared, CommandWriters};
 
 /// Controls a streaming sound.
 pub struct StreamingSoundHandle<Error> {
-	pub(crate) shared: Arc<Shared>,
-	pub(crate) sound_command_producer: HeapProducer<SoundCommand>,
-	pub(crate) decode_scheduler_command_producer: HeapProducer<DecodeSchedulerCommand>,
-	pub(crate) error_consumer: HeapConsumer<Error>,
+	pub(super) shared: Arc<Shared>,
+	pub(super) command_writers: CommandWriters,
+	pub(super) error_consumer: HeapConsumer<Error>,
 }
 
 impl<Error> StreamingSoundHandle<Error> {
@@ -44,7 +44,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
 	use kira::tween::Tween;
 
-	sound.set_volume(0.5, Tween::default())?;
+	sound.set_volume(0.5, Tween::default());
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
@@ -63,7 +63,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	sound.set_volume(kira::Volume::Decibels(-6.0), Tween {
 		duration: Duration::from_secs(3),
 		..Default::default()
-	})?;
+	});
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
@@ -86,18 +86,15 @@ impl<Error> StreamingSoundHandle<Error> {
 	sound.set_volume(&tweener, Tween {
 		duration: Duration::from_secs(3),
 		..Default::default()
-	})?;
+	});
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
-	pub fn set_volume(
-		&mut self,
-		volume: impl Into<Value<Volume>>,
-		tween: Tween,
-	) -> Result<(), CommandError> {
-		self.sound_command_producer
-			.push(SoundCommand::SetVolume(volume.into(), tween))
-			.map_err(|_| CommandError::CommandQueueFull)
+	pub fn set_volume(&mut self, volume: impl Into<Value<Volume>>, tween: Tween) {
+		self.command_writers.set_volume.write(ValueChangeCommand {
+			target: volume.into(),
+			tween,
+		})
 	}
 
 	/**
@@ -119,7 +116,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
 	use kira::tween::Tween;
 
-	sound.set_playback_rate(0.5, Tween::default())?;
+	sound.set_playback_rate(0.5, Tween::default());
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
@@ -141,7 +138,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	sound.set_playback_rate(PlaybackRate::Semitones(-2.0), Tween {
 		duration: Duration::from_secs(3),
 		..Default::default()
-	})?;
+	});
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
@@ -164,7 +161,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	sound.set_playback_rate(&tweener, Tween {
 		duration: Duration::from_secs(3),
 		..Default::default()
-	})?;
+	});
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
@@ -172,10 +169,13 @@ impl<Error> StreamingSoundHandle<Error> {
 		&mut self,
 		playback_rate: impl Into<Value<PlaybackRate>>,
 		tween: Tween,
-	) -> Result<(), CommandError> {
-		self.sound_command_producer
-			.push(SoundCommand::SetPlaybackRate(playback_rate.into(), tween))
-			.map_err(|_| CommandError::CommandQueueFull)
+	) {
+		self.command_writers
+			.set_playback_rate
+			.write(ValueChangeCommand {
+				target: playback_rate.into(),
+				tween,
+			})
 	}
 
 	/**
@@ -199,7 +199,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	sound.set_panning(0.25, Tween {
 		duration: Duration::from_secs(3),
 		..Default::default()
-	})?;
+	});
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
@@ -222,18 +222,15 @@ impl<Error> StreamingSoundHandle<Error> {
 	sound.set_panning(&tweener, Tween {
 		duration: Duration::from_secs(3),
 		..Default::default()
-	})?;
+	});
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
-	pub fn set_panning(
-		&mut self,
-		panning: impl Into<Value<f64>>,
-		tween: Tween,
-	) -> Result<(), CommandError> {
-		self.sound_command_producer
-			.push(SoundCommand::SetPanning(panning.into(), tween))
-			.map_err(|_| CommandError::CommandQueueFull)
+	pub fn set_panning(&mut self, panning: impl Into<Value<f64>>, tween: Tween) {
+		self.command_writers.set_panning.write(ValueChangeCommand {
+			target: panning.into(),
+			tween,
+		})
 	}
 
 	/**
@@ -250,7 +247,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	# };
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
-	sound.set_loop_region(3.0..)?;
+	sound.set_loop_region(3.0..);
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
@@ -263,7 +260,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	# };
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
-	sound.set_loop_region(2.0..4.0)?;
+	sound.set_loop_region(2.0..4.0);
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
@@ -276,59 +273,44 @@ impl<Error> StreamingSoundHandle<Error> {
 	# };
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
-	sound.set_loop_region(None)?;
+	sound.set_loop_region(None);
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
-	pub fn set_loop_region(
-		&mut self,
-		loop_region: impl IntoOptionalRegion,
-	) -> Result<(), CommandError> {
-		self.decode_scheduler_command_producer
-			.push(DecodeSchedulerCommand::SetLoopRegion(
-				loop_region.into_optional_region(),
-			))
-			.map_err(|_| CommandError::CommandQueueFull)
+	pub fn set_loop_region(&mut self, loop_region: impl IntoOptionalRegion) {
+		self.command_writers
+			.set_loop_region
+			.write(loop_region.into_optional_region())
 	}
 
 	/// Fades out the sound to silence with the given tween and then
 	/// pauses playback.
-	pub fn pause(&mut self, tween: Tween) -> Result<(), CommandError> {
-		self.sound_command_producer
-			.push(SoundCommand::Pause(tween))
-			.map_err(|_| CommandError::CommandQueueFull)
+	pub fn pause(&mut self, tween: Tween) {
+		self.command_writers.pause.write(tween)
 	}
 
 	/// Resumes playback and fades in the sound from silence
 	/// with the given tween.
-	pub fn resume(&mut self, tween: Tween) -> Result<(), CommandError> {
-		self.sound_command_producer
-			.push(SoundCommand::Resume(tween))
-			.map_err(|_| CommandError::CommandQueueFull)
+	pub fn resume(&mut self, tween: Tween) {
+		self.command_writers.resume.write(tween)
 	}
 
 	/// Fades out the sound to silence with the given tween and then
 	/// stops playback.
 	///
 	/// Once the sound is stopped, it cannot be restarted.
-	pub fn stop(&mut self, tween: Tween) -> Result<(), CommandError> {
-		self.sound_command_producer
-			.push(SoundCommand::Stop(tween))
-			.map_err(|_| CommandError::CommandQueueFull)
+	pub fn stop(&mut self, tween: Tween) {
+		self.command_writers.stop.write(tween)
 	}
 
 	/// Sets the playback position to the specified time in seconds.
-	pub fn seek_to(&mut self, position: f64) -> Result<(), CommandError> {
-		self.decode_scheduler_command_producer
-			.push(DecodeSchedulerCommand::SeekTo(position))
-			.map_err(|_| CommandError::CommandQueueFull)
+	pub fn seek_to(&mut self, position: f64) {
+		self.command_writers.seek_to.write(position)
 	}
 
 	/// Moves the playback position by the specified amount of time in seconds.
-	pub fn seek_by(&mut self, amount: f64) -> Result<(), CommandError> {
-		self.decode_scheduler_command_producer
-			.push(DecodeSchedulerCommand::SeekBy(amount))
-			.map_err(|_| CommandError::CommandQueueFull)
+	pub fn seek_by(&mut self, amount: f64) {
+		self.command_writers.seek_by.write(amount)
 	}
 
 	/// Returns an error that occurred while decoding audio, if any.

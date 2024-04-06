@@ -7,14 +7,13 @@ use crate::sound::{EndPosition, IntoOptionalRegion, Region, SoundData};
 use ringbuf::HeapRb;
 
 use super::sound::Shared;
-use super::{StreamingSoundHandle, StreamingSoundSettings};
+use super::{command_writers_and_readers, StreamingSoundHandle, StreamingSoundSettings};
 
 use super::{
 	decoder::Decoder,
 	sound::{decode_scheduler::DecodeScheduler, StreamingSound},
 };
 
-const COMMAND_BUFFER_CAPACITY: usize = 8;
 const ERROR_BUFFER_CAPACITY: usize = 8;
 
 /// A streaming sound that is not playing yet.
@@ -122,10 +121,8 @@ impl<Error: Send + 'static> StreamingSoundData<Error> {
 		),
 		Error,
 	> {
-		let (sound_command_producer, sound_command_consumer) =
-			HeapRb::new(COMMAND_BUFFER_CAPACITY).split();
-		let (decode_scheduler_command_producer, decode_scheduler_command_consumer) =
-			HeapRb::new(COMMAND_BUFFER_CAPACITY).split();
+		let (command_writers, command_readers, decode_scheduler_command_readers) =
+			command_writers_and_readers();
 		let (error_producer, error_consumer) = HeapRb::new(ERROR_BUFFER_CAPACITY).split();
 		let sample_rate = self.decoder.sample_rate();
 		let shared = Arc::new(Shared::new());
@@ -134,7 +131,7 @@ impl<Error: Send + 'static> StreamingSoundData<Error> {
 			self.slice,
 			self.settings,
 			shared.clone(),
-			decode_scheduler_command_consumer,
+			decode_scheduler_command_readers,
 			error_producer,
 		)?;
 		let sound = StreamingSound::new(
@@ -142,13 +139,12 @@ impl<Error: Send + 'static> StreamingSoundData<Error> {
 			self.settings,
 			shared.clone(),
 			frame_consumer,
-			sound_command_consumer,
+			command_readers,
 			&scheduler,
 		);
 		let handle = StreamingSoundHandle {
 			shared,
-			sound_command_producer,
-			decode_scheduler_command_producer,
+			command_writers,
 			error_consumer,
 		};
 		Ok((sound, handle, scheduler))
