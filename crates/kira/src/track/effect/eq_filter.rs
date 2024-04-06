@@ -8,15 +8,12 @@ mod handle;
 pub use builder::*;
 pub use handle::*;
 
-use ringbuf::HeapConsumer;
-
 use std::f64::consts::PI;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider,
-	dsp::Frame,
-	modulator::value_provider::ModulatorValueProvider,
-	tween::{Parameter, Tween, Value},
+	clock::clock_info::ClockInfoProvider, command::ValueChangeCommand, command_writers_and_readers,
+	dsp::Frame, modulator::value_provider::ModulatorValueProvider, read_commands_into_parameters,
+	tween::Parameter,
 };
 
 use super::Effect;
@@ -24,7 +21,7 @@ use super::Effect;
 const MIN_Q: f64 = 0.01;
 
 struct EqFilter {
-	command_consumer: HeapConsumer<Command>,
+	command_readers: CommandReaders,
 	kind: EqFilterKind,
 	frequency: Parameter,
 	gain: Parameter,
@@ -34,9 +31,9 @@ struct EqFilter {
 }
 
 impl EqFilter {
-	fn new(builder: EqFilterBuilder, command_consumer: HeapConsumer<Command>) -> Self {
+	fn new(builder: EqFilterBuilder, command_readers: CommandReaders) -> Self {
 		Self {
-			command_consumer,
+			command_readers,
 			kind: builder.kind,
 			frequency: Parameter::new(builder.frequency, 500.0),
 			gain: Parameter::new(builder.gain, 0.0),
@@ -115,14 +112,10 @@ impl EqFilter {
 
 impl Effect for EqFilter {
 	fn on_start_processing(&mut self) {
-		while let Some(command) = self.command_consumer.pop() {
-			match command {
-				Command::SetKind(kind) => self.kind = kind,
-				Command::SetFrequency(target, tween) => self.frequency.set(target, tween),
-				Command::SetGain(target, tween) => self.gain.set(target, tween),
-				Command::SetQ(target, tween) => self.q.set(target, tween),
-			}
+		if let Some(kind) = self.command_readers.set_kind.read() {
+			self.kind = kind;
 		}
+		read_commands_into_parameters!(self, frequency, gain, q);
 	}
 
 	fn process(
@@ -176,9 +169,9 @@ struct Coefficients {
 	m2: f64,
 }
 
-enum Command {
-	SetKind(EqFilterKind),
-	SetFrequency(Value<f64>, Tween),
-	SetGain(Value<f64>, Tween),
-	SetQ(Value<f64>, Tween),
+command_writers_and_readers! {
+	set_kind: EqFilterKind,
+	set_frequency: ValueChangeCommand<f64>,
+	set_gain: ValueChangeCommand<f64>,
+	set_q: ValueChangeCommand<f64>,
 }

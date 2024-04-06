@@ -6,22 +6,11 @@ mod handle;
 pub use builder::*;
 pub use handle::*;
 
-use ringbuf::HeapConsumer;
-
 use crate::{
-	clock::clock_info::ClockInfoProvider,
-	dsp::Frame,
-	modulator::value_provider::ModulatorValueProvider,
-	track::Effect,
-	tween::{Parameter, Tween, Value},
-	Volume,
+	clock::clock_info::ClockInfoProvider, command::ValueChangeCommand, command_writers_and_readers,
+	dsp::Frame, modulator::value_provider::ModulatorValueProvider, read_commands_into_parameters,
+	track::Effect, tween::Parameter, Volume,
 };
-
-enum Command {
-	SetKind(DistortionKind),
-	SetDrive(Value<Volume>, Tween),
-	SetMix(Value<f64>, Tween),
-}
 
 /// Different types of distortion.
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -49,7 +38,7 @@ impl Default for DistortionKind {
 }
 
 struct Distortion {
-	command_consumer: HeapConsumer<Command>,
+	command_readers: CommandReaders,
 	kind: DistortionKind,
 	drive: Parameter<Volume>,
 	mix: Parameter,
@@ -57,13 +46,10 @@ struct Distortion {
 
 impl Effect for Distortion {
 	fn on_start_processing(&mut self) {
-		while let Some(command) = self.command_consumer.pop() {
-			match command {
-				Command::SetKind(kind) => self.kind = kind,
-				Command::SetDrive(drive, tween) => self.drive.set(drive, tween),
-				Command::SetMix(mix, tween) => self.mix.set(mix, tween),
-			}
+		if let Some(kind) = self.command_readers.set_kind.read() {
+			self.kind = kind;
 		}
+		read_commands_into_parameters!(self, drive, mix);
 	}
 
 	fn process(
@@ -94,4 +80,10 @@ impl Effect for Distortion {
 		let mix = self.mix.value() as f32;
 		output * mix.sqrt() + input * (1.0 - mix).sqrt()
 	}
+}
+
+command_writers_and_readers! {
+	set_kind: DistortionKind,
+	set_drive: ValueChangeCommand<Volume>,
+	set_mix: ValueChangeCommand<f64>,
 }

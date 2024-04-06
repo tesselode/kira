@@ -1,14 +1,10 @@
-use ringbuf::HeapRb;
-
 use crate::{
 	track::effect::{Effect, EffectBuilder},
 	tween::Value,
 	Volume,
 };
 
-use super::{Delay, DelayHandle};
-
-const COMMAND_CAPACITY: usize = 8;
+use super::{command_writers_and_readers, Delay, DelayHandle};
 
 /// Configures a delay effect.
 #[non_exhaustive]
@@ -94,10 +90,10 @@ impl EffectBuilder for DelayBuilder {
 	type Handle = DelayHandle;
 
 	fn build(self) -> (Box<dyn Effect>, Self::Handle) {
-		let (command_producer, command_consumer) = HeapRb::new(COMMAND_CAPACITY).split();
+		let (command_writers, command_readers) = command_writers_and_readers();
 		(
-			Box::new(Delay::new(self, command_consumer)),
-			DelayHandle { command_producer },
+			Box::new(Delay::new(self, command_readers)),
+			DelayHandle { command_writers },
 		)
 	}
 }

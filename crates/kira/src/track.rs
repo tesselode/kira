@@ -108,7 +108,7 @@ let track = manager.add_sub_track({
 	filter = builder.add_effect(FilterBuilder::new().cutoff(1000.0));
 	builder
 })?;
-filter.set_cutoff(4000.0, Tween::default())?;
+filter.set_cutoff(4000.0, Tween::default());
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 

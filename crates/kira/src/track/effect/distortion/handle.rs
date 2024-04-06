@@ -1,47 +1,26 @@
-use ringbuf::HeapProducer;
+use crate::{handle_param_setters, Volume};
 
-use crate::{
-	tween::{Tween, Value},
-	CommandError, Volume,
-};
-
-use super::{Command, DistortionKind};
+use super::{CommandWriters, DistortionKind};
 
 /// Controls a distortion effect.
 pub struct DistortionHandle {
-	pub(super) command_producer: HeapProducer<Command>,
+	pub(super) command_writers: CommandWriters,
 }
 
 impl DistortionHandle {
 	/// Sets the kind of distortion to use.
-	pub fn set_kind(&mut self, kind: DistortionKind) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::SetKind(kind))
-			.map_err(|_| CommandError::CommandQueueFull)
+	pub fn set_kind(&mut self, kind: DistortionKind) {
+		self.command_writers.set_kind.write(kind)
 	}
 
-	/// Sets how much distortion should be applied.
-	pub fn set_drive(
-		&mut self,
-		drive: impl Into<Value<Volume>>,
-		tween: Tween,
-	) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::SetDrive(drive.into(), tween))
-			.map_err(|_| CommandError::CommandQueueFull)
-	}
+	handle_param_setters! {
+		/// Sets how much distortion should be applied.
+		drive: Volume,
 
-	/// Sets how much dry (unprocessed) signal should be blended
-	/// with the wet (processed) signal. `0.0` means only the dry
-	/// signal will be heard. `1.0` means only the wet signal will
-	/// be heard.
-	pub fn set_mix(
-		&mut self,
-		mix: impl Into<Value<f64>>,
-		tween: Tween,
-	) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::SetMix(mix.into(), tween))
-			.map_err(|_| CommandError::CommandQueueFull)
+		/// Sets how much dry (unprocessed) signal should be blended
+		/// with the wet (processed) signal. `0.0` means only the dry
+		/// signal will be heard. `1.0` means only the wet signal will
+		/// be heard.
+		mix: f64,
 	}
 }

@@ -1,14 +1,10 @@
-use ringbuf::HeapRb;
-
 use crate::{
 	track::effect::{Effect, EffectBuilder},
 	tween::{Parameter, Value},
 	Volume,
 };
 
-use super::{handle::DistortionHandle, Distortion, DistortionKind};
-
-const COMMAND_CAPACITY: usize = 8;
+use super::{command_writers_and_readers, handle::DistortionHandle, Distortion, DistortionKind};
 
 /// Configures a distortion effect.
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -72,15 +68,15 @@ impl EffectBuilder for DistortionBuilder {
 	type Handle = DistortionHandle;
 
 	fn build(self) -> (Box<dyn Effect>, Self::Handle) {
-		let (command_producer, command_consumer) = HeapRb::new(COMMAND_CAPACITY).split();
+		let (command_writers, command_readers) = command_writers_and_readers();
 		(
 			Box::new(Distortion {
-				command_consumer,
+				command_readers,
 				kind: self.kind,
 				drive: Parameter::new(self.drive, Volume::Amplitude(1.0)),
 				mix: Parameter::new(self.mix, 1.0),
 			}),
-			DistortionHandle { command_producer },
+			DistortionHandle { command_writers },
 		)
 	}
 }
