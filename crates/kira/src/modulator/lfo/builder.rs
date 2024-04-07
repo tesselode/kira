@@ -1,15 +1,11 @@
 use std::sync::Arc;
 
-use ringbuf::HeapRb;
-
 use crate::{
 	modulator::{Modulator, ModulatorBuilder, ModulatorId},
 	tween::Value,
 };
 
-use super::{handle::LfoHandle, Lfo, LfoShared, Waveform};
-
-const COMMAND_CAPACITY: usize = 8;
+use super::{command_writers_and_readers, handle::LfoHandle, Lfo, LfoShared, Waveform};
 
 /// Configures an LFO modulator.
 #[non_exhaustive]
@@ -102,13 +98,13 @@ impl ModulatorBuilder for LfoBuilder {
 	type Handle = LfoHandle;
 
 	fn build(self, id: ModulatorId) -> (Box<dyn Modulator>, Self::Handle) {
-		let (command_producer, command_consumer) = HeapRb::new(COMMAND_CAPACITY).split();
+		let (command_writers, command_readers) = command_writers_and_readers();
 		let shared = Arc::new(LfoShared::new());
 		(
-			Box::new(Lfo::new(&self, command_consumer, shared.clone())),
+			Box::new(Lfo::new(&self, command_readers, shared.clone())),
 			LfoHandle {
 				id,
-				command_producer,
+				command_writers,
 				shared,
 			},
 		)

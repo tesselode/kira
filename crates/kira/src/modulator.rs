@@ -150,7 +150,7 @@ use std::time::Duration;
 tweener.set(1.0, Tween {
 	duration: Duration::from_secs(3),
 	..Default::default()
-})?;
+});
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 

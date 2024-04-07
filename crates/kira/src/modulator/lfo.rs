@@ -17,11 +17,9 @@ use std::{
 	},
 };
 
-use ringbuf::HeapConsumer;
-
 use crate::{
-	clock::clock_info::ClockInfoProvider,
-	tween::{Parameter, Tween, Value},
+	clock::clock_info::ClockInfoProvider, command::ValueChangeCommand, command_writers_and_readers,
+	read_commands_into_parameters, tween::Parameter,
 };
 
 use super::{value_provider::ModulatorValueProvider, Modulator};
@@ -31,24 +29,20 @@ struct Lfo {
 	frequency: Parameter,
 	amplitude: Parameter,
 	offset: Parameter,
-	command_consumer: HeapConsumer<Command>,
+	command_readers: CommandReaders,
 	shared: Arc<LfoShared>,
 	phase: f64,
 	value: f64,
 }
 
 impl Lfo {
-	fn new(
-		builder: &LfoBuilder,
-		command_consumer: HeapConsumer<Command>,
-		shared: Arc<LfoShared>,
-	) -> Self {
+	fn new(builder: &LfoBuilder, command_readers: CommandReaders, shared: Arc<LfoShared>) -> Self {
 		Self {
 			waveform: builder.waveform,
 			frequency: Parameter::new(builder.frequency, 2.0),
 			amplitude: Parameter::new(builder.amplitude, 1.0),
 			offset: Parameter::new(builder.offset, 0.0),
-			command_consumer,
+			command_readers,
 			shared,
 			phase: builder.starting_phase / TAU,
 			value: 0.0,
@@ -58,14 +52,12 @@ impl Lfo {
 
 impl Modulator for Lfo {
 	fn on_start_processing(&mut self) {
-		while let Some(command) = self.command_consumer.pop() {
-			match command {
-				Command::SetWaveform { waveform } => self.waveform = waveform,
-				Command::SetFrequency { target, tween } => self.frequency.set(target, tween),
-				Command::SetAmplitude { target, tween } => self.amplitude.set(target, tween),
-				Command::SetOffset { target, tween } => self.offset.set(target, tween),
-				Command::SetPhase { phase } => self.phase = phase / TAU,
-			}
+		read_commands_into_parameters!(self, frequency, amplitude, offset);
+		if let Some(waveform) = self.command_readers.set_waveform.read() {
+			self.waveform = waveform;
+		}
+		if let Some(phase) = self.command_readers.set_phase.read() {
+			self.phase = phase / TAU;
 		}
 	}
 
@@ -132,14 +124,6 @@ impl Waveform {
 	}
 }
 
-enum Command {
-	SetWaveform { waveform: Waveform },
-	SetFrequency { target: Value<f64>, tween: Tween },
-	SetAmplitude { target: Value<f64>, tween: Tween },
-	SetOffset { target: Value<f64>, tween: Tween },
-	SetPhase { phase: f64 },
-}
-
 struct LfoShared {
 	removed: AtomicBool,
 }
@@ -150,4 +134,12 @@ impl LfoShared {
 			removed: AtomicBool::new(false),
 		}
 	}
+}
+
+command_writers_and_readers! {
+	set_waveform: Waveform,
+	set_frequency: ValueChangeCommand<f64>,
+	set_amplitude: ValueChangeCommand<f64>,
+	set_offset: ValueChangeCommand<f64>,
+	set_phase: f64,
 }
