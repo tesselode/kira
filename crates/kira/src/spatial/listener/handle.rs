@@ -1,12 +1,11 @@
 use std::sync::Arc;
 
 use crate::{
-	manager::command::{producer::CommandProducer, Command, SpatialSceneCommand},
+	command::ValueChangeCommand,
 	tween::{Tween, Value},
-	CommandError,
 };
 
-use super::{ListenerId, ListenerShared};
+use super::{CommandWriters, ListenerId, ListenerShared};
 
 /// Controls a listener.
 ///
@@ -15,7 +14,7 @@ use super::{ListenerId, ListenerShared};
 pub struct ListenerHandle {
 	pub(crate) id: ListenerId,
 	pub(crate) shared: Arc<ListenerShared>,
-	pub(crate) command_producer: CommandProducer,
+	pub(crate) command_writers: CommandWriters,
 }
 
 impl ListenerHandle {
@@ -25,15 +24,12 @@ impl ListenerHandle {
 	}
 
 	/// Sets the location of the listener in the spatial scene.
-	pub fn set_position(
-		&mut self,
-		position: impl Into<Value<mint::Vector3<f32>>>,
-		tween: Tween,
-	) -> Result<(), CommandError> {
+	pub fn set_position(&mut self, position: impl Into<Value<mint::Vector3<f32>>>, tween: Tween) {
 		let position: Value<mint::Vector3<f32>> = position.into();
-		self.command_producer.push(Command::SpatialScene(
-			SpatialSceneCommand::SetListenerPosition(self.id, position.to_(), tween),
-		))
+		self.command_writers.set_position.write(ValueChangeCommand {
+			target: position.to_(),
+			tween,
+		})
 	}
 
 	/// Sets the rotation of the listener.
@@ -44,11 +40,14 @@ impl ListenerHandle {
 		&mut self,
 		orientation: impl Into<Value<mint::Quaternion<f32>>>,
 		tween: Tween,
-	) -> Result<(), CommandError> {
+	) {
 		let orientation: Value<mint::Quaternion<f32>> = orientation.into();
-		self.command_producer.push(Command::SpatialScene(
-			SpatialSceneCommand::SetListenerOrientation(self.id, orientation.to_(), tween),
-		))
+		self.command_writers
+			.set_orientation
+			.write(ValueChangeCommand {
+				target: orientation.to_(),
+				tween,
+			})
 	}
 }
 

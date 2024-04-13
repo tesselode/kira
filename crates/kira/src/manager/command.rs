@@ -1,7 +1,6 @@
 pub mod producer;
 
 use atomic_arena::Key;
-use glam::{Quat, Vec3};
 
 use crate::{
 	clock::{Clock, ClockId, ClockSpeed},
@@ -44,9 +43,6 @@ pub(crate) enum SpatialSceneCommand {
 	Add(SpatialSceneId, SpatialScene),
 	AddEmitter(EmitterId, Emitter),
 	AddListener(ListenerId, Listener),
-	SetListenerPosition(ListenerId, Value<Vec3>, Tween),
-	SetListenerOrientation(ListenerId, Value<Quat>, Tween),
-	SetEmitterPosition(EmitterId, Value<Vec3>, Tween),
 }
 
 pub(crate) enum ModulatorCommand {

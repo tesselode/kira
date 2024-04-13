@@ -18,14 +18,18 @@ use glam::Vec3;
 
 use crate::{
 	clock::clock_info::ClockInfoProvider,
+	command::ValueChangeCommand,
+	command_writers_and_readers,
 	dsp::Frame,
 	modulator::value_provider::ModulatorValueProvider,
-	tween::{Easing, Parameter, Tween, Value},
+	read_commands_into_parameters,
+	tween::{Easing, Parameter, Value},
 };
 
 use super::scene::SpatialSceneId;
 
 pub(crate) struct Emitter {
+	command_readers: CommandReaders,
 	shared: Arc<EmitterShared>,
 	position: Parameter<Vec3>,
 	distances: EmitterDistances,
@@ -38,8 +42,13 @@ pub(crate) struct Emitter {
 }
 
 impl Emitter {
-	pub fn new(position: Value<Vec3>, settings: EmitterSettings) -> Self {
+	pub fn new(
+		command_readers: CommandReaders,
+		position: Value<Vec3>,
+		settings: EmitterSettings,
+	) -> Self {
 		Self {
+			command_readers,
 			shared: Arc::new(EmitterShared::new()),
 			position: Parameter::new(position, Vec3::ZERO),
 			distances: settings.distances,
@@ -80,13 +89,13 @@ impl Emitter {
 		self.finished
 	}
 
-	pub fn set_position(&mut self, position: Value<Vec3>, tween: Tween) {
-		self.position.set(position, tween);
-	}
-
 	pub fn add_input(&mut self, input: Frame) {
 		self.input += input;
 		self.used_this_frame = true;
+	}
+
+	pub fn on_start_processing(&mut self) {
+		read_commands_into_parameters!(self, position);
 	}
 
 	pub fn after_process(&mut self) {
@@ -150,4 +159,8 @@ impl EmitterShared {
 	pub fn mark_for_removal(&self) {
 		self.removed.store(true, Ordering::SeqCst);
 	}
+}
+
+command_writers_and_readers! {
+	set_position: ValueChangeCommand<Vec3>,
 }
