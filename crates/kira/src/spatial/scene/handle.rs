@@ -12,8 +12,8 @@ use ringbuf::HeapConsumer;
 use crate::{
 	manager::command::{producer::CommandProducer, Command, SpatialSceneCommand},
 	spatial::{
-		emitter::{Emitter, EmitterHandle, EmitterId, EmitterSettings},
-		listener::{Listener, ListenerHandle, ListenerId, ListenerSettings},
+		emitter::{self, Emitter, EmitterHandle, EmitterId, EmitterSettings},
+		listener::{self, Listener, ListenerHandle, ListenerId, ListenerSettings},
 	},
 	tween::Value,
 };
@@ -88,11 +88,12 @@ impl SpatialSceneHandle {
 				.map_err(|_| AddEmitterError::EmitterLimitReached)?,
 			scene_id: self.id,
 		};
-		let emitter = Emitter::new(position, settings);
+		let (command_writers, command_readers) = emitter::command_writers_and_readers();
+		let emitter = Emitter::new(command_readers, position, settings);
 		let handle = EmitterHandle {
 			id,
 			shared: emitter.shared(),
-			command_producer: self.command_producer.clone(),
+			command_writers,
 		};
 		self.command_producer
 			.push(Command::SpatialScene(SpatialSceneCommand::AddEmitter(
@@ -115,11 +116,12 @@ impl SpatialSceneHandle {
 				.map_err(|_| AddListenerError::ListenerLimitReached)?,
 			scene_id: self.id,
 		};
-		let listener = Listener::new(position, orientation, settings);
+		let (command_writers, command_readers) = listener::command_writers_and_readers();
+		let listener = Listener::new(command_readers, position, orientation, settings);
 		let handle = ListenerHandle {
 			id,
 			shared: listener.shared(),
-			command_producer: self.command_producer.clone(),
+			command_writers,
 		};
 		self.command_producer
 			.push(Command::SpatialScene(SpatialSceneCommand::AddListener(

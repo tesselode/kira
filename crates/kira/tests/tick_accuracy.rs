@@ -39,6 +39,9 @@ impl Effect for TestEffect {
 		_modulator_value_provider: &kira::modulator::value_provider::ModulatorValueProvider,
 	) -> Frame {
 		self.frames += 1;
+		if self.frames == 24000 {
+			println!("asdf");
+		}
 		if let WhenToStart::Now = clock_info_provider.when_to_start(ClockTime {
 			clock: self.clock.id(),
 			ticks: self.ticks,
@@ -84,10 +87,10 @@ fn tick_accuracy() {
 	})
 	.unwrap();
 
-	let clock = manager
+	let mut clock = manager
 		.add_clock(ClockSpeed::TicksPerSecond(TICKS_PER_SECOND))
 		.unwrap();
-	clock.start().unwrap();
+	clock.start();
 
 	let _effect_handle;
 	let _track = manager

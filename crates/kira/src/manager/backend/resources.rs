@@ -15,7 +15,7 @@ use crate::{
 	modulator::Modulator,
 	sound::Sound,
 	spatial::scene::SpatialScene,
-	track::{Track, TrackBuilder},
+	track::{Track, TrackBuilder, TrackHandle},
 };
 
 use self::{
@@ -84,6 +84,7 @@ pub(crate) struct ResourceControllers {
 	pub clock_controller: Controller,
 	pub spatial_scene_controller: Controller,
 	pub modulator_controller: Controller,
+	pub main_track_handle: TrackHandle,
 }
 
 pub(crate) fn create_resources(
@@ -94,7 +95,7 @@ pub(crate) fn create_resources(
 ) -> (Resources, ResourceControllers) {
 	let sounds = Sounds::new(capacities.sound_capacity, unused_resource_producers.sound);
 	let sound_controller = sounds.controller();
-	let mixer = Mixer::new(
+	let (mixer, main_track_handle) = Mixer::new(
 		capacities.sub_track_capacity,
 		unused_resource_producers.sub_track,
 		sample_rate,
@@ -127,6 +128,7 @@ pub(crate) fn create_resources(
 			clock_controller,
 			spatial_scene_controller,
 			modulator_controller,
+			main_track_handle,
 		},
 	)
 }

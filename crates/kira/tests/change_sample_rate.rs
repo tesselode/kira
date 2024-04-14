@@ -78,7 +78,7 @@ fn change_sample_rate() {
 	})
 	.unwrap();
 	let mut effect_handle;
-	manager
+	let _track = manager
 		.add_sub_track({
 			let mut builder = TrackBuilder::new();
 			effect_handle = builder.add_effect(TestEffectBuilder);

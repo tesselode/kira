@@ -1,13 +1,9 @@
-use ringbuf::HeapRb;
-
 use crate::{
 	track::effect::{Effect, EffectBuilder},
 	tween::Value,
 };
 
-use super::{Reverb, ReverbHandle};
-
-const COMMAND_CAPACITY: usize = 8;
+use super::{command_writers_and_readers, Reverb, ReverbHandle};
 
 /// Configures a reverb effect.
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -89,10 +85,10 @@ impl EffectBuilder for ReverbBuilder {
 	type Handle = ReverbHandle;
 
 	fn build(self) -> (Box<dyn Effect>, Self::Handle) {
-		let (command_producer, command_consumer) = HeapRb::new(COMMAND_CAPACITY).split();
+		let (command_writers, command_readers) = command_writers_and_readers();
 		(
-			Box::new(Reverb::new(self, command_consumer)),
-			ReverbHandle { command_producer },
+			Box::new(Reverb::new(self, command_readers)),
+			ReverbHandle { command_writers },
 		)
 	}
 }

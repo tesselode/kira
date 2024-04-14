@@ -133,12 +133,10 @@ fn pauses_and_resumes_with_fades() {
 	);
 	assert_eq!(sound.state, PlaybackState::Playing);
 
-	handle
-		.pause(Tween {
-			duration: Duration::from_secs(4),
-			..Default::default()
-		})
-		.unwrap();
+	handle.pause(Tween {
+		duration: Duration::from_secs(4),
+		..Default::default()
+	});
 	sound.on_start_processing();
 	assert_eq!(sound.state, PlaybackState::Pausing);
 
@@ -181,12 +179,10 @@ fn pauses_and_resumes_with_fades() {
 		assert_eq!(sound.state, PlaybackState::Paused);
 	}
 
-	handle
-		.resume(Tween {
-			duration: Duration::from_secs(4),
-			..Default::default()
-		})
-		.unwrap();
+	handle.resume(Tween {
+		duration: Duration::from_secs(4),
+		..Default::default()
+	});
 	sound.on_start_processing();
 
 	// allow for a few samples of delay because of the resampling, but the
@@ -247,12 +243,10 @@ fn stops_with_fade_out() {
 	);
 	assert_eq!(sound.state, PlaybackState::Playing);
 
-	handle
-		.stop(Tween {
-			duration: Duration::from_secs(4),
-			..Default::default()
-		})
-		.unwrap();
+	handle.stop(Tween {
+		duration: Duration::from_secs(4),
+		..Default::default()
+	});
 	sound.on_start_processing();
 	assert_eq!(sound.state, PlaybackState::Stopping);
 
@@ -698,15 +692,13 @@ fn set_volume() {
 		),
 		Frame::from_mono(1.0).panned(0.5)
 	);
-	handle
-		.set_volume(
-			0.5,
-			Tween {
-				duration: Duration::ZERO,
-				..Default::default()
-			},
-		)
-		.unwrap();
+	handle.set_volume(
+		0.5,
+		Tween {
+			duration: Duration::ZERO,
+			..Default::default()
+		},
+	);
 	sound.on_start_processing();
 	expect_frame_soon(Frame::from_mono(0.5).panned(0.5), &mut sound);
 }
@@ -753,15 +745,13 @@ fn set_panning() {
 		),
 		Frame::from_mono(1.0).panned(0.5)
 	);
-	handle
-		.set_panning(
-			0.0,
-			Tween {
-				duration: Duration::ZERO,
-				..Default::default()
-			},
-		)
-		.unwrap();
+	handle.set_panning(
+		0.0,
+		Tween {
+			duration: Duration::ZERO,
+			..Default::default()
+		},
+	);
 	sound.on_start_processing();
 	expect_frame_soon(Frame::from_mono(1.0).panned(0.0), &mut sound);
 }
@@ -826,15 +816,13 @@ fn set_playback_rate() {
 		Frame::from_mono(1.0).panned(0.5)
 	);
 
-	handle
-		.set_playback_rate(
-			2.0,
-			Tween {
-				duration: Duration::ZERO,
-				..Default::default()
-			},
-		)
-		.unwrap();
+	handle.set_playback_rate(
+		2.0,
+		Tween {
+			duration: Duration::ZERO,
+			..Default::default()
+		},
+	);
 	sound.on_start_processing();
 
 	assert_eq!(
@@ -936,7 +924,7 @@ fn seek_to() {
 		slice: None,
 	};
 	let (mut sound, mut handle) = data.split();
-	handle.seek_to(15.0).unwrap();
+	handle.seek_to(15.0);
 	sound.on_start_processing();
 	expect_frame_soon(Frame::from_mono(15.0).panned(0.5), &mut sound);
 }
@@ -951,7 +939,7 @@ fn seek_by() {
 		slice: None,
 	};
 	let (mut sound, mut handle) = data.split();
-	handle.seek_by(5.0).unwrap();
+	handle.seek_by(5.0);
 	sound.on_start_processing();
 	// we wouldn't actually expect the position to be 10.0 seconds right at
 	// this moment - the sound probably ran ahead a few samples to fill

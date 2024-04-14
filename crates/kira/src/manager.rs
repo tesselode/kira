@@ -13,10 +13,7 @@ mod settings;
 use ringbuf::HeapRb;
 pub use settings::*;
 
-use std::{
-	collections::HashSet,
-	sync::{atomic::Ordering, Arc},
-};
+use std::sync::{atomic::Ordering, Arc};
 
 use crate::{
 	clock::{Clock, ClockHandle, ClockId, ClockSpeed},
@@ -25,7 +22,7 @@ use crate::{
 	modulator::{ModulatorBuilder, ModulatorId},
 	sound::SoundData,
 	spatial::scene::{SpatialScene, SpatialSceneHandle, SpatialSceneId, SpatialSceneSettings},
-	track::{SubTrackId, Track, TrackBuilder, TrackHandle, TrackId},
+	track::{SubTrackId, TrackBuilder, TrackHandle, TrackId},
 	tween::{Tween, Value},
 };
 
@@ -197,17 +194,10 @@ impl<B: Backend> AudioManager<B> {
 				.try_reserve()
 				.map_err(|_| AddSubTrackError::SubTrackLimitReached)?,
 		);
-		let existing_routes = builder.routes.0.keys().copied().collect();
-		let mut sub_track = Track::new(builder);
-		sub_track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
-		let handle = TrackHandle {
-			id: TrackId::Sub(id),
-			shared: Some(sub_track.shared()),
-			command_producer: self.command_producer.clone(),
-			existing_routes,
-		};
+		let (mut track, handle) = builder.build(TrackId::Sub(id));
+		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
 		self.command_producer
-			.push(Command::Mixer(MixerCommand::AddSubTrack(id, sub_track)))?;
+			.push(Command::Mixer(MixerCommand::AddSubTrack(id, track)))?;
 		Ok(handle)
 	}
 
@@ -246,12 +236,7 @@ impl<B: Backend> AudioManager<B> {
 				.try_reserve()
 				.map_err(|_| AddClockError::ClockLimitReached)?,
 		);
-		let clock = Clock::new(speed.into());
-		let handle = ClockHandle {
-			id,
-			shared: clock.shared(),
-			command_producer: self.command_producer.clone(),
-		};
+		let (clock, handle) = Clock::new(speed.into(), id);
 		self.command_producer
 			.push(Command::Clock(ClockCommand::Add(id, clock)))?;
 		Ok(handle)
@@ -425,17 +410,12 @@ impl<B: Backend> AudioManager<B> {
 	use kira::tween::Tween;
 
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	manager.main_track().set_volume(0.5, Tween::default())?;
+	manager.main_track().set_volume(0.5, Tween::default());
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
-	pub fn main_track(&self) -> TrackHandle {
-		TrackHandle {
-			id: TrackId::Main,
-			shared: None,
-			command_producer: self.command_producer.clone(),
-			existing_routes: HashSet::new(),
-		}
+	pub fn main_track(&mut self) -> &mut TrackHandle {
+		&mut self.resource_controllers.main_track_handle
 	}
 
 	/// Returns the current playback state of the audio.

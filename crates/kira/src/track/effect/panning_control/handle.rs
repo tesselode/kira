@@ -1,26 +1,15 @@
-use ringbuf::HeapProducer;
+use crate::handle_param_setters;
 
-use crate::{
-	tween::{Tween, Value},
-	CommandError,
-};
-
-use super::Command;
+use super::CommandWriters;
 
 /// Controls a panning control effect.
 pub struct PanningControlHandle {
-	pub(super) command_producer: HeapProducer<Command>,
+	pub(super) command_writers: CommandWriters,
 }
 
 impl PanningControlHandle {
-	/// Sets the panning adjustment to apply to input audio.
-	pub fn set_panning(
-		&mut self,
-		panning: impl Into<Value<f64>>,
-		tween: Tween,
-	) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::SetPanning(panning.into(), tween))
-			.map_err(|_| CommandError::CommandQueueFull)
+	handle_param_setters! {
+		/// Sets the panning adjustment to apply to input audio.
+		panning: f64,
 	}
 }

@@ -108,7 +108,7 @@ let track = manager.add_sub_track({
 	filter = builder.add_effect(FilterBuilder::new().cutoff(1000.0));
 	builder
 })?;
-filter.set_cutoff(4000.0, Tween::default())?;
+filter.set_cutoff(4000.0, Tween::default());
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
@@ -270,9 +270,10 @@ use atomic_arena::Key;
 
 use crate::{
 	clock::clock_info::ClockInfoProvider,
+	command::{CommandReader, ValueChangeCommand},
 	dsp::Frame,
 	modulator::value_provider::ModulatorValueProvider,
-	tween::{Parameter, Tween, Value},
+	tween::Parameter,
 	Volume,
 };
 
@@ -326,22 +327,13 @@ impl TrackShared {
 pub(crate) struct Track {
 	shared: Arc<TrackShared>,
 	volume: Parameter<Volume>,
-	routes: Vec<(TrackId, Parameter<Volume>)>,
+	set_volume_command_reader: CommandReader<ValueChangeCommand<Volume>>,
+	routes: Vec<(TrackId, TrackRoute)>,
 	effects: Vec<Box<dyn Effect>>,
 	input: Frame,
 }
 
 impl Track {
-	pub fn new(builder: TrackBuilder) -> Self {
-		Self {
-			shared: Arc::new(TrackShared::new()),
-			volume: Parameter::new(builder.volume, Volume::Amplitude(1.0)),
-			routes: builder.routes.into_vec(),
-			effects: builder.effects,
-			input: Frame::ZERO,
-		}
-	}
-
 	pub fn init_effects(&mut self, sample_rate: u32) {
 		for effect in &mut self.effects {
 			effect.init(sample_rate);
@@ -358,25 +350,8 @@ impl Track {
 		self.shared.clone()
 	}
 
-	pub fn routes_mut(&mut self) -> &mut Vec<(TrackId, Parameter<Volume>)> {
+	pub fn routes_mut(&mut self) -> &mut Vec<(TrackId, TrackRoute)> {
 		&mut self.routes
-	}
-
-	pub fn set_volume(&mut self, volume: Value<Volume>, tween: Tween) {
-		self.volume.set(volume, tween);
-	}
-
-	pub fn set_route(&mut self, to: TrackId, volume: Value<Volume>, tween: Tween) {
-		// TODO: determine if we should store the track routes in some
-		// other data structure like an IndexMap so we don't have to do
-		// linear search
-		if let Some(route) =
-			self.routes
-				.iter_mut()
-				.find_map(|(id, route)| if *id == to { Some(route) } else { None })
-		{
-			route.set(volume, tween);
-		}
 	}
 
 	pub fn add_input(&mut self, input: Frame) {
@@ -384,6 +359,11 @@ impl Track {
 	}
 
 	pub fn on_start_processing(&mut self) {
+		self.volume
+			.read_command(&mut self.set_volume_command_reader);
+		for (_, route) in &mut self.routes {
+			route.read_commands();
+		}
 		for effect in &mut self.effects {
 			effect.on_start_processing();
 		}
@@ -398,12 +378,26 @@ impl Track {
 		self.volume
 			.update(dt, clock_info_provider, modulator_value_provider);
 		for (_, route) in &mut self.routes {
-			route.update(dt, clock_info_provider, modulator_value_provider);
+			route
+				.volume
+				.update(dt, clock_info_provider, modulator_value_provider);
 		}
 		let mut output = std::mem::replace(&mut self.input, Frame::ZERO);
 		for effect in &mut self.effects {
 			output = effect.process(output, dt, clock_info_provider, modulator_value_provider);
 		}
 		output * self.volume.value().as_amplitude() as f32
+	}
+}
+
+pub(crate) struct TrackRoute {
+	pub(crate) volume: Parameter<Volume>,
+	pub(crate) set_volume_command_reader: CommandReader<ValueChangeCommand<Volume>>,
+}
+
+impl TrackRoute {
+	pub fn read_commands(&mut self) {
+		self.volume
+			.read_command(&mut self.set_volume_command_reader);
 	}
 }

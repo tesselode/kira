@@ -6,22 +6,17 @@ mod handle;
 pub use builder::*;
 pub use handle::*;
 
-use ringbuf::HeapConsumer;
-
 use crate::{
 	clock::clock_info::ClockInfoProvider,
+	command::ValueChangeCommand,
+	command_writers_and_readers,
 	dsp::{interpolate_frame, Frame},
 	modulator::value_provider::ModulatorValueProvider,
+	read_commands_into_parameters,
 	track::Effect,
-	tween::{Parameter, Tween, Value},
+	tween::Parameter,
 	Volume,
 };
-
-enum Command {
-	SetDelayTime(Value<f64>, Tween),
-	SetFeedback(Value<Volume>, Tween),
-	SetMix(Value<f64>, Tween),
-}
 
 #[derive(Debug, Clone)]
 enum DelayState {
@@ -36,7 +31,7 @@ enum DelayState {
 }
 
 struct Delay {
-	command_consumer: HeapConsumer<Command>,
+	command_readers: CommandReaders,
 	delay_time: Parameter,
 	feedback: Parameter<Volume>,
 	mix: Parameter,
@@ -46,9 +41,9 @@ struct Delay {
 
 impl Delay {
 	/// Creates a new delay effect.
-	fn new(builder: DelayBuilder, command_consumer: HeapConsumer<Command>) -> Self {
+	fn new(builder: DelayBuilder, command_readers: CommandReaders) -> Self {
 		Self {
-			command_consumer,
+			command_readers,
 			delay_time: Parameter::new(builder.delay_time, 0.5),
 			feedback: Parameter::new(builder.feedback, Volume::Amplitude(0.5)),
 			mix: Parameter::new(builder.mix, 0.5),
@@ -94,13 +89,7 @@ impl Effect for Delay {
 	}
 
 	fn on_start_processing(&mut self) {
-		while let Some(command) = self.command_consumer.pop() {
-			match command {
-				Command::SetDelayTime(delay_time, tween) => self.delay_time.set(delay_time, tween),
-				Command::SetFeedback(feedback, tween) => self.feedback.set(feedback, tween),
-				Command::SetMix(mix, tween) => self.mix.set(mix, tween),
-			}
-		}
+		read_commands_into_parameters!(self, delay_time, feedback, mix);
 		for effect in &mut self.feedback_effects {
 			effect.on_start_processing();
 		}
@@ -164,4 +153,10 @@ impl Effect for Delay {
 			panic!("The delay should be initialized by the first process call")
 		}
 	}
+}
+
+command_writers_and_readers! {
+	set_delay_time: ValueChangeCommand<f64>,
+	set_feedback: ValueChangeCommand<Volume>,
+	set_mix: ValueChangeCommand<f64>,
 }

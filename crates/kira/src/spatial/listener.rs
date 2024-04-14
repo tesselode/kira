@@ -19,10 +19,13 @@ use glam::{Quat, Vec3};
 
 use crate::{
 	clock::clock_info::ClockInfoProvider,
+	command::ValueChangeCommand,
+	command_writers_and_readers,
 	dsp::Frame,
 	modulator::value_provider::ModulatorValueProvider,
+	read_commands_into_parameters,
 	track::TrackId,
-	tween::{Parameter, Tween, Tweenable, Value},
+	tween::{Parameter, Tweenable, Value},
 	Volume,
 };
 
@@ -33,6 +36,7 @@ const EAR_ANGLE_FROM_HEAD: f32 = FRAC_PI_8;
 const MIN_EAR_AMPLITUDE: f32 = 0.5;
 
 pub(crate) struct Listener {
+	command_readers: CommandReaders,
 	shared: Arc<ListenerShared>,
 	position: Parameter<Vec3>,
 	orientation: Parameter<Quat>,
@@ -41,11 +45,13 @@ pub(crate) struct Listener {
 
 impl Listener {
 	pub fn new(
+		command_readers: CommandReaders,
 		position: Value<Vec3>,
 		orientation: Value<Quat>,
 		settings: ListenerSettings,
 	) -> Self {
 		Self {
+			command_readers,
 			shared: Arc::new(ListenerShared::new()),
 			position: Parameter::new(position, Vec3::ZERO),
 			orientation: Parameter::new(orientation, Quat::IDENTITY),
@@ -61,12 +67,8 @@ impl Listener {
 		self.track
 	}
 
-	pub fn set_position(&mut self, position: Value<Vec3>, tween: Tween) {
-		self.position.set(position, tween);
-	}
-
-	pub fn set_orientation(&mut self, orientation: Value<Quat>, tween: Tween) {
-		self.orientation.set(orientation, tween);
+	pub fn on_start_processing(&mut self) {
+		read_commands_into_parameters!(self, position, orientation);
 	}
 
 	pub fn process(
@@ -172,4 +174,9 @@ impl ListenerShared {
 	pub fn mark_for_removal(&self) {
 		self.removed.store(true, Ordering::SeqCst);
 	}
+}
+
+command_writers_and_readers! {
+	set_position: ValueChangeCommand<Vec3>,
+	set_orientation: ValueChangeCommand<Quat>,
 }

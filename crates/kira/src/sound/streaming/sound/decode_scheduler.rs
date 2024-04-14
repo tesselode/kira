@@ -6,7 +6,7 @@ use std::{
 use crate::{
 	dsp::Frame,
 	sound::{
-		streaming::{decoder::Decoder, DecodeSchedulerCommand, StreamingSoundSettings},
+		streaming::{decoder::Decoder, DecodeSchedulerCommandReaders, StreamingSoundSettings},
 		transport::Transport,
 		PlaybackState,
 	},
@@ -32,19 +32,19 @@ pub(crate) struct DecodeScheduler<Error: Send + 'static> {
 	transport: Transport,
 	decoder_current_frame_index: usize,
 	decoded_chunk: Option<DecodedChunk>,
-	command_consumer: HeapConsumer<DecodeSchedulerCommand>,
+	command_readers: DecodeSchedulerCommandReaders,
 	frame_producer: HeapProducer<TimestampedFrame>,
 	error_producer: HeapProducer<Error>,
 	shared: Arc<Shared>,
 }
 
 impl<Error: Send + 'static> DecodeScheduler<Error> {
-	pub fn new(
+	pub(crate) fn new(
 		mut decoder: Box<dyn Decoder<Error = Error>>,
 		slice: Option<(usize, usize)>,
 		settings: StreamingSoundSettings,
 		shared: Arc<Shared>,
-		command_consumer: HeapConsumer<DecodeSchedulerCommand>,
+		command_readers: DecodeSchedulerCommandReaders,
 		error_producer: HeapProducer<Error>,
 	) -> Result<(Self, HeapConsumer<TimestampedFrame>), Error> {
 		let (mut frame_producer, frame_consumer) = HeapRb::new(BUFFER_SIZE).split();
@@ -78,7 +78,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 			),
 			decoder_current_frame_index,
 			decoded_chunk: None,
-			command_consumer,
+			command_readers,
 			frame_producer,
 			error_producer,
 			shared,
@@ -114,15 +114,16 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		if self.frame_producer.is_full() {
 			return Ok(NextStep::Wait);
 		}
-		// check for seek commands
-		while let Some(command) = self.command_consumer.pop() {
-			match command {
-				DecodeSchedulerCommand::SetLoopRegion(loop_region) => self
-					.transport
-					.set_loop_region(loop_region, self.sample_rate, self.num_frames),
-				DecodeSchedulerCommand::SeekBy(amount) => self.seek_by(amount)?,
-				DecodeSchedulerCommand::SeekTo(position) => self.seek_to(position)?,
-			}
+		// check for commands
+		if let Some(loop_region) = self.command_readers.set_loop_region.read() {
+			self.transport
+				.set_loop_region(loop_region, self.sample_rate, self.num_frames);
+		}
+		if let Some(amount) = self.command_readers.seek_by.read() {
+			self.seek_by(amount)?;
+		}
+		if let Some(position) = self.command_readers.seek_to.read() {
+			self.seek_to(position)?;
 		}
 		let frame = self.frame_at_index(self.transport.position)?;
 		self.frame_producer

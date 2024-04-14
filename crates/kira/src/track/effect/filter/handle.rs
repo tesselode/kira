@@ -1,58 +1,29 @@
-use ringbuf::HeapProducer;
+use crate::handle_param_setters;
 
-use crate::{
-	tween::{Tween, Value},
-	CommandError,
-};
-
-use super::{Command, FilterMode};
+use super::{CommandWriters, FilterMode};
 
 /// Controls a filter effect.
 pub struct FilterHandle {
-	pub(super) command_producer: HeapProducer<Command>,
+	pub(super) command_writers: CommandWriters,
 }
 
 impl FilterHandle {
 	/// Sets the frequencies that the filter will remove.
-	pub fn set_mode(&mut self, mode: FilterMode) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::SetMode(mode))
-			.map_err(|_| CommandError::CommandQueueFull)
+	pub fn set_mode(&mut self, mode: FilterMode) {
+		self.command_writers.set_mode.write(mode)
 	}
 
-	/// Sets the cutoff frequency of the filter (in hertz).
-	pub fn set_cutoff(
-		&mut self,
-		cutoff: impl Into<Value<f64>>,
-		tween: Tween,
-	) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::SetCutoff(cutoff.into(), tween))
-			.map_err(|_| CommandError::CommandQueueFull)
-	}
+	handle_param_setters! {
+		/// Sets the cutoff frequency of the filter (in hertz).
+		cutoff: f64,
 
-	/// Sets the resonance of the filter.
-	pub fn set_resonance(
-		&mut self,
-		resonance: impl Into<Value<f64>>,
-		tween: Tween,
-	) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::SetResonance(resonance.into(), tween))
-			.map_err(|_| CommandError::CommandQueueFull)
-	}
+		/// Sets the resonance of the filter.
+		resonance: f64,
 
-	/// Sets how much dry (unprocessed) signal should be blended
-	/// with the wet (processed) signal. `0.0` means only the dry
-	/// signal will be heard. `1.0` means only the wet signal will
-	/// be heard.
-	pub fn set_mix(
-		&mut self,
-		mix: impl Into<Value<f64>>,
-		tween: Tween,
-	) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::SetMix(mix.into(), tween))
-			.map_err(|_| CommandError::CommandQueueFull)
+		/// Sets how much dry (unprocessed) signal should be blended
+		/// with the wet (processed) signal. `0.0` means only the dry
+		/// signal will be heard. `1.0` means only the wet signal will
+		/// be heard.
+		mix: f64,
 	}
 }

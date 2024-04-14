@@ -1,6 +1,16 @@
-use crate::{tween::Value, Volume};
+use std::{collections::HashMap, sync::Arc};
 
-use super::{Effect, effect::EffectBuilder, routes::TrackRoutes};
+use crate::{
+	command::command_writer_and_reader,
+	dsp::Frame,
+	tween::{Parameter, Value},
+	Volume,
+};
+
+use super::{
+	effect::EffectBuilder, routes::TrackRoutes, Effect, Track, TrackHandle, TrackId, TrackRoute,
+	TrackShared,
+};
 
 /// Configures a mixer track.
 #[non_exhaustive]
@@ -117,34 +127,34 @@ impl TrackBuilder {
 	}
 
 	/** Adds an already built effect into this track.
-	 
-	 `Box<dyn Effect>` values are created when calling `build` on an effect builder, which gives you
-	 an effect handle, as well as this boxed effect, which is the actual audio effect.
-	 
-	 This is a lower-level method than [`Self::add_effect`], and you should probably use it rather
-	 than this method, unless you have a reason to.
-	 
-	 # Examples 
-	 
-	 ```
-	 use kira::track::{TrackBuilder, effect::delay::DelayBuilder};
-	 use kira::track::effect::EffectBuilder;
 
-	 let mut builder = TrackBuilder::new();
-	 let delay_builder = DelayBuilder::new();
-	 let (effect, delay_handle) = delay_builder.build();
-	 let delay_handle = builder.add_built_effect(effect);
-	 ```
-	 */
+	`Box<dyn Effect>` values are created when calling `build` on an effect builder, which gives you
+	an effect handle, as well as this boxed effect, which is the actual audio effect.
+
+	This is a lower-level method than [`Self::add_effect`], and you should probably use it rather
+	than this method, unless you have a reason to.
+
+	# Examples
+
+	```
+	use kira::track::{TrackBuilder, effect::delay::DelayBuilder};
+	use kira::track::effect::EffectBuilder;
+
+	let mut builder = TrackBuilder::new();
+	let delay_builder = DelayBuilder::new();
+	let (effect, delay_handle) = delay_builder.build();
+	let delay_handle = builder.add_built_effect(effect);
+	```
+	*/
 	pub fn add_built_effect(&mut self, effect: Box<dyn Effect>) {
 		self.effects.push(effect);
 	}
-	
+
 	/** Add an already-built effect and return the [`TrackBuilder`].
 
 	 `Box<dyn Effect>` values are created when calling `build` on an effect builder, which gives you
 	 an effect handle, as well as this boxed effect, which is the actual audio effect.
-	 
+
 	 This is a lower-level method than [`Self::with_effect`], and you should probably use it rather
 	 than this method, unless you have a reason to.
 
@@ -166,6 +176,40 @@ impl TrackBuilder {
 	pub fn with_built_effect(mut self, effect: Box<dyn Effect>) -> Self {
 		self.add_built_effect(effect);
 		self
+	}
+
+	pub(crate) fn build(self, id: TrackId) -> (Track, TrackHandle) {
+		let (set_volume_command_writer, set_volume_command_reader) = command_writer_and_reader();
+		let shared = Arc::new(TrackShared::new());
+		let mut routes = vec![];
+		let mut route_set_volume_command_writers = HashMap::new();
+		for (track_id, volume) in self.routes.0 {
+			let (set_volume_command_writer, set_volume_command_reader) =
+				command_writer_and_reader();
+			routes.push((
+				track_id,
+				TrackRoute {
+					volume: Parameter::new(volume, Volume::Amplitude(1.0)),
+					set_volume_command_reader,
+				},
+			));
+			route_set_volume_command_writers.insert(track_id, set_volume_command_writer);
+		}
+		let track = Track {
+			shared: shared.clone(),
+			volume: Parameter::new(self.volume, Volume::Amplitude(1.0)),
+			set_volume_command_reader,
+			routes,
+			effects: self.effects,
+			input: Frame::ZERO,
+		};
+		let handle = TrackHandle {
+			id,
+			shared: Some(shared),
+			set_volume_command_writer,
+			route_set_volume_command_writers,
+		};
+		(track, handle)
 	}
 }
 
