@@ -236,12 +236,7 @@ impl<B: Backend> AudioManager<B> {
 				.try_reserve()
 				.map_err(|_| AddClockError::ClockLimitReached)?,
 		);
-		let clock = Clock::new(speed.into());
-		let handle = ClockHandle {
-			id,
-			shared: clock.shared(),
-			command_producer: self.command_producer.clone(),
-		};
+		let (clock, handle) = Clock::new(speed.into(), id);
 		self.command_producer
 			.push(Command::Clock(ClockCommand::Add(id, clock)))?;
 		Ok(handle)

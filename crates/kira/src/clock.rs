@@ -15,7 +15,7 @@ use kira::{
 
 let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
-clock.start()?;
+clock.start();
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
@@ -52,7 +52,7 @@ manager.play(StaticSoundData::from_file(
 		ticks: 4,
 	})),
 )?)?;
-clock.start()?;
+clock.start();
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
@@ -81,7 +81,7 @@ manager.play(StaticSoundData::from_file(
 		ticks: 4,
 	}),
 )?)?;
-# clock.start()?;
+# clock.start();
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
@@ -106,7 +106,7 @@ manager.play(StaticSoundData::from_file(
 	"sound.ogg",
 	StaticSoundSettings::new().start_time(clock.time() + 4),
 )?)?;
-# clock.start()?;
+# clock.start();
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
@@ -144,7 +144,7 @@ sound.set_playback_rate(
 		..Default::default()
 	},
 );
-clock.start()?;
+clock.start();
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 */
@@ -169,8 +169,11 @@ use std::sync::{
 use atomic_arena::Key;
 
 use crate::{
+	command::ValueChangeCommand,
+	command_writers_and_readers,
 	modulator::value_provider::ModulatorValueProvider,
-	tween::{Parameter, Tween, Value},
+	read_commands_into_parameters,
+	tween::{Parameter, Value},
 };
 
 use self::clock_info::ClockInfoProvider;
@@ -226,8 +229,8 @@ pub(crate) enum State {
 	},
 }
 
-#[derive(Clone)]
 pub(crate) struct Clock {
+	command_readers: CommandReaders,
 	shared: Arc<ClockShared>,
 	ticking: bool,
 	speed: Parameter<ClockSpeed>,
@@ -235,8 +238,29 @@ pub(crate) struct Clock {
 }
 
 impl Clock {
-	pub(crate) fn new(speed: Value<ClockSpeed>) -> Self {
+	pub(crate) fn new(speed: Value<ClockSpeed>, id: ClockId) -> (Self, ClockHandle) {
+		let (command_writers, command_readers) = command_writers_and_readers();
+		let shared = Arc::new(ClockShared::new());
+		(
+			Self {
+				command_readers,
+				shared: shared.clone(),
+				ticking: false,
+				speed: Parameter::new(speed, ClockSpeed::TicksPerMinute(120.0)),
+				state: State::NotStarted,
+			},
+			ClockHandle {
+				id,
+				shared,
+				command_writers,
+			},
+		)
+	}
+
+	pub(crate) fn without_handle(speed: Value<ClockSpeed>) -> Self {
+		let (_, command_readers) = command_writers_and_readers();
 		Self {
+			command_readers,
 			shared: Arc::new(ClockShared::new()),
 			ticking: false,
 			speed: Parameter::new(speed, ClockSpeed::TicksPerMinute(120.0)),
@@ -256,27 +280,28 @@ impl Clock {
 		self.ticking
 	}
 
-	pub(crate) fn set_speed(&mut self, speed: Value<ClockSpeed>, tween: Tween) {
-		self.speed.set(speed, tween);
+	pub(crate) fn on_start_processing(&mut self) {
+		read_commands_into_parameters!(self, speed);
+		if let Some(ticking) = self.command_readers.set_ticking.read() {
+			self.set_ticking(ticking);
+		}
+		if self.command_readers.reset.read().is_some() {
+			self.reset();
+		}
+		self.update_shared();
 	}
 
-	pub(crate) fn start(&mut self) {
-		self.ticking = true;
-		self.shared.ticking.store(true, Ordering::SeqCst);
+	fn set_ticking(&mut self, ticking: bool) {
+		self.ticking = ticking;
+		self.shared.ticking.store(ticking, Ordering::SeqCst);
 	}
 
-	pub(crate) fn pause(&mut self) {
-		self.ticking = false;
-		self.shared.ticking.store(false, Ordering::SeqCst);
-	}
-
-	pub(crate) fn stop(&mut self) {
-		self.pause();
+	fn reset(&mut self) {
 		self.state = State::NotStarted;
 		self.shared.ticks.store(0, Ordering::SeqCst);
 	}
 
-	pub(crate) fn on_start_processing(&mut self) {
+	fn update_shared(&mut self) {
 		let (ticks, fractional_position) = match &self.state {
 			State::NotStarted => (0, 0.0),
 			State::Started {
@@ -329,4 +354,10 @@ impl Clock {
 		}
 		new_tick_count
 	}
+}
+
+command_writers_and_readers! {
+	set_speed: ValueChangeCommand<ClockSpeed>,
+	set_ticking: bool,
+	reset: (),
 }

@@ -1,12 +1,8 @@
 use std::sync::Arc;
 
-use crate::{
-	error::CommandError,
-	manager::command::{producer::CommandProducer, ClockCommand, Command},
-	tween::{Tween, Value},
-};
+use crate::handle_param_setters;
 
-use super::{ClockId, ClockShared, ClockSpeed, ClockTime};
+use super::{ClockId, ClockShared, ClockSpeed, ClockTime, CommandWriters};
 
 /// Controls a clock.
 ///
@@ -15,7 +11,7 @@ use super::{ClockId, ClockShared, ClockSpeed, ClockTime};
 pub struct ClockHandle {
 	pub(crate) id: ClockId,
 	pub(crate) shared: Arc<ClockShared>,
-	pub(crate) command_producer: CommandProducer,
+	pub(crate) command_writers: CommandWriters,
 }
 
 impl ClockHandle {
@@ -45,36 +41,25 @@ impl ClockHandle {
 		self.shared.fractional_position()
 	}
 
-	/// Sets the speed of the clock.
-	pub fn set_speed(
-		&self,
-		speed: impl Into<Value<ClockSpeed>>,
-		tween: Tween,
-	) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::Clock(ClockCommand::SetSpeed(
-				self.id,
-				speed.into(),
-				tween,
-			)))
+	handle_param_setters! {
+		/// Sets the speed of the clock.
+		speed: ClockSpeed,
 	}
 
 	/// Starts or resumes the clock.
-	pub fn start(&self) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::Clock(ClockCommand::Start(self.id)))
+	pub fn start(&mut self) {
+		self.command_writers.set_ticking.write(true)
 	}
 
 	/// Pauses the clock.
-	pub fn pause(&self) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::Clock(ClockCommand::Pause(self.id)))
+	pub fn pause(&mut self) {
+		self.command_writers.set_ticking.write(false)
 	}
 
 	/// Stops and resets the clock.
-	pub fn stop(&self) -> Result<(), CommandError> {
-		self.command_producer
-			.push(Command::Clock(ClockCommand::Stop(self.id)))
+	pub fn stop(&mut self) {
+		self.command_writers.set_ticking.write(false);
+		self.command_writers.reset.write(());
 	}
 }
 

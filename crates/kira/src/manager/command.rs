@@ -3,7 +3,7 @@ pub mod producer;
 use atomic_arena::Key;
 
 use crate::{
-	clock::{Clock, ClockId, ClockSpeed},
+	clock::{Clock, ClockId},
 	modulator::{Modulator, ModulatorId},
 	sound::Sound,
 	spatial::{
@@ -12,7 +12,7 @@ use crate::{
 		scene::{SpatialScene, SpatialSceneId},
 	},
 	track::{SubTrackId, Track},
-	tween::{Tween, Value},
+	tween::Tween,
 };
 
 pub(crate) enum SoundCommand {
@@ -25,10 +25,6 @@ pub(crate) enum MixerCommand {
 
 pub(crate) enum ClockCommand {
 	Add(ClockId, Clock),
-	SetSpeed(ClockId, Value<ClockSpeed>, Tween),
-	Start(ClockId),
-	Pause(ClockId),
-	Stop(ClockId),
 }
 
 pub(crate) enum SpatialSceneCommand {

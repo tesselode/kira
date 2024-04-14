@@ -9,9 +9,7 @@
 
 use atomic_arena::{error::ArenaFull, Arena};
 
-use crate::manager::backend::resources::clocks::Clocks;
-
-use super::{ClockId, ClockTime, State};
+use super::{Clock, ClockId, ClockTime, State};
 
 /// Information about the current state of a [clock](super).
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -30,7 +28,7 @@ pub struct ClockInfoProvider<'a> {
 }
 
 impl<'a> ClockInfoProvider<'a> {
-	pub(crate) fn new(clocks: &'a Clocks) -> Self {
+	pub(crate) fn new(clocks: &'a Arena<Clock>) -> Self {
 		Self {
 			kind: ClockInfoProviderKind::Normal { clocks },
 		}
@@ -40,7 +38,7 @@ impl<'a> ClockInfoProvider<'a> {
 	/// exists, returns `None` otherwise.
 	pub fn get(&self, id: ClockId) -> Option<ClockInfo> {
 		match &self.kind {
-			ClockInfoProviderKind::Normal { clocks } => clocks.get(id).map(|clock| ClockInfo {
+			ClockInfoProviderKind::Normal { clocks } => clocks.get(id.0).map(|clock| ClockInfo {
 				ticking: clock.ticking(),
 				ticks: match clock.state() {
 					State::NotStarted => 0,
@@ -74,7 +72,7 @@ impl<'a> ClockInfoProvider<'a> {
 }
 
 enum ClockInfoProviderKind<'a> {
-	Normal { clocks: &'a Clocks },
+	Normal { clocks: &'a Arena<Clock> },
 	Mock { clock_info: Arena<ClockInfo> },
 }
 
