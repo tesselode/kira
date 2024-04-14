@@ -1,6 +1,6 @@
 use crate::{tween::Value, Volume};
 
-use super::{effect::EffectBuilder, routes::TrackRoutes, Effect};
+use super::{Effect, effect::EffectBuilder, routes::TrackRoutes};
 
 /// Configures a mixer track.
 #[non_exhaustive]
@@ -113,6 +113,58 @@ impl TrackBuilder {
 	*/
 	pub fn with_effect<B: EffectBuilder>(mut self, builder: B) -> Self {
 		self.add_effect(builder);
+		self
+	}
+
+	/** Adds an already built effect into this track.
+	 
+	 `Box<dyn Effect>` values are created when calling `build` on an effect builder, which gives you
+	 an effect handle, as well as this boxed effect, which is the actual audio effect.
+	 
+	 This is a lower-level method than [`Self::add_effect`], and you should probably use it rather
+	 than this method, unless you have a reason to.
+	 
+	 # Examples 
+	 
+	 ```
+	 use kira::track::{TrackBuilder, effect::delay::DelayBuilder};
+	 use kira::track::effect::EffectBuilder;
+
+	 let mut builder = TrackBuilder::new();
+	 let delay_builder = DelayBuilder::new();
+	 let (effect, delay_handle) = delay_builder.build();
+	 let delay_handle = builder.add_built_effect(effect);
+	 ```
+	 */
+	pub fn add_built_effect(&mut self, effect: Box<dyn Effect>) {
+		self.effects.push(effect);
+	}
+	
+	/** Add an already-built effect and return the [`TrackBuilder`].
+
+	 `Box<dyn Effect>` values are created when calling `build` on an effect builder, which gives you
+	 an effect handle, as well as this boxed effect, which is the actual audio effect.
+	 
+	 This is a lower-level method than [`Self::with_effect`], and you should probably use it rather
+	 than this method, unless you have a reason to.
+
+	# Examples
+
+	```
+	use kira::track::{
+		TrackBuilder,
+		effect::{filter::FilterBuilder, reverb::ReverbBuilder, EffectBuilder},
+	};
+
+	let (filter_effect, filter_handle) = FilterBuilder::new().build();
+	let (reverb_effect, reverb_handle) = ReverbBuilder::new().build();
+	let mut builder = TrackBuilder::new()
+		.with_built_effect(filter_effect)
+		.with_built_effect(reverb_effect);
+	```
+	 */
+	pub fn with_built_effect(mut self, effect: Box<dyn Effect>) -> Self {
+		self.add_built_effect(effect);
 		self
 	}
 }
