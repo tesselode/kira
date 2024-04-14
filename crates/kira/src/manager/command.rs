@@ -11,9 +11,8 @@ use crate::{
 		listener::{Listener, ListenerId},
 		scene::{SpatialScene, SpatialSceneId},
 	},
-	track::{SubTrackId, Track, TrackId},
+	track::{SubTrackId, Track},
 	tween::{Tween, Value},
-	Volume,
 };
 
 pub(crate) enum SoundCommand {
@@ -22,13 +21,6 @@ pub(crate) enum SoundCommand {
 
 pub(crate) enum MixerCommand {
 	AddSubTrack(SubTrackId, Track),
-	SetTrackVolume(TrackId, Value<Volume>, Tween),
-	SetTrackRoutes {
-		from: TrackId,
-		to: TrackId,
-		volume: Value<Volume>,
-		tween: Tween,
-	},
 }
 
 pub(crate) enum ClockCommand {
