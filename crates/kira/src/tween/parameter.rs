@@ -83,22 +83,22 @@ impl<T: Tweenable> Parameter<T> {
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
-	) -> JustFinishedTween {
+	) -> ParameterUpdateInfo {
 		if self.stagnant {
-			return false;
+			return ParameterUpdateInfo::default();
 		}
-		let just_finished_tween = self.update_tween(dt, clock_info_provider);
+		let info = self.update_tween(dt, clock_info_provider);
 		if let Some(raw_value) = self.calculate_new_raw_value(modulator_value_provider) {
 			self.raw_value = raw_value;
 		}
-		just_finished_tween
+		info
 	}
 
 	fn update_tween(
 		&mut self,
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
-	) -> JustFinishedTween {
+	) -> ParameterUpdateInfo {
 		if let State::Tweening {
 			target,
 			time,
@@ -122,18 +122,24 @@ impl<T: Tweenable> Parameter<T> {
 				}
 			};
 			if !started {
-				return false;
+				return ParameterUpdateInfo::default();
 			}
 			*time += dt;
-			if *time >= tween.duration.as_secs_f64() {
+			let just_finished = if *time >= tween.duration.as_secs_f64() {
 				if matches!(target, Value::Fixed(_)) {
 					self.stagnant = true;
 				}
 				self.state = State::Idle { value: *target };
-				return true;
-			}
+				true
+			} else {
+				false
+			};
+			return ParameterUpdateInfo {
+				started,
+				just_finished,
+			};
 		}
-		false
+		ParameterUpdateInfo::default()
 	}
 
 	fn calculate_new_raw_value(
@@ -172,4 +178,11 @@ enum State<T: Tweenable> {
 	},
 }
 
-type JustFinishedTween = bool;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub struct ParameterUpdateInfo {
+	/// Whether the current tween (if any) has started yet. This will be `false`
+	/// if the tween is waiting for a delay or clock time.
+	pub started: bool,
+	/// Whether the current tween just finished this update.
+	pub just_finished: bool,
+}

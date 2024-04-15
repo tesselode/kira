@@ -284,6 +284,55 @@ fn pauses_and_resumes_with_fades() {
 	}
 }
 
+/// Tests that when a `StaticSound` resumes with a fade-in tween with a
+/// non-immediate start time, playback doesn't resume until the fade in starts.
+#[test]
+fn resumes_at_fade_in_start_time() {
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(
+			std::iter::repeat(Frame::from_mono(-1.0))
+				.take(10)
+				.chain(std::iter::repeat(Frame::from_mono(1.0)).take(10))
+				.collect(),
+		)),
+		settings: StreamingSoundSettings::new(),
+		slice: None,
+	};
+	let (mut sound, mut handle, mut scheduler) = data.split().unwrap();
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
+
+	handle.pause(Tween {
+		duration: Duration::ZERO,
+		..Default::default()
+	});
+	sound.on_start_processing();
+
+	for _ in 0..15 {
+		sound.process(
+			1.0,
+			&MockClockInfoProviderBuilder::new(0).build(),
+			&MockModulatorValueProviderBuilder::new(0).build(),
+		);
+	}
+
+	handle.resume(Tween {
+		duration: Duration::ZERO,
+		start_time: StartTime::Delayed(Duration::from_secs(15)),
+		..Default::default()
+	});
+	sound.on_start_processing();
+
+	for _ in 0..15 {
+		sound.process(
+			1.0,
+			&MockClockInfoProviderBuilder::new(0).build(),
+			&MockModulatorValueProviderBuilder::new(0).build(),
+		);
+	}
+
+	expect_frame_soon(Frame::from_mono(-1.0), &mut sound);
+}
+
 /// Tests that a `StreamingSound` stops and finishes after a fade-out.
 #[test]
 #[allow(clippy::float_cmp)]

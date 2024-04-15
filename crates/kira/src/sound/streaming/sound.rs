@@ -17,7 +17,7 @@ use crate::{
 	modulator::value_provider::ModulatorValueProvider,
 	read_commands_into_parameters,
 	sound::{util::create_volume_fade_parameter, PlaybackRate, PlaybackState, Sound},
-	tween::{Parameter, Tween, Value},
+	tween::{Parameter, ParameterUpdateInfo, Tween, Value},
 	OutputDestination, StartTime, Volume,
 };
 use ringbuf::HeapConsumer;
@@ -153,7 +153,6 @@ impl StreamingSound {
 	}
 
 	fn resume(&mut self, tween: Tween) {
-		self.set_state(PlaybackState::Playing);
 		self.volume_fade
 			.set(Value::Fixed(Volume::Decibels(0.0)), tween);
 	}
@@ -209,10 +208,18 @@ impl Sound for StreamingSound {
 			.update(dt, clock_info_provider, modulator_value_provider);
 		self.panning
 			.update(dt, clock_info_provider, modulator_value_provider);
-		if self
+		let ParameterUpdateInfo {
+			started,
+			just_finished,
+		} = self
 			.volume_fade
-			.update(dt, clock_info_provider, modulator_value_provider)
-		{
+			.update(dt, clock_info_provider, modulator_value_provider);
+		if started {
+			if let PlaybackState::Paused = self.state {
+				self.set_state(PlaybackState::Playing);
+			}
+		}
+		if just_finished {
 			match self.state {
 				PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
 				PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),

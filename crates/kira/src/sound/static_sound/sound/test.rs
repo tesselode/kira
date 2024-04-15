@@ -224,6 +224,53 @@ fn pauses_and_resumes_with_fades() {
 	}
 }
 
+/// Tests that when a `StaticSound` resumes with a fade-in tween with a
+/// non-immediate start time, playback doesn't resume until the fade in starts.
+#[test]
+fn resumes_at_fade_in_start_time() {
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: std::iter::repeat(Frame::from_mono(-1.0))
+			.take(10)
+			.chain(std::iter::repeat(Frame::from_mono(1.0)).take(10))
+			.collect(),
+		settings: StaticSoundSettings::new(),
+		slice: None,
+	};
+	let (mut sound, mut handle) = data.split();
+
+	handle.pause(Tween {
+		duration: Duration::ZERO,
+		..Default::default()
+	});
+	sound.on_start_processing();
+
+	for _ in 0..15 {
+		sound.process(
+			1.0,
+			&MockClockInfoProviderBuilder::new(0).build(),
+			&MockModulatorValueProviderBuilder::new(0).build(),
+		);
+	}
+
+	handle.resume(Tween {
+		duration: Duration::ZERO,
+		start_time: StartTime::Delayed(Duration::from_secs(15)),
+		..Default::default()
+	});
+	sound.on_start_processing();
+
+	for _ in 0..15 {
+		sound.process(
+			1.0,
+			&MockClockInfoProviderBuilder::new(0).build(),
+			&MockModulatorValueProviderBuilder::new(0).build(),
+		);
+	}
+
+	expect_frame_soon(Frame::from_mono(-1.0), &mut sound);
+}
+
 /// Tests that a `StaticSound` stops and finishes after a fade-out.
 #[test]
 #[allow(clippy::float_cmp)]
@@ -522,7 +569,7 @@ fn immediate_pause_resume_and_stop_with_clock_start_time() {
 		&clock_info_provider,
 		&MockModulatorValueProviderBuilder::new(0).build(),
 	);
-	assert!(sound.state == PlaybackState::Paused);
+	assert_eq!(sound.state, PlaybackState::Paused);
 
 	sound.resume(Tween {
 		duration: Duration::from_secs(0),
@@ -533,7 +580,7 @@ fn immediate_pause_resume_and_stop_with_clock_start_time() {
 		&clock_info_provider,
 		&MockModulatorValueProviderBuilder::new(0).build(),
 	);
-	assert!(sound.state == PlaybackState::Playing);
+	assert_eq!(sound.state, PlaybackState::Playing);
 
 	sound.stop(Tween {
 		duration: Duration::from_secs(0),
@@ -544,7 +591,7 @@ fn immediate_pause_resume_and_stop_with_clock_start_time() {
 		&clock_info_provider,
 		&MockModulatorValueProviderBuilder::new(0).build(),
 	);
-	assert!(sound.state == PlaybackState::Stopped);
+	assert_eq!(sound.state, PlaybackState::Stopped);
 }
 
 /// Tests that a `StaticSound` can be played partially.

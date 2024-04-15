@@ -17,13 +17,12 @@ use std::sync::{atomic::Ordering, Arc};
 
 use crate::{
 	clock::{Clock, ClockHandle, ClockId, ClockSpeed},
-	error::CommandError,
 	manager::command::ModulatorCommand,
 	modulator::{ModulatorBuilder, ModulatorId},
 	sound::SoundData,
 	spatial::scene::{SpatialScene, SpatialSceneHandle, SpatialSceneId, SpatialSceneSettings},
 	track::{SubTrackId, TrackBuilder, TrackHandle, TrackId},
-	tween::{Tween, Value},
+	tween::Value,
 };
 
 use self::{
@@ -317,80 +316,6 @@ impl<B: Backend> AudioManager<B> {
 		self.command_producer
 			.push(Command::Modulator(ModulatorCommand::Add(id, modulator)))?;
 		Ok(handle)
-	}
-
-	/**
-	Fades out and pauses all audio.
-
-	# Examples
-
-	Pause audio immediately:
-
-	```no_run
-	# use kira::{
-	# 	manager::{
-	# 		AudioManager, AudioManagerSettings,
-	# 		backend::DefaultBackend,
-	# 	},
-	# };
-	use kira::tween::Tween;
-
-	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	manager.pause(Tween::default())?;
-	# Result::<(), Box<dyn std::error::Error>>::Ok(())
-	```
-
-	Fade out audio for 3 seconds and then pause:
-
-	```no_run
-	# use kira::{
-	# 	manager::{
-	# 		AudioManager, AudioManagerSettings,
-	# 		backend::DefaultBackend,
-	# 	},
-	# };
-	use kira::tween::Tween;
-	use std::time::Duration;
-
-	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	manager.pause(Tween {
-		duration: Duration::from_secs(3),
-		..Default::default()
-	})?;
-	# Result::<(), Box<dyn std::error::Error>>::Ok(())
-	```
-	*/
-	pub fn pause(&self, fade_out_tween: Tween) -> Result<(), CommandError> {
-		self.command_producer.push(Command::Pause(fade_out_tween))
-	}
-
-	/**
-	Resumes and fades in all audio.
-
-	# Examples
-
-	Resume audio with a 3-second fade-in:
-
-	```no_run
-	# use kira::{
-	# 	manager::{
-	# 		AudioManager, AudioManagerSettings,
-	# 		backend::DefaultBackend,
-	# 	},
-	# };
-	use kira::tween::Tween;
-	use std::time::Duration;
-
-	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	manager.resume(Tween {
-		duration: Duration::from_secs(3),
-		..Default::default()
-	})?;
-	# Result::<(), Box<dyn std::error::Error>>::Ok(())
-	```
-	*/
-	pub fn resume(&self, fade_out_tween: Tween) -> Result<(), CommandError> {
-		self.command_producer.push(Command::Resume(fade_out_tween))
 	}
 
 	/**
