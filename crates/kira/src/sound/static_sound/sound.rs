@@ -26,11 +26,15 @@ use crate::{
 
 use self::resampler::Resampler;
 
-use super::{data::StaticSoundData, CommandReaders};
+use super::{data::StaticSoundData, frame_at_index, num_frames, CommandReaders};
 
 pub(super) struct StaticSound {
 	command_readers: CommandReaders,
-	data: StaticSoundData,
+	sample_rate: u32,
+	frames: Arc<[Frame]>,
+	slice: Option<(usize, usize)>,
+	reverse: bool,
+	output_destination: OutputDestination,
 	state: PlaybackState,
 	start_time: StartTime,
 	resampler: Resampler,
@@ -57,7 +61,11 @@ impl StaticSound {
 		let position = starting_frame_index as f64 / data.sample_rate as f64;
 		let mut sound = Self {
 			command_readers,
-			data,
+			sample_rate: data.sample_rate,
+			frames: data.frames,
+			slice: data.slice,
+			reverse: data.settings.reverse,
+			output_destination: data.settings.output_destination,
 			state: PlaybackState::Playing,
 			start_time: settings.start_time,
 			resampler: Resampler::new(starting_frame_index),
@@ -113,7 +121,7 @@ impl StaticSound {
 
 	fn is_playing_backwards(&self) -> bool {
 		let mut is_playing_backwards = self.playback_rate.value().as_factor().is_sign_negative();
-		if self.data.settings.reverse {
+		if self.reverse {
 			is_playing_backwards = !is_playing_backwards
 		}
 		is_playing_backwards
@@ -130,7 +138,8 @@ impl StaticSound {
 		if self.is_playing_backwards() {
 			self.transport.decrement_position();
 		} else {
-			self.transport.increment_position(self.data.num_frames());
+			self.transport
+				.increment_position(num_frames(&self.frames, self.slice));
 		}
 		if !self.transport.playing {
 			self.set_state(PlaybackState::Stopped);
@@ -138,7 +147,8 @@ impl StaticSound {
 	}
 
 	fn seek_to_index(&mut self, index: usize) {
-		self.transport.seek_to(index, self.data.num_frames());
+		self.transport
+			.seek_to(index, num_frames(&self.frames, self.slice));
 		// if the sound is playing, push a frame to the resample buffer
 		// to make sure it doesn't get skipped
 		if !matches!(self.state, PlaybackState::Paused | PlaybackState::Stopped) {
@@ -147,12 +157,12 @@ impl StaticSound {
 	}
 
 	fn push_frame_to_resampler(&mut self) {
-		let num_frames = self.data.num_frames();
+		let num_frames = num_frames(&self.frames, self.slice);
 		let frame = if self.transport.position >= num_frames {
 			Frame::ZERO
 		} else {
 			let frame_index: usize = self.transport.position;
-			(self.data.frame_at_index(frame_index).unwrap_or_default()
+			(frame_at_index(frame_index, &self.frames, self.slice).unwrap_or_default()
 				* self.volume_fade.value().as_amplitude() as f32
 				* self.volume.value().as_amplitude() as f32)
 				.panned(self.panning.value() as f32)
@@ -161,14 +171,14 @@ impl StaticSound {
 	}
 
 	fn seek_by(&mut self, amount: f64) {
-		let current_position = self.transport.position as f64 / self.data.sample_rate as f64;
+		let current_position = self.transport.position as f64 / self.sample_rate as f64;
 		let position = current_position + amount;
-		let index = (position * self.data.sample_rate as f64) as usize;
+		let index = (position * self.sample_rate as f64) as usize;
 		self.seek_to_index(index);
 	}
 
 	fn seek_to(&mut self, position: f64) {
-		let index = (position * self.data.sample_rate as f64) as usize;
+		let index = (position * self.sample_rate as f64) as usize;
 		self.seek_to_index(index);
 	}
 
@@ -177,8 +187,8 @@ impl StaticSound {
 		if let Some(loop_region) = self.command_readers.set_loop_region.read() {
 			self.transport.set_loop_region(
 				loop_region,
-				self.data.sample_rate,
-				self.data.num_frames(),
+				self.sample_rate,
+				num_frames(&self.frames, self.slice),
 			);
 		}
 		if let Some(tween) = self.command_readers.pause.read() {
@@ -201,13 +211,13 @@ impl StaticSound {
 
 impl Sound for StaticSound {
 	fn output_destination(&mut self) -> OutputDestination {
-		self.data.settings.output_destination
+		self.output_destination
 	}
 
 	fn on_start_processing(&mut self) {
 		let last_played_frame_position = self.resampler.current_frame_index();
 		self.shared.position.store(
-			(last_played_frame_position as f64 / self.data.sample_rate as f64).to_bits(),
+			(last_played_frame_position as f64 / self.sample_rate as f64).to_bits(),
 			Ordering::SeqCst,
 		);
 		self.read_commands();
@@ -266,7 +276,7 @@ impl Sound for StaticSound {
 		// play back audio
 		let out = self.resampler.get(self.fractional_position as f32);
 		self.fractional_position +=
-			self.data.sample_rate as f64 * self.playback_rate.value().as_factor().abs() * dt;
+			self.sample_rate as f64 * self.playback_rate.value().as_factor().abs() * dt;
 		while self.fractional_position >= 1.0 {
 			self.fractional_position -= 1.0;
 			self.update_position();

@@ -36,11 +36,7 @@ pub struct StaticSoundData {
 
 impl StaticSoundData {
 	pub fn num_frames(&self) -> usize {
-		if let Some((start, end)) = self.slice {
-			end - start
-		} else {
-			self.frames.len()
-		}
+		num_frames(&self.frames, self.slice)
 	}
 
 	/// Returns the duration of the audio.
@@ -49,11 +45,7 @@ impl StaticSoundData {
 	}
 
 	pub fn frame_at_index(&self, index: usize) -> Option<Frame> {
-		if index >= self.num_frames() {
-			return None;
-		}
-		let start = self.slice.map(|(start, _)| start).unwrap_or_default();
-		Some(self.frames[index + start])
+		frame_at_index(index, &self.frames, self.slice)
 	}
 
 	pub fn slice(&self, region: impl IntoOptionalRegion) -> Self {
@@ -135,4 +127,24 @@ impl Debug for FramesDebug {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		f.write_fmt(format_args!("[{} frames]", self.len))
 	}
+}
+
+pub(crate) fn num_frames(frames: &[Frame], slice: Option<(usize, usize)>) -> usize {
+	if let Some((start, end)) = slice {
+		end - start
+	} else {
+		frames.len()
+	}
+}
+
+pub(crate) fn frame_at_index(
+	index: usize,
+	frames: &[Frame],
+	slice: Option<(usize, usize)>,
+) -> Option<Frame> {
+	if index >= num_frames(frames, slice) {
+		return None;
+	}
+	let start = slice.map(|(start, _)| start).unwrap_or_default();
+	Some(frames[index + start])
 }
