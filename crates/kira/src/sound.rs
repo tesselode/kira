@@ -118,7 +118,7 @@ pub enum PlaybackState {
 pub struct Region {
 	/// The starting time of the region (in seconds).
 	pub start: PlaybackPosition,
-	/// The ending time of the region.
+	/// The (exclusive) ending time of the region.
 	pub end: EndPosition,
 }
 
@@ -140,26 +140,8 @@ impl<T: Into<PlaybackPosition>> From<Range<T>> for Region {
 	}
 }
 
-impl<T: Into<PlaybackPosition> + Copy> From<RangeInclusive<T>> for Region {
-	fn from(range: RangeInclusive<T>) -> Self {
-		Self {
-			start: (*range.start()).into(),
-			end: EndPosition::Custom((*range.end()).into()),
-		}
-	}
-}
-
 impl<T: Into<PlaybackPosition>> From<RangeTo<T>> for Region {
 	fn from(range: RangeTo<T>) -> Self {
-		Self {
-			start: PlaybackPosition::Samples(0),
-			end: EndPosition::Custom(range.end.into()),
-		}
-	}
-}
-
-impl<T: Into<PlaybackPosition>> From<RangeToInclusive<T>> for Region {
-	fn from(range: RangeToInclusive<T>) -> Self {
 		Self {
 			start: PlaybackPosition::Samples(0),
 			end: EndPosition::Custom(range.end.into()),
