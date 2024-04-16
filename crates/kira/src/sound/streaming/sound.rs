@@ -30,6 +30,7 @@ pub(crate) struct Shared {
 	state: AtomicU8,
 	position: AtomicU64,
 	reached_end: AtomicBool,
+	encountered_error: AtomicBool,
 }
 
 impl Shared {
@@ -38,6 +39,7 @@ impl Shared {
 			position: AtomicU64::new(0.0f64.to_bits()),
 			state: AtomicU8::new(PlaybackState::Playing as u8),
 			reached_end: AtomicBool::new(false),
+			encountered_error: AtomicBool::new(false),
 		}
 	}
 
@@ -58,6 +60,10 @@ impl Shared {
 
 	pub fn reached_end(&self) -> bool {
 		self.reached_end.load(Ordering::SeqCst)
+	}
+
+	pub fn encountered_error(&self) -> bool {
+		self.encountered_error.load(Ordering::SeqCst)
 	}
 }
 
@@ -191,6 +197,11 @@ impl Sound for StreamingSound {
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
 	) -> Frame {
+		if self.shared.encountered_error() {
+			self.set_state(PlaybackState::Stopped);
+			return Frame::ZERO;
+		}
+
 		// update parameters
 		self.volume
 			.update(dt, clock_info_provider, modulator_value_provider);

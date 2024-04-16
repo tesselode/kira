@@ -14,7 +14,7 @@ use super::{
 	sound::{decode_scheduler::DecodeScheduler, StreamingSound},
 };
 
-const ERROR_BUFFER_CAPACITY: usize = 8;
+const ERROR_BUFFER_CAPACITY: usize = 1;
 
 /// A streaming sound that is not playing yet.
 pub struct StreamingSoundData<Error: Send + 'static> {

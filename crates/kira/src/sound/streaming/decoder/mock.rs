@@ -20,7 +20,7 @@ impl MockDecoder {
 }
 
 impl Decoder for MockDecoder {
-	type Error = ();
+	type Error = MockDecoderError;
 
 	fn sample_rate(&self) -> u32 {
 		MOCK_DECODER_SAMPLE_RATE
@@ -33,7 +33,11 @@ impl Decoder for MockDecoder {
 	fn decode(&mut self) -> Result<Vec<Frame>, Self::Error> {
 		let mut frames = vec![];
 		for _ in 0..MOCK_DECODER_PACKET_SIZE {
-			frames.push(self.frames[self.current_frame_index]);
+			let frame = self.frames[self.current_frame_index];
+			if frame.left.is_nan() || frame.right.is_nan() {
+				return Err(MockDecoderError);
+			}
+			frames.push(frame);
 			self.current_frame_index += 1;
 			if self.current_frame_index >= self.frames.len() {
 				break;
@@ -51,3 +55,6 @@ impl Decoder for MockDecoder {
 		Ok(index)
 	}
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) struct MockDecoderError;

@@ -100,6 +100,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 				},
 				Err(error) => {
 					self.error_producer.push(error).ok();
+					self.shared.encountered_error.store(true, Ordering::SeqCst);
 				}
 			}
 		});
