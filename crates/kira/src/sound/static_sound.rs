@@ -32,7 +32,9 @@ pub use data::*;
 pub use handle::*;
 pub use settings::*;
 
-use crate::{command::ValueChangeCommand, command_writers_and_readers, tween::Tween, Volume};
+use crate::{
+	command::ValueChangeCommand, command_writers_and_readers, tween::Tween, StartTime, Volume,
+};
 
 use super::{PlaybackRate, Region};
 
@@ -42,7 +44,7 @@ command_writers_and_readers! {
 	set_panning: ValueChangeCommand<f64>,
 	set_loop_region: Option<Region>,
 	pause: Tween,
-	resume: Tween,
+	resume: (StartTime, Tween),
 	stop: Tween,
 	seek_by: f64,
 	seek_to: f64,

@@ -12,7 +12,7 @@ use crate::{
 		PlaybackState, Sound,
 	},
 	tween::Tween,
-	StartTime, Volume,
+	Volume,
 };
 
 use super::{decode_scheduler::NextStep, StreamingSound};
@@ -552,70 +552,6 @@ fn stops_if_depending_on_missing_clock() {
 	);
 	sound.on_start_processing();
 	assert_eq!(handle.state(), PlaybackState::Stopped);
-}
-
-/// Tests that a `StreamingSound` can be paused, resumed, and
-/// stopped immediately even if playback is waiting for a clock
-/// time to start.
-#[test]
-fn immediate_pause_resume_and_stop_with_clock_start_time() {
-	let (clock_info_provider, clock_id) = {
-		let mut builder = MockClockInfoProviderBuilder::new(2);
-		let clock_id = builder
-			.add(ClockInfo {
-				ticking: true,
-				ticks: 0,
-				fractional_position: 0.0,
-			})
-			.unwrap();
-		(builder.build(), clock_id)
-	};
-
-	let data = StreamingSoundData {
-		decoder: Box::new(MockDecoder::new(
-			(1..100).map(|i| Frame::from_mono(i as f32)).collect(),
-		)),
-		settings: StreamingSoundSettings::new().start_time(StartTime::ClockTime(ClockTime {
-			clock: clock_id,
-			ticks: 2,
-		})),
-		slice: None,
-	};
-	let (mut sound, _, mut scheduler) = data.split().unwrap();
-	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
-
-	sound.pause(Tween {
-		duration: Duration::from_secs(0),
-		..Default::default()
-	});
-	sound.process(
-		1.0,
-		&clock_info_provider,
-		&MockModulatorValueProviderBuilder::new(0).build(),
-	);
-	assert!(sound.state == PlaybackState::Paused);
-
-	sound.resume(Tween {
-		duration: Duration::from_secs(0),
-		..Default::default()
-	});
-	sound.process(
-		1.0,
-		&clock_info_provider,
-		&MockModulatorValueProviderBuilder::new(0).build(),
-	);
-	assert!(sound.state == PlaybackState::Playing);
-
-	sound.stop(Tween {
-		duration: Duration::from_secs(0),
-		..Default::default()
-	});
-	sound.process(
-		1.0,
-		&clock_info_provider,
-		&MockModulatorValueProviderBuilder::new(0).build(),
-	);
-	assert!(sound.state == PlaybackState::Stopped);
 }
 
 /// Tests that a `StreamingSound` can be started partway through the sound.

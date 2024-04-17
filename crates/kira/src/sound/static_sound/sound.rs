@@ -105,7 +105,8 @@ impl StaticSound {
 		);
 	}
 
-	fn resume(&mut self, fade_in_tween: Tween) {
+	fn resume(&mut self, start_time: StartTime, fade_in_tween: Tween) {
+		self.start_time = start_time;
 		self.set_state(PlaybackState::Playing);
 		self.volume_fade
 			.set(Value::Fixed(Volume::Decibels(0.0)), fade_in_tween);
@@ -194,8 +195,8 @@ impl StaticSound {
 		if let Some(tween) = self.command_readers.pause.read() {
 			self.pause(tween);
 		}
-		if let Some(tween) = self.command_readers.resume.read() {
-			self.resume(tween);
+		if let Some((start_time, tween)) = self.command_readers.resume.read() {
+			self.resume(start_time, tween);
 		}
 		if let Some(tween) = self.command_readers.stop.read() {
 			self.stop(tween);
@@ -229,25 +230,6 @@ impl Sound for StaticSound {
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
 	) -> Frame {
-		// update parameters
-		self.volume
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.playback_rate
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.panning
-			.update(dt, clock_info_provider, modulator_value_provider);
-		if self
-			.volume_fade
-			.update(dt, clock_info_provider, modulator_value_provider)
-		{
-			match self.state {
-				PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
-				PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),
-				_ => {}
-			}
-		}
-
-		// check if the sound has started
 		let started = match &mut self.start_time {
 			StartTime::Immediate => true,
 			StartTime::Delayed(time_remaining) => {
@@ -269,8 +251,28 @@ impl Sound for StaticSound {
 				}
 			}
 		};
+
+		// update parameters
+		self.volume
+			.update(dt, clock_info_provider, modulator_value_provider);
+		self.playback_rate
+			.update(dt, clock_info_provider, modulator_value_provider);
+		self.panning
+			.update(dt, clock_info_provider, modulator_value_provider);
+
 		if !started {
 			return Frame::ZERO;
+		}
+
+		if self
+			.volume_fade
+			.update(dt, clock_info_provider, modulator_value_provider)
+		{
+			match self.state {
+				PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
+				PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),
+				_ => {}
+			}
 		}
 
 		// play back audio

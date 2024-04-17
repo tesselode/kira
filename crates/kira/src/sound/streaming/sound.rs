@@ -152,7 +152,8 @@ impl StreamingSound {
 			.set(Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)), tween);
 	}
 
-	fn resume(&mut self, tween: Tween) {
+	fn resume(&mut self, start_time: StartTime, tween: Tween) {
+		self.start_time = start_time;
 		self.set_state(PlaybackState::Playing);
 		self.volume_fade
 			.set(Value::Fixed(Volume::Decibels(0.0)), tween);
@@ -169,8 +170,8 @@ impl StreamingSound {
 		if let Some(tween) = self.command_readers.pause.read() {
 			self.pause(tween);
 		}
-		if let Some(tween) = self.command_readers.resume.read() {
-			self.resume(tween);
+		if let Some((start_time, tween)) = self.command_readers.resume.read() {
+			self.resume(start_time, tween);
 		}
 		if let Some(tween) = self.command_readers.stop.read() {
 			self.stop(tween);
@@ -202,24 +203,6 @@ impl Sound for StreamingSound {
 			return Frame::ZERO;
 		}
 
-		// update parameters
-		self.volume
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.playback_rate
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.panning
-			.update(dt, clock_info_provider, modulator_value_provider);
-		if self
-			.volume_fade
-			.update(dt, clock_info_provider, modulator_value_provider)
-		{
-			match self.state {
-				PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
-				PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),
-				_ => {}
-			}
-		}
-
 		// check if the sound has started
 		let started = match &mut self.start_time {
 			StartTime::Immediate => true,
@@ -242,8 +225,28 @@ impl Sound for StreamingSound {
 				}
 			}
 		};
+
+		// update parameters
+		self.volume
+			.update(dt, clock_info_provider, modulator_value_provider);
+		self.playback_rate
+			.update(dt, clock_info_provider, modulator_value_provider);
+		self.panning
+			.update(dt, clock_info_provider, modulator_value_provider);
+
 		if !started {
 			return Frame::ZERO;
+		}
+
+		if self
+			.volume_fade
+			.update(dt, clock_info_provider, modulator_value_provider)
+		{
+			match self.state {
+				PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
+				PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),
+				_ => {}
+			}
 		}
 
 		if matches!(self.state, PlaybackState::Paused | PlaybackState::Stopped) {

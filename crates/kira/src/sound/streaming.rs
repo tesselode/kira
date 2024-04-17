@@ -39,7 +39,7 @@ pub use settings::*;
 use crate::{
 	command::{command_writer_and_reader, CommandReader, CommandWriter, ValueChangeCommand},
 	tween::Tween,
-	Volume,
+	StartTime, Volume,
 };
 
 use super::{PlaybackRate, Region};
@@ -50,7 +50,7 @@ pub(crate) struct CommandWriters {
 	set_panning: CommandWriter<ValueChangeCommand<f64>>,
 	set_loop_region: CommandWriter<Option<Region>>,
 	pause: CommandWriter<Tween>,
-	resume: CommandWriter<Tween>,
+	resume: CommandWriter<(StartTime, Tween)>,
 	stop: CommandWriter<Tween>,
 	seek_by: CommandWriter<f64>,
 	seek_to: CommandWriter<f64>,
@@ -61,7 +61,7 @@ pub(crate) struct CommandReaders {
 	set_playback_rate: CommandReader<ValueChangeCommand<PlaybackRate>>,
 	set_panning: CommandReader<ValueChangeCommand<f64>>,
 	pause: CommandReader<Tween>,
-	resume: CommandReader<Tween>,
+	resume: CommandReader<(StartTime, Tween)>,
 	stop: CommandReader<Tween>,
 }
 

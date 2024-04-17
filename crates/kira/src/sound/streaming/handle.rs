@@ -4,7 +4,7 @@ use crate::{
 	handle_param_setters,
 	sound::{IntoOptionalRegion, PlaybackRate, PlaybackState},
 	tween::Tween,
-	Volume,
+	StartTime, Volume,
 };
 use ringbuf::HeapConsumer;
 
@@ -273,7 +273,13 @@ impl<Error> StreamingSoundHandle<Error> {
 	/// Resumes playback and fades in the sound from silence
 	/// with the given tween.
 	pub fn resume(&mut self, tween: Tween) {
-		self.command_writers.resume.write(tween)
+		self.resume_at(StartTime::Immediate, tween)
+	}
+
+	/// Resumes playback at the given start time and fades in
+	/// the sound from silence with the given tween.
+	pub fn resume_at(&mut self, start_time: StartTime, tween: Tween) {
+		self.command_writers.resume.write((start_time, tween))
 	}
 
 	/// Fades out the sound to silence with the given tween and then
