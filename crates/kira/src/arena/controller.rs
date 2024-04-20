@@ -1,5 +1,5 @@
 use std::sync::{
-	atomic::{AtomicBool, AtomicU16, Ordering},
+	atomic::{AtomicBool, AtomicU16, AtomicU32, Ordering},
 	Arc,
 };
 
@@ -16,7 +16,7 @@ const NO_NEXT_FREE_SLOT: u16 = u16::MAX;
 #[derive(Debug)]
 struct ControllerSlot {
 	free: AtomicBool,
-	generation: AtomicU16,
+	generation: AtomicU32,
 	next_free_slot_index: AtomicU16,
 }
 
@@ -33,7 +33,7 @@ impl ControllerInner {
 			slots: (0..capacity)
 				.map(|i| ControllerSlot {
 					free: AtomicBool::new(true),
-					generation: AtomicU16::new(0),
+					generation: AtomicU32::new(0),
 					next_free_slot_index: AtomicU16::new(if i < capacity - 1 {
 						i + 1
 					} else {

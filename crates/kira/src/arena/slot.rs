@@ -11,7 +11,7 @@ pub(crate) enum ArenaSlotState<T> {
 #[derive(Debug)]
 pub(crate) struct ArenaSlot<T> {
 	pub(crate) state: ArenaSlotState<T>,
-	pub(crate) generation: u16,
+	pub(crate) generation: u32,
 }
 
 impl<T> ArenaSlot<T> {

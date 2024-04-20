@@ -18,7 +18,7 @@ use slot::{ArenaSlot, ArenaSlotState};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Key {
 	index: u16,
-	generation: u16,
+	generation: u32,
 }
 
 /// A container of items that can be accessed via a [`Key`].
