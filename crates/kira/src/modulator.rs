@@ -98,15 +98,18 @@ use kira::{
 # 		..Default::default()
 # 	}));
 # let piano_track = manager.add_sub_track(TrackBuilder::new().with_effect(filter_builder))?;
-let piano_settings = StaticSoundSettings::new().output_destination(&piano_track);
-manager.play(StaticSoundData::from_file("piano.ogg", piano_settings)?)?;
-let drums_settings = StaticSoundSettings::new()
-	.volume(Value::from_modulator(&tweener, ModulatorMapping {
-		input_range: (0.0, 1.0),
-		output_range: (Volume::Amplitude(1.0), Volume::Amplitude(0.0)),
-		..Default::default()
-	}));
-manager.play(StaticSoundData::from_file("drums.ogg", drums_settings)?)?;
+manager.play(
+	StaticSoundData::from_file("piano.ogg")?
+		.output_destination(&piano_track)
+)?;
+manager.play(
+	StaticSoundData::from_file("drums.ogg")?
+		.volume(Value::from_modulator(&tweener, ModulatorMapping {
+			input_range: (0.0, 1.0),
+			output_range: (Volume::Amplitude(1.0), Volume::Amplitude(0.0)),
+			..Default::default()
+		}))
+)?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
@@ -138,15 +141,17 @@ use std::time::Duration;
 # 	}));
 # let piano_track = manager.add_sub_track(TrackBuilder::new().with_effect(filter_builder))?;
 # manager.play(
-# 	StaticSoundData::from_file("piano.ogg", StaticSoundSettings::new().output_destination(&piano_track))?
+# 	StaticSoundData::from_file("piano.ogg")?
+# 		.output_destination(&piano_track)
 # )?;
-# let drums_settings = StaticSoundSettings::new()
-# 	.volume(Value::from_modulator(&tweener, ModulatorMapping {
-# 		input_range: (0.0, 1.0),
-# 		output_range: (Volume::Amplitude(1.0), Volume::Amplitude(0.0)),
-# 		..Default::default()
-# 	}));
-# manager.play(StaticSoundData::from_file("drums.ogg", drums_settings)?)?;
+# manager.play(
+# 	StaticSoundData::from_file("drums.ogg")?
+# 		.volume(Value::from_modulator(&tweener, ModulatorMapping {
+# 	 		input_range: (0.0, 1.0),
+# 	 		output_range: (Volume::Amplitude(1.0), Volume::Amplitude(0.0)),
+# 	 		..Default::default()
+# 	 	}))
+# )?;
 tweener.set(1.0, Tween {
 	duration: Duration::from_secs(3),
 	..Default::default()

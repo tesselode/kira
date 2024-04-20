@@ -42,7 +42,7 @@ impl<Error> StreamingSoundHandle<Error> {
 		# 	sound::streaming::{StreamingSoundData, StreamingSoundSettings},
 		# };
 		# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-		# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+		# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg")?)?;
 		use kira::tween::Tween;
 
 		sound.set_volume(0.5, Tween::default());
@@ -57,7 +57,7 @@ impl<Error> StreamingSoundHandle<Error> {
 		# 	sound::streaming::{StreamingSoundData, StreamingSoundSettings},
 		# };
 		# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-		# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+		# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg")?)?;
 		use kira::tween::Tween;
 		use std::time::Duration;
 
@@ -83,7 +83,7 @@ impl<Error> StreamingSoundHandle<Error> {
 		let tweener = manager.add_modulator(TweenerBuilder {
 			initial_value: 0.5,
 		})?;
-		let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+		let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg")?)?;
 		sound.set_volume(&tweener, Tween {
 			duration: Duration::from_secs(3),
 			..Default::default()
@@ -109,7 +109,7 @@ impl<Error> StreamingSoundHandle<Error> {
 		# 	sound::streaming::{StreamingSoundData, StreamingSoundSettings},
 		# };
 		# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-		# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+		# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg")?)?;
 		use kira::tween::Tween;
 
 		sound.set_playback_rate(0.5, Tween::default());
@@ -124,7 +124,7 @@ impl<Error> StreamingSoundHandle<Error> {
 		# 	sound::streaming::{StreamingSoundData, StreamingSoundSettings},
 		# };
 		# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-		# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+		# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg")?)?;
 		use kira::{
 			tween::Tween,
 			sound::PlaybackRate,
@@ -153,7 +153,7 @@ impl<Error> StreamingSoundHandle<Error> {
 		let tweener = manager.add_modulator(TweenerBuilder {
 			initial_value: 0.5,
 		})?;
-		let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+		let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg")?)?;
 		sound.set_playback_rate(&tweener, Tween {
 			duration: Duration::from_secs(3),
 			..Default::default()
@@ -177,7 +177,7 @@ impl<Error> StreamingSoundHandle<Error> {
 		# 	sound::streaming::{StreamingSoundData, StreamingSoundSettings},
 		# };
 		# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-		# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+		# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg")?)?;
 		use kira::tween::Tween;
 		use std::time::Duration;
 
@@ -203,7 +203,7 @@ impl<Error> StreamingSoundHandle<Error> {
 		let tweener = manager.add_modulator(TweenerBuilder {
 			initial_value: 0.25,
 		})?;
-		let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+		let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg")?)?;
 		sound.set_panning(&tweener, Tween {
 			duration: Duration::from_secs(3),
 			..Default::default()
@@ -227,7 +227,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	# 	sound::streaming::{StreamingSoundData, StreamingSoundSettings},
 	# };
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg")?)?;
 	sound.set_loop_region(3.0..);
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
@@ -240,7 +240,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	# 	sound::streaming::{StreamingSoundData, StreamingSoundSettings},
 	# };
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg")?)?;
 	sound.set_loop_region(2.0..4.0);
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
@@ -253,7 +253,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	# 	sound::streaming::{StreamingSoundData, StreamingSoundSettings},
 	# };
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?)?;
+	# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg")?)?;
 	sound.set_loop_region(None);
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```

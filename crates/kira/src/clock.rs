@@ -45,13 +45,13 @@ use kira::{
 
 let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
-manager.play(StaticSoundData::from_file(
-	"sound.ogg",
-	StaticSoundSettings::new().start_time(StartTime::ClockTime(ClockTime {
-		clock: clock.id(),
-		ticks: 4,
-	})),
-)?)?;
+manager.play(
+	StaticSoundData::from_file("sound.ogg")?
+		.start_time(StartTime::ClockTime(ClockTime {
+			clock: clock.id(),
+			ticks: 4,
+		}))
+)?;
 clock.start();
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
@@ -74,13 +74,13 @@ the `start_time` function.
 # 	AudioManagerSettings::default(),
 # )?;
 # let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
-manager.play(StaticSoundData::from_file(
-	"sound.ogg",
-	StaticSoundSettings::new().start_time(ClockTime {
-		clock: clock.id(),
-		ticks: 4,
-	}),
-)?)?;
+manager.play(
+	StaticSoundData::from_file("sound.ogg")?
+		.start_time(ClockTime {
+			clock: clock.id(),
+			ticks: 4,
+		})
+)?;
 # clock.start();
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
@@ -102,10 +102,10 @@ use kira::{
 # 	AudioManagerSettings::default(),
 # )?;
 # let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
-manager.play(StaticSoundData::from_file(
-	"sound.ogg",
-	StaticSoundSettings::new().start_time(clock.time() + 4),
-)?)?;
+manager.play(
+	StaticSoundData::from_file("sound.ogg")?
+		.start_time(clock.time() + 4)
+)?;
 # clock.start();
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
@@ -132,10 +132,7 @@ use kira::{
 
 let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 let mut clock = manager.add_clock(ClockSpeed::SecondsPerTick(1.0))?;
-let mut sound = manager.play(StaticSoundData::from_file(
-	"sound.ogg",
-	StaticSoundSettings::default(),
-)?)?;
+let mut sound = manager.play(StaticSoundData::from_file("sound.ogg")?)?;
 sound.set_playback_rate(
 	0.5,
 	Tween {

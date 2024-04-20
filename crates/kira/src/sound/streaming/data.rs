@@ -3,7 +3,11 @@ mod test;
 
 use std::{sync::Arc, time::Duration};
 
-use crate::sound::{EndPosition, IntoOptionalRegion, Region, SoundData};
+use crate::sound::{
+	EndPosition, IntoOptionalRegion, PlaybackPosition, PlaybackRate, Region, SoundData,
+};
+use crate::tween::{Tween, Value};
+use crate::{OutputDestination, StartTime, Volume};
 use ringbuf::HeapRb;
 
 use super::sound::Shared;
@@ -26,15 +30,253 @@ pub struct StreamingSoundData<Error: Send + 'static> {
 
 impl<Error: Send> StreamingSoundData<Error> {
 	/// Creates a [`StreamingSoundData`] for a [`Decoder`].
-	pub fn from_decoder(
-		decoder: impl Decoder<Error = Error> + 'static,
-		settings: StreamingSoundSettings,
-	) -> Self {
+	pub fn from_decoder(decoder: impl Decoder<Error = Error> + 'static) -> Self {
 		Self {
 			decoder: Box::new(decoder),
-			settings,
+			settings: StreamingSoundSettings::default(),
 			slice: None,
 		}
+	}
+
+	/**
+	Sets when the sound should start playing.
+
+	# Examples
+
+	Configuring a sound to start 4 ticks after a clock's current time:
+
+	```no_run
+	use kira::{
+		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		sound::streaming::{StreamingSoundData, StreamingSoundSettings},
+		clock::ClockSpeed,
+	};
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let clock_handle = manager.add_clock(ClockSpeed::TicksPerMinute(120.0))?;
+	let sound = StreamingSoundData::from_file("sound.ogg")?
+		.start_time(clock_handle.time() + 4);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
+	pub fn start_time(mut self, start_time: impl Into<StartTime>) -> Self {
+		self.settings.start_time = start_time.into();
+		self
+	}
+
+	/// Sets where in the sound playback should start.
+	pub fn start_position(mut self, start_position: impl Into<PlaybackPosition>) -> Self {
+		self.settings.start_position = start_position.into();
+		self
+	}
+
+	/**
+	Sets the portion of the sound that should be looped.
+
+	# Examples
+
+	Configure a sound to loop the portion from 3 seconds in to the end:
+
+	```no_run
+	# use kira::sound::streaming::StreamingSoundData;
+	let sound = StreamingSoundData::from_file("sound.ogg")?.loop_region(3.0..);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+
+	Configure a sound to loop the portion from 2 to 4 seconds:
+
+	```no_run
+	# use kira::sound::streaming::StreamingSoundData;
+	let sound = StreamingSoundData::from_file("sound.ogg")?.loop_region(2.0..4.0);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
+	pub fn loop_region(mut self, loop_region: impl IntoOptionalRegion) -> Self {
+		self.settings.loop_region = loop_region.into_optional_region();
+		self
+	}
+
+	/**
+	Sets the volume of the sound.
+
+	# Examples
+
+	Set the volume as a factor:
+
+	```no_run
+	# use kira::sound::streaming::StreamingSoundData;
+	let sound = StreamingSoundData::from_file("sound.ogg")?.volume(0.5);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+
+	Set the volume as a gain in decibels:
+
+	```no_run
+	# use kira::sound::streaming::StreamingSoundData;
+	let sound = StreamingSoundData::from_file("sound.ogg")?.volume(kira::Volume::Decibels(-6.0));
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+
+	Link the volume to a modulator:
+
+	```no_run
+	use kira::{
+		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		modulator::tweener::TweenerBuilder,
+		sound::streaming::StreamingSoundData,
+	};
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let tweener = manager.add_modulator(TweenerBuilder {
+		initial_value: 0.5,
+	})?;
+	let sound = StreamingSoundData::from_file("sound.ogg")?.volume(&tweener);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
+	pub fn volume(mut self, volume: impl Into<Value<Volume>>) -> Self {
+		self.settings.volume = volume.into();
+		self
+	}
+
+	/**
+	Sets the playback rate of the sound.
+
+	Changing the playback rate will change both the speed
+	and the pitch of the sound.
+
+	# Examples
+
+	Set the playback rate as a factor:
+
+	```no_run
+	# use kira::sound::streaming::StreamingSoundData;
+	let sound = StreamingSoundData::from_file("sound.ogg")?.playback_rate(0.5);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+
+	Set the playback rate as a change in semitones:
+
+	```no_run
+	# use kira::sound::streaming::StreamingSoundData;
+	use kira::sound::PlaybackRate;
+	let sound = StreamingSoundData::from_file("sound.ogg")?.playback_rate(PlaybackRate::Semitones(-2.0));
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+
+	Link the playback rate to a modulator:
+
+	```no_run
+	use kira::{
+		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		modulator::tweener::TweenerBuilder,
+		sound::streaming::StreamingSoundData,
+	};
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let tweener = manager.add_modulator(TweenerBuilder {
+		initial_value: 0.5,
+	})?;
+	let sound = StreamingSoundData::from_file("sound.ogg")?.playback_rate(&tweener);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
+	pub fn playback_rate(mut self, playback_rate: impl Into<Value<PlaybackRate>>) -> Self {
+		self.settings.playback_rate = playback_rate.into();
+		self
+	}
+
+	/**
+	Sets the panning of the sound, where 0 is hard left
+	and 1 is hard right.
+
+	# Examples
+
+	Set the panning to a streaming value:
+
+	``` no_run
+	# use kira::sound::streaming::StreamingSoundData;
+	let sound = StreamingSoundData::from_file("sound.ogg")?.panning(0.25);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+
+	Link the panning to a modulator:
+
+	```no_run
+	use kira::{
+		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		modulator::tweener::TweenerBuilder,
+		sound::streaming::StreamingSoundData,
+	};
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let tweener = manager.add_modulator(TweenerBuilder {
+		initial_value: 0.25,
+	})?;
+	let sound = StreamingSoundData::from_file("sound.ogg")?.panning(&tweener);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
+	pub fn panning(mut self, panning: impl Into<Value<f64>>) -> Self {
+		self.settings.panning = panning.into();
+		self
+	}
+
+	/**
+	Sets the destination that this sound should be routed to.
+
+	# Examples
+
+	Set the output destination of a sound to a mixer track:
+
+	```no_run
+	use kira::{
+		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		track::TrackBuilder,
+		sound::streaming::StreamingSoundData,
+	};
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let sub_track = manager.add_sub_track(TrackBuilder::new())?;
+	let sound = StreamingSoundData::from_file("sound.ogg")?.output_destination(&sub_track);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+
+	Set the output destination of a sound to an emitter in a spatial scene:
+
+	```no_run
+	use kira::{
+		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		spatial::{scene::SpatialSceneSettings, emitter::EmitterSettings},
+		sound::streaming::StreamingSoundData,
+	};
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let mut scene = manager.add_spatial_scene(SpatialSceneSettings::default())?;
+	let emitter = scene.add_emitter(mint::Vector3 {
+		x: 0.0,
+		y: 0.0,
+		z: 0.0,
+	}, EmitterSettings::default())?;
+	let sound = StreamingSoundData::from_file("sound.ogg")?.output_destination(&emitter);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
+	pub fn output_destination(mut self, output_destination: impl Into<OutputDestination>) -> Self {
+		self.settings.output_destination = output_destination.into();
+		self
+	}
+
+	/// Sets the tween used to fade in the instance from silence.
+	pub fn fade_in_tween(mut self, fade_in_tween: impl Into<Option<Tween>>) -> Self {
+		self.settings.fade_in_tween = fade_in_tween.into();
+		self
+	}
+
+	/// Returns the `StreamingSoundData` with the specified settings.
+	pub fn with_settings(mut self, settings: StreamingSoundSettings) -> Self {
+		self.settings = settings;
+		self
 	}
 
 	pub fn num_frames(&self) -> usize {
@@ -70,43 +312,35 @@ impl StreamingSoundData<crate::sound::FromFileError> {
 	/// Creates a [`StreamingSoundData`] for an audio file.
 	pub fn from_file(
 		path: impl AsRef<std::path::Path>,
-		settings: StreamingSoundSettings,
 	) -> Result<StreamingSoundData<crate::sound::FromFileError>, crate::sound::FromFileError> {
 		use std::fs::File;
 
 		use super::symphonia::SymphoniaDecoder;
 
-		Ok(Self::from_decoder(
-			SymphoniaDecoder::new(Box::new(File::open(path)?))?,
-			settings,
-		))
+		Ok(Self::from_decoder(SymphoniaDecoder::new(Box::new(
+			File::open(path)?,
+		))?))
 	}
 
 	/// Creates a [`StreamingSoundData`] for a cursor wrapping audio file data.
 	pub fn from_cursor<T: AsRef<[u8]> + Send + Sync + 'static>(
 		cursor: std::io::Cursor<T>,
-		settings: StreamingSoundSettings,
 	) -> Result<StreamingSoundData<crate::sound::FromFileError>, crate::sound::FromFileError> {
 		use super::symphonia::SymphoniaDecoder;
 
-		Ok(Self::from_decoder(
-			SymphoniaDecoder::new(Box::new(cursor))?,
-			settings,
-		))
+		Ok(Self::from_decoder(SymphoniaDecoder::new(Box::new(cursor))?))
 	}
 
 	/// Creates a [`StreamingSoundData`] for a type that implements Symphonia's
 	/// [`MediaSource`](symphonia::core::io::MediaSource) trait.
 	pub fn from_media_source(
 		media_source: impl symphonia::core::io::MediaSource + 'static,
-		settings: StreamingSoundSettings,
 	) -> Result<StreamingSoundData<crate::sound::FromFileError>, crate::sound::FromFileError> {
 		use super::symphonia::SymphoniaDecoder;
 
-		Ok(Self::from_decoder(
-			SymphoniaDecoder::new(Box::new(media_source))?,
-			settings,
-		))
+		Ok(Self::from_decoder(SymphoniaDecoder::new(Box::new(
+			media_source,
+		))?))
 	}
 }
 

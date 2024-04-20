@@ -42,10 +42,10 @@ use kira::{
 
 let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 let track = manager.add_sub_track(TrackBuilder::default())?;
-manager.play(StaticSoundData::from_file(
-	"sound.ogg",
-	StaticSoundSettings::new().output_destination(&track),
-)?)?;
+manager.play(
+	StaticSoundData::from_file("sound.ogg")?
+		.output_destination(&track)
+)?;
 # Result::<(), Box<dyn Error>>::Ok(())
 ```
 
@@ -81,10 +81,10 @@ let track = manager.add_sub_track(
 	TrackBuilder::new()
 		.with_effect(FilterBuilder::new().cutoff(1000.0))
 )?;
-manager.play(StaticSoundData::from_file(
-	"sound.ogg",
-	StaticSoundSettings::new().output_destination(&track),
-)?)?;
+manager.play(
+	StaticSoundData::from_file("sound.ogg")?
+		.output_destination(&track)
+)?;
 # Result::<(), Box<dyn Error>>::Ok(())
 ```
 

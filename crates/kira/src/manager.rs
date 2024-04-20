@@ -147,7 +147,7 @@ impl<B: Backend> AudioManager<B> {
 	use kira::sound::static_sound::{StaticSoundData, StaticSoundSettings};
 
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	let sound_data = StaticSoundData::from_file("sound.ogg", StaticSoundSettings::default())?;
+	let sound_data = StaticSoundData::from_file("sound.ogg")?;
 	manager.play(sound_data)?;
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```

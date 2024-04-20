@@ -100,10 +100,8 @@ let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::defa
 let mut scene = manager.add_spatial_scene(SpatialSceneSettings::default())?;
 let listener = scene.add_listener(Vec3::ZERO, Quat::IDENTITY, ListenerSettings::default())?;
 let emitter = scene.add_emitter(Vec3::new(100.0, 100.0, 0.0), EmitterSettings::default())?;
-let sound = StaticSoundData::from_file(
-	"sound.ogg",
-	StaticSoundSettings::new().output_destination(&emitter)
-)?;
+let sound = StaticSoundData::from_file("sound.ogg")?
+	.output_destination(&emitter);
 manager.play(sound)?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```

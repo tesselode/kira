@@ -12,7 +12,11 @@ use std::{
 
 use crate::{
 	dsp::Frame,
-	sound::{EndPosition, IntoOptionalRegion, Region, Sound, SoundData},
+	sound::{
+		EndPosition, IntoOptionalRegion, PlaybackPosition, PlaybackRate, Region, Sound, SoundData,
+	},
+	tween::{Tween, Value},
+	OutputDestination, StartTime, Volume,
 };
 
 use super::{
@@ -35,6 +39,257 @@ pub struct StaticSoundData {
 }
 
 impl StaticSoundData {
+	/**
+	Sets when the sound should start playing.
+
+	# Examples
+
+	Configuring a sound to start 4 ticks after a clock's current time:
+
+	```no_run
+	use kira::{
+		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		sound::static_sound::{StaticSoundData, StaticSoundSettings},
+		clock::ClockSpeed,
+	};
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let clock_handle = manager.add_clock(ClockSpeed::TicksPerMinute(120.0))?;
+	let sound = StaticSoundData::from_file("sound.ogg")?
+		.start_time(clock_handle.time() + 4);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
+	pub fn start_time(&self, start_time: impl Into<StartTime>) -> Self {
+		let mut new = self.clone();
+		new.settings.start_time = start_time.into();
+		new
+	}
+
+	/// Sets where in the sound playback should start.
+	pub fn start_position(&self, start_position: impl Into<PlaybackPosition>) -> Self {
+		let mut new = self.clone();
+		new.settings.start_position = start_position.into();
+		new
+	}
+
+	/// Sets whether the sound should be played in reverse.
+	pub fn reverse(&self, reverse: bool) -> Self {
+		let mut new = self.clone();
+		new.settings.reverse = reverse;
+		new
+	}
+
+	/**
+	Sets the portion of the sound that should be looped.
+
+	# Examples
+
+	Configure a sound to loop the portion from 3 seconds in to the end:
+
+	```
+	# use kira::sound::static_sound::StaticSoundSettings;
+	let settings = StaticSoundSettings::new().loop_region(3.0..);
+	```
+
+	Configure a sound to loop the portion from 2 to 4 seconds:
+
+	```
+	# use kira::sound::static_sound::StaticSoundSettings;
+	let settings = StaticSoundSettings::new().loop_region(2.0..4.0);
+	```
+	*/
+	pub fn loop_region(&self, loop_region: impl IntoOptionalRegion) -> Self {
+		let mut new = self.clone();
+		new.settings.loop_region = loop_region.into_optional_region();
+		new
+	}
+
+	/**
+	Sets the volume of the sound.
+
+	# Examples
+
+	Set the volume as a factor:
+
+	```
+	# use kira::sound::static_sound::StaticSoundSettings;
+	let settings = StaticSoundSettings::new().volume(0.5);
+	```
+
+	Set the volume as a gain in decibels:
+
+	```
+	# use kira::sound::static_sound::StaticSoundSettings;
+	let settings = StaticSoundSettings::new().volume(kira::Volume::Decibels(-6.0));
+	```
+
+	Link the volume to a modulator:
+
+	```no_run
+	use kira::{
+		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		modulator::tweener::TweenerBuilder,
+		sound::static_sound::{StaticSoundSettings},
+	};
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let tweener = manager.add_modulator(TweenerBuilder {
+		initial_value: 0.5,
+	})?;
+	let settings = StaticSoundSettings::new().volume(&tweener);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
+	pub fn volume(&self, volume: impl Into<Value<Volume>>) -> Self {
+		let mut new = self.clone();
+		new.settings.volume = volume.into();
+		new
+	}
+
+	/**
+	Sets the playback rate of the sound.
+
+	Changing the playback rate will change both the speed
+	and the pitch of the sound.
+
+	# Examples
+
+	Set the playback rate as a factor:
+
+	```
+	# use kira::sound::static_sound::StaticSoundSettings;
+	let settings = StaticSoundSettings::new().playback_rate(0.5);
+	```
+
+	Set the playback rate as a change in semitones:
+
+	```
+	# use kira::sound::static_sound::StaticSoundSettings;
+	use kira::sound::PlaybackRate;
+	let settings = StaticSoundSettings::new().playback_rate(PlaybackRate::Semitones(-2.0));
+	```
+
+	Link the playback rate to a modulator:
+
+	```no_run
+	use kira::{
+		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		modulator::tweener::TweenerBuilder,
+		sound::static_sound::{StaticSoundSettings},
+	};
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let tweener = manager.add_modulator(TweenerBuilder {
+		initial_value: 0.5,
+	})?;
+	let settings = StaticSoundSettings::new().playback_rate(&tweener);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
+	pub fn playback_rate(&self, playback_rate: impl Into<Value<PlaybackRate>>) -> Self {
+		let mut new = self.clone();
+		new.settings.playback_rate = playback_rate.into();
+		new
+	}
+
+	/**
+	Sets the panning of the sound, where 0 is hard left
+	and 1 is hard right.
+
+	# Examples
+
+	Set the panning to a static value:
+
+	```
+	# use kira::sound::static_sound::StaticSoundSettings;
+	let settings = StaticSoundSettings::new().panning(0.25);
+	```
+
+	Link the panning to a modulator:
+
+	```no_run
+	use kira::{
+		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		modulator::tweener::TweenerBuilder,
+		sound::static_sound::{StaticSoundSettings},
+	};
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let tweener = manager.add_modulator(TweenerBuilder {
+		initial_value: 0.25,
+	})?;
+	let settings = StaticSoundSettings::new().panning(&tweener);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
+	pub fn panning(&self, panning: impl Into<Value<f64>>) -> Self {
+		let mut new = self.clone();
+		new.settings.panning = panning.into();
+		new
+	}
+
+	/**
+	Sets the destination that this sound should be routed to.
+
+	# Examples
+
+	Set the output destination of a sound to a mixer track:
+
+	```no_run
+	use kira::{
+		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		track::TrackBuilder,
+		sound::static_sound::{StaticSoundSettings},
+	};
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let sub_track = manager.add_sub_track(TrackBuilder::new())?;
+	let settings = StaticSoundSettings::new().output_destination(&sub_track);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+
+	Set the output destination of a sound to an emitter in a spatial scene:
+
+	```no_run
+	use kira::{
+		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		spatial::{scene::SpatialSceneSettings, emitter::EmitterSettings},
+		sound::static_sound::{StaticSoundSettings},
+	};
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let mut scene = manager.add_spatial_scene(SpatialSceneSettings::default())?;
+	let emitter = scene.add_emitter(mint::Vector3 {
+		x: 0.0,
+		y: 0.0,
+		z: 0.0,
+	}, EmitterSettings::default())?;
+	let settings = StaticSoundSettings::new().output_destination(&emitter);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
+	pub fn output_destination(&self, output_destination: impl Into<OutputDestination>) -> Self {
+		let mut new = self.clone();
+		new.settings.output_destination = output_destination.into();
+		new
+	}
+
+	/// Sets the tween used to fade in the sound from silence.
+	pub fn fade_in_tween(&self, fade_in_tween: impl Into<Option<Tween>>) -> Self {
+		let mut new = self.clone();
+		new.settings.fade_in_tween = fade_in_tween.into();
+		new
+	}
+
+	/// Returns a clone of the `StaticSoundData` with the specified settings.
+	pub fn with_settings(&self, settings: StaticSoundSettings) -> Self {
+		Self {
+			settings,
+			..self.clone()
+		}
+	}
+
 	pub fn num_frames(&self) -> usize {
 		num_frames(&self.frames, self.slice)
 	}
@@ -59,23 +314,6 @@ impl StaticSoundData {
 			(start, end)
 		});
 		new
-	}
-
-	/// Returns a clone of the `StaticSoundData` with the specified settings.
-	pub fn with_settings(&self, settings: StaticSoundSettings) -> Self {
-		Self {
-			settings,
-			..self.clone()
-		}
-	}
-
-	/// Returns a clone of the `StaticSoundData` with the modified settings from
-	/// the given function.
-	pub fn with_modified_settings(
-		&self,
-		f: impl FnOnce(StaticSoundSettings) -> StaticSoundSettings,
-	) -> Self {
-		self.with_settings(f(self.settings))
 	}
 
 	pub(super) fn split(self) -> (StaticSound, StaticSoundHandle) {

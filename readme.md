@@ -17,12 +17,12 @@ use kira::{
 		AudioManager, AudioManagerSettings,
 		backend::DefaultBackend,
 	},
-	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+	sound::static_sound::StaticSoundData,
 };
 
 // Create an audio manager. This plays sounds and manages resources.
 let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-let sound_data = StaticSoundData::from_file("sound.ogg", StaticSoundSettings::default())?;
+let sound_data = StaticSoundData::from_file("sound.ogg")?;
 manager.play(sound_data.clone())?;
 // After a couple seconds...
 manager.play(sound_data.clone())?;
@@ -39,12 +39,12 @@ use kira::{
 		AudioManager, AudioManagerSettings,
 		backend::DefaultBackend,
 	},
-	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+	sound::static_sound::StaticSoundData,
 	tween::Tween,
 };
 
 let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-let sound_data = StaticSoundData::from_file("sound.ogg", StaticSoundSettings::new())?;
+let sound_data = StaticSoundData::from_file("sound.ogg")?;
 let mut sound = manager.play(sound_data)?;
 // Start smoothly adjusting the playback rate parameter.
 sound.set_playback_rate(
@@ -65,7 +65,7 @@ use kira::{
 		AudioManager, AudioManagerSettings,
 		backend::DefaultBackend,
 	},
-	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+	sound::static_sound::StaticSoundData,
 	track::{
 		TrackBuilder,
 		effect::filter::FilterBuilder,
@@ -80,10 +80,7 @@ let track = manager.add_sub_track({
 	builder
 })?;
 // Play the sound on the track.
-let sound_data = StaticSoundData::from_file(
-	"sound.ogg",
-	StaticSoundSettings::new().output_destination(&track),
-)?;
+let sound_data = StaticSoundData::from_file("sound.ogg")?.output_destination(&track);
 manager.play(sound_data)?;
 ```
 
@@ -95,7 +92,7 @@ use kira::{
 		AudioManager, AudioManagerSettings,
 		backend::DefaultBackend,
 	},
-	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+	sound::static_sound::StaticSoundData,
 	clock::ClockSpeed,
 };
 
@@ -107,16 +104,12 @@ let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::defa
 // arbitrary amount of time.
 let mut clock = manager.add_clock(ClockSpeed::TicksPerMinute(TEMPO))?;
 // Play a sound 2 ticks (beats) from now.
-let sound_data_1 = StaticSoundData::from_file(
-	"sound1.ogg",
-	StaticSoundSettings::new().start_time(clock.time() + 2),
-)?;
+let sound_data_1 = StaticSoundData::from_file("sound1.ogg")?
+	.start_time(clock.time() + 2);
 manager.play(sound_data_1)?;
 // Play a different sound 4 ticks (beats) from now.
-let sound_data_2 = StaticSoundData::from_file(
-	"sound2.ogg",
-	StaticSoundSettings::new().start_time(clock.time() + 4),
-)?;
+let sound_data_2 = StaticSoundData::from_file("sound2.ogg")?
+	.start_time(clock.time() + 4);
 manager.play(sound_data_2)?;
 // Start the clock.
 clock.start()?;

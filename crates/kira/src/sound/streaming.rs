@@ -14,7 +14,7 @@ use kira::{
 };
 
 let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-let sound_data = StreamingSoundData::from_file("sound.ogg", StreamingSoundSettings::default())?;
+let sound_data = StreamingSoundData::from_file("sound.ogg")?;
 manager.play(sound_data)?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```

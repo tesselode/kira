@@ -4,7 +4,7 @@ use kira::{
 	dsp::Frame,
 	manager::{backend::mock::MockBackend, AudioManager, AudioManagerSettings},
 	sound::{
-		streaming::{Decoder, StreamingSoundData, StreamingSoundSettings},
+		streaming::{Decoder, StreamingSoundData},
 		PlaybackState,
 	},
 };
@@ -37,7 +37,7 @@ impl Decoder for MockDecoder {
 #[test]
 fn streaming_sound_stops_on_error() {
 	let mut manager = AudioManager::<MockBackend>::new(AudioManagerSettings::default()).unwrap();
-	let data = StreamingSoundData::from_decoder(MockDecoder, StreamingSoundSettings::default());
+	let data = StreamingSoundData::from_decoder(MockDecoder);
 	let mut sound = manager.play(data).unwrap();
 	manager.backend_mut().on_start_processing();
 	std::thread::sleep(Duration::from_secs(1));
