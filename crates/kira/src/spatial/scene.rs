@@ -11,8 +11,7 @@ use std::sync::{
 	Arc,
 };
 
-use crate::arena::{Arena, Controller, Key};
-use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
+use crate::{arena::Key, manager::backend::resources::ResourceStorage};
 
 use crate::{
 	clock::clock_info::ClockInfoProvider, manager::backend::resources::mixer::Mixer,
@@ -21,35 +20,32 @@ use crate::{
 
 use super::{
 	emitter::{Emitter, EmitterId},
-	listener::{Listener, ListenerId},
+	listener::Listener,
 };
 
 pub(crate) struct SpatialScene {
-	emitters: Arena<Emitter>,
-	unused_emitter_producer: HeapProducer<Emitter>,
-	listeners: Arena<Listener>,
-	unused_listener_producer: HeapProducer<Listener>,
+	emitters: ResourceStorage<Emitter>,
+	listeners: ResourceStorage<Listener>,
 	shared: Arc<SpatialSceneShared>,
 }
 
 impl SpatialScene {
-	pub fn new(
-		settings: SpatialSceneSettings,
-	) -> (Self, HeapConsumer<Emitter>, HeapConsumer<Listener>) {
-		let (unused_emitter_producer, unused_emitter_consumer) =
-			HeapRb::new(settings.emitter_capacity as usize).split();
-		let (unused_listener_producer, unused_listener_consumer) =
-			HeapRb::new(settings.listener_capacity as usize).split();
+	pub fn new(id: SpatialSceneId, settings: SpatialSceneSettings) -> (Self, SpatialSceneHandle) {
+		let (emitters, emitter_controller) = ResourceStorage::new(settings.emitter_capacity);
+		let (listeners, listener_controller) = ResourceStorage::new(settings.listener_capacity);
+		let shared = Arc::new(SpatialSceneShared::new());
 		(
 			Self {
-				emitters: Arena::new(settings.emitter_capacity),
-				unused_emitter_producer,
-				listeners: Arena::new(settings.listener_capacity),
-				unused_listener_producer,
-				shared: Arc::new(SpatialSceneShared::new()),
+				emitters,
+				listeners,
+				shared: shared.clone(),
 			},
-			unused_emitter_consumer,
-			unused_listener_consumer,
+			SpatialSceneHandle {
+				id,
+				shared,
+				emitter_controller,
+				listener_controller,
+			},
 		)
 	}
 
@@ -57,57 +53,19 @@ impl SpatialScene {
 		self.shared.clone()
 	}
 
-	pub fn emitter_controller(&self) -> Controller {
-		self.emitters.controller()
-	}
-
-	pub fn listener_controller(&self) -> Controller {
-		self.listeners.controller()
-	}
-
 	pub fn emitter_mut(&mut self, id: EmitterId) -> Option<&mut Emitter> {
 		self.emitters.get_mut(id.key)
 	}
 
 	pub fn on_start_processing(&mut self) {
-		self.remove_unused_emitters();
-		self.remove_unused_listeners();
+		self.emitters.remove_and_add(|emitter| emitter.finished());
+		self.listeners
+			.remove_and_add(|listener| listener.shared().is_marked_for_removal());
 		for (_, listener) in &mut self.listeners {
 			listener.on_start_processing();
 		}
 		for (_, emitter) in &mut self.emitters {
 			emitter.on_start_processing();
-		}
-	}
-
-	pub fn remove_unused_emitters(&mut self) {
-		if self.unused_emitter_producer.is_full() {
-			return;
-		}
-		for (_, emitter) in self.emitters.drain_filter(|emitter| emitter.finished()) {
-			if self.unused_emitter_producer.push(emitter).is_err() {
-				panic!("Unused emitter producer is full")
-			}
-			if self.unused_emitter_producer.is_full() {
-				return;
-			}
-		}
-	}
-
-	pub fn remove_unused_listeners(&mut self) {
-		if self.unused_listener_producer.is_full() {
-			return;
-		}
-		for (_, listener) in self
-			.listeners
-			.drain_filter(|listener| listener.shared().is_marked_for_removal())
-		{
-			if self.unused_listener_producer.push(listener).is_err() {
-				panic!("Unused listener producer is full")
-			}
-			if self.unused_listener_producer.is_full() {
-				return;
-			}
 		}
 	}
 
@@ -127,25 +85,13 @@ impl SpatialScene {
 					dt,
 					clock_info_provider,
 					modulator_value_provider,
-					&self.emitters,
+					&self.emitters.resources,
 				));
 			}
 		}
 		for (_, emitter) in &mut self.emitters {
 			emitter.after_process();
 		}
-	}
-
-	pub fn add_emitter(&mut self, id: EmitterId, emitter: Emitter) {
-		self.emitters
-			.insert_with_key(id.key, emitter)
-			.expect("Emitter arena is full");
-	}
-
-	pub fn add_listener(&mut self, id: ListenerId, listener: Listener) {
-		self.listeners
-			.insert_with_key(id.key, listener)
-			.expect("Listener arena is full");
 	}
 }
 

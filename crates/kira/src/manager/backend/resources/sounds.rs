@@ -1,57 +1,22 @@
-use crate::arena::{Arena, Controller};
-use ringbuf::HeapProducer;
-
 use crate::{
-	clock::clock_info::ClockInfoProvider, manager::command::SoundCommand,
-	modulator::value_provider::ModulatorValueProvider, sound::Sound, OutputDestination,
+	clock::clock_info::ClockInfoProvider, modulator::value_provider::ModulatorValueProvider,
+	sound::Sound, OutputDestination,
 };
 
-use super::{mixer::Mixer, spatial_scenes::SpatialScenes};
+use super::{mixer::Mixer, spatial_scenes::SpatialScenes, ResourceController, ResourceStorage};
 
-pub(crate) struct Sounds {
-	sounds: Arena<Box<dyn Sound>>,
-	unused_sound_producer: HeapProducer<Box<dyn Sound>>,
-}
+pub(crate) struct Sounds(ResourceStorage<Box<dyn Sound>>);
 
 impl Sounds {
-	pub fn new(capacity: u16, unused_sound_producer: HeapProducer<Box<dyn Sound>>) -> Self {
-		Self {
-			sounds: Arena::new(capacity),
-			unused_sound_producer,
-		}
-	}
-
-	pub fn controller(&self) -> Controller {
-		self.sounds.controller()
+	pub fn new(capacity: u16) -> (Self, ResourceController<Box<dyn Sound>>) {
+		let (storage, controller) = ResourceStorage::new(capacity);
+		(Self(storage), controller)
 	}
 
 	pub fn on_start_processing(&mut self) {
-		for (_, sound) in &mut self.sounds {
+		self.0.remove_and_add(|sound| sound.finished());
+		for (_, sound) in &mut self.0 {
 			sound.on_start_processing();
-		}
-		self.remove_unused_sounds();
-	}
-
-	fn remove_unused_sounds(&mut self) {
-		if self.unused_sound_producer.is_full() {
-			return;
-		}
-		for (_, sound) in self.sounds.drain_filter(|sound| sound.finished()) {
-			if self.unused_sound_producer.push(sound).is_err() {
-				panic!("Unused sound producer is full")
-			}
-			if self.unused_sound_producer.is_full() {
-				return;
-			}
-		}
-	}
-
-	pub fn run_command(&mut self, command: SoundCommand) {
-		match command {
-			SoundCommand::Add(key, sound) => self
-				.sounds
-				.insert_with_key(key, sound)
-				.expect("Sound arena is full"),
 		}
 	}
 
@@ -63,7 +28,7 @@ impl Sounds {
 		mixer: &mut Mixer,
 		scenes: &mut SpatialScenes,
 	) {
-		for (_, sound) in &mut self.sounds {
+		for (_, sound) in &mut self.0 {
 			match sound.output_destination() {
 				OutputDestination::Track(track_id) => {
 					if let Some(track) = mixer.track_mut(track_id) {

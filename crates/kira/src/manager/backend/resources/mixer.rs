@@ -1,65 +1,44 @@
 #[cfg(test)]
 mod test;
 
-use crate::arena::{Arena, Controller};
-use ringbuf::HeapProducer;
-
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	dsp::Frame,
-	manager::command::MixerCommand,
 	modulator::value_provider::ModulatorValueProvider,
-	track::{SubTrackId, Track, TrackBuilder, TrackHandle, TrackId, TrackRoute},
+	track::{Track, TrackBuilder, TrackHandle, TrackId},
 };
+
+use super::{ResourceController, SelfReferentialResourceStorage};
 
 pub(crate) struct Mixer {
 	main_track: Track,
-	sub_tracks: Arena<Track>,
-	sub_track_ids: Vec<SubTrackId>,
-	dummy_routes: Vec<(TrackId, TrackRoute)>,
-	unused_track_producer: HeapProducer<Track>,
+	sub_tracks: SelfReferentialResourceStorage<Track>,
 }
 
 impl Mixer {
 	pub fn new(
 		sub_track_capacity: u16,
-		unused_sub_track_producer: HeapProducer<Track>,
 		sample_rate: u32,
 		main_track_builder: TrackBuilder,
-	) -> (Self, TrackHandle) {
+	) -> (Self, ResourceController<Track>, TrackHandle) {
 		let (mut main_track, main_track_handle) = main_track_builder.build(TrackId::Main);
 		main_track.init_effects(sample_rate);
+		let (sub_tracks, sub_track_controller) =
+			SelfReferentialResourceStorage::new(sub_track_capacity);
 		(
 			Self {
 				main_track,
-				sub_tracks: Arena::new(sub_track_capacity),
-				sub_track_ids: Vec::with_capacity(sub_track_capacity as usize),
-				dummy_routes: vec![],
-				unused_track_producer: unused_sub_track_producer,
+				sub_tracks,
 			},
+			sub_track_controller,
 			main_track_handle,
 		)
-	}
-
-	pub fn sub_track_controller(&self) -> Controller {
-		self.sub_tracks.controller()
 	}
 
 	pub fn track_mut(&mut self, id: TrackId) -> Option<&mut Track> {
 		match id {
 			TrackId::Main => Some(&mut self.main_track),
 			TrackId::Sub(id) => self.sub_tracks.get_mut(id.0),
-		}
-	}
-
-	pub fn run_command(&mut self, command: MixerCommand) {
-		match command {
-			MixerCommand::AddSubTrack(id, track) => {
-				self.sub_tracks
-					.insert_with_key(id.0, track)
-					.expect("Sub-track arena is full");
-				self.sub_track_ids.push(id);
-			}
 		}
 	}
 
@@ -71,35 +50,12 @@ impl Mixer {
 	}
 
 	pub fn on_start_processing(&mut self) {
-		self.remove_unused_tracks();
+		self.sub_tracks
+			.remove_and_add(|track| track.shared().is_marked_for_removal());
 		for (_, track) in &mut self.sub_tracks {
 			track.on_start_processing();
 		}
 		self.main_track.on_start_processing();
-	}
-
-	fn remove_unused_tracks(&mut self) {
-		let mut i = 0;
-		while i < self.sub_track_ids.len() && !self.unused_track_producer.is_full() {
-			let id = self.sub_track_ids[i];
-			let track = &mut self.sub_tracks[id.0];
-			if track.shared().is_marked_for_removal() {
-				if self
-					.unused_track_producer
-					.push(
-						self.sub_tracks
-							.remove(id.0)
-							.unwrap_or_else(|| panic!("Sub track with ID {:?} does not exist", id)),
-					)
-					.is_err()
-				{
-					panic!("Unused track producer is full")
-				}
-				self.sub_track_ids.remove(i);
-			} else {
-				i += 1;
-			}
-		}
 	}
 
 	pub fn process(
@@ -108,36 +64,19 @@ impl Mixer {
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
 	) -> Frame {
-		// iterate through the sub-tracks newest to oldest
-		for id in self.sub_track_ids.iter().rev() {
-			// process the track and get its output
-			let track = self
-				.sub_tracks
-				.get_mut(id.0)
-				.expect("sub track IDs and sub tracks are out of sync");
+		self.sub_tracks.for_each_rev(|track, others| {
 			let output = track.process(dt, clock_info_provider, modulator_value_provider);
-			// temporarily take ownership of its routes. we can't just
-			// borrow the routes because then we can't get mutable
-			// references to the other tracks
-			std::mem::swap(track.routes_mut(), &mut self.dummy_routes);
-			// send the output to the destination tracks
-			for (id, route) in &self.dummy_routes {
+			for (id, route) in track.routes_mut() {
 				let destination_track = match id {
 					TrackId::Main => Some(&mut self.main_track),
-					TrackId::Sub(id) => self.sub_tracks.get_mut(id.0),
+					TrackId::Sub(id) => others.get_mut(id.0),
 				};
 				if let Some(destination_track) = destination_track {
 					destination_track
 						.add_input(output * route.volume.value().as_amplitude() as f32);
 				}
 			}
-			// borrow the track again and give it back its routes
-			let track = self
-				.sub_tracks
-				.get_mut(id.0)
-				.expect("sub track IDs and sub tracks are out of sync");
-			std::mem::swap(track.routes_mut(), &mut self.dummy_routes);
-		}
+		});
 		self.main_track
 			.process(dt, clock_info_provider, modulator_value_provider)
 	}

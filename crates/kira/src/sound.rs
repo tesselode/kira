@@ -26,7 +26,7 @@ mod symphonia;
 mod transport;
 mod util;
 
-use std::ops::{Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive};
+use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
 
 #[cfg(feature = "symphonia")]
 pub use error::*;

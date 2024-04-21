@@ -14,7 +14,7 @@ use std::{
 	},
 };
 
-use crate::arena::{Arena, Key};
+use crate::arena::Arena;
 use glam::{Quat, Vec3};
 
 use crate::{
@@ -29,7 +29,7 @@ use crate::{
 	Volume,
 };
 
-use super::{emitter::Emitter, scene::SpatialSceneId};
+use super::emitter::Emitter;
 
 const EAR_DISTANCE: f32 = 0.1;
 const EAR_ANGLE_FROM_HEAD: f32 = FRAC_PI_8;
@@ -139,20 +139,6 @@ impl Listener {
 		let left = orientation * left_ear_direction_relative_to_head;
 		let right = orientation * right_ear_direction_relative_to_head;
 		(left, right)
-	}
-}
-
-/// A unique identifier for an listener.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ListenerId {
-	pub(crate) key: Key,
-	pub(crate) scene_id: SpatialSceneId,
-}
-
-impl ListenerId {
-	/// Returns the ID of the spatial scene this listener belongs to.
-	pub fn scene(&self) -> SpatialSceneId {
-		self.scene_id
 	}
 }
 

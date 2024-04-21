@@ -2,7 +2,7 @@
 name = "kira"
 version = "0.8.6"
 authors = ["Andrew Minnich <aminnich3@gmail.com>"]
-edition = "2018"
+edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "Expressive audio library for games"
 repository = "https://github.com/tesselode/kira"

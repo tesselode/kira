@@ -1,19 +1,14 @@
-mod error;
-
-pub use error::*;
-
 use glam::{Quat, Vec3};
 
 use std::sync::Arc;
 
-use crate::arena::Controller;
-use ringbuf::HeapConsumer;
+use crate::manager::backend::resources::ResourceController;
 
+use crate::ResourceLimitReached;
 use crate::{
-	manager::command::{producer::CommandProducer, Command, SpatialSceneCommand},
 	spatial::{
 		emitter::{self, Emitter, EmitterHandle, EmitterId, EmitterSettings},
-		listener::{self, Listener, ListenerHandle, ListenerId, ListenerSettings},
+		listener::{self, Listener, ListenerHandle, ListenerSettings},
 	},
 	tween::Value,
 };
@@ -27,11 +22,8 @@ use super::{SpatialSceneId, SpatialSceneShared};
 pub struct SpatialSceneHandle {
 	pub(crate) id: SpatialSceneId,
 	pub(crate) shared: Arc<SpatialSceneShared>,
-	pub(crate) emitter_controller: Controller,
-	pub(crate) unused_emitter_consumer: HeapConsumer<Emitter>,
-	pub(crate) listener_controller: Controller,
-	pub(crate) unused_listener_consumer: HeapConsumer<Listener>,
-	pub(crate) command_producer: CommandProducer,
+	pub(crate) emitter_controller: ResourceController<Emitter>,
+	pub(crate) listener_controller: ResourceController<Listener>,
 }
 
 impl SpatialSceneHandle {
@@ -45,7 +37,7 @@ impl SpatialSceneHandle {
 		&mut self,
 		position: impl Into<Value<mint::Vector3<f32>>>,
 		settings: EmitterSettings,
-	) -> Result<EmitterHandle, AddEmitterError> {
+	) -> Result<EmitterHandle, ResourceLimitReached> {
 		let position: Value<mint::Vector3<f32>> = position.into();
 		self.add_emitter_inner(position.to_(), settings)
 	}
@@ -59,7 +51,7 @@ impl SpatialSceneHandle {
 		position: impl Into<Value<mint::Vector3<f32>>>,
 		orientation: impl Into<Value<mint::Quaternion<f32>>>,
 		settings: ListenerSettings,
-	) -> Result<ListenerHandle, AddListenerError> {
+	) -> Result<ListenerHandle, ResourceLimitReached> {
 		let position: Value<mint::Vector3<f32>> = position.into();
 		let orientation: Value<mint::Quaternion<f32>> = orientation.into();
 		self.add_listener_inner(position.to_(), orientation.to_(), settings)
@@ -79,13 +71,10 @@ impl SpatialSceneHandle {
 		&mut self,
 		position: Value<glam::Vec3>,
 		settings: EmitterSettings,
-	) -> Result<EmitterHandle, AddEmitterError> {
-		while self.unused_emitter_consumer.pop().is_some() {}
+	) -> Result<EmitterHandle, ResourceLimitReached> {
+		let key = self.emitter_controller.try_reserve()?;
 		let id = EmitterId {
-			key: self
-				.emitter_controller
-				.try_reserve()
-				.map_err(|_| AddEmitterError::EmitterLimitReached)?,
+			key,
 			scene_id: self.id,
 		};
 		let (command_writers, command_readers) = emitter::command_writers_and_readers();
@@ -95,10 +84,7 @@ impl SpatialSceneHandle {
 			shared: emitter.shared(),
 			command_writers,
 		};
-		self.command_producer
-			.push(Command::SpatialScene(SpatialSceneCommand::AddEmitter(
-				id, emitter,
-			)))?;
+		self.emitter_controller.insert_with_key(key, emitter);
 		Ok(handle)
 	}
 
@@ -107,26 +93,14 @@ impl SpatialSceneHandle {
 		position: Value<Vec3>,
 		orientation: Value<Quat>,
 		settings: ListenerSettings,
-	) -> Result<ListenerHandle, AddListenerError> {
-		while self.unused_listener_consumer.pop().is_some() {}
-		let id = ListenerId {
-			key: self
-				.listener_controller
-				.try_reserve()
-				.map_err(|_| AddListenerError::ListenerLimitReached)?,
-			scene_id: self.id,
-		};
+	) -> Result<ListenerHandle, ResourceLimitReached> {
 		let (command_writers, command_readers) = listener::command_writers_and_readers();
 		let listener = Listener::new(command_readers, position, orientation, settings);
 		let handle = ListenerHandle {
-			id,
 			shared: listener.shared(),
 			command_writers,
 		};
-		self.command_producer
-			.push(Command::SpatialScene(SpatialSceneCommand::AddListener(
-				id, listener,
-			)))?;
+		self.listener_controller.insert(listener)?;
 		Ok(handle)
 	}
 }

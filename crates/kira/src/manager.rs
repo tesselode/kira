@@ -6,49 +6,36 @@
 //! [`AudioManager`] is dropped, its audio output will be stopped.
 
 pub mod backend;
-pub(crate) mod command;
 pub mod error;
 mod settings;
 
-use ringbuf::HeapRb;
 pub use settings::*;
 
 use std::sync::{atomic::Ordering, Arc};
 
 use crate::{
 	clock::{Clock, ClockHandle, ClockId, ClockSpeed},
-	manager::command::ModulatorCommand,
 	modulator::{ModulatorBuilder, ModulatorId},
 	sound::SoundData,
 	spatial::scene::{SpatialScene, SpatialSceneHandle, SpatialSceneId, SpatialSceneSettings},
 	track::{SubTrackId, TrackBuilder, TrackHandle, TrackId},
 	tween::Value,
+	ResourceLimitReached,
 };
 
 use self::{
 	backend::{
-		resources::{
-			create_resources, create_unused_resource_channels, ResourceControllers,
-			UnusedResourceConsumers,
-		},
+		resources::{create_resources, ResourceControllers},
 		Backend, DefaultBackend, Renderer, RendererShared,
 	},
-	command::{
-		producer::CommandProducer, ClockCommand, Command, MixerCommand, SoundCommand,
-		SpatialSceneCommand,
-	},
-	error::{
-		AddClockError, AddModulatorError, AddSpatialSceneError, AddSubTrackError, PlaySoundError,
-	},
+	error::PlaySoundError,
 };
 
 /// Controls audio from gameplay code.
 pub struct AudioManager<B: Backend = DefaultBackend> {
 	backend: B,
 	renderer_shared: Arc<RendererShared>,
-	command_producer: CommandProducer,
 	resource_controllers: ResourceControllers,
-	unused_resource_consumers: UnusedResourceConsumers,
 }
 
 impl<B: Backend> AudioManager<B> {
@@ -84,25 +71,18 @@ impl<B: Backend> AudioManager<B> {
 	*/
 	pub fn new(settings: AudioManagerSettings<B>) -> Result<Self, B::Error> {
 		let (mut backend, sample_rate) = B::setup(settings.backend_settings)?;
-		let (command_producer, command_consumer) =
-			HeapRb::new(settings.capacities.command_capacity).split();
-		let (unused_resource_producers, unused_resource_consumers) =
-			create_unused_resource_channels(settings.capacities);
 		let (resources, resource_controllers) = create_resources(
 			settings.capacities,
 			settings.main_track_builder,
-			unused_resource_producers,
 			sample_rate,
 		);
-		let renderer = Renderer::new(sample_rate, resources, command_consumer);
+		let renderer = Renderer::new(sample_rate, resources);
 		let renderer_shared = renderer.shared();
 		backend.start(renderer)?;
 		Ok(Self {
 			backend,
 			renderer_shared,
-			command_producer: CommandProducer::new(command_producer),
 			resource_controllers,
-			unused_resource_consumers,
 		})
 	}
 
@@ -130,24 +110,13 @@ impl<B: Backend> AudioManager<B> {
 		&mut self,
 		sound_data: D,
 	) -> Result<D::Handle, PlaySoundError<D::Error>> {
-		while self
-			.unused_resource_consumers
-			.sound
-			.get_mut()
-			.expect("unused resource consumer mutex poisoned")
-			.pop()
-			.is_some()
-		{}
-		let key = self
-			.resource_controllers
-			.sound_controller
-			.try_reserve()
-			.map_err(|_| PlaySoundError::SoundLimitReached)?;
 		let (sound, handle) = sound_data
 			.into_sound()
 			.map_err(PlaySoundError::IntoSoundError)?;
-		self.command_producer
-			.push(Command::Sound(SoundCommand::Add(key, sound)))?;
+		self.resource_controllers
+			.sound_controller
+			.insert(sound)
+			.map_err(|_| PlaySoundError::SoundLimitReached)?;
 		Ok(handle)
 	}
 
@@ -155,23 +124,17 @@ impl<B: Backend> AudioManager<B> {
 	pub fn add_sub_track(
 		&mut self,
 		builder: TrackBuilder,
-	) -> Result<TrackHandle, AddSubTrackError> {
-		let unused_sub_track_consumer = &mut self
-			.unused_resource_consumers
-			.sub_track
-			.get_mut()
-			.expect("unused resource consumer mutex poisoned");
-		while unused_sub_track_consumer.pop().is_some() {}
-		let id = SubTrackId(
-			self.resource_controllers
-				.sub_track_controller
-				.try_reserve()
-				.map_err(|_| AddSubTrackError::SubTrackLimitReached)?,
-		);
-		let (mut track, handle) = builder.build(TrackId::Sub(id));
+	) -> Result<TrackHandle, ResourceLimitReached> {
+		let key = self
+			.resource_controllers
+			.sub_track_controller
+			.try_reserve()?;
+		let id = TrackId::Sub(SubTrackId(key));
+		let (mut track, handle) = builder.build(id);
 		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
-		self.command_producer
-			.push(Command::Mixer(MixerCommand::AddSubTrack(id, track)))?;
+		self.resource_controllers
+			.sub_track_controller
+			.insert_with_key(key, track);
 		Ok(handle)
 	}
 
@@ -197,22 +160,13 @@ impl<B: Backend> AudioManager<B> {
 	pub fn add_clock(
 		&mut self,
 		speed: impl Into<Value<ClockSpeed>>,
-	) -> Result<ClockHandle, AddClockError> {
-		let unused_clock_consumer = &mut self
-			.unused_resource_consumers
-			.clock
-			.get_mut()
-			.expect("unused resource consumer mutex poisoned");
-		while unused_clock_consumer.pop().is_some() {}
-		let id = ClockId(
-			self.resource_controllers
-				.clock_controller
-				.try_reserve()
-				.map_err(|_| AddClockError::ClockLimitReached)?,
-		);
+	) -> Result<ClockHandle, ResourceLimitReached> {
+		let key = self.resource_controllers.clock_controller.try_reserve()?;
+		let id = ClockId(key);
 		let (clock, handle) = Clock::new(speed.into(), id);
-		self.command_producer
-			.push(Command::Clock(ClockCommand::Add(id, clock)))?;
+		self.resource_controllers
+			.clock_controller
+			.insert_with_key(key, clock);
 		Ok(handle)
 	}
 
@@ -220,35 +174,16 @@ impl<B: Backend> AudioManager<B> {
 	pub fn add_spatial_scene(
 		&mut self,
 		settings: SpatialSceneSettings,
-	) -> Result<SpatialSceneHandle, AddSpatialSceneError> {
-		let unused_spatial_scene_consumer = &mut self
-			.unused_resource_consumers
-			.spatial_scene
-			.get_mut()
-			.expect("unused resource consumer mutex poisoned");
-		while unused_spatial_scene_consumer.pop().is_some() {}
-		let id = SpatialSceneId(
-			self.resource_controllers
-				.spatial_scene_controller
-				.try_reserve()
-				.map_err(|_| AddSpatialSceneError::SpatialSceneLimitReached)?,
-		);
-		let (spatial_scene, unused_emitter_consumer, unused_listener_consumer) =
-			SpatialScene::new(settings);
-		let handle = SpatialSceneHandle {
-			id,
-			shared: spatial_scene.shared(),
-			emitter_controller: spatial_scene.emitter_controller(),
-			unused_emitter_consumer,
-			listener_controller: spatial_scene.listener_controller(),
-			unused_listener_consumer,
-			command_producer: self.command_producer.clone(),
-		};
-		self.command_producer
-			.push(Command::SpatialScene(SpatialSceneCommand::Add(
-				id,
-				spatial_scene,
-			)))?;
+	) -> Result<SpatialSceneHandle, ResourceLimitReached> {
+		let key = self
+			.resource_controllers
+			.spatial_scene_controller
+			.try_reserve()?;
+		let id = SpatialSceneId(key);
+		let (spatial_scene, handle) = SpatialScene::new(id, settings);
+		self.resource_controllers
+			.spatial_scene_controller
+			.insert_with_key(key, spatial_scene);
 		Ok(handle)
 	}
 
@@ -274,22 +209,16 @@ impl<B: Backend> AudioManager<B> {
 	pub fn add_modulator<Builder: ModulatorBuilder>(
 		&mut self,
 		builder: Builder,
-	) -> Result<Builder::Handle, AddModulatorError> {
-		let unused_modulator_consumer = &mut self
-			.unused_resource_consumers
-			.modulator
-			.get_mut()
-			.expect("unused resource consumer mutex poisoned");
-		while unused_modulator_consumer.pop().is_some() {}
-		let id = ModulatorId(
-			self.resource_controllers
-				.modulator_controller
-				.try_reserve()
-				.map_err(|_| AddModulatorError::ModulatorLimitReached)?,
-		);
+	) -> Result<Builder::Handle, ResourceLimitReached> {
+		let key = self
+			.resource_controllers
+			.modulator_controller
+			.try_reserve()?;
+		let id = ModulatorId(key);
 		let (modulator, handle) = builder.build(id);
-		self.command_producer
-			.push(Command::Modulator(ModulatorCommand::Add(id, modulator)))?;
+		self.resource_controllers
+			.modulator_controller
+			.insert_with_key(key, modulator);
 		Ok(handle)
 	}
 

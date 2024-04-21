@@ -390,6 +390,12 @@ impl Track {
 	}
 }
 
+impl Default for Track {
+	fn default() -> Self {
+		TrackBuilder::new().build(TrackId::Main).0
+	}
+}
+
 pub(crate) struct TrackRoute {
 	pub(crate) volume: Parameter<Volume>,
 	pub(crate) set_volume_command_reader: CommandReader<ValueChangeCommand<Volume>>,

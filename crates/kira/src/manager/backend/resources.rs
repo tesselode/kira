@@ -6,7 +6,10 @@ pub(crate) mod spatial_scenes;
 
 use std::sync::Mutex;
 
-use crate::arena::Controller;
+use crate::{
+	arena::{Arena, Controller, Key},
+	ResourceLimitReached,
+};
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 
 use crate::{
@@ -23,51 +26,204 @@ use self::{
 	spatial_scenes::SpatialScenes,
 };
 
-pub(crate) struct UnusedResourceProducers {
-	pub sound: HeapProducer<Box<dyn Sound>>,
-	pub sub_track: HeapProducer<Track>,
-	pub clock: HeapProducer<Clock>,
-	pub spatial_scene: HeapProducer<SpatialScene>,
-	pub modulator: HeapProducer<Box<dyn Modulator>>,
+pub(crate) struct ResourceStorage<T> {
+	pub(crate) resources: Arena<T>,
+	new_resource_consumer: HeapConsumer<(Key, T)>,
+	unused_resource_producer: HeapProducer<T>,
 }
 
-pub(crate) struct UnusedResourceConsumers {
-	pub sound: Mutex<HeapConsumer<Box<dyn Sound>>>,
-	pub sub_track: Mutex<HeapConsumer<Track>>,
-	pub clock: Mutex<HeapConsumer<Clock>>,
-	pub spatial_scene: Mutex<HeapConsumer<SpatialScene>>,
-	pub modulator: Mutex<HeapConsumer<Box<dyn Modulator>>>,
+impl<T> ResourceStorage<T> {
+	pub fn new(capacity: u16) -> (Self, ResourceController<T>) {
+		let (new_resource_producer, new_resource_consumer) = HeapRb::new(capacity as usize).split();
+		let (unused_resource_producer, unused_resource_consumer) =
+			HeapRb::new(capacity as usize).split();
+		let resources = Arena::new(capacity);
+		let arena_controller = resources.controller();
+		(
+			Self {
+				resources,
+				new_resource_consumer,
+				unused_resource_producer,
+			},
+			ResourceController {
+				arena_controller,
+				new_resource_producer: Mutex::new(new_resource_producer),
+				unused_resource_consumer: Mutex::new(unused_resource_consumer),
+			},
+		)
+	}
+
+	pub fn remove_and_add(&mut self, remove_test: impl FnMut(&T) -> bool) {
+		for (_, resource) in self.resources.drain_filter(remove_test) {
+			self.unused_resource_producer
+				.push(resource)
+				.unwrap_or_else(|_| panic!("unused resource producer is full"));
+		}
+		while let Some((key, resource)) = self.new_resource_consumer.pop() {
+			self.resources
+				.insert_with_key(key, resource)
+				.expect("error inserting resource");
+		}
+	}
+
+	pub fn get_mut(&mut self, key: Key) -> Option<&mut T> {
+		self.resources.get_mut(key)
+	}
+
+	pub fn iter_mut(&mut self) -> crate::arena::iter::IterMut<T> {
+		self.resources.iter_mut()
+	}
 }
 
-pub(crate) fn create_unused_resource_channels(
-	capacities: Capacities,
-) -> (UnusedResourceProducers, UnusedResourceConsumers) {
-	let (unused_sound_producer, unused_sound_consumer) =
-		HeapRb::new(capacities.sound_capacity as usize).split();
-	let (unused_sub_track_producer, unused_sub_track_consumer) =
-		HeapRb::new(capacities.sub_track_capacity as usize).split();
-	let (unused_clock_producer, unused_clock_consumer) =
-		HeapRb::new(capacities.clock_capacity as usize).split();
-	let (unused_spatial_scene_producer, unused_spatial_scene_consumer) =
-		HeapRb::new(capacities.spatial_scene_capacity as usize).split();
-	let (unused_modulator_producer, unused_modulator_consumer) =
-		HeapRb::new(capacities.modulator_capacity as usize).split();
-	(
-		UnusedResourceProducers {
-			sound: unused_sound_producer,
-			sub_track: unused_sub_track_producer,
-			clock: unused_clock_producer,
-			spatial_scene: unused_spatial_scene_producer,
-			modulator: unused_modulator_producer,
-		},
-		UnusedResourceConsumers {
-			sound: Mutex::new(unused_sound_consumer),
-			sub_track: Mutex::new(unused_sub_track_consumer),
-			clock: Mutex::new(unused_clock_consumer),
-			spatial_scene: Mutex::new(unused_spatial_scene_consumer),
-			modulator: Mutex::new(unused_modulator_consumer),
-		},
-	)
+impl<'a, T> IntoIterator for &'a mut ResourceStorage<T> {
+	type Item = (Key, &'a mut T);
+
+	type IntoIter = crate::arena::iter::IterMut<'a, T>;
+
+	fn into_iter(self) -> Self::IntoIter {
+		self.iter_mut()
+	}
+}
+
+pub(crate) struct SelfReferentialResourceStorage<T> {
+	pub(crate) resources: Arena<T>,
+	keys: Vec<Key>,
+	new_resource_consumer: HeapConsumer<(Key, T)>,
+	unused_resource_producer: HeapProducer<T>,
+	dummy: T,
+}
+
+impl<T> SelfReferentialResourceStorage<T> {
+	pub fn new(capacity: u16) -> (Self, ResourceController<T>)
+	where
+		T: Default,
+	{
+		let (new_resource_producer, new_resource_consumer) = HeapRb::new(capacity as usize).split();
+		let (unused_resource_producer, unused_resource_consumer) =
+			HeapRb::new(capacity as usize).split();
+		let resources = Arena::new(capacity);
+		let arena_controller = resources.controller();
+		(
+			Self {
+				resources,
+				keys: Vec::with_capacity(capacity as usize),
+				new_resource_consumer,
+				unused_resource_producer,
+				dummy: T::default(),
+			},
+			ResourceController {
+				arena_controller,
+				new_resource_producer: Mutex::new(new_resource_producer),
+				unused_resource_consumer: Mutex::new(unused_resource_consumer),
+			},
+		)
+	}
+
+	pub fn remove_and_add(&mut self, remove_test: impl FnMut(&T) -> bool) {
+		self.remove_unused(remove_test);
+		while let Some((key, resource)) = self.new_resource_consumer.pop() {
+			self.resources
+				.insert_with_key(key, resource)
+				.expect("error inserting resource");
+			self.keys.push(key);
+		}
+	}
+
+	pub fn get_mut(&mut self, key: Key) -> Option<&mut T> {
+		self.resources.get_mut(key)
+	}
+
+	pub fn iter_mut(&mut self) -> crate::arena::iter::IterMut<T> {
+		self.resources.iter_mut()
+	}
+
+	pub fn for_each(&mut self, mut f: impl FnMut(&mut T, &mut Arena<T>)) {
+		for key in &self.keys {
+			std::mem::swap(&mut self.resources[*key], &mut self.dummy);
+			f(&mut self.dummy, &mut self.resources);
+			std::mem::swap(&mut self.resources[*key], &mut self.dummy);
+		}
+	}
+
+	pub fn for_each_rev(&mut self, mut f: impl FnMut(&mut T, &mut Arena<T>)) {
+		for key in self.keys.iter().rev() {
+			std::mem::swap(&mut self.resources[*key], &mut self.dummy);
+			f(&mut self.dummy, &mut self.resources);
+			std::mem::swap(&mut self.resources[*key], &mut self.dummy);
+		}
+	}
+
+	fn remove_unused(&mut self, mut remove_test: impl FnMut(&T) -> bool) {
+		let mut i = 0;
+		while i < self.keys.len() && !self.unused_resource_producer.is_full() {
+			let key = self.keys[i];
+			let resource = &mut self.resources[key];
+			if remove_test(resource) {
+				let resource = self.resources.remove(key).unwrap();
+				self.unused_resource_producer
+					.push(resource)
+					.unwrap_or_else(|_| panic!("unused resource producer is full"));
+				self.keys.remove(i);
+			} else {
+				i += 1;
+			}
+		}
+	}
+}
+
+impl<'a, T> IntoIterator for &'a mut SelfReferentialResourceStorage<T> {
+	type Item = (Key, &'a mut T);
+
+	type IntoIter = crate::arena::iter::IterMut<'a, T>;
+
+	fn into_iter(self) -> Self::IntoIter {
+		self.iter_mut()
+	}
+}
+
+pub(crate) struct ResourceController<T> {
+	pub arena_controller: Controller,
+	pub new_resource_producer: Mutex<HeapProducer<(Key, T)>>,
+	pub unused_resource_consumer: Mutex<HeapConsumer<T>>,
+}
+
+impl<T> ResourceController<T> {
+	pub fn insert(&mut self, resource: T) -> Result<Key, ResourceLimitReached> {
+		let key = self.try_reserve()?;
+		self.insert_with_key(key, resource);
+		Ok(key)
+	}
+
+	pub fn try_reserve(&self) -> Result<Key, ResourceLimitReached> {
+		self.arena_controller
+			.try_reserve()
+			.map_err(|_| ResourceLimitReached)
+	}
+
+	pub fn insert_with_key(&mut self, key: Key, resource: T) {
+		self.remove_unused();
+		self.new_resource_producer
+			.get_mut()
+			.expect("new resource producer mutex poisoned")
+			.push((key, resource))
+			.unwrap_or_else(|_| panic!("new resource producer full"));
+	}
+
+	fn remove_unused(&mut self) {
+		let unused_resource_consumer = &mut self
+			.unused_resource_consumer
+			.get_mut()
+			.expect("unused resource consumer mutex poisoned");
+		while unused_resource_consumer.pop().is_some() {}
+	}
+
+	pub fn capacity(&self) -> u16 {
+		self.arena_controller.capacity()
+	}
+
+	pub fn len(&self) -> u16 {
+		self.arena_controller.len()
+	}
 }
 
 pub(crate) struct Resources {
@@ -79,41 +235,29 @@ pub(crate) struct Resources {
 }
 
 pub(crate) struct ResourceControllers {
-	pub sound_controller: Controller,
-	pub sub_track_controller: Controller,
-	pub clock_controller: Controller,
-	pub spatial_scene_controller: Controller,
-	pub modulator_controller: Controller,
+	pub sound_controller: ResourceController<Box<dyn Sound>>,
+	pub sub_track_controller: ResourceController<Track>,
+	pub clock_controller: ResourceController<Clock>,
+	pub spatial_scene_controller: ResourceController<SpatialScene>,
+	pub modulator_controller: ResourceController<Box<dyn Modulator>>,
 	pub main_track_handle: TrackHandle,
 }
 
 pub(crate) fn create_resources(
 	capacities: Capacities,
 	main_track_builder: TrackBuilder,
-	unused_resource_producers: UnusedResourceProducers,
 	sample_rate: u32,
 ) -> (Resources, ResourceControllers) {
-	let sounds = Sounds::new(capacities.sound_capacity, unused_resource_producers.sound);
-	let sound_controller = sounds.controller();
-	let (mixer, main_track_handle) = Mixer::new(
+	let (sounds, sound_controller) = Sounds::new(capacities.sound_capacity);
+	let (mixer, sub_track_controller, main_track_handle) = Mixer::new(
 		capacities.sub_track_capacity,
-		unused_resource_producers.sub_track,
 		sample_rate,
 		main_track_builder,
 	);
-	let sub_track_controller = mixer.sub_track_controller();
-	let clocks = Clocks::new(capacities.clock_capacity, unused_resource_producers.clock);
-	let clock_controller = clocks.controller();
-	let spatial_scenes = SpatialScenes::new(
-		capacities.spatial_scene_capacity,
-		unused_resource_producers.spatial_scene,
-	);
-	let spatial_scene_controller = spatial_scenes.controller();
-	let modulators = Modulators::new(
-		capacities.modulator_capacity,
-		unused_resource_producers.modulator,
-	);
-	let modulator_controller = modulators.controller();
+	let (clocks, clock_controller) = Clocks::new(capacities.clock_capacity);
+	let (spatial_scenes, spatial_scene_controller) =
+		SpatialScenes::new(capacities.spatial_scene_capacity);
+	let (modulators, modulator_controller) = Modulators::new(capacities.modulator_capacity);
 	(
 		Resources {
 			sounds,

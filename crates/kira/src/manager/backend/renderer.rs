@@ -3,10 +3,8 @@ use std::sync::{
 	Arc,
 };
 
-use ringbuf::HeapConsumer;
-
 use crate::{
-	clock::clock_info::ClockInfoProvider, dsp::Frame, manager::command::Command,
+	clock::clock_info::ClockInfoProvider, dsp::Frame,
 	modulator::value_provider::ModulatorValueProvider,
 };
 
@@ -33,20 +31,14 @@ pub struct Renderer {
 	dt: f64,
 	shared: Arc<RendererShared>,
 	resources: Resources,
-	command_consumer: HeapConsumer<Command>,
 }
 
 impl Renderer {
-	pub(crate) fn new(
-		sample_rate: u32,
-		resources: Resources,
-		command_consumer: HeapConsumer<Command>,
-	) -> Self {
+	pub(crate) fn new(sample_rate: u32, resources: Resources) -> Self {
 		Self {
 			dt: 1.0 / sample_rate as f64,
 			shared: Arc::new(RendererShared::new(sample_rate)),
 			resources,
-			command_consumer,
 		}
 	}
 
@@ -65,18 +57,6 @@ impl Renderer {
 	/// Called by the backend when it's time to process
 	/// a new batch of samples.
 	pub fn on_start_processing(&mut self) {
-		while let Some(command) = self.command_consumer.pop() {
-			match command {
-				Command::Sound(command) => self.resources.sounds.run_command(command),
-				Command::Mixer(command) => self.resources.mixer.run_command(command),
-				Command::Clock(command) => self.resources.clocks.run_command(command),
-				Command::SpatialScene(command) => {
-					self.resources.spatial_scenes.run_command(command)
-				}
-				Command::Modulator(command) => self.resources.modulators.run_command(command),
-			}
-		}
-
 		self.resources.sounds.on_start_processing();
 		self.resources.mixer.on_start_processing();
 		self.resources.clocks.on_start_processing();
@@ -88,29 +68,29 @@ impl Renderer {
 	pub fn process(&mut self) -> Frame {
 		self.resources.modulators.process(
 			self.dt,
-			&ClockInfoProvider::new(&self.resources.clocks.clocks),
+			&ClockInfoProvider::new(&self.resources.clocks.0.resources),
 		);
 		self.resources.clocks.update(
 			self.dt,
-			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
+			&ModulatorValueProvider::new(&self.resources.modulators.0.resources),
 		);
 		self.resources.sounds.process(
 			self.dt,
-			&ClockInfoProvider::new(&self.resources.clocks.clocks),
-			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
+			&ClockInfoProvider::new(&self.resources.clocks.0.resources),
+			&ModulatorValueProvider::new(&self.resources.modulators.0.resources),
 			&mut self.resources.mixer,
 			&mut self.resources.spatial_scenes,
 		);
 		self.resources.spatial_scenes.process(
 			self.dt,
-			&ClockInfoProvider::new(&self.resources.clocks.clocks),
-			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
+			&ClockInfoProvider::new(&self.resources.clocks.0.resources),
+			&ModulatorValueProvider::new(&self.resources.modulators.0.resources),
 			&mut self.resources.mixer,
 		);
 		self.resources.mixer.process(
 			self.dt,
-			&ClockInfoProvider::new(&self.resources.clocks.clocks),
-			&ModulatorValueProvider::new(&self.resources.modulators.modulators),
+			&ClockInfoProvider::new(&self.resources.clocks.0.resources),
+			&ModulatorValueProvider::new(&self.resources.modulators.0.resources),
 		)
 	}
 }

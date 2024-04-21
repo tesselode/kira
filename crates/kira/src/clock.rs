@@ -353,6 +353,12 @@ impl Clock {
 	}
 }
 
+impl Default for Clock {
+	fn default() -> Self {
+		Self::without_handle(Value::Fixed(ClockSpeed::TicksPerSecond(0.0)))
+	}
+}
+
 command_writers_and_readers! {
 	set_speed: ValueChangeCommand<ClockSpeed>,
 	set_ticking: bool,
