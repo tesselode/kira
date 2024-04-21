@@ -42,6 +42,8 @@ impl StaticSoundData {
 	/**
 	Sets when the sound should start playing.
 
+	This returns a cheap clone of the `StaticSoundData` with the modified start time.
+
 	# Examples
 
 	Configuring a sound to start 4 ticks after a clock's current time:
@@ -67,6 +69,8 @@ impl StaticSoundData {
 	}
 
 	/// Sets where in the sound playback should start.
+	///
+	/// This returns a cheap clone of the `StaticSoundData` with the modified start position.
 	pub fn start_position(&self, start_position: impl Into<PlaybackPosition>) -> Self {
 		let mut new = self.clone();
 		new.settings.start_position = start_position.into();
@@ -74,6 +78,8 @@ impl StaticSoundData {
 	}
 
 	/// Sets whether the sound should be played in reverse.
+	///
+	/// This returns a cheap clone of the `StaticSoundData` with the modified setting.
 	pub fn reverse(&self, reverse: bool) -> Self {
 		let mut new = self.clone();
 		new.settings.reverse = reverse;
@@ -82,6 +88,8 @@ impl StaticSoundData {
 
 	/**
 	Sets the portion of the sound that should be looped.
+
+	This returns a cheap clone of the `StaticSoundData` with the modified loop region.
 
 	# Examples
 
@@ -107,6 +115,8 @@ impl StaticSoundData {
 
 	/**
 	Sets the volume of the sound.
+
+	This returns a cheap clone of the `StaticSoundData` with the modified volume.
 
 	# Examples
 
@@ -150,8 +160,9 @@ impl StaticSoundData {
 	/**
 	Sets the playback rate of the sound.
 
-	Changing the playback rate will change both the speed
-	and the pitch of the sound.
+	Changing the playback rate will change both the speed and the pitch of the sound.
+
+	This returns a cheap clone of the `StaticSoundData` with the modified playback rate.
 
 	# Examples
 
@@ -194,8 +205,9 @@ impl StaticSoundData {
 	}
 
 	/**
-	Sets the panning of the sound, where 0 is hard left
-	and 1 is hard right.
+	Sets the panning of the sound, where 0 is hard left and 1 is hard right.
+
+	This returns a cheap clone of the `StaticSoundData` with the modified panning.
 
 	# Examples
 
@@ -231,6 +243,8 @@ impl StaticSoundData {
 
 	/**
 	Sets the destination that this sound should be routed to.
+
+	This returns a cheap clone of the `StaticSoundData` with the modified output destination.
 
 	# Examples
 
@@ -276,13 +290,15 @@ impl StaticSoundData {
 	}
 
 	/// Sets the tween used to fade in the sound from silence.
+	///
+	/// This returns a cheap clone of the `StaticSoundData` with the modified fade in tween.
 	pub fn fade_in_tween(&self, fade_in_tween: impl Into<Option<Tween>>) -> Self {
 		let mut new = self.clone();
 		new.settings.fade_in_tween = fade_in_tween.into();
 		new
 	}
 
-	/// Returns a clone of the `StaticSoundData` with the specified settings.
+	/// Returns a cheap clone of the `StaticSoundData` with the specified settings.
 	pub fn with_settings(&self, settings: StaticSoundSettings) -> Self {
 		Self {
 			settings,
