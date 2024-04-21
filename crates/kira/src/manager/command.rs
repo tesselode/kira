@@ -12,7 +12,6 @@ use crate::{
 		scene::{SpatialScene, SpatialSceneId},
 	},
 	track::{SubTrackId, Track},
-	tween::Tween,
 };
 
 pub(crate) enum SoundCommand {
@@ -43,6 +42,4 @@ pub(crate) enum Command {
 	Clock(ClockCommand),
 	SpatialScene(SpatialSceneCommand),
 	Modulator(ModulatorCommand),
-	Pause(Tween),
-	Resume(Tween),
 }
