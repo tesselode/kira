@@ -3,6 +3,7 @@ use crate::{
 	Volume,
 };
 
+#[must_use]
 pub fn create_volume_fade_parameter(fade_in_tween: Option<Tween>) -> Parameter<Volume> {
 	if let Some(tween) = fade_in_tween {
 		let mut tweenable = Parameter::new(

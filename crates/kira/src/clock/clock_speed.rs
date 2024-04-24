@@ -14,6 +14,7 @@ pub enum ClockSpeed {
 
 impl ClockSpeed {
 	/// Returns the [`ClockSpeed`] as a number of seconds between each tick.
+	#[must_use]
 	pub fn as_seconds_per_tick(&self) -> f64 {
 		match self {
 			ClockSpeed::SecondsPerTick(seconds_per_tick) => *seconds_per_tick,
@@ -23,6 +24,7 @@ impl ClockSpeed {
 	}
 
 	/// Returns the [`ClockSpeed`] as a number of ticks per second.
+	#[must_use]
 	pub fn as_ticks_per_second(&self) -> f64 {
 		match self {
 			ClockSpeed::SecondsPerTick(seconds_per_tick) => 1.0 / *seconds_per_tick,
@@ -32,6 +34,7 @@ impl ClockSpeed {
 	}
 
 	/// Returns the [`ClockSpeed`] as a number of ticks per minute.
+	#[must_use]
 	pub fn as_ticks_per_minute(&self) -> f64 {
 		match self {
 			ClockSpeed::SecondsPerTick(seconds_per_tick) => 60.0 / *seconds_per_tick,

@@ -19,11 +19,13 @@ pub struct StreamingSoundHandle<Error> {
 
 impl<Error> StreamingSoundHandle<Error> {
 	/// Returns the current playback state of the sound.
+	#[must_use]
 	pub fn state(&self) -> PlaybackState {
 		self.shared.state()
 	}
 
 	/// Returns the current playback position of the sound (in seconds).
+	#[must_use]
 	pub fn position(&self) -> f64 {
 		self.shared.position()
 	}
@@ -301,6 +303,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	}
 
 	/// Returns an error that occurred while decoding audio, if any.
+	#[must_use]
 	pub fn pop_error(&mut self) -> Option<Error> {
 		self.error_consumer.pop()
 	}

@@ -22,12 +22,14 @@ impl Frame {
 	};
 
 	/// Creates a frame with the given left and right values.
+	#[must_use]
 	pub fn new(left: f32, right: f32) -> Self {
 		Self { left, right }
 	}
 
 	/// Creates a frame with both the left and right channels set
 	/// to the same value.
+	#[must_use]
 	pub fn from_mono(value: f32) -> Self {
 		Self::new(value, value)
 	}
@@ -37,6 +39,7 @@ impl Frame {
 	/// An `x` of 0 represents a hard left panning, an `x` of 1
 	/// represents a hard right panning.
 	#[allow(clippy::float_cmp)]
+	#[must_use = "This method returns a new Frame and does not mutate the original value"]
 	pub fn panned(self, x: f32) -> Self {
 		// adding a special case for center panning improves
 		// performance in the sound playback benchmarks by
@@ -48,6 +51,7 @@ impl Frame {
 	}
 
 	/// Returns the frame mixed down to mono.
+	#[must_use = "This method returns a new Frame and does not mutate the original value"]
 	pub fn as_mono(self) -> Self {
 		Self::from_mono((self.left + self.right) / 2.0)
 	}

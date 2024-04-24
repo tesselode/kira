@@ -21,6 +21,7 @@ pub struct EmitterSettings {
 
 impl EmitterSettings {
 	/// Creates a new [`EmitterSettings`] with the default settings.
+	#[must_use]
 	pub fn new() -> Self {
 		Self {
 			distances: EmitterDistances::default(),
@@ -31,6 +32,7 @@ impl EmitterSettings {
 	}
 
 	/// Sets the distances from a listener at which the emitter is loudest and quietest.
+	#[must_use = "This method consumes self and returns a modified EmitterDistances, so the return value should be used"]
 	pub fn distances(self, distances: impl Into<EmitterDistances>) -> Self {
 		Self {
 			distances: distances.into(),
@@ -41,6 +43,7 @@ impl EmitterSettings {
 	/// Sets how the emitter's volume will change with distance.
 	///
 	/// If `None`, the emitter will output at a constant volume.
+	#[must_use = "This method consumes self and returns a modified EmitterDistances, so the return value should be used"]
 	pub fn attenuation_function(self, attenuation_function: impl Into<Option<Easing>>) -> Self {
 		Self {
 			attenuation_function: attenuation_function.into(),
@@ -50,6 +53,7 @@ impl EmitterSettings {
 
 	/// Sets whether the emitter's output should be panned left or right depending on its
 	/// direction from the listener.
+	#[must_use = "This method consumes self and returns a modified EmitterDistances, so the return value should be used"]
 	pub fn enable_spatialization(self, enable_spatialization: bool) -> Self {
 		Self {
 			enable_spatialization,
@@ -59,6 +63,7 @@ impl EmitterSettings {
 
 	/// Sets whether the emitter should be kept alive until all sounds are finished
 	/// playing on it even if the handle is dropped.
+	#[must_use = "This method consumes self and returns a modified EmitterDistances, so the return value should be used"]
 	pub fn persist_until_sounds_finish(self, persist_until_sounds_finish: bool) -> Self {
 		Self {
 			persist_until_sounds_finish,

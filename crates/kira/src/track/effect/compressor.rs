@@ -30,6 +30,7 @@ struct Compressor {
 }
 
 impl Compressor {
+	#[must_use]
 	fn new(builder: CompressorBuilder, command_readers: CommandReaders) -> Self {
 		Self {
 			command_readers,

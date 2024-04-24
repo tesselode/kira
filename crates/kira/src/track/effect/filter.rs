@@ -43,6 +43,7 @@ struct Filter {
 
 impl Filter {
 	/// Creates a new filter.
+	#[must_use]
 	fn new(builder: FilterBuilder, command_readers: CommandReaders) -> Self {
 		Self {
 			command_readers,

@@ -28,6 +28,7 @@ pub struct SpatialSceneHandle {
 
 impl SpatialSceneHandle {
 	/// Returns the unique identifier for the spatial scene.
+	#[must_use]
 	pub fn id(&self) -> SpatialSceneId {
 		self.id
 	}
@@ -58,11 +59,13 @@ impl SpatialSceneHandle {
 	}
 
 	/// Returns the number of emitters in the scene.
+	#[must_use]
 	pub fn num_emitters(&self) -> u16 {
 		self.emitter_controller.len()
 	}
 
 	/// Returns the number of listeners in the scene.
+	#[must_use]
 	pub fn num_listeners(&self) -> u16 {
 		self.listener_controller.len()
 	}

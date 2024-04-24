@@ -315,6 +315,7 @@ impl TrackShared {
 		}
 	}
 
+	#[must_use]
 	pub fn is_marked_for_removal(&self) -> bool {
 		self.removed.load(Ordering::SeqCst)
 	}
@@ -346,10 +347,12 @@ impl Track {
 		}
 	}
 
+	#[must_use]
 	pub fn shared(&self) -> Arc<TrackShared> {
 		self.shared.clone()
 	}
 
+	#[must_use]
 	pub fn routes_mut(&mut self) -> &mut Vec<(TrackId, TrackRoute)> {
 		&mut self.routes
 	}

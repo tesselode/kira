@@ -20,6 +20,7 @@ pub struct EqFilterBuilder {
 
 impl EqFilterBuilder {
 	/// Creates a new `EqFilterBuilder`.
+	#[must_use]
 	pub fn new(
 		kind: EqFilterKind,
 		frequency: impl Into<Value<f64>>,

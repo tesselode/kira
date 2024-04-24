@@ -16,6 +16,7 @@ impl Volume {
 	pub const MIN_DECIBELS: f64 = -60.0;
 
 	/// Returns the volume as an amplitude.
+	#[must_use]
 	pub fn as_amplitude(&self) -> f64 {
 		match self {
 			Volume::Amplitude(amplitude) => *amplitude,
@@ -35,6 +36,7 @@ impl Volume {
 	}
 
 	/// Returns the volume as a difference in the number of decibels.
+	#[must_use]
 	pub fn as_decibels(&self) -> f64 {
 		match self {
 			Volume::Amplitude(amplitude) => {

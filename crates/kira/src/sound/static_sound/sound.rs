@@ -48,6 +48,7 @@ pub(super) struct StaticSound {
 }
 
 impl StaticSound {
+	#[must_use]
 	pub fn new(data: StaticSoundData, command_readers: CommandReaders) -> Self {
 		let settings = data.settings;
 		let transport = Transport::new(
@@ -120,6 +121,7 @@ impl StaticSound {
 		);
 	}
 
+	#[must_use]
 	fn is_playing_backwards(&self) -> bool {
 		let mut is_playing_backwards = self.playback_rate.value().as_factor().is_sign_negative();
 		if self.reverse {

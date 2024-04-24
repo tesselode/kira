@@ -8,6 +8,7 @@ use super::{mixer::Mixer, spatial_scenes::SpatialScenes, ResourceController, Res
 pub(crate) struct Sounds(ResourceStorage<Box<dyn Sound>>);
 
 impl Sounds {
+	#[must_use]
 	pub fn new(capacity: u16) -> (Self, ResourceController<Box<dyn Sound>>) {
 		let (storage, controller) = ResourceStorage::new(capacity);
 		(Self(storage), controller)

@@ -67,6 +67,7 @@ pub trait Sound: Send {
 	///
 	/// This will typically be set by the user with a settings struct that's passed
 	/// to the [`SoundData`] implementor.
+	#[must_use]
 	fn output_destination(&mut self) -> OutputDestination;
 
 	/// Called whenever a new batch of audio samples is requested by the backend.
@@ -91,6 +92,7 @@ pub trait Sound: Send {
 	/// For finite sounds, this will typically be when playback has reached the
 	/// end of the sound. For infinite sounds, this will typically be when the
 	/// handle for the sound is dropped.
+	#[must_use]
 	fn finished(&self) -> bool;
 }
 
@@ -170,6 +172,7 @@ impl Default for Region {
 /// A trait for types that can be converted into an `Option<Region>`.
 pub trait IntoOptionalRegion {
 	/// Converts the type into an `Option<Region>`.
+	#[must_use]
 	fn into_optional_region(self) -> Option<Region>;
 }
 

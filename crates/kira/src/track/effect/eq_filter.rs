@@ -31,6 +31,7 @@ struct EqFilter {
 }
 
 impl EqFilter {
+	#[must_use]
 	fn new(builder: EqFilterBuilder, command_readers: CommandReaders) -> Self {
 		Self {
 			command_readers,
@@ -43,6 +44,7 @@ impl EqFilter {
 		}
 	}
 
+	#[must_use]
 	fn calculate_coefficients(&self, dt: f64) -> Coefficients {
 		// In my testing, the filter goes unstable when the frequency exceeds half the sample rate,
 		// so I'm clamping this value to 0.5

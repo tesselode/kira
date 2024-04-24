@@ -11,6 +11,7 @@ pub use frame::*;
 // algorithm from "Polynomial Interpolators for High-Quality
 // Resampling of Oversampled Audio" by Olli Niemitalo, p. 43:
 // http://yehar.com/blog/wp-content/uploads/2009/08/deip.pdf
+#[must_use]
 pub fn interpolate_frame(
 	previous: Frame,
 	current: Frame,

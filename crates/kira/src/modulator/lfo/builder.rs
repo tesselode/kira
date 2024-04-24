@@ -31,16 +31,19 @@ pub struct LfoBuilder {
 
 impl LfoBuilder {
 	/// Creates a new [`LfoBuilder`] with the default settings.
+	#[must_use]
 	pub fn new() -> Self {
 		Self::default()
 	}
 
 	/// Sets the oscillation pattern.
+	#[must_use = "This method consumes self and returns a modified LfoBuilder, so the return value should be used"]
 	pub fn waveform(self, waveform: Waveform) -> Self {
 		Self { waveform, ..self }
 	}
 
 	/// Sets how quickly the value oscillates.
+	#[must_use = "This method consumes self and returns a modified LfoBuilder, so the return value should be used"]
 	pub fn frequency(self, frequency: impl Into<Value<f64>>) -> Self {
 		Self {
 			frequency: frequency.into(),
@@ -52,6 +55,7 @@ impl LfoBuilder {
 	///
 	/// An amplitude of `2.0` means the modulator will reach a maximum
 	/// value of `2.0` and a minimum value of `-2.0`.
+	#[must_use = "This method consumes self and returns a modified LfoBuilder, so the return value should be used"]
 	pub fn amplitude(self, amplitude: impl Into<Value<f64>>) -> Self {
 		Self {
 			amplitude: amplitude.into(),
@@ -63,6 +67,7 @@ impl LfoBuilder {
 	///
 	/// An LFO with an offset of `1.0` and an amplitude of `0.5` will reach
 	/// a maximum value of `1.5` and a minimum value of `0.5`.
+	#[must_use = "This method consumes self and returns a modified LfoBuilder, so the return value should be used"]
 	pub fn offset(self, offset: impl Into<Value<f64>>) -> Self {
 		Self {
 			offset: offset.into(),
@@ -73,6 +78,7 @@ impl LfoBuilder {
 	/// Sets the phase the LFO should start at (in radians).
 	///
 	/// This determines when in the oscillation the modulator will start.
+	#[must_use = "This method consumes self and returns a modified LfoBuilder, so the return value should be used"]
 	pub fn starting_phase(self, starting_phase: f64) -> Self {
 		Self {
 			starting_phase,

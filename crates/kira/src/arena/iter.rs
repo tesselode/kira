@@ -12,6 +12,7 @@ pub struct Iter<'a, T> {
 }
 
 impl<'a, T> Iter<'a, T> {
+	#[must_use]
 	pub(super) fn new(arena: &'a Arena<T>) -> Self {
 		Self {
 			next_occupied_slot_index: arena.first_occupied_slot_index,
@@ -59,6 +60,7 @@ pub struct IterMut<'a, T> {
 }
 
 impl<'a, T> IterMut<'a, T> {
+	#[must_use]
 	pub(super) fn new(arena: &'a mut Arena<T>) -> Self {
 		Self {
 			next_occupied_slot_index: arena.first_occupied_slot_index,
@@ -111,6 +113,7 @@ pub struct DrainFilter<'a, T, F: FnMut(&T) -> bool> {
 }
 
 impl<'a, T, F: FnMut(&T) -> bool> DrainFilter<'a, T, F> {
+	#[must_use]
 	pub(super) fn new(arena: &'a mut Arena<T>, filter: F) -> Self {
 		Self {
 			next_occupied_slot_index: arena.first_occupied_slot_index,

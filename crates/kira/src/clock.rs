@@ -187,6 +187,7 @@ pub(crate) struct ClockShared {
 }
 
 impl ClockShared {
+	#[must_use]
 	pub fn new() -> Self {
 		Self {
 			ticking: AtomicBool::new(false),
@@ -196,18 +197,22 @@ impl ClockShared {
 		}
 	}
 
+	#[must_use]
 	pub fn ticking(&self) -> bool {
 		self.ticking.load(Ordering::SeqCst)
 	}
 
+	#[must_use]
 	pub fn ticks(&self) -> u64 {
 		self.ticks.load(Ordering::SeqCst)
 	}
 
+	#[must_use]
 	pub fn fractional_position(&self) -> f64 {
 		f64::from_bits(self.fractional_position.load(Ordering::SeqCst))
 	}
 
+	#[must_use]
 	pub fn is_marked_for_removal(&self) -> bool {
 		self.removed.load(Ordering::SeqCst)
 	}
@@ -235,6 +240,7 @@ pub(crate) struct Clock {
 }
 
 impl Clock {
+	#[must_use]
 	pub(crate) fn new(speed: Value<ClockSpeed>, id: ClockId) -> (Self, ClockHandle) {
 		let (command_writers, command_readers) = command_writers_and_readers();
 		let shared = Arc::new(ClockShared::new());
@@ -254,6 +260,7 @@ impl Clock {
 		)
 	}
 
+	#[must_use]
 	pub(crate) fn without_handle(speed: Value<ClockSpeed>) -> Self {
 		let (_, command_readers) = command_writers_and_readers();
 		Self {
@@ -265,14 +272,17 @@ impl Clock {
 		}
 	}
 
+	#[must_use]
 	pub(crate) fn shared(&self) -> Arc<ClockShared> {
 		self.shared.clone()
 	}
 
+	#[must_use]
 	pub(crate) fn state(&self) -> State {
 		self.state
 	}
 
+	#[must_use]
 	pub(crate) fn ticking(&self) -> bool {
 		self.ticking
 	}

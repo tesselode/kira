@@ -13,6 +13,7 @@ pub struct LfoHandle {
 
 impl LfoHandle {
 	/// Returns the unique identifier for the modulator.
+	#[must_use]
 	pub fn id(&self) -> ModulatorId {
 		self.id
 	}

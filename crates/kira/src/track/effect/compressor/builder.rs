@@ -45,6 +45,7 @@ impl CompressorBuilder {
 	pub(crate) const DEFAULT_MIX: f64 = 1.0;
 
 	/// Creates a new [`CompressorBuilder`] with the default settings.
+	#[must_use]
 	pub fn new() -> Self {
 		Self {
 			threshold: Value::Fixed(Self::DEFAULT_THRESHOLD),
@@ -57,6 +58,7 @@ impl CompressorBuilder {
 	}
 
 	/// Sets the volume above which volume will start to be decreased (in dBFS).
+	#[must_use = "This method consumes self and returns a modified CompressorBuilder, so the return value should be used"]
 	pub fn threshold(self, threshold: impl Into<Value<f64>>) -> Self {
 		Self {
 			threshold: threshold.into(),
@@ -69,6 +71,7 @@ impl CompressorBuilder {
 	/// A ratio of `2.0` (or 2 to 1) means an increase of 3dB will
 	/// become an increase of 1.5dB. Ratios between `0.0` and `1.0`
 	/// will actually expand the audio.
+	#[must_use = "This method consumes self and returns a modified CompressorBuilder, so the return value should be used"]
 	pub fn ratio(self, ratio: impl Into<Value<f64>>) -> Self {
 		Self {
 			ratio: ratio.into(),
@@ -78,6 +81,7 @@ impl CompressorBuilder {
 
 	/// Sets how much time it takes for the volume attenuation to ramp up once
 	/// the input volume exceeds the threshold.
+	#[must_use = "This method consumes self and returns a modified CompressorBuilder, so the return value should be used"]
 	pub fn attack_duration(self, attack_duration: impl Into<Value<Duration>>) -> Self {
 		Self {
 			attack_duration: attack_duration.into(),
@@ -87,6 +91,7 @@ impl CompressorBuilder {
 
 	/// Sets how much time it takes for the volume attenuation to relax once
 	/// the input volume dips below the threshold.
+	#[must_use = "This method consumes self and returns a modified CompressorBuilder, so the return value should be used"]
 	pub fn release_duration(self, release_duration: impl Into<Value<Duration>>) -> Self {
 		Self {
 			release_duration: release_duration.into(),
@@ -99,6 +104,7 @@ impl CompressorBuilder {
 	/// This can be used to compensate for the decrease in volume resulting
 	/// from compression. This is only applied to the wet signal, nto the
 	/// dry signal.
+	#[must_use = "This method consumes self and returns a modified CompressorBuilder, so the return value should be used"]
 	pub fn makeup_gain(self, makeup_gain: impl Into<Value<f64>>) -> Self {
 		Self {
 			makeup_gain: makeup_gain.into(),
@@ -110,6 +116,7 @@ impl CompressorBuilder {
 	/// with the wet (processed) signal. `0.0` means
 	/// only the dry signal will be heard. `1.0` means
 	/// only the wet signal will be heard.
+	#[must_use = "This method consumes self and returns a modified CompressorBuilder, so the return value should be used"]
 	pub fn mix(self, mix: impl Into<Value<f64>>) -> Self {
 		Self {
 			mix: mix.into(),

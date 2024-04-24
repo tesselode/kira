@@ -34,6 +34,7 @@ pub struct TrackHandle {
 
 impl TrackHandle {
 	/// Returns the unique identifier for the mixer track.
+	#[must_use]
 	pub fn id(&self) -> TrackId {
 		self.id
 	}

@@ -8,6 +8,7 @@ pub struct SpatialSceneSettings {
 
 impl SpatialSceneSettings {
 	/// Creates a new [`SpatialSceneSettings`] with the default settings.
+	#[must_use]
 	pub fn new() -> Self {
 		Self {
 			emitter_capacity: 128,
@@ -16,6 +17,7 @@ impl SpatialSceneSettings {
 	}
 
 	/// Sets the maximum number of emitters that can be in the scene at once.
+	#[must_use = "This method consumes self and returns a modified SpatialSceneSettings, so the return value should be used"]
 	pub fn emitter_capacity(self, emitter_capacity: u16) -> Self {
 		Self {
 			emitter_capacity,
@@ -24,6 +26,7 @@ impl SpatialSceneSettings {
 	}
 
 	/// Sets the maximum number of listeners that can be in the scene at once.
+	#[must_use = "This method consumes self and returns a modified SpatialSceneSettings, so the return value should be used"]
 	pub fn listener_capacity(self, listener_capacity: u16) -> Self {
 		Self {
 			listener_capacity,

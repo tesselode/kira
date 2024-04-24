@@ -26,6 +26,7 @@ impl TrackRoutes {
 	)
 	```
 	*/
+	#[must_use]
 	pub fn new() -> Self {
 		Self::parent(TrackId::Main)
 	}
@@ -35,6 +36,7 @@ impl TrackRoutes {
 	/// If you set a track's routes to this as is, you will not hear
 	/// any audio output from that track, since it is not routed
 	/// to the main track nor to any other track.
+	#[must_use]
 	pub fn empty() -> Self {
 		Self(HashMap::new())
 	}
@@ -60,6 +62,7 @@ impl TrackRoutes {
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
+	#[must_use]
 	pub fn parent(track: impl Into<TrackId>) -> Self {
 		Self({
 			let mut routes = HashMap::new();
@@ -70,6 +73,7 @@ impl TrackRoutes {
 
 	/// Sets how much of the current track's signal will be sent
 	/// to the specified destination track.
+	#[must_use = "This method consumes self and returns a modified TrackRoutes, so the return value should be used"]
 	pub fn with_route(
 		mut self,
 		track: impl Into<TrackId>,
@@ -80,6 +84,7 @@ impl TrackRoutes {
 	}
 
 	/// Removes the route to the specified track.
+	#[must_use = "This method consumes self and returns a modified TrackRoutes, so the return value should be used"]
 	pub fn without_route(mut self, track: impl Into<TrackId>) -> Self {
 		self.0.remove(&track.into());
 		self

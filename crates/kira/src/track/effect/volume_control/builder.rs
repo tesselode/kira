@@ -8,6 +8,7 @@ pub struct VolumeControlBuilder(pub Value<Volume>);
 
 impl VolumeControlBuilder {
 	/// Creates a new [`VolumeControlBuilder`].
+	#[must_use]
 	pub fn new(volume: impl Into<Value<Volume>>) -> Self {
 		Self(volume.into())
 	}

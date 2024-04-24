@@ -9,11 +9,13 @@ use super::{mixer::Mixer, ResourceController, ResourceStorage};
 pub(crate) struct SpatialScenes(ResourceStorage<SpatialScene>);
 
 impl SpatialScenes {
+	#[must_use]
 	pub fn new(capacity: u16) -> (Self, ResourceController<SpatialScene>) {
 		let (storage, controller) = ResourceStorage::new(capacity);
 		(Self(storage), controller)
 	}
 
+	#[must_use]
 	pub fn get_mut(&mut self, id: SpatialSceneId) -> Option<&mut SpatialScene> {
 		self.0.get_mut(id.0)
 	}

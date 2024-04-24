@@ -36,6 +36,7 @@ impl<T: Tweenable> Parameter<T> {
 	///
 	/// The `default_raw_value` is used if the parameter is linked to a modulator
 	/// that doesn't exist.
+	#[must_use]
 	pub fn new(initial_value: Value<T>, default_raw_value: T) -> Self {
 		Self {
 			state: State::Idle {
@@ -50,6 +51,7 @@ impl<T: Tweenable> Parameter<T> {
 	}
 
 	/// Returns the current actual value of the parameter.
+	#[must_use]
 	pub fn value(&self) -> T {
 		self.raw_value
 	}

@@ -19,6 +19,7 @@ pub enum PlaybackRate {
 impl PlaybackRate {
 	/// Returns the playback rate as a factor of the original
 	/// playback rate.
+	#[must_use]
 	pub fn as_factor(&self) -> f64 {
 		match self {
 			PlaybackRate::Factor(factor) => *factor,
@@ -28,6 +29,7 @@ impl PlaybackRate {
 
 	/// Returns the number of semitones of pitch difference this
 	/// playback rate will cause.
+	#[must_use]
 	pub fn as_semitones(&self) -> f64 {
 		match self {
 			PlaybackRate::Factor(factor) => 12.0 * factor.log2(),

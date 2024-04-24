@@ -42,6 +42,7 @@ pub(crate) struct Emitter {
 }
 
 impl Emitter {
+	#[must_use]
 	pub fn new(
 		command_readers: CommandReaders,
 		position: Value<Vec3>,
@@ -61,30 +62,37 @@ impl Emitter {
 		}
 	}
 
+	#[must_use]
 	pub fn output(&self) -> Frame {
 		self.input
 	}
 
+	#[must_use]
 	pub fn shared(&self) -> Arc<EmitterShared> {
 		self.shared.clone()
 	}
 
+	#[must_use]
 	pub fn position(&self) -> Vec3 {
 		self.position.value()
 	}
 
+	#[must_use]
 	pub fn distances(&self) -> EmitterDistances {
 		self.distances
 	}
 
+	#[must_use]
 	pub fn attenuation_function(&self) -> Option<Easing> {
 		self.attenuation_function
 	}
 
+	#[must_use]
 	pub fn enable_spatialization(&self) -> bool {
 		self.enable_spatialization
 	}
 
+	#[must_use]
 	pub fn finished(&self) -> bool {
 		self.finished
 	}
@@ -116,6 +124,7 @@ impl Emitter {
 			.update(dt, clock_info_provider, modulator_value_provider);
 	}
 
+	#[must_use]
 	fn should_be_finished(&self) -> bool {
 		if !self.shared.is_marked_for_removal() {
 			return false;
@@ -146,12 +155,14 @@ pub(crate) struct EmitterShared {
 }
 
 impl EmitterShared {
+	#[must_use]
 	pub fn new() -> Self {
 		Self {
 			removed: AtomicBool::new(false),
 		}
 	}
 
+	#[must_use]
 	pub fn is_marked_for_removal(&self) -> bool {
 		self.removed.load(Ordering::SeqCst)
 	}

@@ -13,6 +13,7 @@ impl<T: Send + Copy> CommandWriter<T> {
 pub struct CommandReader<T: Send + Copy>(Output<Option<T>>);
 
 impl<T: Send + Copy> CommandReader<T> {
+	#[must_use]
 	pub fn read(&mut self) -> Option<T> {
 		if self.0.update() {
 			*self.0.output_buffer()
@@ -22,6 +23,7 @@ impl<T: Send + Copy> CommandReader<T> {
 	}
 }
 
+#[must_use]
 pub fn command_writer_and_reader<T: Send + Copy>() -> (CommandWriter<T>, CommandReader<T>) {
 	let (input, output) = triple_buffer(&None);
 	(CommandWriter(input), CommandReader(output))
@@ -44,6 +46,7 @@ macro_rules! command_writers_and_readers {
 			$($field_name: $crate::command::CommandReader<$type>),*
 		}
 
+		#[must_use]
 		pub(crate) fn command_writers_and_readers() -> (CommandWriters, CommandReaders) {
 			paste::paste! {
 				$(let ([<$field_name _writer>], [<$field_name _reader>]) = $crate::command::command_writer_and_reader();)*

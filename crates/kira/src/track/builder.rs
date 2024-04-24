@@ -26,6 +26,7 @@ pub struct TrackBuilder {
 
 impl TrackBuilder {
 	/// Creates a new [`TrackBuilder`] with the default settings.
+	#[must_use]
 	pub fn new() -> Self {
 		Self {
 			volume: Value::Fixed(Volume::Amplitude(1.0)),
@@ -70,6 +71,7 @@ impl TrackBuilder {
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
+	#[must_use = "This method consumes self and returns a modified TrackBuilder, so the return value should be used"]
 	pub fn volume(self, volume: impl Into<Value<Volume>>) -> Self {
 		Self {
 			volume: volume.into(),
@@ -79,6 +81,7 @@ impl TrackBuilder {
 
 	/// Sets how the output of this track should be routed
 	/// to other mixer tracks.
+	#[must_use = "This method consumes self and returns a modified TrackBuilder, so the return value should be used"]
 	pub fn routes(self, routes: TrackRoutes) -> Self {
 		Self { routes, ..self }
 	}
@@ -120,6 +123,7 @@ impl TrackBuilder {
 		.with_effect(ReverbBuilder::new());
 	```
 	*/
+	#[must_use = "This method consumes self and returns a modified TrackBuilder, so the return value should be used"]
 	pub fn with_effect<B: EffectBuilder>(mut self, builder: B) -> Self {
 		self.add_effect(builder);
 		self
@@ -172,11 +176,13 @@ impl TrackBuilder {
 		.with_built_effect(reverb_effect);
 	```
 	 */
+	#[must_use = "This method consumes self and returns a modified TrackBuilder, so the return value should be used"]
 	pub fn with_built_effect(mut self, effect: Box<dyn Effect>) -> Self {
 		self.add_built_effect(effect);
 		self
 	}
 
+	#[must_use]
 	pub(crate) fn build(self, id: TrackId) -> (Track, TrackHandle) {
 		let (set_volume_command_writer, set_volume_command_reader) = command_writer_and_reader();
 		let shared = Arc::new(TrackShared::new());

@@ -20,6 +20,7 @@ struct VolumeControl {
 }
 
 impl VolumeControl {
+	#[must_use]
 	fn new(builder: VolumeControlBuilder, command_readers: CommandReaders) -> Self {
 		Self {
 			command_readers,

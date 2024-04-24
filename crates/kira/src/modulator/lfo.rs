@@ -36,6 +36,7 @@ struct Lfo {
 }
 
 impl Lfo {
+	#[must_use]
 	fn new(builder: &LfoBuilder, command_readers: CommandReaders, shared: Arc<LfoShared>) -> Self {
 		Self {
 			waveform: builder.waveform,
@@ -108,6 +109,7 @@ pub enum Waveform {
 }
 
 impl Waveform {
+	#[must_use]
 	fn value(self, phase: f64) -> f64 {
 		match self {
 			Waveform::Sine => (phase * TAU).sin(),

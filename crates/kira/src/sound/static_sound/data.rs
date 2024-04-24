@@ -62,6 +62,7 @@ impl StaticSoundData {
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
+	#[must_use = "This method returns a modified StaticSoundData and does not mutate the original value"]
 	pub fn start_time(&self, start_time: impl Into<StartTime>) -> Self {
 		let mut new = self.clone();
 		new.settings.start_time = start_time.into();
@@ -71,6 +72,7 @@ impl StaticSoundData {
 	/// Sets where in the sound playback should start.
 	///
 	/// This returns a cheap clone of the `StaticSoundData` with the modified start position.
+	#[must_use = "This method returns a modified StaticSoundData and does not mutate the original value"]
 	pub fn start_position(&self, start_position: impl Into<PlaybackPosition>) -> Self {
 		let mut new = self.clone();
 		new.settings.start_position = start_position.into();
@@ -80,6 +82,7 @@ impl StaticSoundData {
 	/// Sets whether the sound should be played in reverse.
 	///
 	/// This returns a cheap clone of the `StaticSoundData` with the modified setting.
+	#[must_use = "This method returns a modified StaticSoundData and does not mutate the original value"]
 	pub fn reverse(&self, reverse: bool) -> Self {
 		let mut new = self.clone();
 		new.settings.reverse = reverse;
@@ -107,6 +110,7 @@ impl StaticSoundData {
 	let settings = StaticSoundSettings::new().loop_region(2.0..4.0);
 	```
 	*/
+	#[must_use = "This method returns a modified StaticSoundData and does not mutate the original value"]
 	pub fn loop_region(&self, loop_region: impl IntoOptionalRegion) -> Self {
 		let mut new = self.clone();
 		new.settings.loop_region = loop_region.into_optional_region();
@@ -151,6 +155,7 @@ impl StaticSoundData {
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
+	#[must_use = "This method returns a modified StaticSoundData and does not mutate the original value"]
 	pub fn volume(&self, volume: impl Into<Value<Volume>>) -> Self {
 		let mut new = self.clone();
 		new.settings.volume = volume.into();
@@ -198,6 +203,7 @@ impl StaticSoundData {
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
+	#[must_use = "This method returns a modified StaticSoundData and does not mutate the original value"]
 	pub fn playback_rate(&self, playback_rate: impl Into<Value<PlaybackRate>>) -> Self {
 		let mut new = self.clone();
 		new.settings.playback_rate = playback_rate.into();
@@ -235,6 +241,7 @@ impl StaticSoundData {
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
+	#[must_use = "This method returns a modified StaticSoundData and does not mutate the original value"]
 	pub fn panning(&self, panning: impl Into<Value<f64>>) -> Self {
 		let mut new = self.clone();
 		new.settings.panning = panning.into();
@@ -283,6 +290,7 @@ impl StaticSoundData {
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
+	#[must_use = "This method returns a modified StaticSoundData and does not mutate the original value"]
 	pub fn output_destination(&self, output_destination: impl Into<OutputDestination>) -> Self {
 		let mut new = self.clone();
 		new.settings.output_destination = output_destination.into();
@@ -292,6 +300,7 @@ impl StaticSoundData {
 	/// Sets the tween used to fade in the sound from silence.
 	///
 	/// This returns a cheap clone of the `StaticSoundData` with the modified fade in tween.
+	#[must_use = "This method returns a modified StaticSoundData and does not mutate the original value"]
 	pub fn fade_in_tween(&self, fade_in_tween: impl Into<Option<Tween>>) -> Self {
 		let mut new = self.clone();
 		new.settings.fade_in_tween = fade_in_tween.into();
@@ -299,6 +308,7 @@ impl StaticSoundData {
 	}
 
 	/// Returns a cheap clone of the `StaticSoundData` with the specified settings.
+	#[must_use = "This method returns a modified StaticSoundData and does not mutate the original value"]
 	pub fn with_settings(&self, settings: StaticSoundSettings) -> Self {
 		Self {
 			settings,
@@ -306,19 +316,23 @@ impl StaticSoundData {
 		}
 	}
 
+	#[must_use]
 	pub fn num_frames(&self) -> usize {
 		num_frames(&self.frames, self.slice)
 	}
 
 	/// Returns the duration of the audio.
+	#[must_use]
 	pub fn duration(&self) -> Duration {
 		Duration::from_secs_f64(self.num_frames() as f64 / self.sample_rate as f64)
 	}
 
+	#[must_use]
 	pub fn frame_at_index(&self, index: usize) -> Option<Frame> {
 		frame_at_index(index, &self.frames, self.slice)
 	}
 
+	#[must_use = "This method returns a modified StaticSoundData and does not mutate the original value"]
 	pub fn slice(&self, region: impl IntoOptionalRegion) -> Self {
 		let mut new = self.clone();
 		new.slice = region.into_optional_region().map(|Region { start, end }| {

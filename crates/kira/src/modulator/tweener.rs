@@ -34,6 +34,7 @@ struct Tweener {
 }
 
 impl Tweener {
+	#[must_use]
 	fn new(
 		initial_value: f64,
 		command_readers: CommandReaders,
@@ -126,6 +127,7 @@ struct TweenerShared {
 }
 
 impl TweenerShared {
+	#[must_use]
 	fn new() -> Self {
 		Self {
 			removed: AtomicBool::new(false),

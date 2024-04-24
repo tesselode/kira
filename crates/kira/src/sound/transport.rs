@@ -12,6 +12,7 @@ pub struct Transport {
 }
 
 impl Transport {
+	#[must_use]
 	pub fn new(
 		start_position: usize,
 		loop_region: Option<Region>,

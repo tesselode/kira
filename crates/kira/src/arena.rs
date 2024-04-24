@@ -32,6 +32,7 @@ pub struct Arena<T> {
 impl<T> Arena<T> {
 	/// Creates a new [`Arena`] with enough space for `capacity`
 	/// number of items.
+	#[must_use]
 	pub fn new(capacity: u16) -> Self {
 		Self {
 			controller: Controller::new(capacity),
@@ -41,16 +42,19 @@ impl<T> Arena<T> {
 	}
 
 	/// Returns a [`Controller`] for this [`Arena`].
+	#[must_use]
 	pub fn controller(&self) -> Controller {
 		self.controller.clone()
 	}
 
 	/// Returns the total capacity for this [`Arena`].
+	#[must_use]
 	pub fn capacity(&self) -> usize {
 		self.slots.len()
 	}
 
 	/// Returns the number of items currently in the [`Arena`].
+	#[must_use]
 	pub fn len(&self) -> usize {
 		self.slots
 			.iter()
@@ -59,6 +63,7 @@ impl<T> Arena<T> {
 	}
 
 	/// Returns `true` if the [`Arena`] is currently empty.
+	#[must_use]
 	pub fn is_empty(&self) -> bool {
 		self.len() == 0
 	}
@@ -147,6 +152,7 @@ impl<T> Arena<T> {
 	/// If the [`Arena`] contains an item with the given [`Key`],
 	/// removes it from the [`Arena`] and returns `Some(item)`.
 	/// Otherwise, returns `None`.
+	#[must_use]
 	pub fn remove(&mut self, key: Key) -> Option<T> {
 		// TODO: answer the following questions:
 		// - if you reserve a key, then try to remove the key
@@ -164,6 +170,7 @@ impl<T> Arena<T> {
 
 	/// Returns a shared reference to the item in the [`Arena`] with
 	/// the given [`Key`] if it exists. Otherwise, returns `None`.
+	#[must_use]
 	pub fn get(&self, key: Key) -> Option<&T> {
 		let slot = &self.slots[key.index as usize];
 		if slot.generation != key.generation {
@@ -177,6 +184,7 @@ impl<T> Arena<T> {
 
 	/// Returns a mutable reference to the item in the [`Arena`] with
 	/// the given [`Key`] if it exists. Otherwise, returns `None`.
+	#[must_use]
 	pub fn get_mut(&mut self, key: Key) -> Option<&mut T> {
 		let slot = &mut self.slots[key.index as usize];
 		if slot.generation != key.generation {
@@ -221,6 +229,7 @@ impl<T> Arena<T> {
 	/// the [`Arena`].
 	///
 	/// The most recently added items will be visited first.
+	#[must_use]
 	pub fn iter(&self) -> Iter<T> {
 		Iter::new(self)
 	}
@@ -229,12 +238,14 @@ impl<T> Arena<T> {
 	/// the [`Arena`].
 	///
 	/// The most recently added items will be visited first.
+	#[must_use]
 	pub fn iter_mut(&mut self) -> IterMut<T> {
 		IterMut::new(self)
 	}
 
 	/// Returns an iterator that removes and yields all elements
 	/// for which `filter(&element)` returns `true`.
+	#[must_use]
 	pub fn drain_filter<F: FnMut(&T) -> bool>(&mut self, filter: F) -> DrainFilter<T, F> {
 		DrainFilter::new(self, filter)
 	}

@@ -26,11 +26,13 @@ pub struct DelayBuilder {
 
 impl DelayBuilder {
 	/// Creates a new [`DelayBuilder`] with the default settings.
+	#[must_use]
 	pub fn new() -> Self {
 		Self::default()
 	}
 
 	/// Sets the delay time (in seconds).
+	#[must_use = "This method consumes self and returns a modified DelayBuilder, so the return value should be used"]
 	pub fn delay_time(self, delay_time: impl Into<Value<f64>>) -> Self {
 		Self {
 			delay_time: delay_time.into(),
@@ -39,6 +41,7 @@ impl DelayBuilder {
 	}
 
 	/// Sets the amount of feedback.
+	#[must_use = "This method consumes self and returns a modified DelayBuilder, so the return value should be used"]
 	pub fn feedback(self, feedback: impl Into<Value<Volume>>) -> Self {
 		Self {
 			feedback: feedback.into(),
@@ -47,6 +50,7 @@ impl DelayBuilder {
 	}
 
 	/// Sets the amount of audio the delay can store.
+	#[must_use = "This method consumes self and returns a modified DelayBuilder, so the return value should be used"]
 	pub fn buffer_length(self, buffer_length: f64) -> Self {
 		Self {
 			buffer_length,
@@ -65,6 +69,7 @@ impl DelayBuilder {
 	/// with the wet (processed) signal. `0.0` means only the dry
 	/// signal will be heard. `1.0` means only the wet signal will
 	/// be heard.
+	#[must_use = "This method consumes self and returns a modified DelayBuilder, so the return value should be used"]
 	pub fn mix(self, mix: impl Into<Value<f64>>) -> Self {
 		Self {
 			mix: mix.into(),

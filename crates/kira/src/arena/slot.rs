@@ -15,6 +15,7 @@ pub(crate) struct ArenaSlot<T> {
 }
 
 impl<T> ArenaSlot<T> {
+	#[must_use]
 	pub(crate) fn new() -> Self {
 		Self {
 			state: ArenaSlotState::Free,

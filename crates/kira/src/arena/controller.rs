@@ -28,6 +28,7 @@ struct ControllerInner {
 }
 
 impl ControllerInner {
+	#[must_use]
 	fn new(capacity: u16) -> Self {
 		Self {
 			slots: (0..capacity)
@@ -45,10 +46,12 @@ impl ControllerInner {
 		}
 	}
 
+	#[must_use]
 	fn capacity(&self) -> u16 {
 		self.slots.len() as u16
 	}
 
+	#[must_use]
 	fn len(&self) -> u16 {
 		self.slots
 			.iter()

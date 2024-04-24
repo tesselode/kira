@@ -19,6 +19,7 @@ pub struct EmitterHandle {
 
 impl EmitterHandle {
 	/// Returns the unique identifier for the emitter.
+	#[must_use]
 	pub fn id(&self) -> EmitterId {
 		self.id
 	}

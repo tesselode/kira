@@ -21,6 +21,7 @@ pub enum Value<T> {
 
 impl<T> Value<T> {
 	/// Creates a `Value::FromModulator` from a modulator ID or handle.
+	#[must_use]
 	pub fn from_modulator(id: impl Into<ModulatorId>, mapping: ModulatorMapping<T>) -> Self {
 		Self::FromModulator {
 			id: id.into(),
@@ -29,6 +30,7 @@ impl<T> Value<T> {
 	}
 
 	/// Converts a `Value<T>` to a `Value<T2>`.
+	#[must_use = "This method returns a new Value and does not mutate the original."]
 	pub fn to_<T2: From<T>>(self) -> Value<T2> {
 		match self {
 			Value::Fixed(value) => Value::Fixed(value.into()),
@@ -119,6 +121,7 @@ pub struct ModulatorMapping<T> {
 
 impl<T> ModulatorMapping<T> {
 	/// Converts a `ModulatorMapping<T>` to a `ModulatorMapping<T2>`.
+	#[must_use = "This method returns a new ModulatorMapping and does not mutate the original."]
 	pub fn to_<T2: From<T>>(self) -> ModulatorMapping<T2> {
 		ModulatorMapping {
 			input_range: self.input_range,
@@ -129,6 +132,7 @@ impl<T> ModulatorMapping<T> {
 	}
 
 	/// Transforms an input value to an output value using this mapping.
+	#[must_use]
 	pub fn map(self, input: f64) -> T
 	where
 		T: Tweenable,

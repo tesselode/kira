@@ -16,6 +16,7 @@ pub(crate) struct Mixer {
 }
 
 impl Mixer {
+	#[must_use]
 	pub fn new(
 		sub_track_capacity: u16,
 		sample_rate: u32,
@@ -35,6 +36,7 @@ impl Mixer {
 		)
 	}
 
+	#[must_use]
 	pub fn track_mut(&mut self, id: TrackId) -> Option<&mut Track> {
 		match id {
 			TrackId::Main => Some(&mut self.main_track),
@@ -58,6 +60,7 @@ impl Mixer {
 		self.main_track.on_start_processing();
 	}
 
+	#[must_use]
 	pub fn process(
 		&mut self,
 		dt: f64,

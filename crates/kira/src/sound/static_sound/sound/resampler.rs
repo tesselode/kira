@@ -14,6 +14,7 @@ pub(super) struct Resampler {
 }
 
 impl Resampler {
+	#[must_use]
 	pub fn new(starting_frame_index: usize) -> Self {
 		Self {
 			frames: [RecentFrame {
@@ -33,6 +34,7 @@ impl Resampler {
 		};
 	}
 
+	#[must_use]
 	pub fn get(&self, fractional_position: f32) -> Frame {
 		interpolate_frame(
 			self.frames[0].frame,
@@ -51,10 +53,12 @@ impl Resampler {
 	/// `self.frames[2]`. `self.frames[0]` and `self.frames[3]`
 	/// are used to provide additional information to the interpolation
 	/// algorithm to get a smoother result.
+	#[must_use]
 	pub fn current_frame_index(&self) -> usize {
 		self.frames[1].frame_index
 	}
 
+	#[must_use]
 	pub fn outputting_silence(&self) -> bool {
 		self.frames
 			.iter()

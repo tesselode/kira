@@ -28,6 +28,7 @@ pub struct ClockInfoProvider<'a> {
 }
 
 impl<'a> ClockInfoProvider<'a> {
+	#[must_use]
 	pub(crate) fn new(clocks: &'a Arena<Clock>) -> Self {
 		Self {
 			kind: ClockInfoProviderKind::Normal { clocks },
@@ -36,6 +37,7 @@ impl<'a> ClockInfoProvider<'a> {
 
 	/// Gets information about the clock with the given ID if it
 	/// exists, returns `None` otherwise.
+	#[must_use]
 	pub fn get(&self, id: ClockId) -> Option<ClockInfo> {
 		match &self.kind {
 			ClockInfoProviderKind::Normal { clocks } => clocks.get(id.0).map(|clock| ClockInfo {
@@ -58,6 +60,7 @@ impl<'a> ClockInfoProvider<'a> {
 
 	/// Returns whether something with the given start time should
 	/// start now, later, or never given the current state of the clocks.
+	#[must_use]
 	pub fn when_to_start(&self, ClockTime { clock, ticks }: ClockTime) -> WhenToStart {
 		if let Some(clock_info) = self.get(clock) {
 			if clock_info.ticking && clock_info.ticks >= ticks {
@@ -106,6 +109,7 @@ pub struct MockClockInfoProviderBuilder {
 impl MockClockInfoProviderBuilder {
 	/// Creates a new [`MockClockInfoProviderBuilder`] with room for
 	/// the specified number of clocks.
+	#[must_use]
 	pub fn new(capacity: u16) -> Self {
 		Self {
 			clock_info: Arena::new(capacity),
@@ -119,6 +123,7 @@ impl MockClockInfoProviderBuilder {
 	}
 
 	/// Consumes the builder and returns a [`ClockInfoProvider`].
+	#[must_use]
 	pub fn build(self) -> ClockInfoProvider<'static> {
 		ClockInfoProvider {
 			kind: ClockInfoProviderKind::Mock {

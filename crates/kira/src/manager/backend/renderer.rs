@@ -15,6 +15,7 @@ pub(crate) struct RendererShared {
 }
 
 impl RendererShared {
+	#[must_use]
 	pub fn new(sample_rate: u32) -> Self {
 		Self {
 			sample_rate: AtomicU32::new(sample_rate),
@@ -34,6 +35,7 @@ pub struct Renderer {
 }
 
 impl Renderer {
+	#[must_use]
 	pub(crate) fn new(sample_rate: u32, resources: Resources) -> Self {
 		Self {
 			dt: 1.0 / sample_rate as f64,
@@ -42,6 +44,7 @@ impl Renderer {
 		}
 	}
 
+	#[must_use]
 	pub(crate) fn shared(&self) -> Arc<RendererShared> {
 		self.shared.clone()
 	}
@@ -65,6 +68,7 @@ impl Renderer {
 	}
 
 	/// Produces the next [`Frame`] of audio.
+	#[must_use]
 	pub fn process(&mut self) -> Frame {
 		self.resources.modulators.process(
 			self.dt,

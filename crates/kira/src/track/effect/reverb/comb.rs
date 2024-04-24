@@ -6,6 +6,7 @@ pub struct CombFilter {
 }
 
 impl CombFilter {
+	#[must_use]
 	pub fn new(buffer_size: usize) -> Self {
 		Self {
 			filter_store: 0.0,
@@ -14,6 +15,7 @@ impl CombFilter {
 		}
 	}
 
+	#[must_use]
 	pub fn process(&mut self, input: f32, feedback: f32, damp: f32) -> f32 {
 		let output = self.buffer[self.current_index];
 		self.filter_store = output * (1.0 - damp) + self.filter_store * damp;

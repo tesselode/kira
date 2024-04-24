@@ -34,6 +34,7 @@ pub(crate) struct Shared {
 }
 
 impl Shared {
+	#[must_use]
 	pub fn new() -> Self {
 		Self {
 			position: AtomicU64::new(0.0f64.to_bits()),
@@ -43,6 +44,7 @@ impl Shared {
 		}
 	}
 
+	#[must_use]
 	pub fn state(&self) -> PlaybackState {
 		match self.state.load(Ordering::SeqCst) {
 			0 => PlaybackState::Playing,
@@ -54,14 +56,17 @@ impl Shared {
 		}
 	}
 
+	#[must_use]
 	pub fn position(&self) -> f64 {
 		f64::from_bits(self.position.load(Ordering::SeqCst))
 	}
 
+	#[must_use]
 	pub fn reached_end(&self) -> bool {
 		self.reached_end.load(Ordering::SeqCst)
 	}
 
+	#[must_use]
 	pub fn encountered_error(&self) -> bool {
 		self.encountered_error.load(Ordering::SeqCst)
 	}
@@ -84,6 +89,7 @@ pub(crate) struct StreamingSound {
 }
 
 impl StreamingSound {
+	#[must_use]
 	pub(super) fn new<Error: Send + 'static>(
 		sample_rate: u32,
 		settings: StreamingSoundSettings,
@@ -128,6 +134,7 @@ impl StreamingSound {
 		}
 	}
 
+	#[must_use]
 	fn next_frames(&mut self) -> [Frame; 4] {
 		let mut frames = [Frame::ZERO; 4];
 		let (a, b) = self.frame_consumer.as_slices();
@@ -142,6 +149,7 @@ impl StreamingSound {
 		frames
 	}
 
+	#[must_use]
 	fn position(&self) -> f64 {
 		(self.current_frame as f64 + self.fractional_position) / self.sample_rate as f64
 	}

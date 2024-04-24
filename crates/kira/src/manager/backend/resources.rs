@@ -33,6 +33,7 @@ pub(crate) struct ResourceStorage<T> {
 }
 
 impl<T> ResourceStorage<T> {
+	#[must_use]
 	pub fn new(capacity: u16) -> (Self, ResourceController<T>) {
 		let (new_resource_producer, new_resource_consumer) = HeapRb::new(capacity as usize).split();
 		let (unused_resource_producer, unused_resource_consumer) =
@@ -66,10 +67,12 @@ impl<T> ResourceStorage<T> {
 		}
 	}
 
+	#[must_use]
 	pub fn get_mut(&mut self, key: Key) -> Option<&mut T> {
 		self.resources.get_mut(key)
 	}
 
+	#[must_use]
 	pub fn iter_mut(&mut self) -> crate::arena::iter::IterMut<T> {
 		self.resources.iter_mut()
 	}
@@ -129,10 +132,12 @@ impl<T> SelfReferentialResourceStorage<T> {
 		}
 	}
 
+	#[must_use]
 	pub fn get_mut(&mut self, key: Key) -> Option<&mut T> {
 		self.resources.get_mut(key)
 	}
 
+	#[must_use]
 	pub fn iter_mut(&mut self) -> crate::arena::iter::IterMut<T> {
 		self.resources.iter_mut()
 	}
@@ -217,10 +222,12 @@ impl<T> ResourceController<T> {
 		while unused_resource_consumer.pop().is_some() {}
 	}
 
+	#[must_use]
 	pub fn capacity(&self) -> u16 {
 		self.arena_controller.capacity()
 	}
 
+	#[must_use]
 	pub fn len(&self) -> u16 {
 		self.arena_controller.len()
 	}

@@ -10,6 +10,7 @@ pub struct EmitterDistances {
 }
 
 impl EmitterDistances {
+	#[must_use]
 	pub(crate) fn relative_distance(&self, distance: f32) -> f32 {
 		let distance = distance.clamp(self.min_distance, self.max_distance);
 		(distance - self.min_distance) / (self.max_distance - self.min_distance)

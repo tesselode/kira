@@ -41,6 +41,7 @@ struct Delay {
 
 impl Delay {
 	/// Creates a new delay effect.
+	#[must_use]
 	fn new(builder: DelayBuilder, command_readers: CommandReaders) -> Self {
 		Self {
 			command_readers,

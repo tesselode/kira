@@ -20,6 +20,7 @@ struct PanningControl {
 }
 
 impl PanningControl {
+	#[must_use]
 	fn new(builder: PanningControlBuilder, command_readers: CommandReaders) -> Self {
 		Self {
 			command_readers,

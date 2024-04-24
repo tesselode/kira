@@ -71,6 +71,7 @@ pub(crate) struct DecodeSchedulerCommandReaders {
 	seek_to: CommandReader<f64>,
 }
 
+#[must_use]
 fn command_writers_and_readers() -> (
 	CommandWriters,
 	CommandReaders,

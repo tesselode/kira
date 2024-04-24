@@ -44,6 +44,7 @@ pub(crate) struct Listener {
 }
 
 impl Listener {
+	#[must_use]
 	pub fn new(
 		command_readers: CommandReaders,
 		position: Value<Vec3>,
@@ -59,10 +60,12 @@ impl Listener {
 		}
 	}
 
+	#[must_use]
 	pub fn shared(&self) -> Arc<ListenerShared> {
 		self.shared.clone()
 	}
 
+	#[must_use]
 	pub fn track(&self) -> TrackId {
 		self.track
 	}
@@ -71,6 +74,7 @@ impl Listener {
 		read_commands_into_parameters!(self, position, orientation);
 	}
 
+	#[must_use]
 	pub fn process(
 		&mut self,
 		dt: f64,
@@ -122,6 +126,7 @@ impl Listener {
 		output
 	}
 
+	#[must_use]
 	fn ear_positions(&self) -> (Vec3, Vec3) {
 		let position = self.position.value();
 		let orientation = self.orientation.value();
@@ -130,6 +135,7 @@ impl Listener {
 		(left, right)
 	}
 
+	#[must_use]
 	fn ear_directions(&self) -> (Vec3, Vec3) {
 		let left_ear_direction_relative_to_head =
 			Quat::from_rotation_y(-EAR_ANGLE_FROM_HEAD) * Vec3::NEG_X;
@@ -147,12 +153,14 @@ pub(crate) struct ListenerShared {
 }
 
 impl ListenerShared {
+	#[must_use]
 	pub fn new() -> Self {
 		Self {
 			removed: AtomicBool::new(false),
 		}
 	}
 
+	#[must_use]
 	pub fn is_marked_for_removal(&self) -> bool {
 		self.removed.load(Ordering::SeqCst)
 	}

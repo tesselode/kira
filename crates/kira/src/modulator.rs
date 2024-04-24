@@ -177,6 +177,7 @@ pub trait ModulatorBuilder {
 	type Handle;
 
 	/// Creates the modulator and a handle to the modulator.
+	#[must_use]
 	fn build(self, id: ModulatorId) -> (Box<dyn Modulator>, Self::Handle);
 }
 
@@ -200,9 +201,11 @@ pub trait Modulator: Send {
 	);
 
 	/// Returns the current output of the modulator.
+	#[must_use]
 	fn value(&self) -> f64;
 
 	/// Whether the modulator can be removed from the audio context.
+	#[must_use]
 	fn finished(&self) -> bool;
 }
 

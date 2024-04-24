@@ -33,6 +33,7 @@ pub struct StaticSoundSettings {
 
 impl StaticSoundSettings {
 	/// Creates a new [`StaticSoundSettings`] with the default settings.
+	#[must_use]
 	pub fn new() -> Self {
 		Self {
 			start_time: StartTime::default(),
@@ -48,6 +49,7 @@ impl StaticSoundSettings {
 	}
 
 	/** Sets when the sound should start playing. */
+	#[must_use = "This method consumes self and returns a modified StaticSoundSettings, so the return value should be used"]
 	pub fn start_time(self, start_time: impl Into<StartTime>) -> Self {
 		Self {
 			start_time: start_time.into(),
@@ -56,6 +58,7 @@ impl StaticSoundSettings {
 	}
 
 	/// Sets where in the sound playback should start.
+	#[must_use = "This method consumes self and returns a modified StaticSoundSettings, so the return value should be used"]
 	pub fn start_position(self, start_position: impl Into<PlaybackPosition>) -> Self {
 		Self {
 			start_position: start_position.into(),
@@ -64,11 +67,13 @@ impl StaticSoundSettings {
 	}
 
 	/// Sets whether the sound should be played in reverse.
+	#[must_use = "This method consumes self and returns a modified StaticSoundSettings, so the return value should be used"]
 	pub fn reverse(self, reverse: bool) -> Self {
 		Self { reverse, ..self }
 	}
 
 	/** Sets the portion of the sound that should be looped. */
+	#[must_use = "This method consumes self and returns a modified StaticSoundSettings, so the return value should be used"]
 	pub fn loop_region(self, loop_region: impl IntoOptionalRegion) -> Self {
 		Self {
 			loop_region: loop_region.into_optional_region(),
@@ -77,6 +82,7 @@ impl StaticSoundSettings {
 	}
 
 	/** Sets the volume of the sound. */
+	#[must_use = "This method consumes self and returns a modified StaticSoundSettings, so the return value should be used"]
 	pub fn volume(self, volume: impl Into<Value<Volume>>) -> Self {
 		Self {
 			volume: volume.into(),
@@ -90,6 +96,7 @@ impl StaticSoundSettings {
 	Changing the playback rate will change both the speed
 	and the pitch of the sound.
 	*/
+	#[must_use = "This method consumes self and returns a modified StaticSoundSettings, so the return value should be used"]
 	pub fn playback_rate(self, playback_rate: impl Into<Value<PlaybackRate>>) -> Self {
 		Self {
 			playback_rate: playback_rate.into(),
@@ -101,6 +108,7 @@ impl StaticSoundSettings {
 	Sets the panning of the sound, where 0 is hard left
 	and 1 is hard right.
 	*/
+	#[must_use = "This method consumes self and returns a modified StaticSoundSettings, so the return value should be used"]
 	pub fn panning(self, panning: impl Into<Value<f64>>) -> Self {
 		Self {
 			panning: panning.into(),
@@ -111,6 +119,7 @@ impl StaticSoundSettings {
 	/**
 	Sets the destination that this sound should be routed to.
 	*/
+	#[must_use = "This method consumes self and returns a modified StaticSoundSettings, so the return value should be used"]
 	pub fn output_destination(self, output_destination: impl Into<OutputDestination>) -> Self {
 		Self {
 			output_destination: output_destination.into(),
@@ -119,6 +128,7 @@ impl StaticSoundSettings {
 	}
 
 	/// Sets the tween used to fade in the sound from silence.
+	#[must_use = "This method consumes self and returns a modified StaticSoundSettings, so the return value should be used"]
 	pub fn fade_in_tween(self, fade_in_tween: impl Into<Option<Tween>>) -> Self {
 		Self {
 			fade_in_tween: fade_in_tween.into(),

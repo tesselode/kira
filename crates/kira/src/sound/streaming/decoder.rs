@@ -11,9 +11,11 @@ pub trait Decoder: Send {
 	type Error;
 
 	/// Returns the sample rate of the audio (in Hz).
+	#[must_use]
 	fn sample_rate(&self) -> u32;
 
 	/// Returns the total number of samples of audio.
+	#[must_use]
 	fn num_frames(&self) -> usize;
 
 	/// Decodes the next chunk of audio.

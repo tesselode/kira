@@ -14,6 +14,7 @@ pub struct ModulatorValueProvider<'a> {
 }
 
 impl<'a> ModulatorValueProvider<'a> {
+	#[must_use]
 	pub(crate) fn new(modulators: &'a Arena<Box<dyn Modulator>>) -> Self {
 		Self {
 			kind: ModulatorValueProviderKind::Normal { modulators },
@@ -22,6 +23,7 @@ impl<'a> ModulatorValueProvider<'a> {
 
 	/// Gets the value of the modulator with the given ID if it
 	/// exists, returns `None` otherwise.
+	#[must_use]
 	pub fn get(&self, id: ModulatorId) -> Option<f64> {
 		match &self.kind {
 			ModulatorValueProviderKind::Normal { modulators } => {
@@ -55,6 +57,7 @@ pub struct MockModulatorValueProviderBuilder {
 impl MockModulatorValueProviderBuilder {
 	/// Creates a new [`MockModulatorValueProviderBuilder`] with room for
 	/// the specified number of modulators.
+	#[must_use]
 	pub fn new(capacity: u16) -> Self {
 		Self {
 			modulator_values: Arena::new(capacity),
@@ -68,6 +71,7 @@ impl MockModulatorValueProviderBuilder {
 	}
 
 	/// Consumes the builder and returns a [`ModulatorValueProvider`].
+	#[must_use]
 	pub fn build(self) -> ModulatorValueProvider<'static> {
 		ModulatorValueProvider {
 			kind: ModulatorValueProviderKind::Mock {

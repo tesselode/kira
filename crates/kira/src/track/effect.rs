@@ -29,6 +29,7 @@ pub trait EffectBuilder {
 	type Handle;
 
 	/// Creates the effect and a handle to the effect.
+	#[must_use]
 	fn build(self) -> (Box<dyn Effect>, Self::Handle);
 }
 

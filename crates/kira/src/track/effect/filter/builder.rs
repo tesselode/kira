@@ -26,16 +26,19 @@ pub struct FilterBuilder {
 
 impl FilterBuilder {
 	/// Creates a new [`FilterBuilder`] with the default settings.
+	#[must_use]
 	pub fn new() -> Self {
 		Self::default()
 	}
 
 	/// Sets the frequencies that the filter will remove.
+	#[must_use = "This method consumes self and returns a modified FilterBuilder, so the return value should be used"]
 	pub fn mode(self, mode: FilterMode) -> Self {
 		Self { mode, ..self }
 	}
 
 	/// Sets the cutoff frequency of the filter (in hertz).
+	#[must_use = "This method consumes self and returns a modified FilterBuilder, so the return value should be used"]
 	pub fn cutoff(self, cutoff: impl Into<Value<f64>>) -> Self {
 		Self {
 			cutoff: cutoff.into(),
@@ -44,6 +47,7 @@ impl FilterBuilder {
 	}
 
 	/// Sets the resonance of the filter.
+	#[must_use = "This method consumes self and returns a modified FilterBuilder, so the return value should be used"]
 	pub fn resonance(self, resonance: impl Into<Value<f64>>) -> Self {
 		Self {
 			resonance: resonance.into(),
@@ -55,6 +59,7 @@ impl FilterBuilder {
 	/// with the wet (processed) signal. `0.0` means only the dry
 	/// signal will be heard. `1.0` means only the wet signal will
 	/// be heard.
+	#[must_use = "This method consumes self and returns a modified FilterBuilder, so the return value should be used"]
 	pub fn mix(self, mix: impl Into<Value<f64>>) -> Self {
 		Self {
 			mix: mix.into(),

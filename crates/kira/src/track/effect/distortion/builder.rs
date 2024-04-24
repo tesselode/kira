@@ -23,17 +23,20 @@ pub struct DistortionBuilder {
 
 impl DistortionBuilder {
 	/// Creates a new [`DistortionBuilder`] with the default settings.
+	#[must_use]
 	pub fn new() -> Self {
 		Self::default()
 	}
 
 	/// Sets the kind of distortion to use.
+	#[must_use = "This method consumes self and returns a modified DistortionBuilder, so the return value should be used"]
 	pub fn kind(self, kind: DistortionKind) -> Self {
 		Self { kind, ..self }
 	}
 
 	/// Sets the factor to multiply the signal by before applying
 	/// the distortion.
+	#[must_use = "This method consumes self and returns a modified DistortionBuilder, so the return value should be used"]
 	pub fn drive(self, drive: impl Into<Value<Volume>>) -> Self {
 		Self {
 			drive: drive.into(),
@@ -45,6 +48,7 @@ impl DistortionBuilder {
 	/// with the wet (processed) signal. `0.0` means only the dry
 	/// signal will be heard. `1.0` means only the wet signal will
 	/// be heard.
+	#[must_use = "This method consumes self and returns a modified DistortionBuilder, so the return value should be used"]
 	pub fn mix(self, mix: impl Into<Value<f64>>) -> Self {
 		Self {
 			mix: mix.into(),

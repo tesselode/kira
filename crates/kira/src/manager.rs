@@ -243,26 +243,31 @@ impl<B: Backend> AudioManager<B> {
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
+	#[must_use]
 	pub fn main_track(&mut self) -> &mut TrackHandle {
 		&mut self.resource_controllers.main_track_handle
 	}
 
 	/// Returns the number of sounds that can be loaded at a time.
+	#[must_use]
 	pub fn sound_capacity(&self) -> u16 {
 		self.resource_controllers.sound_controller.capacity()
 	}
 
 	/// Returns the number of mixer sub-tracks that can exist at a time.
+	#[must_use]
 	pub fn sub_track_capacity(&self) -> u16 {
 		self.resource_controllers.sub_track_controller.capacity()
 	}
 
 	/// Returns the number of clocks that can exist at a time.
+	#[must_use]
 	pub fn clock_capacity(&self) -> u16 {
 		self.resource_controllers.clock_controller.capacity()
 	}
 
 	/// Returns the number of spatial scenes that can exist at a time.
+	#[must_use]
 	pub fn spatial_scene_capacity(&self) -> u16 {
 		self.resource_controllers
 			.spatial_scene_controller
@@ -270,36 +275,43 @@ impl<B: Backend> AudioManager<B> {
 	}
 
 	/// Returns the number of modulators that can exist at a time.
+	#[must_use]
 	pub fn modulator_capacity(&self) -> u16 {
 		self.resource_controllers.modulator_controller.capacity()
 	}
 
 	/// Returns the number of sounds that are currently loaded.
+	#[must_use]
 	pub fn num_sounds(&self) -> u16 {
 		self.resource_controllers.sound_controller.len()
 	}
 
 	/// Returns the number of mixer sub-tracks that currently exist.
+	#[must_use]
 	pub fn num_sub_tracks(&self) -> u16 {
 		self.resource_controllers.sub_track_controller.len()
 	}
 
 	/// Returns the number of clocks that currently exist.
+	#[must_use]
 	pub fn num_clocks(&self) -> u16 {
 		self.resource_controllers.clock_controller.len()
 	}
 
 	/// Returns the number of spatial scenes that currently exist.
+	#[must_use]
 	pub fn num_spatial_scenes(&self) -> u16 {
 		self.resource_controllers.spatial_scene_controller.len()
 	}
 
 	/// Returns the number of modulators that currently exist.
+	#[must_use]
 	pub fn num_modulators(&self) -> u16 {
 		self.resource_controllers.modulator_controller.len()
 	}
 
 	/// Returns a mutable reference to this manager's backend.
+	#[must_use]
 	pub fn backend_mut(&mut self) -> &mut B {
 		&mut self.backend
 	}

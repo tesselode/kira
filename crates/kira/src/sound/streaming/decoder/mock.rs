@@ -11,6 +11,7 @@ pub(crate) struct MockDecoder {
 }
 
 impl MockDecoder {
+	#[must_use]
 	pub(crate) fn new(frames: Vec<Frame>) -> Self {
 		Self {
 			frames,

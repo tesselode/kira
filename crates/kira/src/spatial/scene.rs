@@ -30,6 +30,7 @@ pub(crate) struct SpatialScene {
 }
 
 impl SpatialScene {
+	#[must_use]
 	pub fn new(id: SpatialSceneId, settings: SpatialSceneSettings) -> (Self, SpatialSceneHandle) {
 		let (emitters, emitter_controller) = ResourceStorage::new(settings.emitter_capacity);
 		let (listeners, listener_controller) = ResourceStorage::new(settings.listener_capacity);
@@ -49,10 +50,12 @@ impl SpatialScene {
 		)
 	}
 
+	#[must_use]
 	pub fn shared(&self) -> Arc<SpatialSceneShared> {
 		self.shared.clone()
 	}
 
+	#[must_use]
 	pub fn emitter_mut(&mut self, id: EmitterId) -> Option<&mut Emitter> {
 		self.emitters.get_mut(id.key)
 	}

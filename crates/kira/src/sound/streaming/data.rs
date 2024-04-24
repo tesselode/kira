@@ -30,6 +30,7 @@ pub struct StreamingSoundData<Error: Send + 'static> {
 
 impl<Error: Send> StreamingSoundData<Error> {
 	/// Creates a [`StreamingSoundData`] for a [`Decoder`].
+	#[must_use]
 	pub fn from_decoder(decoder: impl Decoder<Error = Error> + 'static) -> Self {
 		Self {
 			decoder: Box::new(decoder),
@@ -59,12 +60,14 @@ impl<Error: Send> StreamingSoundData<Error> {
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
+	#[must_use = "This method consumes self and returns a modified StreamingSoundData, so the return value should be used"]
 	pub fn start_time(mut self, start_time: impl Into<StartTime>) -> Self {
 		self.settings.start_time = start_time.into();
 		self
 	}
 
 	/// Sets where in the sound playback should start.
+	#[must_use = "This method consumes self and returns a modified StreamingSoundData, so the return value should be used"]
 	pub fn start_position(mut self, start_position: impl Into<PlaybackPosition>) -> Self {
 		self.settings.start_position = start_position.into();
 		self
@@ -91,6 +94,7 @@ impl<Error: Send> StreamingSoundData<Error> {
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
+	#[must_use = "This method consumes self and returns a modified StreamingSoundData, so the return value should be used"]
 	pub fn loop_region(mut self, loop_region: impl IntoOptionalRegion) -> Self {
 		self.settings.loop_region = loop_region.into_optional_region();
 		self
@@ -134,6 +138,7 @@ impl<Error: Send> StreamingSoundData<Error> {
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
+	#[must_use = "This method consumes self and returns a modified StreamingSoundData, so the return value should be used"]
 	pub fn volume(mut self, volume: impl Into<Value<Volume>>) -> Self {
 		self.settings.volume = volume.into();
 		self
@@ -181,6 +186,7 @@ impl<Error: Send> StreamingSoundData<Error> {
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
+	#[must_use = "This method consumes self and returns a modified StreamingSoundData, so the return value should be used"]
 	pub fn playback_rate(mut self, playback_rate: impl Into<Value<PlaybackRate>>) -> Self {
 		self.settings.playback_rate = playback_rate.into();
 		self
@@ -217,6 +223,7 @@ impl<Error: Send> StreamingSoundData<Error> {
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
+	#[must_use = "This method consumes self and returns a modified StreamingSoundData, so the return value should be used"]
 	pub fn panning(mut self, panning: impl Into<Value<f64>>) -> Self {
 		self.settings.panning = panning.into();
 		self
@@ -262,23 +269,27 @@ impl<Error: Send> StreamingSoundData<Error> {
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
+	#[must_use = "This method consumes self and returns a modified StreamingSoundData, so the return value should be used"]
 	pub fn output_destination(mut self, output_destination: impl Into<OutputDestination>) -> Self {
 		self.settings.output_destination = output_destination.into();
 		self
 	}
 
 	/// Sets the tween used to fade in the instance from silence.
+	#[must_use = "This method consumes self and returns a modified StreamingSoundData, so the return value should be used"]
 	pub fn fade_in_tween(mut self, fade_in_tween: impl Into<Option<Tween>>) -> Self {
 		self.settings.fade_in_tween = fade_in_tween.into();
 		self
 	}
 
 	/// Returns the `StreamingSoundData` with the specified settings.
+	#[must_use = "This method consumes self and returns a modified StreamingSoundData, so the return value should be used"]
 	pub fn with_settings(mut self, settings: StreamingSoundSettings) -> Self {
 		self.settings = settings;
 		self
 	}
 
+	#[must_use]
 	pub fn num_frames(&self) -> usize {
 		if let Some((start, end)) = self.slice {
 			end - start
@@ -288,10 +299,12 @@ impl<Error: Send> StreamingSoundData<Error> {
 	}
 
 	/// Returns the duration of the audio.
+	#[must_use]
 	pub fn duration(&self) -> Duration {
 		Duration::from_secs_f64(self.num_frames() as f64 / self.decoder.sample_rate() as f64)
 	}
 
+	#[must_use = "This method consumes self and returns a modified StreamingSoundData, so the return value should be used"]
 	pub fn slice(mut self, region: impl IntoOptionalRegion) -> Self {
 		self.slice = region.into_optional_region().map(|Region { start, end }| {
 			let start = start.into_samples(self.decoder.sample_rate());

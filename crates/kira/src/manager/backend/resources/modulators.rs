@@ -8,6 +8,7 @@ use super::{ResourceController, SelfReferentialResourceStorage};
 pub(crate) struct Modulators(pub(crate) SelfReferentialResourceStorage<Box<dyn Modulator>>);
 
 impl Modulators {
+	#[must_use]
 	pub fn new(capacity: u16) -> (Self, ResourceController<Box<dyn Modulator>>) {
 		let (storage, controller) = SelfReferentialResourceStorage::new(capacity);
 		(Self(storage), controller)

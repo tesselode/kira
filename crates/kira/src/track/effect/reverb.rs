@@ -44,6 +44,7 @@ struct Reverb {
 
 impl Reverb {
 	/// Creates a new `Reverb` effect.
+	#[must_use]
 	fn new(settings: ReverbBuilder, command_readers: CommandReaders) -> Self {
 		Self {
 			command_readers,

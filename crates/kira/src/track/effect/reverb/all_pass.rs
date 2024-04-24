@@ -7,6 +7,7 @@ pub struct AllPassFilter {
 }
 
 impl AllPassFilter {
+	#[must_use]
 	pub fn new(buffer_size: usize) -> Self {
 		Self {
 			buffer: vec![0.0; buffer_size],
@@ -14,6 +15,7 @@ impl AllPassFilter {
 		}
 	}
 
+	#[must_use]
 	pub fn process(&mut self, input: f32) -> f32 {
 		let buffer_output = self.buffer[self.current_index];
 		let output = -input + buffer_output;

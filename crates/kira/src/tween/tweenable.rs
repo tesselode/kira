@@ -9,6 +9,7 @@ pub trait Tweenable: Copy {
 	/// An amount of `0.0` should yield `a`, an amount of `1.0` should
 	/// yield `b`, and an amount of `0.5` should yield a value halfway
 	/// between `a` and `b`.
+	#[must_use]
 	fn interpolate(a: Self, b: Self, amount: f64) -> Self;
 }
 

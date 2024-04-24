@@ -17,11 +17,13 @@ pub struct StaticSoundHandle {
 
 impl StaticSoundHandle {
 	/// Returns the current playback state of the sound.
+	#[must_use]
 	pub fn state(&self) -> PlaybackState {
 		self.shared.state()
 	}
 
 	/// Returns the current playback position of the sound (in seconds).
+	#[must_use]
 	pub fn position(&self) -> f64 {
 		self.shared.position()
 	}

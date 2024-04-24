@@ -8,6 +8,7 @@ pub struct ListenerSettings {
 
 impl ListenerSettings {
 	/// Creates a new [`ListenerSettings`] with the default settings.
+	#[must_use]
 	pub fn new() -> Self {
 		Self {
 			track: TrackId::Main,
@@ -15,6 +16,7 @@ impl ListenerSettings {
 	}
 
 	/// Sets the mixer track that the listener's received audio should be routed to.
+	#[must_use = "This method consumes self and returns a modified ListenerSettings, so the return value should be used"]
 	pub fn track(self, track: impl Into<TrackId>) -> Self {
 		Self {
 			track: track.into(),

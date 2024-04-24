@@ -20,6 +20,7 @@ pub(crate) struct SymphoniaDecoder {
 }
 
 impl SymphoniaDecoder {
+	#[must_use]
 	pub(crate) fn new(media_source: Box<dyn MediaSource>) -> Result<Self, FromFileError> {
 		let codecs = symphonia::default::get_codecs();
 		let probe = symphonia::default::get_probe();
