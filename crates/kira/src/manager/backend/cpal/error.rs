@@ -4,7 +4,6 @@ use cpal::{BuildStreamError, DefaultStreamConfigError, PlayStreamError};
 
 /// Errors that can occur when using the cpal backend.
 #[derive(Debug)]
-#[non_exhaustive]
 pub enum Error {
 	/// A default audio output device could not be determined.
 	NoDefaultOutputDevice,

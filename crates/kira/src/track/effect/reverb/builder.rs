@@ -7,7 +7,6 @@ use super::{command_writers_and_readers, Reverb, ReverbHandle};
 
 /// Configures a reverb effect.
 #[derive(Debug, Copy, Clone, PartialEq)]
-#[non_exhaustive]
 pub struct ReverbBuilder {
 	/// How much the room reverberates. A higher value will
 	/// result in a bigger sounding room. 1.0 gives an infinitely

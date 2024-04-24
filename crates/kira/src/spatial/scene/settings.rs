@@ -1,5 +1,4 @@
 /// Settings for a spatial scene.
-#[non_exhaustive]
 pub struct SpatialSceneSettings {
 	/// The maximum number of emitters that can be in the scene at once.
 	pub emitter_capacity: u16,

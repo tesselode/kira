@@ -13,7 +13,6 @@ use super::{
 };
 
 /// Configures a mixer track.
-#[non_exhaustive]
 pub struct TrackBuilder {
 	/// The volume of the track.
 	pub(crate) volume: Value<Volume>,

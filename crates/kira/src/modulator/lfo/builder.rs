@@ -8,7 +8,6 @@ use crate::{
 use super::{command_writers_and_readers, handle::LfoHandle, Lfo, LfoShared, Waveform};
 
 /// Configures an LFO modulator.
-#[non_exhaustive]
 pub struct LfoBuilder {
 	/// The oscillation pattern.
 	pub waveform: Waveform,

@@ -7,7 +7,6 @@ use crate::{
 use super::{command_writers_and_readers, Delay, DelayHandle};
 
 /// Configures a delay effect.
-#[non_exhaustive]
 pub struct DelayBuilder {
 	/// The delay time (in seconds).
 	pub(super) delay_time: Value<f64>,

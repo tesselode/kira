@@ -3,7 +3,6 @@ use crate::{track::effect::EffectBuilder, tween::Value};
 use super::{command_writers_and_readers, EqFilter, EqFilterHandle, EqFilterKind};
 
 /// Configures an EQ filter.
-#[non_exhaustive]
 pub struct EqFilterBuilder {
 	/// The shape of the frequency adjustment curve.
 	pub kind: EqFilterKind,

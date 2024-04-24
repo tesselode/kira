@@ -7,7 +7,6 @@ use super::{command_writers_and_readers, Filter, FilterHandle, FilterMode};
 
 /// Configures a filter effect.
 #[derive(Debug, Copy, Clone, PartialEq)]
-#[non_exhaustive]
 pub struct FilterBuilder {
 	/// The frequencies that the filter will remove.
 	pub mode: FilterMode,

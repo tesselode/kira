@@ -8,7 +8,6 @@ use super::{command_writers_and_readers, handle::DistortionHandle, Distortion, D
 
 /// Configures a distortion effect.
 #[derive(Debug, Copy, Clone, PartialEq)]
-#[non_exhaustive]
 pub struct DistortionBuilder {
 	/// The kind of distortion to use.
 	pub kind: DistortionKind,

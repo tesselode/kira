@@ -8,7 +8,6 @@ use crate::{
 use super::{command_writers_and_readers, Compressor, CompressorHandle};
 
 /// Configures a compressor.
-#[non_exhaustive]
 pub struct CompressorBuilder {
 	/// The volume above which volume will start to be decreased (in dBFS).
 	pub threshold: Value<f64>,

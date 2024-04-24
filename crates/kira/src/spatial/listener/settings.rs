@@ -1,7 +1,6 @@
 use crate::track::TrackId;
 
 /// Settings for a listener.
-#[non_exhaustive]
 pub struct ListenerSettings {
 	/// The mixer track that the listener's received audio should be routed to.
 	pub track: TrackId,

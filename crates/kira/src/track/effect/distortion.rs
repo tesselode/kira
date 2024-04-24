@@ -15,7 +15,6 @@ use crate::{
 /// Different types of distortion.
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[non_exhaustive]
 pub enum DistortionKind {
 	/// The signal will be clamped to the -1.0 to 1.0 range.
 	///

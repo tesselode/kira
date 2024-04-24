@@ -7,7 +7,6 @@ use std::{
 
 /// Errors that can occur when playing a sound.
 #[derive(Debug)]
-#[non_exhaustive]
 pub enum PlaySoundError<E> {
 	/// Could not play a sound because the maximum number of sounds has been reached.
 	SoundLimitReached,
