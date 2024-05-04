@@ -152,7 +152,6 @@ impl<T> Arena<T> {
 	/// If the [`Arena`] contains an item with the given [`Key`],
 	/// removes it from the [`Arena`] and returns `Some(item)`.
 	/// Otherwise, returns `None`.
-	#[must_use]
 	pub fn remove(&mut self, key: Key) -> Option<T> {
 		// TODO: answer the following questions:
 		// - if you reserve a key, then try to remove the key

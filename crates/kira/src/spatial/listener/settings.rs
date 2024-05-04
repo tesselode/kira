@@ -20,7 +20,6 @@ impl ListenerSettings {
 	pub fn track(self, track: impl Into<TrackId>) -> Self {
 		Self {
 			track: track.into(),
-			..self
 		}
 	}
 }

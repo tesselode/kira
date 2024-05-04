@@ -41,7 +41,7 @@ fn streaming_sound_stops_on_error() {
 	let mut sound = manager.play(data).unwrap();
 	manager.backend_mut().on_start_processing();
 	std::thread::sleep(Duration::from_secs(1));
-	manager.backend_mut().process();
+	let _ = manager.backend_mut().process();
 	manager.backend_mut().on_start_processing();
 	assert_eq!(sound.state(), PlaybackState::Stopped);
 	assert_eq!(sound.pop_error(), Some(MockDecoderError));

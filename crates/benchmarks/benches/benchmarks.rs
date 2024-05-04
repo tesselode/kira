@@ -79,7 +79,7 @@ fn sounds(c: &mut Criterion) {
 			if num_iterations % 1000 == 0 {
 				manager.backend_mut().on_start_processing();
 			}
-			manager.backend_mut().process();
+			let _ = manager.backend_mut().process();
 			num_iterations += 1;
 		});
 	});

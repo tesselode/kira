@@ -39,7 +39,6 @@ pub(crate) struct DecodeScheduler<Error: Send + 'static> {
 }
 
 impl<Error: Send + 'static> DecodeScheduler<Error> {
-	#[must_use]
 	pub(crate) fn new(
 		mut decoder: Box<dyn Decoder<Error = Error>>,
 		slice: Option<(usize, usize)>,

@@ -88,10 +88,10 @@ fn change_sample_rate() {
 	let backend = manager.backend_mut();
 	backend.on_start_processing();
 	assert_eq!(effect_handle.sample_rate.load(Ordering::SeqCst), 100);
-	backend.process();
+	let _ = backend.process();
 	assert_eq!(effect_handle.dt_consumer.pop(), Some(1.0 / 100.0));
 	backend.set_sample_rate(200);
 	assert_eq!(effect_handle.sample_rate.load(Ordering::SeqCst), 200);
-	backend.process();
+	let _ = backend.process();
 	assert_eq!(effect_handle.dt_consumer.pop(), Some(1.0 / 200.0));
 }
