@@ -8,11 +8,11 @@ pub use handle::*;
 
 use crate::{
 	clock::clock_info::ClockInfoProvider,
+	command::read_commands_into_parameters,
 	command::ValueChangeCommand,
 	command_writers_and_readers,
 	dsp::{interpolate_frame, Frame},
 	modulator::value_provider::ModulatorValueProvider,
-	read_commands_into_parameters,
 	track::Effect,
 	tween::Parameter,
 	Volume,

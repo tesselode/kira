@@ -25,6 +25,15 @@ pub struct StreamingSoundData<Error: Send + 'static> {
 	pub(crate) decoder: Box<dyn Decoder<Error = Error>>,
 	/// Settings for the streaming sound.
 	pub settings: StreamingSoundSettings,
+	/**
+	The portion of the sound this [`StreamingSoundData`] represents.
+
+	Note that the [`StreamingSoundData`] holds the entire piece of audio
+	it was originally given regardless of the value of `slice`, but
+	[`StreamingSoundData::num_frames`] and [`StreamingSoundData::duration`]
+	will behave as if this [`StreamingSoundData`] only contained the specified
+	portion of audio.
+	*/
 	pub slice: Option<(usize, usize)>,
 }
 
@@ -289,6 +298,10 @@ impl<Error: Send> StreamingSoundData<Error> {
 		self
 	}
 
+	/// Returns the number of frames in the [`StreamingSoundData`].
+	///
+	/// If [`StreamingSoundData::slice`] is `Some`, this will be the number
+	/// of frames in the slice.
 	#[must_use]
 	pub fn num_frames(&self) -> usize {
 		if let Some((start, end)) = self.slice {
@@ -299,11 +312,17 @@ impl<Error: Send> StreamingSoundData<Error> {
 	}
 
 	/// Returns the duration of the audio.
+	///
+	/// If [`StreamingSoundData::slice`] is `Some`, this will be the duration
+	/// of the slice.
 	#[must_use]
 	pub fn duration(&self) -> Duration {
 		Duration::from_secs_f64(self.num_frames() as f64 / self.decoder.sample_rate() as f64)
 	}
 
+	/**
+	Sets the portion of the audio this [`StreamingSoundData`] represents.
+	*/
 	#[must_use = "This method consumes self and returns a modified StreamingSoundData, so the return value should be used"]
 	pub fn slice(mut self, region: impl IntoOptionalRegion) -> Self {
 		self.slice = region.into_optional_region().map(|Region { start, end }| {

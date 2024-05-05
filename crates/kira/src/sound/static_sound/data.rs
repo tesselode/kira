@@ -35,6 +35,16 @@ pub struct StaticSoundData {
 	pub frames: Arc<[Frame]>,
 	/// Settings for the sound.
 	pub settings: StaticSoundSettings,
+	/**
+	The portion of the sound this [`StaticSoundData`] represents.
+
+	Note that the [`StaticSoundData`] holds the entire piece of audio
+	it was originally given regardless of the value of `slice`, but
+	[`StaticSoundData::num_frames`], [`StaticSoundData::duration`],
+	and [`StaticSoundData::frame_at_index`] will all behave as if
+	this [`StaticSoundData`] only contained the specified portion of
+	audio.
+	*/
 	pub slice: Option<(usize, usize)>,
 }
 
@@ -42,7 +52,7 @@ impl StaticSoundData {
 	/**
 	Sets when the sound should start playing.
 
-	This returns a cheap clone of the `StaticSoundData` with the modified start time.
+	This returns a cheap clone of the [`StaticSoundData`] with the modified start time.
 
 	# Examples
 
@@ -71,7 +81,7 @@ impl StaticSoundData {
 
 	/// Sets where in the sound playback should start.
 	///
-	/// This returns a cheap clone of the `StaticSoundData` with the modified start position.
+	/// This returns a cheap clone of the [`StaticSoundData`] with the modified start position.
 	#[must_use = "This method returns a modified StaticSoundData and does not mutate the original value"]
 	pub fn start_position(&self, start_position: impl Into<PlaybackPosition>) -> Self {
 		let mut new = self.clone();
@@ -81,7 +91,7 @@ impl StaticSoundData {
 
 	/// Sets whether the sound should be played in reverse.
 	///
-	/// This returns a cheap clone of the `StaticSoundData` with the modified setting.
+	/// This returns a cheap clone of the [`StaticSoundData`] with the modified setting.
 	#[must_use = "This method returns a modified StaticSoundData and does not mutate the original value"]
 	pub fn reverse(&self, reverse: bool) -> Self {
 		let mut new = self.clone();
@@ -92,7 +102,7 @@ impl StaticSoundData {
 	/**
 	Sets the portion of the sound that should be looped.
 
-	This returns a cheap clone of the `StaticSoundData` with the modified loop region.
+	This returns a cheap clone of the [`StaticSoundData`] with the modified loop region.
 
 	# Examples
 
@@ -120,7 +130,7 @@ impl StaticSoundData {
 	/**
 	Sets the volume of the sound.
 
-	This returns a cheap clone of the `StaticSoundData` with the modified volume.
+	This returns a cheap clone of the [`StaticSoundData`] with the modified volume.
 
 	# Examples
 
@@ -167,7 +177,7 @@ impl StaticSoundData {
 
 	Changing the playback rate will change both the speed and the pitch of the sound.
 
-	This returns a cheap clone of the `StaticSoundData` with the modified playback rate.
+	This returns a cheap clone of the [`StaticSoundData`] with the modified playback rate.
 
 	# Examples
 
@@ -213,7 +223,7 @@ impl StaticSoundData {
 	/**
 	Sets the panning of the sound, where 0 is hard left and 1 is hard right.
 
-	This returns a cheap clone of the `StaticSoundData` with the modified panning.
+	This returns a cheap clone of the [`StaticSoundData`] with the modified panning.
 
 	# Examples
 
@@ -251,7 +261,7 @@ impl StaticSoundData {
 	/**
 	Sets the destination that this sound should be routed to.
 
-	This returns a cheap clone of the `StaticSoundData` with the modified output destination.
+	This returns a cheap clone of the [`StaticSoundData`] with the modified output destination.
 
 	# Examples
 
@@ -299,7 +309,7 @@ impl StaticSoundData {
 
 	/// Sets the tween used to fade in the sound from silence.
 	///
-	/// This returns a cheap clone of the `StaticSoundData` with the modified fade in tween.
+	/// This returns a cheap clone of the [`StaticSoundData`] with the modified fade in tween.
 	#[must_use = "This method returns a modified StaticSoundData and does not mutate the original value"]
 	pub fn fade_in_tween(&self, fade_in_tween: impl Into<Option<Tween>>) -> Self {
 		let mut new = self.clone();
@@ -316,22 +326,62 @@ impl StaticSoundData {
 		}
 	}
 
+	/// Returns the number of frames in the [`StaticSoundData`].
+	///
+	/// If [`StaticSoundData::slice`] is `Some`, this will be the number
+	/// of frames in the slice.
 	#[must_use]
 	pub fn num_frames(&self) -> usize {
 		num_frames(&self.frames, self.slice)
 	}
 
 	/// Returns the duration of the audio.
+	///
+	/// If [`StaticSoundData::slice`] is `Some`, this will be the duration
+	/// of the slice.
 	#[must_use]
 	pub fn duration(&self) -> Duration {
 		Duration::from_secs_f64(self.num_frames() as f64 / self.sample_rate as f64)
 	}
 
+	/// Returns the nth [`Frame`] of audio in the [`StaticSoundData`].
+	///
+	/// If [`StaticSoundData::slice`] is `Some`, this will behave as if the [`StaticSoundData`]
+	/// only contained that portion of the audio.
 	#[must_use]
 	pub fn frame_at_index(&self, index: usize) -> Option<Frame> {
 		frame_at_index(index, &self.frames, self.slice)
 	}
 
+	/**
+	Sets the portion of the audio this [`StaticSoundData`] represents.
+
+	This returns a cheap clone of the [`StaticSoundData`] with the modified slice.
+
+	Note that the [`StaticSoundData`] holds the entire piece of audio it was originally
+	given regardless of the value of `slice`, but [`StaticSoundData::num_frames`],
+	[`StaticSoundData::duration`], and [`StaticSoundData::frame_at_index`] will all behave
+	as if this [`StaticSoundData`] only contained the specified portion of audio.
+
+	# Example
+
+	```
+	use kira::{
+		sound::static_sound::{StaticSoundData, StaticSoundSettings},
+		dsp::Frame,
+	};
+	let sound = StaticSoundData {
+		sample_rate: 1,
+		frames: (0..10).map(|i| Frame::from_mono(i as f32)).collect(),
+		settings: StaticSoundSettings::default(),
+		slice: None,
+	};
+	let sliced = sound.slice(3.0..6.0);
+	assert_eq!(sliced.num_frames(), 3);
+	assert_eq!(sliced.frame_at_index(0), Some(Frame::from_mono(3.0)));
+	assert_eq!(sliced.frame_at_index(1), Some(Frame::from_mono(4.0)));
+	```
+	*/
 	#[must_use = "This method returns a modified StaticSoundData and does not mutate the original value"]
 	pub fn slice(&self, region: impl IntoOptionalRegion) -> Self {
 		let mut new = self.clone();

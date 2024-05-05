@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
-	handle_param_setters,
+	command::handle_param_setters,
 	sound::{IntoOptionalRegion, PlaybackRate, PlaybackState},
 	tween::Tween,
 	StartTime, Volume,

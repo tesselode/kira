@@ -168,10 +168,10 @@ use std::sync::{
 use crate::arena::Key;
 
 use crate::{
+	command::read_commands_into_parameters,
 	command::ValueChangeCommand,
 	command_writers_and_readers,
 	modulator::value_provider::ModulatorValueProvider,
-	read_commands_into_parameters,
 	tween::{Parameter, Value},
 };
 

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::handle_param_setters;
+use crate::command::handle_param_setters;
 
 use super::{ClockId, ClockShared, ClockSpeed, ClockTime, CommandWriters};
 

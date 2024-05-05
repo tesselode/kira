@@ -18,8 +18,8 @@ use std::{
 };
 
 use crate::{
-	clock::clock_info::ClockInfoProvider, command::ValueChangeCommand, command_writers_and_readers,
-	read_commands_into_parameters, tween::Parameter,
+	clock::clock_info::ClockInfoProvider, command::read_commands_into_parameters,
+	command::ValueChangeCommand, command_writers_and_readers, tween::Parameter,
 };
 
 use super::{value_provider::ModulatorValueProvider, Modulator};

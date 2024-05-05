@@ -67,6 +67,8 @@ impl<T: Tweenable> Parameter<T> {
 		};
 	}
 
+	/// Reads a [`ValueChangeCommand`] from a [`CommandReader`], and if there is one,
+	/// sets the parameter with the value and tween.
 	pub fn read_command(&mut self, command_reader: &mut CommandReader<ValueChangeCommand<T>>)
 	where
 		T: Send,

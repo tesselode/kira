@@ -158,13 +158,12 @@ audio formats, like MP3 and WAV.
 	- [`EqFilterKind`](crate::track::effect::eq_filter::EqFilterKind)
 	- [`FilterMode`](crate::track::effect::filter::FilterMode)
 	- [`Frame`](crate::dsp::Frame)
-	- [`MainPlaybackState`](crate::manager::MainPlaybackState)
 	- [`ModulatorMapping`](crate::tween::ModulatorMapping)
 	- [`PlaybackPosition`](crate::sound::PlaybackPosition)
 	- [`PlaybackRate`](crate::sound::PlaybackRate)
 	- [`PlaybackState`](crate::sound::PlaybackState)
 	- [`Region`](crate::sound::Region)
-	- [`Volume`](crate::Volume)
+	- [`Volume`]
 	- [`Waveform`](crate::modulator::lfo::Waveform)
 - `assert_no_alloc` - uses the [`assert_no_alloc`](https://crates.io/crates/assert_no_alloc) crate
 to cause panics if memory is allocated or deallocated on the audio thread. This is mainly useful
@@ -249,7 +248,7 @@ and compile times for games.
 
 mod arena;
 pub mod clock;
-mod command;
+pub mod command;
 pub mod dsp;
 mod error;
 pub mod manager;

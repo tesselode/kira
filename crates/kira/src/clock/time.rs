@@ -22,10 +22,37 @@ pub struct ClockTime {
 	/// The elapsed time in whole ticks.
 	pub ticks: u64,
 	/// The amount of time since the last tick as a fraction of a tick.
+	///
+	/// This will always be in the range of `0.0` (inclusive) to `1.0` (exclusive).
 	pub fraction: f64,
 }
 
 impl ClockTime {
+	/**
+	Creates a [`ClockTime`] for a clock with the specified number of
+	whole ticks.
+
+	# Example
+
+	```
+	use kira::{
+		manager::{AudioManager, backend::DefaultBackend, AudioManagerSettings},
+		clock::{ClockSpeed, ClockTime},
+	};
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let clock = manager.add_clock(ClockSpeed::TicksPerMinute(120.0))?;
+	assert_eq!(
+		ClockTime::from_ticks_u64(&clock, 3),
+		ClockTime {
+			clock: clock.id(),
+			ticks: 3,
+			fraction: 0.0,
+		},
+	);
+	# Ok::<(), Box<dyn std::error::Error>>(())
+	```
+	*/
 	pub fn from_ticks_u64(clock: impl Into<ClockId>, ticks: u64) -> Self {
 		Self {
 			clock: clock.into(),
@@ -34,6 +61,31 @@ impl ClockTime {
 		}
 	}
 
+	/**
+	Creates a [`ClockTime`] for a clock with the specified number of
+	ticks.
+
+	# Example
+
+	```
+	use kira::{
+		manager::{AudioManager, backend::DefaultBackend, AudioManagerSettings},
+		clock::{ClockSpeed, ClockTime},
+	};
+
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let clock = manager.add_clock(ClockSpeed::TicksPerMinute(120.0))?;
+	assert_eq!(
+		ClockTime::from_ticks_f64(&clock, 3.5),
+		ClockTime {
+			clock: clock.id(),
+			ticks: 3,
+			fraction: 0.5,
+		},
+	);
+	# Ok::<(), Box<dyn std::error::Error>>(())
+	```
+	*/
 	pub fn from_ticks_f64(clock: impl Into<ClockId>, ticks: f64) -> Self {
 		Self {
 			clock: clock.into(),

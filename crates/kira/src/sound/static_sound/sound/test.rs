@@ -1,10 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
 use crate::{
-	clock::{
-		clock_info::{ClockInfo, MockClockInfoProviderBuilder},
-		ClockTime,
-	},
+	clock::{clock_info::MockClockInfoProviderBuilder, ClockTime},
 	dsp::Frame,
 	modulator::value_provider::MockModulatorValueProviderBuilder,
 	sound::{

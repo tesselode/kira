@@ -7,9 +7,9 @@ pub use builder::*;
 pub use handle::*;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider, command::ValueChangeCommand, command_writers_and_readers,
-	dsp::Frame, modulator::value_provider::ModulatorValueProvider, read_commands_into_parameters,
-	track::Effect, tween::Parameter,
+	clock::clock_info::ClockInfoProvider, command::read_commands_into_parameters,
+	command::ValueChangeCommand, command_writers_and_readers, dsp::Frame,
+	modulator::value_provider::ModulatorValueProvider, track::Effect, tween::Parameter,
 };
 use all_pass::AllPassFilter;
 use comb::CombFilter;

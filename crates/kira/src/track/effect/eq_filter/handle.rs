@@ -1,4 +1,4 @@
-use crate::handle_param_setters;
+use crate::command::handle_param_setters;
 
 use super::{CommandWriters, EqFilterKind};
 

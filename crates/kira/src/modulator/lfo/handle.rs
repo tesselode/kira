@@ -1,6 +1,6 @@
 use std::sync::{atomic::Ordering, Arc};
 
-use crate::{handle_param_setters, modulator::ModulatorId};
+use crate::{command::handle_param_setters, modulator::ModulatorId};
 
 use super::{CommandWriters, LfoShared, Waveform};
 

@@ -13,9 +13,9 @@ use std::{
 
 use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
+	command::read_commands_into_parameters,
 	dsp::{interpolate_frame, Frame},
 	modulator::value_provider::ModulatorValueProvider,
-	read_commands_into_parameters,
 	sound::{util::create_volume_fade_parameter, PlaybackRate, PlaybackState, Sound},
 	tween::{Parameter, Tween, Value},
 	OutputDestination, StartTime, Volume,
