@@ -101,6 +101,13 @@ fn add_f64() {
 	} + 3.7;
 	assert_eq!(time.ticks, 6);
 	assert_relative_eq!(time.fraction, 0.2);
+	let time = ClockTime {
+		clock: id,
+		ticks: 2,
+		fraction: 0.5,
+	} + 3.5;
+	assert_eq!(time.ticks, 6);
+	assert_relative_eq!(time.fraction, 0.0);
 }
 
 #[test]
@@ -113,6 +120,13 @@ fn sub_f64() {
 	} - 3.7;
 	assert_eq!(time.ticks, 1);
 	assert_relative_eq!(time.fraction, 0.8);
+	let time = ClockTime {
+		clock: id,
+		ticks: 5,
+		fraction: 0.5,
+	} - 3.5;
+	assert_eq!(time.ticks, 2);
+	assert_relative_eq!(time.fraction, 0.0);
 }
 
 #[test]

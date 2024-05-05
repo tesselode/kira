@@ -109,7 +109,7 @@ impl Sub<f64> for ClockTime {
 	fn sub(self, ticks: f64) -> Self::Output {
 		let mut fraction = self.fraction - ticks;
 		let mut ticks = self.ticks;
-		while fraction <= 0.0 {
+		while fraction < 0.0 {
 			fraction += 1.0;
 			ticks -= 1;
 		}
