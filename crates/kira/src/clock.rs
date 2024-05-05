@@ -50,6 +50,7 @@ manager.play(
 		.start_time(StartTime::ClockTime(ClockTime {
 			clock: clock.id(),
 			ticks: 4,
+			fraction: 0.0,
 		}))
 )?;
 clock.start();
@@ -79,6 +80,7 @@ manager.play(
 		.start_time(ClockTime {
 			clock: clock.id(),
 			ticks: 4,
+			fraction: 0.0,
 		})
 )?;
 # clock.start();

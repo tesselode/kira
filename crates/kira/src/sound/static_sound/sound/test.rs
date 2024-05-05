@@ -298,20 +298,8 @@ fn stops_with_fade_out() {
 fn waits_for_start_time() {
 	let (clock_info_provider, clock_id_1) = {
 		let mut builder = MockClockInfoProviderBuilder::new(2);
-		let clock_id_1 = builder
-			.add(ClockInfo {
-				ticking: true,
-				ticks: 0,
-				fractional_position: 0.0,
-			})
-			.unwrap();
-		builder
-			.add(ClockInfo {
-				ticking: true,
-				ticks: 0,
-				fractional_position: 0.0,
-			})
-			.unwrap();
+		let clock_id_1 = builder.add(true, 0, 0.0).unwrap();
+		builder.add(true, 0, 0.0).unwrap();
 		(builder.build(), clock_id_1)
 	};
 
@@ -321,6 +309,7 @@ fn waits_for_start_time() {
 		settings: StaticSoundSettings::new().start_time(ClockTime {
 			clock: clock_id_1,
 			ticks: 2,
+			fraction: 0.0,
 		}),
 		slice: None,
 	};
@@ -340,20 +329,8 @@ fn waits_for_start_time() {
 
 	let clock_info_provider = {
 		let mut builder = MockClockInfoProviderBuilder::new(2);
-		builder
-			.add(ClockInfo {
-				ticking: true,
-				ticks: 1,
-				fractional_position: 0.0,
-			})
-			.unwrap();
-		builder
-			.add(ClockInfo {
-				ticking: true,
-				ticks: 0,
-				fractional_position: 0.0,
-			})
-			.unwrap();
+		builder.add(true, 1, 0.0).unwrap();
+		builder.add(true, 0, 0.0).unwrap();
 		builder.build()
 	};
 
@@ -372,20 +349,8 @@ fn waits_for_start_time() {
 
 	let clock_info_provider = {
 		let mut builder = MockClockInfoProviderBuilder::new(2);
-		builder
-			.add(ClockInfo {
-				ticking: true,
-				ticks: 1,
-				fractional_position: 0.0,
-			})
-			.unwrap();
-		builder
-			.add(ClockInfo {
-				ticking: true,
-				ticks: 2,
-				fractional_position: 0.0,
-			})
-			.unwrap();
+		builder.add(true, 1, 0.0).unwrap();
+		builder.add(true, 2, 0.0).unwrap();
 		builder.build()
 	};
 
@@ -404,20 +369,8 @@ fn waits_for_start_time() {
 
 	let clock_info_provider = {
 		let mut builder = MockClockInfoProviderBuilder::new(2);
-		builder
-			.add(ClockInfo {
-				ticking: true,
-				ticks: 2,
-				fractional_position: 0.0,
-			})
-			.unwrap();
-		builder
-			.add(ClockInfo {
-				ticking: true,
-				ticks: 2,
-				fractional_position: 0.0,
-			})
-			.unwrap();
+		builder.add(true, 2, 0.0).unwrap();
+		builder.add(true, 2, 0.0).unwrap();
 		builder.build()
 	};
 
@@ -444,13 +397,7 @@ fn waits_for_start_time() {
 fn stops_if_depending_on_missing_clock() {
 	let (clock_info_provider, clock_id) = {
 		let mut builder = MockClockInfoProviderBuilder::new(1);
-		let clock_id = builder
-			.add(ClockInfo {
-				ticking: true,
-				ticks: 0,
-				fractional_position: 0.0,
-			})
-			.unwrap();
+		let clock_id = builder.add(true, 0, 0.0).unwrap();
 		(builder.build(), clock_id)
 	};
 
@@ -460,6 +407,7 @@ fn stops_if_depending_on_missing_clock() {
 		settings: StaticSoundSettings::new().start_time(ClockTime {
 			clock: clock_id,
 			ticks: 2,
+			fraction: 0.0,
 		}),
 		slice: None,
 	};

@@ -2,10 +2,7 @@ use std::time::Duration;
 
 use crate::{
 	arena::Arena,
-	clock::{
-		clock_info::{ClockInfo, MockClockInfoProviderBuilder},
-		ClockTime,
-	},
+	clock::{clock_info::MockClockInfoProviderBuilder, ClockTime},
 	modulator::value_provider::MockModulatorValueProviderBuilder,
 	tween::{Tween, Value},
 	StartTime,
@@ -191,13 +188,7 @@ fn set_speed() {
 fn set_speed_with_clock_time_start() {
 	let (clock_info_provider, clock_id) = {
 		let mut builder = MockClockInfoProviderBuilder::new(1);
-		let clock_id = builder
-			.add(ClockInfo {
-				ticking: true,
-				ticks: 0,
-				fractional_position: 0.0,
-			})
-			.unwrap();
+		let clock_id = builder.add(true, 0, 0.0).unwrap();
 		(builder.build(), clock_id)
 	};
 
@@ -214,6 +205,7 @@ fn set_speed_with_clock_time_start() {
 			start_time: StartTime::ClockTime(ClockTime {
 				clock: clock_id,
 				ticks: 1,
+				fraction: 0.0,
 			}),
 			..Default::default()
 		},
@@ -237,13 +229,7 @@ fn set_speed_with_clock_time_start() {
 
 	let clock_info_provider = {
 		let mut builder = MockClockInfoProviderBuilder::new(1);
-		builder
-			.add(ClockInfo {
-				ticking: true,
-				ticks: 1,
-				fractional_position: 0.0,
-			})
-			.unwrap();
+		builder.add(true, 1, 0.0).unwrap();
 		builder.build()
 	};
 
@@ -270,7 +256,7 @@ fn fractional_position() {
 		Value::Fixed(ClockSpeed::SecondsPerTick(1.0)),
 		fake_clock_id(),
 	);
-	assert_eq!(handle.fractional_position(), 0.0);
+	assert_eq!(handle.time().fraction, 0.0);
 	// the clock is not started yet, so the fractional position should remain at 0
 	clock.update(
 		1.0,
@@ -278,7 +264,7 @@ fn fractional_position() {
 		&MockModulatorValueProviderBuilder::new(0).build(),
 	);
 	clock.on_start_processing();
-	assert_eq!(handle.fractional_position(), 0.0);
+	assert_eq!(handle.time().fraction, 0.0);
 	// start the clock
 	handle.start();
 	clock.on_start_processing();
@@ -288,14 +274,14 @@ fn fractional_position() {
 		&MockModulatorValueProviderBuilder::new(0).build(),
 	);
 	clock.on_start_processing();
-	assert_eq!(handle.fractional_position(), 0.5);
+	assert_eq!(handle.time().fraction, 0.5);
 	clock.update(
 		0.75,
 		&MockClockInfoProviderBuilder::new(0).build(),
 		&MockModulatorValueProviderBuilder::new(0).build(),
 	);
 	clock.on_start_processing();
-	assert_eq!(handle.fractional_position(), 0.25);
+	assert_eq!(handle.time().fraction, 0.25);
 }
 
 fn fake_clock_id() -> ClockId {
