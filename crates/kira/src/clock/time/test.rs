@@ -8,6 +8,32 @@ use crate::{
 };
 
 #[test]
+fn from_ticks_u64() {
+	let id = fake_clock_id();
+	assert_eq!(
+		ClockTime::from_ticks_u64(id, 3),
+		ClockTime {
+			clock: id,
+			ticks: 3,
+			fraction: 0.0
+		}
+	)
+}
+
+#[test]
+fn from_ticks_f64() {
+	let id = fake_clock_id();
+	assert_eq!(
+		ClockTime::from_ticks_f64(id, 3.5),
+		ClockTime {
+			clock: id,
+			ticks: 3,
+			fraction: 0.5
+		}
+	)
+}
+
+#[test]
 fn add_u64() {
 	let id = fake_clock_id();
 	assert_eq!(

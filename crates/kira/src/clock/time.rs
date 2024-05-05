@@ -25,6 +25,24 @@ pub struct ClockTime {
 	pub fraction: f64,
 }
 
+impl ClockTime {
+	pub fn from_ticks_u64(clock: impl Into<ClockId>, ticks: u64) -> Self {
+		Self {
+			clock: clock.into(),
+			ticks,
+			fraction: 0.0,
+		}
+	}
+
+	pub fn from_ticks_f64(clock: impl Into<ClockId>, ticks: f64) -> Self {
+		Self {
+			clock: clock.into(),
+			ticks: ticks as u64,
+			fraction: ticks.fract(),
+		}
+	}
+}
+
 impl Add<u64> for ClockTime {
 	type Output = ClockTime;
 
