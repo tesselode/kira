@@ -9,6 +9,7 @@ pub mod backend;
 pub mod error;
 mod settings;
 
+pub use backend::DefaultBackend;
 pub use settings::*;
 
 use std::sync::{atomic::Ordering, Arc};
@@ -26,7 +27,7 @@ use crate::{
 use self::{
 	backend::{
 		resources::{create_resources, ResourceControllers},
-		Backend, DefaultBackend, Renderer, RendererShared,
+		Backend, Renderer, RendererShared,
 	},
 	error::PlaySoundError,
 };
