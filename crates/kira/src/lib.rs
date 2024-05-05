@@ -168,6 +168,8 @@ audio formats, like MP3 and WAV.
 - `assert_no_alloc` - uses the [`assert_no_alloc`](https://crates.io/crates/assert_no_alloc) crate
 to cause panics if memory is allocated or deallocated on the audio thread. This is mainly useful
 for people developing Kira itself.
+- `android_shared_stdcxx` - enables cpal's `oboe-shared-stdcxx` which can be helpful
+for Android compilation
 
 ## Loading other audio file formats
 
