@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::clock::ClockTime;
 
 /// Describes when an action should occur.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum StartTime {
 	/// The action should occur immediately.
 	Immediate,

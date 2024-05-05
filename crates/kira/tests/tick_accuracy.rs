@@ -45,6 +45,7 @@ impl Effect for TestEffect {
 		if let WhenToStart::Now = clock_info_provider.when_to_start(ClockTime {
 			clock: self.clock.id(),
 			ticks: self.ticks,
+			fraction: 0.0,
 		}) {
 			assert_eq!(
 				self.frames % (SAMPLE_RATE / (TICKS_PER_SECOND as u32 / EVENT_TIME_TICKS as u32)),

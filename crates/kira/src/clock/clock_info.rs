@@ -16,10 +16,8 @@ use super::{Clock, ClockId, ClockTime, State};
 pub struct ClockInfo {
 	/// Whether the clock is currently running.
 	pub ticking: bool,
-	/// The number of times the clock has ticked.
-	pub ticks: u64,
-	/// The time between ticks (from `0.0`-`1.0`).
-	pub fractional_position: f64,
+	/// The current time of the clock.
+	pub time: ClockTime,
 }
 
 /// Provides information about any clock that currently exists.
@@ -42,16 +40,19 @@ impl<'a> ClockInfoProvider<'a> {
 		match &self.kind {
 			ClockInfoProviderKind::Normal { clocks } => clocks.get(id.0).map(|clock| ClockInfo {
 				ticking: clock.ticking(),
-				ticks: match clock.state() {
-					State::NotStarted => 0,
-					State::Started { ticks, .. } => ticks,
-				},
-				fractional_position: match clock.state() {
-					State::NotStarted => 0.0,
-					State::Started {
-						fractional_position,
-						..
-					} => fractional_position,
+				time: ClockTime {
+					clock: id,
+					ticks: match clock.state() {
+						State::NotStarted => 0,
+						State::Started { ticks, .. } => ticks,
+					},
+					fraction: match clock.state() {
+						State::NotStarted => 0.0,
+						State::Started {
+							fractional_position,
+							..
+						} => fractional_position,
+					},
 				},
 			}),
 			ClockInfoProviderKind::Mock { clock_info } => clock_info.get(id.0).copied(),
@@ -61,9 +62,9 @@ impl<'a> ClockInfoProvider<'a> {
 	/// Returns whether something with the given start time should
 	/// start now, later, or never given the current state of the clocks.
 	#[must_use]
-	pub fn when_to_start(&self, ClockTime { clock, ticks }: ClockTime) -> WhenToStart {
-		if let Some(clock_info) = self.get(clock) {
-			if clock_info.ticking && clock_info.ticks >= ticks {
+	pub fn when_to_start(&self, time: ClockTime) -> WhenToStart {
+		if let Some(clock_info) = self.get(time.clock) {
+			if clock_info.ticking && clock_info.time >= time {
 				WhenToStart::Now
 			} else {
 				WhenToStart::Later
@@ -118,8 +119,22 @@ impl MockClockInfoProviderBuilder {
 
 	/// Adds a new fake clock to the builder and returns the corresponding
 	/// [`ClockId`].
-	pub fn add(&mut self, info: ClockInfo) -> Result<ClockId, ArenaFull> {
-		Ok(ClockId(self.clock_info.insert(info)?))
+	pub fn add(&mut self, ticking: bool, ticks: u64, fraction: f64) -> Result<ClockId, ArenaFull> {
+		let id = ClockId(self.clock_info.controller().try_reserve()?);
+		self.clock_info
+			.insert_with_key(
+				id.0,
+				ClockInfo {
+					ticking,
+					time: ClockTime {
+						clock: id,
+						ticks,
+						fraction,
+					},
+				},
+			)
+			.unwrap();
+		Ok(id)
 	}
 
 	/// Consumes the builder and returns a [`ClockInfoProvider`].

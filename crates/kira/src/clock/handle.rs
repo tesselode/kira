@@ -34,15 +34,8 @@ impl ClockHandle {
 		ClockTime {
 			clock: self.id,
 			ticks: self.shared.ticks(),
+			fraction: self.shared.fractional_position(),
 		}
-	}
-
-	/// Returns the time between ticks (from `0.0` to `1.0`) of the clock.
-	///
-	/// A time of `0.5` is halfway between two ticks.
-	#[must_use]
-	pub fn fractional_position(&self) -> f64 {
-		self.shared.fractional_position()
 	}
 
 	handle_param_setters! {

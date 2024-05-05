@@ -1,10 +1,7 @@
 use std::time::Duration;
 
 use crate::{
-	clock::{
-		clock_info::{ClockInfo, MockClockInfoProviderBuilder},
-		ClockTime,
-	},
+	clock::{clock_info::MockClockInfoProviderBuilder, ClockTime},
 	modulator::value_provider::MockModulatorValueProviderBuilder,
 	tween::{Tween, Value},
 	StartTime,
@@ -80,20 +77,8 @@ fn waits_for_delay() {
 fn waits_for_start_time() {
 	let (clock_info_provider, clock_id_1) = {
 		let mut builder = MockClockInfoProviderBuilder::new(2);
-		let clock_id_1 = builder
-			.add(ClockInfo {
-				ticking: true,
-				ticks: 0,
-				fractional_position: 0.0,
-			})
-			.unwrap();
-		builder
-			.add(ClockInfo {
-				ticking: true,
-				ticks: 0,
-				fractional_position: 0.0,
-			})
-			.unwrap();
+		let clock_id_1 = builder.add(true, 0, 0.0).unwrap();
+		builder.add(true, 0, 0.0).unwrap();
 		(builder.build(), clock_id_1)
 	};
 	let modulator_value_provider = MockModulatorValueProviderBuilder::new(0).build();
@@ -105,6 +90,7 @@ fn waits_for_start_time() {
 			start_time: StartTime::ClockTime(ClockTime {
 				clock: clock_id_1,
 				ticks: 2,
+				fraction: 0.0,
 			}),
 			duration: Duration::from_secs(1),
 			..Default::default()
@@ -119,20 +105,8 @@ fn waits_for_start_time() {
 
 	let clock_info_provider = {
 		let mut builder = MockClockInfoProviderBuilder::new(2);
-		builder
-			.add(ClockInfo {
-				ticking: true,
-				ticks: 1,
-				fractional_position: 0.0,
-			})
-			.unwrap();
-		builder
-			.add(ClockInfo {
-				ticking: true,
-				ticks: 0,
-				fractional_position: 0.0,
-			})
-			.unwrap();
+		builder.add(true, 1, 0.0).unwrap();
+		builder.add(true, 0, 0.0).unwrap();
 		builder.build()
 	};
 
@@ -145,20 +119,8 @@ fn waits_for_start_time() {
 
 	let clock_info_provider = {
 		let mut builder = MockClockInfoProviderBuilder::new(2);
-		builder
-			.add(ClockInfo {
-				ticking: true,
-				ticks: 1,
-				fractional_position: 0.0,
-			})
-			.unwrap();
-		builder
-			.add(ClockInfo {
-				ticking: true,
-				ticks: 2,
-				fractional_position: 0.0,
-			})
-			.unwrap();
+		builder.add(true, 1, 0.0).unwrap();
+		builder.add(true, 2, 0.0).unwrap();
 		builder.build()
 	};
 
@@ -171,20 +133,8 @@ fn waits_for_start_time() {
 
 	let clock_info_provider = {
 		let mut builder = MockClockInfoProviderBuilder::new(2);
-		builder
-			.add(ClockInfo {
-				ticking: true,
-				ticks: 2,
-				fractional_position: 0.0,
-			})
-			.unwrap();
-		builder
-			.add(ClockInfo {
-				ticking: true,
-				ticks: 2,
-				fractional_position: 0.0,
-			})
-			.unwrap();
+		builder.add(true, 2, 0.0).unwrap();
+		builder.add(true, 2, 0.0).unwrap();
 		builder.build()
 	};
 
