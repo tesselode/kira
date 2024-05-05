@@ -8,7 +8,8 @@ use crate::{
 
 use super::{TrackId, TrackShared};
 
-/// Cannot change the volume of a track route that did not exist originally.
+/// An error that's returned when trying to change the volume of a track route
+/// that did not exist originally.
 #[derive(Debug)]
 pub struct NonexistentRoute;
 
