@@ -1,3 +1,134 @@
+# v0.9.0
+
+## `ClockTime::fraction`
+
+`ClockTime` now has a `fraction` field, which represents a fraction of a tick. This
+means sounds and tweens can be scheduled for times in-between ticks.
+
+In addition, `ClockHandle::fractional_position` has been removed because
+`ClockHandle::time` provides that info anyway, and the shape of `ClockInfo` has
+changed to hold a `ClockTime` (this is only relevant if you're creating implementations
+of one of Kira's traits).
+
+## Added configuration for the `CpalBackend`
+
+(Implemented by @zeozeozeo)
+
+The device and buffer size used by the `CpalBackend` are now configurable via
+`CpalBackendSettings`.
+
+## Most param changes are now infallible
+
+Anything that could previously fail because of a command buffer filling up or
+getting poisoned can no longer fail that way, so you can call functions
+like `Emitter::set_position` as frequently as you want.
+
+## Updated API for sound start positions and playback regions
+
+v0.8 introduced a `playback_region` setting for static and streaming sounds
+which replaced the previous `start_position` setting. It was meant to serve two
+purposes:
+
+- Allow you to play only a portion of a sound
+- Allow setting the start position of the sound
+
+However, these two purposes had an unintuitive interaction. Say you want to play
+a sound starting 3 seconds in. In v0.8, you would do something like this:
+
+```rs
+manager.play(
+  StaticSoundData::from_file(
+    "test.ogg",
+    StaticSoundSettings::new().playback_region(3..),
+  )?,
+)?;
+```
+
+Then let's say you wanted to seek the sound to 2 seconds. The sound would stop
+because you've set the playback region not to include that part of the sound,
+when all you really wanted to do was set the start position.
+
+In v0.9, these two purposes are separated. The `playback_region` setting has been
+reverted to the `start_position` setting from versions before v0.8, and to serve
+the purpose of playing portions of sounds, `slice` methods have been added to
+`StaticSoundData` and `StreamingSoundData`.
+
+Note that the `loop_region` option added in v0.8 remains and works the same way
+in v0.9.
+
+## `StartTime::delayed`
+
+Previously, you could delay the playback of a static sound by setting its
+start position to a negative number. This only worked with static sounds, however,
+not streaming sounds or tweens. This is now disallowed, which allows for some
+minor internal code cleanup. In its place is the more explicit and intuitive
+`StartTime::delayed`, which works with anything that has a `StartTime`.
+
+## `Static/StreamingSoundHandle::resume_at`
+
+Previously, if you paused a sound and set the fade-in tween to have a start time
+in the future, the sound wouldn't become audible until the start time, but it would
+still be advancing in the background as soon as you called `resume`. The `resume_at`
+method delays playback until the specified `StartTime`.
+
+## Added settings methods to `Static/StreamingSoundData`
+
+Chainable methods have been added to `StaticSoundData` and `StreamingSoundData` to
+change settings on the sound data. So instead of doing this:
+
+```rs
+let sound = StaticSoundData::from_file("sound.ogg", StaticSoundSettings::new()
+  .volume(0.5)
+  .playback_rate(2.0)
+)?;
+```
+
+You can use this less verbose code:
+
+```rs
+let sound = StaticSoundData::from_file("sound.ogg")?
+  .volume(0.5)
+  .playback_rate(2.0);
+```
+
+`StaticSoundSettings` and `StreamingSoundSettings` still exist and are still fields
+of the corresponding `SoundData`s, so you can still store settings independently
+of a sound data.
+
+## Resource capacities are now `u16`s
+
+This allows for some performance improvements, but it does mean you are limited to
+65,536 of each kind of resource (sounds, clocks, etc.). I apologize to anyone who
+was trying to play more than 65k sounds.
+
+## Remove `AudioManager::pause/resume`
+
+This feature was thrown into a previous version of Kira as a quick and dirty way
+to pause/resume all sounds. However, it's the wrong tool for the job, since it pauses
+and resumes the entire audio system, which is almost never what you want.
+
+## Performance improvements
+
+The benchmarks run about 26-29% faster (on my machine) compared to v0.8.7.
+
+## Other changes
+
+- Added `android_shared_stdcxx` feature
+- Update `glam` to 0.27
+- Added `TrackBuilder::add_built_effect` and `TrackBuilder::with_built_effect`
+- Improve performance when using `start_position` with streaming sounds
+- Remove `RangeInclusive` conversions for `Region`s, as all current uses of
+  `Region`s treat the end bound as exclusive
+- Stop streaming sounds immediately if there's a decoding error
+- Remove all uses of `#[non_exhaustive]`
+- Add `#[must_use]` where appropriate
+- Moved some types and modules to reduce excessive nesting
+- `AudioManager::main_track` now returns `&mut TrackHandle` instead of `TrackHandle`
+
+# v0.8.7 - January 31, 2024
+
+- Fix ClockInfoProvider having poor timing resolution
+
 # v0.8.6 - January 13, 2024
 
 - Fix a typo in the readme
