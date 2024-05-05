@@ -1,6 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
-use crate::dsp::Frame;
+use crate::frame::Frame;
 
 use super::StaticSoundData;
 

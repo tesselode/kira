@@ -1,7 +1,7 @@
 use std::convert::TryInto;
 
 use crate::{
-	dsp::Frame,
+	frame::Frame,
 	sound::{symphonia::load_frames_from_buffer_ref, FromFileError},
 };
 use symphonia::core::{

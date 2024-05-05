@@ -4,7 +4,7 @@ use symphonia::core::{
 	sample::Sample,
 };
 
-use crate::dsp::Frame;
+use crate::frame::Frame;
 
 use super::FromFileError;
 

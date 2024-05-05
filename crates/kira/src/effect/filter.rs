@@ -10,8 +10,8 @@ use std::f64::consts::PI;
 
 use crate::{
 	clock::clock_info::ClockInfoProvider, command::read_commands_into_parameters,
-	command::ValueChangeCommand, command_writers_and_readers, dsp::Frame,
-	modulator::value_provider::ModulatorValueProvider, track::Effect, tween::Parameter,
+	command::ValueChangeCommand, command_writers_and_readers, effect::Effect, frame::Frame,
+	modulator::value_provider::ModulatorValueProvider, tween::Parameter,
 };
 
 // This filter code is based on the filter code from baseplug:

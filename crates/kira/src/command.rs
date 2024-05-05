@@ -1,7 +1,7 @@
 /*!
 Helpers for sending commands from the gameplay thread to the audio thread.
 You'll only need to use this if you're making your own implementation of
-[`Sound`](crate::sound::Sound), [`Effect`](crate::track::effect::Effect),
+[`Sound`](crate::sound::Sound), [`Effect`](crate::effect::Effect),
 or [`Modulator`](crate::modulator::Modulator).
 
 This module provides a [`CommandWriter`] and [`CommandReader`] that can
@@ -78,7 +78,7 @@ pub struct ValueChangeCommand<T> {
 /**
 Creates a set of command writers and readers and a constructor for them.
 You'll only need to use this if you're making your own implementation of
-[`Sound`](crate::sound::Sound), [`Effect`](crate::track::effect::Effect),
+[`Sound`](crate::sound::Sound), [`Effect`](crate::effect::Effect),
 or [`Modulator`](crate::modulator::Modulator).
 
 # Example

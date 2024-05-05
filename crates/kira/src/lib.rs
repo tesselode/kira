@@ -3,7 +3,7 @@
 
 Kira is a backend-agnostic library to create expressive audio for games. It provides
 [tweens](tween) for smoothly adjusting properties of sounds, a flexible [mixer](track)
-for applying effects to audio, a [clock] system for precisely timing audio events,
+for applying [effects](effect) to audio, a [clock] system for precisely timing audio events,
 and [spatial audio](spatial) support.
 
 To get started, create an [`AudioManager`](crate::manager::AudioManager) and use it to
@@ -152,12 +152,12 @@ audio formats, like MP3 and WAV.
 - `serde` - adds `Serialize` and `Deserialize` implementations for the following types:
 	- [`Capacities`](crate::manager::Capacities)
 	- [`ClockSpeed`](crate::clock::ClockSpeed)
-	- [`DistortionKind`](crate::track::effect::distortion::DistortionKind)
+	- [`DistortionKind`](crate::effect::distortion::DistortionKind)
 	- [`Easing`](crate::tween::Easing)
 	- [`EndPosition`](crate::sound::EndPosition)
-	- [`EqFilterKind`](crate::track::effect::eq_filter::EqFilterKind)
-	- [`FilterMode`](crate::track::effect::filter::FilterMode)
-	- [`Frame`](crate::dsp::Frame)
+	- [`EqFilterKind`](crate::effect::eq_filter::EqFilterKind)
+	- [`FilterMode`](crate::effect::filter::FilterMode)
+	- [`Frame`]
 	- [`ModulatorMapping`](crate::tween::ModulatorMapping)
 	- [`PlaybackPosition`](crate::sound::PlaybackPosition)
 	- [`PlaybackRate`](crate::sound::PlaybackRate)
@@ -249,8 +249,9 @@ and compile times for games.
 mod arena;
 pub mod clock;
 pub mod command;
-pub mod dsp;
+pub mod effect;
 mod error;
+mod frame;
 pub mod manager;
 pub mod modulator;
 mod output_destination;
@@ -262,6 +263,7 @@ pub mod tween;
 mod volume;
 
 pub use error::*;
+pub use frame::*;
 pub use output_destination::*;
 pub use start_time::*;
 pub use volume::*;

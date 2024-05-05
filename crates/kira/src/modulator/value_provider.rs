@@ -2,7 +2,7 @@
 //!
 //! You'll only need these types if you're creating implementations
 //! of the [`Sound`](crate::sound::Sound) or
-//! [`Effect`](crate::track::effect::Effect) traits.
+//! [`Effect`](crate::effect::Effect) traits.
 
 use crate::arena::{error::ArenaFull, Arena};
 
@@ -49,7 +49,7 @@ enum ModulatorValueProviderKind<'a> {
 ///
 /// This is mainly useful for writing tests for implementations
 /// of the [`Sound`](crate::sound::Sound) and
-/// [`Effect`](crate::track::effect::Effect) traits.
+/// [`Effect`](crate::effect::Effect) traits.
 pub struct MockModulatorValueProviderBuilder {
 	modulator_values: Arena<f64>,
 }

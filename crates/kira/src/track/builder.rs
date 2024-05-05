@@ -2,15 +2,13 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::{
 	command::command_writer_and_reader,
-	dsp::Frame,
+	effect::EffectBuilder,
+	frame::Frame,
 	tween::{Parameter, Value},
 	Volume,
 };
 
-use super::{
-	effect::EffectBuilder, routes::TrackRoutes, Effect, Track, TrackHandle, TrackId, TrackRoute,
-	TrackShared,
-};
+use super::{routes::TrackRoutes, Effect, Track, TrackHandle, TrackId, TrackRoute, TrackShared};
 
 /// Configures a mixer track.
 pub struct TrackBuilder {
@@ -141,7 +139,7 @@ impl TrackBuilder {
 
 	```
 	use kira::track::{TrackBuilder, effect::delay::DelayBuilder};
-	use kira::track::effect::EffectBuilder;
+	use kira::effect::EffectBuilder;
 
 	let mut builder = TrackBuilder::new();
 	let delay_builder = DelayBuilder::new();

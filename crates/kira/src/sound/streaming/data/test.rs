@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use crate::{
-	dsp::Frame,
+	frame::Frame,
 	sound::streaming::{mock::MockDecoder, StreamingSoundData},
 };
 

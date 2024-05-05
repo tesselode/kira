@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use crate::{
-	track::effect::{Effect, EffectBuilder},
+	effect::{Effect, EffectBuilder},
 	tween::Value,
 };
 

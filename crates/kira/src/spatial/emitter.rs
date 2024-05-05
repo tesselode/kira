@@ -21,7 +21,7 @@ use crate::{
 	command::read_commands_into_parameters,
 	command::ValueChangeCommand,
 	command_writers_and_readers,
-	dsp::Frame,
+	frame::Frame,
 	modulator::value_provider::ModulatorValueProvider,
 	tween::{Easing, Parameter, Value},
 };

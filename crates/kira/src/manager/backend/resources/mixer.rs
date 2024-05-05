@@ -3,7 +3,7 @@ mod test;
 
 use crate::{
 	clock::clock_info::ClockInfoProvider,
-	dsp::Frame,
+	frame::Frame,
 	modulator::value_provider::ModulatorValueProvider,
 	track::{Track, TrackBuilder, TrackHandle, TrackId},
 };

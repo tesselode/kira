@@ -250,7 +250,6 @@ track has 50% volume, giving us more reverb for these sounds.
 */
 
 mod builder;
-pub mod effect;
 mod handle;
 mod routes;
 
@@ -266,18 +265,16 @@ use std::sync::{
 	Arc,
 };
 
-use crate::arena::Key;
+use crate::{arena::Key, effect::Effect};
 
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	command::{CommandReader, ValueChangeCommand},
-	dsp::Frame,
+	frame::Frame,
 	modulator::value_provider::ModulatorValueProvider,
 	tween::Parameter,
 	Volume,
 };
-
-use self::effect::Effect;
 
 /// A unique identifier for a mixer sub-track.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

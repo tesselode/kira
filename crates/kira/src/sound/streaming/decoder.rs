@@ -3,7 +3,7 @@ pub(crate) mod mock;
 #[cfg(feature = "symphonia")]
 pub(crate) mod symphonia;
 
-use crate::dsp::Frame;
+use crate::frame::Frame;
 
 /// Decodes chunks of audio.
 pub trait Decoder: Send {

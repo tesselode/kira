@@ -1,4 +1,4 @@
-use crate::dsp::Frame;
+use crate::frame::Frame;
 
 use super::Decoder;
 

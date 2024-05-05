@@ -1,6 +1,6 @@
 use crate::{
 	clock::clock_info::MockClockInfoProviderBuilder,
-	dsp::Frame,
+	frame::Frame,
 	modulator::value_provider::MockModulatorValueProviderBuilder,
 	track::{SubTrackId, TrackBuilder, TrackRoutes},
 };

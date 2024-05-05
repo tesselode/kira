@@ -4,7 +4,7 @@ use std::sync::{
 };
 
 use crate::{
-	clock::clock_info::ClockInfoProvider, dsp::Frame,
+	clock::clock_info::ClockInfoProvider, frame::Frame,
 	modulator::value_provider::ModulatorValueProvider,
 };
 

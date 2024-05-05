@@ -1,4 +1,4 @@
-use crate::{track::effect::EffectBuilder, tween::Value, Volume};
+use crate::{effect::EffectBuilder, tween::Value, Volume};
 
 use super::{command_writers_and_readers, VolumeControl, VolumeControlHandle};
 
@@ -23,7 +23,7 @@ impl Default for VolumeControlBuilder {
 impl EffectBuilder for VolumeControlBuilder {
 	type Handle = VolumeControlHandle;
 
-	fn build(self) -> (Box<dyn crate::track::effect::Effect>, Self::Handle) {
+	fn build(self) -> (Box<dyn crate::effect::Effect>, Self::Handle) {
 		let (command_writers, command_readers) = command_writers_and_readers();
 		(
 			Box::new(VolumeControl::new(self, command_readers)),

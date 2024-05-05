@@ -5,16 +5,14 @@ use std::sync::{
 
 use kira::{
 	clock::clock_info::ClockInfoProvider,
-	dsp::Frame,
+	effect::{Effect, EffectBuilder},
 	manager::{
 		backend::mock::{MockBackend, MockBackendSettings},
 		AudioManager, AudioManagerSettings,
 	},
 	modulator::value_provider::ModulatorValueProvider,
-	track::{
-		effect::{Effect, EffectBuilder},
-		TrackBuilder,
-	},
+	track::TrackBuilder,
+	Frame,
 };
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 

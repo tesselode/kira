@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::{
-	dsp::Frame,
+	frame::Frame,
 	sound::{
 		streaming::{decoder::Decoder, DecodeSchedulerCommandReaders, StreamingSoundSettings},
 		transport::Transport,

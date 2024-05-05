@@ -1,4 +1,4 @@
-use crate::dsp::{interpolate_frame, Frame};
+use crate::frame::{interpolate_frame, Frame};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct RecentFrame {

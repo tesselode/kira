@@ -19,7 +19,7 @@ use crate::{
 /// and linked to modulators.
 ///
 /// You'll only need to use this if you're creating your own
-/// [`Sound`](crate::sound::Sound), [`Effect`](crate::track::effect::Effect),
+/// [`Sound`](crate::sound::Sound), [`Effect`](crate::effect::Effect),
 /// or [`Modulator`](crate::modulator::Modulator) implementations. If you
 /// want to adjust a parameter of something from gameplay code (such as the
 /// volume of a sound or the speed of a clock), use the functions on that

@@ -11,12 +11,13 @@ use crate::{
 	command::read_commands_into_parameters,
 	command::ValueChangeCommand,
 	command_writers_and_readers,
-	dsp::{interpolate_frame, Frame},
+	frame::{interpolate_frame, Frame},
 	modulator::value_provider::ModulatorValueProvider,
-	track::Effect,
 	tween::Parameter,
 	Volume,
 };
+
+use super::Effect;
 
 #[derive(Debug, Clone)]
 enum DelayState {

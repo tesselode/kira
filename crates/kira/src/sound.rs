@@ -6,9 +6,11 @@ Any type that implements [`SoundData`] can be played using
 [`SoundData`] implementations:
 
 - [`StaticSoundData`](static_sound::StaticSoundData), which loads an entire chunk of audio
-into memory
+into memory. This is more appropriate for short sounds, sounds you want to play multiple times,
+or sounds where consistent start times are important.
 - [`StreamingSoundData`](streaming::StreamingSoundData), which streams audio from a file or cursor
-(only available on desktop platforms)
+(only available on desktop platforms). This is more appropriate for long sounds that you only
+play once at a time, like background music. Streaming sounds use less memory than static sounds.
 
 These two sound types should cover most use cases, but if you need something else, you can
 create your own types that implement the [`SoundData`] and [`Sound`] traits.
@@ -34,7 +36,7 @@ pub use playback_position::*;
 pub use playback_rate::*;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider, dsp::Frame,
+	clock::clock_info::ClockInfoProvider, frame::Frame,
 	modulator::value_provider::ModulatorValueProvider, OutputDestination,
 };
 

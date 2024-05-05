@@ -1,12 +1,12 @@
 use std::time::Duration;
 
 use kira::{
-	dsp::Frame,
 	manager::{backend::mock::MockBackend, AudioManager, AudioManagerSettings},
 	sound::{
 		streaming::{Decoder, StreamingSoundData},
 		PlaybackState,
 	},
+	Frame,
 };
 
 struct MockDecoder;

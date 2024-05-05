@@ -2,16 +2,14 @@ use std::time::Duration;
 
 use crate::{
 	clock::clock_info::{ClockInfoProvider, MockClockInfoProviderBuilder},
-	dsp::Frame,
+	effect::{Effect, EffectBuilder},
+	frame::Frame,
 	modulator::value_provider::{MockModulatorValueProviderBuilder, ModulatorValueProvider},
 	track::TrackId,
 	tween::Tween,
 };
 
-use super::{
-	effect::{Effect, EffectBuilder},
-	TrackBuilder,
-};
+use super::TrackBuilder;
 
 /// Tests that the output volume of a track can be set.
 #[test]
@@ -80,7 +78,7 @@ enum MockEffect {
 impl EffectBuilder for MockEffect {
 	type Handle = ();
 
-	fn build(self) -> (Box<dyn super::effect::Effect>, Self::Handle) {
+	fn build(self) -> (Box<dyn Effect>, Self::Handle) {
 		(Box::new(self), ())
 	}
 }

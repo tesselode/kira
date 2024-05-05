@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::{
 	clock::{clock_info::MockClockInfoProviderBuilder, ClockTime},
-	dsp::Frame,
+	frame::Frame,
 	modulator::value_provider::MockModulatorValueProviderBuilder,
 	sound::{
 		streaming::{decoder::mock::MockDecoder, StreamingSoundData, StreamingSoundSettings},

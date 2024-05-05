@@ -8,7 +8,7 @@ pub use handle::*;
 
 use crate::{
 	clock::clock_info::ClockInfoProvider, command::read_commands_into_parameters,
-	command::ValueChangeCommand, command_writers_and_readers, dsp::Frame,
+	command::ValueChangeCommand, command_writers_and_readers, frame::Frame,
 	modulator::value_provider::ModulatorValueProvider, tween::Parameter,
 };
 

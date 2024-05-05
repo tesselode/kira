@@ -2,7 +2,7 @@ use std::{sync::Arc, time::Duration};
 
 use crate::{
 	clock::{clock_info::MockClockInfoProviderBuilder, ClockTime},
-	dsp::Frame,
+	frame::Frame,
 	modulator::value_provider::MockModulatorValueProviderBuilder,
 	sound::{
 		static_sound::{StaticSoundData, StaticSoundSettings},

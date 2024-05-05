@@ -11,7 +11,7 @@ use std::{
 };
 
 use crate::{
-	dsp::Frame,
+	frame::Frame,
 	sound::{
 		EndPosition, IntoOptionalRegion, PlaybackPosition, PlaybackRate, Region, Sound, SoundData,
 	},

@@ -1,4 +1,4 @@
-use crate::{track::effect::EffectBuilder, tween::Value};
+use crate::{effect::EffectBuilder, tween::Value};
 
 use super::{command_writers_and_readers, PanningControl, PanningControlHandle};
 
@@ -15,7 +15,7 @@ impl Default for PanningControlBuilder {
 impl EffectBuilder for PanningControlBuilder {
 	type Handle = PanningControlHandle;
 
-	fn build(self) -> (Box<dyn crate::track::effect::Effect>, Self::Handle) {
+	fn build(self) -> (Box<dyn crate::effect::Effect>, Self::Handle) {
 		let (command_writers, command_readers) = command_writers_and_readers();
 		(
 			Box::new(PanningControl::new(self, command_readers)),

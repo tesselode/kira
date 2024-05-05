@@ -14,7 +14,7 @@ use std::{
 use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
 	command::read_commands_into_parameters,
-	dsp::Frame,
+	frame::Frame,
 	modulator::value_provider::ModulatorValueProvider,
 	sound::{
 		transport::Transport, util::create_volume_fade_parameter, PlaybackRate, PlaybackState,

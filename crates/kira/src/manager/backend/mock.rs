@@ -2,7 +2,7 @@
 
 use std::sync::Mutex;
 
-use crate::dsp::Frame;
+use crate::frame::Frame;
 
 use super::{Backend, Renderer};
 
