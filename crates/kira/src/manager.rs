@@ -60,7 +60,8 @@ impl<B: Backend> AudioManager<B> {
 	```no_run
 	use kira::{
 		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
-		track::{TrackBuilder, effect::reverb::ReverbBuilder},
+		track::TrackBuilder,
+		effect::reverb::ReverbBuilder,
 	};
 
 	let audio_manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings {

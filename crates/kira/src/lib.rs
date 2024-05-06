@@ -78,10 +78,8 @@ use kira::{
 		backend::DefaultBackend,
 	},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
-	track::{
-		TrackBuilder,
-		effect::filter::FilterBuilder,
-	},
+	track::TrackBuilder,
+	effect::filter::FilterBuilder,
 };
 
 let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;

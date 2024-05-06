@@ -90,7 +90,7 @@ impl TrackBuilder {
 	# Examples
 
 	```
-	use kira::track::{TrackBuilder, effect::delay::DelayBuilder};
+	use kira::{track::TrackBuilder, effect::delay::DelayBuilder};
 
 	let mut builder = TrackBuilder::new();
 	let delay_handle = builder.add_effect(DelayBuilder::new());
@@ -111,8 +111,8 @@ impl TrackBuilder {
 	# Examples
 
 	```
-	use kira::track::{
-		TrackBuilder,
+	use kira::{
+		track::TrackBuilder,
 		effect::{filter::FilterBuilder, reverb::ReverbBuilder},
 	};
 
@@ -138,8 +138,8 @@ impl TrackBuilder {
 	# Examples
 
 	```
-	use kira::track::{TrackBuilder, effect::delay::DelayBuilder};
-	use kira::effect::EffectBuilder;
+	use kira::track::TrackBuilder;
+	use kira::effect::{EffectBuilder, delay::DelayBuilder};
 
 	let mut builder = TrackBuilder::new();
 	let delay_builder = DelayBuilder::new();
@@ -162,8 +162,8 @@ impl TrackBuilder {
 	# Examples
 
 	```
-	use kira::track::{
-		TrackBuilder,
+	use kira::{
+		track::TrackBuilder,
 		effect::{filter::FilterBuilder, reverb::ReverbBuilder, EffectBuilder},
 	};
 

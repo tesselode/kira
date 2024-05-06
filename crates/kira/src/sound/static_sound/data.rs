@@ -368,7 +368,7 @@ impl StaticSoundData {
 	```
 	use kira::{
 		sound::static_sound::{StaticSoundData, StaticSoundSettings},
-		dsp::Frame,
+		Frame,
 	};
 	let sound = StaticSoundData {
 		sample_rate: 1,

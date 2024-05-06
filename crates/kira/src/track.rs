@@ -72,8 +72,8 @@ use kira::{
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	track::{
 		TrackBuilder,
-		effect::filter::FilterBuilder,
 	},
+	effect::filter::FilterBuilder,
 };
 
 let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
@@ -96,10 +96,11 @@ after the track has been created.
 # 	manager::{
 #     AudioManager, AudioManagerSettings,
 #     backend::DefaultBackend,
-#   },
-# 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
-# 	track::{effect::filter::FilterBuilder, TrackBuilder},
-# 	tween::Tween,
+# 	},
+#   sound::static_sound::{StaticSoundData, StaticSoundSettings},
+#   track::TrackBuilder,
+#   effect::filter::FilterBuilder,
+#   tween::Tween,
 # };
 # let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 let mut filter;
@@ -212,8 +213,8 @@ use kira::{
 	},
 	track::{
 		TrackRoutes, TrackBuilder,
-		effect::reverb::ReverbBuilder,
 	},
+	effect::reverb::ReverbBuilder,
 };
 
 let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;

@@ -55,12 +55,13 @@ Next, we'll create a mixer track with a low-pass filter effect. The piano will p
 on this track so we can make it sound more or less muffled.
 
 ```no_run
-use kira::{
+# use kira::{
 # 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
 # 	modulator::tweener::TweenerBuilder,
-	track::{TrackBuilder, effect::filter::FilterBuilder},
-	tween::{ModulatorMapping, Value},
-};
+#   track::TrackBuilder,
+#   effect::filter::FilterBuilder,
+#   tween::{ModulatorMapping, Value},
+# };
 
 # let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 # let mut tweener = manager.add_modulator(TweenerBuilder { initial_value: 0.0 })?;
@@ -80,14 +81,15 @@ of the filter cutoff frequency.
 Finally, we'll play the sounds:
 
 ```no_run
-use kira::{
+# use kira::{
 # 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
 # 	modulator::tweener::TweenerBuilder,
-# 	track::{TrackBuilder, effect::filter::FilterBuilder},
-	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+#   effect::filter::FilterBuilder,
+# 	track::TrackBuilder,
+#   sound::static_sound::{StaticSoundData, StaticSoundSettings},
 # 	tween::{ModulatorMapping, Value},
-	Volume,
-};
+#   Volume,
+# };
 
 # let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 # let mut tweener = manager.add_modulator(TweenerBuilder { initial_value: 0.0 })?;
@@ -123,7 +125,8 @@ Once the player goes underwater, we can smoothly transition the tweener's value 
 # use kira::{
 # 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
 # 	modulator::tweener::TweenerBuilder,
-# 	track::{TrackBuilder, effect::filter::FilterBuilder},
+# 	track::TrackBuilder,
+#   effect::filter::FilterBuilder,
 # 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 # 	tween::{ModulatorMapping, Value},
 # 	Volume,

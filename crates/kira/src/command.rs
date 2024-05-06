@@ -85,7 +85,7 @@ or [`Modulator`](crate::modulator::Modulator).
 
 This macro call...
 
-```
+```ignore
 command_writers_and_readers! {
 	set_phase: f64,
 	set_frequency: ValueChangeCommand<f64>,
@@ -94,7 +94,7 @@ command_writers_and_readers! {
 
 ...will produce this code:
 
-```
+```ignore
 pub(crate) struct CommandWriters {
 	set_phase: kira::command::CommandWriter<f64>,
 	set_frequency: kira::command::CommandWriter<ValueChangeCommand<f64>>,
