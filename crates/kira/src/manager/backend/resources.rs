@@ -4,6 +4,9 @@ pub(crate) mod modulators;
 pub(crate) mod sounds;
 pub(crate) mod spatial_scenes;
 
+#[cfg(test)]
+mod test;
+
 use std::sync::Mutex;
 
 use crate::{
