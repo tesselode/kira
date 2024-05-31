@@ -5,6 +5,7 @@ use crate::command::handle_param_setters;
 use super::CommandWriters;
 
 /// Controls a compressor.
+#[derive(Debug)]
 pub struct CompressorHandle {
 	pub(super) command_writers: CommandWriters,
 }

@@ -24,6 +24,7 @@ use triple_buffer::{triple_buffer, Input, Output};
 use crate::tween::{Tween, Value};
 
 /** Writes values that can be sent to a [`CommandReader`]. */
+#[derive(Debug)]
 pub struct CommandWriter<T: Send + Copy>(Input<Option<T>>);
 
 impl<T: Send + Copy> CommandWriter<T> {
@@ -34,6 +35,7 @@ impl<T: Send + Copy> CommandWriter<T> {
 }
 
 /** Reads values that were written to a [`CommandWriter`]. */
+#[derive(Debug)]
 pub struct CommandReader<T: Send + Copy>(Output<Option<T>>);
 
 impl<T: Send + Copy> CommandReader<T> {
@@ -124,10 +126,12 @@ pub(crate) fn command_writers_and_readers() -> (CommandWriters, CommandReaders) 
 #[macro_export]
 macro_rules! command_writers_and_readers {
 	($($field_name:ident: $type:ty),*$(,)?) => {
+		#[derive(Debug)]
 		pub(crate) struct CommandWriters {
 			$($field_name: $crate::command::CommandWriter<$type>),*
 		}
 
+		#[derive(Debug)]
 		pub(crate) struct CommandReaders {
 			$($field_name: $crate::command::CommandReader<$type>),*
 		}

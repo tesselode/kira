@@ -181,6 +181,7 @@ use self::clock_info::ClockInfoProvider;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ClockId(pub(crate) Key);
 
+#[derive(Debug)]
 pub(crate) struct ClockShared {
 	ticking: AtomicBool,
 	ticks: AtomicU64,

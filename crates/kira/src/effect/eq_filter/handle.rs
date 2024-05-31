@@ -3,6 +3,7 @@ use crate::command::handle_param_setters;
 use super::{CommandWriters, EqFilterKind};
 
 /// Controls an EQ filter.
+#[derive(Debug)]
 pub struct EqFilterHandle {
 	pub(super) command_writers: CommandWriters,
 }

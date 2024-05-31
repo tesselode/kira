@@ -5,6 +5,7 @@ use crate::{command::handle_param_setters, modulator::ModulatorId};
 use super::{CommandWriters, LfoShared, Waveform};
 
 /// Controls an LFO modulator.
+#[derive(Debug)]
 pub struct LfoHandle {
 	pub(super) id: ModulatorId,
 	pub(super) command_writers: CommandWriters,

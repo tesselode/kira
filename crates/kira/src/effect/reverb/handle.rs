@@ -3,6 +3,7 @@ use crate::command::handle_param_setters;
 use super::CommandWriters;
 
 /// Controls a reverb effect.
+#[derive(Debug)]
 pub struct ReverbHandle {
 	pub(super) command_writers: CommandWriters,
 }

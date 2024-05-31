@@ -5,6 +5,7 @@ use crate::{modulator::ModulatorId, tween::Tween};
 use super::{CommandWriters, TweenerShared};
 
 /// Controls a tweener.
+#[derive(Debug)]
 pub struct TweenerHandle {
 	pub(super) id: ModulatorId,
 	pub(super) command_writers: CommandWriters,

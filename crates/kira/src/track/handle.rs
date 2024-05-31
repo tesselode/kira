@@ -25,6 +25,7 @@ impl Error for NonexistentRoute {}
 ///
 /// When a [`TrackHandle`] is dropped, the corresponding mixer
 /// track will be removed.
+#[derive(Debug)]
 pub struct TrackHandle {
 	pub(crate) id: TrackId,
 	pub(crate) shared: Option<Arc<TrackShared>>,

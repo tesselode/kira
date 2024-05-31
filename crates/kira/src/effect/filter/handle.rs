@@ -3,6 +3,7 @@ use crate::command::handle_param_setters;
 use super::{CommandWriters, FilterMode};
 
 /// Controls a filter effect.
+#[derive(Debug)]
 pub struct FilterHandle {
 	pub(super) command_writers: CommandWriters,
 }

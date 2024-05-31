@@ -302,6 +302,7 @@ impl From<&TrackHandle> for TrackId {
 	}
 }
 
+#[derive(Debug)]
 pub(crate) struct TrackShared {
 	removed: AtomicBool,
 }

@@ -10,6 +10,7 @@ use crate::{
 use super::{sound::Shared, CommandWriters};
 
 /// Controls a static sound.
+#[derive(Debug)]
 pub struct StaticSoundHandle {
 	pub(super) command_writers: CommandWriters,
 	pub(super) shared: Arc<Shared>,

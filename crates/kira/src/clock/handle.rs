@@ -8,6 +8,7 @@ use super::{ClockId, ClockShared, ClockSpeed, ClockTime, CommandWriters};
 ///
 /// When a [`ClockHandle`] is dropped, the corresponding clock
 /// will be removed.
+#[derive(Debug)]
 pub struct ClockHandle {
 	pub(crate) id: ClockId,
 	pub(crate) shared: Arc<ClockShared>,

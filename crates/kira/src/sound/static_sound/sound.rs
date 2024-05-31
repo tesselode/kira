@@ -296,6 +296,7 @@ impl Sound for StaticSound {
 	}
 }
 
+#[derive(Debug)]
 pub(super) struct Shared {
 	state: AtomicU8,
 	position: AtomicU64,

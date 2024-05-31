@@ -11,6 +11,7 @@ use super::{CommandWriters, EmitterId, EmitterShared};
 ///
 /// When a [`EmitterHandle`] is dropped, the corresponding
 /// emitter will be removed.
+#[derive(Debug)]
 pub struct EmitterHandle {
 	pub(crate) id: EmitterId,
 	pub(crate) shared: Arc<EmitterShared>,

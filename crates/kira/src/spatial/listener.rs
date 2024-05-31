@@ -148,6 +148,7 @@ impl Listener {
 	}
 }
 
+#[derive(Debug)]
 pub(crate) struct ListenerShared {
 	removed: AtomicBool,
 }

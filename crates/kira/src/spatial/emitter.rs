@@ -150,6 +150,7 @@ impl EmitterId {
 	}
 }
 
+#[derive(Debug)]
 pub(crate) struct EmitterShared {
 	removed: AtomicBool,
 }

@@ -1,4 +1,7 @@
-use std::sync::Arc;
+use std::{
+	fmt::{Debug, Formatter},
+	sync::Arc,
+};
 
 use crate::{
 	command::handle_param_setters,
@@ -306,5 +309,23 @@ impl<Error> StreamingSoundHandle<Error> {
 	#[must_use]
 	pub fn pop_error(&mut self) -> Option<Error> {
 		self.error_consumer.pop()
+	}
+}
+
+impl<Error: Debug> Debug for StreamingSoundHandle<Error> {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("StreamingSoundHandle")
+			.field("shared", &self.shared)
+			.field("command_writers", &self.command_writers)
+			.field("error_consumer", &HeapConsumerDebug)
+			.finish()
+	}
+}
+
+struct HeapConsumerDebug;
+
+impl Debug for HeapConsumerDebug {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("HeapConsumer").finish()
 	}
 }

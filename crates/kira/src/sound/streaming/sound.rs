@@ -26,6 +26,7 @@ use super::{CommandReaders, StreamingSoundSettings};
 
 use self::decode_scheduler::DecodeScheduler;
 
+#[derive(Debug)]
 pub(crate) struct Shared {
 	state: AtomicU8,
 	position: AtomicU64,

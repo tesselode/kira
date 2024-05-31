@@ -19,6 +19,7 @@ use super::{SpatialSceneId, SpatialSceneShared};
 ///
 /// When a [`SpatialSceneHandle`] is dropped, the corresponding
 /// spatial scene will be removed.
+#[derive(Debug)]
 pub struct SpatialSceneHandle {
 	pub(crate) id: SpatialSceneId,
 	pub(crate) shared: Arc<SpatialSceneShared>,

@@ -44,6 +44,7 @@ use crate::{
 
 use super::{PlaybackRate, Region};
 
+#[derive(Debug)]
 pub(crate) struct CommandWriters {
 	set_volume: CommandWriter<ValueChangeCommand<Volume>>,
 	set_playback_rate: CommandWriter<ValueChangeCommand<PlaybackRate>>,
@@ -65,6 +66,7 @@ pub(crate) struct CommandReaders {
 	stop: CommandReader<Tween>,
 }
 
+#[derive(Debug)]
 pub(crate) struct DecodeSchedulerCommandReaders {
 	set_loop_region: CommandReader<Option<Region>>,
 	seek_by: CommandReader<f64>,

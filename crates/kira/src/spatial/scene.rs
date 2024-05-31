@@ -102,6 +102,7 @@ impl SpatialScene {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SpatialSceneId(pub(crate) Key);
 
+#[derive(Debug)]
 pub(crate) struct SpatialSceneShared {
 	removed: AtomicBool,
 }

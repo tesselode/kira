@@ -11,6 +11,7 @@ use super::{CommandWriters, ListenerShared};
 ///
 /// When a [`ListenerHandle`] is dropped, the corresponding
 /// listener will be removed.
+#[derive(Debug)]
 pub struct ListenerHandle {
 	pub(crate) shared: Arc<ListenerShared>,
 	pub(crate) command_writers: CommandWriters,

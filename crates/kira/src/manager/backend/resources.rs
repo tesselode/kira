@@ -7,7 +7,10 @@ pub(crate) mod spatial_scenes;
 #[cfg(test)]
 mod test;
 
-use std::sync::Mutex;
+use std::{
+	fmt::{Debug, Formatter},
+	sync::Mutex,
+};
 
 use crate::{
 	arena::{Arena, Controller, Key},
@@ -233,6 +236,32 @@ impl<T> ResourceController<T> {
 	#[must_use]
 	pub fn len(&self) -> u16 {
 		self.arena_controller.len()
+	}
+}
+
+impl<T> Debug for ResourceController<T> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("ResourceController")
+			.field("arena_controller", &self.arena_controller)
+			.field("new_resource_producer", &HeapProducerDebug)
+			.field("unused_resource_consumer", &HeapConsumerDebug)
+			.finish()
+	}
+}
+
+struct HeapProducerDebug;
+
+impl Debug for HeapProducerDebug {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("HeapProducer").finish()
+	}
+}
+
+struct HeapConsumerDebug;
+
+impl Debug for HeapConsumerDebug {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("HeapConsumer").finish()
 	}
 }
 

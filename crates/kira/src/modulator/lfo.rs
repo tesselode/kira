@@ -126,6 +126,7 @@ impl Waveform {
 	}
 }
 
+#[derive(Debug)]
 struct LfoShared {
 	removed: AtomicBool,
 }

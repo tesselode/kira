@@ -3,6 +3,7 @@ use crate::{command::handle_param_setters, Volume};
 use super::{CommandWriters, DistortionKind};
 
 /// Controls a distortion effect.
+#[derive(Debug)]
 pub struct DistortionHandle {
 	pub(super) command_writers: CommandWriters,
 }

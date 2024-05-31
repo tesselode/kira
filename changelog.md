@@ -3,6 +3,7 @@
 - Fix sounds stopping after having already started if the clock they were originally
   waiting on stops
 - Implement `Default` for `Region`, `EndPosition`, `PlaybackPosition`, and `Value`
+- Implement `Debug` for handles, command types, and `ResourceController`
 
 # v0.9.0 - May 11, 2024
 

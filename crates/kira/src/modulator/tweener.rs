@@ -122,6 +122,7 @@ enum State {
 	},
 }
 
+#[derive(Debug)]
 struct TweenerShared {
 	removed: AtomicBool,
 }

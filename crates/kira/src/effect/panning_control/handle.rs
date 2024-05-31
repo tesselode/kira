@@ -3,6 +3,7 @@ use crate::command::handle_param_setters;
 use super::CommandWriters;
 
 /// Controls a panning control effect.
+#[derive(Debug)]
 pub struct PanningControlHandle {
 	pub(super) command_writers: CommandWriters,
 }

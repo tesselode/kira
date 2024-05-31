@@ -3,6 +3,7 @@ use crate::{command::handle_param_setters, Volume};
 use super::CommandWriters;
 
 /// Controls a delay effect.
+#[derive(Debug)]
 pub struct DelayHandle {
 	pub(super) command_writers: CommandWriters,
 }
