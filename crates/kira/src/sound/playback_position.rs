@@ -26,3 +26,9 @@ impl From<f64> for PlaybackPosition {
 		Self::Seconds(v)
 	}
 }
+
+impl Default for PlaybackPosition {
+	fn default() -> Self {
+		Self::Seconds(0.0)
+	}
+}

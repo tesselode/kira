@@ -3,9 +3,10 @@ use std::time::Duration;
 use crate::clock::ClockTime;
 
 /// Describes when an action should occur.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub enum StartTime {
 	/// The action should occur immediately.
+	#[default]
 	Immediate,
 	/// The action should occur a certain amount of time from now.
 	Delayed(Duration),
@@ -23,11 +24,5 @@ impl From<Duration> for StartTime {
 impl From<ClockTime> for StartTime {
 	fn from(v: ClockTime) -> Self {
 		Self::ClockTime(v)
-	}
-}
-
-impl Default for StartTime {
-	fn default() -> Self {
-		Self::Immediate
 	}
 }

@@ -92,6 +92,12 @@ impl From<Duration> for Value<Duration> {
 	}
 }
 
+impl<T: Default> Default for Value<T> {
+	fn default() -> Self {
+		Self::Fixed(T::default())
+	}
+}
+
 impl<T, IntoId> From<IntoId> for Value<T>
 where
 	ModulatorId: From<IntoId>,

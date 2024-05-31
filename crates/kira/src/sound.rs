@@ -117,7 +117,7 @@ pub enum PlaybackState {
 }
 
 /// A portion of audio.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Region {
 	/// The starting time of the region (in seconds).
@@ -162,15 +162,6 @@ impl From<RangeFull> for Region {
 	}
 }
 
-impl Default for Region {
-	fn default() -> Self {
-		Self {
-			start: PlaybackPosition::Samples(0),
-			end: EndPosition::EndOfAudio,
-		}
-	}
-}
-
 /// A trait for types that can be converted into an `Option<Region>`.
 pub trait IntoOptionalRegion {
 	/// Converts the type into an `Option<Region>`.
@@ -191,10 +182,11 @@ impl IntoOptionalRegion for Option<Region> {
 }
 
 /// The ending time of a region of audio.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum EndPosition {
 	/// The end of the audio data.
+	#[default]
 	EndOfAudio,
 	/// A user-defined time in seconds.
 	Custom(PlaybackPosition),
