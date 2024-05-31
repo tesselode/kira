@@ -458,7 +458,7 @@ fn waits_for_start_time() {
 /// Without this behavior, a sound in this situation would be in limbo
 /// forever with no way to free up its resources.
 #[test]
-fn stops_if_depending_on_missing_clock() {
+fn stops_if_waiting_on_missing_clock() {
 	let (clock_info_provider, clock_id) = {
 		let mut builder = MockClockInfoProviderBuilder::new(1);
 		let clock_id = builder.add(true, 0, 0.0).unwrap();
@@ -497,6 +497,55 @@ fn stops_if_depending_on_missing_clock() {
 	);
 	sound.on_start_processing();
 	assert_eq!(handle.state(), PlaybackState::Stopped);
+}
+
+/// Tests that a `StreamingSound` that had its start time set to a clock time and already
+/// started will not stop if the clock stops.
+#[test]
+fn continues_when_clock_stops() {
+	let (clock_info_provider, clock_id) = {
+		let mut builder = MockClockInfoProviderBuilder::new(1);
+		let clock_id = builder.add(true, 0, 0.0).unwrap();
+		(builder.build(), clock_id)
+	};
+
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(
+			(1..100).map(|_| Frame::from_mono(1.0)).collect(),
+		)),
+		settings: StreamingSoundSettings::new().start_time(ClockTime {
+			clock: clock_id,
+			ticks: 0,
+			fraction: 0.0,
+		}),
+		slice: None,
+	};
+	let (mut sound, _, mut scheduler) = data.split().unwrap();
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
+
+	assert_eq!(
+		sound.process(
+			1.0,
+			&clock_info_provider,
+			&MockModulatorValueProviderBuilder::new(0).build(),
+		),
+		Frame::from_mono(1.0),
+	);
+
+	let clock_info_provider = {
+		let mut builder = MockClockInfoProviderBuilder::new(1);
+		builder.add(false, 0, 0.0).unwrap();
+		builder.build()
+	};
+
+	assert_eq!(
+		sound.process(
+			1.0,
+			&clock_info_provider,
+			&MockModulatorValueProviderBuilder::new(0).build(),
+		),
+		Frame::from_mono(1.0),
+	);
 }
 
 /// Tests that a `StreamingSound` can be started partway through the sound.

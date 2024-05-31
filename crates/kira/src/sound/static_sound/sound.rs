@@ -244,7 +244,10 @@ impl Sound for StaticSound {
 			}
 			StartTime::ClockTime(clock_time) => {
 				match clock_info_provider.when_to_start(*clock_time) {
-					WhenToStart::Now => true,
+					WhenToStart::Now => {
+						self.start_time = StartTime::Immediate;
+						true
+					}
 					WhenToStart::Later => false,
 					WhenToStart::Never => {
 						self.set_state(PlaybackState::Stopped);

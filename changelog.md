@@ -1,3 +1,8 @@
+# v0.9.1 - May 31, 2024
+
+- Fix sounds stopping after having already started if the clock they were originally
+  waiting on stops
+
 # v0.9.0 - May 11, 2024
 
 ## `ClockTime::fraction`
