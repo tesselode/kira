@@ -3,16 +3,13 @@ mod resampler;
 #[cfg(test)]
 mod test;
 
-use std::{
-	sync::{
-		atomic::{AtomicU64, AtomicU8, Ordering},
-		Arc,
-	},
-	time::Duration,
+use std::sync::{
+	atomic::{AtomicU64, AtomicU8, Ordering},
+	Arc,
 };
 
 use crate::{
-	clock::clock_info::{ClockInfoProvider, WhenToStart},
+	clock::clock_info::ClockInfoProvider,
 	command::read_commands_into_parameters,
 	frame::Frame,
 	modulator::value_provider::ModulatorValueProvider,
@@ -44,6 +41,8 @@ pub(super) struct StaticSound {
 	playback_rate: Parameter<PlaybackRate>,
 	panning: Parameter,
 	volume_fade: Parameter<Volume>,
+	volume_fade_start_time: StartTime,
+	resume_queued: bool,
 	shared: Arc<Shared>,
 }
 
@@ -76,6 +75,8 @@ impl StaticSound {
 			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate::Factor(1.0)),
 			panning: Parameter::new(settings.panning, 0.5),
 			volume_fade: create_volume_fade_parameter(settings.fade_in_tween),
+			volume_fade_start_time: StartTime::Immediate,
+			resume_queued: false,
 			shared: Arc::new(Shared {
 				state: AtomicU8::new(PlaybackState::Playing as u8),
 				position: AtomicU64::new(position.to_bits()),
@@ -107,8 +108,12 @@ impl StaticSound {
 	}
 
 	fn resume(&mut self, start_time: StartTime, fade_in_tween: Tween) {
-		self.start_time = start_time;
-		self.set_state(PlaybackState::Playing);
+		self.volume_fade_start_time = start_time;
+		if start_time == StartTime::Immediate {
+			self.set_state(PlaybackState::Playing);
+		} else {
+			self.resume_queued = true;
+		}
 		self.volume_fade
 			.set(Value::Fixed(Volume::Decibels(0.0)), fade_in_tween);
 	}
@@ -232,31 +237,6 @@ impl Sound for StaticSound {
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
 	) -> Frame {
-		let started = match &mut self.start_time {
-			StartTime::Immediate => true,
-			StartTime::Delayed(time_remaining) => {
-				if time_remaining.is_zero() {
-					true
-				} else {
-					*time_remaining = time_remaining.saturating_sub(Duration::from_secs_f64(dt));
-					false
-				}
-			}
-			StartTime::ClockTime(clock_time) => {
-				match clock_info_provider.when_to_start(*clock_time) {
-					WhenToStart::Now => {
-						self.start_time = StartTime::Immediate;
-						true
-					}
-					WhenToStart::Later => false,
-					WhenToStart::Never => {
-						self.set_state(PlaybackState::Stopped);
-						false
-					}
-				}
-			}
-		};
-
 		// update parameters
 		self.volume
 			.update(dt, clock_info_provider, modulator_value_provider);
@@ -264,20 +244,30 @@ impl Sound for StaticSound {
 			.update(dt, clock_info_provider, modulator_value_provider);
 		self.panning
 			.update(dt, clock_info_provider, modulator_value_provider);
-
-		if !started {
-			return Frame::ZERO;
+		self.volume_fade_start_time.update(dt, clock_info_provider);
+		if self.volume_fade_start_time == StartTime::Immediate {
+			if self.resume_queued {
+				self.resume_queued = false;
+				self.set_state(PlaybackState::Playing);
+			}
+			if self
+				.volume_fade
+				.update(dt, clock_info_provider, modulator_value_provider)
+			{
+				match self.state {
+					PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
+					PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),
+					_ => {}
+				}
+			}
 		}
 
-		if self
-			.volume_fade
-			.update(dt, clock_info_provider, modulator_value_provider)
-		{
-			match self.state {
-				PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
-				PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),
-				_ => {}
-			}
+		let will_never_start = self.start_time.update(dt, clock_info_provider);
+		if will_never_start {
+			self.set_state(PlaybackState::Stopped);
+		}
+		if self.start_time != StartTime::Immediate {
+			return Frame::ZERO;
 		}
 
 		// play back audio

@@ -9,7 +9,7 @@ use crate::{
 		PlaybackState, Sound,
 	},
 	tween::Tween,
-	Volume,
+	StartTime, Volume,
 };
 
 use super::{decode_scheduler::NextStep, StreamingSound};
@@ -546,6 +546,136 @@ fn continues_when_clock_stops() {
 		),
 		Frame::from_mono(1.0),
 	);
+}
+
+/// Tests that a `StreamingSound` can be paused, resumed, and stopped immediately
+/// even if it's waiting for its start time.
+#[test]
+fn immediate_playback_state_change_with_start_time() {
+	let (clock_info_provider, clock_id) = {
+		let mut builder = MockClockInfoProviderBuilder::new(1);
+		let clock_id = builder.add(true, 0, 0.0).unwrap();
+		(builder.build(), clock_id)
+	};
+
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(
+			(1..100).map(|i| Frame::from_mono(i as f32)).collect(),
+		)),
+		settings: StreamingSoundSettings::new().start_time(ClockTime {
+			clock: clock_id,
+			ticks: 2,
+			fraction: 0.0,
+		}),
+		slice: None,
+	};
+	let (mut sound, mut handle, mut scheduler) = data.split().unwrap();
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
+
+	handle.pause(Tween {
+		duration: Duration::ZERO,
+		..Default::default()
+	});
+	sound.on_start_processing();
+	sound.process(
+		1.0,
+		&clock_info_provider,
+		&MockModulatorValueProviderBuilder::new(0).build(),
+	);
+	sound.on_start_processing();
+	assert_eq!(handle.state(), PlaybackState::Paused);
+
+	handle.resume(Tween {
+		duration: Duration::ZERO,
+		..Default::default()
+	});
+	sound.on_start_processing();
+	sound.process(
+		1.0,
+		&clock_info_provider,
+		&MockModulatorValueProviderBuilder::new(0).build(),
+	);
+	sound.on_start_processing();
+	assert_eq!(handle.state(), PlaybackState::Playing);
+
+	handle.stop(Tween {
+		duration: Duration::ZERO,
+		..Default::default()
+	});
+	sound.on_start_processing();
+	sound.process(
+		1.0,
+		&clock_info_provider,
+		&MockModulatorValueProviderBuilder::new(0).build(),
+	);
+	sound.on_start_processing();
+	assert_eq!(handle.state(), PlaybackState::Stopped);
+}
+
+/// Tests that a `StreamingSound` can be set to resume at a certain start time.
+#[test]
+fn resume_at() {
+	let (clock_info_provider, clock_id) = {
+		let mut builder = MockClockInfoProviderBuilder::new(1);
+		let clock_id = builder.add(true, 0, 0.0).unwrap();
+		(builder.build(), clock_id)
+	};
+
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(
+			(1..100).map(|i| Frame::from_mono(i as f32)).collect(),
+		)),
+		settings: StreamingSoundSettings::new(),
+		slice: None,
+	};
+	let (mut sound, mut handle, mut scheduler) = data.split().unwrap();
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
+
+	handle.pause(Tween {
+		duration: Duration::ZERO,
+		..Default::default()
+	});
+	sound.on_start_processing();
+	sound.process(
+		1.0,
+		&clock_info_provider,
+		&MockModulatorValueProviderBuilder::new(0).build(),
+	);
+	sound.on_start_processing();
+	assert_eq!(handle.state(), PlaybackState::Paused);
+
+	handle.resume_at(
+		StartTime::ClockTime(ClockTime {
+			clock: clock_id,
+			ticks: 1,
+			fraction: 0.0,
+		}),
+		Tween {
+			duration: Duration::ZERO,
+			..Default::default()
+		},
+	);
+	sound.on_start_processing();
+	sound.process(
+		1.0,
+		&clock_info_provider,
+		&MockModulatorValueProviderBuilder::new(0).build(),
+	);
+	sound.on_start_processing();
+	assert_eq!(handle.state(), PlaybackState::Paused);
+
+	let clock_info_provider = {
+		let mut builder = MockClockInfoProviderBuilder::new(1);
+		builder.add(true, 1, 0.0).unwrap();
+		builder.build()
+	};
+	sound.process(
+		1.0,
+		&clock_info_provider,
+		&MockModulatorValueProviderBuilder::new(0).build(),
+	);
+	sound.on_start_processing();
+	assert_eq!(handle.state(), PlaybackState::Playing);
 }
 
 /// Tests that a `StreamingSound` can be started partway through the sound.

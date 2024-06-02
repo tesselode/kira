@@ -1,3 +1,12 @@
+# v0.9.2
+
+- Fix `StaticSoundHandle/StreamingSoundHandle::pause/resume/stop` not taking effect
+immediately if the sound has a start time. This was an unintended change from the
+behavior in v0.8.x and earlier versions.
+- Fix sounds erroneously reporting their state as `Playing` before playback has
+resumed after calling `StaticSoundHandle/StreamingSoundHandle::resume_at` with
+a non-immediate `StartTime`
+
 # v0.9.1 - May 31, 2024
 
 - Fix sounds stopping after having already started if the clock they were originally

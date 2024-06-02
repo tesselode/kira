@@ -9,7 +9,7 @@ use crate::{
 		PlaybackState, Sound,
 	},
 	tween::Tween,
-	Volume,
+	StartTime, Volume,
 };
 
 use super::StaticSound;
@@ -475,6 +475,132 @@ fn continues_when_clock_stops() {
 		),
 		Frame::from_mono(1.0),
 	);
+}
+
+/// Tests that a `StaticSound` can be paused, resumed, and stopped immediately
+/// even if it's waiting for its start time.
+#[test]
+fn immediate_playback_state_change_with_start_time() {
+	let (clock_info_provider, clock_id) = {
+		let mut builder = MockClockInfoProviderBuilder::new(1);
+		let clock_id = builder.add(true, 0, 0.0).unwrap();
+		(builder.build(), clock_id)
+	};
+
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: (1..100).map(|_| Frame::from_mono(1.0)).collect(),
+		settings: StaticSoundSettings::new().start_time(ClockTime {
+			clock: clock_id,
+			ticks: 1,
+			fraction: 0.0,
+		}),
+		slice: None,
+	};
+	let (mut sound, mut handle) = data.split();
+
+	handle.pause(Tween {
+		duration: Duration::ZERO,
+		..Default::default()
+	});
+	sound.on_start_processing();
+	sound.process(
+		1.0,
+		&clock_info_provider,
+		&MockModulatorValueProviderBuilder::new(0).build(),
+	);
+	sound.on_start_processing();
+	assert_eq!(handle.state(), PlaybackState::Paused);
+
+	handle.resume(Tween {
+		duration: Duration::ZERO,
+		..Default::default()
+	});
+	sound.on_start_processing();
+	sound.process(
+		1.0,
+		&clock_info_provider,
+		&MockModulatorValueProviderBuilder::new(0).build(),
+	);
+	sound.on_start_processing();
+	assert_eq!(handle.state(), PlaybackState::Playing);
+
+	handle.stop(Tween {
+		duration: Duration::ZERO,
+		..Default::default()
+	});
+	sound.on_start_processing();
+	sound.process(
+		1.0,
+		&clock_info_provider,
+		&MockModulatorValueProviderBuilder::new(0).build(),
+	);
+	sound.on_start_processing();
+	assert_eq!(handle.state(), PlaybackState::Stopped);
+}
+
+/// Tests that a `StaticSound` can be set to resume at a certain start time.
+#[test]
+fn resume_at() {
+	let (clock_info_provider, clock_id) = {
+		let mut builder = MockClockInfoProviderBuilder::new(1);
+		let clock_id = builder.add(true, 0, 0.0).unwrap();
+		(builder.build(), clock_id)
+	};
+
+	let data = StaticSoundData {
+		sample_rate: 1,
+		frames: (1..100).map(|_| Frame::from_mono(1.0)).collect(),
+		settings: StaticSoundSettings::new(),
+		slice: None,
+	};
+	let (mut sound, mut handle) = data.split();
+
+	handle.pause(Tween {
+		duration: Duration::ZERO,
+		..Default::default()
+	});
+	sound.on_start_processing();
+	sound.process(
+		1.0,
+		&clock_info_provider,
+		&MockModulatorValueProviderBuilder::new(0).build(),
+	);
+	sound.on_start_processing();
+	assert_eq!(handle.state(), PlaybackState::Paused);
+
+	handle.resume_at(
+		StartTime::ClockTime(ClockTime {
+			clock: clock_id,
+			ticks: 1,
+			fraction: 0.0,
+		}),
+		Tween {
+			duration: Duration::ZERO,
+			..Default::default()
+		},
+	);
+	sound.on_start_processing();
+	sound.process(
+		1.0,
+		&clock_info_provider,
+		&MockModulatorValueProviderBuilder::new(0).build(),
+	);
+	sound.on_start_processing();
+	assert_eq!(handle.state(), PlaybackState::Paused);
+
+	let clock_info_provider = {
+		let mut builder = MockClockInfoProviderBuilder::new(1);
+		builder.add(true, 1, 0.0).unwrap();
+		builder.build()
+	};
+	sound.process(
+		1.0,
+		&clock_info_provider,
+		&MockModulatorValueProviderBuilder::new(0).build(),
+	);
+	sound.on_start_processing();
+	assert_eq!(handle.state(), PlaybackState::Playing);
 }
 
 /// Tests that a `StaticSound` can be played partially.

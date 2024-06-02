@@ -3,16 +3,13 @@ pub(crate) mod decode_scheduler;
 #[cfg(test)]
 mod test;
 
-use std::{
-	sync::{
-		atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering},
-		Arc,
-	},
-	time::Duration,
+use std::sync::{
+	atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering},
+	Arc,
 };
 
 use crate::{
-	clock::clock_info::{ClockInfoProvider, WhenToStart},
+	clock::clock_info::ClockInfoProvider,
 	command::read_commands_into_parameters,
 	frame::{interpolate_frame, Frame},
 	modulator::value_provider::ModulatorValueProvider,
@@ -81,6 +78,8 @@ pub(crate) struct StreamingSound {
 	start_time: StartTime,
 	state: PlaybackState,
 	volume_fade: Parameter<Volume>,
+	volume_fade_start_time: StartTime,
+	resume_queued: bool,
 	current_frame: usize,
 	fractional_position: f64,
 	volume: Parameter<Volume>,
@@ -112,6 +111,8 @@ impl StreamingSound {
 			start_time: settings.start_time,
 			state: PlaybackState::Playing,
 			volume_fade: create_volume_fade_parameter(settings.fade_in_tween),
+			volume_fade_start_time: StartTime::Immediate,
+			resume_queued: false,
 			current_frame,
 			fractional_position: 0.0,
 			volume: Parameter::new(settings.volume, Volume::Amplitude(1.0)),
@@ -162,8 +163,12 @@ impl StreamingSound {
 	}
 
 	fn resume(&mut self, start_time: StartTime, tween: Tween) {
-		self.start_time = start_time;
-		self.set_state(PlaybackState::Playing);
+		self.volume_fade_start_time = start_time;
+		if start_time == StartTime::Immediate {
+			self.set_state(PlaybackState::Playing);
+		} else {
+			self.resume_queued = true;
+		}
 		self.volume_fade
 			.set(Value::Fixed(Volume::Decibels(0.0)), tween);
 	}
@@ -212,32 +217,6 @@ impl Sound for StreamingSound {
 			return Frame::ZERO;
 		}
 
-		// check if the sound has started
-		let started = match &mut self.start_time {
-			StartTime::Immediate => true,
-			StartTime::Delayed(time_remaining) => {
-				if time_remaining.is_zero() {
-					true
-				} else {
-					*time_remaining = time_remaining.saturating_sub(Duration::from_secs_f64(dt));
-					false
-				}
-			}
-			StartTime::ClockTime(clock_time) => {
-				match clock_info_provider.when_to_start(*clock_time) {
-					WhenToStart::Now => {
-						self.start_time = StartTime::Immediate;
-						true
-					}
-					WhenToStart::Later => false,
-					WhenToStart::Never => {
-						self.set_state(PlaybackState::Stopped);
-						false
-					}
-				}
-			}
-		};
-
 		// update parameters
 		self.volume
 			.update(dt, clock_info_provider, modulator_value_provider);
@@ -245,20 +224,30 @@ impl Sound for StreamingSound {
 			.update(dt, clock_info_provider, modulator_value_provider);
 		self.panning
 			.update(dt, clock_info_provider, modulator_value_provider);
-
-		if !started {
-			return Frame::ZERO;
+		self.volume_fade_start_time.update(dt, clock_info_provider);
+		if self.volume_fade_start_time == StartTime::Immediate {
+			if self.resume_queued {
+				self.resume_queued = false;
+				self.set_state(PlaybackState::Playing);
+			}
+			if self
+				.volume_fade
+				.update(dt, clock_info_provider, modulator_value_provider)
+			{
+				match self.state {
+					PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
+					PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),
+					_ => {}
+				}
+			}
 		}
 
-		if self
-			.volume_fade
-			.update(dt, clock_info_provider, modulator_value_provider)
-		{
-			match self.state {
-				PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
-				PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),
-				_ => {}
-			}
+		let will_never_start = self.start_time.update(dt, clock_info_provider);
+		if will_never_start {
+			self.set_state(PlaybackState::Stopped);
+		}
+		if self.start_time != StartTime::Immediate {
+			return Frame::ZERO;
 		}
 
 		if matches!(self.state, PlaybackState::Paused | PlaybackState::Stopped) {
