@@ -6,6 +6,8 @@ behavior in v0.8.x and earlier versions.
 - Fix sounds erroneously reporting their state as `Playing` before playback has
 resumed after calling `StaticSoundHandle/StreamingSoundHandle::resume_at` with
 a non-immediate `StartTime`
+- Fix sounds entering a limbo state where they output no sound and can never be
+unloaded when their output destination (track or emitter) is removed
 
 # v0.9.1 - May 31, 2024
 

@@ -30,24 +30,17 @@ impl Sounds {
 		scenes: &mut SpatialScenes,
 	) {
 		for (_, sound) in &mut self.0 {
+			let output = sound.process(dt, clock_info_provider, modulator_value_provider);
 			match sound.output_destination() {
 				OutputDestination::Track(track_id) => {
 					if let Some(track) = mixer.track_mut(track_id) {
-						track.add_input(sound.process(
-							dt,
-							clock_info_provider,
-							modulator_value_provider,
-						));
+						track.add_input(output);
 					}
 				}
 				OutputDestination::Emitter(emitter_id) => {
 					if let Some(scene) = scenes.get_mut(emitter_id.scene_id) {
 						if let Some(emitter) = scene.emitter_mut(emitter_id) {
-							emitter.add_input(sound.process(
-								dt,
-								clock_info_provider,
-								modulator_value_provider,
-							));
+							emitter.add_input(output);
 						}
 					}
 				}
