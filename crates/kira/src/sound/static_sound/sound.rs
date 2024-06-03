@@ -149,7 +149,7 @@ impl StaticSound {
 			self.transport
 				.increment_position(num_frames(&self.frames, self.slice));
 		}
-		if !self.transport.playing {
+		if !self.transport.playing && self.resampler.outputting_silence() {
 			self.set_state(PlaybackState::Stopped);
 		}
 	}
@@ -282,7 +282,7 @@ impl Sound for StaticSound {
 	}
 
 	fn finished(&self) -> bool {
-		self.state == PlaybackState::Stopped && self.resampler.outputting_silence()
+		self.state == PlaybackState::Stopped
 	}
 }
 

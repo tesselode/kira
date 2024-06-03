@@ -8,6 +8,8 @@ resumed after calling `StaticSoundHandle/StreamingSoundHandle::resume_at` with
 a non-immediate `StartTime`
 - Fix sounds entering a limbo state where they output no sound and can never be
 unloaded when their output destination (track or emitter) is removed
+- Fix a bug where static sounds could enter a limbo state where they're stopped, but
+never unloaded if the clock they're waiting on is removed
 
 # v0.9.1 - May 31, 2024
 

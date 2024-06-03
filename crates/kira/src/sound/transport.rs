@@ -56,6 +56,9 @@ impl Transport {
 	}
 
 	pub fn increment_position(&mut self, num_frames: usize) {
+		if !self.playing {
+			return;
+		}
 		self.position += 1;
 		if let Some((loop_start, loop_end)) = self.loop_region {
 			while self.position >= loop_end {
@@ -68,6 +71,9 @@ impl Transport {
 	}
 
 	pub fn decrement_position(&mut self) {
+		if !self.playing {
+			return;
+		}
 		if let Some((loop_start, loop_end)) = self.loop_region {
 			while self.position <= loop_start {
 				self.position += loop_end - loop_start;

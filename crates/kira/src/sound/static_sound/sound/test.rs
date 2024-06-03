@@ -428,6 +428,7 @@ fn stops_if_waiting_on_missing_clock() {
 	);
 	sound.on_start_processing();
 	assert_eq!(handle.state(), PlaybackState::Stopped);
+	assert!(sound.finished());
 }
 
 /// Tests that a `StaticSound` that had its start time set to a clock time and already
