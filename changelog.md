@@ -1,4 +1,4 @@
-# v0.9.2
+# v0.9.2 - June 2, 2024
 
 - Fix `StaticSoundHandle/StreamingSoundHandle::pause/resume/stop` not taking effect
 immediately if the sound has a start time. This was an unintended change from the
