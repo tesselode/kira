@@ -7,7 +7,7 @@ use crate::{
 	command::handle_param_setters,
 	sound::{IntoOptionalRegion, PlaybackRate, PlaybackState},
 	tween::Tween,
-	StartTime, Volume,
+	StartTime, Trigger, Volume,
 };
 use ringbuf::HeapConsumer;
 
@@ -271,28 +271,36 @@ impl<Error> StreamingSoundHandle<Error> {
 
 	/// Fades out the sound to silence with the given tween and then
 	/// pauses playback.
-	pub fn pause(&mut self, tween: Tween) {
-		self.command_writers.pause.write(tween)
+	pub fn pause(&mut self, tween: Tween) -> Trigger {
+		let trigger = Trigger::new();
+		self.command_writers.pause.write((tween, trigger.clone()));
+		trigger
 	}
 
 	/// Resumes playback and fades in the sound from silence
 	/// with the given tween.
-	pub fn resume(&mut self, tween: Tween) {
+	pub fn resume(&mut self, tween: Tween) -> Trigger {
 		self.resume_at(StartTime::Immediate, tween)
 	}
 
 	/// Resumes playback at the given start time and fades in
 	/// the sound from silence with the given tween.
-	pub fn resume_at(&mut self, start_time: StartTime, tween: Tween) {
-		self.command_writers.resume.write((start_time, tween))
+	pub fn resume_at(&mut self, start_time: StartTime, tween: Tween) -> Trigger {
+		let trigger = Trigger::new();
+		self.command_writers
+			.resume
+			.write((start_time, tween, trigger.clone()));
+		trigger
 	}
 
 	/// Fades out the sound to silence with the given tween and then
 	/// stops playback.
 	///
 	/// Once the sound is stopped, it cannot be restarted.
-	pub fn stop(&mut self, tween: Tween) {
-		self.command_writers.stop.write(tween)
+	pub fn stop(&mut self, tween: Tween) -> Trigger {
+		let trigger = Trigger::new();
+		self.command_writers.stop.write((tween, trigger.clone()));
+		trigger
 	}
 
 	/// Sets the playback position to the specified time in seconds.

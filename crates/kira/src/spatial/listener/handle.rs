@@ -3,6 +3,7 @@ use std::sync::Arc;
 use crate::{
 	command::ValueChangeCommand,
 	tween::{Tween, Value},
+	Trigger,
 };
 
 use super::{CommandWriters, ListenerShared};
@@ -19,12 +20,19 @@ pub struct ListenerHandle {
 
 impl ListenerHandle {
 	/// Sets the location of the listener in the spatial scene.
-	pub fn set_position(&mut self, position: impl Into<Value<mint::Vector3<f32>>>, tween: Tween) {
+	pub fn set_position(
+		&mut self,
+		position: impl Into<Value<mint::Vector3<f32>>>,
+		tween: Tween,
+	) -> Trigger {
+		let finish_trigger = Trigger::new();
 		let position: Value<mint::Vector3<f32>> = position.into();
 		self.command_writers.set_position.write(ValueChangeCommand {
 			target: position.to_(),
 			tween,
-		})
+			finish_trigger: Some(finish_trigger.clone()),
+		});
+		finish_trigger
 	}
 
 	/// Sets the rotation of the listener.
@@ -35,14 +43,17 @@ impl ListenerHandle {
 		&mut self,
 		orientation: impl Into<Value<mint::Quaternion<f32>>>,
 		tween: Tween,
-	) {
+	) -> Trigger {
+		let finish_trigger = Trigger::new();
 		let orientation: Value<mint::Quaternion<f32>> = orientation.into();
 		self.command_writers
 			.set_orientation
 			.write(ValueChangeCommand {
 				target: orientation.to_(),
 				tween,
-			})
+				finish_trigger: Some(finish_trigger.clone()),
+			});
+		finish_trigger
 	}
 }
 

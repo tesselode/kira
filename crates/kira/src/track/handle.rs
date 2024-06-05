@@ -3,7 +3,7 @@ use std::{collections::HashMap, error::Error, fmt::Display, sync::Arc};
 use crate::{
 	command::{CommandWriter, ValueChangeCommand},
 	tween::{Tween, Value},
-	Volume,
+	Trigger, Volume,
 };
 
 use super::{TrackId, TrackShared};
@@ -42,11 +42,14 @@ impl TrackHandle {
 	}
 
 	/// Sets the (post-effects) volume of the mixer track.
-	pub fn set_volume(&mut self, volume: impl Into<Value<Volume>>, tween: Tween) {
+	pub fn set_volume(&mut self, volume: impl Into<Value<Volume>>, tween: Tween) -> Trigger {
+		let trigger = Trigger::new();
 		self.set_volume_command_writer.write(ValueChangeCommand {
 			target: volume.into(),
 			tween,
-		})
+			finish_trigger: Some(trigger.clone()),
+		});
+		trigger
 	}
 
 	/// Sets the volume of this track's route to another track.
@@ -58,7 +61,8 @@ impl TrackHandle {
 		to: impl Into<TrackId>,
 		volume: impl Into<Value<Volume>>,
 		tween: Tween,
-	) -> Result<(), NonexistentRoute> {
+	) -> Result<Trigger, NonexistentRoute> {
+		let trigger = Trigger::new();
 		let to = to.into();
 		self.route_set_volume_command_writers
 			.get_mut(&to)
@@ -66,8 +70,9 @@ impl TrackHandle {
 			.write(ValueChangeCommand {
 				target: volume.into(),
 				tween,
+				finish_trigger: Some(trigger.clone()),
 			});
-		Ok(())
+		Ok(trigger)
 	}
 }
 

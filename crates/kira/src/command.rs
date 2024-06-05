@@ -21,7 +21,10 @@ which Kira uses internally.
 
 use triple_buffer::{triple_buffer, Input, Output};
 
-use crate::tween::{Tween, Value};
+use crate::{
+	tween::{Tween, Value},
+	Trigger,
+};
 
 /** Writes values that can be sent to a [`CommandReader`]. */
 #[derive(Debug)]
@@ -75,6 +78,8 @@ pub struct ValueChangeCommand<T> {
 	pub target: Value<T>,
 	/// The tween to use to smoothly transition the value.
 	pub tween: Tween,
+	/// The trigger to fire when the tween finishes.
+	pub finish_trigger: Option<Trigger>,
 }
 
 /**
@@ -165,11 +170,14 @@ macro_rules! handle_param_setters {
 		paste::paste! {
 			$(
 				$(#[$m])*
-				pub fn [<set_ $name>](&mut self, $name: impl Into<$crate::tween::Value<$type>>, tween: $crate::tween::Tween) {
+				pub fn [<set_ $name>](&mut self, $name: impl Into<$crate::tween::Value<$type>>, tween: $crate::tween::Tween) -> crate::Trigger {
+					let trigger = crate::Trigger::new();
 					self.command_writers.[<set_ $name>].write($crate::command::ValueChangeCommand {
 						target: $name.into(),
 						tween,
-					})
+						finish_trigger: Some(trigger.clone()),
+					});
+					trigger
 				}
 			)*
 		}

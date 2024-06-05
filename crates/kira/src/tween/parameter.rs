@@ -10,7 +10,7 @@ use crate::{
 	command::{CommandReader, ValueChangeCommand},
 	modulator::value_provider::ModulatorValueProvider,
 	tween::{Tween, Tweenable},
-	StartTime,
+	StartTime, Trigger,
 };
 
 /// Manages and updates a value that can be smoothly transitioned
@@ -55,13 +55,14 @@ impl<T: Tweenable> Parameter<T> {
 	}
 
 	/// Starts a transition from the current value to the target value.
-	pub fn set(&mut self, target: Value<T>, tween: Tween) {
+	pub fn set(&mut self, target: Value<T>, tween: Tween, finish_trigger: Option<Trigger>) {
 		self.stagnant = false;
 		self.state = State::Tweening {
 			start: self.value(),
 			target,
 			time: 0.0,
 			tween,
+			finish_trigger,
 		};
 	}
 
@@ -71,8 +72,13 @@ impl<T: Tweenable> Parameter<T> {
 	where
 		T: Send,
 	{
-		if let Some(ValueChangeCommand { target, tween }) = command_reader.read() {
-			self.set(target, tween);
+		if let Some(ValueChangeCommand {
+			target,
+			tween,
+			finish_trigger,
+		}) = command_reader.read()
+		{
+			self.set(target, tween, finish_trigger);
 		}
 	}
 
@@ -105,6 +111,7 @@ impl<T: Tweenable> Parameter<T> {
 			target,
 			time,
 			tween,
+			finish_trigger,
 			..
 		} = &mut self.state
 		{
@@ -114,6 +121,9 @@ impl<T: Tweenable> Parameter<T> {
 			}
 			*time += dt;
 			if *time >= tween.duration.as_secs_f64() {
+				if let Some(finish_trigger) = finish_trigger {
+					finish_trigger.fire();
+				}
 				if matches!(target, Value::Fixed(_)) {
 					self.stagnant = true;
 				}
@@ -135,6 +145,7 @@ impl<T: Tweenable> Parameter<T> {
 				target,
 				time,
 				tween,
+				..
 			} => {
 				if tween.duration.is_zero() {
 					return None;
@@ -157,6 +168,7 @@ enum State<T: Tweenable> {
 		target: Value<T>,
 		time: f64,
 		tween: Tween,
+		finish_trigger: Option<Trigger>,
 	},
 }
 

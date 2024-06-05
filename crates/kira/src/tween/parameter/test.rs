@@ -30,6 +30,7 @@ fn tweening() {
 			duration: Duration::from_secs(2),
 			..Default::default()
 		},
+		None,
 	);
 
 	assert!(!parameter.update(1.0, &clock_info_provider, &modulator_value_provider));
@@ -56,6 +57,7 @@ fn waits_for_delay() {
 			duration: Duration::from_secs(1),
 			..Default::default()
 		},
+		None,
 	);
 
 	// value should not be changing yet
@@ -95,6 +97,7 @@ fn waits_for_start_time() {
 			duration: Duration::from_secs(1),
 			..Default::default()
 		},
+		None,
 	);
 
 	// value should not be changing yet
@@ -168,6 +171,7 @@ fn tweens_to_modulator_values() {
 			duration: Duration::from_secs(1),
 			..Default::default()
 		},
+		None,
 	);
 
 	for i in 1..=4 {

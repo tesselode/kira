@@ -33,7 +33,8 @@ pub use handle::*;
 pub use settings::*;
 
 use crate::{
-	command::ValueChangeCommand, command_writers_and_readers, tween::Tween, StartTime, Volume,
+	command::ValueChangeCommand, command_writers_and_readers, tween::Tween, StartTime, Trigger,
+	Volume,
 };
 
 use super::{PlaybackRate, Region};
@@ -43,9 +44,9 @@ command_writers_and_readers! {
 	set_playback_rate: ValueChangeCommand<PlaybackRate>,
 	set_panning: ValueChangeCommand<f64>,
 	set_loop_region: Option<Region>,
-	pause: Tween,
-	resume: (StartTime, Tween),
-	stop: Tween,
+	pause: (Tween, Trigger),
+	resume: (StartTime, Tween, Trigger),
+	stop: (Tween, Trigger),
 	seek_by: f64,
 	seek_to: f64,
 }

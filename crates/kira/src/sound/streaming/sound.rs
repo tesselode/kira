@@ -15,7 +15,7 @@ use crate::{
 	modulator::value_provider::ModulatorValueProvider,
 	sound::{util::create_volume_fade_parameter, PlaybackRate, PlaybackState, Sound},
 	tween::{Parameter, Tween, Value},
-	OutputDestination, StartTime, Volume,
+	OutputDestination, StartTime, Trigger, Volume,
 };
 use ringbuf::HeapConsumer;
 
@@ -156,39 +156,48 @@ impl StreamingSound {
 		(self.current_frame as f64 + self.fractional_position) / self.sample_rate as f64
 	}
 
-	fn pause(&mut self, tween: Tween) {
+	fn pause(&mut self, tween: Tween, finish_trigger: Trigger) {
 		self.set_state(PlaybackState::Pausing);
-		self.volume_fade
-			.set(Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)), tween);
+		self.volume_fade.set(
+			Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)),
+			tween,
+			Some(finish_trigger),
+		);
 	}
 
-	fn resume(&mut self, start_time: StartTime, tween: Tween) {
+	fn resume(&mut self, start_time: StartTime, tween: Tween, finish_trigger: Trigger) {
 		self.volume_fade_start_time = start_time;
 		if matches!(self.volume_fade_start_time, StartTime::Immediate) {
 			self.set_state(PlaybackState::Playing);
 		} else {
 			self.resume_queued = true;
 		}
-		self.volume_fade
-			.set(Value::Fixed(Volume::Decibels(0.0)), tween);
+		self.volume_fade.set(
+			Value::Fixed(Volume::Decibels(0.0)),
+			tween,
+			Some(finish_trigger),
+		);
 	}
 
-	fn stop(&mut self, tween: Tween) {
+	fn stop(&mut self, tween: Tween, finish_trigger: Trigger) {
 		self.set_state(PlaybackState::Stopping);
-		self.volume_fade
-			.set(Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)), tween);
+		self.volume_fade.set(
+			Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)),
+			tween,
+			Some(finish_trigger),
+		);
 	}
 
 	fn read_commands(&mut self) {
 		read_commands_into_parameters!(self, volume, playback_rate, panning);
-		if let Some(tween) = self.command_readers.pause.read() {
-			self.pause(tween);
+		if let Some((tween, finish_trigger)) = self.command_readers.pause.read() {
+			self.pause(tween, finish_trigger);
 		}
-		if let Some((start_time, tween)) = self.command_readers.resume.read() {
-			self.resume(start_time, tween);
+		if let Some((start_time, tween, finish_trigger)) = self.command_readers.resume.read() {
+			self.resume(start_time, tween, finish_trigger);
 		}
-		if let Some(tween) = self.command_readers.stop.read() {
-			self.stop(tween);
+		if let Some((tween, finish_trigger)) = self.command_readers.stop.read() {
+			self.stop(tween, finish_trigger);
 		}
 	}
 }

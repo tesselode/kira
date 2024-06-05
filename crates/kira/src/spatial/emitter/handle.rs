@@ -3,6 +3,7 @@ use std::sync::Arc;
 use crate::{
 	command::ValueChangeCommand,
 	tween::{Tween, Value},
+	Trigger,
 };
 
 use super::{CommandWriters, EmitterId, EmitterShared};
@@ -26,12 +27,19 @@ impl EmitterHandle {
 	}
 
 	/// Sets the position that audio is produced from.
-	pub fn set_position(&mut self, position: impl Into<Value<mint::Vector3<f32>>>, tween: Tween) {
+	pub fn set_position(
+		&mut self,
+		position: impl Into<Value<mint::Vector3<f32>>>,
+		tween: Tween,
+	) -> Trigger {
+		let finish_trigger = Trigger::new();
 		let position: Value<mint::Vector3<f32>> = position.into();
 		self.command_writers.set_position.write(ValueChangeCommand {
 			target: position.to_(),
 			tween,
-		})
+			finish_trigger: Some(finish_trigger.clone()),
+		});
+		finish_trigger
 	}
 }
 

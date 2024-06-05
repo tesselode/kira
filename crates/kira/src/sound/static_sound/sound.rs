@@ -18,7 +18,7 @@ use crate::{
 		Sound,
 	},
 	tween::{Parameter, Tween, Value},
-	OutputDestination, StartTime, Volume,
+	OutputDestination, StartTime, Trigger, Volume,
 };
 
 use self::resampler::Resampler;
@@ -100,30 +100,35 @@ impl StaticSound {
 		self.shared.state.store(state as u8, Ordering::SeqCst);
 	}
 
-	fn pause(&mut self, fade_out_tween: Tween) {
+	fn pause(&mut self, fade_out_tween: Tween, finish_trigger: Trigger) {
 		self.set_state(PlaybackState::Pausing);
 		self.volume_fade.set(
 			Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)),
 			fade_out_tween,
+			Some(finish_trigger),
 		);
 	}
 
-	fn resume(&mut self, start_time: StartTime, fade_in_tween: Tween) {
+	fn resume(&mut self, start_time: StartTime, fade_in_tween: Tween, finish_trigger: Trigger) {
 		self.volume_fade_start_time = start_time;
 		if matches!(self.volume_fade_start_time, StartTime::Immediate) {
 			self.set_state(PlaybackState::Playing);
 		} else {
 			self.resume_queued = true;
 		}
-		self.volume_fade
-			.set(Value::Fixed(Volume::Decibels(0.0)), fade_in_tween);
+		self.volume_fade.set(
+			Value::Fixed(Volume::Decibels(0.0)),
+			fade_in_tween,
+			Some(finish_trigger),
+		);
 	}
 
-	fn stop(&mut self, fade_out_tween: Tween) {
+	fn stop(&mut self, fade_out_tween: Tween, finish_trigger: Trigger) {
 		self.set_state(PlaybackState::Stopping);
 		self.volume_fade.set(
 			Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)),
 			fade_out_tween,
+			Some(finish_trigger),
 		);
 	}
 
@@ -200,14 +205,14 @@ impl StaticSound {
 				num_frames(&self.frames, self.slice),
 			);
 		}
-		if let Some(tween) = self.command_readers.pause.read() {
-			self.pause(tween);
+		if let Some((tween, finish_trigger)) = self.command_readers.pause.read() {
+			self.pause(tween, finish_trigger);
 		}
-		if let Some((start_time, tween)) = self.command_readers.resume.read() {
-			self.resume(start_time, tween);
+		if let Some((start_time, tween, finish_trigger)) = self.command_readers.resume.read() {
+			self.resume(start_time, tween, finish_trigger);
 		}
-		if let Some(tween) = self.command_readers.stop.read() {
-			self.stop(tween);
+		if let Some((tween, finish_trigger)) = self.command_readers.stop.read() {
+			self.stop(tween, finish_trigger);
 		}
 		if let Some(amount) = self.command_readers.seek_by.read() {
 			self.seek_by(amount);
