@@ -164,7 +164,7 @@ impl StreamingSound {
 
 	fn resume(&mut self, start_time: StartTime, tween: Tween) {
 		self.volume_fade_start_time = start_time;
-		if start_time == StartTime::Immediate {
+		if matches!(self.volume_fade_start_time, StartTime::Immediate) {
 			self.set_state(PlaybackState::Playing);
 		} else {
 			self.resume_queued = true;
@@ -225,7 +225,7 @@ impl Sound for StreamingSound {
 		self.panning
 			.update(dt, clock_info_provider, modulator_value_provider);
 		self.volume_fade_start_time.update(dt, clock_info_provider);
-		if self.volume_fade_start_time == StartTime::Immediate {
+		if matches!(self.volume_fade_start_time, StartTime::Immediate) {
 			if self.resume_queued {
 				self.resume_queued = false;
 				self.set_state(PlaybackState::Playing);
@@ -246,7 +246,7 @@ impl Sound for StreamingSound {
 		if will_never_start {
 			self.set_state(PlaybackState::Stopped);
 		}
-		if self.start_time != StartTime::Immediate {
+		if !matches!(self.start_time, StartTime::Immediate) {
 			return Frame::ZERO;
 		}
 

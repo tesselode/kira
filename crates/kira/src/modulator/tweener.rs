@@ -6,19 +6,16 @@ mod handle;
 #[cfg(test)]
 mod test;
 
-use std::{
-	sync::{
-		atomic::{AtomicBool, Ordering},
-		Arc,
-	},
-	time::Duration,
+use std::sync::{
+	atomic::{AtomicBool, Ordering},
+	Arc,
 };
 
 pub use builder::*;
 pub use handle::*;
 
 use crate::{
-	clock::clock_info::{ClockInfoProvider, WhenToStart},
+	clock::clock_info::ClockInfoProvider,
 	command_writers_and_readers,
 	tween::{Tween, Tweenable},
 	StartTime,
@@ -76,22 +73,8 @@ impl Modulator for Tweener {
 			tween,
 		} = &mut self.state
 		{
-			let started = match &mut tween.start_time {
-				StartTime::Immediate => true,
-				StartTime::Delayed(time_remaining) => {
-					if time_remaining.is_zero() {
-						true
-					} else {
-						*time_remaining =
-							time_remaining.saturating_sub(Duration::from_secs_f64(dt));
-						false
-					}
-				}
-				StartTime::ClockTime(clock_time) => {
-					clock_info_provider.when_to_start(*clock_time) == WhenToStart::Now
-				}
-			};
-			if !started {
+			tween.start_time.update(dt, clock_info_provider);
+			if !matches!(tween.start_time, StartTime::Immediate) {
 				return;
 			}
 			*time += dt;

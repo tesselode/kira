@@ -259,6 +259,7 @@ pub mod sound;
 pub mod spatial;
 mod start_time;
 pub mod track;
+mod trigger;
 pub mod tween;
 mod volume;
 
@@ -266,4 +267,5 @@ pub use error::*;
 pub use frame::*;
 pub use output_destination::*;
 pub use start_time::*;
+pub use trigger::*;
 pub use volume::*;

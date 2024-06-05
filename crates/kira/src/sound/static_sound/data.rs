@@ -27,7 +27,7 @@ use super::{
 ///
 /// These can be cheaply cloned, as the audio data is shared
 /// among all clones.
-#[derive(Clone, PartialEq)]
+#[derive(Clone)]
 pub struct StaticSoundData {
 	/// The sample rate of the audio (in Hz).
 	pub sample_rate: u32,

@@ -395,7 +395,7 @@ impl<Error: Send + 'static> StreamingSoundData<Error> {
 		let (scheduler, frame_consumer) = DecodeScheduler::new(
 			self.decoder,
 			self.slice,
-			self.settings,
+			self.settings.clone(),
 			shared.clone(),
 			decode_scheduler_command_readers,
 			error_producer,

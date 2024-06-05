@@ -5,7 +5,7 @@ use crate::{
 };
 
 /// Settings for a static sound.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct StaticSoundSettings {
 	/// When the sound should start playing.
 	pub start_time: StartTime,

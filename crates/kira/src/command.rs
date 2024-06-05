@@ -25,9 +25,9 @@ use crate::tween::{Tween, Value};
 
 /** Writes values that can be sent to a [`CommandReader`]. */
 #[derive(Debug)]
-pub struct CommandWriter<T: Send + Copy>(Input<Option<T>>);
+pub struct CommandWriter<T: Send + Clone>(Input<Option<T>>);
 
-impl<T: Send + Copy> CommandWriter<T> {
+impl<T: Send + Clone> CommandWriter<T> {
 	/** Writes a new value, overwriting any previous values. */
 	pub fn write(&mut self, command: T) {
 		self.0.write(Some(command))
@@ -36,9 +36,9 @@ impl<T: Send + Copy> CommandWriter<T> {
 
 /** Reads values that were written to a [`CommandWriter`]. */
 #[derive(Debug)]
-pub struct CommandReader<T: Send + Copy>(Output<Option<T>>);
+pub struct CommandReader<T: Send + Clone>(Output<Option<T>>);
 
-impl<T: Send + Copy> CommandReader<T> {
+impl<T: Send + Clone> CommandReader<T> {
 	/**
 	 * Returns the latest value that was written to the [`CommandWriter`],
 	 * or `None` if no new values were written since the last read.
@@ -46,7 +46,7 @@ impl<T: Send + Copy> CommandReader<T> {
 	#[must_use]
 	pub fn read(&mut self) -> Option<T> {
 		if self.0.update() {
-			*self.0.output_buffer()
+			self.0.output_buffer().clone()
 		} else {
 			None
 		}
@@ -55,7 +55,7 @@ impl<T: Send + Copy> CommandReader<T> {
 
 /** Creates a command writer/reader pair. */
 #[must_use]
-pub fn command_writer_and_reader<T: Send + Copy>() -> (CommandWriter<T>, CommandReader<T>) {
+pub fn command_writer_and_reader<T: Send + Clone>() -> (CommandWriter<T>, CommandReader<T>) {
 	let (input, output) = triple_buffer(&None);
 	(CommandWriter(input), CommandReader(output))
 }
@@ -69,7 +69,7 @@ pub fn command_writer_and_reader<T: Send + Copy>() -> (CommandWriter<T>, Command
  * `CommandReader<ValueChangeCommand>`s can be passed to [`Parameter`](crate::tween::Parameter)s
  * to quickly set the parameter to a new value read from the [`CommandReader`].
  */
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct ValueChangeCommand<T> {
 	/// The new value to set something to.
 	pub target: Value<T>,

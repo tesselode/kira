@@ -87,7 +87,7 @@ impl Default for Easing {
 }
 
 /// Describes a smooth transition between values.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct Tween {
 	/// When the motion starts.
 	pub start_time: StartTime,

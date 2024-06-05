@@ -49,13 +49,14 @@ pub(super) struct StaticSound {
 impl StaticSound {
 	#[must_use]
 	pub fn new(data: StaticSoundData, command_readers: CommandReaders) -> Self {
+		let num_frames = data.num_frames();
 		let settings = data.settings;
 		let transport = Transport::new(
-			data.settings.start_position.into_samples(data.sample_rate),
-			data.settings.loop_region,
-			data.settings.reverse,
+			settings.start_position.into_samples(data.sample_rate),
+			settings.loop_region,
+			settings.reverse,
 			data.sample_rate,
-			data.num_frames(),
+			num_frames,
 		);
 		let starting_frame_index = transport.position;
 		let position = starting_frame_index as f64 / data.sample_rate as f64;
@@ -64,8 +65,8 @@ impl StaticSound {
 			sample_rate: data.sample_rate,
 			frames: data.frames,
 			slice: data.slice,
-			reverse: data.settings.reverse,
-			output_destination: data.settings.output_destination,
+			reverse: settings.reverse,
+			output_destination: settings.output_destination,
 			state: PlaybackState::Playing,
 			start_time: settings.start_time,
 			resampler: Resampler::new(starting_frame_index),
@@ -109,7 +110,7 @@ impl StaticSound {
 
 	fn resume(&mut self, start_time: StartTime, fade_in_tween: Tween) {
 		self.volume_fade_start_time = start_time;
-		if start_time == StartTime::Immediate {
+		if matches!(self.volume_fade_start_time, StartTime::Immediate) {
 			self.set_state(PlaybackState::Playing);
 		} else {
 			self.resume_queued = true;
@@ -245,7 +246,7 @@ impl Sound for StaticSound {
 		self.panning
 			.update(dt, clock_info_provider, modulator_value_provider);
 		self.volume_fade_start_time.update(dt, clock_info_provider);
-		if self.volume_fade_start_time == StartTime::Immediate {
+		if matches!(self.volume_fade_start_time, StartTime::Immediate) {
 			if self.resume_queued {
 				self.resume_queued = false;
 				self.set_state(PlaybackState::Playing);
@@ -266,7 +267,7 @@ impl Sound for StaticSound {
 		if will_never_start {
 			self.set_state(PlaybackState::Stopped);
 		}
-		if self.start_time != StartTime::Immediate {
+		if !matches!(self.start_time, StartTime::Immediate) {
 			return Frame::ZERO;
 		}
 
