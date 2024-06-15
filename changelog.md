@@ -1,3 +1,7 @@
+# v0.9.3 - June 15, 2024
+
+- Update `glam` to 0.28.0
+
 # v0.9.2 - June 2, 2024
 
 - Fix `StaticSoundHandle/StreamingSoundHandle::pause/resume/stop` not taking effect

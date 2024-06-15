@@ -1,6 +1,6 @@
 [package]
 name = "kira"
-version = "0.9.2"
+version = "0.9.3"
 authors = ["Andrew Minnich <aminnich3@gmail.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -12,7 +12,7 @@ readme = "../../README.md"
 
 [dependencies]
 assert_no_alloc = { version = "1.1.2", optional = true }
-glam = { version = "0.27.0", features = ["mint"] }
+glam = { version = "0.28.0", features = ["mint"] }
 mint = "0.5.9"
 paste = "1.0.14"
 ringbuf = "0.3.1"
