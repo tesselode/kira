@@ -165,15 +165,14 @@ impl StaticSound {
 	}
 
 	fn push_frame_to_resampler(&mut self) {
-		let num_frames = num_frames(&self.frames, self.slice);
-		let frame = if self.transport.position >= num_frames {
-			Frame::ZERO
-		} else {
+		let frame = if self.transport.playing {
 			let frame_index: usize = self.transport.position;
 			(frame_at_index(frame_index, &self.frames, self.slice).unwrap_or_default()
 				* self.volume_fade.value().as_amplitude() as f32
 				* self.volume.value().as_amplitude() as f32)
 				.panned(self.panning.value() as f32)
+		} else {
+			Frame::ZERO
 		};
 		self.resampler.push_frame(frame, self.transport.position);
 	}
