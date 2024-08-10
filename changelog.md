@@ -2,6 +2,7 @@
 
 - Fix bug where static sounds played backwards would never be marked as finished,
 and thus never unloaded
+- Update `triple_buffer` to 8.0.0
 
 # v0.9.3 - June 15, 2024
 
