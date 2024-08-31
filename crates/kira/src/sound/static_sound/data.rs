@@ -447,7 +447,8 @@ impl Debug for FramesDebug {
 	}
 }
 
-pub(crate) fn num_frames(frames: &[Frame], slice: Option<(usize, usize)>) -> usize {
+/// Given a slice of [Frame] and [Region], returns the number of frames.
+pub fn num_frames(frames: &[Frame], slice: Option<(usize, usize)>) -> usize {
 	if let Some((start, end)) = slice {
 		end - start
 	} else {
