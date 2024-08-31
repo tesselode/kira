@@ -126,6 +126,22 @@ pub struct Region {
 	pub end: EndPosition,
 }
 
+impl Region {
+	/// Given the number of frames and a sample rate, returns audio region duration.
+	pub fn duration(&self, num_frames: usize, sample_rate: u32) -> std::time::Duration {
+		let (start, end) = self.into_samples(num_frames, sample_rate);
+		std::time::Duration::from_secs_f64((end - start) as f64 / sample_rate as f64)
+	}
+	pub(crate) fn into_samples(&self, num_frames: usize, sample_rate: u32) -> (usize, usize) {
+		let start = self.start.into_samples(sample_rate);
+		let end = match self.end {
+			EndPosition::EndOfAudio => num_frames,
+			EndPosition::Custom(end) => end.into_samples(sample_rate),
+		};
+		(start, end)
+	}
+}
+
 impl<T: Into<PlaybackPosition>> From<RangeFrom<T>> for Region {
 	fn from(range: RangeFrom<T>) -> Self {
 		Self {

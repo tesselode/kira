@@ -1,4 +1,4 @@
-use super::{EndPosition, Region};
+use super::Region;
 
 #[cfg(test)]
 mod test;
@@ -20,14 +20,8 @@ impl Transport {
 		sample_rate: u32,
 		num_frames: usize,
 	) -> Self {
-		let loop_region = loop_region.map(|loop_region| {
-			let loop_start = loop_region.start.into_samples(sample_rate);
-			let loop_end = match loop_region.end {
-				EndPosition::EndOfAudio => num_frames,
-				EndPosition::Custom(end_position) => end_position.into_samples(sample_rate),
-			};
-			(loop_start, loop_end)
-		});
+		let loop_region =
+			loop_region.map(|loop_region| loop_region.into_samples(num_frames, sample_rate));
 		Self {
 			position: if reverse {
 				num_frames - 1 - start_position
@@ -45,14 +39,8 @@ impl Transport {
 		sample_rate: u32,
 		num_frames: usize,
 	) {
-		self.loop_region = loop_region.map(|loop_region| {
-			let loop_start = loop_region.start.into_samples(sample_rate);
-			let loop_end = match loop_region.end {
-				EndPosition::EndOfAudio => num_frames,
-				EndPosition::Custom(end_position) => end_position.into_samples(sample_rate),
-			};
-			(loop_start, loop_end)
-		});
+		self.loop_region =
+			loop_region.map(|loop_region| loop_region.into_samples(num_frames, sample_rate));
 	}
 
 	pub fn increment_position(&mut self, num_frames: usize) {

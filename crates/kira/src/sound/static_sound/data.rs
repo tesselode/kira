@@ -12,9 +12,7 @@ use std::{
 
 use crate::{
 	frame::Frame,
-	sound::{
-		EndPosition, IntoOptionalRegion, PlaybackPosition, PlaybackRate, Region, Sound, SoundData,
-	},
+	sound::{IntoOptionalRegion, PlaybackPosition, PlaybackRate, Sound, SoundData},
 	tween::{Tween, Value},
 	OutputDestination, StartTime, Volume,
 };
@@ -385,14 +383,9 @@ impl StaticSoundData {
 	#[must_use = "This method returns a modified StaticSoundData and does not mutate the original value"]
 	pub fn slice(&self, region: impl IntoOptionalRegion) -> Self {
 		let mut new = self.clone();
-		new.slice = region.into_optional_region().map(|Region { start, end }| {
-			let start = start.into_samples(self.sample_rate);
-			let end = match end {
-				EndPosition::EndOfAudio => self.frames.len(),
-				EndPosition::Custom(end) => end.into_samples(self.sample_rate),
-			};
-			(start, end)
-		});
+		new.slice = region
+			.into_optional_region()
+			.map(|region| region.into_samples(self.frames.len(), self.sample_rate));
 		new
 	}
 

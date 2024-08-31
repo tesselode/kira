@@ -3,9 +3,7 @@ mod test;
 
 use std::{sync::Arc, time::Duration};
 
-use crate::sound::{
-	EndPosition, IntoOptionalRegion, PlaybackPosition, PlaybackRate, Region, SoundData,
-};
+use crate::sound::{IntoOptionalRegion, PlaybackPosition, PlaybackRate, SoundData};
 use crate::tween::{Tween, Value};
 use crate::{OutputDestination, StartTime, Volume};
 use ringbuf::HeapRb;
@@ -325,13 +323,8 @@ impl<Error: Send> StreamingSoundData<Error> {
 	*/
 	#[must_use = "This method consumes self and returns a modified StreamingSoundData, so the return value should be used"]
 	pub fn slice(mut self, region: impl IntoOptionalRegion) -> Self {
-		self.slice = region.into_optional_region().map(|Region { start, end }| {
-			let start = start.into_samples(self.decoder.sample_rate());
-			let end = match end {
-				EndPosition::EndOfAudio => self.decoder.num_frames(),
-				EndPosition::Custom(end) => end.into_samples(self.decoder.sample_rate()),
-			};
-			(start, end)
+		self.slice = region.into_optional_region().map(|region| {
+			region.into_samples(self.decoder.num_frames(), self.decoder.sample_rate())
 		});
 		self
 	}
