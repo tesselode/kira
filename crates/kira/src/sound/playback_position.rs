@@ -12,8 +12,10 @@ pub enum PlaybackPosition {
 }
 
 impl PlaybackPosition {
+	/// Given a sample rate,
+	/// consumes this [PlaybackPosition] and returns its [samples][PlaybackPosition::Samples].
 	#[must_use]
-	pub(crate) fn into_samples(self, sample_rate: u32) -> usize {
+	pub fn into_samples(self, sample_rate: u32) -> usize {
 		match self {
 			PlaybackPosition::Seconds(seconds) => (seconds * sample_rate as f64).round() as usize,
 			PlaybackPosition::Samples(samples) => samples,
