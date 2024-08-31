@@ -335,6 +335,11 @@ impl<Error: Send> StreamingSoundData<Error> {
 		});
 		self
 	}
+
+	/// Returns the sample rate from the decoder.
+	pub fn sample_rate(&self) -> u32 {
+		self.decoder.sample_rate()
+	}
 }
 
 impl<T: Send> StreamingSoundData<T> {}

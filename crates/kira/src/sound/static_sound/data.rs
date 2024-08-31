@@ -408,6 +408,11 @@ impl StaticSoundData {
 			},
 		)
 	}
+
+	/// Returns the sample rate of the audio.
+	pub fn sample_rate(&self) -> u32 {
+		self.sample_rate
+	}
 }
 
 impl SoundData for StaticSoundData {
