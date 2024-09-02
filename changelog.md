@@ -1,3 +1,7 @@
+# v0.9.5 - September 2, 2024
+
+- Update `glam` to 0.29.0
+
 # v0.9.4 - August 8, 2024
 
 - Fix bug where static sounds played backwards would never be marked as finished,
