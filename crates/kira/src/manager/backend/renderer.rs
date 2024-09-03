@@ -10,6 +10,7 @@ use crate::{
 
 use super::resources::Resources;
 
+#[derive(Debug)]
 pub(crate) struct RendererShared {
 	pub(crate) sample_rate: AtomicU32,
 }
@@ -36,17 +37,12 @@ pub struct Renderer {
 
 impl Renderer {
 	#[must_use]
-	pub(crate) fn new(sample_rate: u32, resources: Resources) -> Self {
+	pub(crate) fn new(shared: Arc<RendererShared>, resources: Resources) -> Self {
 		Self {
-			dt: 1.0 / sample_rate as f64,
-			shared: Arc::new(RendererShared::new(sample_rate)),
+			dt: 1.0 / shared.sample_rate.load(Ordering::SeqCst) as f64,
+			shared,
 			resources,
 		}
-	}
-
-	#[must_use]
-	pub(crate) fn shared(&self) -> Arc<RendererShared> {
-		self.shared.clone()
 	}
 
 	/// Called by the backend when the sample rate of the
@@ -60,7 +56,6 @@ impl Renderer {
 	/// Called by the backend when it's time to process
 	/// a new batch of samples.
 	pub fn on_start_processing(&mut self) {
-		self.resources.sounds.on_start_processing();
 		self.resources.mixer.on_start_processing();
 		self.resources.clocks.on_start_processing();
 		self.resources.spatial_scenes.on_start_processing();
@@ -78,23 +73,16 @@ impl Renderer {
 			self.dt,
 			&ModulatorValueProvider::new(&self.resources.modulators.0.resources),
 		);
-		self.resources.sounds.process(
-			self.dt,
-			&ClockInfoProvider::new(&self.resources.clocks.0.resources),
-			&ModulatorValueProvider::new(&self.resources.modulators.0.resources),
-			&mut self.resources.mixer,
-			&mut self.resources.spatial_scenes,
-		);
 		self.resources.spatial_scenes.process(
 			self.dt,
 			&ClockInfoProvider::new(&self.resources.clocks.0.resources),
 			&ModulatorValueProvider::new(&self.resources.modulators.0.resources),
-			&mut self.resources.mixer,
 		);
 		self.resources.mixer.process(
 			self.dt,
 			&ClockInfoProvider::new(&self.resources.clocks.0.resources),
 			&ModulatorValueProvider::new(&self.resources.modulators.0.resources),
+			&self.resources.spatial_scenes,
 		)
 	}
 }

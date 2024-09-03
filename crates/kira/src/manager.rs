@@ -6,37 +6,38 @@
 //! [`AudioManager`] is dropped, its audio output will be stopped.
 
 pub mod backend;
-pub mod error;
 mod settings;
 
 pub use backend::DefaultBackend;
 pub use settings::*;
 
-use std::sync::{atomic::Ordering, Arc};
+use std::sync::{
+	atomic::{AtomicU32, Ordering},
+	Arc,
+};
 
 use crate::{
 	clock::{Clock, ClockHandle, ClockId, ClockSpeed},
 	modulator::{ModulatorBuilder, ModulatorId},
 	sound::SoundData,
 	spatial::scene::{SpatialScene, SpatialSceneHandle, SpatialSceneId, SpatialSceneSettings},
-	track::{SubTrackId, TrackBuilder, TrackHandle, TrackId},
+	track::{
+		MainTrackHandle, SendTrackBuilder, SendTrackHandle, SendTrackId, TrackBuilder, TrackHandle,
+	},
 	tween::Value,
-	ResourceLimitReached,
+	PlaySoundError, ResourceLimitReached,
 };
 
-use self::{
-	backend::{
-		resources::{create_resources, ResourceControllers},
-		Backend, Renderer, RendererShared,
-	},
-	error::PlaySoundError,
+use self::backend::{
+	resources::{create_resources, ResourceControllers},
+	Backend, Renderer, RendererShared,
 };
 
 /// Controls audio from gameplay code.
 pub struct AudioManager<B: Backend = DefaultBackend> {
 	backend: B,
-	renderer_shared: Arc<RendererShared>,
 	resource_controllers: ResourceControllers,
+	renderer_shared: Arc<RendererShared>,
 }
 
 impl<B: Backend> AudioManager<B> {
@@ -73,18 +74,20 @@ impl<B: Backend> AudioManager<B> {
 	*/
 	pub fn new(settings: AudioManagerSettings<B>) -> Result<Self, B::Error> {
 		let (mut backend, sample_rate) = B::setup(settings.backend_settings)?;
+		let renderer_shared = Arc::new(RendererShared {
+			sample_rate: AtomicU32::new(sample_rate),
+		});
 		let (resources, resource_controllers) = create_resources(
 			settings.capacities,
 			settings.main_track_builder,
 			sample_rate,
 		);
-		let renderer = Renderer::new(sample_rate, resources);
-		let renderer_shared = renderer.shared();
+		let renderer = Renderer::new(renderer_shared.clone(), resources);
 		backend.start(renderer)?;
 		Ok(Self {
 			backend,
-			renderer_shared,
 			resource_controllers,
+			renderer_shared,
 		})
 	}
 
@@ -112,14 +115,7 @@ impl<B: Backend> AudioManager<B> {
 		&mut self,
 		sound_data: D,
 	) -> Result<D::Handle, PlaySoundError<D::Error>> {
-		let (sound, handle) = sound_data
-			.into_sound()
-			.map_err(PlaySoundError::IntoSoundError)?;
-		self.resource_controllers
-			.sound_controller
-			.insert(sound)
-			.map_err(|_| PlaySoundError::SoundLimitReached)?;
-		Ok(handle)
+		self.main_track().play(sound_data)
 	}
 
 	/// Creates a mixer sub-track.
@@ -127,15 +123,28 @@ impl<B: Backend> AudioManager<B> {
 		&mut self,
 		builder: TrackBuilder,
 	) -> Result<TrackHandle, ResourceLimitReached> {
-		let key = self
-			.resource_controllers
-			.sub_track_controller
-			.try_reserve()?;
-		let id = TrackId::Sub(SubTrackId(key));
-		let (mut track, handle) = builder.build(id);
+		let (mut track, handle) = builder.build(self.renderer_shared.clone());
 		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
 		self.resource_controllers
 			.sub_track_controller
+			.insert(track)?;
+		Ok(handle)
+	}
+
+	/// Creates a mixer send track.
+	pub fn add_send_track(
+		&mut self,
+		builder: SendTrackBuilder,
+	) -> Result<SendTrackHandle, ResourceLimitReached> {
+		let key = self
+			.resource_controllers
+			.send_track_controller
+			.try_reserve()?;
+		let id = SendTrackId(key);
+		let (mut track, handle) = builder.build(id);
+		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
+		self.resource_controllers
+			.send_track_controller
 			.insert_with_key(key, track);
 		Ok(handle)
 	}
@@ -246,20 +255,20 @@ impl<B: Backend> AudioManager<B> {
 	```
 	*/
 	#[must_use]
-	pub fn main_track(&mut self) -> &mut TrackHandle {
+	pub fn main_track(&mut self) -> &mut MainTrackHandle {
 		&mut self.resource_controllers.main_track_handle
-	}
-
-	/// Returns the number of sounds that can be loaded at a time.
-	#[must_use]
-	pub fn sound_capacity(&self) -> u16 {
-		self.resource_controllers.sound_controller.capacity()
 	}
 
 	/// Returns the number of mixer sub-tracks that can exist at a time.
 	#[must_use]
 	pub fn sub_track_capacity(&self) -> u16 {
 		self.resource_controllers.sub_track_controller.capacity()
+	}
+
+	/// Returns the number of mixer send tracks that can exist at a time.
+	#[must_use]
+	pub fn send_track_capacity(&self) -> u16 {
+		self.resource_controllers.send_track_controller.capacity()
 	}
 
 	/// Returns the number of clocks that can exist at a time.
@@ -282,16 +291,16 @@ impl<B: Backend> AudioManager<B> {
 		self.resource_controllers.modulator_controller.capacity()
 	}
 
-	/// Returns the number of sounds that are currently loaded.
-	#[must_use]
-	pub fn num_sounds(&self) -> u16 {
-		self.resource_controllers.sound_controller.len()
-	}
-
 	/// Returns the number of mixer sub-tracks that currently exist.
 	#[must_use]
 	pub fn num_sub_tracks(&self) -> u16 {
 		self.resource_controllers.sub_track_controller.len()
+	}
+
+	/// Returns the number of mixer send tracks that currently exist.
+	#[must_use]
+	pub fn num_send_tracks(&self) -> u16 {
+		self.resource_controllers.send_track_controller.len()
 	}
 
 	/// Returns the number of clocks that currently exist.

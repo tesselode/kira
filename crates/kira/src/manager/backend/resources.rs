@@ -1,7 +1,6 @@
 pub(crate) mod clocks;
 pub(crate) mod mixer;
 pub(crate) mod modulators;
-pub(crate) mod sounds;
 pub(crate) mod spatial_scenes;
 
 #[cfg(test)]
@@ -14,23 +13,16 @@ use std::{
 
 use crate::{
 	arena::{Arena, Controller, Key},
+	track::{MainTrackBuilder, MainTrackHandle, SendTrack, Track},
 	ResourceLimitReached,
 };
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 
 use crate::{
-	clock::Clock,
-	manager::settings::Capacities,
-	modulator::Modulator,
-	sound::Sound,
-	spatial::scene::SpatialScene,
-	track::{Track, TrackBuilder, TrackHandle},
+	clock::Clock, manager::settings::Capacities, modulator::Modulator, spatial::scene::SpatialScene,
 };
 
-use self::{
-	clocks::Clocks, mixer::Mixer, modulators::Modulators, sounds::Sounds,
-	spatial_scenes::SpatialScenes,
-};
+use self::{clocks::Clocks, mixer::Mixer, modulators::Modulators, spatial_scenes::SpatialScenes};
 
 pub(crate) struct ResourceStorage<T> {
 	pub(crate) resources: Arena<T>,
@@ -74,13 +66,28 @@ impl<T> ResourceStorage<T> {
 	}
 
 	#[must_use]
+	pub fn get(&self, key: Key) -> Option<&T> {
+		self.resources.get(key)
+	}
+
+	#[must_use]
 	pub fn get_mut(&mut self, key: Key) -> Option<&mut T> {
 		self.resources.get_mut(key)
 	}
 
 	#[must_use]
+	pub fn iter(&self) -> crate::arena::iter::Iter<T> {
+		self.resources.iter()
+	}
+
+	#[must_use]
 	pub fn iter_mut(&mut self) -> crate::arena::iter::IterMut<T> {
 		self.resources.iter_mut()
+	}
+
+	#[must_use]
+	pub fn is_empty(&self) -> bool {
+		self.resources.is_empty()
 	}
 }
 
@@ -138,6 +145,7 @@ impl<T> SelfReferentialResourceStorage<T> {
 		}
 	}
 
+	#[cfg(test)]
 	#[must_use]
 	pub fn get_mut(&mut self, key: Key) -> Option<&mut T> {
 		self.resources.get_mut(key)
@@ -150,14 +158,6 @@ impl<T> SelfReferentialResourceStorage<T> {
 
 	pub fn for_each(&mut self, mut f: impl FnMut(&mut T, &mut Arena<T>)) {
 		for key in &self.keys {
-			std::mem::swap(&mut self.resources[*key], &mut self.dummy);
-			f(&mut self.dummy, &mut self.resources);
-			std::mem::swap(&mut self.resources[*key], &mut self.dummy);
-		}
-	}
-
-	pub fn for_each_rev(&mut self, mut f: impl FnMut(&mut T, &mut Arena<T>)) {
-		for key in self.keys.iter().rev() {
 			std::mem::swap(&mut self.resources[*key], &mut self.dummy);
 			f(&mut self.dummy, &mut self.resources);
 			std::mem::swap(&mut self.resources[*key], &mut self.dummy);
@@ -266,7 +266,6 @@ impl Debug for HeapConsumerDebug {
 }
 
 pub(crate) struct Resources {
-	pub sounds: Sounds,
 	pub mixer: Mixer,
 	pub clocks: Clocks,
 	pub spatial_scenes: SpatialScenes,
@@ -274,22 +273,22 @@ pub(crate) struct Resources {
 }
 
 pub(crate) struct ResourceControllers {
-	pub sound_controller: ResourceController<Box<dyn Sound>>,
 	pub sub_track_controller: ResourceController<Track>,
+	pub send_track_controller: ResourceController<SendTrack>,
 	pub clock_controller: ResourceController<Clock>,
 	pub spatial_scene_controller: ResourceController<SpatialScene>,
 	pub modulator_controller: ResourceController<Box<dyn Modulator>>,
-	pub main_track_handle: TrackHandle,
+	pub main_track_handle: MainTrackHandle,
 }
 
 pub(crate) fn create_resources(
 	capacities: Capacities,
-	main_track_builder: TrackBuilder,
+	main_track_builder: MainTrackBuilder,
 	sample_rate: u32,
 ) -> (Resources, ResourceControllers) {
-	let (sounds, sound_controller) = Sounds::new(capacities.sound_capacity);
-	let (mixer, sub_track_controller, main_track_handle) = Mixer::new(
+	let (mixer, sub_track_controller, send_track_controller, main_track_handle) = Mixer::new(
 		capacities.sub_track_capacity,
+		capacities.send_track_capacity,
 		sample_rate,
 		main_track_builder,
 	);
@@ -299,15 +298,14 @@ pub(crate) fn create_resources(
 	let (modulators, modulator_controller) = Modulators::new(capacities.modulator_capacity);
 	(
 		Resources {
-			sounds,
 			mixer,
 			clocks,
 			spatial_scenes,
 			modulators,
 		},
 		ResourceControllers {
-			sound_controller,
 			sub_track_controller,
+			send_track_controller,
 			clock_controller,
 			spatial_scene_controller,
 			modulator_controller,

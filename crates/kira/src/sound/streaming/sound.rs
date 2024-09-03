@@ -15,7 +15,7 @@ use crate::{
 	modulator::value_provider::ModulatorValueProvider,
 	sound::{util::create_volume_fade_parameter, PlaybackRate, PlaybackState, Sound},
 	tween::{Parameter, Tween, Value},
-	OutputDestination, StartTime, Volume,
+	StartTime, Volume,
 };
 use ringbuf::HeapConsumer;
 
@@ -74,7 +74,6 @@ pub(crate) struct StreamingSound {
 	command_readers: CommandReaders,
 	sample_rate: u32,
 	frame_consumer: HeapConsumer<TimestampedFrame>,
-	output_destination: OutputDestination,
 	start_time: StartTime,
 	state: PlaybackState,
 	volume_fade: Parameter<Volume>,
@@ -107,7 +106,6 @@ impl StreamingSound {
 			command_readers,
 			sample_rate,
 			frame_consumer,
-			output_destination: settings.output_destination,
 			start_time: settings.start_time,
 			state: PlaybackState::Playing,
 			volume_fade: create_volume_fade_parameter(settings.fade_in_tween),
@@ -194,10 +192,6 @@ impl StreamingSound {
 }
 
 impl Sound for StreamingSound {
-	fn output_destination(&mut self) -> OutputDestination {
-		self.output_destination
-	}
-
 	fn on_start_processing(&mut self) {
 		self.update_current_frame();
 		self.shared

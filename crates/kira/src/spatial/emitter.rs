@@ -13,7 +13,10 @@ use std::sync::{
 	Arc,
 };
 
-use crate::arena::Key;
+use crate::{
+	manager::backend::resources::{ResourceController, ResourceStorage},
+	sound::Sound,
+};
 use glam::Vec3;
 
 use crate::{
@@ -26,19 +29,16 @@ use crate::{
 	tween::{Easing, Parameter, Value},
 };
 
-use super::scene::SpatialSceneId;
-
 pub(crate) struct Emitter {
 	command_readers: CommandReaders,
 	shared: Arc<EmitterShared>,
+	sounds: ResourceStorage<Box<dyn Sound>>,
 	position: Parameter<Vec3>,
 	distances: EmitterDistances,
 	attenuation_function: Option<Easing>,
 	enable_spatialization: bool,
 	persist_until_sounds_finish: bool,
-	input: Frame,
-	used_this_frame: bool,
-	finished: bool,
+	output: Frame,
 }
 
 impl Emitter {
@@ -47,24 +47,27 @@ impl Emitter {
 		command_readers: CommandReaders,
 		position: Value<Vec3>,
 		settings: EmitterSettings,
-	) -> Self {
-		Self {
-			command_readers,
-			shared: Arc::new(EmitterShared::new()),
-			position: Parameter::new(position, Vec3::ZERO),
-			distances: settings.distances,
-			attenuation_function: settings.attenuation_function,
-			enable_spatialization: settings.enable_spatialization,
-			persist_until_sounds_finish: settings.persist_until_sounds_finish,
-			input: Frame::ZERO,
-			used_this_frame: false,
-			finished: false,
-		}
+	) -> (Self, ResourceController<Box<dyn Sound>>) {
+		let (sounds, sound_controller) = ResourceStorage::new(settings.sound_capacity);
+		(
+			Self {
+				command_readers,
+				shared: Arc::new(EmitterShared::new()),
+				sounds,
+				position: Parameter::new(position, Vec3::ZERO),
+				distances: settings.distances,
+				attenuation_function: settings.attenuation_function,
+				enable_spatialization: settings.enable_spatialization,
+				persist_until_sounds_finish: settings.persist_until_sounds_finish,
+				output: Frame::ZERO,
+			},
+			sound_controller,
+		)
 	}
 
 	#[must_use]
 	pub fn output(&self) -> Frame {
-		self.input
+		self.output
 	}
 
 	#[must_use]
@@ -94,27 +97,22 @@ impl Emitter {
 
 	#[must_use]
 	pub fn finished(&self) -> bool {
-		self.finished
-	}
-
-	pub fn add_input(&mut self, input: Frame) {
-		self.input += input;
-		self.used_this_frame = true;
+		if self.persist_until_sounds_finish {
+			self.shared().is_marked_for_removal() && self.sounds.is_empty()
+		} else {
+			self.shared().is_marked_for_removal()
+		}
 	}
 
 	pub fn on_start_processing(&mut self) {
+		self.sounds.remove_and_add(|sound| sound.finished());
+		for (_, sound) in &mut self.sounds {
+			sound.on_start_processing();
+		}
 		read_commands_into_parameters!(self, position);
 	}
 
-	pub fn after_process(&mut self) {
-		if self.should_be_finished() {
-			self.finished = true;
-		}
-		self.input = Frame::ZERO;
-		self.used_this_frame = false;
-	}
-
-	pub fn update(
+	pub fn process(
 		&mut self,
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
@@ -122,31 +120,10 @@ impl Emitter {
 	) {
 		self.position
 			.update(dt, clock_info_provider, modulator_value_provider);
-	}
-
-	#[must_use]
-	fn should_be_finished(&self) -> bool {
-		if !self.shared.is_marked_for_removal() {
-			return false;
+		self.output = Frame::ZERO;
+		for (_, sound) in &mut self.sounds {
+			self.output += sound.process(dt, clock_info_provider, modulator_value_provider);
 		}
-		if self.persist_until_sounds_finish && self.used_this_frame {
-			return false;
-		}
-		true
-	}
-}
-
-/// A unique identifier for an emitter.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct EmitterId {
-	pub(crate) key: Key,
-	pub(crate) scene_id: SpatialSceneId,
-}
-
-impl EmitterId {
-	/// Returns the ID of the spatial scene this emitter belongs to.
-	pub fn scene(&self) -> SpatialSceneId {
-		self.scene_id
 	}
 }
 

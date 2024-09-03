@@ -34,7 +34,6 @@ fn sounds(c: &mut Criterion) {
 		let mut manager = AudioManager::<MockBackend>::new(AudioManagerSettings {
 			capacities: Capacities {
 				command_capacity: NUM_SOUNDS as usize,
-				sound_capacity: NUM_SOUNDS,
 				..Default::default()
 			},
 			backend_settings: MockBackendSettings {
@@ -60,7 +59,6 @@ fn sounds(c: &mut Criterion) {
 		let mut manager = AudioManager::<MockBackend>::new(AudioManagerSettings {
 			capacities: Capacities {
 				command_capacity: NUM_SOUNDS as usize,
-				sound_capacity: NUM_SOUNDS,
 				..Default::default()
 			},
 			backend_settings: MockBackendSettings {

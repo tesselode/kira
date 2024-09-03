@@ -254,7 +254,6 @@ mod error;
 mod frame;
 pub mod manager;
 pub mod modulator;
-mod output_destination;
 pub mod sound;
 pub mod spatial;
 mod start_time;
@@ -264,6 +263,5 @@ mod volume;
 
 pub use error::*;
 pub use frame::*;
-pub use output_destination::*;
 pub use start_time::*;
 pub use volume::*;
