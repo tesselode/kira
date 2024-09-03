@@ -45,5 +45,5 @@ fn streaming_sound_stops_on_error() {
 	manager.backend_mut().on_start_processing();
 	assert_eq!(sound.state(), PlaybackState::Stopped);
 	assert_eq!(sound.pop_error(), Some(MockDecoderError));
-	assert_eq!(manager.num_sounds(), 0);
+	assert_eq!(manager.main_track().num_sounds(), 0);
 }

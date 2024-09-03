@@ -37,7 +37,7 @@ pub use playback_rate::*;
 
 use crate::{
 	clock::clock_info::ClockInfoProvider, frame::Frame,
-	modulator::value_provider::ModulatorValueProvider, OutputDestination,
+	modulator::value_provider::ModulatorValueProvider,
 };
 
 /// A source of audio that is loaded, but not yet playing.
@@ -65,13 +65,6 @@ pub trait SoundData {
 /// or deallocate memory.
 #[allow(unused_variables)]
 pub trait Sound: Send {
-	/// Returns the destination that this sound's audio should be routed to.
-	///
-	/// This will typically be set by the user with a settings struct that's passed
-	/// to the [`SoundData`] implementor.
-	#[must_use]
-	fn output_destination(&mut self) -> OutputDestination;
-
 	/// Called whenever a new batch of audio samples is requested by the backend.
 	///
 	/// This is a good place to put code that needs to run fairly frequently,

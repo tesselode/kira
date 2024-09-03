@@ -1,94 +1,43 @@
-use std::{collections::HashMap, sync::Arc};
-
 use crate::{
 	command::command_writer_and_reader,
 	effect::EffectBuilder,
-	manager::backend::{resources::ResourceStorage, RendererShared},
+	manager::backend::resources::ResourceStorage,
 	tween::{Parameter, Value},
 	Volume,
 };
 
-use super::{Effect, SendTrackId, SendTrackRoute, Track, TrackHandle, TrackShared};
+use super::{Effect, MainTrack, MainTrackHandle};
 
-/// Configures a mixer track.
-pub struct TrackBuilder {
+/// Configures the main mixer track.
+pub struct MainTrackBuilder {
 	/// The volume of the track.
 	pub(crate) volume: Value<Volume>,
 	/// The effects that should be applied to the input audio
 	/// for this track.
 	pub(crate) effects: Vec<Box<dyn Effect>>,
-	/// The number of child tracks that can be added to this track.
-	pub(crate) sub_track_capacity: u16,
 	/// The maximum number of sounds that can be played simultaneously on this track.
 	pub(crate) sound_capacity: u16,
 	/// The number of spatial scene listeners that can be added to this track.
 	pub(crate) listener_capacity: u16,
-	pub(crate) sends: HashMap<SendTrackId, Value<Volume>>,
 }
 
-impl TrackBuilder {
-	/// Creates a new [`TrackBuilder`] with the default settings.
+impl MainTrackBuilder {
+	/// Creates a new [`MainTrackBuilder`] with the default settings.
 	#[must_use]
 	pub fn new() -> Self {
 		Self {
 			volume: Value::Fixed(Volume::Amplitude(1.0)),
 			effects: vec![],
-			sub_track_capacity: 16,
 			sound_capacity: 128,
 			listener_capacity: 8,
-			sends: HashMap::new(),
 		}
 	}
 
-	/**
-	Sets the volume of the track.
-
-	# Examples
-
-	Set the volume as a factor:
-
-	```
-	# use kira::track::TrackBuilder;
-	let builder = TrackBuilder::new().volume(0.5);
-	```
-
-	Set the volume as a gain in decibels:
-
-	```
-	# use kira::track::TrackBuilder;
-	let builder = TrackBuilder::new().volume(kira::Volume::Decibels(-6.0));
-	```
-
-	Link the volume to a modulator:
-
-	```no_run
-	use kira::{
-		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
-		modulator::tweener::TweenerBuilder,
-		track::TrackBuilder,
-	};
-
-	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	let tweener = manager.add_modulator(TweenerBuilder {
-		initial_value: 0.5,
-	})?;
-	let builder = TrackBuilder::new().volume(&tweener);
-	# Result::<(), Box<dyn std::error::Error>>::Ok(())
-	```
-	*/
+	/// Sets the volume of the main mixer track.
 	#[must_use = "This method consumes self and returns a modified TrackBuilder, so the return value should be used"]
 	pub fn volume(self, volume: impl Into<Value<Volume>>) -> Self {
 		Self {
 			volume: volume.into(),
-			..self
-		}
-	}
-
-	/// Sets the maximum number of sub-tracks this track can have.
-	#[must_use = "This method consumes self and returns a modified TrackBuilder, so the return value should be used"]
-	pub fn sub_track_capacity(self, capacity: u16) -> Self {
-		Self {
-			sub_track_capacity: capacity,
 			..self
 		}
 	}
@@ -109,15 +58,6 @@ impl TrackBuilder {
 			listener_capacity: capacity,
 			..self
 		}
-	}
-
-	pub fn with_send(
-		mut self,
-		track: impl Into<SendTrackId>,
-		volume: impl Into<Value<Volume>>,
-	) -> Self {
-		self.sends.insert(track.into(), volume.into());
-		self
 	}
 
 	/**
@@ -217,50 +157,27 @@ impl TrackBuilder {
 	}
 
 	#[must_use]
-	pub(crate) fn build(self, renderer_shared: Arc<RendererShared>) -> (Track, TrackHandle) {
+	pub(crate) fn build(self) -> (MainTrack, MainTrackHandle) {
 		let (set_volume_command_writer, set_volume_command_reader) = command_writer_and_reader();
-		let shared = Arc::new(TrackShared::new());
 		let (sounds, sound_controller) = ResourceStorage::new(self.sound_capacity);
 		let (listeners, listener_controller) = ResourceStorage::new(self.listener_capacity);
-		let (sub_tracks, sub_track_controller) = ResourceStorage::new(self.sub_track_capacity);
-		let mut sends = vec![];
-		let mut send_volume_command_writers = HashMap::new();
-		for (send_track_id, volume) in self.sends {
-			let (set_volume_command_writer, set_volume_command_reader) =
-				command_writer_and_reader();
-			sends.push((
-				send_track_id,
-				SendTrackRoute {
-					volume: Parameter::new(volume, Volume::Amplitude(1.0)),
-					set_volume_command_reader,
-				},
-			));
-			send_volume_command_writers.insert(send_track_id, set_volume_command_writer);
-		}
-		let track = Track {
-			shared: shared.clone(),
+		let track = MainTrack {
 			volume: Parameter::new(self.volume, Volume::Amplitude(1.0)),
 			set_volume_command_reader,
 			sounds,
 			listeners,
-			sub_tracks,
 			effects: self.effects,
-			sends,
 		};
-		let handle = TrackHandle {
-			renderer_shared,
-			shared: Some(shared),
+		let handle = MainTrackHandle {
 			set_volume_command_writer,
 			sound_controller,
 			listener_controller,
-			sub_track_controller,
-			send_volume_command_writers,
 		};
 		(track, handle)
 	}
 }
 
-impl Default for TrackBuilder {
+impl Default for MainTrackBuilder {
 	fn default() -> Self {
 		Self::new()
 	}

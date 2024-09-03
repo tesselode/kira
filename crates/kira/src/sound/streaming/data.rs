@@ -7,7 +7,7 @@ use crate::sound::{
 	EndPosition, IntoOptionalRegion, PlaybackPosition, PlaybackRate, Region, SoundData,
 };
 use crate::tween::{Tween, Value};
-use crate::{OutputDestination, StartTime, Volume};
+use crate::{StartTime, Volume};
 use ringbuf::HeapRb;
 
 use super::sound::Shared;
@@ -235,52 +235,6 @@ impl<Error: Send> StreamingSoundData<Error> {
 	#[must_use = "This method consumes self and returns a modified StreamingSoundData, so the return value should be used"]
 	pub fn panning(mut self, panning: impl Into<Value<f64>>) -> Self {
 		self.settings.panning = panning.into();
-		self
-	}
-
-	/**
-	Sets the destination that this sound should be routed to.
-
-	# Examples
-
-	Set the output destination of a sound to a mixer track:
-
-	```no_run
-	use kira::{
-		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
-		track::TrackBuilder,
-		sound::streaming::StreamingSoundData,
-	};
-
-	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	let sub_track = manager.add_sub_track(TrackBuilder::new())?;
-	let sound = StreamingSoundData::from_file("sound.ogg")?.output_destination(&sub_track);
-	# Result::<(), Box<dyn std::error::Error>>::Ok(())
-	```
-
-	Set the output destination of a sound to an emitter in a spatial scene:
-
-	```no_run
-	use kira::{
-		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
-		spatial::{scene::SpatialSceneSettings, emitter::EmitterSettings},
-		sound::streaming::StreamingSoundData,
-	};
-
-	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	let mut scene = manager.add_spatial_scene(SpatialSceneSettings::default())?;
-	let emitter = scene.add_emitter(mint::Vector3 {
-		x: 0.0,
-		y: 0.0,
-		z: 0.0,
-	}, EmitterSettings::default())?;
-	let sound = StreamingSoundData::from_file("sound.ogg")?.output_destination(&emitter);
-	# Result::<(), Box<dyn std::error::Error>>::Ok(())
-	```
-	*/
-	#[must_use = "This method consumes self and returns a modified StreamingSoundData, so the return value should be used"]
-	pub fn output_destination(mut self, output_destination: impl Into<OutputDestination>) -> Self {
-		self.settings.output_destination = output_destination.into();
 		self
 	}
 

@@ -4,7 +4,7 @@ use crate::{
 	spatial::scene::{SpatialScene, SpatialSceneId},
 };
 
-use super::{mixer::Mixer, ResourceController, ResourceStorage};
+use super::{ResourceController, ResourceStorage};
 
 pub(crate) struct SpatialScenes(ResourceStorage<SpatialScene>);
 
@@ -16,8 +16,8 @@ impl SpatialScenes {
 	}
 
 	#[must_use]
-	pub fn get_mut(&mut self, id: SpatialSceneId) -> Option<&mut SpatialScene> {
-		self.0.get_mut(id.0)
+	pub fn get(&self, id: SpatialSceneId) -> Option<&SpatialScene> {
+		self.0.get(id.0)
 	}
 
 	pub fn on_start_processing(&mut self) {
@@ -33,10 +33,9 @@ impl SpatialScenes {
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
-		mixer: &mut Mixer,
 	) {
 		for (_, scene) in &mut self.0 {
-			scene.process(dt, clock_info_provider, modulator_value_provider, mixer);
+			scene.process(dt, clock_info_provider, modulator_value_provider);
 		}
 	}
 }

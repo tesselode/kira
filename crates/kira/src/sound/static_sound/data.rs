@@ -16,7 +16,7 @@ use crate::{
 		EndPosition, IntoOptionalRegion, PlaybackPosition, PlaybackRate, Region, Sound, SoundData,
 	},
 	tween::{Tween, Value},
-	OutputDestination, StartTime, Volume,
+	StartTime, Volume,
 };
 
 use super::{
@@ -255,55 +255,6 @@ impl StaticSoundData {
 	pub fn panning(&self, panning: impl Into<Value<f64>>) -> Self {
 		let mut new = self.clone();
 		new.settings.panning = panning.into();
-		new
-	}
-
-	/**
-	Sets the destination that this sound should be routed to.
-
-	This returns a cheap clone of the [`StaticSoundData`] with the modified output destination.
-
-	# Examples
-
-	Set the output destination of a sound to a mixer track:
-
-	```no_run
-	use kira::{
-		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
-		track::TrackBuilder,
-		sound::static_sound::{StaticSoundSettings},
-	};
-
-	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	let sub_track = manager.add_sub_track(TrackBuilder::new())?;
-	let settings = StaticSoundSettings::new().output_destination(&sub_track);
-	# Result::<(), Box<dyn std::error::Error>>::Ok(())
-	```
-
-	Set the output destination of a sound to an emitter in a spatial scene:
-
-	```no_run
-	use kira::{
-		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
-		spatial::{scene::SpatialSceneSettings, emitter::EmitterSettings},
-		sound::static_sound::{StaticSoundSettings},
-	};
-
-	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	let mut scene = manager.add_spatial_scene(SpatialSceneSettings::default())?;
-	let emitter = scene.add_emitter(mint::Vector3 {
-		x: 0.0,
-		y: 0.0,
-		z: 0.0,
-	}, EmitterSettings::default())?;
-	let settings = StaticSoundSettings::new().output_destination(&emitter);
-	# Result::<(), Box<dyn std::error::Error>>::Ok(())
-	```
-	*/
-	#[must_use = "This method returns a modified StaticSoundData and does not mutate the original value"]
-	pub fn output_destination(&self, output_destination: impl Into<OutputDestination>) -> Self {
-		let mut new = self.clone();
-		new.settings.output_destination = output_destination.into();
 		new
 	}
 

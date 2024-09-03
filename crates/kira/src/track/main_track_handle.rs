@@ -1,13 +1,8 @@
-use std::{
-	collections::HashMap,
-	sync::{atomic::Ordering, Arc},
-};
-
 use glam::{Quat, Vec3};
 
 use crate::{
 	command::{CommandWriter, ValueChangeCommand},
-	manager::backend::{resources::ResourceController, RendererShared},
+	manager::backend::resources::ResourceController,
 	sound::{Sound, SoundData},
 	spatial::{
 		listener::{self, Listener, ListenerHandle},
@@ -17,25 +12,15 @@ use crate::{
 	PlaySoundError, ResourceLimitReached, Volume,
 };
 
-use super::{NonexistentRoute, SendTrackId, Track, TrackBuilder, TrackShared};
-
-/// Controls a mixer track.
-///
-/// When a [`MainTrackHandle`] is dropped, the corresponding mixer
-/// track will be removed.
+/// Controls the main mixer track.
 #[derive(Debug)]
-pub struct TrackHandle {
-	pub(crate) renderer_shared: Arc<RendererShared>,
-	pub(crate) shared: Option<Arc<TrackShared>>,
+pub struct MainTrackHandle {
 	pub(crate) set_volume_command_writer: CommandWriter<ValueChangeCommand<Volume>>,
 	pub(crate) sound_controller: ResourceController<Box<dyn Sound>>,
 	pub(crate) listener_controller: ResourceController<Listener>,
-	pub(crate) sub_track_controller: ResourceController<Track>,
-	pub(crate) send_volume_command_writers:
-		HashMap<SendTrackId, CommandWriter<ValueChangeCommand<Volume>>>,
 }
 
-impl TrackHandle {
+impl MainTrackHandle {
 	/// Plays a sound.
 	pub fn play<D: SoundData>(
 		&mut self,
@@ -47,17 +32,6 @@ impl TrackHandle {
 		self.sound_controller
 			.insert(sound)
 			.map_err(|_| PlaySoundError::SoundLimitReached)?;
-		Ok(handle)
-	}
-
-	/// Adds a child track to this track.
-	pub fn add_sub_track(
-		&mut self,
-		builder: TrackBuilder,
-	) -> Result<TrackHandle, ResourceLimitReached> {
-		let (mut track, handle) = builder.build(self.renderer_shared.clone());
-		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
-		self.sub_track_controller.insert(track)?;
 		Ok(handle)
 	}
 
@@ -84,27 +58,6 @@ impl TrackHandle {
 		})
 	}
 
-	/// Sets the volume of this track's route to a send track.
-	///
-	/// This can only be used to change the volume of existing routes,
-	/// not to add new routes.
-	pub fn set_route(
-		&mut self,
-		to: impl Into<SendTrackId>,
-		volume: impl Into<Value<Volume>>,
-		tween: Tween,
-	) -> Result<(), NonexistentRoute> {
-		let to = to.into();
-		self.send_volume_command_writers
-			.get_mut(&to)
-			.ok_or(NonexistentRoute)?
-			.write(ValueChangeCommand {
-				target: volume.into(),
-				tween,
-			});
-		Ok(())
-	}
-
 	/// Returns the maximum number of sounds that can play simultaneously on this track.
 	#[must_use]
 	pub fn sound_capacity(&self) -> u16 {
@@ -129,18 +82,6 @@ impl TrackHandle {
 		self.listener_controller.len()
 	}
 
-	/// Returns the maximum number of child tracks this track can have.
-	#[must_use]
-	pub fn sub_track_capacity(&self) -> u16 {
-		self.sub_track_controller.capacity()
-	}
-
-	/// Returns the number of child tracks this track has.
-	#[must_use]
-	pub fn num_sub_tracks(&self) -> u16 {
-		self.sub_track_controller.len()
-	}
-
 	fn add_listener_inner(
 		&mut self,
 		spatial_scene_id: SpatialSceneId,
@@ -155,13 +96,5 @@ impl TrackHandle {
 		};
 		self.listener_controller.insert(listener)?;
 		Ok(handle)
-	}
-}
-
-impl Drop for TrackHandle {
-	fn drop(&mut self) {
-		if let Some(shared) = &self.shared {
-			shared.mark_for_removal();
-		}
 	}
 }

@@ -1,4 +1,4 @@
-use crate::track::TrackBuilder;
+use crate::track::MainTrackBuilder;
 
 use super::backend::Backend;
 
@@ -10,10 +10,10 @@ pub struct Capacities {
 	/// The number of resources (sounds, clocks, etc.) that be sent to the
 	/// renderer at a time.
 	pub command_capacity: usize,
-	/// The maximum number of sounds that can be playing at a time.
-	pub sound_capacity: u16,
 	/// The maximum number of mixer sub-tracks that can exist at a time.
 	pub sub_track_capacity: u16,
+	/// The maximum number of mixer send tracks that can exist at a time.
+	pub send_track_capacity: u16,
 	/// The maximum number of clocks that can exist at a time.
 	pub clock_capacity: u16,
 	/// The maximum number of spatial scenes that can exist at a time.
@@ -26,8 +26,8 @@ impl Default for Capacities {
 	fn default() -> Self {
 		Self {
 			command_capacity: 128,
-			sound_capacity: 128,
 			sub_track_capacity: 128,
+			send_track_capacity: 16,
 			clock_capacity: 8,
 			spatial_scene_capacity: 8,
 			modulator_capacity: 16,
@@ -41,7 +41,7 @@ pub struct AudioManagerSettings<B: Backend> {
 	/// can have.
 	pub capacities: Capacities,
 	/// Configures the main mixer track.
-	pub main_track_builder: TrackBuilder,
+	pub main_track_builder: MainTrackBuilder,
 	/// Configures the backend.
 	pub backend_settings: B::Settings,
 }
@@ -53,7 +53,7 @@ where
 	fn default() -> Self {
 		Self {
 			capacities: Capacities::default(),
-			main_track_builder: TrackBuilder::default(),
+			main_track_builder: MainTrackBuilder::default(),
 			backend_settings: B::Settings::default(),
 		}
 	}

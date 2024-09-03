@@ -1,10 +1,8 @@
 //! Receives audio in a 3D space.
 
 mod handle;
-mod settings;
 
 pub use handle::*;
-pub use settings::*;
 
 use std::{
 	f32::consts::FRAC_PI_8,
@@ -14,7 +12,7 @@ use std::{
 	},
 };
 
-use crate::arena::Arena;
+use crate::manager::backend::resources::spatial_scenes::SpatialScenes;
 use glam::{Quat, Vec3};
 
 use crate::{
@@ -24,39 +22,38 @@ use crate::{
 	command_writers_and_readers,
 	frame::Frame,
 	modulator::value_provider::ModulatorValueProvider,
-	track::TrackId,
 	tween::{Parameter, Tweenable, Value},
 	Volume,
 };
 
-use super::emitter::Emitter;
+use super::scene::SpatialSceneId;
 
 const EAR_DISTANCE: f32 = 0.1;
 const EAR_ANGLE_FROM_HEAD: f32 = FRAC_PI_8;
 const MIN_EAR_AMPLITUDE: f32 = 0.5;
 
 pub(crate) struct Listener {
+	spatial_scene_id: SpatialSceneId,
 	command_readers: CommandReaders,
 	shared: Arc<ListenerShared>,
 	position: Parameter<Vec3>,
 	orientation: Parameter<Quat>,
-	track: TrackId,
 }
 
 impl Listener {
 	#[must_use]
 	pub fn new(
+		spatial_scene_id: SpatialSceneId,
 		command_readers: CommandReaders,
 		position: Value<Vec3>,
 		orientation: Value<Quat>,
-		settings: ListenerSettings,
 	) -> Self {
 		Self {
+			spatial_scene_id,
 			command_readers,
 			shared: Arc::new(ListenerShared::new()),
 			position: Parameter::new(position, Vec3::ZERO),
 			orientation: Parameter::new(orientation, Quat::IDENTITY),
-			track: settings.track,
 		}
 	}
 
@@ -65,9 +62,8 @@ impl Listener {
 		self.shared.clone()
 	}
 
-	#[must_use]
-	pub fn track(&self) -> TrackId {
-		self.track
+	pub fn finished(&self) -> bool {
+		self.shared.is_marked_for_removal()
 	}
 
 	pub fn on_start_processing(&mut self) {
@@ -80,14 +76,17 @@ impl Listener {
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
-		emitters: &Arena<Emitter>,
+		spatial_scenes: &SpatialScenes,
 	) -> Frame {
 		self.position
 			.update(dt, clock_info_provider, modulator_value_provider);
 		self.orientation
 			.update(dt, clock_info_provider, modulator_value_provider);
+		let Some(spatial_scene) = spatial_scenes.get(self.spatial_scene_id) else {
+			return Frame::ZERO;
+		};
 		let mut output = Frame::ZERO;
-		for (_, emitter) in emitters {
+		for (_, emitter) in spatial_scene.emitters() {
 			let mut emitter_output = emitter.output();
 			// attenuate volume
 			if let Some(attenuation_function) = emitter.attenuation_function() {

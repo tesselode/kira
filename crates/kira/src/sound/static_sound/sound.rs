@@ -18,7 +18,7 @@ use crate::{
 		Sound,
 	},
 	tween::{Parameter, Tween, Value},
-	OutputDestination, StartTime, Volume,
+	StartTime, Volume,
 };
 
 use self::resampler::Resampler;
@@ -31,7 +31,6 @@ pub(super) struct StaticSound {
 	frames: Arc<[Frame]>,
 	slice: Option<(usize, usize)>,
 	reverse: bool,
-	output_destination: OutputDestination,
 	state: PlaybackState,
 	start_time: StartTime,
 	resampler: Resampler,
@@ -65,7 +64,6 @@ impl StaticSound {
 			frames: data.frames,
 			slice: data.slice,
 			reverse: data.settings.reverse,
-			output_destination: data.settings.output_destination,
 			state: PlaybackState::Playing,
 			start_time: settings.start_time,
 			resampler: Resampler::new(starting_frame_index),
@@ -217,10 +215,6 @@ impl StaticSound {
 }
 
 impl Sound for StaticSound {
-	fn output_destination(&mut self) -> OutputDestination {
-		self.output_destination
-	}
-
 	fn on_start_processing(&mut self) {
 		let last_played_frame_position = self.resampler.current_frame_index();
 		self.shared.position.store(
