@@ -7,10 +7,8 @@ use super::backend::Backend;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Capacities {
-	/// The number of commands that be sent to the renderer at a time.
-	///
-	/// Each action you take, like playing a sound or pausing a clock,
-	/// queues up one command.
+	/// The number of resources (sounds, clocks, etc.) that be sent to the
+	/// renderer at a time.
 	pub command_capacity: usize,
 	/// The maximum number of sounds that can be playing at a time.
 	pub sound_capacity: u16,
