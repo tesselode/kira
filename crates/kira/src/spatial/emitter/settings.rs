@@ -5,6 +5,8 @@ use super::EmitterDistances;
 /// Settings for an emitter.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct EmitterSettings {
+	/// The maximum number of sounds that can play simultaneously from this emitter.
+	pub sound_capacity: u16,
 	/// The distances from a listener at which the emitter is loudest and quietest.
 	pub distances: EmitterDistances,
 	/// How the emitter's volume will change with distance.
@@ -24,10 +26,20 @@ impl EmitterSettings {
 	#[must_use]
 	pub fn new() -> Self {
 		Self {
+			sound_capacity: 128,
 			distances: EmitterDistances::default(),
 			attenuation_function: Some(Easing::Linear),
 			enable_spatialization: true,
 			persist_until_sounds_finish: false,
+		}
+	}
+
+	/// Sets the maximum number of sounds that can play simultaneously from this emitter.
+	#[must_use = "This method consumes self and returns a modified EmitterSettings, so the return value should be used"]
+	pub fn sound_capacity(self, sound_capacity: u16) -> Self {
+		Self {
+			sound_capacity,
+			..self
 		}
 	}
 

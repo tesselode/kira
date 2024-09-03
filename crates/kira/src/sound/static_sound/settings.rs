@@ -1,7 +1,7 @@
 use crate::{
 	sound::{IntoOptionalRegion, PlaybackPosition, PlaybackRate, Region},
 	tween::{Tween, Value},
-	OutputDestination, StartTime, Volume,
+	StartTime, Volume,
 };
 
 /// Settings for a static sound.
@@ -25,8 +25,6 @@ pub struct StaticSoundSettings {
 	/// The panning of the sound, where 0 is hard left
 	/// and 1 is hard right.
 	pub panning: Value<f64>,
-	/// The destination that this sound should be routed to.
-	pub output_destination: OutputDestination,
 	/// An optional fade-in from silence.
 	pub fade_in_tween: Option<Tween>,
 }
@@ -43,7 +41,6 @@ impl StaticSoundSettings {
 			volume: Value::Fixed(Volume::Amplitude(1.0)),
 			playback_rate: Value::Fixed(PlaybackRate::Factor(1.0)),
 			panning: Value::Fixed(0.5),
-			output_destination: OutputDestination::default(),
 			fade_in_tween: None,
 		}
 	}
@@ -112,17 +109,6 @@ impl StaticSoundSettings {
 	pub fn panning(self, panning: impl Into<Value<f64>>) -> Self {
 		Self {
 			panning: panning.into(),
-			..self
-		}
-	}
-
-	/**
-	Sets the destination that this sound should be routed to.
-	*/
-	#[must_use = "This method consumes self and returns a modified StaticSoundSettings, so the return value should be used"]
-	pub fn output_destination(self, output_destination: impl Into<OutputDestination>) -> Self {
-		Self {
-			output_destination: output_destination.into(),
 			..self
 		}
 	}
