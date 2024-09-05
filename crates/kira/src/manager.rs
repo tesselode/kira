@@ -18,6 +18,7 @@ use std::sync::{
 
 use crate::{
 	clock::{Clock, ClockHandle, ClockId, ClockSpeed},
+	listener::{self, Listener, ListenerHandle, ListenerId, ListenerShared},
 	modulator::{ModulatorBuilder, ModulatorId},
 	sound::SoundData,
 	track::{
@@ -212,6 +213,23 @@ impl<B: Backend> AudioManager<B> {
 		self.resource_controllers
 			.modulator_controller
 			.insert_with_key(key, modulator);
+		Ok(handle)
+	}
+
+	pub fn add_listener(
+		&mut self,
+		position: impl Into<Value<mint::Vector3<f32>>>,
+		orientation: impl Into<Value<mint::Quaternion<f32>>>,
+	) -> Result<ListenerHandle, ResourceLimitReached> {
+		let key = self
+			.resource_controllers
+			.listener_controller
+			.try_reserve()?;
+		let id = ListenerId(key);
+		let (listener, handle) = Listener::new(id, position.into().to_(), orientation.into().to_());
+		self.resource_controllers
+			.listener_controller
+			.insert_with_key(key, listener);
 		Ok(handle)
 	}
 
