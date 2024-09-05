@@ -5,7 +5,7 @@ use crate::{
 	track::{MainTrack, MainTrackBuilder, MainTrackHandle, SendTrack, Track},
 };
 
-use super::{spatial_scenes::SpatialScenes, ResourceController, ResourceStorage};
+use super::{ResourceController, ResourceStorage};
 
 pub(crate) struct Mixer {
 	main_track: MainTrack,
@@ -72,7 +72,6 @@ impl Mixer {
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
-		spatial_scenes: &SpatialScenes,
 	) -> Frame {
 		let mut main_track_input = Frame::ZERO;
 		for (_, track) in &mut self.sub_tracks {
@@ -80,7 +79,6 @@ impl Mixer {
 				dt,
 				clock_info_provider,
 				modulator_value_provider,
-				spatial_scenes,
 				&mut self.send_tracks,
 			);
 		}
@@ -92,7 +90,6 @@ impl Mixer {
 			dt,
 			clock_info_provider,
 			modulator_value_provider,
-			spatial_scenes,
 		)
 	}
 }

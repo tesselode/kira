@@ -20,11 +20,7 @@ use std::sync::{
 };
 
 use crate::{
-	arena::Key,
-	effect::Effect,
-	manager::backend::resources::{spatial_scenes::SpatialScenes, ResourceStorage},
-	sound::Sound,
-	spatial::listener::Listener,
+	arena::Key, effect::Effect, manager::backend::resources::ResourceStorage, sound::Sound,
 };
 
 use crate::{
@@ -50,7 +46,6 @@ pub(crate) struct MainTrack {
 	volume: Parameter<Volume>,
 	set_volume_command_reader: CommandReader<ValueChangeCommand<Volume>>,
 	sounds: ResourceStorage<Box<dyn Sound>>,
-	listeners: ResourceStorage<Listener>,
 	effects: Vec<Box<dyn Effect>>,
 }
 
@@ -74,11 +69,6 @@ impl MainTrack {
 		for (_, sound) in &mut self.sounds {
 			sound.on_start_processing();
 		}
-		self.listeners
-			.remove_and_add(|listener| listener.finished());
-		for (_, listener) in &mut self.listeners {
-			listener.on_start_processing();
-		}
 		for effect in &mut self.effects {
 			effect.on_start_processing();
 		}
@@ -90,21 +80,12 @@ impl MainTrack {
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
-		spatial_scenes: &SpatialScenes,
 	) -> Frame {
 		self.volume
 			.update(dt, clock_info_provider, modulator_value_provider);
 		let mut output = input;
 		for (_, sound) in &mut self.sounds {
 			output += sound.process(dt, clock_info_provider, modulator_value_provider);
-		}
-		for (_, listener) in &mut self.listeners {
-			output += listener.process(
-				dt,
-				clock_info_provider,
-				modulator_value_provider,
-				spatial_scenes,
-			);
 		}
 		for effect in &mut self.effects {
 			output = effect.process(output, dt, clock_info_provider, modulator_value_provider);
@@ -119,7 +100,6 @@ pub(crate) struct Track {
 	volume: Parameter<Volume>,
 	set_volume_command_reader: CommandReader<ValueChangeCommand<Volume>>,
 	sounds: ResourceStorage<Box<dyn Sound>>,
-	listeners: ResourceStorage<Listener>,
 	sub_tracks: ResourceStorage<Track>,
 	effects: Vec<Box<dyn Effect>>,
 	sends: Vec<(SendTrackId, SendTrackRoute)>,
@@ -167,11 +147,6 @@ impl Track {
 		for (_, sound) in &mut self.sounds {
 			sound.on_start_processing();
 		}
-		self.listeners
-			.remove_and_add(|listener| listener.finished());
-		for (_, listener) in &mut self.listeners {
-			listener.on_start_processing();
-		}
 		self.sub_tracks
 			.remove_and_add(|sub_track| sub_track.should_be_removed());
 		for (_, sub_track) in &mut self.sub_tracks {
@@ -187,7 +162,6 @@ impl Track {
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
-		spatial_scenes: &SpatialScenes,
 		send_tracks: &mut ResourceStorage<SendTrack>,
 	) -> Frame {
 		self.volume
@@ -204,20 +178,11 @@ impl Track {
 				dt,
 				clock_info_provider,
 				modulator_value_provider,
-				spatial_scenes,
 				send_tracks,
 			);
 		}
 		for (_, sound) in &mut self.sounds {
 			output += sound.process(dt, clock_info_provider, modulator_value_provider);
-		}
-		for (_, listener) in &mut self.listeners {
-			output += listener.process(
-				dt,
-				clock_info_provider,
-				modulator_value_provider,
-				spatial_scenes,
-			);
 		}
 		for effect in &mut self.effects {
 			output = effect.process(output, dt, clock_info_provider, modulator_value_provider);
