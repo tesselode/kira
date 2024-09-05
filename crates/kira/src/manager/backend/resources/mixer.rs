@@ -1,6 +1,7 @@
 use crate::{
 	clock::clock_info::ClockInfoProvider,
 	frame::Frame,
+	listener::ListenerInfoProvider,
 	modulator::value_provider::ModulatorValueProvider,
 	track::{MainTrack, MainTrackBuilder, MainTrackHandle, SendTrack, Track},
 };
@@ -72,6 +73,7 @@ impl Mixer {
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
+		listener_info_provider: &ListenerInfoProvider,
 	) -> Frame {
 		let mut main_track_input = Frame::ZERO;
 		for (_, track) in &mut self.sub_tracks {
@@ -79,6 +81,7 @@ impl Mixer {
 				dt,
 				clock_info_provider,
 				modulator_value_provider,
+				listener_info_provider,
 				&mut self.send_tracks,
 			);
 		}
