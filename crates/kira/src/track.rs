@@ -162,6 +162,7 @@ impl Track {
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
+		listener_info_provider: &ListenerInfoProvider,
 		send_tracks: &mut ResourceStorage<SendTrack>,
 	) -> Frame {
 		self.volume
@@ -178,6 +179,7 @@ impl Track {
 				dt,
 				clock_info_provider,
 				modulator_value_provider,
+				listener_info_provider,
 				send_tracks,
 			);
 		}

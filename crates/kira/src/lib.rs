@@ -252,6 +252,7 @@ pub mod command;
 pub mod effect;
 mod error;
 mod frame;
+pub mod listener;
 pub mod manager;
 pub mod modulator;
 pub mod sound;
