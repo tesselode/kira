@@ -1,14 +1,15 @@
 use std::sync::Arc;
 
-use crate::manager::backend::resources::ResourceController;
-
-use crate::ResourceLimitReached;
 use crate::{
-	spatial::emitter::{self, Emitter, EmitterHandle, EmitterSettings},
-	tween::Value,
+	command::ValueChangeCommand,
+	manager::backend::resources::ResourceController,
+	tween::{Tween, Value},
+	ResourceLimitReached,
 };
 
-use super::{SpatialSceneId, SpatialSceneShared};
+use super::{
+	emitter, sound::SpatialSceneShared, CommandWriters, Emitter, EmitterHandle, EmitterSettings,
+};
 
 /// Controls a spatial scene.
 ///
@@ -16,16 +17,43 @@ use super::{SpatialSceneId, SpatialSceneShared};
 /// spatial scene will be removed.
 #[derive(Debug)]
 pub struct SpatialSceneHandle {
-	pub(crate) id: SpatialSceneId,
 	pub(crate) shared: Arc<SpatialSceneShared>,
 	pub(crate) emitter_controller: ResourceController<Emitter>,
+	pub(crate) command_writers: CommandWriters,
 }
 
 impl SpatialSceneHandle {
-	/// Returns the unique identifier for the spatial scene.
-	#[must_use]
-	pub fn id(&self) -> SpatialSceneId {
-		self.id
+	/// Sets the location of the listener in the spatial scene.
+	pub fn set_listener_position(
+		&mut self,
+		position: impl Into<Value<mint::Vector3<f32>>>,
+		tween: Tween,
+	) {
+		let position: Value<mint::Vector3<f32>> = position.into();
+		self.command_writers
+			.set_listener_position
+			.write(ValueChangeCommand {
+				target: position.to_(),
+				tween,
+			})
+	}
+
+	/// Sets the rotation of the listener in the spatial scene.
+	///
+	/// An unrotated listener should face in the negative Z direction with
+	/// positive X to the right and positive Y up.
+	pub fn set_listener_orientation(
+		&mut self,
+		orientation: impl Into<Value<mint::Quaternion<f32>>>,
+		tween: Tween,
+	) {
+		let orientation: Value<mint::Quaternion<f32>> = orientation.into();
+		self.command_writers
+			.set_listener_orientation
+			.write(ValueChangeCommand {
+				target: orientation.to_(),
+				tween,
+			})
 	}
 
 	/// Adds an emitter to the scene.
@@ -65,11 +93,5 @@ impl SpatialSceneHandle {
 impl Drop for SpatialSceneHandle {
 	fn drop(&mut self) {
 		self.shared.mark_for_removal();
-	}
-}
-
-impl From<&SpatialSceneHandle> for SpatialSceneId {
-	fn from(handle: &SpatialSceneHandle) -> Self {
-		handle.id()
 	}
 }

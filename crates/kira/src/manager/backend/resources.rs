@@ -1,7 +1,6 @@
 pub(crate) mod clocks;
 pub(crate) mod mixer;
 pub(crate) mod modulators;
-pub(crate) mod spatial_scenes;
 
 #[cfg(test)]
 mod test;
@@ -18,11 +17,9 @@ use crate::{
 };
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 
-use crate::{
-	clock::Clock, manager::settings::Capacities, modulator::Modulator, spatial::scene::SpatialScene,
-};
+use crate::{clock::Clock, manager::settings::Capacities, modulator::Modulator};
 
-use self::{clocks::Clocks, mixer::Mixer, modulators::Modulators, spatial_scenes::SpatialScenes};
+use self::{clocks::Clocks, mixer::Mixer, modulators::Modulators};
 
 pub(crate) struct ResourceStorage<T> {
 	pub(crate) resources: Arena<T>,
@@ -88,6 +85,16 @@ impl<T> ResourceStorage<T> {
 	#[must_use]
 	pub fn is_empty(&self) -> bool {
 		self.resources.is_empty()
+	}
+}
+
+impl<'a, T> IntoIterator for &'a ResourceStorage<T> {
+	type Item = (Key, &'a T);
+
+	type IntoIter = crate::arena::iter::Iter<'a, T>;
+
+	fn into_iter(self) -> Self::IntoIter {
+		self.iter()
 	}
 }
 
@@ -268,7 +275,6 @@ impl Debug for HeapConsumerDebug {
 pub(crate) struct Resources {
 	pub mixer: Mixer,
 	pub clocks: Clocks,
-	pub spatial_scenes: SpatialScenes,
 	pub modulators: Modulators,
 }
 
@@ -276,7 +282,6 @@ pub(crate) struct ResourceControllers {
 	pub sub_track_controller: ResourceController<Track>,
 	pub send_track_controller: ResourceController<SendTrack>,
 	pub clock_controller: ResourceController<Clock>,
-	pub spatial_scene_controller: ResourceController<SpatialScene>,
 	pub modulator_controller: ResourceController<Box<dyn Modulator>>,
 	pub main_track_handle: MainTrackHandle,
 }
@@ -293,21 +298,17 @@ pub(crate) fn create_resources(
 		main_track_builder,
 	);
 	let (clocks, clock_controller) = Clocks::new(capacities.clock_capacity);
-	let (spatial_scenes, spatial_scene_controller) =
-		SpatialScenes::new(capacities.spatial_scene_capacity);
 	let (modulators, modulator_controller) = Modulators::new(capacities.modulator_capacity);
 	(
 		Resources {
 			mixer,
 			clocks,
-			spatial_scenes,
 			modulators,
 		},
 		ResourceControllers {
 			sub_track_controller,
 			send_track_controller,
 			clock_controller,
-			spatial_scene_controller,
 			modulator_controller,
 			main_track_handle,
 		},
