@@ -255,7 +255,6 @@ mod frame;
 pub mod manager;
 pub mod modulator;
 pub mod sound;
-pub mod spatial;
 mod start_time;
 pub mod track;
 pub mod tween;
