@@ -20,7 +20,6 @@ use crate::{
 	clock::{Clock, ClockHandle, ClockId, ClockSpeed},
 	modulator::{ModulatorBuilder, ModulatorId},
 	sound::SoundData,
-	spatial::scene::{SpatialScene, SpatialSceneHandle, SpatialSceneId, SpatialSceneSettings},
 	track::{
 		MainTrackHandle, SendTrackBuilder, SendTrackHandle, SendTrackId, TrackBuilder, TrackHandle,
 	},
@@ -181,23 +180,6 @@ impl<B: Backend> AudioManager<B> {
 		Ok(handle)
 	}
 
-	/// Creates a spatial scene.
-	pub fn add_spatial_scene(
-		&mut self,
-		settings: SpatialSceneSettings,
-	) -> Result<SpatialSceneHandle, ResourceLimitReached> {
-		let key = self
-			.resource_controllers
-			.spatial_scene_controller
-			.try_reserve()?;
-		let id = SpatialSceneId(key);
-		let (spatial_scene, handle) = SpatialScene::new(id, settings);
-		self.resource_controllers
-			.spatial_scene_controller
-			.insert_with_key(key, spatial_scene);
-		Ok(handle)
-	}
-
 	/**
 	Creates a modulator.
 
@@ -277,14 +259,6 @@ impl<B: Backend> AudioManager<B> {
 		self.resource_controllers.clock_controller.capacity()
 	}
 
-	/// Returns the number of spatial scenes that can exist at a time.
-	#[must_use]
-	pub fn spatial_scene_capacity(&self) -> u16 {
-		self.resource_controllers
-			.spatial_scene_controller
-			.capacity()
-	}
-
 	/// Returns the number of modulators that can exist at a time.
 	#[must_use]
 	pub fn modulator_capacity(&self) -> u16 {
@@ -307,12 +281,6 @@ impl<B: Backend> AudioManager<B> {
 	#[must_use]
 	pub fn num_clocks(&self) -> u16 {
 		self.resource_controllers.clock_controller.len()
-	}
-
-	/// Returns the number of spatial scenes that currently exist.
-	#[must_use]
-	pub fn num_spatial_scenes(&self) -> u16 {
-		self.resource_controllers.spatial_scene_controller.len()
 	}
 
 	/// Returns the number of modulators that currently exist.

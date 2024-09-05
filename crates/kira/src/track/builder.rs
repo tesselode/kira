@@ -21,8 +21,6 @@ pub struct TrackBuilder {
 	pub(crate) sub_track_capacity: u16,
 	/// The maximum number of sounds that can be played simultaneously on this track.
 	pub(crate) sound_capacity: u16,
-	/// The number of spatial scene listeners that can be added to this track.
-	pub(crate) listener_capacity: u16,
 	pub(crate) sends: HashMap<SendTrackId, Value<Volume>>,
 }
 
@@ -35,7 +33,6 @@ impl TrackBuilder {
 			effects: vec![],
 			sub_track_capacity: 16,
 			sound_capacity: 128,
-			listener_capacity: 8,
 			sends: HashMap::new(),
 		}
 	}
@@ -98,15 +95,6 @@ impl TrackBuilder {
 	pub fn sound_capacity(self, capacity: u16) -> Self {
 		Self {
 			sound_capacity: capacity,
-			..self
-		}
-	}
-
-	/// Sets the number of spatial scene listeners that can be added to this track.
-	#[must_use = "This method consumes self and returns a modified TrackBuilder, so the return value should be used"]
-	pub fn listener_capacity(self, capacity: u16) -> Self {
-		Self {
-			listener_capacity: capacity,
 			..self
 		}
 	}
@@ -221,7 +209,6 @@ impl TrackBuilder {
 		let (set_volume_command_writer, set_volume_command_reader) = command_writer_and_reader();
 		let shared = Arc::new(TrackShared::new());
 		let (sounds, sound_controller) = ResourceStorage::new(self.sound_capacity);
-		let (listeners, listener_controller) = ResourceStorage::new(self.listener_capacity);
 		let (sub_tracks, sub_track_controller) = ResourceStorage::new(self.sub_track_capacity);
 		let mut sends = vec![];
 		let mut send_volume_command_writers = HashMap::new();
@@ -242,7 +229,6 @@ impl TrackBuilder {
 			volume: Parameter::new(self.volume, Volume::Amplitude(1.0)),
 			set_volume_command_reader,
 			sounds,
-			listeners,
 			sub_tracks,
 			effects: self.effects,
 			sends,
@@ -252,7 +238,6 @@ impl TrackBuilder {
 			shared: Some(shared),
 			set_volume_command_writer,
 			sound_controller,
-			listener_controller,
 			sub_track_controller,
 			send_volume_command_writers,
 		};

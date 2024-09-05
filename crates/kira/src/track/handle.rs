@@ -3,16 +3,10 @@ use std::{
 	sync::{atomic::Ordering, Arc},
 };
 
-use glam::{Quat, Vec3};
-
 use crate::{
 	command::{CommandWriter, ValueChangeCommand},
 	manager::backend::{resources::ResourceController, RendererShared},
 	sound::{Sound, SoundData},
-	spatial::{
-		listener::{self, Listener, ListenerHandle},
-		scene::SpatialSceneId,
-	},
 	tween::{Tween, Value},
 	PlaySoundError, ResourceLimitReached, Volume,
 };
@@ -29,7 +23,6 @@ pub struct TrackHandle {
 	pub(crate) shared: Option<Arc<TrackShared>>,
 	pub(crate) set_volume_command_writer: CommandWriter<ValueChangeCommand<Volume>>,
 	pub(crate) sound_controller: ResourceController<Box<dyn Sound>>,
-	pub(crate) listener_controller: ResourceController<Listener>,
 	pub(crate) sub_track_controller: ResourceController<Track>,
 	pub(crate) send_volume_command_writers:
 		HashMap<SendTrackId, CommandWriter<ValueChangeCommand<Volume>>>,
@@ -59,21 +52,6 @@ impl TrackHandle {
 		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
 		self.sub_track_controller.insert(track)?;
 		Ok(handle)
-	}
-
-	/// Adds a listener for a spatial scene to this track.
-	///
-	/// An unrotated listener should face in the negative Z direction with
-	/// positive X to the right and positive Y up.
-	pub fn add_listener(
-		&mut self,
-		scene: impl Into<SpatialSceneId>,
-		position: impl Into<Value<mint::Vector3<f32>>>,
-		orientation: impl Into<Value<mint::Quaternion<f32>>>,
-	) -> Result<ListenerHandle, ResourceLimitReached> {
-		let position: Value<mint::Vector3<f32>> = position.into();
-		let orientation: Value<mint::Quaternion<f32>> = orientation.into();
-		self.add_listener_inner(scene.into(), position.to_(), orientation.to_())
 	}
 
 	/// Sets the (post-effects) volume of the mixer track.
@@ -117,18 +95,6 @@ impl TrackHandle {
 		self.sound_controller.len()
 	}
 
-	/// Returns the maximum number of listeners that can exist on this track at a time.
-	#[must_use]
-	pub fn listener_capacity(&self) -> u16 {
-		self.listener_controller.capacity()
-	}
-
-	/// Returns the number of listeners on this track.
-	#[must_use]
-	pub fn num_listeners(&self) -> u16 {
-		self.listener_controller.len()
-	}
-
 	/// Returns the maximum number of child tracks this track can have.
 	#[must_use]
 	pub fn sub_track_capacity(&self) -> u16 {
@@ -139,22 +105,6 @@ impl TrackHandle {
 	#[must_use]
 	pub fn num_sub_tracks(&self) -> u16 {
 		self.sub_track_controller.len()
-	}
-
-	fn add_listener_inner(
-		&mut self,
-		spatial_scene_id: SpatialSceneId,
-		position: Value<Vec3>,
-		orientation: Value<Quat>,
-	) -> Result<ListenerHandle, ResourceLimitReached> {
-		let (command_writers, command_readers) = listener::command_writers_and_readers();
-		let listener = Listener::new(spatial_scene_id, command_readers, position, orientation);
-		let handle = ListenerHandle {
-			shared: listener.shared(),
-			command_writers,
-		};
-		self.listener_controller.insert(listener)?;
-		Ok(handle)
 	}
 }
 

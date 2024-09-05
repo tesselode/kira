@@ -58,7 +58,6 @@ impl Renderer {
 	pub fn on_start_processing(&mut self) {
 		self.resources.mixer.on_start_processing();
 		self.resources.clocks.on_start_processing();
-		self.resources.spatial_scenes.on_start_processing();
 		self.resources.modulators.on_start_processing();
 	}
 
@@ -73,16 +72,10 @@ impl Renderer {
 			self.dt,
 			&ModulatorValueProvider::new(&self.resources.modulators.0.resources),
 		);
-		self.resources.spatial_scenes.process(
-			self.dt,
-			&ClockInfoProvider::new(&self.resources.clocks.0.resources),
-			&ModulatorValueProvider::new(&self.resources.modulators.0.resources),
-		);
 		self.resources.mixer.process(
 			self.dt,
 			&ClockInfoProvider::new(&self.resources.clocks.0.resources),
 			&ModulatorValueProvider::new(&self.resources.modulators.0.resources),
-			&self.resources.spatial_scenes,
 		)
 	}
 }

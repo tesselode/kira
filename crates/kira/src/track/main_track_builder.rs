@@ -17,8 +17,6 @@ pub struct MainTrackBuilder {
 	pub(crate) effects: Vec<Box<dyn Effect>>,
 	/// The maximum number of sounds that can be played simultaneously on this track.
 	pub(crate) sound_capacity: u16,
-	/// The number of spatial scene listeners that can be added to this track.
-	pub(crate) listener_capacity: u16,
 }
 
 impl MainTrackBuilder {
@@ -29,7 +27,6 @@ impl MainTrackBuilder {
 			volume: Value::Fixed(Volume::Amplitude(1.0)),
 			effects: vec![],
 			sound_capacity: 128,
-			listener_capacity: 8,
 		}
 	}
 
@@ -47,15 +44,6 @@ impl MainTrackBuilder {
 	pub fn sound_capacity(self, capacity: u16) -> Self {
 		Self {
 			sound_capacity: capacity,
-			..self
-		}
-	}
-
-	/// Sets the number of spatial scene listeners that can be added to this track.
-	#[must_use = "This method consumes self and returns a modified TrackBuilder, so the return value should be used"]
-	pub fn listener_capacity(self, capacity: u16) -> Self {
-		Self {
-			listener_capacity: capacity,
 			..self
 		}
 	}
@@ -160,18 +148,15 @@ impl MainTrackBuilder {
 	pub(crate) fn build(self) -> (MainTrack, MainTrackHandle) {
 		let (set_volume_command_writer, set_volume_command_reader) = command_writer_and_reader();
 		let (sounds, sound_controller) = ResourceStorage::new(self.sound_capacity);
-		let (listeners, listener_controller) = ResourceStorage::new(self.listener_capacity);
 		let track = MainTrack {
 			volume: Parameter::new(self.volume, Volume::Amplitude(1.0)),
 			set_volume_command_reader,
 			sounds,
-			listeners,
 			effects: self.effects,
 		};
 		let handle = MainTrackHandle {
 			set_volume_command_writer,
 			sound_controller,
-			listener_controller,
 		};
 		(track, handle)
 	}
