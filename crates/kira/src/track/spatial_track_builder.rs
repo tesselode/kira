@@ -1,17 +1,22 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, ops::RangeInclusive, sync::Arc};
+
+use glam::Vec3;
 
 use crate::{
 	command::command_writer_and_reader,
 	effect::EffectBuilder,
+	listener::ListenerId,
 	manager::backend::{resources::ResourceStorage, RendererShared},
-	tween::{Parameter, Value},
+	tween::{Easing, Parameter, Value},
 	Volume,
 };
 
-use super::{Effect, SendTrackId, SendTrackRoute, Track, TrackHandle, TrackShared};
+use super::{
+	Effect, SendTrackId, SendTrackRoute, SpatialData, SpatialTrackHandle, Track, TrackShared,
+};
 
-/// Configures a mixer track.
-pub struct TrackBuilder {
+/// Configures a spatial mixer track.
+pub struct SpatialTrackBuilder {
 	/// The volume of the track.
 	pub(crate) volume: Value<Volume>,
 	/// The effects that should be applied to the input audio
@@ -22,9 +27,18 @@ pub struct TrackBuilder {
 	/// The maximum number of sounds that can be played simultaneously on this track.
 	pub(crate) sound_capacity: u16,
 	pub(crate) sends: HashMap<SendTrackId, Value<Volume>>,
+	/// The distances from a listener at which the track is loudest and quietest.
+	pub(crate) distances: SpatialTrackDistances,
+	/// How the track's volume will change with distance.
+	///
+	/// If `None`, the track will output at a constant volume.
+	pub(crate) attenuation_function: Option<Easing>,
+	/// Whether the track's output should be panned left or right depending on its
+	/// direction from the listener.
+	pub(crate) enable_spatialization: bool,
 }
 
-impl TrackBuilder {
+impl SpatialTrackBuilder {
 	/// Creates a new [`TrackBuilder`] with the default settings.
 	#[must_use]
 	pub fn new() -> Self {
@@ -34,6 +48,9 @@ impl TrackBuilder {
 			sub_track_capacity: 16,
 			sound_capacity: 128,
 			sends: HashMap::new(),
+			distances: SpatialTrackDistances::default(),
+			attenuation_function: Some(Easing::Linear),
+			enable_spatialization: true,
 		}
 	}
 
@@ -204,9 +221,46 @@ impl TrackBuilder {
 		self
 	}
 
+	/// Sets the distances from a listener at which the emitter is loudest and quietest.
+	#[must_use = "This method consumes self and returns a modified TrackBuilder, so the return value should be used"]
+	pub fn distances(self, distances: impl Into<SpatialTrackDistances>) -> Self {
+		Self {
+			distances: distances.into(),
+			..self
+		}
+	}
+
+	/// Sets how the emitter's volume will change with distance.
+	///
+	/// If `None`, the emitter will output at a constant volume.
+	#[must_use = "This method consumes self and returns a modified TrackBuilder, so the return value should be used"]
+	pub fn attenuation_function(self, attenuation_function: impl Into<Option<Easing>>) -> Self {
+		Self {
+			attenuation_function: attenuation_function.into(),
+			..self
+		}
+	}
+
+	/// Sets whether the emitter's output should be panned left or right depending on its
+	/// direction from the listener.
+	#[must_use = "This method consumes self and returns a modified TrackBuilder, so the return value should be used"]
+	pub fn enable_spatialization(self, enable_spatialization: bool) -> Self {
+		Self {
+			enable_spatialization,
+			..self
+		}
+	}
+
 	#[must_use]
-	pub(crate) fn build(self, renderer_shared: Arc<RendererShared>) -> (Track, TrackHandle) {
+	pub(crate) fn build(
+		self,
+		renderer_shared: Arc<RendererShared>,
+		listener_id: ListenerId,
+		position: Value<Vec3>,
+	) -> (Track, SpatialTrackHandle) {
 		let (set_volume_command_writer, set_volume_command_reader) = command_writer_and_reader();
+		let (set_position_command_writer, set_position_command_reader) =
+			command_writer_and_reader();
 		let shared = Arc::new(TrackShared::new());
 		let (sounds, sound_controller) = ResourceStorage::new(self.sound_capacity);
 		let (sub_tracks, sub_track_controller) = ResourceStorage::new(self.sub_track_capacity);
@@ -232,22 +286,83 @@ impl TrackBuilder {
 			sub_tracks,
 			effects: self.effects,
 			sends,
-			spatial_data: None,
+			spatial_data: Some(SpatialData {
+				listener_id,
+				position: Parameter::new(position, Vec3::ZERO),
+				set_position_command_reader,
+				distances: self.distances,
+				attenuation_function: self.attenuation_function,
+				enable_spatialization: self.enable_spatialization,
+			}),
 		};
-		let handle = TrackHandle {
+		let handle = SpatialTrackHandle {
 			renderer_shared,
 			shared: Some(shared),
 			set_volume_command_writer,
 			sound_controller,
 			sub_track_controller,
 			send_volume_command_writers,
+			set_position_command_writer,
 		};
 		(track, handle)
 	}
 }
 
-impl Default for TrackBuilder {
+impl Default for SpatialTrackBuilder {
 	fn default() -> Self {
 		Self::new()
+	}
+}
+
+/// The distances from a listener at which an emitter is loudest and quietest.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct SpatialTrackDistances {
+	/// The distance from a listener at which an emitter outputs at full volume.
+	pub min_distance: f32,
+	/// The distance from a listener at which an emitter becomes inaudible.
+	pub max_distance: f32,
+}
+
+impl SpatialTrackDistances {
+	#[must_use]
+	pub(crate) fn relative_distance(&self, distance: f32) -> f32 {
+		let distance = distance.clamp(self.min_distance, self.max_distance);
+		(distance - self.min_distance) / (self.max_distance - self.min_distance)
+	}
+}
+
+impl Default for SpatialTrackDistances {
+	fn default() -> Self {
+		Self {
+			min_distance: 1.0,
+			max_distance: 100.0,
+		}
+	}
+}
+
+impl From<(f32, f32)> for SpatialTrackDistances {
+	fn from((min_distance, max_distance): (f32, f32)) -> Self {
+		Self {
+			min_distance,
+			max_distance,
+		}
+	}
+}
+
+impl From<[f32; 2]> for SpatialTrackDistances {
+	fn from([min_distance, max_distance]: [f32; 2]) -> Self {
+		Self {
+			min_distance,
+			max_distance,
+		}
+	}
+}
+
+impl From<RangeInclusive<f32>> for SpatialTrackDistances {
+	fn from(range: RangeInclusive<f32>) -> Self {
+		Self {
+			min_distance: *range.start(),
+			max_distance: *range.end(),
+		}
 	}
 }

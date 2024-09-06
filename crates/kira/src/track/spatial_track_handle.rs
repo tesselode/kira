@@ -3,6 +3,8 @@ use std::{
 	sync::{atomic::Ordering, Arc},
 };
 
+use glam::Vec3;
+
 use crate::{
 	command::{CommandWriter, ValueChangeCommand},
 	listener::ListenerId,
@@ -13,7 +15,7 @@ use crate::{
 };
 
 use super::{
-	NonexistentRoute, SendTrackId, SpatialTrackBuilder, SpatialTrackHandle, Track, TrackBuilder,
+	NonexistentRoute, SendTrackId, SpatialTrackBuilder, Track, TrackBuilder, TrackHandle,
 	TrackShared,
 };
 
@@ -22,7 +24,7 @@ use super::{
 /// When a [`MainTrackHandle`] is dropped, the corresponding mixer
 /// track will be removed.
 #[derive(Debug)]
-pub struct TrackHandle {
+pub struct SpatialTrackHandle {
 	pub(crate) renderer_shared: Arc<RendererShared>,
 	pub(crate) shared: Option<Arc<TrackShared>>,
 	pub(crate) set_volume_command_writer: CommandWriter<ValueChangeCommand<Volume>>,
@@ -30,9 +32,10 @@ pub struct TrackHandle {
 	pub(crate) sub_track_controller: ResourceController<Track>,
 	pub(crate) send_volume_command_writers:
 		HashMap<SendTrackId, CommandWriter<ValueChangeCommand<Volume>>>,
+	pub(crate) set_position_command_writer: CommandWriter<ValueChangeCommand<Vec3>>,
 }
 
-impl TrackHandle {
+impl SpatialTrackHandle {
 	/// Plays a sound.
 	pub fn play<D: SoundData>(
 		&mut self,
@@ -83,6 +86,15 @@ impl TrackHandle {
 		})
 	}
 
+	/// Sets the position that audio is produced from.
+	pub fn set_position(&mut self, position: impl Into<Value<mint::Vector3<f32>>>, tween: Tween) {
+		let position: Value<mint::Vector3<f32>> = position.into();
+		self.set_position_command_writer.write(ValueChangeCommand {
+			target: position.to_(),
+			tween,
+		})
+	}
+
 	/// Sets the volume of this track's route to a send track.
 	///
 	/// This can only be used to change the volume of existing routes,
@@ -129,7 +141,7 @@ impl TrackHandle {
 	}
 }
 
-impl Drop for TrackHandle {
+impl Drop for SpatialTrackHandle {
 	fn drop(&mut self) {
 		if let Some(shared) = &self.shared {
 			shared.mark_for_removal();
