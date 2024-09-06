@@ -7,6 +7,7 @@ use kira::{
 		AudioManager, AudioManagerSettings, Capacities,
 	},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
+	track::MainTrackBuilder,
 	Frame,
 };
 
@@ -39,7 +40,7 @@ fn sounds(c: &mut Criterion) {
 			backend_settings: MockBackendSettings {
 				sample_rate: SAMPLE_RATE,
 			},
-			..Default::default()
+			main_track_builder: MainTrackBuilder::new().sound_capacity(NUM_SOUNDS),
 		})
 		.unwrap();
 		let sound_data = create_test_sound(SAMPLE_RATE as usize);
@@ -64,7 +65,7 @@ fn sounds(c: &mut Criterion) {
 			backend_settings: MockBackendSettings {
 				sample_rate: SAMPLE_RATE,
 			},
-			..Default::default()
+			main_track_builder: MainTrackBuilder::new().sound_capacity(NUM_SOUNDS),
 		})
 		.unwrap();
 		let sound_data = create_test_sound(SAMPLE_RATE as usize);
