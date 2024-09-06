@@ -18,11 +18,12 @@ use std::sync::{
 
 use crate::{
 	clock::{Clock, ClockHandle, ClockId, ClockSpeed},
-	listener::{self, Listener, ListenerHandle, ListenerId, ListenerShared},
+	listener::{Listener, ListenerHandle, ListenerId},
 	modulator::{ModulatorBuilder, ModulatorId},
 	sound::SoundData,
 	track::{
-		MainTrackHandle, SendTrackBuilder, SendTrackHandle, SendTrackId, TrackBuilder, TrackHandle,
+		MainTrackHandle, SendTrackBuilder, SendTrackHandle, SendTrackId, SpatialTrackBuilder,
+		SpatialTrackHandle, TrackBuilder, TrackHandle,
 	},
 	tween::Value,
 	PlaySoundError, ResourceLimitReached,
@@ -124,6 +125,25 @@ impl<B: Backend> AudioManager<B> {
 		builder: TrackBuilder,
 	) -> Result<TrackHandle, ResourceLimitReached> {
 		let (mut track, handle) = builder.build(self.renderer_shared.clone());
+		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
+		self.resource_controllers
+			.sub_track_controller
+			.insert(track)?;
+		Ok(handle)
+	}
+
+	/// Adds a spatial mixer sub-track.
+	pub fn add_spatial_sub_track(
+		&mut self,
+		listener: impl Into<ListenerId>,
+		position: impl Into<Value<mint::Vector3<f32>>>,
+		builder: SpatialTrackBuilder,
+	) -> Result<SpatialTrackHandle, ResourceLimitReached> {
+		let (mut track, handle) = builder.build(
+			self.renderer_shared.clone(),
+			listener.into(),
+			position.into().to_(),
+		);
 		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
 		self.resource_controllers
 			.sub_track_controller
