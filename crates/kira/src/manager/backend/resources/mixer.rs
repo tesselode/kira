@@ -55,7 +55,7 @@ impl Mixer {
 
 	pub fn on_start_processing(&mut self) {
 		self.sub_tracks
-			.remove_and_add(|track| track.shared().is_marked_for_removal());
+			.remove_and_add(|track| track.should_be_removed());
 		for (_, track) in &mut self.sub_tracks {
 			track.on_start_processing();
 		}

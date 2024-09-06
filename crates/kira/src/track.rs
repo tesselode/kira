@@ -116,6 +116,7 @@ pub(crate) struct Track {
 	sub_tracks: ResourceStorage<Track>,
 	effects: Vec<Box<dyn Effect>>,
 	sends: Vec<(SendTrackId, SendTrackRoute)>,
+	persist_until_sounds_finish: bool,
 	spatial_data: Option<SpatialData>,
 }
 
@@ -144,11 +145,18 @@ impl Track {
 	}
 
 	pub fn should_be_removed(&self) -> bool {
-		self.shared().is_marked_for_removal()
-			&& self
-				.sub_tracks
-				.iter()
-				.all(|(_, sub_track)| sub_track.should_be_removed())
+		if self
+			.sub_tracks
+			.iter()
+			.any(|(_, sub_track)| !sub_track.should_be_removed())
+		{
+			return false;
+		}
+		if self.persist_until_sounds_finish {
+			self.shared().is_marked_for_removal() && self.sounds.is_empty()
+		} else {
+			self.shared().is_marked_for_removal()
+		}
 	}
 
 	pub fn on_start_processing(&mut self) {

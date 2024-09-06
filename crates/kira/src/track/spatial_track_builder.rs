@@ -27,6 +27,7 @@ pub struct SpatialTrackBuilder {
 	/// The maximum number of sounds that can be played simultaneously on this track.
 	pub(crate) sound_capacity: u16,
 	pub(crate) sends: HashMap<SendTrackId, Value<Volume>>,
+	pub(crate) persist_until_sounds_finish: bool,
 	/// The distances from a listener at which the track is loudest and quietest.
 	pub(crate) distances: SpatialTrackDistances,
 	/// How the track's volume will change with distance.
@@ -48,6 +49,7 @@ impl SpatialTrackBuilder {
 			sub_track_capacity: 16,
 			sound_capacity: 128,
 			sends: HashMap::new(),
+			persist_until_sounds_finish: false,
 			distances: SpatialTrackDistances::default(),
 			attenuation_function: Some(Easing::Linear),
 			enable_spatialization: true,
@@ -221,6 +223,13 @@ impl SpatialTrackBuilder {
 		self
 	}
 
+	pub fn persist_until_sounds_finish(self, persist: bool) -> Self {
+		Self {
+			persist_until_sounds_finish: persist,
+			..self
+		}
+	}
+
 	/// Sets the distances from a listener at which the emitter is loudest and quietest.
 	#[must_use = "This method consumes self and returns a modified TrackBuilder, so the return value should be used"]
 	pub fn distances(self, distances: impl Into<SpatialTrackDistances>) -> Self {
@@ -286,6 +295,7 @@ impl SpatialTrackBuilder {
 			sub_tracks,
 			effects: self.effects,
 			sends,
+			persist_until_sounds_finish: self.persist_until_sounds_finish,
 			spatial_data: Some(SpatialData {
 				listener_id,
 				position: Parameter::new(position, Vec3::ZERO),

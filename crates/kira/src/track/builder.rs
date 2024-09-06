@@ -22,6 +22,7 @@ pub struct TrackBuilder {
 	/// The maximum number of sounds that can be played simultaneously on this track.
 	pub(crate) sound_capacity: u16,
 	pub(crate) sends: HashMap<SendTrackId, Value<Volume>>,
+	pub(crate) persist_until_sounds_finish: bool,
 }
 
 impl TrackBuilder {
@@ -34,6 +35,7 @@ impl TrackBuilder {
 			sub_track_capacity: 16,
 			sound_capacity: 128,
 			sends: HashMap::new(),
+			persist_until_sounds_finish: false,
 		}
 	}
 
@@ -204,6 +206,13 @@ impl TrackBuilder {
 		self
 	}
 
+	pub fn persist_until_sounds_finish(self, persist: bool) -> Self {
+		Self {
+			persist_until_sounds_finish: persist,
+			..self
+		}
+	}
+
 	#[must_use]
 	pub(crate) fn build(self, renderer_shared: Arc<RendererShared>) -> (Track, TrackHandle) {
 		let (set_volume_command_writer, set_volume_command_reader) = command_writer_and_reader();
@@ -232,6 +241,7 @@ impl TrackBuilder {
 			sub_tracks,
 			effects: self.effects,
 			sends,
+			persist_until_sounds_finish: self.persist_until_sounds_finish,
 			spatial_data: None,
 		};
 		let handle = TrackHandle {
