@@ -6,6 +6,7 @@ use std::sync::{
 use kira::{
 	clock::clock_info::ClockInfoProvider,
 	effect::{Effect, EffectBuilder},
+	listener::ListenerInfoProvider,
 	manager::{
 		backend::mock::{MockBackend, MockBackendSettings},
 		AudioManager, AudioManagerSettings,
@@ -36,6 +37,7 @@ impl Effect for TestEffect {
 		dt: f64,
 		_clock_info_provider: &ClockInfoProvider,
 		_modulator_value_provider: &ModulatorValueProvider,
+		_listener_info_provider: &ListenerInfoProvider,
 	) -> Frame {
 		self.dt_producer.push(dt).unwrap();
 		Frame::ZERO

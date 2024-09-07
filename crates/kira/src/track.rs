@@ -31,7 +31,7 @@ use crate::{
 	arena::Key,
 	effect::Effect,
 	listener::{ListenerId, ListenerInfo, ListenerInfoProvider},
-	manager::backend::resources::ResourceStorage,
+	manager::backend::resources::{listeners::Listeners, ResourceStorage},
 	sound::Sound,
 	tween::{Easing, Tweenable},
 };
@@ -93,15 +93,31 @@ impl MainTrack {
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
+		listener_info_provider: &ListenerInfoProvider,
 	) -> Frame {
-		self.volume
-			.update(dt, clock_info_provider, modulator_value_provider);
+		self.volume.update(
+			dt,
+			clock_info_provider,
+			modulator_value_provider,
+			listener_info_provider,
+		);
 		let mut output = input;
 		for (_, sound) in &mut self.sounds {
-			output += sound.process(dt, clock_info_provider, modulator_value_provider);
+			output += sound.process(
+				dt,
+				clock_info_provider,
+				modulator_value_provider,
+				listener_info_provider,
+			);
 		}
 		for effect in &mut self.effects {
-			output = effect.process(output, dt, clock_info_provider, modulator_value_provider);
+			output = effect.process(
+				output,
+				dt,
+				clock_info_provider,
+				modulator_value_provider,
+				listener_info_provider,
+			);
 		}
 		output *= self.volume.value().as_amplitude() as f32;
 		output
@@ -192,15 +208,30 @@ impl Track {
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
-		listener_info_provider: &ListenerInfoProvider,
+		listeners: &Listeners,
+		spatial_track_position: Option<Vec3>,
 		send_tracks: &mut ResourceStorage<SendTrack>,
 	) -> Frame {
-		self.volume
-			.update(dt, clock_info_provider, modulator_value_provider);
+		let spatial_track_position = self
+			.spatial_data
+			.as_ref()
+			.map(|spatial_data| spatial_data.position.value())
+			.or(spatial_track_position);
+		let listener_info_provider =
+			ListenerInfoProvider::new(spatial_track_position, &listeners.0.resources);
+		self.volume.update(
+			dt,
+			clock_info_provider,
+			modulator_value_provider,
+			&listener_info_provider,
+		);
 		for (_, route) in &mut self.sends {
-			route
-				.volume
-				.update(dt, clock_info_provider, modulator_value_provider);
+			route.volume.update(
+				dt,
+				clock_info_provider,
+				modulator_value_provider,
+				&listener_info_provider,
+			);
 		}
 
 		let mut output = Frame::ZERO;
@@ -209,17 +240,26 @@ impl Track {
 				dt,
 				clock_info_provider,
 				modulator_value_provider,
-				listener_info_provider,
+				listeners,
+				spatial_track_position,
 				send_tracks,
 			);
 		}
 		for (_, sound) in &mut self.sounds {
-			output += sound.process(dt, clock_info_provider, modulator_value_provider);
+			output += sound.process(
+				dt,
+				clock_info_provider,
+				modulator_value_provider,
+				&listener_info_provider,
+			);
 		}
 		if let Some(spatial_data) = &mut self.spatial_data {
-			spatial_data
-				.position
-				.update(dt, clock_info_provider, modulator_value_provider);
+			spatial_data.position.update(
+				dt,
+				clock_info_provider,
+				modulator_value_provider,
+				&listener_info_provider,
+			);
 			if let Some(ListenerInfo {
 				position,
 				orientation,
@@ -229,15 +269,21 @@ impl Track {
 			}
 		}
 		for effect in &mut self.effects {
-			output = effect.process(output, dt, clock_info_provider, modulator_value_provider);
+			output = effect.process(
+				output,
+				dt,
+				clock_info_provider,
+				modulator_value_provider,
+				&listener_info_provider,
+			);
 		}
-		output *= self.volume.value().as_amplitude() as f32;
 		for (send_track_id, SendTrackRoute { volume, .. }) in &self.sends {
 			let Some(send_track) = send_tracks.get_mut(send_track_id.0) else {
 				continue;
 			};
 			send_track.add_input(output * volume.value().as_amplitude() as f32);
 		}
+		output *= self.volume.value().as_amplitude() as f32;
 		output
 	}
 }
@@ -285,12 +331,23 @@ impl SendTrack {
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
+		listener_info_provider: &ListenerInfoProvider,
 	) -> Frame {
-		self.volume
-			.update(dt, clock_info_provider, modulator_value_provider);
+		self.volume.update(
+			dt,
+			clock_info_provider,
+			modulator_value_provider,
+			listener_info_provider,
+		);
 		let mut output = std::mem::replace(&mut self.input, Frame::ZERO);
 		for effect in &mut self.effects {
-			output = effect.process(output, dt, clock_info_provider, modulator_value_provider);
+			output = effect.process(
+				output,
+				dt,
+				clock_info_provider,
+				modulator_value_provider,
+				listener_info_provider,
+			);
 		}
 		output * self.volume.value().as_amplitude() as f32
 	}

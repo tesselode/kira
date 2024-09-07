@@ -63,11 +63,32 @@ impl Listener {
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
+		listener_info_provider: &ListenerInfoProvider,
 	) {
-		self.position
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.orientation
-			.update(dt, clock_info_provider, modulator_value_provider);
+		self.position.update(
+			dt,
+			clock_info_provider,
+			modulator_value_provider,
+			listener_info_provider,
+		);
+		self.orientation.update(
+			dt,
+			clock_info_provider,
+			modulator_value_provider,
+			listener_info_provider,
+		);
+	}
+}
+
+impl Default for Listener {
+	fn default() -> Self {
+		let (_, command_readers) = command_writers_and_readers();
+		Self {
+			shared: Arc::new(ListenerShared::new()),
+			position: Parameter::new(Value::Fixed(Vec3::ZERO), Vec3::ZERO),
+			orientation: Parameter::new(Value::Fixed(Quat::IDENTITY), Quat::IDENTITY),
+			command_readers,
+		}
 	}
 }
 

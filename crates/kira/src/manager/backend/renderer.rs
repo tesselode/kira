@@ -68,10 +68,12 @@ impl Renderer {
 		self.resources.modulators.process(
 			self.dt,
 			&ClockInfoProvider::new(&self.resources.clocks.0.resources),
+			&ListenerInfoProvider::new(None, &self.resources.listeners.0.resources),
 		);
 		self.resources.clocks.update(
 			self.dt,
 			&ModulatorValueProvider::new(&self.resources.modulators.0.resources),
+			&ListenerInfoProvider::new(None, &self.resources.listeners.0.resources),
 		);
 		self.resources.listeners.update(
 			self.dt,
@@ -82,7 +84,7 @@ impl Renderer {
 			self.dt,
 			&ClockInfoProvider::new(&self.resources.clocks.0.resources),
 			&ModulatorValueProvider::new(&self.resources.modulators.0.resources),
-			&ListenerInfoProvider::new(&self.resources.listeners.0.resources),
+			&self.resources.listeners,
 		)
 	}
 }

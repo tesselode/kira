@@ -1,4 +1,4 @@
-use crate::tween::{ModulatorMapping, Tweenable, Value};
+use crate::tween::{Mapping, Tweenable, Value};
 
 /// A change in volume of a sound.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -87,7 +87,7 @@ impl Tweenable for Volume {
 	}
 }
 
-impl Default for ModulatorMapping<Volume> {
+impl Default for Mapping<Volume> {
 	fn default() -> Self {
 		Self {
 			input_range: (0.0, 1.0),

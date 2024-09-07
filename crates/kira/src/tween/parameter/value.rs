@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use crate::{
+	listener::{ListenerId, ListenerInfoProvider},
 	modulator::{value_provider::ModulatorValueProvider, ModulatorId},
 	tween::Tweenable,
 };
@@ -15,15 +16,28 @@ pub enum Value<T> {
 		/// The modulator to link to.
 		id: ModulatorId,
 		/// How the modulator's value should be converted to the parameter's value.
-		mapping: ModulatorMapping<T>,
+		mapping: Mapping<T>,
+	},
+	FromListenerDistance {
+		id: ListenerId,
+		mapping: Mapping<T>,
 	},
 }
 
 impl<T> Value<T> {
 	/// Creates a `Value::FromModulator` from a modulator ID or handle.
 	#[must_use]
-	pub fn from_modulator(id: impl Into<ModulatorId>, mapping: ModulatorMapping<T>) -> Self {
+	pub fn from_modulator(id: impl Into<ModulatorId>, mapping: Mapping<T>) -> Self {
 		Self::FromModulator {
+			id: id.into(),
+			mapping,
+		}
+	}
+
+	/// Creates a `Value::FromListener` from a listener ID or handle.
+	#[must_use]
+	pub fn from_listener_distance(id: impl Into<ListenerId>, mapping: Mapping<T>) -> Self {
+		Self::FromListenerDistance {
 			id: id.into(),
 			mapping,
 		}
@@ -38,6 +52,10 @@ impl<T> Value<T> {
 				id,
 				mapping: mapping.to_(),
 			},
+			Value::FromListenerDistance { id, mapping } => Value::FromListenerDistance {
+				id,
+				mapping: mapping.to_(),
+			},
 		}
 	}
 }
@@ -46,12 +64,19 @@ impl<T> Value<T>
 where
 	T: Tweenable,
 {
-	pub(crate) fn raw_value(self, modulator_value_provider: &ModulatorValueProvider) -> Option<T> {
+	pub(crate) fn raw_value(
+		self,
+		modulator_value_provider: &ModulatorValueProvider,
+		listener_info_provider: &ListenerInfoProvider,
+	) -> Option<T> {
 		match self {
 			Value::Fixed(value) => Some(value),
 			Value::FromModulator { id, mapping } => modulator_value_provider
 				.get(id)
 				.map(|value| mapping.map(value)),
+			Value::FromListenerDistance { id, mapping } => listener_info_provider
+				.listener_distance(id)
+				.map(|value| mapping.map(value.into())),
 		}
 	}
 }
@@ -101,12 +126,12 @@ impl<T: Default> Default for Value<T> {
 impl<T, IntoId> From<IntoId> for Value<T>
 where
 	ModulatorId: From<IntoId>,
-	ModulatorMapping<T>: Default,
+	Mapping<T>: Default,
 {
 	fn from(id: IntoId) -> Self {
 		Self::FromModulator {
 			id: id.into(),
-			mapping: ModulatorMapping::default(),
+			mapping: Mapping::default(),
 		}
 	}
 }
@@ -114,7 +139,7 @@ where
 /// A transformation from a modulator's value to a parameter value.
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct ModulatorMapping<T> {
+pub struct Mapping<T> {
 	/// A range of values from a modulator.
 	pub input_range: (f64, f64),
 	/// The corresponding range of values of the parameter.
@@ -125,11 +150,11 @@ pub struct ModulatorMapping<T> {
 	pub clamp_top: bool,
 }
 
-impl<T> ModulatorMapping<T> {
+impl<T> Mapping<T> {
 	/// Converts a `ModulatorMapping<T>` to a `ModulatorMapping<T2>`.
 	#[must_use = "This method returns a new ModulatorMapping and does not mutate the original."]
-	pub fn to_<T2: From<T>>(self) -> ModulatorMapping<T2> {
-		ModulatorMapping {
+	pub fn to_<T2: From<T>>(self) -> Mapping<T2> {
+		Mapping {
 			input_range: self.input_range,
 			output_range: (self.output_range.0.into(), self.output_range.1.into()),
 			clamp_bottom: self.clamp_bottom,
@@ -154,7 +179,7 @@ impl<T> ModulatorMapping<T> {
 	}
 }
 
-impl Default for ModulatorMapping<f32> {
+impl Default for Mapping<f32> {
 	fn default() -> Self {
 		Self {
 			input_range: (0.0, 1.0),
@@ -165,7 +190,7 @@ impl Default for ModulatorMapping<f32> {
 	}
 }
 
-impl Default for ModulatorMapping<f64> {
+impl Default for Mapping<f64> {
 	fn default() -> Self {
 		Self {
 			input_range: (0.0, 1.0),

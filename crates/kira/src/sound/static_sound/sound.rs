@@ -12,6 +12,7 @@ use crate::{
 	clock::clock_info::ClockInfoProvider,
 	command::read_commands_into_parameters,
 	frame::Frame,
+	listener::ListenerInfoProvider,
 	modulator::value_provider::ModulatorValueProvider,
 	sound::{
 		transport::Transport, util::create_volume_fade_parameter, PlaybackRate, PlaybackState,
@@ -229,24 +230,39 @@ impl Sound for StaticSound {
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
+		listener_info_provider: &ListenerInfoProvider,
 	) -> Frame {
 		// update parameters
-		self.volume
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.playback_rate
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.panning
-			.update(dt, clock_info_provider, modulator_value_provider);
+		self.volume.update(
+			dt,
+			clock_info_provider,
+			modulator_value_provider,
+			listener_info_provider,
+		);
+		self.playback_rate.update(
+			dt,
+			clock_info_provider,
+			modulator_value_provider,
+			listener_info_provider,
+		);
+		self.panning.update(
+			dt,
+			clock_info_provider,
+			modulator_value_provider,
+			listener_info_provider,
+		);
 		self.volume_fade_start_time.update(dt, clock_info_provider);
 		if self.volume_fade_start_time == StartTime::Immediate {
 			if self.resume_queued {
 				self.resume_queued = false;
 				self.set_state(PlaybackState::Playing);
 			}
-			if self
-				.volume_fade
-				.update(dt, clock_info_provider, modulator_value_provider)
-			{
+			if self.volume_fade.update(
+				dt,
+				clock_info_provider,
+				modulator_value_provider,
+				listener_info_provider,
+			) {
 				match self.state {
 					PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
 					PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),

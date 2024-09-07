@@ -1,5 +1,6 @@
 use crate::{
 	clock::clock_info::ClockInfoProvider,
+	listener::ListenerInfoProvider,
 	modulator::{value_provider::ModulatorValueProvider, Modulator},
 };
 
@@ -21,12 +22,18 @@ impl Modulators {
 		}
 	}
 
-	pub fn process(&mut self, dt: f64, clock_info_provider: &ClockInfoProvider) {
+	pub fn process(
+		&mut self,
+		dt: f64,
+		clock_info_provider: &ClockInfoProvider,
+		listener_info_provider: &ListenerInfoProvider,
+	) {
 		self.0.for_each(|modulator, others| {
 			modulator.update(
 				dt,
 				clock_info_provider,
 				&ModulatorValueProvider::new(others),
+				listener_info_provider,
 			);
 		});
 	}
@@ -40,6 +47,7 @@ impl Modulator for DummyModulator {
 		_dt: f64,
 		_clock_info_provider: &ClockInfoProvider,
 		_modulator_value_provider: &ModulatorValueProvider,
+		_listener_info_provider: &ListenerInfoProvider,
 	) {
 	}
 

@@ -36,7 +36,7 @@ pub use playback_position::*;
 pub use playback_rate::*;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider, frame::Frame,
+	clock::clock_info::ClockInfoProvider, frame::Frame, listener::ListenerInfoProvider,
 	modulator::value_provider::ModulatorValueProvider,
 };
 
@@ -80,6 +80,7 @@ pub trait Sound: Send {
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
+		listener_info_provider: &ListenerInfoProvider,
 	) -> Frame;
 
 	/// Returns `true` if the sound is finished and can be unloaded.

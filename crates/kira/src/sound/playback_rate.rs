@@ -1,4 +1,4 @@
-use crate::tween::{ModulatorMapping, Tweenable, Value};
+use crate::tween::{Mapping, Tweenable, Value};
 
 /// How quickly a sound is played.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -75,7 +75,7 @@ impl Tweenable for PlaybackRate {
 	}
 }
 
-impl Default for ModulatorMapping<PlaybackRate> {
+impl Default for Mapping<PlaybackRate> {
 	fn default() -> Self {
 		Self {
 			input_range: (0.0, 1.0),

@@ -8,12 +8,17 @@
 ///
 /// In the current setting we expect a tick every 24000 frames.
 use kira::{
-	clock::{clock_info::WhenToStart, ClockHandle, ClockSpeed, ClockTime},
+	clock::{
+		clock_info::{ClockInfoProvider, WhenToStart},
+		ClockHandle, ClockSpeed, ClockTime,
+	},
 	effect::{Effect, EffectBuilder},
+	listener::ListenerInfoProvider,
 	manager::{
 		backend::mock::{MockBackend, MockBackendSettings},
 		AudioManager, AudioManagerSettings,
 	},
+	modulator::value_provider::ModulatorValueProvider,
 	track::TrackBuilder,
 	Frame,
 };
@@ -33,8 +38,9 @@ impl Effect for TestEffect {
 		&mut self,
 		input: Frame,
 		_dt: f64,
-		clock_info_provider: &kira::clock::clock_info::ClockInfoProvider,
-		_modulator_value_provider: &kira::modulator::value_provider::ModulatorValueProvider,
+		clock_info_provider: &ClockInfoProvider,
+		_modulator_value_provider: &ModulatorValueProvider,
+		_listener_info_provider: &ListenerInfoProvider,
 	) -> Frame {
 		self.frames += 1;
 		if self.frames == 24000 {

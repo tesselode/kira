@@ -165,7 +165,7 @@ use std::sync::{
 	Arc,
 };
 
-use crate::arena::Key;
+use crate::{arena::Key, listener::ListenerInfoProvider};
 
 use crate::{
 	command::read_commands_into_parameters,
@@ -334,9 +334,14 @@ impl Clock {
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
+		listener_info_provider: &ListenerInfoProvider,
 	) -> Option<u64> {
-		self.speed
-			.update(dt, clock_info_provider, modulator_value_provider);
+		self.speed.update(
+			dt,
+			clock_info_provider,
+			modulator_value_provider,
+			listener_info_provider,
+		);
 		if !self.ticking {
 			return None;
 		}

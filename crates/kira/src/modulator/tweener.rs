@@ -20,6 +20,7 @@ pub use handle::*;
 use crate::{
 	clock::clock_info::{ClockInfoProvider, WhenToStart},
 	command_writers_and_readers,
+	listener::ListenerInfoProvider,
 	tween::{Tween, Tweenable},
 	StartTime,
 };
@@ -69,6 +70,7 @@ impl Modulator for Tweener {
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		_modulator_value_provider: &ModulatorValueProvider,
+		_listener_info_provider: &ListenerInfoProvider,
 	) {
 		if let State::Tweening {
 			values,

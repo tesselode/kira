@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use crate::arena::Arena;
 
+use crate::listener::MockListenerInfoProviderBuilder;
 use crate::{
 	clock::{clock_info::MockClockInfoProviderBuilder, ClockTime},
 	modulator::{
@@ -21,10 +22,16 @@ fn tweening() {
 		TweenerBuilder { initial_value: 0.0 }.build(generate_fake_modulator_id());
 	let clock_info_provider = MockClockInfoProviderBuilder::new(1).build();
 	let modulator_value_provider = MockModulatorValueProviderBuilder::new(0).build();
+	let listener_info_provider = MockListenerInfoProviderBuilder::new(None, 0).build();
 
 	// value should not be changing yet
 	for _ in 0..3 {
-		tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
+		tweener.update(
+			1.0,
+			&clock_info_provider,
+			&modulator_value_provider,
+			&listener_info_provider,
+		);
 		assert_eq!(tweener.value(), 0.0);
 	}
 
@@ -37,11 +44,26 @@ fn tweening() {
 	);
 	tweener.on_start_processing();
 
-	tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
+	tweener.update(
+		1.0,
+		&clock_info_provider,
+		&modulator_value_provider,
+		&listener_info_provider,
+	);
 	assert_eq!(tweener.value(), 0.5);
-	tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
+	tweener.update(
+		1.0,
+		&clock_info_provider,
+		&modulator_value_provider,
+		&listener_info_provider,
+	);
 	assert_eq!(tweener.value(), 1.0);
-	tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
+	tweener.update(
+		1.0,
+		&clock_info_provider,
+		&modulator_value_provider,
+		&listener_info_provider,
+	);
 	assert_eq!(tweener.value(), 1.0);
 }
 
@@ -52,6 +74,7 @@ fn tweening() {
 fn waits_for_delay() {
 	let clock_info_provider = MockClockInfoProviderBuilder::new(0).build();
 	let modulator_value_provider = MockModulatorValueProviderBuilder::new(0).build();
+	let listener_info_provider = MockListenerInfoProviderBuilder::new(None, 0).build();
 
 	let (mut tweener, mut handle) =
 		TweenerBuilder { initial_value: 0.0 }.build(generate_fake_modulator_id());
@@ -68,11 +91,21 @@ fn waits_for_delay() {
 	// value should not be changing yet
 	for _ in 0..2 {
 		assert_eq!(tweener.value(), 0.0);
-		tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
+		tweener.update(
+			1.0,
+			&clock_info_provider,
+			&modulator_value_provider,
+			&listener_info_provider,
+		);
 	}
 
 	// the tween should start now
-	tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
+	tweener.update(
+		1.0,
+		&clock_info_provider,
+		&modulator_value_provider,
+		&listener_info_provider,
+	);
 	assert_eq!(tweener.value(), 1.0);
 }
 
@@ -91,6 +124,7 @@ fn waits_for_start_time() {
 		(builder.build(), clock_id_1)
 	};
 	let modulator_value_provider = MockModulatorValueProviderBuilder::new(0).build();
+	let listener_info_provider = MockListenerInfoProviderBuilder::new(None, 0).build();
 
 	handle.set(
 		1.0,
@@ -108,7 +142,12 @@ fn waits_for_start_time() {
 
 	// value should not be changing yet
 	for _ in 0..3 {
-		tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
+		tweener.update(
+			1.0,
+			&clock_info_provider,
+			&modulator_value_provider,
+			&listener_info_provider,
+		);
 		assert_eq!(tweener.value(), 0.0);
 	}
 
@@ -122,7 +161,12 @@ fn waits_for_start_time() {
 	// the tween is set to start at tick 2, so it should not
 	// start yet
 	for _ in 0..3 {
-		tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
+		tweener.update(
+			1.0,
+			&clock_info_provider,
+			&modulator_value_provider,
+			&listener_info_provider,
+		);
 		assert_eq!(tweener.value(), 0.0);
 	}
 
@@ -136,7 +180,12 @@ fn waits_for_start_time() {
 	// a different clock reached tick 2, so the tween should not
 	// start yet
 	for _ in 0..3 {
-		tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
+		tweener.update(
+			1.0,
+			&clock_info_provider,
+			&modulator_value_provider,
+			&listener_info_provider,
+		);
 		assert_eq!(tweener.value(), 0.0);
 	}
 
@@ -148,7 +197,12 @@ fn waits_for_start_time() {
 	};
 
 	// the tween should start now
-	tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
+	tweener.update(
+		1.0,
+		&clock_info_provider,
+		&modulator_value_provider,
+		&listener_info_provider,
+	);
 	assert_eq!(tweener.value(), 1.0);
 }
 

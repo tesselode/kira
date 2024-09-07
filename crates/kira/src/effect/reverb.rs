@@ -7,9 +7,14 @@ pub use builder::*;
 pub use handle::*;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider, command::read_commands_into_parameters,
-	command::ValueChangeCommand, command_writers_and_readers, effect::Effect, frame::Frame,
-	modulator::value_provider::ModulatorValueProvider, tween::Parameter,
+	clock::clock_info::ClockInfoProvider,
+	command::{read_commands_into_parameters, ValueChangeCommand},
+	command_writers_and_readers,
+	effect::Effect,
+	frame::Frame,
+	listener::ListenerInfoProvider,
+	modulator::value_provider::ModulatorValueProvider,
+	tween::Parameter,
 };
 use all_pass::AllPassFilter;
 use comb::CombFilter;
@@ -140,20 +145,37 @@ impl Effect for Reverb {
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
+		listener_info_provider: &ListenerInfoProvider,
 	) -> Frame {
 		if let ReverbState::Initialized {
 			comb_filters,
 			all_pass_filters,
 		} = &mut self.state
 		{
-			self.feedback
-				.update(dt, clock_info_provider, modulator_value_provider);
-			self.damping
-				.update(dt, clock_info_provider, modulator_value_provider);
-			self.stereo_width
-				.update(dt, clock_info_provider, modulator_value_provider);
-			self.mix
-				.update(dt, clock_info_provider, modulator_value_provider);
+			self.feedback.update(
+				dt,
+				clock_info_provider,
+				modulator_value_provider,
+				listener_info_provider,
+			);
+			self.damping.update(
+				dt,
+				clock_info_provider,
+				modulator_value_provider,
+				listener_info_provider,
+			);
+			self.stereo_width.update(
+				dt,
+				clock_info_provider,
+				modulator_value_provider,
+				listener_info_provider,
+			);
+			self.mix.update(
+				dt,
+				clock_info_provider,
+				modulator_value_provider,
+				listener_info_provider,
+			);
 
 			let feedback = self.feedback.value() as f32;
 			let damping = self.damping.value() as f32;
