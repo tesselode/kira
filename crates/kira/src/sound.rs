@@ -26,7 +26,6 @@ pub mod streaming;
 #[cfg(feature = "symphonia")]
 mod symphonia;
 mod transport;
-mod util;
 
 use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
 
@@ -94,11 +93,31 @@ pub enum PlaybackState {
 	Pausing,
 	/// Playback is paused.
 	Paused,
+	/// The sound is paused, but is schedule to resume in the future.
+	WaitingToResume,
+	/// The sound is fading back in after being previously paused.
+	Resuming,
 	/// The sound is fading out, and when the fade-out
 	/// is finished, playback will stop.
 	Stopping,
 	/// The sound has stopped and can no longer be resumed.
 	Stopped,
+}
+
+impl PlaybackState {
+	/// Whether the sound is advancing and outputting audio given
+	/// its current playback state.
+	pub fn is_advancing(self) -> bool {
+		match self {
+			PlaybackState::Playing => true,
+			PlaybackState::Pausing => true,
+			PlaybackState::Paused => false,
+			PlaybackState::WaitingToResume => false,
+			PlaybackState::Resuming => true,
+			PlaybackState::Stopping => true,
+			PlaybackState::Stopped => false,
+		}
+	}
 }
 
 /// A portion of audio.
