@@ -12,11 +12,9 @@ use crate::{
 	command::read_commands_into_parameters,
 	frame::Frame,
 	info::Info,
-	sound::{
-		transport::Transport, util::create_volume_fade_parameter, PlaybackRate, PlaybackState,
-		Sound,
-	},
-	tween::{Parameter, Tween, Value},
+	playback_state_manager::PlaybackStateManager,
+	sound::{transport::Transport, PlaybackRate, PlaybackState, Sound},
+	tween::{Parameter, Tween},
 	StartTime, Volume,
 };
 
@@ -30,7 +28,7 @@ pub(super) struct StaticSound {
 	frames: Arc<[Frame]>,
 	slice: Option<(usize, usize)>,
 	reverse: bool,
-	state: PlaybackState,
+	playback_state_manager: PlaybackStateManager,
 	start_time: StartTime,
 	resampler: Resampler,
 	transport: Transport,
@@ -38,9 +36,6 @@ pub(super) struct StaticSound {
 	volume: Parameter<Volume>,
 	playback_rate: Parameter<PlaybackRate>,
 	panning: Parameter,
-	volume_fade: Parameter<Volume>,
-	volume_fade_start_time: StartTime,
-	resume_queued: bool,
 	shared: Arc<Shared>,
 }
 
@@ -63,7 +58,7 @@ impl StaticSound {
 			frames: data.frames,
 			slice: data.slice,
 			reverse: data.settings.reverse,
-			state: PlaybackState::Playing,
+			playback_state_manager: PlaybackStateManager::new(settings.fade_in_tween),
 			start_time: settings.start_time,
 			resampler: Resampler::new(starting_frame_index),
 			transport,
@@ -71,9 +66,6 @@ impl StaticSound {
 			volume: Parameter::new(settings.volume, Volume::Amplitude(1.0)),
 			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate::Factor(1.0)),
 			panning: Parameter::new(settings.panning, 0.5),
-			volume_fade: create_volume_fade_parameter(settings.fade_in_tween),
-			volume_fade_start_time: StartTime::Immediate,
-			resume_queued: false,
 			shared: Arc::new(Shared {
 				state: AtomicU8::new(PlaybackState::Playing as u8),
 				position: AtomicU64::new(position.to_bits()),
@@ -91,36 +83,25 @@ impl StaticSound {
 		self.shared.clone()
 	}
 
-	fn set_state(&mut self, state: PlaybackState) {
-		self.state = state;
-		self.shared.state.store(state as u8, Ordering::SeqCst);
+	fn update_shared_playback_state(&mut self) {
+		self.shared
+			.set_state(self.playback_state_manager.playback_state());
 	}
 
 	fn pause(&mut self, fade_out_tween: Tween) {
-		self.set_state(PlaybackState::Pausing);
-		self.volume_fade.set(
-			Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)),
-			fade_out_tween,
-		);
+		self.playback_state_manager.pause(fade_out_tween);
+		self.update_shared_playback_state();
 	}
 
 	fn resume(&mut self, start_time: StartTime, fade_in_tween: Tween) {
-		self.volume_fade_start_time = start_time;
-		if start_time == StartTime::Immediate {
-			self.set_state(PlaybackState::Playing);
-		} else {
-			self.resume_queued = true;
-		}
-		self.volume_fade
-			.set(Value::Fixed(Volume::Decibels(0.0)), fade_in_tween);
+		self.playback_state_manager
+			.resume(start_time, fade_in_tween);
+		self.update_shared_playback_state();
 	}
 
 	fn stop(&mut self, fade_out_tween: Tween) {
-		self.set_state(PlaybackState::Stopping);
-		self.volume_fade.set(
-			Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)),
-			fade_out_tween,
-		);
+		self.playback_state_manager.stop(fade_out_tween);
+		self.update_shared_playback_state();
 	}
 
 	#[must_use]
@@ -134,7 +115,7 @@ impl StaticSound {
 
 	/// Updates the current frame index by 1 and pushes a new sample to the resampler.
 	fn update_position(&mut self) {
-		if matches!(self.state, PlaybackState::Paused | PlaybackState::Stopped) {
+		if !self.playback_state_manager.playback_state().is_advancing() {
 			self.resampler
 				.push_frame(Frame::ZERO, self.transport.position);
 			return;
@@ -147,7 +128,8 @@ impl StaticSound {
 				.increment_position(num_frames(&self.frames, self.slice));
 		}
 		if !self.transport.playing && self.resampler.outputting_silence() {
-			self.set_state(PlaybackState::Stopped);
+			self.playback_state_manager.mark_as_stopped();
+			self.update_shared_playback_state();
 		}
 	}
 
@@ -156,7 +138,7 @@ impl StaticSound {
 			.seek_to(index, num_frames(&self.frames, self.slice));
 		// if the sound is playing, push a frame to the resample buffer
 		// to make sure it doesn't get skipped
-		if !matches!(self.state, PlaybackState::Paused | PlaybackState::Stopped) {
+		if self.playback_state_manager.playback_state().is_advancing() {
 			self.push_frame_to_resampler();
 		}
 	}
@@ -164,9 +146,10 @@ impl StaticSound {
 	fn push_frame_to_resampler(&mut self) {
 		let frame = if self.transport.playing {
 			let frame_index: usize = self.transport.position;
+			let fade_volume = self.playback_state_manager.fade_volume().as_amplitude() as f32;
+			let volume = self.volume.value().as_amplitude() as f32;
 			(frame_at_index(frame_index, &self.frames, self.slice).unwrap_or_default()
-				* self.volume_fade.value().as_amplitude() as f32
-				* self.volume.value().as_amplitude() as f32)
+				* fade_volume * volume)
 				.panned(self.panning.value() as f32)
 		} else {
 			Frame::ZERO
@@ -228,24 +211,15 @@ impl Sound for StaticSound {
 		self.volume.update(dt, info);
 		self.playback_rate.update(dt, info);
 		self.panning.update(dt, info);
-		self.volume_fade_start_time.update(dt, info);
-		if self.volume_fade_start_time == StartTime::Immediate {
-			if self.resume_queued {
-				self.resume_queued = false;
-				self.set_state(PlaybackState::Playing);
-			}
-			if self.volume_fade.update(dt, info) {
-				match self.state {
-					PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
-					PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),
-					_ => {}
-				}
-			}
+		let changed_playback_state = self.playback_state_manager.update(dt, info);
+		if changed_playback_state {
+			self.update_shared_playback_state();
 		}
 
 		let will_never_start = self.start_time.update(dt, info);
 		if will_never_start {
-			self.set_state(PlaybackState::Stopped);
+			self.playback_state_manager.mark_as_stopped();
+			self.update_shared_playback_state();
 		}
 		if self.start_time != StartTime::Immediate {
 			return Frame::ZERO;
@@ -263,7 +237,7 @@ impl Sound for StaticSound {
 	}
 
 	fn finished(&self) -> bool {
-		self.state == PlaybackState::Stopped
+		self.playback_state_manager.playback_state() == PlaybackState::Stopped
 	}
 }
 
@@ -279,10 +253,16 @@ impl Shared {
 			0 => PlaybackState::Playing,
 			1 => PlaybackState::Pausing,
 			2 => PlaybackState::Paused,
-			3 => PlaybackState::Stopping,
-			4 => PlaybackState::Stopped,
+			3 => PlaybackState::WaitingToResume,
+			4 => PlaybackState::Resuming,
+			5 => PlaybackState::Stopping,
+			6 => PlaybackState::Stopped,
 			_ => panic!("Invalid playback state"),
 		}
+	}
+
+	pub fn set_state(&self, state: PlaybackState) {
+		self.state.store(state as u8, Ordering::SeqCst);
 	}
 
 	pub fn position(&self) -> f64 {
