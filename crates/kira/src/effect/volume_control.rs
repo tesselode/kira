@@ -7,9 +7,14 @@ pub use builder::*;
 pub use handle::*;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider, command::read_commands_into_parameters,
-	command::ValueChangeCommand, command_writers_and_readers, frame::Frame,
-	modulator::value_provider::ModulatorValueProvider, tween::Parameter, Volume,
+	clock::clock_info::ClockInfoProvider,
+	command::{read_commands_into_parameters, ValueChangeCommand},
+	command_writers_and_readers,
+	frame::Frame,
+	listener::ListenerInfoProvider,
+	modulator::value_provider::ModulatorValueProvider,
+	tween::Parameter,
+	Volume,
 };
 
 use super::Effect;
@@ -40,9 +45,14 @@ impl Effect for VolumeControl {
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
+		listener_info_provider: &ListenerInfoProvider,
 	) -> Frame {
-		self.volume
-			.update(dt, clock_info_provider, modulator_value_provider);
+		self.volume.update(
+			dt,
+			clock_info_provider,
+			modulator_value_provider,
+			listener_info_provider,
+		);
 		input * self.volume.value().as_amplitude() as f32
 	}
 }

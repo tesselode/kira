@@ -11,9 +11,13 @@ pub use handle::*;
 use std::f64::consts::PI;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider, command::read_commands_into_parameters,
-	command::ValueChangeCommand, command_writers_and_readers, frame::Frame,
-	modulator::value_provider::ModulatorValueProvider, tween::Parameter,
+	clock::clock_info::ClockInfoProvider,
+	command::{read_commands_into_parameters, ValueChangeCommand},
+	command_writers_and_readers,
+	frame::Frame,
+	listener::ListenerInfoProvider,
+	modulator::value_provider::ModulatorValueProvider,
+	tween::Parameter,
 };
 
 use super::Effect;
@@ -126,13 +130,26 @@ impl Effect for EqFilter {
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
+		listener_info_provider: &ListenerInfoProvider,
 	) -> Frame {
-		self.frequency
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.gain
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.q
-			.update(dt, clock_info_provider, modulator_value_provider);
+		self.frequency.update(
+			dt,
+			clock_info_provider,
+			modulator_value_provider,
+			listener_info_provider,
+		);
+		self.gain.update(
+			dt,
+			clock_info_provider,
+			modulator_value_provider,
+			listener_info_provider,
+		);
+		self.q.update(
+			dt,
+			clock_info_provider,
+			modulator_value_provider,
+			listener_info_provider,
+		);
 		let Coefficients {
 			a1,
 			a2,

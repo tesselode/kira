@@ -19,7 +19,7 @@ pub mod reverb;
 pub mod volume_control;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider, frame::Frame,
+	clock::clock_info::ClockInfoProvider, frame::Frame, listener::ListenerInfoProvider,
 	modulator::value_provider::ModulatorValueProvider,
 };
 
@@ -61,5 +61,6 @@ pub trait Effect: Send + Sync {
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
+		listener_info_provider: &ListenerInfoProvider,
 	) -> Frame;
 }
