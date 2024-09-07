@@ -182,7 +182,7 @@ impl SendTrackBuilder {
 		};
 		let handle = SendTrackHandle {
 			id,
-			shared: Some(shared),
+			shared,
 			set_volume_command_writer,
 		};
 		(track, handle)

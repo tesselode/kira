@@ -8,13 +8,14 @@ use crate::{
 	listener::ListenerId,
 	manager::backend::{resources::ResourceController, RendererShared},
 	sound::{Sound, SoundData},
+	track::TrackPlaybackState,
 	tween::{Tween, Value},
-	PlaySoundError, ResourceLimitReached, Volume,
+	PlaySoundError, ResourceLimitReached, StartTime, Volume,
 };
 
 use super::{
-	NonexistentRoute, SendTrackId, SpatialTrackBuilder, SpatialTrackHandle, Track, TrackBuilder,
-	TrackShared,
+	CommandWriters, NonexistentRoute, SendTrackId, SpatialTrackBuilder, SpatialTrackHandle, Track,
+	TrackBuilder, TrackShared,
 };
 
 /// Controls a mixer track.
@@ -24,8 +25,8 @@ use super::{
 #[derive(Debug)]
 pub struct TrackHandle {
 	pub(crate) renderer_shared: Arc<RendererShared>,
-	pub(crate) shared: Option<Arc<TrackShared>>,
-	pub(crate) set_volume_command_writer: CommandWriter<ValueChangeCommand<Volume>>,
+	pub(crate) shared: Arc<TrackShared>,
+	pub(crate) command_writers: CommandWriters,
 	pub(crate) sound_controller: ResourceController<Box<dyn Sound>>,
 	pub(crate) sub_track_controller: ResourceController<Track>,
 	pub(crate) send_volume_command_writers:
@@ -33,6 +34,12 @@ pub struct TrackHandle {
 }
 
 impl TrackHandle {
+	/// Returns the current playback state of the track.
+	#[must_use]
+	pub fn state(&self) -> TrackPlaybackState {
+		self.shared.state()
+	}
+
 	/// Plays a sound.
 	pub fn play<D: SoundData>(
 		&mut self,
@@ -77,7 +84,7 @@ impl TrackHandle {
 
 	/// Sets the (post-effects) volume of the mixer track.
 	pub fn set_volume(&mut self, volume: impl Into<Value<Volume>>, tween: Tween) {
-		self.set_volume_command_writer.write(ValueChangeCommand {
+		self.command_writers.set_volume.write(ValueChangeCommand {
 			target: volume.into(),
 			tween,
 		})
@@ -102,6 +109,26 @@ impl TrackHandle {
 				tween,
 			});
 		Ok(())
+	}
+
+	/// Fades out the track to silence with the given tween and then
+	/// pauses playback, pausing all sounds and emitters playing on this
+	/// track.
+	pub fn pause(&mut self, tween: Tween) {
+		self.command_writers.pause.write(tween)
+	}
+
+	/// Resumes playback and fades in the sound from silence
+	/// with the given tween, resuming all sounds and emitters
+	/// playing on this track.
+	pub fn resume(&mut self, tween: Tween) {
+		self.resume_at(StartTime::Immediate, tween)
+	}
+
+	/// Resumes playback at the given start time and fades in
+	/// the sound from silence with the given tween.
+	pub fn resume_at(&mut self, start_time: StartTime, tween: Tween) {
+		self.command_writers.resume.write((start_time, tween))
 	}
 
 	/// Returns the maximum number of sounds that can play simultaneously on this track.
@@ -131,8 +158,6 @@ impl TrackHandle {
 
 impl Drop for TrackHandle {
 	fn drop(&mut self) {
-		if let Some(shared) = &self.shared {
-			shared.mark_for_removal();
-		}
+		self.shared.mark_for_removal();
 	}
 }

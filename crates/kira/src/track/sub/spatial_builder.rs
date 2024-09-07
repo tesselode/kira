@@ -7,12 +7,14 @@ use crate::{
 	effect::EffectBuilder,
 	listener::ListenerId,
 	manager::backend::{resources::ResourceStorage, RendererShared},
+	playback_state_manager::PlaybackStateManager,
 	tween::{Easing, Parameter, Value},
 	Volume,
 };
 
 use super::{
-	Effect, SendTrackId, SendTrackRoute, SpatialData, SpatialTrackHandle, Track, TrackShared,
+	command_writers_and_readers, Effect, SendTrackId, SendTrackRoute, SpatialData,
+	SpatialTrackHandle, Track, TrackShared,
 };
 
 /// Configures a spatial mixer track.
@@ -267,9 +269,7 @@ impl SpatialTrackBuilder {
 		listener_id: ListenerId,
 		position: Value<Vec3>,
 	) -> (Track, SpatialTrackHandle) {
-		let (set_volume_command_writer, set_volume_command_reader) = command_writer_and_reader();
-		let (set_position_command_writer, set_position_command_reader) =
-			command_writer_and_reader();
+		let (command_writers, command_readers) = command_writers_and_readers();
 		let shared = Arc::new(TrackShared::new());
 		let (sounds, sound_controller) = ResourceStorage::new(self.sound_capacity);
 		let (sub_tracks, sub_track_controller) = ResourceStorage::new(self.sub_track_capacity);
@@ -289,8 +289,8 @@ impl SpatialTrackBuilder {
 		}
 		let track = Track {
 			shared: shared.clone(),
+			command_readers,
 			volume: Parameter::new(self.volume, Volume::Amplitude(1.0)),
-			set_volume_command_reader,
 			sounds,
 			sub_tracks,
 			effects: self.effects,
@@ -299,20 +299,19 @@ impl SpatialTrackBuilder {
 			spatial_data: Some(SpatialData {
 				listener_id,
 				position: Parameter::new(position, Vec3::ZERO),
-				set_position_command_reader,
 				distances: self.distances,
 				attenuation_function: self.attenuation_function,
 				enable_spatialization: self.enable_spatialization,
 			}),
+			playback_state_manager: PlaybackStateManager::new(None),
 		};
 		let handle = SpatialTrackHandle {
 			renderer_shared,
-			shared: Some(shared),
-			set_volume_command_writer,
+			shared,
+			command_writers,
 			sound_controller,
 			sub_track_controller,
 			send_volume_command_writers,
-			set_position_command_writer,
 		};
 		(track, handle)
 	}

@@ -4,11 +4,15 @@ use crate::{
 	command::command_writer_and_reader,
 	effect::EffectBuilder,
 	manager::backend::{resources::ResourceStorage, RendererShared},
+	playback_state_manager::PlaybackStateManager,
 	tween::{Parameter, Value},
 	Volume,
 };
 
-use super::{Effect, SendTrackId, SendTrackRoute, Track, TrackHandle, TrackShared};
+use super::{
+	command_writers_and_readers, Effect, SendTrackId, SendTrackRoute, Track, TrackHandle,
+	TrackShared,
+};
 
 /// Configures a mixer track.
 pub struct TrackBuilder {
@@ -215,7 +219,7 @@ impl TrackBuilder {
 
 	#[must_use]
 	pub(crate) fn build(self, renderer_shared: Arc<RendererShared>) -> (Track, TrackHandle) {
-		let (set_volume_command_writer, set_volume_command_reader) = command_writer_and_reader();
+		let (command_writers, command_readers) = command_writers_and_readers();
 		let shared = Arc::new(TrackShared::new());
 		let (sounds, sound_controller) = ResourceStorage::new(self.sound_capacity);
 		let (sub_tracks, sub_track_controller) = ResourceStorage::new(self.sub_track_capacity);
@@ -235,19 +239,20 @@ impl TrackBuilder {
 		}
 		let track = Track {
 			shared: shared.clone(),
+			command_readers,
 			volume: Parameter::new(self.volume, Volume::Amplitude(1.0)),
-			set_volume_command_reader,
 			sounds,
 			sub_tracks,
 			effects: self.effects,
 			sends,
 			persist_until_sounds_finish: self.persist_until_sounds_finish,
 			spatial_data: None,
+			playback_state_manager: PlaybackStateManager::new(None),
 		};
 		let handle = TrackHandle {
 			renderer_shared,
-			shared: Some(shared),
-			set_volume_command_writer,
+			shared,
+			command_writers,
 			sound_controller,
 			sub_track_controller,
 			send_volume_command_writers,
