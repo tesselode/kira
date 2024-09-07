@@ -15,7 +15,7 @@ use super::{SendTrackId, TrackShared};
 #[derive(Debug)]
 pub struct SendTrackHandle {
 	pub(crate) id: SendTrackId,
-	pub(crate) shared: Option<Arc<TrackShared>>,
+	pub(crate) shared: Arc<TrackShared>,
 	pub(crate) set_volume_command_writer: CommandWriter<ValueChangeCommand<Volume>>,
 }
 
@@ -36,8 +36,6 @@ impl SendTrackHandle {
 
 impl Drop for SendTrackHandle {
 	fn drop(&mut self) {
-		if let Some(shared) = &self.shared {
-			shared.mark_for_removal();
-		}
+		self.shared.mark_for_removal();
 	}
 }
