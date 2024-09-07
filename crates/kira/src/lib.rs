@@ -256,6 +256,7 @@ pub mod info;
 pub mod listener;
 pub mod manager;
 pub mod modulator;
+mod playback_state_manager;
 pub mod sound;
 mod start_time;
 pub mod track;

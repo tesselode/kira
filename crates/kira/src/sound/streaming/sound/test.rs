@@ -50,7 +50,10 @@ fn plays_all_samples() {
 
 	// the sound should be finished and stopped by now
 	assert!(sound.finished());
-	assert_eq!(sound.state, PlaybackState::Stopped);
+	assert_eq!(
+		sound.playback_state_manager.playback_state(),
+		PlaybackState::Stopped
+	);
 }
 
 /// Tests that a `StreamingSound` will pause playback while waiting
@@ -112,7 +115,10 @@ fn reports_playback_state() {
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
 
 	for _ in 0..20 {
-		assert_eq!(handle.state(), sound.state);
+		assert_eq!(
+			handle.state(),
+			sound.playback_state_manager.playback_state()
+		);
 		sound.process(1.0, &MockInfoBuilder::new(None).build());
 	}
 }
@@ -151,14 +157,20 @@ fn pauses_and_resumes_with_fades() {
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
 
 	sound.process(1.0, &MockInfoBuilder::new(None).build());
-	assert_eq!(sound.state, PlaybackState::Playing);
+	assert_eq!(
+		sound.playback_state_manager.playback_state(),
+		PlaybackState::Playing
+	);
 
 	handle.pause(Tween {
 		duration: Duration::from_secs(4),
 		..Default::default()
 	});
 	sound.on_start_processing();
-	assert_eq!(sound.state, PlaybackState::Pausing);
+	assert_eq!(
+		sound.playback_state_manager.playback_state(),
+		PlaybackState::Pausing
+	);
 
 	// allow for a few samples of delay because of the resampling, but the
 	// sound should fade out soon.
@@ -185,7 +197,10 @@ fn pauses_and_resumes_with_fades() {
 		);
 		sound.on_start_processing();
 		assert_eq!(handle.position(), position);
-		assert_eq!(sound.state, PlaybackState::Paused);
+		assert_eq!(
+			sound.playback_state_manager.playback_state(),
+			PlaybackState::Paused
+		);
 	}
 
 	handle.resume(Tween {
@@ -200,24 +215,36 @@ fn pauses_and_resumes_with_fades() {
 		Frame::from_mono(Volume::Decibels(-45.0).as_amplitude() as f32).panned(0.5),
 		&mut sound,
 	);
-	assert_eq!(sound.state, PlaybackState::Playing);
+	assert_eq!(
+		sound.playback_state_manager.playback_state(),
+		PlaybackState::Resuming
+	);
 	assert_eq!(
 		sound.process(1.0, &MockInfoBuilder::new(None).build()),
 		Frame::from_mono(Volume::Decibels(-30.0).as_amplitude() as f32).panned(0.5)
 	);
-	assert_eq!(sound.state, PlaybackState::Playing);
+	assert_eq!(
+		sound.playback_state_manager.playback_state(),
+		PlaybackState::Resuming
+	);
 	assert_eq!(
 		sound.process(1.0, &MockInfoBuilder::new(None).build()),
 		Frame::from_mono(Volume::Decibels(-15.0).as_amplitude() as f32).panned(0.5)
 	);
-	assert_eq!(sound.state, PlaybackState::Playing);
+	assert_eq!(
+		sound.playback_state_manager.playback_state(),
+		PlaybackState::Resuming
+	);
 
 	for _ in 0..3 {
 		assert_eq!(
 			sound.process(1.0, &MockInfoBuilder::new(None).build()),
 			Frame::from_mono(1.0).panned(0.5)
 		);
-		assert_eq!(sound.state, PlaybackState::Playing);
+		assert_eq!(
+			sound.playback_state_manager.playback_state(),
+			PlaybackState::Playing
+		);
 	}
 }
 
@@ -234,14 +261,20 @@ fn stops_with_fade_out() {
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
 
 	sound.process(1.0, &MockInfoBuilder::new(None).build());
-	assert_eq!(sound.state, PlaybackState::Playing);
+	assert_eq!(
+		sound.playback_state_manager.playback_state(),
+		PlaybackState::Playing
+	);
 
 	handle.stop(Tween {
 		duration: Duration::from_secs(4),
 		..Default::default()
 	});
 	sound.on_start_processing();
-	assert_eq!(sound.state, PlaybackState::Stopping);
+	assert_eq!(
+		sound.playback_state_manager.playback_state(),
+		PlaybackState::Stopping
+	);
 
 	// allow for a few samples of delay because of the resampling, but the
 	// sound should fade out soon.
@@ -268,7 +301,10 @@ fn stops_with_fade_out() {
 		);
 		sound.on_start_processing();
 		assert_eq!(handle.position(), position);
-		assert_eq!(sound.state, PlaybackState::Stopped);
+		assert_eq!(
+			sound.playback_state_manager.playback_state(),
+			PlaybackState::Stopped
+		);
 		assert!(sound.finished());
 	}
 }
@@ -498,20 +534,23 @@ fn resume_at() {
 			fraction: 0.0,
 		}),
 		Tween {
-			duration: Duration::ZERO,
+			duration: Duration::from_secs(1),
 			..Default::default()
 		},
 	);
 	sound.on_start_processing();
 	sound.process(1.0, &info);
 	sound.on_start_processing();
-	assert_eq!(handle.state(), PlaybackState::Paused);
+	assert_eq!(handle.state(), PlaybackState::WaitingToResume);
 
 	let info = {
 		let mut builder = MockInfoBuilder::new(None);
 		builder.add_clock(true, 1, 0.0);
 		builder.build()
 	};
+	sound.process(1.0, &info);
+	sound.on_start_processing();
+	assert_eq!(handle.state(), PlaybackState::Resuming);
 	sound.process(1.0, &info);
 	sound.on_start_processing();
 	assert_eq!(handle.state(), PlaybackState::Playing);
