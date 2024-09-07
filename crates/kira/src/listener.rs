@@ -1,8 +1,6 @@
 mod handle;
-mod provider;
 
 pub use handle::*;
-pub use provider::*;
 
 use std::sync::{
 	atomic::{AtomicBool, Ordering},
@@ -13,10 +11,9 @@ use glam::{Quat, Vec3};
 
 use crate::{
 	arena::Key,
-	clock::clock_info::ClockInfoProvider,
 	command::{read_commands_into_parameters, ValueChangeCommand},
 	command_writers_and_readers,
-	modulator::value_provider::ModulatorValueProvider,
+	info::Info,
 	tween::{Parameter, Value},
 };
 
@@ -58,25 +55,9 @@ impl Listener {
 		read_commands_into_parameters!(self, position, orientation);
 	}
 
-	pub(crate) fn update(
-		&mut self,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-		listener_info_provider: &ListenerInfoProvider,
-	) {
-		self.position.update(
-			dt,
-			clock_info_provider,
-			modulator_value_provider,
-			listener_info_provider,
-		);
-		self.orientation.update(
-			dt,
-			clock_info_provider,
-			modulator_value_provider,
-			listener_info_provider,
-		);
+	pub(crate) fn update(&mut self, dt: f64, info: &Info) {
+		self.position.update(dt, info);
+		self.orientation.update(dt, info);
 	}
 }
 

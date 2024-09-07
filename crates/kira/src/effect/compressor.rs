@@ -11,12 +11,10 @@ pub use handle::*;
 use std::time::Duration;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider,
 	command::{read_commands_into_parameters, ValueChangeCommand},
 	command_writers_and_readers,
 	frame::Frame,
-	listener::ListenerInfoProvider,
-	modulator::value_provider::ModulatorValueProvider,
+	info::Info,
 	tween::Parameter,
 };
 
@@ -71,50 +69,13 @@ impl Effect for Compressor {
 		);
 	}
 
-	fn process(
-		&mut self,
-		input: Frame,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-		listener_info_provider: &ListenerInfoProvider,
-	) -> Frame {
-		self.threshold.update(
-			dt,
-			clock_info_provider,
-			modulator_value_provider,
-			listener_info_provider,
-		);
-		self.ratio.update(
-			dt,
-			clock_info_provider,
-			modulator_value_provider,
-			listener_info_provider,
-		);
-		self.attack_duration.update(
-			dt,
-			clock_info_provider,
-			modulator_value_provider,
-			listener_info_provider,
-		);
-		self.release_duration.update(
-			dt,
-			clock_info_provider,
-			modulator_value_provider,
-			listener_info_provider,
-		);
-		self.makeup_gain.update(
-			dt,
-			clock_info_provider,
-			modulator_value_provider,
-			listener_info_provider,
-		);
-		self.mix.update(
-			dt,
-			clock_info_provider,
-			modulator_value_provider,
-			listener_info_provider,
-		);
+	fn process(&mut self, input: Frame, dt: f64, info: &Info) -> Frame {
+		self.threshold.update(dt, info);
+		self.ratio.update(dt, info);
+		self.attack_duration.update(dt, info);
+		self.release_duration.update(dt, info);
+		self.makeup_gain.update(dt, info);
+		self.mix.update(dt, info);
 
 		let threshold = self.threshold.value() as f32;
 		let ratio = self.ratio.value() as f32;

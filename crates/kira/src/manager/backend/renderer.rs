@@ -3,10 +3,7 @@ use std::sync::{
 	Arc,
 };
 
-use crate::{
-	clock::clock_info::ClockInfoProvider, frame::Frame, listener::ListenerInfoProvider,
-	modulator::value_provider::ModulatorValueProvider,
-};
+use crate::Frame;
 
 use super::resources::Resources;
 
@@ -67,23 +64,23 @@ impl Renderer {
 	pub fn process(&mut self) -> Frame {
 		self.resources.modulators.process(
 			self.dt,
-			&ClockInfoProvider::new(&self.resources.clocks.0.resources),
-			&ListenerInfoProvider::new(None, &self.resources.listeners.0.resources),
+			&self.resources.clocks,
+			&self.resources.listeners,
 		);
 		self.resources.clocks.update(
 			self.dt,
-			&ModulatorValueProvider::new(&self.resources.modulators.0.resources),
-			&ListenerInfoProvider::new(None, &self.resources.listeners.0.resources),
+			&self.resources.modulators,
+			&self.resources.listeners,
 		);
 		self.resources.listeners.update(
 			self.dt,
-			&ClockInfoProvider::new(&self.resources.clocks.0.resources),
-			&ModulatorValueProvider::new(&self.resources.modulators.0.resources),
+			&self.resources.clocks,
+			&self.resources.modulators,
 		);
 		self.resources.mixer.process(
 			self.dt,
-			&ClockInfoProvider::new(&self.resources.clocks.0.resources),
-			&ModulatorValueProvider::new(&self.resources.modulators.0.resources),
+			&self.resources.clocks,
+			&self.resources.modulators,
 			&self.resources.listeners,
 		)
 	}

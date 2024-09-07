@@ -1,10 +1,8 @@
-use crate::{
-	clock::clock_info::ClockInfoProvider,
-	listener::ListenerInfoProvider,
-	modulator::{value_provider::ModulatorValueProvider, Modulator},
-};
+use crate::{info::Info, modulator::Modulator};
 
-use super::{ResourceController, SelfReferentialResourceStorage};
+use super::{
+	clocks::Clocks, listeners::Listeners, ResourceController, SelfReferentialResourceStorage,
+};
 
 pub(crate) struct Modulators(pub(crate) SelfReferentialResourceStorage<Box<dyn Modulator>>);
 
@@ -22,18 +20,11 @@ impl Modulators {
 		}
 	}
 
-	pub fn process(
-		&mut self,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		listener_info_provider: &ListenerInfoProvider,
-	) {
+	pub fn process(&mut self, dt: f64, clocks: &Clocks, listeners: &Listeners) {
 		self.0.for_each(|modulator, others| {
 			modulator.update(
 				dt,
-				clock_info_provider,
-				&ModulatorValueProvider::new(others),
-				listener_info_provider,
+				&Info::new(&clocks.0.resources, others, &listeners.0.resources, None),
 			);
 		});
 	}
@@ -42,14 +33,7 @@ impl Modulators {
 struct DummyModulator;
 
 impl Modulator for DummyModulator {
-	fn update(
-		&mut self,
-		_dt: f64,
-		_clock_info_provider: &ClockInfoProvider,
-		_modulator_value_provider: &ModulatorValueProvider,
-		_listener_info_provider: &ListenerInfoProvider,
-	) {
-	}
+	fn update(&mut self, _dt: f64, _info: &Info) {}
 
 	fn value(&self) -> f64 {
 		0.0
