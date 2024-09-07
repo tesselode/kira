@@ -148,7 +148,6 @@ clock.start();
 ```
 */
 
-pub mod clock_info;
 mod clock_speed;
 mod handle;
 mod time;
@@ -165,17 +164,13 @@ use std::sync::{
 	Arc,
 };
 
-use crate::{arena::Key, listener::ListenerInfoProvider};
-
 use crate::{
-	command::read_commands_into_parameters,
-	command::ValueChangeCommand,
+	arena::Key,
+	command::{read_commands_into_parameters, ValueChangeCommand},
 	command_writers_and_readers,
-	modulator::value_provider::ModulatorValueProvider,
+	info::Info,
 	tween::{Parameter, Value},
 };
-
-use self::clock_info::ClockInfoProvider;
 
 /// A unique identifier for a clock.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -329,19 +324,8 @@ impl Clock {
 	///
 	/// If the tick count changes this update, returns `Some(tick_number)`.
 	/// Otherwise, returns `None`.
-	pub(crate) fn update(
-		&mut self,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-		listener_info_provider: &ListenerInfoProvider,
-	) -> Option<u64> {
-		self.speed.update(
-			dt,
-			clock_info_provider,
-			modulator_value_provider,
-			listener_info_provider,
-		);
+	pub(crate) fn update(&mut self, dt: f64, info: &Info) -> Option<u64> {
+		self.speed.update(dt, info);
 		if !self.ticking {
 			return None;
 		}

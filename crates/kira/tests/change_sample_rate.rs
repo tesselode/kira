@@ -4,14 +4,12 @@ use std::sync::{
 };
 
 use kira::{
-	clock::clock_info::ClockInfoProvider,
 	effect::{Effect, EffectBuilder},
-	listener::ListenerInfoProvider,
+	info::Info,
 	manager::{
 		backend::mock::{MockBackend, MockBackendSettings},
 		AudioManager, AudioManagerSettings,
 	},
-	modulator::value_provider::ModulatorValueProvider,
 	track::TrackBuilder,
 	Frame,
 };
@@ -31,14 +29,7 @@ impl Effect for TestEffect {
 		self.sample_rate.store(sample_rate, Ordering::SeqCst);
 	}
 
-	fn process(
-		&mut self,
-		_input: Frame,
-		dt: f64,
-		_clock_info_provider: &ClockInfoProvider,
-		_modulator_value_provider: &ModulatorValueProvider,
-		_listener_info_provider: &ListenerInfoProvider,
-	) -> Frame {
+	fn process(&mut self, _input: Frame, dt: f64, _info: &Info) -> Frame {
 		self.dt_producer.push(dt).unwrap();
 		Frame::ZERO
 	}
