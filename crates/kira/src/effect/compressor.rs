@@ -11,9 +11,13 @@ pub use handle::*;
 use std::time::Duration;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider, command::read_commands_into_parameters,
-	command::ValueChangeCommand, command_writers_and_readers, frame::Frame,
-	modulator::value_provider::ModulatorValueProvider, tween::Parameter,
+	clock::clock_info::ClockInfoProvider,
+	command::{read_commands_into_parameters, ValueChangeCommand},
+	command_writers_and_readers,
+	frame::Frame,
+	listener::ListenerInfoProvider,
+	modulator::value_provider::ModulatorValueProvider,
+	tween::Parameter,
 };
 
 use super::Effect;
@@ -73,19 +77,44 @@ impl Effect for Compressor {
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
+		listener_info_provider: &ListenerInfoProvider,
 	) -> Frame {
-		self.threshold
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.ratio
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.attack_duration
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.release_duration
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.makeup_gain
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.mix
-			.update(dt, clock_info_provider, modulator_value_provider);
+		self.threshold.update(
+			dt,
+			clock_info_provider,
+			modulator_value_provider,
+			listener_info_provider,
+		);
+		self.ratio.update(
+			dt,
+			clock_info_provider,
+			modulator_value_provider,
+			listener_info_provider,
+		);
+		self.attack_duration.update(
+			dt,
+			clock_info_provider,
+			modulator_value_provider,
+			listener_info_provider,
+		);
+		self.release_duration.update(
+			dt,
+			clock_info_provider,
+			modulator_value_provider,
+			listener_info_provider,
+		);
+		self.makeup_gain.update(
+			dt,
+			clock_info_provider,
+			modulator_value_provider,
+			listener_info_provider,
+		);
+		self.mix.update(
+			dt,
+			clock_info_provider,
+			modulator_value_provider,
+			listener_info_provider,
+		);
 
 		let threshold = self.threshold.value() as f32;
 		let ratio = self.ratio.value() as f32;

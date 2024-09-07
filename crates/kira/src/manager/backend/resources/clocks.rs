@@ -1,5 +1,6 @@
 use crate::{
 	clock::{clock_info::ClockInfoProvider, Clock},
+	listener::ListenerInfoProvider,
 	modulator::value_provider::ModulatorValueProvider,
 };
 
@@ -22,12 +23,18 @@ impl Clocks {
 		}
 	}
 
-	pub(crate) fn update(&mut self, dt: f64, modulator_value_provider: &ModulatorValueProvider) {
+	pub(crate) fn update(
+		&mut self,
+		dt: f64,
+		modulator_value_provider: &ModulatorValueProvider,
+		listener_info_provider: &ListenerInfoProvider,
+	) {
 		self.0.for_each(|clock, others| {
 			clock.update(
 				dt,
 				&ClockInfoProvider::new(others),
 				modulator_value_provider,
+				listener_info_provider,
 			);
 		});
 	}

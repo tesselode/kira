@@ -4,24 +4,35 @@
 //! of the [`Sound`](crate::sound::Sound) or
 //! [`Effect`](crate::effect::Effect) traits.
 
+use glam::Vec3;
+
 use crate::arena::{error::ArenaFull, Arena};
 
 use super::{Listener, ListenerId};
 
-/// Provides values of any listener that currently exists.
+/// Provides information about any listener that currently exists.
 pub struct ListenerInfoProvider<'a> {
+	spatial_track_position: Option<Vec3>,
 	kind: ListenerInfoProviderKind<'a>,
 }
 
 impl<'a> ListenerInfoProvider<'a> {
 	#[must_use]
-	pub(crate) fn new(listeners: &'a Arena<Listener>) -> Self {
+	pub(crate) fn new(
+		spatial_track_position: Option<Vec3>,
+		listeners: &'a Arena<Listener>,
+	) -> Self {
 		Self {
+			spatial_track_position,
 			kind: ListenerInfoProviderKind::Normal { listeners },
 		}
 	}
 
-	/// Gets the value of the listener with the given ID if it
+	pub fn spatial_track_position(&self) -> Option<Vec3> {
+		self.spatial_track_position
+	}
+
+	/// Gets information about the listener with the given ID if it
 	/// exists, returns `None` otherwise.
 	#[must_use]
 	pub fn get(&self, id: ListenerId) -> Option<ListenerInfo> {
@@ -34,6 +45,14 @@ impl<'a> ListenerInfoProvider<'a> {
 			}
 			ListenerInfoProviderKind::Mock { listener_info } => listener_info.get(id.0).copied(),
 		}
+	}
+
+	pub fn listener_distance(&self, id: ListenerId) -> Option<f32> {
+		self.spatial_track_position.zip(self.get(id)).map(
+			|(spatial_track_position, listener_info)| {
+				Vec3::from(listener_info.position).distance(spatial_track_position)
+			},
+		)
 	}
 }
 
@@ -48,6 +67,7 @@ enum ListenerInfoProviderKind<'a> {
 /// of the [`Sound`](crate::sound::Sound) and
 /// [`Effect`](crate::effect::Effect) traits.
 pub struct MockListenerInfoProviderBuilder {
+	spatial_track_position: Option<Vec3>,
 	listener_info: Arena<ListenerInfo>,
 }
 
@@ -55,8 +75,9 @@ impl MockListenerInfoProviderBuilder {
 	/// Creates a new [`MockListenerInfoProviderBuilder`] with room for
 	/// the specified number of listeners.
 	#[must_use]
-	pub fn new(capacity: u16) -> Self {
+	pub fn new(spatial_track_position: Option<Vec3>, capacity: u16) -> Self {
 		Self {
+			spatial_track_position,
 			listener_info: Arena::new(capacity),
 		}
 	}
@@ -71,6 +92,7 @@ impl MockListenerInfoProviderBuilder {
 	#[must_use]
 	pub fn build(self) -> ListenerInfoProvider<'static> {
 		ListenerInfoProvider {
+			spatial_track_position: self.spatial_track_position,
 			kind: ListenerInfoProviderKind::Mock {
 				listener_info: self.listener_info,
 			},

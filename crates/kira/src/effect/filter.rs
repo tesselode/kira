@@ -9,9 +9,14 @@ pub use handle::*;
 use std::f64::consts::PI;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider, command::read_commands_into_parameters,
-	command::ValueChangeCommand, command_writers_and_readers, effect::Effect, frame::Frame,
-	modulator::value_provider::ModulatorValueProvider, tween::Parameter,
+	clock::clock_info::ClockInfoProvider,
+	command::{read_commands_into_parameters, ValueChangeCommand},
+	command_writers_and_readers,
+	effect::Effect,
+	frame::Frame,
+	listener::ListenerInfoProvider,
+	modulator::value_provider::ModulatorValueProvider,
+	tween::Parameter,
 };
 
 // This filter code is based on the filter code from baseplug:
@@ -71,13 +76,26 @@ impl Effect for Filter {
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
+		listener_info_provider: &ListenerInfoProvider,
 	) -> Frame {
-		self.cutoff
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.resonance
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.mix
-			.update(dt, clock_info_provider, modulator_value_provider);
+		self.cutoff.update(
+			dt,
+			clock_info_provider,
+			modulator_value_provider,
+			listener_info_provider,
+		);
+		self.resonance.update(
+			dt,
+			clock_info_provider,
+			modulator_value_provider,
+			listener_info_provider,
+		);
+		self.mix.update(
+			dt,
+			clock_info_provider,
+			modulator_value_provider,
+			listener_info_provider,
+		);
 		let sample_rate = 1.0 / dt;
 		let g = (PI * (self.cutoff.value() / sample_rate)).tan();
 		let k = 2.0 - (1.9 * self.resonance.value().min(1.0).max(0.0));

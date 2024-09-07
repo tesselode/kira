@@ -171,6 +171,7 @@ pub mod value_provider;
 use crate::arena::Key;
 
 use crate::clock::clock_info::ClockInfoProvider;
+use crate::listener::ListenerInfoProvider;
 
 use self::value_provider::ModulatorValueProvider;
 
@@ -201,6 +202,7 @@ pub trait Modulator: Send {
 		dt: f64,
 		clock_info_provider: &ClockInfoProvider,
 		modulator_value_provider: &ModulatorValueProvider,
+		listener_info_provider: &ListenerInfoProvider,
 	);
 
 	/// Returns the current output of the modulator.

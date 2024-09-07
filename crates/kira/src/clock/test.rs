@@ -3,6 +3,7 @@ use std::time::Duration;
 use crate::{
 	arena::Arena,
 	clock::{clock_info::MockClockInfoProviderBuilder, ClockTime},
+	listener::MockListenerInfoProviderBuilder,
 	modulator::value_provider::MockModulatorValueProviderBuilder,
 	tween::{Tween, Value},
 	StartTime,
@@ -24,6 +25,7 @@ fn initially_stopped() {
 			1.0,
 			&MockClockInfoProviderBuilder::new(0).build(),
 			&MockModulatorValueProviderBuilder::new(0).build(),
+			&MockListenerInfoProviderBuilder::new(None, 0).build(),
 		);
 		clock.on_start_processing();
 	}
@@ -45,7 +47,8 @@ fn basic_behavior() {
 			clock.update(
 				1.0,
 				&MockClockInfoProviderBuilder::new(0).build(),
-				&MockModulatorValueProviderBuilder::new(0).build()
+				&MockModulatorValueProviderBuilder::new(0).build(),
+				&MockListenerInfoProviderBuilder::new(None, 0).build()
 			),
 			Some(i + 1)
 		);
@@ -66,6 +69,7 @@ fn pause() {
 		1.5,
 		&MockClockInfoProviderBuilder::new(0).build(),
 		&MockModulatorValueProviderBuilder::new(0).build(),
+		&MockListenerInfoProviderBuilder::new(None, 0).build(),
 	);
 	clock.on_start_processing();
 	assert_eq!(handle.time().ticks, 1);
@@ -77,6 +81,7 @@ fn pause() {
 			1.0,
 			&MockClockInfoProviderBuilder::new(0).build(),
 			&MockModulatorValueProviderBuilder::new(0).build(),
+			&MockListenerInfoProviderBuilder::new(None, 0).build(),
 		);
 		clock.on_start_processing();
 		assert!(!handle.ticking());
@@ -90,6 +95,7 @@ fn pause() {
 		0.4,
 		&MockClockInfoProviderBuilder::new(0).build(),
 		&MockModulatorValueProviderBuilder::new(0).build(),
+		&MockListenerInfoProviderBuilder::new(None, 0).build(),
 	);
 	clock.on_start_processing();
 	assert_eq!(handle.time().ticks, 1);
@@ -97,6 +103,7 @@ fn pause() {
 		0.1,
 		&MockClockInfoProviderBuilder::new(0).build(),
 		&MockModulatorValueProviderBuilder::new(0).build(),
+		&MockListenerInfoProviderBuilder::new(None, 0).build(),
 	);
 	clock.on_start_processing();
 	assert_eq!(handle.time().ticks, 2);
@@ -115,6 +122,7 @@ fn stop() {
 		1.5,
 		&MockClockInfoProviderBuilder::new(0).build(),
 		&MockModulatorValueProviderBuilder::new(0).build(),
+		&MockListenerInfoProviderBuilder::new(None, 0).build(),
 	);
 	clock.on_start_processing();
 	handle.stop();
@@ -125,6 +133,7 @@ fn stop() {
 			1.0,
 			&MockClockInfoProviderBuilder::new(0).build(),
 			&MockModulatorValueProviderBuilder::new(0).build(),
+			&MockListenerInfoProviderBuilder::new(None, 0).build(),
 		);
 		clock.on_start_processing();
 		assert!(!handle.ticking());
@@ -137,6 +146,7 @@ fn stop() {
 		0.9,
 		&MockClockInfoProviderBuilder::new(0).build(),
 		&MockModulatorValueProviderBuilder::new(0).build(),
+		&MockListenerInfoProviderBuilder::new(None, 0).build(),
 	);
 	clock.on_start_processing();
 	assert_eq!(handle.time().ticks, 0);
@@ -144,6 +154,7 @@ fn stop() {
 		0.1,
 		&MockClockInfoProviderBuilder::new(0).build(),
 		&MockModulatorValueProviderBuilder::new(0).build(),
+		&MockListenerInfoProviderBuilder::new(None, 0).build(),
 	);
 	clock.on_start_processing();
 	assert_eq!(handle.time().ticks, 1);
@@ -170,6 +181,7 @@ fn set_speed() {
 		1.0,
 		&MockClockInfoProviderBuilder::new(0).build(),
 		&MockModulatorValueProviderBuilder::new(0).build(),
+		&MockListenerInfoProviderBuilder::new(None, 0).build(),
 	);
 	clock.on_start_processing();
 	assert_eq!(handle.time().ticks, 2);
@@ -177,6 +189,7 @@ fn set_speed() {
 		1.0,
 		&MockClockInfoProviderBuilder::new(0).build(),
 		&MockModulatorValueProviderBuilder::new(0).build(),
+		&MockListenerInfoProviderBuilder::new(None, 0).build(),
 	);
 	clock.on_start_processing();
 	assert_eq!(handle.time().ticks, 4);
@@ -216,6 +229,7 @@ fn set_speed_with_clock_time_start() {
 		1.0,
 		&clock_info_provider,
 		&MockModulatorValueProviderBuilder::new(0).build(),
+		&MockListenerInfoProviderBuilder::new(None, 0).build(),
 	);
 	clock.on_start_processing();
 	assert_eq!(handle.time().ticks, 1);
@@ -223,6 +237,7 @@ fn set_speed_with_clock_time_start() {
 		1.0,
 		&clock_info_provider,
 		&MockModulatorValueProviderBuilder::new(0).build(),
+		&MockListenerInfoProviderBuilder::new(None, 0).build(),
 	);
 	clock.on_start_processing();
 	assert_eq!(handle.time().ticks, 2);
@@ -237,6 +252,7 @@ fn set_speed_with_clock_time_start() {
 		1.0,
 		&clock_info_provider,
 		&MockModulatorValueProviderBuilder::new(0).build(),
+		&MockListenerInfoProviderBuilder::new(None, 0).build(),
 	);
 	clock.on_start_processing();
 	assert_eq!(handle.time().ticks, 4);
@@ -244,6 +260,7 @@ fn set_speed_with_clock_time_start() {
 		1.0,
 		&clock_info_provider,
 		&MockModulatorValueProviderBuilder::new(0).build(),
+		&MockListenerInfoProviderBuilder::new(None, 0).build(),
 	);
 	clock.on_start_processing();
 	assert_eq!(handle.time().ticks, 6);
@@ -262,6 +279,7 @@ fn fractional_position() {
 		1.0,
 		&MockClockInfoProviderBuilder::new(0).build(),
 		&MockModulatorValueProviderBuilder::new(0).build(),
+		&MockListenerInfoProviderBuilder::new(None, 0).build(),
 	);
 	clock.on_start_processing();
 	assert_eq!(handle.time().fraction, 0.0);
@@ -272,6 +290,7 @@ fn fractional_position() {
 		0.5,
 		&MockClockInfoProviderBuilder::new(0).build(),
 		&MockModulatorValueProviderBuilder::new(0).build(),
+		&MockListenerInfoProviderBuilder::new(None, 0).build(),
 	);
 	clock.on_start_processing();
 	assert_eq!(handle.time().fraction, 0.5);
@@ -279,6 +298,7 @@ fn fractional_position() {
 		0.75,
 		&MockClockInfoProviderBuilder::new(0).build(),
 		&MockModulatorValueProviderBuilder::new(0).build(),
+		&MockListenerInfoProviderBuilder::new(None, 0).build(),
 	);
 	clock.on_start_processing();
 	assert_eq!(handle.time().fraction, 0.25);
