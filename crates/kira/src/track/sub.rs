@@ -13,16 +13,18 @@ use std::{error::Error, f32::consts::FRAC_PI_8, fmt::Display, sync::Arc};
 use glam::{Quat, Vec3};
 
 use crate::{
-	command::{CommandReader, ValueChangeCommand},
+	command::ValueChangeCommand,
+	command_writers_and_readers,
 	effect::Effect,
 	info::{Info, ListenerInfo},
 	listener::ListenerId,
 	manager::backend::resources::{
 		clocks::Clocks, listeners::Listeners, modulators::Modulators, ResourceStorage,
 	},
+	playback_state_manager::PlaybackStateManager,
 	sound::Sound,
-	tween::{Easing, Parameter, Tweenable},
-	Frame, Volume,
+	tween::{Easing, Parameter, Tween, Tweenable},
+	Frame, StartTime, Volume,
 };
 
 use super::{SendTrack, SendTrackId, SendTrackRoute, TrackShared};
@@ -42,17 +44,34 @@ impl Error for NonexistentRoute {}
 
 pub(crate) struct Track {
 	shared: Arc<TrackShared>,
+	command_readers: CommandReaders,
 	volume: Parameter<Volume>,
-	set_volume_command_reader: CommandReader<ValueChangeCommand<Volume>>,
 	sounds: ResourceStorage<Box<dyn Sound>>,
 	sub_tracks: ResourceStorage<Track>,
 	effects: Vec<Box<dyn Effect>>,
 	sends: Vec<(SendTrackId, SendTrackRoute)>,
 	persist_until_sounds_finish: bool,
 	spatial_data: Option<SpatialData>,
+	playback_state_manager: PlaybackStateManager,
 }
 
 impl Track {
+	fn update_shared_playback_state(&mut self) {
+		self.shared
+			.set_state(self.playback_state_manager.playback_state());
+	}
+
+	fn pause(&mut self, fade_out_tween: Tween) {
+		self.playback_state_manager.pause(fade_out_tween);
+		self.update_shared_playback_state();
+	}
+
+	fn resume(&mut self, start_time: StartTime, fade_in_tween: Tween) {
+		self.playback_state_manager
+			.resume(start_time, fade_in_tween);
+		self.update_shared_playback_state();
+	}
+
 	pub fn init_effects(&mut self, sample_rate: u32) {
 		for effect in &mut self.effects {
 			effect.init(sample_rate);
@@ -92,19 +111,7 @@ impl Track {
 	}
 
 	pub fn on_start_processing(&mut self) {
-		self.volume
-			.read_command(&mut self.set_volume_command_reader);
-		for (_, route) in &mut self.sends {
-			route.read_commands();
-		}
-		if let Some(SpatialData {
-			position,
-			set_position_command_reader,
-			..
-		}) = &mut self.spatial_data
-		{
-			position.read_command(set_position_command_reader);
-		}
+		self.read_commands();
 		self.sounds.remove_and_add(|sound| sound.finished());
 		for (_, sound) in &mut self.sounds {
 			sound.on_start_processing();
@@ -144,6 +151,14 @@ impl Track {
 			route.volume.update(dt, &info);
 		}
 
+		let changed_playback_state = self.playback_state_manager.update(dt, &info);
+		if changed_playback_state {
+			self.update_shared_playback_state();
+		}
+		if !self.playback_state_manager.playback_state().is_advancing() {
+			return Frame::ZERO;
+		}
+
 		let mut output = Frame::ZERO;
 		for (_, sub_track) in &mut self.sub_tracks {
 			output += sub_track.process(
@@ -177,15 +192,32 @@ impl Track {
 			};
 			send_track.add_input(output * volume.value().as_amplitude() as f32);
 		}
-		output *= self.volume.value().as_amplitude() as f32;
+		output *= self.volume.value().as_amplitude() as f32
+			* self.playback_state_manager.fade_volume().as_amplitude() as f32;
 		output
+	}
+
+	fn read_commands(&mut self) {
+		self.volume
+			.read_command(&mut self.command_readers.set_volume);
+		for (_, route) in &mut self.sends {
+			route.read_commands();
+		}
+		if let Some(SpatialData { position, .. }) = &mut self.spatial_data {
+			position.read_command(&mut self.command_readers.set_position);
+		}
+		if let Some(tween) = self.command_readers.pause.read() {
+			self.pause(tween);
+		}
+		if let Some((start_time, tween)) = self.command_readers.resume.read() {
+			self.resume(start_time, tween);
+		}
 	}
 }
 
 struct SpatialData {
 	listener_id: ListenerId,
 	position: Parameter<Vec3>,
-	set_position_command_reader: CommandReader<ValueChangeCommand<Vec3>>,
 	/// The distances from a listener at which the track is loudest and quietest.
 	distances: SpatialTrackDistances,
 	/// How the track's volume will change with distance.
@@ -263,4 +295,11 @@ fn listener_ear_directions(listener_orientation: Quat) -> (Vec3, Vec3) {
 	let left = orientation * left_ear_direction_relative_to_head;
 	let right = orientation * right_ear_direction_relative_to_head;
 	(left, right)
+}
+
+command_writers_and_readers! {
+	set_volume: ValueChangeCommand<Volume>,
+	set_position: ValueChangeCommand<Vec3>,
+	pause: Tween,
+	resume: (StartTime, Tween),
 }
