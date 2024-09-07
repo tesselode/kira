@@ -8,10 +8,8 @@ use std::time::Duration;
 pub use value::*;
 
 use crate::{
-	clock::clock_info::{ClockInfoProvider, WhenToStart},
 	command::{CommandReader, ValueChangeCommand},
-	listener::ListenerInfoProvider,
-	modulator::value_provider::ModulatorValueProvider,
+	info::{Info, WhenToStart},
 	tween::{Tween, Tweenable},
 	StartTime,
 };
@@ -84,30 +82,18 @@ impl<T: Tweenable> Parameter<T> {
 	/// with any linked modulators.
 	///
 	/// Returns `true` if a transition just finished after this update.
-	pub fn update(
-		&mut self,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-		listener_info_provider: &ListenerInfoProvider,
-	) -> JustFinishedTween {
+	pub fn update(&mut self, dt: f64, info: &Info) -> JustFinishedTween {
 		if self.stagnant {
 			return false;
 		}
-		let just_finished_tween = self.update_tween(dt, clock_info_provider);
-		if let Some(raw_value) =
-			self.calculate_new_raw_value(modulator_value_provider, listener_info_provider)
-		{
+		let just_finished_tween = self.update_tween(dt, info);
+		if let Some(raw_value) = self.calculate_new_raw_value(info) {
 			self.raw_value = raw_value;
 		}
 		just_finished_tween
 	}
 
-	fn update_tween(
-		&mut self,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-	) -> JustFinishedTween {
+	fn update_tween(&mut self, dt: f64, info: &Info) -> JustFinishedTween {
 		if let State::Tweening {
 			target,
 			time,
@@ -127,7 +113,7 @@ impl<T: Tweenable> Parameter<T> {
 					}
 				}
 				StartTime::ClockTime(clock_time) => {
-					clock_info_provider.when_to_start(*clock_time) == WhenToStart::Now
+					info.when_to_start(*clock_time) == WhenToStart::Now
 				}
 			};
 			if !started {
@@ -145,15 +131,9 @@ impl<T: Tweenable> Parameter<T> {
 		false
 	}
 
-	fn calculate_new_raw_value(
-		&self,
-		modulator_value_provider: &ModulatorValueProvider,
-		listener_info_provider: &ListenerInfoProvider,
-	) -> Option<T> {
+	fn calculate_new_raw_value(&self, info: &Info) -> Option<T> {
 		match &self.state {
-			State::Idle { value } => {
-				value.raw_value(modulator_value_provider, listener_info_provider)
-			}
+			State::Idle { value } => value.raw_value(info),
 			State::Tweening {
 				start,
 				target,
@@ -164,7 +144,7 @@ impl<T: Tweenable> Parameter<T> {
 					return None;
 				}
 				target
-					.raw_value(modulator_value_provider, listener_info_provider)
+					.raw_value(info)
 					.map(|target| T::interpolate(*start, target, tween.value(*time)))
 			}
 		}

@@ -1,10 +1,8 @@
-use crate::{
-	clock::clock_info::ClockInfoProvider,
-	listener::{Listener, ListenerInfoProvider},
-	modulator::value_provider::ModulatorValueProvider,
-};
+use crate::{info::Info, listener::Listener};
 
-use super::{ResourceController, SelfReferentialResourceStorage};
+use super::{
+	clocks::Clocks, modulators::Modulators, ResourceController, SelfReferentialResourceStorage,
+};
 
 pub(crate) struct Listeners(pub(crate) SelfReferentialResourceStorage<Listener>);
 
@@ -23,18 +21,11 @@ impl Listeners {
 		}
 	}
 
-	pub(crate) fn update(
-		&mut self,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-	) {
+	pub(crate) fn update(&mut self, dt: f64, clocks: &Clocks, modulators: &Modulators) {
 		self.0.for_each(|listener, others| {
 			listener.update(
 				dt,
-				clock_info_provider,
-				modulator_value_provider,
-				&ListenerInfoProvider::new(None, others),
+				&Info::new(&clocks.0.resources, &modulators.0.resources, others, None),
 			);
 		});
 	}

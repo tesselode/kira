@@ -1,10 +1,6 @@
 use std::time::Duration;
 
-use crate::{
-	listener::{ListenerId, ListenerInfoProvider},
-	modulator::{value_provider::ModulatorValueProvider, ModulatorId},
-	tween::Tweenable,
-};
+use crate::{info::Info, listener::ListenerId, modulator::ModulatorId, tween::Tweenable};
 
 /// A value that a parameter can be linked to.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -64,17 +60,13 @@ impl<T> Value<T>
 where
 	T: Tweenable,
 {
-	pub(crate) fn raw_value(
-		self,
-		modulator_value_provider: &ModulatorValueProvider,
-		listener_info_provider: &ListenerInfoProvider,
-	) -> Option<T> {
+	pub(crate) fn raw_value(self, info: &Info) -> Option<T> {
 		match self {
 			Value::Fixed(value) => Some(value),
-			Value::FromModulator { id, mapping } => modulator_value_provider
-				.get(id)
-				.map(|value| mapping.map(value)),
-			Value::FromListenerDistance { id, mapping } => listener_info_provider
+			Value::FromModulator { id, mapping } => {
+				info.modulator_value(id).map(|value| mapping.map(value))
+			}
+			Value::FromListenerDistance { id, mapping } => info
 				.listener_distance(id)
 				.map(|value| mapping.map(value.into())),
 		}

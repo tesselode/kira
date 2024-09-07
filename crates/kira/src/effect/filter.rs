@@ -9,13 +9,11 @@ pub use handle::*;
 use std::f64::consts::PI;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider,
 	command::{read_commands_into_parameters, ValueChangeCommand},
 	command_writers_and_readers,
 	effect::Effect,
 	frame::Frame,
-	listener::ListenerInfoProvider,
-	modulator::value_provider::ModulatorValueProvider,
+	info::Info,
 	tween::Parameter,
 };
 
@@ -70,32 +68,10 @@ impl Effect for Filter {
 		read_commands_into_parameters!(self, cutoff, resonance, mix);
 	}
 
-	fn process(
-		&mut self,
-		input: Frame,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-		listener_info_provider: &ListenerInfoProvider,
-	) -> Frame {
-		self.cutoff.update(
-			dt,
-			clock_info_provider,
-			modulator_value_provider,
-			listener_info_provider,
-		);
-		self.resonance.update(
-			dt,
-			clock_info_provider,
-			modulator_value_provider,
-			listener_info_provider,
-		);
-		self.mix.update(
-			dt,
-			clock_info_provider,
-			modulator_value_provider,
-			listener_info_provider,
-		);
+	fn process(&mut self, input: Frame, dt: f64, info: &Info) -> Frame {
+		self.cutoff.update(dt, info);
+		self.resonance.update(dt, info);
+		self.mix.update(dt, info);
 		let sample_rate = 1.0 / dt;
 		let g = (PI * (self.cutoff.value() / sample_rate)).tan();
 		let k = 2.0 - (1.9 * self.resonance.value().min(1.0).max(0.0));

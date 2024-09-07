@@ -1,8 +1,8 @@
 use std::time::Duration;
 
-use crate::clock::{
-	clock_info::{ClockInfoProvider, WhenToStart},
-	ClockTime,
+use crate::{
+	clock::ClockTime,
+	info::{Info, WhenToStart},
 };
 
 /// Describes when an action should occur.
@@ -19,11 +19,7 @@ pub enum StartTime {
 }
 
 impl StartTime {
-	pub(crate) fn update(
-		&mut self,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-	) -> WillNeverStart {
+	pub(crate) fn update(&mut self, dt: f64, info: &Info) -> WillNeverStart {
 		match self {
 			StartTime::Immediate => {}
 			StartTime::Delayed(time_remaining) => {
@@ -32,15 +28,13 @@ impl StartTime {
 					*self = StartTime::Immediate;
 				}
 			}
-			StartTime::ClockTime(clock_time) => {
-				match clock_info_provider.when_to_start(*clock_time) {
-					WhenToStart::Now => {
-						*self = StartTime::Immediate;
-					}
-					WhenToStart::Later => {}
-					WhenToStart::Never => return true,
+			StartTime::ClockTime(clock_time) => match info.when_to_start(*clock_time) {
+				WhenToStart::Now => {
+					*self = StartTime::Immediate;
 				}
-			}
+				WhenToStart::Later => {}
+				WhenToStart::Never => return true,
+			},
 		}
 		false
 	}

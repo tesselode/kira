@@ -1,9 +1,8 @@
 use std::time::Duration;
 
 use crate::{
-	clock::{clock_info::MockClockInfoProviderBuilder, ClockTime},
-	listener::MockListenerInfoProviderBuilder,
-	modulator::value_provider::MockModulatorValueProviderBuilder,
+	clock::ClockTime,
+	info::MockInfoBuilder,
 	tween::{Tween, Value},
 	StartTime,
 };
@@ -16,19 +15,12 @@ use super::{Mapping, Parameter};
 #[allow(clippy::float_cmp)]
 fn tweening() {
 	let mut parameter = Parameter::new(Value::Fixed(0.0), 0.0);
-	let clock_info_provider = MockClockInfoProviderBuilder::new(0).build();
-	let modulator_value_provider = MockModulatorValueProviderBuilder::new(0).build();
-	let listener_info_provider = MockListenerInfoProviderBuilder::new(None, 0).build();
+	let info = MockInfoBuilder::new(None).build();
 
 	// value should not be changing yet
 	for _ in 0..3 {
 		assert_eq!(parameter.value(), 0.0);
-		assert!(!parameter.update(
-			1.0,
-			&clock_info_provider,
-			&modulator_value_provider,
-			&listener_info_provider
-		));
+		assert!(!parameter.update(1.0, &info));
 	}
 
 	parameter.set(
@@ -39,26 +31,11 @@ fn tweening() {
 		},
 	);
 
-	assert!(!parameter.update(
-		1.0,
-		&clock_info_provider,
-		&modulator_value_provider,
-		&listener_info_provider
-	));
+	assert!(!parameter.update(1.0, &info));
 	assert_eq!(parameter.value(), 0.5);
-	assert!(parameter.update(
-		1.0,
-		&clock_info_provider,
-		&modulator_value_provider,
-		&listener_info_provider
-	));
+	assert!(parameter.update(1.0, &info));
 	assert_eq!(parameter.value(), 1.0);
-	assert!(!parameter.update(
-		1.0,
-		&clock_info_provider,
-		&modulator_value_provider,
-		&listener_info_provider
-	));
+	assert!(!parameter.update(1.0, &info));
 	assert_eq!(parameter.value(), 1.0);
 }
 
@@ -67,9 +44,7 @@ fn tweening() {
 #[test]
 #[allow(clippy::float_cmp)]
 fn waits_for_delay() {
-	let clock_info_provider = MockClockInfoProviderBuilder::new(0).build();
-	let modulator_value_provider = MockModulatorValueProviderBuilder::new(0).build();
-	let listener_info_provider = MockListenerInfoProviderBuilder::new(None, 0).build();
+	let info = MockInfoBuilder::new(None).build();
 
 	let mut parameter = Parameter::new(Value::Fixed(0.0), 0.0);
 	parameter.set(
@@ -84,21 +59,11 @@ fn waits_for_delay() {
 	// value should not be changing yet
 	for _ in 0..2 {
 		assert_eq!(parameter.value(), 0.0);
-		assert!(!parameter.update(
-			1.0,
-			&clock_info_provider,
-			&modulator_value_provider,
-			&listener_info_provider
-		));
+		assert!(!parameter.update(1.0, &info));
 	}
 
 	// the tween should start now
-	assert!(parameter.update(
-		1.0,
-		&clock_info_provider,
-		&modulator_value_provider,
-		&listener_info_provider
-	));
+	assert!(parameter.update(1.0, &info));
 	assert_eq!(parameter.value(), 1.0);
 }
 
@@ -108,14 +73,9 @@ fn waits_for_delay() {
 #[test]
 #[allow(clippy::float_cmp)]
 fn waits_for_start_time() {
-	let (clock_info_provider, clock_id_1) = {
-		let mut builder = MockClockInfoProviderBuilder::new(2);
-		let clock_id_1 = builder.add(true, 0, 0.0).unwrap();
-		builder.add(true, 0, 0.0).unwrap();
-		(builder.build(), clock_id_1)
-	};
-	let modulator_value_provider = MockModulatorValueProviderBuilder::new(0).build();
-	let listener_info_provider = MockListenerInfoProviderBuilder::new(None, 0).build();
+	let mut info_builder = MockInfoBuilder::new(None);
+	let clock_id_1 = info_builder.add_clock(true, 0, 0.0);
+	let info = info_builder.build();
 
 	let mut parameter = Parameter::new(Value::Fixed(0.0), 0.0);
 	parameter.set(
@@ -134,18 +94,13 @@ fn waits_for_start_time() {
 	// value should not be changing yet
 	for _ in 0..3 {
 		assert_eq!(parameter.value(), 0.0);
-		assert!(!parameter.update(
-			1.0,
-			&clock_info_provider,
-			&modulator_value_provider,
-			&listener_info_provider
-		));
+		assert!(!parameter.update(1.0, &info));
 	}
 
-	let clock_info_provider = {
-		let mut builder = MockClockInfoProviderBuilder::new(2);
-		builder.add(true, 1, 0.0).unwrap();
-		builder.add(true, 0, 0.0).unwrap();
+	let info = {
+		let mut builder = MockInfoBuilder::new(None);
+		builder.add_clock(true, 1, 0.0);
+		builder.add_clock(true, 0, 0.0);
 		builder.build()
 	};
 
@@ -153,18 +108,13 @@ fn waits_for_start_time() {
 	// start yet
 	for _ in 0..3 {
 		assert_eq!(parameter.value(), 0.0);
-		assert!(!parameter.update(
-			1.0,
-			&clock_info_provider,
-			&modulator_value_provider,
-			&listener_info_provider
-		));
+		assert!(!parameter.update(1.0, &info));
 	}
 
-	let clock_info_provider = {
-		let mut builder = MockClockInfoProviderBuilder::new(2);
-		builder.add(true, 1, 0.0).unwrap();
-		builder.add(true, 2, 0.0).unwrap();
+	let info = {
+		let mut builder = MockInfoBuilder::new(None);
+		builder.add_clock(true, 1, 0.0);
+		builder.add_clock(true, 2, 0.0);
 		builder.build()
 	};
 
@@ -172,28 +122,18 @@ fn waits_for_start_time() {
 	// start yet
 	for _ in 0..3 {
 		assert_eq!(parameter.value(), 0.0);
-		assert!(!parameter.update(
-			1.0,
-			&clock_info_provider,
-			&modulator_value_provider,
-			&listener_info_provider
-		));
+		assert!(!parameter.update(1.0, &info));
 	}
 
-	let clock_info_provider = {
-		let mut builder = MockClockInfoProviderBuilder::new(2);
-		builder.add(true, 2, 0.0).unwrap();
-		builder.add(true, 2, 0.0).unwrap();
+	let info = {
+		let mut builder = MockInfoBuilder::new(None);
+		builder.add_clock(true, 2, 0.0);
+		builder.add_clock(true, 2, 0.0);
 		builder.build()
 	};
 
 	// the tween should start now
-	assert!(parameter.update(
-		1.0,
-		&clock_info_provider,
-		&modulator_value_provider,
-		&listener_info_provider
-	));
+	assert!(parameter.update(1.0, &info));
 	assert_eq!(parameter.value(), 1.0);
 }
 
@@ -202,12 +142,8 @@ fn waits_for_start_time() {
 #[test]
 #[allow(clippy::float_cmp)]
 fn tweens_to_modulator_values() {
-	let clock_info_provider = MockClockInfoProviderBuilder::new(0).build();
-	let modulator_id = {
-		let mut builder = MockModulatorValueProviderBuilder::new(1);
-		builder.add(0.0).unwrap()
-	};
-	let listener_info_provider = MockListenerInfoProviderBuilder::new(None, 0).build();
+	let mut info_builder = MockInfoBuilder::new(None);
+	let modulator_id = info_builder.add_modulator(0.0);
 	let mut parameter = Parameter::new(Value::Fixed(0.0), 0.0);
 	parameter.set(
 		Value::FromModulator {
@@ -227,17 +163,12 @@ fn tweens_to_modulator_values() {
 
 	for i in 1..=4 {
 		let time = i as f64 / 4.0;
-		let modulator_value_provider = {
-			let mut builder = MockModulatorValueProviderBuilder::new(1);
-			builder.add(time).unwrap();
+		let info = {
+			let mut builder = MockInfoBuilder::new(None);
+			builder.add_modulator(time);
 			builder.build()
 		};
-		parameter.update(
-			0.25,
-			&clock_info_provider,
-			&modulator_value_provider,
-			&listener_info_provider,
-		);
+		parameter.update(0.25, &info);
 		assert_eq!(parameter.value(), time * time);
 	}
 }

@@ -30,17 +30,18 @@ use std::{
 use crate::{
 	arena::Key,
 	effect::Effect,
-	listener::{ListenerId, ListenerInfo, ListenerInfoProvider},
-	manager::backend::resources::{listeners::Listeners, ResourceStorage},
+	info::{Info, ListenerInfo},
+	listener::ListenerId,
+	manager::backend::resources::{
+		clocks::Clocks, listeners::Listeners, modulators::Modulators, ResourceStorage,
+	},
 	sound::Sound,
 	tween::{Easing, Tweenable},
 };
 
 use crate::{
-	clock::clock_info::ClockInfoProvider,
 	command::{CommandReader, ValueChangeCommand},
 	frame::Frame,
-	modulator::value_provider::ModulatorValueProvider,
 	tween::Parameter,
 	Volume,
 };
@@ -87,37 +88,14 @@ impl MainTrack {
 		}
 	}
 
-	pub fn process(
-		&mut self,
-		input: Frame,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-		listener_info_provider: &ListenerInfoProvider,
-	) -> Frame {
-		self.volume.update(
-			dt,
-			clock_info_provider,
-			modulator_value_provider,
-			listener_info_provider,
-		);
+	pub fn process(&mut self, input: Frame, dt: f64, info: &Info) -> Frame {
+		self.volume.update(dt, info);
 		let mut output = input;
 		for (_, sound) in &mut self.sounds {
-			output += sound.process(
-				dt,
-				clock_info_provider,
-				modulator_value_provider,
-				listener_info_provider,
-			);
+			output += sound.process(dt, info);
 		}
 		for effect in &mut self.effects {
-			output = effect.process(
-				output,
-				dt,
-				clock_info_provider,
-				modulator_value_provider,
-				listener_info_provider,
-			);
+			output = effect.process(output, dt, info);
 		}
 		output *= self.volume.value().as_amplitude() as f32;
 		output
@@ -206,8 +184,8 @@ impl Track {
 	pub fn process(
 		&mut self,
 		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
+		clocks: &Clocks,
+		modulators: &Modulators,
 		listeners: &Listeners,
 		spatial_track_position: Option<Vec3>,
 		send_tracks: &mut ResourceStorage<SendTrack>,
@@ -217,65 +195,43 @@ impl Track {
 			.as_ref()
 			.map(|spatial_data| spatial_data.position.value())
 			.or(spatial_track_position);
-		let listener_info_provider =
-			ListenerInfoProvider::new(spatial_track_position, &listeners.0.resources);
-		self.volume.update(
-			dt,
-			clock_info_provider,
-			modulator_value_provider,
-			&listener_info_provider,
+		let info = Info::new(
+			&clocks.0.resources,
+			&modulators.0.resources,
+			&listeners.0.resources,
+			spatial_track_position,
 		);
+		self.volume.update(dt, &info);
 		for (_, route) in &mut self.sends {
-			route.volume.update(
-				dt,
-				clock_info_provider,
-				modulator_value_provider,
-				&listener_info_provider,
-			);
+			route.volume.update(dt, &info);
 		}
 
 		let mut output = Frame::ZERO;
 		for (_, sub_track) in &mut self.sub_tracks {
 			output += sub_track.process(
 				dt,
-				clock_info_provider,
-				modulator_value_provider,
+				clocks,
+				modulators,
 				listeners,
 				spatial_track_position,
 				send_tracks,
 			);
 		}
 		for (_, sound) in &mut self.sounds {
-			output += sound.process(
-				dt,
-				clock_info_provider,
-				modulator_value_provider,
-				&listener_info_provider,
-			);
+			output += sound.process(dt, &info);
 		}
 		if let Some(spatial_data) = &mut self.spatial_data {
-			spatial_data.position.update(
-				dt,
-				clock_info_provider,
-				modulator_value_provider,
-				&listener_info_provider,
-			);
+			spatial_data.position.update(dt, &info);
 			if let Some(ListenerInfo {
 				position,
 				orientation,
-			}) = listener_info_provider.get(spatial_data.listener_id)
+			}) = info.listener_info(spatial_data.listener_id)
 			{
 				output = spatial_data.spatialize(output, position.into(), orientation.into());
 			}
 		}
 		for effect in &mut self.effects {
-			output = effect.process(
-				output,
-				dt,
-				clock_info_provider,
-				modulator_value_provider,
-				&listener_info_provider,
-			);
+			output = effect.process(output, dt, &info);
 		}
 		for (send_track_id, SendTrackRoute { volume, .. }) in &self.sends {
 			let Some(send_track) = send_tracks.get_mut(send_track_id.0) else {
@@ -326,28 +282,11 @@ impl SendTrack {
 		}
 	}
 
-	pub fn process(
-		&mut self,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-		listener_info_provider: &ListenerInfoProvider,
-	) -> Frame {
-		self.volume.update(
-			dt,
-			clock_info_provider,
-			modulator_value_provider,
-			listener_info_provider,
-		);
+	pub fn process(&mut self, dt: f64, info: &Info) -> Frame {
+		self.volume.update(dt, info);
 		let mut output = std::mem::replace(&mut self.input, Frame::ZERO);
 		for effect in &mut self.effects {
-			output = effect.process(
-				output,
-				dt,
-				clock_info_provider,
-				modulator_value_provider,
-				listener_info_provider,
-			);
+			output = effect.process(output, dt, info);
 		}
 		output * self.volume.value().as_amplitude() as f32
 	}

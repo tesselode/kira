@@ -18,14 +18,13 @@ use std::{
 };
 
 use crate::{
-	clock::clock_info::ClockInfoProvider,
 	command::{read_commands_into_parameters, ValueChangeCommand},
 	command_writers_and_readers,
-	listener::ListenerInfoProvider,
+	info::Info,
 	tween::Parameter,
 };
 
-use super::{value_provider::ModulatorValueProvider, Modulator};
+use super::Modulator;
 
 struct Lfo {
 	waveform: Waveform,
@@ -65,31 +64,10 @@ impl Modulator for Lfo {
 		}
 	}
 
-	fn update(
-		&mut self,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-		listener_info_provider: &ListenerInfoProvider,
-	) {
-		self.frequency.update(
-			dt,
-			clock_info_provider,
-			modulator_value_provider,
-			listener_info_provider,
-		);
-		self.amplitude.update(
-			dt,
-			clock_info_provider,
-			modulator_value_provider,
-			listener_info_provider,
-		);
-		self.offset.update(
-			dt,
-			clock_info_provider,
-			modulator_value_provider,
-			listener_info_provider,
-		);
+	fn update(&mut self, dt: f64, info: &Info) {
+		self.frequency.update(dt, info);
+		self.amplitude.update(dt, info);
+		self.offset.update(dt, info);
 		self.phase += dt * self.frequency.value();
 		self.phase %= 1.0;
 		self.value = self.offset.value() + self.amplitude.value() * self.waveform.value(self.phase);

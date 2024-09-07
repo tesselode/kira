@@ -7,12 +7,10 @@ pub use builder::*;
 pub use handle::*;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider,
 	command::{read_commands_into_parameters, ValueChangeCommand},
 	command_writers_and_readers,
 	frame::{interpolate_frame, Frame},
-	listener::ListenerInfoProvider,
-	modulator::value_provider::ModulatorValueProvider,
+	info::Info,
 	tween::Parameter,
 	Volume,
 };
@@ -97,38 +95,16 @@ impl Effect for Delay {
 		}
 	}
 
-	fn process(
-		&mut self,
-		input: Frame,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-		listener_info_provider: &ListenerInfoProvider,
-	) -> Frame {
+	fn process(&mut self, input: Frame, dt: f64, info: &Info) -> Frame {
 		if let DelayState::Initialized {
 			buffer,
 			write_position,
 			..
 		} = &mut self.state
 		{
-			self.delay_time.update(
-				dt,
-				clock_info_provider,
-				modulator_value_provider,
-				listener_info_provider,
-			);
-			self.feedback.update(
-				dt,
-				clock_info_provider,
-				modulator_value_provider,
-				listener_info_provider,
-			);
-			self.mix.update(
-				dt,
-				clock_info_provider,
-				modulator_value_provider,
-				listener_info_provider,
-			);
+			self.delay_time.update(dt, info);
+			self.feedback.update(dt, info);
+			self.mix.update(dt, info);
 
 			// get the read position (in samples)
 			let mut read_position = *write_position as f32 - (self.delay_time.value() / dt) as f32;
@@ -154,13 +130,7 @@ impl Effect for Delay {
 				fraction,
 			);
 			for effect in &mut self.feedback_effects {
-				output = effect.process(
-					output,
-					dt,
-					clock_info_provider,
-					modulator_value_provider,
-					listener_info_provider,
-				);
+				output = effect.process(output, dt, info);
 			}
 
 			// write output audio to the buffer

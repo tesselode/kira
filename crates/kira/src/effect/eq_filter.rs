@@ -11,12 +11,10 @@ pub use handle::*;
 use std::f64::consts::PI;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider,
 	command::{read_commands_into_parameters, ValueChangeCommand},
 	command_writers_and_readers,
 	frame::Frame,
-	listener::ListenerInfoProvider,
-	modulator::value_provider::ModulatorValueProvider,
+	info::Info,
 	tween::Parameter,
 };
 
@@ -124,32 +122,10 @@ impl Effect for EqFilter {
 		read_commands_into_parameters!(self, frequency, gain, q);
 	}
 
-	fn process(
-		&mut self,
-		input: Frame,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-		listener_info_provider: &ListenerInfoProvider,
-	) -> Frame {
-		self.frequency.update(
-			dt,
-			clock_info_provider,
-			modulator_value_provider,
-			listener_info_provider,
-		);
-		self.gain.update(
-			dt,
-			clock_info_provider,
-			modulator_value_provider,
-			listener_info_provider,
-		);
-		self.q.update(
-			dt,
-			clock_info_provider,
-			modulator_value_provider,
-			listener_info_provider,
-		);
+	fn process(&mut self, input: Frame, dt: f64, info: &Info) -> Frame {
+		self.frequency.update(dt, info);
+		self.gain.update(dt, info);
+		self.q.update(dt, info);
 		let Coefficients {
 			a1,
 			a2,

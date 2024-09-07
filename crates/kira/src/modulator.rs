@@ -166,14 +166,8 @@ tweener.set(1.0, Tween {
 
 pub mod lfo;
 pub mod tweener;
-pub mod value_provider;
 
-use crate::arena::Key;
-
-use crate::clock::clock_info::ClockInfoProvider;
-use crate::listener::ListenerInfoProvider;
-
-use self::value_provider::ModulatorValueProvider;
+use crate::{arena::Key, info::Info};
 
 /// Configures a modulator.
 pub trait ModulatorBuilder {
@@ -197,13 +191,7 @@ pub trait Modulator: Send {
 	///
 	/// `dt` is the time that's elapsed since the previous round of
 	/// processing (in seconds).
-	fn update(
-		&mut self,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-		listener_info_provider: &ListenerInfoProvider,
-	);
+	fn update(&mut self, dt: f64, info: &Info);
 
 	/// Returns the current output of the modulator.
 	#[must_use]

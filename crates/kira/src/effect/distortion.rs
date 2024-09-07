@@ -7,13 +7,11 @@ pub use builder::*;
 pub use handle::*;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider,
 	command::{read_commands_into_parameters, ValueChangeCommand},
 	command_writers_and_readers,
 	effect::Effect,
 	frame::Frame,
-	listener::ListenerInfoProvider,
-	modulator::value_provider::ModulatorValueProvider,
+	info::Info,
 	tween::Parameter,
 	Volume,
 };
@@ -57,26 +55,9 @@ impl Effect for Distortion {
 		read_commands_into_parameters!(self, drive, mix);
 	}
 
-	fn process(
-		&mut self,
-		input: Frame,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-		listener_info_provider: &ListenerInfoProvider,
-	) -> Frame {
-		self.drive.update(
-			dt,
-			clock_info_provider,
-			modulator_value_provider,
-			listener_info_provider,
-		);
-		self.mix.update(
-			dt,
-			clock_info_provider,
-			modulator_value_provider,
-			listener_info_provider,
-		);
+	fn process(&mut self, input: Frame, dt: f64, info: &Info) -> Frame {
+		self.drive.update(dt, info);
+		self.mix.update(dt, info);
 		let drive = self.drive.value().as_amplitude() as f32;
 		let mut output = input * drive;
 		output = match self.kind {
