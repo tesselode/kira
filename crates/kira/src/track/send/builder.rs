@@ -24,7 +24,7 @@ impl SendTrackBuilder {
 	#[must_use]
 	pub fn new() -> Self {
 		Self {
-			volume: Value::Fixed(Dbfs::MAX),
+			volume: Value::Fixed(Dbfs::IDENTITY),
 			effects: vec![],
 		}
 	}
@@ -175,7 +175,7 @@ impl SendTrackBuilder {
 		let shared = Arc::new(TrackShared::new());
 		let track = SendTrack {
 			shared: shared.clone(),
-			volume: Parameter::new(self.volume, Dbfs::MAX),
+			volume: Parameter::new(self.volume, Dbfs::IDENTITY),
 			set_volume_command_reader,
 			effects: self.effects,
 			input: Frame::ZERO,

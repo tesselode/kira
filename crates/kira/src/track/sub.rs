@@ -246,7 +246,8 @@ impl SpatialData {
 			let relative_volume =
 				attenuation_function.apply((1.0 - relative_distance).into()) as f32;
 			let amplitude =
-				Tweenable::interpolate(Dbfs::MIN, Dbfs::MAX, relative_volume.into()).as_amplitude();
+				Tweenable::interpolate(Dbfs::SILENCE, Dbfs::IDENTITY, relative_volume.into())
+					.as_amplitude();
 			output *= amplitude;
 		}
 		// apply spatialization
