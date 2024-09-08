@@ -39,7 +39,7 @@ impl StaticSoundSettings {
 			reverse: false,
 			loop_region: None,
 			volume: Value::Fixed(Dbfs::MAX),
-			playback_rate: Value::Fixed(PlaybackRate::Factor(1.0)),
+			playback_rate: Value::Fixed(PlaybackRate(1.0)),
 			panning: Value::Fixed(0.5),
 			fade_in_tween: None,
 		}
