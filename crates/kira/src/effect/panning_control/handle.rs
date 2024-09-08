@@ -1,4 +1,4 @@
-use crate::command::handle_param_setters;
+use crate::{command::handle_param_setters, Panning};
 
 use super::CommandWriters;
 
@@ -11,6 +11,6 @@ pub struct PanningControlHandle {
 impl PanningControlHandle {
 	handle_param_setters! {
 		/// Sets the panning adjustment to apply to input audio.
-		panning: f64,
+		panning: Panning,
 	}
 }

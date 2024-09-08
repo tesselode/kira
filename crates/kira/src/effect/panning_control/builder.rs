@@ -1,14 +1,14 @@
-use crate::{effect::EffectBuilder, tween::Value};
+use crate::{effect::EffectBuilder, tween::Value, Panning};
 
 use super::{command_writers_and_readers, PanningControl, PanningControlHandle};
 
 /// Configures a panning control effect.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct PanningControlBuilder(pub Value<f64>);
+pub struct PanningControlBuilder(pub Value<Panning>);
 
 impl Default for PanningControlBuilder {
 	fn default() -> Self {
-		Self(Value::Fixed(0.5))
+		Self(Value::Fixed(Panning::CENTER))
 	}
 }
 

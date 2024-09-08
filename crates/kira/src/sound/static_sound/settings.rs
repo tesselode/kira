@@ -1,7 +1,7 @@
 use crate::{
 	sound::{IntoOptionalRegion, PlaybackPosition, PlaybackRate, Region},
 	tween::{Tween, Value},
-	StartTime, Dbfs,
+	Dbfs, Panning, StartTime,
 };
 
 /// Settings for a static sound.
@@ -24,7 +24,7 @@ pub struct StaticSoundSettings {
 	pub playback_rate: Value<PlaybackRate>,
 	/// The panning of the sound, where 0 is hard left
 	/// and 1 is hard right.
-	pub panning: Value<f64>,
+	pub panning: Value<Panning>,
 	/// An optional fade-in from silence.
 	pub fade_in_tween: Option<Tween>,
 }
@@ -40,7 +40,7 @@ impl StaticSoundSettings {
 			loop_region: None,
 			volume: Value::Fixed(Dbfs::MAX),
 			playback_rate: Value::Fixed(PlaybackRate(1.0)),
-			panning: Value::Fixed(0.5),
+			panning: Value::Fixed(Panning::CENTER),
 			fade_in_tween: None,
 		}
 	}
@@ -106,7 +106,7 @@ impl StaticSoundSettings {
 	and 1 is hard right.
 	*/
 	#[must_use = "This method consumes self and returns a modified StaticSoundSettings, so the return value should be used"]
-	pub fn panning(self, panning: impl Into<Value<f64>>) -> Self {
+	pub fn panning(self, panning: impl Into<Value<Panning>>) -> Self {
 		Self {
 			panning: panning.into(),
 			..self
