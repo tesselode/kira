@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::{
 	clock::ClockTime,
 	info::MockInfoBuilder,
-	tween::{Tween, Value},
+	tween::{Easing, Tween, Value},
 	StartTime,
 };
 
@@ -151,8 +151,7 @@ fn tweens_to_modulator_values() {
 			mapping: Mapping {
 				input_range: (0.0, 1.0),
 				output_range: (0.0, 1.0),
-				clamp_bottom: false,
-				clamp_top: false,
+				easing: Easing::Linear,
 			},
 		},
 		Tween {

@@ -1,6 +1,11 @@
 use std::time::Duration;
 
-use crate::{info::Info, listener::ListenerId, modulator::ModulatorId, tween::Tweenable};
+use crate::{
+	info::Info,
+	listener::ListenerId,
+	modulator::ModulatorId,
+	tween::{Easing, Tweenable},
+};
 
 /// A value that a parameter can be linked to.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -123,10 +128,7 @@ pub struct Mapping<T> {
 	pub input_range: (f64, f64),
 	/// The corresponding range of values of the parameter.
 	pub output_range: (T, T),
-	/// Whether values should be prevented from being less than the bottom of the output range.
-	pub clamp_bottom: bool,
-	/// Whether values should be prevented from being greater than the top of the output range.
-	pub clamp_top: bool,
+	pub easing: Easing,
 }
 
 impl<T> Mapping<T> {
@@ -136,8 +138,7 @@ impl<T> Mapping<T> {
 		Mapping {
 			input_range: self.input_range,
 			output_range: (self.output_range.0.into(), self.output_range.1.into()),
-			clamp_bottom: self.clamp_bottom,
-			clamp_top: self.clamp_top,
+			easing: self.easing,
 		}
 	}
 
@@ -148,12 +149,8 @@ impl<T> Mapping<T> {
 		T: Tweenable,
 	{
 		let mut amount = (input - self.input_range.0) / (self.input_range.1 - self.input_range.0);
-		if self.clamp_bottom {
-			amount = amount.max(0.0);
-		}
-		if self.clamp_top {
-			amount = amount.min(1.0);
-		}
+		amount = amount.clamp(0.0, 1.0);
+		amount = self.easing.apply(amount);
 		T::interpolate(self.output_range.0, self.output_range.1, amount)
 	}
 }
