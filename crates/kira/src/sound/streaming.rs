@@ -39,10 +39,10 @@ pub use settings::*;
 use crate::{
 	command::{command_writer_and_reader, CommandReader, CommandWriter, ValueChangeCommand},
 	tween::Tween,
-	Dbfs, Panning, StartTime,
+	Dbfs, Panning, PlaybackRate, StartTime,
 };
 
-use super::{PlaybackRate, Region};
+use super::Region;
 
 #[derive(Debug)]
 pub(crate) struct CommandWriters {

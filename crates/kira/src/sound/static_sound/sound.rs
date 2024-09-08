@@ -13,9 +13,9 @@ use crate::{
 	frame::Frame,
 	info::Info,
 	playback_state_manager::PlaybackStateManager,
-	sound::{transport::Transport, PlaybackRate, PlaybackState, Sound},
+	sound::{transport::Transport, PlaybackState, Sound},
 	tween::{Parameter, Tween},
-	Dbfs, Panning, StartTime,
+	Dbfs, Panning, PlaybackRate, StartTime,
 };
 
 use self::resampler::Resampler;

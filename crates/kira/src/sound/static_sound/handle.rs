@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use crate::{
 	command::handle_param_setters,
-	sound::{IntoOptionalRegion, PlaybackRate, PlaybackState},
+	sound::{IntoOptionalRegion, PlaybackState},
 	tween::Tween,
-	Dbfs, Panning, StartTime,
+	Dbfs, Panning, PlaybackRate, StartTime,
 };
 
 use super::{sound::Shared, CommandWriters};

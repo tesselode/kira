@@ -3,8 +3,8 @@ use std::ops::{
 };
 
 use crate::{
-	sound::PlaybackRate,
 	tween::{Tweenable, Value},
+	PlaybackRate,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]

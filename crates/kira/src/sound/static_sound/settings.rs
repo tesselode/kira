@@ -1,7 +1,7 @@
 use crate::{
-	sound::{IntoOptionalRegion, PlaybackPosition, PlaybackRate, Region},
+	sound::{IntoOptionalRegion, PlaybackPosition, Region},
 	tween::{Tween, Value},
-	Dbfs, Panning, StartTime,
+	Dbfs, Panning, PlaybackRate, StartTime,
 };
 
 /// Settings for a static sound.
