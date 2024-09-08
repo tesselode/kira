@@ -1,4 +1,4 @@
-use crate::command::handle_param_setters;
+use crate::{command::handle_param_setters, Mix};
 
 use super::{CommandWriters, FilterMode};
 
@@ -25,6 +25,6 @@ impl FilterHandle {
 		/// with the wet (processed) signal. `0.0` means only the dry
 		/// signal will be heard. `1.0` means only the wet signal will
 		/// be heard.
-		mix: f64,
+		mix: Mix,
 	}
 }

@@ -13,6 +13,7 @@ use crate::{
 	frame::Frame,
 	info::Info,
 	tween::Parameter,
+	Mix,
 };
 use all_pass::AllPassFilter;
 use comb::CombFilter;
@@ -41,7 +42,7 @@ struct Reverb {
 	feedback: Parameter,
 	damping: Parameter,
 	stereo_width: Parameter,
-	mix: Parameter,
+	mix: Parameter<Mix>,
 	state: ReverbState,
 }
 
@@ -54,7 +55,7 @@ impl Reverb {
 			feedback: Parameter::new(settings.feedback, 0.9),
 			damping: Parameter::new(settings.damping, 0.1),
 			stereo_width: Parameter::new(settings.stereo_width, 1.0),
-			mix: Parameter::new(settings.mix, 0.5),
+			mix: Parameter::new(settings.mix, Mix(0.5)),
 			state: ReverbState::Uninitialized,
 		}
 	}
@@ -170,7 +171,7 @@ impl Effect for Reverb {
 				output.left * wet_1 + output.right * wet_2,
 				output.right * wet_1 + output.left * wet_2,
 			);
-			let mix = self.mix.value() as f32;
+			let mix = self.mix.value().0 as f32;
 			output * mix.sqrt() + input * (1.0 - mix).sqrt()
 		} else {
 			panic!("Reverb should be initialized before the first process call")
@@ -182,5 +183,5 @@ command_writers_and_readers! {
 	set_feedback: ValueChangeCommand<f64>,
 	set_damping: ValueChangeCommand<f64>,
 	set_stereo_width: ValueChangeCommand<f64>,
-	set_mix: ValueChangeCommand<f64>,
+	set_mix: ValueChangeCommand<Mix>,
 }

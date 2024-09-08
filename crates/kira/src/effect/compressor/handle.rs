@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::command::handle_param_setters;
+use crate::{command::handle_param_setters, Dbfs, Mix};
 
 use super::CommandWriters;
 
@@ -35,12 +35,12 @@ impl CompressorHandle {
 		/// This can be used to compensate for the decrease in volume resulting
 		/// from compression. This is only applied to the wet signal, nto the
 		/// dry signal.
-		makeup_gain: f64,
+		makeup_gain: Dbfs,
 
 		/// Sets how much dry (unprocessed) signal should be blended
 		/// with the wet (processed) signal. `0.0` means only the dry
 		/// signal will be heard. `1.0` means only the wet signal will
 		/// be heard.
-		mix: f64,
+		mix: Mix,
 	}
 }

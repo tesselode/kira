@@ -16,6 +16,7 @@ use crate::{
 	frame::Frame,
 	info::Info,
 	tween::Parameter,
+	Dbfs, Mix,
 };
 
 use super::Effect;
@@ -26,8 +27,8 @@ struct Compressor {
 	ratio: Parameter,
 	attack_duration: Parameter<Duration>,
 	release_duration: Parameter<Duration>,
-	makeup_gain: Parameter,
-	mix: Parameter,
+	makeup_gain: Parameter<Dbfs>,
+	mix: Parameter<Mix>,
 	envelope_follower: [f32; 2],
 }
 
@@ -100,13 +101,13 @@ impl Effect for Compressor {
 			.envelope_follower
 			.map(|envelope_follower| envelope_follower * ((1.0 / ratio) - 1.0));
 		let amplitude = gain_reduction.map(|gain_reduction| 10.0f32.powf(gain_reduction / 20.0));
-		let makeup_gain_linear = 10.0f32.powf(self.makeup_gain.value() as f32 / 20.0);
+		let makeup_gain_linear = 10.0f32.powf(self.makeup_gain.value().0 / 20.0);
 		let output = Frame {
 			left: amplitude[0] * input.left,
 			right: amplitude[1] * input.right,
 		} * makeup_gain_linear;
 
-		let mix = self.mix.value() as f32;
+		let mix = self.mix.value().0 as f32;
 		output * mix.sqrt() + input * (1.0 - mix).sqrt()
 	}
 }
@@ -116,6 +117,6 @@ command_writers_and_readers! {
 	set_ratio: ValueChangeCommand<f64>,
 	set_attack_duration: ValueChangeCommand<Duration>,
 	set_release_duration: ValueChangeCommand<Duration>,
-	set_makeup_gain: ValueChangeCommand<f64>,
-	set_mix: ValueChangeCommand<f64>,
+	set_makeup_gain: ValueChangeCommand<Dbfs>,
+	set_mix: ValueChangeCommand<Mix>,
 }

@@ -13,7 +13,7 @@ use crate::{
 	frame::Frame,
 	info::Info,
 	tween::Parameter,
-	Dbfs,
+	Dbfs, Mix,
 };
 
 /// Different types of distortion.
@@ -44,7 +44,7 @@ struct Distortion {
 	command_readers: CommandReaders,
 	kind: DistortionKind,
 	drive: Parameter<Dbfs>,
-	mix: Parameter,
+	mix: Parameter<Mix>,
 }
 
 impl Effect for Distortion {
@@ -72,7 +72,7 @@ impl Effect for Distortion {
 		};
 		output /= drive;
 
-		let mix = self.mix.value() as f32;
+		let mix = self.mix.value().0 as f32;
 		output * mix.sqrt() + input * (1.0 - mix).sqrt()
 	}
 }
@@ -80,5 +80,5 @@ impl Effect for Distortion {
 command_writers_and_readers! {
 	set_kind: DistortionKind,
 	set_drive: ValueChangeCommand<Dbfs>,
-	set_mix: ValueChangeCommand<f64>,
+	set_mix: ValueChangeCommand<Mix>,
 }

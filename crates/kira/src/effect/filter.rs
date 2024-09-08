@@ -15,6 +15,7 @@ use crate::{
 	frame::Frame,
 	info::Info,
 	tween::Parameter,
+	Mix,
 };
 
 // This filter code is based on the filter code from baseplug:
@@ -39,7 +40,7 @@ struct Filter {
 	mode: FilterMode,
 	cutoff: Parameter,
 	resonance: Parameter,
-	mix: Parameter,
+	mix: Parameter<Mix>,
 	ic1eq: Frame,
 	ic2eq: Frame,
 }
@@ -53,7 +54,7 @@ impl Filter {
 			mode: builder.mode,
 			cutoff: Parameter::new(builder.cutoff, 1000.0),
 			resonance: Parameter::new(builder.resonance, 0.0),
-			mix: Parameter::new(builder.mix, 1.0),
+			mix: Parameter::new(builder.mix, Mix(1.0)),
 			ic1eq: Frame::ZERO,
 			ic2eq: Frame::ZERO,
 		}
@@ -89,7 +90,7 @@ impl Effect for Filter {
 			FilterMode::HighPass => input - v1 * (k as f32) - v2,
 			FilterMode::Notch => input - v1 * (k as f32),
 		};
-		let mix = self.mix.value() as f32;
+		let mix = self.mix.value().0 as f32;
 		output * mix.sqrt() + input * (1.0 - mix).sqrt()
 	}
 }
@@ -98,5 +99,5 @@ command_writers_and_readers!(
 	set_mode: FilterMode,
 	set_cutoff: ValueChangeCommand<f64>,
 	set_resonance: ValueChangeCommand<f64>,
-	set_mix: ValueChangeCommand<f64>,
+	set_mix: ValueChangeCommand<Mix>,
 );

@@ -1,4 +1,4 @@
-use crate::{command::handle_param_setters, Dbfs};
+use crate::{command::handle_param_setters, Dbfs, Mix};
 
 use super::{CommandWriters, DistortionKind};
 
@@ -22,6 +22,6 @@ impl DistortionHandle {
 		/// with the wet (processed) signal. `0.0` means only the dry
 		/// signal will be heard. `1.0` means only the wet signal will
 		/// be heard.
-		mix: f64,
+		mix: Mix,
 	}
 }
