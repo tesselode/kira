@@ -2,7 +2,7 @@ use std::ops::{
 	Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
 };
 
-use crate::tween::{Mapping, Tweenable, Value};
+use crate::tween::{Tweenable, Value};
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct PlaybackRate(pub f64);
@@ -112,16 +112,5 @@ impl Rem<f64> for PlaybackRate {
 impl RemAssign<f64> for PlaybackRate {
 	fn rem_assign(&mut self, rhs: f64) {
 		self.0 %= rhs;
-	}
-}
-
-impl Default for Mapping<PlaybackRate> {
-	fn default() -> Self {
-		Self {
-			input_range: (0.0, 1.0),
-			output_range: (PlaybackRate(0.0), PlaybackRate(1.0)),
-			clamp_bottom: false,
-			clamp_top: false,
-		}
 	}
 }

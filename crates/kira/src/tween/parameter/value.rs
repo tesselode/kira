@@ -115,19 +115,6 @@ impl<T: Default> Default for Value<T> {
 	}
 }
 
-impl<T, IntoId> From<IntoId> for Value<T>
-where
-	ModulatorId: From<IntoId>,
-	Mapping<T>: Default,
-{
-	fn from(id: IntoId) -> Self {
-		Self::FromModulator {
-			id: id.into(),
-			mapping: Mapping::default(),
-		}
-	}
-}
-
 /// A transformation from a modulator's value to a parameter value.
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -168,27 +155,5 @@ impl<T> Mapping<T> {
 			amount = amount.min(1.0);
 		}
 		T::interpolate(self.output_range.0, self.output_range.1, amount)
-	}
-}
-
-impl Default for Mapping<f32> {
-	fn default() -> Self {
-		Self {
-			input_range: (0.0, 1.0),
-			output_range: (0.0, 1.0),
-			clamp_bottom: false,
-			clamp_top: false,
-		}
-	}
-}
-
-impl Default for Mapping<f64> {
-	fn default() -> Self {
-		Self {
-			input_range: (0.0, 1.0),
-			output_range: (0.0, 1.0),
-			clamp_bottom: false,
-			clamp_top: false,
-		}
 	}
 }
