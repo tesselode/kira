@@ -16,7 +16,7 @@ use crate::{
 		EndPosition, IntoOptionalRegion, PlaybackPosition, PlaybackRate, Region, Sound, SoundData,
 	},
 	tween::{Tween, Value},
-	Dbfs, StartTime,
+	Dbfs, Panning, StartTime,
 };
 
 use super::{
@@ -221,7 +221,7 @@ impl StaticSoundData {
 	}
 
 	/**
-	Sets the panning of the sound, where 0 is hard left and 1 is hard right.
+	Sets the panning of the sound, where -1.0 is hard left and 1.0 is hard right.
 
 	This returns a cheap clone of the [`StaticSoundData`] with the modified panning.
 
@@ -252,7 +252,7 @@ impl StaticSoundData {
 	```
 	*/
 	#[must_use = "This method returns a modified StaticSoundData and does not mutate the original value"]
-	pub fn panning(&self, panning: impl Into<Value<f64>>) -> Self {
+	pub fn panning(&self, panning: impl Into<Value<Panning>>) -> Self {
 		let mut new = self.clone();
 		new.settings.panning = panning.into();
 		new

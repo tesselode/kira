@@ -4,7 +4,7 @@ use crate::{
 	command::handle_param_setters,
 	sound::{IntoOptionalRegion, PlaybackRate, PlaybackState},
 	tween::Tween,
-	Dbfs, StartTime,
+	Dbfs, Panning, StartTime,
 };
 
 use super::{sound::Shared, CommandWriters};
@@ -166,8 +166,8 @@ impl StaticSoundHandle {
 		playback_rate: PlaybackRate,
 
 		/**
-		Sets the panning of the sound, where `0.0` is hard left,
-		`0.5` is center, and `1.0` is hard right.
+		Sets the panning of the sound, where `-1.0` is hard left,
+		`0.0` is center, and `1.0` is hard right.
 
 		# Examples
 
@@ -213,7 +213,7 @@ impl StaticSoundHandle {
 		# Result::<(), Box<dyn std::error::Error>>::Ok(())
 		```
 		*/
-		panning: f64,
+		panning: Panning,
 	}
 
 	/**

@@ -12,13 +12,14 @@ use crate::{
 	frame::Frame,
 	info::Info,
 	tween::Parameter,
+	Panning,
 };
 
 use super::Effect;
 
 struct PanningControl {
 	command_readers: CommandReaders,
-	panning: Parameter,
+	panning: Parameter<Panning>,
 }
 
 impl PanningControl {
@@ -26,7 +27,7 @@ impl PanningControl {
 	fn new(builder: PanningControlBuilder, command_readers: CommandReaders) -> Self {
 		Self {
 			command_readers,
-			panning: Parameter::new(builder.0, 0.5),
+			panning: Parameter::new(builder.0, Panning::CENTER),
 		}
 	}
 }
@@ -38,10 +39,10 @@ impl Effect for PanningControl {
 
 	fn process(&mut self, input: Frame, dt: f64, info: &Info) -> Frame {
 		self.panning.update(dt, info);
-		input.panned(self.panning.value() as f32)
+		input.panned(self.panning.value())
 	}
 }
 
 command_writers_and_readers! {
-	set_panning: ValueChangeCommand<f64>,
+	set_panning: ValueChangeCommand<Panning>,
 }

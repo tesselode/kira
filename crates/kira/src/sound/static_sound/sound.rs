@@ -15,7 +15,7 @@ use crate::{
 	playback_state_manager::PlaybackStateManager,
 	sound::{transport::Transport, PlaybackRate, PlaybackState, Sound},
 	tween::{Parameter, Tween},
-	Dbfs, StartTime,
+	Dbfs, Panning, StartTime,
 };
 
 use self::resampler::Resampler;
@@ -35,7 +35,7 @@ pub(super) struct StaticSound {
 	fractional_position: f64,
 	volume: Parameter<Dbfs>,
 	playback_rate: Parameter<PlaybackRate>,
-	panning: Parameter,
+	panning: Parameter<Panning>,
 	shared: Arc<Shared>,
 }
 
@@ -65,7 +65,7 @@ impl StaticSound {
 			fractional_position: 0.0,
 			volume: Parameter::new(settings.volume, Dbfs::MAX),
 			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate(1.0)),
-			panning: Parameter::new(settings.panning, 0.5),
+			panning: Parameter::new(settings.panning, Panning::CENTER),
 			shared: Arc::new(Shared {
 				state: AtomicU8::new(PlaybackState::Playing as u8),
 				position: AtomicU64::new(position.to_bits()),
@@ -150,7 +150,7 @@ impl StaticSound {
 			let volume = self.volume.value().as_amplitude();
 			(frame_at_index(frame_index, &self.frames, self.slice).unwrap_or_default()
 				* fade_volume * volume)
-				.panned(self.panning.value() as f32)
+				.panned(self.panning.value())
 		} else {
 			Frame::ZERO
 		};

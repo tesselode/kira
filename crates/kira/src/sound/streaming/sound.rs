@@ -15,7 +15,7 @@ use crate::{
 	playback_state_manager::PlaybackStateManager,
 	sound::{PlaybackRate, PlaybackState, Sound},
 	tween::{Parameter, Tween},
-	Dbfs, StartTime,
+	Dbfs, Panning, StartTime,
 };
 use ringbuf::HeapConsumer;
 
@@ -86,7 +86,7 @@ pub(crate) struct StreamingSound {
 	fractional_position: f64,
 	volume: Parameter<Dbfs>,
 	playback_rate: Parameter<PlaybackRate>,
-	panning: Parameter,
+	panning: Parameter<Panning>,
 	shared: Arc<Shared>,
 }
 
@@ -115,7 +115,7 @@ impl StreamingSound {
 			fractional_position: 0.0,
 			volume: Parameter::new(settings.volume, Dbfs::MAX),
 			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate(1.0)),
-			panning: Parameter::new(settings.panning, 0.5),
+			panning: Parameter::new(settings.panning, Panning::CENTER),
 			shared,
 		}
 	}
@@ -247,7 +247,7 @@ impl Sound for StreamingSound {
 		}
 		(out * self.playback_state_manager.fade_volume().as_amplitude()
 			* self.volume.value().as_amplitude())
-		.panned(self.panning.value() as f32)
+		.panned(self.panning.value())
 	}
 
 	fn finished(&self) -> bool {

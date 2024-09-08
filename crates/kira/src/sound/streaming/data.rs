@@ -7,7 +7,7 @@ use crate::sound::{
 	EndPosition, IntoOptionalRegion, PlaybackPosition, PlaybackRate, Region, SoundData,
 };
 use crate::tween::{Tween, Value};
-use crate::{Dbfs, StartTime};
+use crate::{Dbfs, Panning, StartTime};
 use ringbuf::HeapRb;
 
 use super::sound::Shared;
@@ -233,7 +233,7 @@ impl<Error: Send> StreamingSoundData<Error> {
 	```
 	*/
 	#[must_use = "This method consumes self and returns a modified StreamingSoundData, so the return value should be used"]
-	pub fn panning(mut self, panning: impl Into<Value<f64>>) -> Self {
+	pub fn panning(mut self, panning: impl Into<Value<Panning>>) -> Self {
 		self.settings.panning = panning.into();
 		self
 	}
