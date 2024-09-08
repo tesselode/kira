@@ -13,7 +13,7 @@ use crate::{
 	frame::Frame,
 	info::Info,
 	tween::Parameter,
-	Volume,
+	Dbfs,
 };
 
 /// Different types of distortion.
@@ -43,7 +43,7 @@ impl Default for DistortionKind {
 struct Distortion {
 	command_readers: CommandReaders,
 	kind: DistortionKind,
-	drive: Parameter<Volume>,
+	drive: Parameter<Dbfs>,
 	mix: Parameter,
 }
 
@@ -58,7 +58,7 @@ impl Effect for Distortion {
 	fn process(&mut self, input: Frame, dt: f64, info: &Info) -> Frame {
 		self.drive.update(dt, info);
 		self.mix.update(dt, info);
-		let drive = self.drive.value().as_amplitude() as f32;
+		let drive = self.drive.value().as_amplitude();
 		let mut output = input * drive;
 		output = match self.kind {
 			DistortionKind::HardClip => Frame::new(
@@ -79,6 +79,6 @@ impl Effect for Distortion {
 
 command_writers_and_readers! {
 	set_kind: DistortionKind,
-	set_drive: ValueChangeCommand<Volume>,
+	set_drive: ValueChangeCommand<Dbfs>,
 	set_mix: ValueChangeCommand<f64>,
 }

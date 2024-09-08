@@ -12,7 +12,7 @@ use crate::{
 	frame::{interpolate_frame, Frame},
 	info::Info,
 	tween::Parameter,
-	Volume,
+	Dbfs,
 };
 
 use super::Effect;
@@ -32,7 +32,7 @@ enum DelayState {
 struct Delay {
 	command_readers: CommandReaders,
 	delay_time: Parameter,
-	feedback: Parameter<Volume>,
+	feedback: Parameter<Dbfs>,
 	mix: Parameter,
 	state: DelayState,
 	feedback_effects: Vec<Box<dyn Effect>>,
@@ -45,7 +45,7 @@ impl Delay {
 		Self {
 			command_readers,
 			delay_time: Parameter::new(builder.delay_time, 0.5),
-			feedback: Parameter::new(builder.feedback, Volume::Amplitude(0.5)),
+			feedback: Parameter::new(builder.feedback, Dbfs(-6.0)),
 			mix: Parameter::new(builder.mix, 0.5),
 			state: DelayState::Uninitialized {
 				buffer_length: builder.buffer_length,
@@ -136,7 +136,7 @@ impl Effect for Delay {
 			// write output audio to the buffer
 			*write_position += 1;
 			*write_position %= buffer.len();
-			buffer[*write_position] = input + output * self.feedback.value().as_amplitude() as f32;
+			buffer[*write_position] = input + output * self.feedback.value().as_amplitude();
 
 			let mix = self.mix.value() as f32;
 			output * mix.sqrt() + input * (1.0 - mix).sqrt()
@@ -148,6 +148,6 @@ impl Effect for Delay {
 
 command_writers_and_readers! {
 	set_delay_time: ValueChangeCommand<f64>,
-	set_feedback: ValueChangeCommand<Volume>,
+	set_feedback: ValueChangeCommand<Dbfs>,
 	set_mix: ValueChangeCommand<f64>,
 }

@@ -7,7 +7,7 @@ use crate::{
 	command::handle_param_setters,
 	sound::{IntoOptionalRegion, PlaybackRate, PlaybackState},
 	tween::Tween,
-	StartTime, Volume,
+	Dbfs, StartTime,
 };
 use ringbuf::HeapConsumer;
 
@@ -50,7 +50,7 @@ impl<Error> StreamingSoundHandle<Error> {
 		# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg")?)?;
 		use kira::tween::Tween;
 
-		sound.set_volume(0.5, Tween::default());
+		sound.set_volume(-6.0, Tween::default());
 		# Result::<(), Box<dyn std::error::Error>>::Ok(())
 		```
 
@@ -66,7 +66,7 @@ impl<Error> StreamingSoundHandle<Error> {
 		use kira::tween::Tween;
 		use std::time::Duration;
 
-		sound.set_volume(kira::Volume::Decibels(-6.0), Tween {
+		sound.set_volume(kira::Dbfs(-6.0), Tween {
 			duration: Duration::from_secs(3),
 			..Default::default()
 		});
@@ -96,7 +96,7 @@ impl<Error> StreamingSoundHandle<Error> {
 		# Result::<(), Box<dyn std::error::Error>>::Ok(())
 		```
 		*/
-		volume: Volume,
+		volume: Dbfs,
 
 		/**
 		Sets the playback rate of the sound.
