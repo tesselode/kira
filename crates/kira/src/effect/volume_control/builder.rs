@@ -16,7 +16,7 @@ impl VolumeControlBuilder {
 
 impl Default for VolumeControlBuilder {
 	fn default() -> Self {
-		Self(Value::Fixed(Dbfs::MAX))
+		Self(Value::Fixed(Dbfs::IDENTITY))
 	}
 }
 

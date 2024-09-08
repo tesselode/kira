@@ -35,7 +35,7 @@ impl StreamingSoundSettings {
 			start_time: StartTime::Immediate,
 			start_position: PlaybackPosition::Seconds(0.0),
 			loop_region: None,
-			volume: Value::Fixed(Dbfs::MAX),
+			volume: Value::Fixed(Dbfs::IDENTITY),
 			playback_rate: Value::Fixed(PlaybackRate(1.0)),
 			panning: Value::Fixed(Panning::CENTER),
 			fade_in_tween: None,

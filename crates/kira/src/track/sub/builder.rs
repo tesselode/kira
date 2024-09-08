@@ -34,7 +34,7 @@ impl TrackBuilder {
 	#[must_use]
 	pub fn new() -> Self {
 		Self {
-			volume: Value::Fixed(Dbfs::MAX),
+			volume: Value::Fixed(Dbfs::IDENTITY),
 			effects: vec![],
 			sub_track_capacity: 16,
 			sound_capacity: 128,
@@ -231,7 +231,7 @@ impl TrackBuilder {
 			sends.push((
 				send_track_id,
 				SendTrackRoute {
-					volume: Parameter::new(volume, Dbfs::MAX),
+					volume: Parameter::new(volume, Dbfs::IDENTITY),
 					set_volume_command_reader,
 				},
 			));
@@ -240,7 +240,7 @@ impl TrackBuilder {
 		let track = Track {
 			shared: shared.clone(),
 			command_readers,
-			volume: Parameter::new(self.volume, Dbfs::MAX),
+			volume: Parameter::new(self.volume, Dbfs::IDENTITY),
 			sounds,
 			sub_tracks,
 			effects: self.effects,
