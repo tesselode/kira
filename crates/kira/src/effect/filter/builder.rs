@@ -1,6 +1,7 @@
 use crate::{
 	effect::{Effect, EffectBuilder},
 	tween::Value,
+	Mix,
 };
 
 use super::{command_writers_and_readers, Filter, FilterHandle, FilterMode};
@@ -21,7 +22,7 @@ pub struct FilterBuilder {
 	/// with the wet (processed) signal. `0.0` means
 	/// only the dry signal will be heard. `1.0` means
 	/// only the wet signal will be heard.
-	pub mix: Value<f64>,
+	pub mix: Value<Mix>,
 }
 
 impl FilterBuilder {
@@ -60,7 +61,7 @@ impl FilterBuilder {
 	/// signal will be heard. `1.0` means only the wet signal will
 	/// be heard.
 	#[must_use = "This method consumes self and returns a modified FilterBuilder, so the return value should be used"]
-	pub fn mix(self, mix: impl Into<Value<f64>>) -> Self {
+	pub fn mix(self, mix: impl Into<Value<Mix>>) -> Self {
 		Self {
 			mix: mix.into(),
 			..self
@@ -74,7 +75,7 @@ impl Default for FilterBuilder {
 			mode: FilterMode::LowPass,
 			cutoff: Value::Fixed(1000.0),
 			resonance: Value::Fixed(0.0),
-			mix: Value::Fixed(1.0),
+			mix: Value::Fixed(Mix::WET),
 		}
 	}
 }

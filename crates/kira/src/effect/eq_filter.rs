@@ -16,6 +16,7 @@ use crate::{
 	frame::Frame,
 	info::Info,
 	tween::Parameter,
+	Dbfs,
 };
 
 use super::Effect;
@@ -26,7 +27,7 @@ struct EqFilter {
 	command_readers: CommandReaders,
 	kind: EqFilterKind,
 	frequency: Parameter,
-	gain: Parameter,
+	gain: Parameter<Dbfs>,
 	q: Parameter,
 	ic1eq: Frame,
 	ic2eq: Frame,
@@ -39,7 +40,7 @@ impl EqFilter {
 			command_readers,
 			kind: builder.kind,
 			frequency: Parameter::new(builder.frequency, 500.0),
-			gain: Parameter::new(builder.gain, 0.0),
+			gain: Parameter::new(builder.gain, Dbfs::MAX),
 			q: Parameter::new(builder.q, 1.0),
 			ic1eq: Frame::ZERO,
 			ic2eq: Frame::ZERO,
@@ -54,7 +55,7 @@ impl EqFilter {
 		let q = self.q.value().max(MIN_Q);
 		match self.kind {
 			EqFilterKind::Bell => {
-				let a = 10.0f64.powf(self.gain.value() / 40.0);
+				let a = 10.0f64.powf(self.gain.value().0 as f64 / 40.0);
 				let g = (PI * relative_frequency).tan();
 				let k = 1.0 / (q * a);
 				let a1 = 1.0 / (1.0 + g * (g + k));
@@ -73,7 +74,7 @@ impl EqFilter {
 				}
 			}
 			EqFilterKind::LowShelf => {
-				let a = 10.0f64.powf(self.gain.value() / 40.0);
+				let a = 10.0f64.powf(self.gain.value().0 as f64 / 40.0);
 				let g = (PI * relative_frequency).tan() / a.sqrt();
 				let k = 1.0 / q;
 				let a1 = 1.0 / (1.0 + g * (g + k));
@@ -92,7 +93,7 @@ impl EqFilter {
 				}
 			}
 			EqFilterKind::HighShelf => {
-				let a = 10.0f64.powf(self.gain.value() / 40.0);
+				let a = 10.0f64.powf(self.gain.value().0 as f64 / 40.0);
 				let g = (PI * relative_frequency).tan() * a.sqrt();
 				let k = 1.0 / q;
 				let a1 = 1.0 / (1.0 + g * (g + k));
@@ -167,6 +168,6 @@ struct Coefficients {
 command_writers_and_readers! {
 	set_kind: EqFilterKind,
 	set_frequency: ValueChangeCommand<f64>,
-	set_gain: ValueChangeCommand<f64>,
+	set_gain: ValueChangeCommand<Dbfs>,
 	set_q: ValueChangeCommand<f64>,
 }

@@ -12,7 +12,7 @@ use crate::{
 	frame::{interpolate_frame, Frame},
 	info::Info,
 	tween::Parameter,
-	Dbfs,
+	Dbfs, Mix,
 };
 
 use super::Effect;
@@ -33,7 +33,7 @@ struct Delay {
 	command_readers: CommandReaders,
 	delay_time: Parameter,
 	feedback: Parameter<Dbfs>,
-	mix: Parameter,
+	mix: Parameter<Mix>,
 	state: DelayState,
 	feedback_effects: Vec<Box<dyn Effect>>,
 }
@@ -46,7 +46,7 @@ impl Delay {
 			command_readers,
 			delay_time: Parameter::new(builder.delay_time, 0.5),
 			feedback: Parameter::new(builder.feedback, Dbfs(-6.0)),
-			mix: Parameter::new(builder.mix, 0.5),
+			mix: Parameter::new(builder.mix, Mix(0.5)),
 			state: DelayState::Uninitialized {
 				buffer_length: builder.buffer_length,
 			},
@@ -138,7 +138,7 @@ impl Effect for Delay {
 			*write_position %= buffer.len();
 			buffer[*write_position] = input + output * self.feedback.value().as_amplitude();
 
-			let mix = self.mix.value() as f32;
+			let mix = self.mix.value().0 as f32;
 			output * mix.sqrt() + input * (1.0 - mix).sqrt()
 		} else {
 			panic!("The delay should be initialized by the first process call")
@@ -149,5 +149,5 @@ impl Effect for Delay {
 command_writers_and_readers! {
 	set_delay_time: ValueChangeCommand<f64>,
 	set_feedback: ValueChangeCommand<Dbfs>,
-	set_mix: ValueChangeCommand<f64>,
+	set_mix: ValueChangeCommand<Mix>,
 }

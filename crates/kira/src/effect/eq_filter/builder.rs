@@ -1,4 +1,4 @@
-use crate::{effect::EffectBuilder, tween::Value};
+use crate::{effect::EffectBuilder, tween::Value, Dbfs};
 
 use super::{command_writers_and_readers, EqFilter, EqFilterHandle, EqFilterKind};
 
@@ -10,7 +10,7 @@ pub struct EqFilterBuilder {
 	/// (for bell or shelf curves, respectively).
 	pub frequency: Value<f64>,
 	/// The volume adjustment for frequencies in the specified range (in decibels).
-	pub gain: Value<f64>,
+	pub gain: Value<Dbfs>,
 	/// The width of the frequency range to adjust.
 	///
 	/// A higher Q value results in a narrower range of frequencies being adjusted.
@@ -24,7 +24,7 @@ impl EqFilterBuilder {
 	pub fn new(
 		kind: EqFilterKind,
 		frequency: impl Into<Value<f64>>,
-		gain: impl Into<Value<f64>>,
+		gain: impl Into<Value<Dbfs>>,
 		q: impl Into<Value<f64>>,
 	) -> Self {
 		Self {
