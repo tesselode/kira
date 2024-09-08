@@ -161,7 +161,7 @@ audio formats, like MP3 and WAV.
 	- [`PlaybackRate`](crate::sound::PlaybackRate)
 	- [`PlaybackState`](crate::sound::PlaybackState)
 	- [`Region`](crate::sound::Region)
-	- [`Volume`]
+	- [`Dbfs`]
 	- [`Waveform`](crate::modulator::lfo::Waveform)
 - `assert_no_alloc` - uses the [`assert_no_alloc`](https://crates.io/crates/assert_no_alloc) crate
 to cause panics if memory is allocated or deallocated on the audio thread. This is mainly useful
@@ -249,6 +249,7 @@ and compile times for games.
 mod arena;
 pub mod clock;
 pub mod command;
+mod dbfs;
 pub mod effect;
 mod error;
 mod frame;
@@ -261,9 +262,8 @@ pub mod sound;
 mod start_time;
 pub mod track;
 pub mod tween;
-mod volume;
 
+pub use dbfs::*;
 pub use error::*;
 pub use frame::*;
 pub use start_time::*;
-pub use volume::*;

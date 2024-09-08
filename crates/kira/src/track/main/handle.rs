@@ -3,13 +3,13 @@ use crate::{
 	manager::backend::resources::ResourceController,
 	sound::{Sound, SoundData},
 	tween::{Tween, Value},
-	PlaySoundError, Volume,
+	PlaySoundError, Dbfs,
 };
 
 /// Controls the main mixer track.
 #[derive(Debug)]
 pub struct MainTrackHandle {
-	pub(crate) set_volume_command_writer: CommandWriter<ValueChangeCommand<Volume>>,
+	pub(crate) set_volume_command_writer: CommandWriter<ValueChangeCommand<Dbfs>>,
 	pub(crate) sound_controller: ResourceController<Box<dyn Sound>>,
 }
 
@@ -29,7 +29,7 @@ impl MainTrackHandle {
 	}
 
 	/// Sets the (post-effects) volume of the mixer track.
-	pub fn set_volume(&mut self, volume: impl Into<Value<Volume>>, tween: Tween) {
+	pub fn set_volume(&mut self, volume: impl Into<Value<Dbfs>>, tween: Tween) {
 		self.set_volume_command_writer.write(ValueChangeCommand {
 			target: volume.into(),
 			tween,
