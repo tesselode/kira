@@ -1,4 +1,7 @@
-use std::time::Duration;
+use std::{
+	ops::{Add, Div, Mul, Neg, Rem, Sub},
+	time::Duration,
+};
 
 use crate::{
 	info::Info,
@@ -120,6 +123,137 @@ impl<T: Default> Default for Value<T> {
 	}
 }
 
+impl<T, Rhs> Add<Rhs> for Value<T>
+where
+	T: Add<Rhs, Output = T>,
+	Rhs: Copy,
+{
+	type Output = Self;
+
+	fn add(self, rhs: Rhs) -> Self::Output {
+		match self {
+			Value::Fixed(value) => Self::Fixed(value + rhs),
+			Value::FromModulator { id, mapping } => Value::FromModulator {
+				id,
+				mapping: mapping.add_output(rhs),
+			},
+			Value::FromListenerDistance { id, mapping } => Value::FromListenerDistance {
+				id,
+				mapping: mapping.add_output(rhs),
+			},
+		}
+	}
+}
+
+impl<T, Rhs> Sub<Rhs> for Value<T>
+where
+	T: Sub<Rhs, Output = T>,
+	Rhs: Copy,
+{
+	type Output = Self;
+
+	fn sub(self, rhs: Rhs) -> Self::Output {
+		match self {
+			Value::Fixed(value) => Self::Fixed(value - rhs),
+			Value::FromModulator { id, mapping } => Value::FromModulator {
+				id,
+				mapping: mapping.sub_output(rhs),
+			},
+			Value::FromListenerDistance { id, mapping } => Value::FromListenerDistance {
+				id,
+				mapping: mapping.sub_output(rhs),
+			},
+		}
+	}
+}
+
+impl<T, Rhs> Mul<Rhs> for Value<T>
+where
+	T: Mul<Rhs, Output = T>,
+	Rhs: Copy,
+{
+	type Output = Self;
+
+	fn mul(self, rhs: Rhs) -> Self::Output {
+		match self {
+			Value::Fixed(value) => Self::Fixed(value * rhs),
+			Value::FromModulator { id, mapping } => Value::FromModulator {
+				id,
+				mapping: mapping.mul_output(rhs),
+			},
+			Value::FromListenerDistance { id, mapping } => Value::FromListenerDistance {
+				id,
+				mapping: mapping.mul_output(rhs),
+			},
+		}
+	}
+}
+
+impl<T, Rhs> Div<Rhs> for Value<T>
+where
+	T: Div<Rhs, Output = T>,
+	Rhs: Copy,
+{
+	type Output = Self;
+
+	fn div(self, rhs: Rhs) -> Self::Output {
+		match self {
+			Value::Fixed(value) => Self::Fixed(value / rhs),
+			Value::FromModulator { id, mapping } => Value::FromModulator {
+				id,
+				mapping: mapping.div_output(rhs),
+			},
+			Value::FromListenerDistance { id, mapping } => Value::FromListenerDistance {
+				id,
+				mapping: mapping.div_output(rhs),
+			},
+		}
+	}
+}
+
+impl<T, Rhs> Rem<Rhs> for Value<T>
+where
+	T: Rem<Rhs, Output = T>,
+	Rhs: Copy,
+{
+	type Output = Self;
+
+	fn rem(self, rhs: Rhs) -> Self::Output {
+		match self {
+			Value::Fixed(value) => Self::Fixed(value % rhs),
+			Value::FromModulator { id, mapping } => Value::FromModulator {
+				id,
+				mapping: mapping.rem_output(rhs),
+			},
+			Value::FromListenerDistance { id, mapping } => Value::FromListenerDistance {
+				id,
+				mapping: mapping.rem_output(rhs),
+			},
+		}
+	}
+}
+
+impl<T> Neg for Value<T>
+where
+	T: Neg<Output = T>,
+{
+	type Output = Self;
+
+	fn neg(self) -> Self::Output {
+		match self {
+			Value::Fixed(value) => Self::Fixed(-value),
+			Value::FromModulator { id, mapping } => Value::FromModulator {
+				id,
+				mapping: mapping.neg_output(),
+			},
+			Value::FromListenerDistance { id, mapping } => Value::FromListenerDistance {
+				id,
+				mapping: mapping.neg_output(),
+			},
+		}
+	}
+}
+
 /// A transformation from a modulator's value to a parameter value.
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -152,5 +286,70 @@ impl<T> Mapping<T> {
 		amount = amount.clamp(0.0, 1.0);
 		amount = self.easing.apply(amount);
 		T::interpolate(self.output_range.0, self.output_range.1, amount)
+	}
+
+	pub fn add_output<Rhs>(self, rhs: Rhs) -> Self
+	where
+		T: Add<Rhs, Output = T>,
+		Rhs: Copy,
+	{
+		Self {
+			output_range: (self.output_range.0 + rhs, self.output_range.1 + rhs),
+			..self
+		}
+	}
+
+	pub fn sub_output<Rhs>(self, rhs: Rhs) -> Self
+	where
+		T: Sub<Rhs, Output = T>,
+		Rhs: Copy,
+	{
+		Self {
+			output_range: (self.output_range.0 - rhs, self.output_range.1 - rhs),
+			..self
+		}
+	}
+
+	pub fn mul_output<Rhs>(self, rhs: Rhs) -> Self
+	where
+		T: Mul<Rhs, Output = T>,
+		Rhs: Copy,
+	{
+		Self {
+			output_range: (self.output_range.0 * rhs, self.output_range.1 * rhs),
+			..self
+		}
+	}
+
+	pub fn div_output<Rhs>(self, rhs: Rhs) -> Self
+	where
+		T: Div<Rhs, Output = T>,
+		Rhs: Copy,
+	{
+		Self {
+			output_range: (self.output_range.0 / rhs, self.output_range.1 / rhs),
+			..self
+		}
+	}
+
+	pub fn rem_output<Rhs>(self, rhs: Rhs) -> Self
+	where
+		T: Rem<Rhs, Output = T>,
+		Rhs: Copy,
+	{
+		Self {
+			output_range: (self.output_range.0 % rhs, self.output_range.1 % rhs),
+			..self
+		}
+	}
+
+	pub fn neg_output(self) -> Self
+	where
+		T: Neg<Output = T>,
+	{
+		Self {
+			output_range: (-self.output_range.0, -self.output_range.1),
+			..self
+		}
 	}
 }
