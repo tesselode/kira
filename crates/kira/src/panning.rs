@@ -2,7 +2,7 @@ use std::ops::{
 	Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
 };
 
-use crate::tween::{Mapping, Tweenable, Value};
+use crate::tween::{Tweenable, Value};
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Panning(pub f32);
@@ -118,16 +118,5 @@ impl Rem<f32> for Panning {
 impl RemAssign<f32> for Panning {
 	fn rem_assign(&mut self, rhs: f32) {
 		self.0 %= rhs;
-	}
-}
-
-impl Default for Mapping<Panning> {
-	fn default() -> Self {
-		Self {
-			input_range: (0.0, 1.0),
-			output_range: (Panning(0.0), Panning(1.0)),
-			clamp_bottom: false,
-			clamp_top: false,
-		}
 	}
 }
