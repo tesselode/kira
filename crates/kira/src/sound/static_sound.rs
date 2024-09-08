@@ -33,7 +33,8 @@ pub use handle::*;
 pub use settings::*;
 
 use crate::{
-	command::ValueChangeCommand, command_writers_and_readers, tween::Tween, StartTime, Dbfs,
+	command::ValueChangeCommand, command_writers_and_readers, tween::Tween, Dbfs, Panning,
+	StartTime,
 };
 
 use super::{PlaybackRate, Region};
@@ -41,7 +42,7 @@ use super::{PlaybackRate, Region};
 command_writers_and_readers! {
 	set_volume: ValueChangeCommand<Dbfs>,
 	set_playback_rate: ValueChangeCommand<PlaybackRate>,
-	set_panning: ValueChangeCommand<f64>,
+	set_panning: ValueChangeCommand<Panning>,
 	set_loop_region: Option<Region>,
 	pause: Tween,
 	resume: (StartTime, Tween),
