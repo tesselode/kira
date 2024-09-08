@@ -27,7 +27,7 @@ impl VolumeControl {
 	fn new(builder: VolumeControlBuilder, command_readers: CommandReaders) -> Self {
 		Self {
 			command_readers,
-			volume: Parameter::new(builder.0, Dbfs::MAX),
+			volume: Parameter::new(builder.0, Dbfs::IDENTITY),
 		}
 	}
 }

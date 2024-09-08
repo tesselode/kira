@@ -9,8 +9,8 @@ pub struct Dbfs(pub f32);
 impl Dbfs {
 	/// The minimum decibel value at which a sound is considered
 	/// silent.
-	pub const MIN: Self = Self(-60.0);
-	pub const MAX: Self = Self(0.0);
+	pub const SILENCE: Self = Self(-60.0);
+	pub const IDENTITY: Self = Self(0.0);
 
 	/// Returns the volume as an amplitude.
 	pub fn as_amplitude(self) -> f32 {
@@ -20,7 +20,7 @@ impl Dbfs {
 		if self == Self(0.0) {
 			return 1.0;
 		}
-		if self <= Self::MIN {
+		if self <= Self::SILENCE {
 			return 0.0;
 		}
 		10.0f32.powf(self.0 / 20.0)
@@ -29,7 +29,7 @@ impl Dbfs {
 
 impl Default for Dbfs {
 	fn default() -> Self {
-		Self::MAX
+		Self::IDENTITY
 	}
 }
 
@@ -92,12 +92,12 @@ fn test() {
 	/// A table of dB values to the corresponding amplitudes.
 	// Data gathered from https://www.silisoftware.com/tools/db.php
 	const TEST_CALCULATIONS: [(Dbfs, f32); 6] = [
-		(Dbfs::MAX, 1.0),
+		(Dbfs::IDENTITY, 1.0),
 		(Dbfs(3.0), 1.4125375446227544),
 		(Dbfs(12.0), 3.9810717055349722),
 		(Dbfs(-3.0), 0.7079457843841379),
 		(Dbfs(-12.0), 0.251188643150958),
-		(Dbfs::MIN, 0.0),
+		(Dbfs::SILENCE, 0.0),
 	];
 
 	for (dbfs, amplitude) in TEST_CALCULATIONS {
@@ -105,5 +105,5 @@ fn test() {
 	}
 
 	// test some special cases
-	assert_eq!((Dbfs::MIN - Dbfs(100.0)).as_amplitude(), 0.0);
+	assert_eq!((Dbfs::SILENCE - Dbfs(100.0)).as_amplitude(), 0.0);
 }

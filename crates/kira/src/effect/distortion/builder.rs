@@ -61,7 +61,7 @@ impl Default for DistortionBuilder {
 	fn default() -> Self {
 		Self {
 			kind: Default::default(),
-			drive: Value::Fixed(Dbfs::MAX),
+			drive: Value::Fixed(Dbfs::IDENTITY),
 			mix: Value::Fixed(Mix::WET),
 		}
 	}
@@ -76,7 +76,7 @@ impl EffectBuilder for DistortionBuilder {
 			Box::new(Distortion {
 				command_readers,
 				kind: self.kind,
-				drive: Parameter::new(self.drive, Dbfs::MAX),
+				drive: Parameter::new(self.drive, Dbfs::IDENTITY),
 				mix: Parameter::new(self.mix, Mix::WET),
 			}),
 			DistortionHandle { command_writers },

@@ -113,7 +113,7 @@ impl StreamingSound {
 			playback_state_manager: PlaybackStateManager::new(settings.fade_in_tween),
 			current_frame,
 			fractional_position: 0.0,
-			volume: Parameter::new(settings.volume, Dbfs::MAX),
+			volume: Parameter::new(settings.volume, Dbfs::IDENTITY),
 			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate(1.0)),
 			panning: Parameter::new(settings.panning, Panning::CENTER),
 			shared,

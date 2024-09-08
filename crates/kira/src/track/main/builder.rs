@@ -24,7 +24,7 @@ impl MainTrackBuilder {
 	#[must_use]
 	pub fn new() -> Self {
 		Self {
-			volume: Value::Fixed(Dbfs::MAX),
+			volume: Value::Fixed(Dbfs::IDENTITY),
 			effects: vec![],
 			sound_capacity: 128,
 		}
@@ -149,7 +149,7 @@ impl MainTrackBuilder {
 		let (set_volume_command_writer, set_volume_command_reader) = command_writer_and_reader();
 		let (sounds, sound_controller) = ResourceStorage::new(self.sound_capacity);
 		let track = MainTrack {
-			volume: Parameter::new(self.volume, Dbfs::MAX),
+			volume: Parameter::new(self.volume, Dbfs::IDENTITY),
 			set_volume_command_reader,
 			sounds,
 			effects: self.effects,

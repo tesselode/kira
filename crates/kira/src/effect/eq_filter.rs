@@ -40,7 +40,7 @@ impl EqFilter {
 			command_readers,
 			kind: builder.kind,
 			frequency: Parameter::new(builder.frequency, 500.0),
-			gain: Parameter::new(builder.gain, Dbfs::MAX),
+			gain: Parameter::new(builder.gain, Dbfs::IDENTITY),
 			q: Parameter::new(builder.q, 1.0),
 			ic1eq: Frame::ZERO,
 			ic2eq: Frame::ZERO,
