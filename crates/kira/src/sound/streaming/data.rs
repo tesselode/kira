@@ -7,7 +7,7 @@ use crate::sound::{
 	EndPosition, IntoOptionalRegion, PlaybackPosition, PlaybackRate, Region, SoundData,
 };
 use crate::tween::{Tween, Value};
-use crate::{StartTime, Dbfs};
+use crate::{Dbfs, StartTime};
 use ringbuf::HeapRb;
 
 use super::sound::Shared;
@@ -173,8 +173,8 @@ impl<Error: Send> StreamingSoundData<Error> {
 
 	```no_run
 	# use kira::sound::streaming::StreamingSoundData;
-	use kira::sound::PlaybackRate;
-	let sound = StreamingSoundData::from_file("sound.ogg")?.playback_rate(PlaybackRate::Semitones(-2.0));
+	use kira::{Semitones, sound::PlaybackRate};
+	let sound = StreamingSoundData::from_file("sound.ogg")?.playback_rate(Semitones(-2.0));
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 

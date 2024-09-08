@@ -114,7 +114,7 @@ impl StreamingSound {
 			current_frame,
 			fractional_position: 0.0,
 			volume: Parameter::new(settings.volume, Dbfs::MAX),
-			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate::Factor(1.0)),
+			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate(1.0)),
 			panning: Parameter::new(settings.panning, 0.5),
 			shared,
 		}
@@ -236,7 +236,7 @@ impl Sound for StreamingSound {
 			self.fractional_position as f32,
 		);
 		self.fractional_position +=
-			self.sample_rate as f64 * self.playback_rate.value().as_factor().max(0.0) * dt;
+			self.sample_rate as f64 * self.playback_rate.value().0.max(0.0) * dt;
 		while self.fractional_position >= 1.0 {
 			self.fractional_position -= 1.0;
 			self.frame_consumer.pop();
@@ -247,7 +247,7 @@ impl Sound for StreamingSound {
 		}
 		(out * self.playback_state_manager.fade_volume().as_amplitude()
 			* self.volume.value().as_amplitude())
-			.panned(self.panning.value() as f32)
+		.panned(self.panning.value() as f32)
 	}
 
 	fn finished(&self) -> bool {

@@ -15,7 +15,7 @@ use crate::{
 	playback_state_manager::PlaybackStateManager,
 	sound::{transport::Transport, PlaybackRate, PlaybackState, Sound},
 	tween::{Parameter, Tween},
-	StartTime, Dbfs,
+	Dbfs, StartTime,
 };
 
 use self::resampler::Resampler;
@@ -64,7 +64,7 @@ impl StaticSound {
 			transport,
 			fractional_position: 0.0,
 			volume: Parameter::new(settings.volume, Dbfs::MAX),
-			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate::Factor(1.0)),
+			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate(1.0)),
 			panning: Parameter::new(settings.panning, 0.5),
 			shared: Arc::new(Shared {
 				state: AtomicU8::new(PlaybackState::Playing as u8),
@@ -106,7 +106,7 @@ impl StaticSound {
 
 	#[must_use]
 	fn is_playing_backwards(&self) -> bool {
-		let mut is_playing_backwards = self.playback_rate.value().as_factor().is_sign_negative();
+		let mut is_playing_backwards = self.playback_rate.value().0.is_sign_negative();
 		if self.reverse {
 			is_playing_backwards = !is_playing_backwards
 		}
@@ -228,7 +228,7 @@ impl Sound for StaticSound {
 		// play back audio
 		let out = self.resampler.get(self.fractional_position as f32);
 		self.fractional_position +=
-			self.sample_rate as f64 * self.playback_rate.value().as_factor().abs() * dt;
+			self.sample_rate as f64 * self.playback_rate.value().0.abs() * dt;
 		while self.fractional_position >= 1.0 {
 			self.fractional_position -= 1.0;
 			self.update_position();

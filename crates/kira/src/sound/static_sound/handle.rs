@@ -128,11 +128,12 @@ impl StaticSoundHandle {
 		# let mut sound = manager.play(StaticSoundData::from_file("sound.ogg")?)?;
 		use kira::{
 			tween::Tween,
+			Semitones,
 			sound::PlaybackRate,
 		};
 		use std::time::Duration;
 
-		sound.set_playback_rate(PlaybackRate::Semitones(-2.0), Tween {
+		sound.set_playback_rate(Semitones(-2.0), Tween {
 			duration: Duration::from_secs(3),
 			..Default::default()
 		});
