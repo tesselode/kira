@@ -13,9 +13,9 @@ use crate::{
 	frame::{interpolate_frame, Frame},
 	info::Info,
 	playback_state_manager::PlaybackStateManager,
-	sound::{PlaybackRate, PlaybackState, Sound},
+	sound::{PlaybackState, Sound},
 	tween::{Parameter, Tween},
-	Dbfs, Panning, StartTime,
+	Dbfs, Panning, PlaybackRate, StartTime,
 };
 use ringbuf::HeapConsumer;
 

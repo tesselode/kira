@@ -3,11 +3,9 @@ mod test;
 
 use std::{sync::Arc, time::Duration};
 
-use crate::sound::{
-	EndPosition, IntoOptionalRegion, PlaybackPosition, PlaybackRate, Region, SoundData,
-};
+use crate::sound::{EndPosition, IntoOptionalRegion, PlaybackPosition, Region, SoundData};
 use crate::tween::{Tween, Value};
-use crate::{Dbfs, Panning, StartTime};
+use crate::{Dbfs, Panning, PlaybackRate, StartTime};
 use ringbuf::HeapRb;
 
 use super::sound::Shared;
