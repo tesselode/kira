@@ -24,7 +24,7 @@ use crate::{
 	playback_state_manager::PlaybackStateManager,
 	sound::Sound,
 	tween::{Easing, Parameter, Tween, Tweenable},
-	Frame, StartTime, Volume,
+	Dbfs, Frame, StartTime,
 };
 
 use super::{SendTrack, SendTrackId, SendTrackRoute, TrackShared};
@@ -45,7 +45,7 @@ impl Error for NonexistentRoute {}
 pub(crate) struct Track {
 	shared: Arc<TrackShared>,
 	command_readers: CommandReaders,
-	volume: Parameter<Volume>,
+	volume: Parameter<Dbfs>,
 	sounds: ResourceStorage<Box<dyn Sound>>,
 	sub_tracks: ResourceStorage<Track>,
 	effects: Vec<Box<dyn Effect>>,
@@ -190,10 +190,10 @@ impl Track {
 			let Some(send_track) = send_tracks.get_mut(send_track_id.0) else {
 				continue;
 			};
-			send_track.add_input(output * volume.value().as_amplitude() as f32);
+			send_track.add_input(output * volume.value().as_amplitude());
 		}
-		output *= self.volume.value().as_amplitude() as f32
-			* self.playback_state_manager.fade_volume().as_amplitude() as f32;
+		output *= self.volume.value().as_amplitude()
+			* self.playback_state_manager.fade_volume().as_amplitude();
 		output
 	}
 
@@ -245,12 +245,8 @@ impl SpatialData {
 			let relative_distance = self.distances.relative_distance(distance);
 			let relative_volume =
 				attenuation_function.apply((1.0 - relative_distance).into()) as f32;
-			let amplitude = Tweenable::interpolate(
-				Volume::Decibels(Volume::MIN_DECIBELS),
-				Volume::Decibels(0.0),
-				relative_volume.into(),
-			)
-			.as_amplitude() as f32;
+			let amplitude =
+				Tweenable::interpolate(Dbfs::MIN, Dbfs::MAX, relative_volume.into()).as_amplitude();
 			output *= amplitude;
 		}
 		// apply spatialization
@@ -298,7 +294,7 @@ fn listener_ear_directions(listener_orientation: Quat) -> (Vec3, Vec3) {
 }
 
 command_writers_and_readers! {
-	set_volume: ValueChangeCommand<Volume>,
+	set_volume: ValueChangeCommand<Dbfs>,
 	set_position: ValueChangeCommand<Vec3>,
 	pause: Tween,
 	resume: (StartTime, Tween),

@@ -11,12 +11,12 @@ use crate::{
 	manager::backend::resources::ResourceStorage,
 	sound::Sound,
 	tween::Parameter,
-	Frame, Volume,
+	Dbfs, Frame,
 };
 
 pub(crate) struct MainTrack {
-	volume: Parameter<Volume>,
-	set_volume_command_reader: CommandReader<ValueChangeCommand<Volume>>,
+	volume: Parameter<Dbfs>,
+	set_volume_command_reader: CommandReader<ValueChangeCommand<Dbfs>>,
 	sounds: ResourceStorage<Box<dyn Sound>>,
 	effects: Vec<Box<dyn Effect>>,
 }
@@ -55,7 +55,7 @@ impl MainTrack {
 		for effect in &mut self.effects {
 			output = effect.process(output, dt, info);
 		}
-		output *= self.volume.value().as_amplitude() as f32;
+		output *= self.volume.value().as_amplitude();
 		output
 	}
 }

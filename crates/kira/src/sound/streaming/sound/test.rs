@@ -9,7 +9,7 @@ use crate::{
 		PlaybackState, Sound,
 	},
 	tween::Tween,
-	StartTime, Volume,
+	Dbfs, StartTime,
 };
 
 use super::{decode_scheduler::NextStep, StreamingSound};
@@ -175,16 +175,16 @@ fn pauses_and_resumes_with_fades() {
 	// allow for a few samples of delay because of the resampling, but the
 	// sound should fade out soon.
 	expect_frame_soon(
-		Frame::from_mono(Volume::Decibels(-15.0).as_amplitude() as f32).panned(0.5),
+		Frame::from_mono(Dbfs(-15.0).as_amplitude()).panned(0.5),
 		&mut sound,
 	);
 	assert_eq!(
 		sound.process(1.0, &MockInfoBuilder::new(None).build()),
-		Frame::from_mono(Volume::Decibels(-30.0).as_amplitude() as f32).panned(0.5)
+		Frame::from_mono(Dbfs(-30.0).as_amplitude()).panned(0.5)
 	);
 	assert_eq!(
 		sound.process(1.0, &MockInfoBuilder::new(None).build()),
-		Frame::from_mono(Volume::Decibels(-45.0).as_amplitude() as f32).panned(0.5)
+		Frame::from_mono(Dbfs(-45.0).as_amplitude()).panned(0.5)
 	);
 	sound.process(1.0, &MockInfoBuilder::new(None).build());
 
@@ -212,7 +212,7 @@ fn pauses_and_resumes_with_fades() {
 	// allow for a few samples of delay because of the resampling, but the
 	// sound should fade back in soon.
 	expect_frame_soon(
-		Frame::from_mono(Volume::Decibels(-45.0).as_amplitude() as f32).panned(0.5),
+		Frame::from_mono(Dbfs(-45.0).as_amplitude()).panned(0.5),
 		&mut sound,
 	);
 	assert_eq!(
@@ -221,7 +221,7 @@ fn pauses_and_resumes_with_fades() {
 	);
 	assert_eq!(
 		sound.process(1.0, &MockInfoBuilder::new(None).build()),
-		Frame::from_mono(Volume::Decibels(-30.0).as_amplitude() as f32).panned(0.5)
+		Frame::from_mono(Dbfs(-30.0).as_amplitude()).panned(0.5)
 	);
 	assert_eq!(
 		sound.playback_state_manager.playback_state(),
@@ -229,7 +229,7 @@ fn pauses_and_resumes_with_fades() {
 	);
 	assert_eq!(
 		sound.process(1.0, &MockInfoBuilder::new(None).build()),
-		Frame::from_mono(Volume::Decibels(-15.0).as_amplitude() as f32).panned(0.5)
+		Frame::from_mono(Dbfs(-15.0).as_amplitude()).panned(0.5)
 	);
 	assert_eq!(
 		sound.playback_state_manager.playback_state(),
@@ -279,16 +279,16 @@ fn stops_with_fade_out() {
 	// allow for a few samples of delay because of the resampling, but the
 	// sound should fade out soon.
 	expect_frame_soon(
-		Frame::from_mono(Volume::Decibels(-15.0).as_amplitude() as f32).panned(0.5),
+		Frame::from_mono(Dbfs(-15.0).as_amplitude()).panned(0.5),
 		&mut sound,
 	);
 	assert_eq!(
 		sound.process(1.0, &MockInfoBuilder::new(None).build()),
-		Frame::from_mono(Volume::Decibels(-30.0).as_amplitude() as f32).panned(0.5)
+		Frame::from_mono(Dbfs(-30.0).as_amplitude()).panned(0.5)
 	);
 	assert_eq!(
 		sound.process(1.0, &MockInfoBuilder::new(None).build()),
-		Frame::from_mono(Volume::Decibels(-45.0).as_amplitude() as f32).panned(0.5)
+		Frame::from_mono(Dbfs(-45.0).as_amplitude()).panned(0.5)
 	);
 	sound.process(1.0, &MockInfoBuilder::new(None).build());
 
@@ -626,7 +626,7 @@ fn loops_forward() {
 fn volume() {
 	let data = StreamingSoundData {
 		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(1.0); 10])),
-		settings: StreamingSoundSettings::new().volume(0.5),
+		settings: StreamingSoundSettings::new().volume(-6.0),
 		slice: None,
 	};
 	let (mut sound, _, mut scheduler) = data.split().unwrap();
@@ -634,7 +634,7 @@ fn volume() {
 
 	assert_eq!(
 		sound.process(1.0, &MockInfoBuilder::new(None).build()),
-		Frame::from_mono(0.5).panned(0.5)
+		Frame::from_mono(Dbfs(-6.0).as_amplitude()).panned(0.5)
 	);
 }
 
@@ -655,14 +655,17 @@ fn set_volume() {
 		Frame::from_mono(1.0).panned(0.5)
 	);
 	handle.set_volume(
-		0.5,
+		-6.0,
 		Tween {
 			duration: Duration::ZERO,
 			..Default::default()
 		},
 	);
 	sound.on_start_processing();
-	expect_frame_soon(Frame::from_mono(0.5).panned(0.5), &mut sound);
+	expect_frame_soon(
+		Frame::from_mono(Dbfs(-6.0).as_amplitude()).panned(0.5),
+		&mut sound,
+	);
 }
 
 /// Tests that the panning of a `StreamingSound` can be adjusted.

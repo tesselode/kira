@@ -1,7 +1,7 @@
 use crate::{
 	effect::{Effect, EffectBuilder},
 	tween::{Parameter, Value},
-	Volume,
+	Dbfs,
 };
 
 use super::{command_writers_and_readers, handle::DistortionHandle, Distortion, DistortionKind};
@@ -13,7 +13,7 @@ pub struct DistortionBuilder {
 	pub kind: DistortionKind,
 	/// The factor to multiply the signal by before applying
 	/// the distortion.
-	pub drive: Value<Volume>,
+	pub drive: Value<Dbfs>,
 	/// How much dry (unprocessed) signal should be blended
 	/// with the wet (processed) signal. `0.0` means
 	/// only the dry signal will be heard. `1.0` means
@@ -37,7 +37,7 @@ impl DistortionBuilder {
 	/// Sets the factor to multiply the signal by before applying
 	/// the distortion.
 	#[must_use = "This method consumes self and returns a modified DistortionBuilder, so the return value should be used"]
-	pub fn drive(self, drive: impl Into<Value<Volume>>) -> Self {
+	pub fn drive(self, drive: impl Into<Value<Dbfs>>) -> Self {
 		Self {
 			drive: drive.into(),
 			..self
@@ -61,7 +61,7 @@ impl Default for DistortionBuilder {
 	fn default() -> Self {
 		Self {
 			kind: Default::default(),
-			drive: Value::Fixed(Volume::Amplitude(1.0)),
+			drive: Value::Fixed(Dbfs::MAX),
 			mix: Value::Fixed(1.0),
 		}
 	}
@@ -76,7 +76,7 @@ impl EffectBuilder for DistortionBuilder {
 			Box::new(Distortion {
 				command_readers,
 				kind: self.kind,
-				drive: Parameter::new(self.drive, Volume::Amplitude(1.0)),
+				drive: Parameter::new(self.drive, Dbfs::MAX),
 				mix: Parameter::new(self.mix, 1.0),
 			}),
 			DistortionHandle { command_writers },

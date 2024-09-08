@@ -15,7 +15,7 @@ use crate::{
 	playback_state_manager::PlaybackStateManager,
 	sound::{transport::Transport, PlaybackRate, PlaybackState, Sound},
 	tween::{Parameter, Tween},
-	StartTime, Volume,
+	StartTime, Dbfs,
 };
 
 use self::resampler::Resampler;
@@ -33,7 +33,7 @@ pub(super) struct StaticSound {
 	resampler: Resampler,
 	transport: Transport,
 	fractional_position: f64,
-	volume: Parameter<Volume>,
+	volume: Parameter<Dbfs>,
 	playback_rate: Parameter<PlaybackRate>,
 	panning: Parameter,
 	shared: Arc<Shared>,
@@ -63,7 +63,7 @@ impl StaticSound {
 			resampler: Resampler::new(starting_frame_index),
 			transport,
 			fractional_position: 0.0,
-			volume: Parameter::new(settings.volume, Volume::Amplitude(1.0)),
+			volume: Parameter::new(settings.volume, Dbfs::MAX),
 			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate::Factor(1.0)),
 			panning: Parameter::new(settings.panning, 0.5),
 			shared: Arc::new(Shared {
@@ -146,8 +146,8 @@ impl StaticSound {
 	fn push_frame_to_resampler(&mut self) {
 		let frame = if self.transport.playing {
 			let frame_index: usize = self.transport.position;
-			let fade_volume = self.playback_state_manager.fade_volume().as_amplitude() as f32;
-			let volume = self.volume.value().as_amplitude() as f32;
+			let fade_volume = self.playback_state_manager.fade_volume().as_amplitude();
+			let volume = self.volume.value().as_amplitude();
 			(frame_at_index(frame_index, &self.frames, self.slice).unwrap_or_default()
 				* fade_volume * volume)
 				.panned(self.panning.value() as f32)

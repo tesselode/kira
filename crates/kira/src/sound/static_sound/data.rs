@@ -16,7 +16,7 @@ use crate::{
 		EndPosition, IntoOptionalRegion, PlaybackPosition, PlaybackRate, Region, Sound, SoundData,
 	},
 	tween::{Tween, Value},
-	StartTime, Volume,
+	StartTime, Dbfs,
 };
 
 use super::{
@@ -145,7 +145,7 @@ impl StaticSoundData {
 
 	```
 	# use kira::sound::static_sound::StaticSoundSettings;
-	let settings = StaticSoundSettings::new().volume(kira::Volume::Decibels(-6.0));
+	let settings = StaticSoundSettings::new().volume(kira::Dbfs(-6.0));
 	```
 
 	Link the volume to a modulator:
@@ -166,7 +166,7 @@ impl StaticSoundData {
 	```
 	*/
 	#[must_use = "This method returns a modified StaticSoundData and does not mutate the original value"]
-	pub fn volume(&self, volume: impl Into<Value<Volume>>) -> Self {
+	pub fn volume(&self, volume: impl Into<Value<Dbfs>>) -> Self {
 		let mut new = self.clone();
 		new.settings.volume = volume.into();
 		new

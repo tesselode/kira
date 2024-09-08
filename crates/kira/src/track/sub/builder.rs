@@ -6,7 +6,7 @@ use crate::{
 	manager::backend::{resources::ResourceStorage, RendererShared},
 	playback_state_manager::PlaybackStateManager,
 	tween::{Parameter, Value},
-	Volume,
+	Dbfs,
 };
 
 use super::{
@@ -17,7 +17,7 @@ use super::{
 /// Configures a mixer track.
 pub struct TrackBuilder {
 	/// The volume of the track.
-	pub(crate) volume: Value<Volume>,
+	pub(crate) volume: Value<Dbfs>,
 	/// The effects that should be applied to the input audio
 	/// for this track.
 	pub(crate) effects: Vec<Box<dyn Effect>>,
@@ -25,7 +25,7 @@ pub struct TrackBuilder {
 	pub(crate) sub_track_capacity: u16,
 	/// The maximum number of sounds that can be played simultaneously on this track.
 	pub(crate) sound_capacity: u16,
-	pub(crate) sends: HashMap<SendTrackId, Value<Volume>>,
+	pub(crate) sends: HashMap<SendTrackId, Value<Dbfs>>,
 	pub(crate) persist_until_sounds_finish: bool,
 }
 
@@ -34,7 +34,7 @@ impl TrackBuilder {
 	#[must_use]
 	pub fn new() -> Self {
 		Self {
-			volume: Value::Fixed(Volume::Amplitude(1.0)),
+			volume: Value::Fixed(Dbfs::MAX),
 			effects: vec![],
 			sub_track_capacity: 16,
 			sound_capacity: 128,
@@ -59,7 +59,7 @@ impl TrackBuilder {
 
 	```
 	# use kira::track::TrackBuilder;
-	let builder = TrackBuilder::new().volume(kira::Volume::Decibels(-6.0));
+	let builder = TrackBuilder::new().volume(kira::Dbfs(-6.0));
 	```
 
 	Link the volume to a modulator:
@@ -80,7 +80,7 @@ impl TrackBuilder {
 	```
 	*/
 	#[must_use = "This method consumes self and returns a modified TrackBuilder, so the return value should be used"]
-	pub fn volume(self, volume: impl Into<Value<Volume>>) -> Self {
+	pub fn volume(self, volume: impl Into<Value<Dbfs>>) -> Self {
 		Self {
 			volume: volume.into(),
 			..self
@@ -108,7 +108,7 @@ impl TrackBuilder {
 	pub fn with_send(
 		mut self,
 		track: impl Into<SendTrackId>,
-		volume: impl Into<Value<Volume>>,
+		volume: impl Into<Value<Dbfs>>,
 	) -> Self {
 		self.sends.insert(track.into(), volume.into());
 		self
@@ -231,7 +231,7 @@ impl TrackBuilder {
 			sends.push((
 				send_track_id,
 				SendTrackRoute {
-					volume: Parameter::new(volume, Volume::Amplitude(1.0)),
+					volume: Parameter::new(volume, Dbfs::MAX),
 					set_volume_command_reader,
 				},
 			));
@@ -240,7 +240,7 @@ impl TrackBuilder {
 		let track = Track {
 			shared: shared.clone(),
 			command_readers,
-			volume: Parameter::new(self.volume, Volume::Amplitude(1.0)),
+			volume: Parameter::new(self.volume, Dbfs::MAX),
 			sounds,
 			sub_tracks,
 			effects: self.effects,

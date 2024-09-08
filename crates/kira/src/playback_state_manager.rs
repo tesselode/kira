@@ -2,12 +2,12 @@ use crate::{
 	info::Info,
 	sound::PlaybackState,
 	tween::{Parameter, Tween, Value},
-	StartTime, Volume,
+	Dbfs, StartTime,
 };
 
 pub(crate) struct PlaybackStateManager {
 	state: State,
-	volume_fade: Parameter<Volume>,
+	volume_fade: Parameter<Dbfs>,
 }
 
 impl PlaybackStateManager {
@@ -16,20 +16,15 @@ impl PlaybackStateManager {
 			state: State::Playing,
 			volume_fade: fade_in_tween
 				.map(|tween| {
-					let mut parameter = Parameter::new(
-						Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)),
-						Volume::Decibels(Volume::MIN_DECIBELS),
-					);
-					parameter.set(Value::Fixed(Volume::Decibels(0.0)), tween);
+					let mut parameter = Parameter::new(Value::Fixed(Dbfs::MIN), Dbfs::MIN);
+					parameter.set(Value::Fixed(Dbfs::MAX), tween);
 					parameter
 				})
-				.unwrap_or_else(|| {
-					Parameter::new(Value::Fixed(Volume::Decibels(0.0)), Volume::Decibels(0.0))
-				}),
+				.unwrap_or_else(|| Parameter::new(Value::Fixed(Dbfs::MAX), Dbfs::MAX)),
 		}
 	}
 
-	pub fn fade_volume(&self) -> Volume {
+	pub fn fade_volume(&self) -> Dbfs {
 		self.volume_fade.value()
 	}
 
@@ -50,10 +45,8 @@ impl PlaybackStateManager {
 			return;
 		}
 		self.state = State::Pausing;
-		self.volume_fade.set(
-			Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)),
-			fade_out_tween,
-		);
+		self.volume_fade
+			.set(Value::Fixed(Dbfs::MIN), fade_out_tween);
 	}
 
 	pub fn resume(&mut self, start_time: StartTime, fade_in_tween: Tween) {
@@ -62,8 +55,7 @@ impl PlaybackStateManager {
 		}
 		if let StartTime::Immediate = start_time {
 			self.state = State::Resuming;
-			self.volume_fade
-				.set(Value::Fixed(Volume::Decibels(0.0)), fade_in_tween);
+			self.volume_fade.set(Value::Fixed(Dbfs::MAX), fade_in_tween);
 		} else {
 			self.state = State::WaitingToResume {
 				start_time,
@@ -77,10 +69,8 @@ impl PlaybackStateManager {
 			return;
 		}
 		self.state = State::Stopping;
-		self.volume_fade.set(
-			Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)),
-			fade_out_tween,
-		);
+		self.volume_fade
+			.set(Value::Fixed(Dbfs::MIN), fade_out_tween);
 	}
 
 	pub fn mark_as_stopped(&mut self) {

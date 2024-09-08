@@ -3,7 +3,7 @@ use crate::{
 	effect::EffectBuilder,
 	manager::backend::resources::ResourceStorage,
 	tween::{Parameter, Value},
-	Volume,
+	Dbfs,
 };
 
 use super::{Effect, MainTrack, MainTrackHandle};
@@ -11,7 +11,7 @@ use super::{Effect, MainTrack, MainTrackHandle};
 /// Configures the main mixer track.
 pub struct MainTrackBuilder {
 	/// The volume of the track.
-	pub(crate) volume: Value<Volume>,
+	pub(crate) volume: Value<Dbfs>,
 	/// The effects that should be applied to the input audio
 	/// for this track.
 	pub(crate) effects: Vec<Box<dyn Effect>>,
@@ -24,7 +24,7 @@ impl MainTrackBuilder {
 	#[must_use]
 	pub fn new() -> Self {
 		Self {
-			volume: Value::Fixed(Volume::Amplitude(1.0)),
+			volume: Value::Fixed(Dbfs::MAX),
 			effects: vec![],
 			sound_capacity: 128,
 		}
@@ -32,7 +32,7 @@ impl MainTrackBuilder {
 
 	/// Sets the volume of the main mixer track.
 	#[must_use = "This method consumes self and returns a modified TrackBuilder, so the return value should be used"]
-	pub fn volume(self, volume: impl Into<Value<Volume>>) -> Self {
+	pub fn volume(self, volume: impl Into<Value<Dbfs>>) -> Self {
 		Self {
 			volume: volume.into(),
 			..self
@@ -149,7 +149,7 @@ impl MainTrackBuilder {
 		let (set_volume_command_writer, set_volume_command_reader) = command_writer_and_reader();
 		let (sounds, sound_controller) = ResourceStorage::new(self.sound_capacity);
 		let track = MainTrack {
-			volume: Parameter::new(self.volume, Volume::Amplitude(1.0)),
+			volume: Parameter::new(self.volume, Dbfs::MAX),
 			set_volume_command_reader,
 			sounds,
 			effects: self.effects,

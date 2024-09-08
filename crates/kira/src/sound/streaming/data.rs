@@ -7,7 +7,7 @@ use crate::sound::{
 	EndPosition, IntoOptionalRegion, PlaybackPosition, PlaybackRate, Region, SoundData,
 };
 use crate::tween::{Tween, Value};
-use crate::{StartTime, Volume};
+use crate::{StartTime, Dbfs};
 use ringbuf::HeapRb;
 
 use super::sound::Shared;
@@ -126,7 +126,7 @@ impl<Error: Send> StreamingSoundData<Error> {
 
 	```no_run
 	# use kira::sound::streaming::StreamingSoundData;
-	let sound = StreamingSoundData::from_file("sound.ogg")?.volume(kira::Volume::Decibels(-6.0));
+	let sound = StreamingSoundData::from_file("sound.ogg")?.volume(kira::Dbfs(-6.0));
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
@@ -148,7 +148,7 @@ impl<Error: Send> StreamingSoundData<Error> {
 	```
 	*/
 	#[must_use = "This method consumes self and returns a modified StreamingSoundData, so the return value should be used"]
-	pub fn volume(mut self, volume: impl Into<Value<Volume>>) -> Self {
+	pub fn volume(mut self, volume: impl Into<Value<Dbfs>>) -> Self {
 		self.settings.volume = volume.into();
 		self
 	}

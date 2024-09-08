@@ -5,7 +5,7 @@ use crate::{
 	effect::EffectBuilder,
 	frame::Frame,
 	tween::{Parameter, Value},
-	Volume,
+	Dbfs,
 };
 
 use super::{Effect, SendTrack, SendTrackHandle, SendTrackId, TrackShared};
@@ -13,7 +13,7 @@ use super::{Effect, SendTrack, SendTrackHandle, SendTrackId, TrackShared};
 /// Configures a mixer track.
 pub struct SendTrackBuilder {
 	/// The volume of the send track.
-	pub(crate) volume: Value<Volume>,
+	pub(crate) volume: Value<Dbfs>,
 	/// The effects that should be applied to the input audio
 	/// for this track.
 	pub(crate) effects: Vec<Box<dyn Effect>>,
@@ -24,7 +24,7 @@ impl SendTrackBuilder {
 	#[must_use]
 	pub fn new() -> Self {
 		Self {
-			volume: Value::Fixed(Volume::Amplitude(1.0)),
+			volume: Value::Fixed(Dbfs::MAX),
 			effects: vec![],
 		}
 	}
@@ -45,7 +45,7 @@ impl SendTrackBuilder {
 
 	```
 	# use kira::track::SendTrackBuilder;
-	let builder = SendTrackBuilder::new().volume(kira::Volume::Decibels(-6.0));
+	let builder = SendTrackBuilder::new().volume(kira::Dbfs(-6.0));
 	```
 
 	Link the volume to a modulator:
@@ -66,7 +66,7 @@ impl SendTrackBuilder {
 	```
 	*/
 	#[must_use = "This method consumes self and returns a modified SendTrackBuilder, so the return value should be used"]
-	pub fn volume(self, volume: impl Into<Value<Volume>>) -> Self {
+	pub fn volume(self, volume: impl Into<Value<Dbfs>>) -> Self {
 		Self {
 			volume: volume.into(),
 			..self
@@ -175,7 +175,7 @@ impl SendTrackBuilder {
 		let shared = Arc::new(TrackShared::new());
 		let track = SendTrack {
 			shared: shared.clone(),
-			volume: Parameter::new(self.volume, Volume::Amplitude(1.0)),
+			volume: Parameter::new(self.volume, Dbfs::MAX),
 			set_volume_command_reader,
 			effects: self.effects,
 			input: Frame::ZERO,
