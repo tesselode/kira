@@ -1,6 +1,6 @@
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 
-use crate::tween::{Mapping, Tweenable, Value};
+use crate::tween::{Tweenable, Value};
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -82,17 +82,6 @@ impl Sub<Dbfs> for Dbfs {
 impl SubAssign<Dbfs> for Dbfs {
 	fn sub_assign(&mut self, rhs: Dbfs) {
 		self.0 -= rhs.0;
-	}
-}
-
-impl Default for Mapping<Dbfs> {
-	fn default() -> Self {
-		Self {
-			input_range: (0.0, 1.0),
-			output_range: (Dbfs::MIN, Dbfs::MAX),
-			clamp_bottom: true,
-			clamp_top: true,
-		}
 	}
 }
 
