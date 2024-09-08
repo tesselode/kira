@@ -34,10 +34,10 @@ pub use settings::*;
 
 use crate::{
 	command::ValueChangeCommand, command_writers_and_readers, tween::Tween, Dbfs, Panning,
-	StartTime,
+	PlaybackRate, StartTime,
 };
 
-use super::{PlaybackRate, Region};
+use super::Region;
 
 command_writers_and_readers! {
 	set_volume: ValueChangeCommand<Dbfs>,
