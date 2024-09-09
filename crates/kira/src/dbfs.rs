@@ -4,6 +4,7 @@ use crate::tween::{Tweenable, Value};
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(transparent))]
 pub struct Dbfs(pub f32);
 
 impl Dbfs {
