@@ -48,7 +48,7 @@ impl SpatialTrackBuilder {
 		Self {
 			volume: Value::Fixed(Dbfs::IDENTITY),
 			effects: vec![],
-			sub_track_capacity: 16,
+			sub_track_capacity: 128,
 			sound_capacity: 128,
 			sends: HashMap::new(),
 			persist_until_sounds_finish: false,
