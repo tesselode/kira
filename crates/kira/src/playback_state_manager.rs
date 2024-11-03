@@ -2,12 +2,12 @@ use crate::{
 	info::Info,
 	sound::PlaybackState,
 	tween::{Parameter, Tween, Value},
-	Dbfs, StartTime,
+	Decibels, StartTime,
 };
 
 pub(crate) struct PlaybackStateManager {
 	state: State,
-	volume_fade: Parameter<Dbfs>,
+	volume_fade: Parameter<Decibels>,
 }
 
 impl PlaybackStateManager {
@@ -16,15 +16,18 @@ impl PlaybackStateManager {
 			state: State::Playing,
 			volume_fade: fade_in_tween
 				.map(|tween| {
-					let mut parameter = Parameter::new(Value::Fixed(Dbfs::SILENCE), Dbfs::SILENCE);
-					parameter.set(Value::Fixed(Dbfs::IDENTITY), tween);
+					let mut parameter =
+						Parameter::new(Value::Fixed(Decibels::SILENCE), Decibels::SILENCE);
+					parameter.set(Value::Fixed(Decibels::IDENTITY), tween);
 					parameter
 				})
-				.unwrap_or_else(|| Parameter::new(Value::Fixed(Dbfs::IDENTITY), Dbfs::IDENTITY)),
+				.unwrap_or_else(|| {
+					Parameter::new(Value::Fixed(Decibels::IDENTITY), Decibels::IDENTITY)
+				}),
 		}
 	}
 
-	pub fn fade_volume(&self) -> Dbfs {
+	pub fn fade_volume(&self) -> Decibels {
 		self.volume_fade.value()
 	}
 
@@ -46,7 +49,7 @@ impl PlaybackStateManager {
 		}
 		self.state = State::Pausing;
 		self.volume_fade
-			.set(Value::Fixed(Dbfs::SILENCE), fade_out_tween);
+			.set(Value::Fixed(Decibels::SILENCE), fade_out_tween);
 	}
 
 	pub fn resume(&mut self, start_time: StartTime, fade_in_tween: Tween) {
@@ -56,7 +59,7 @@ impl PlaybackStateManager {
 		if let StartTime::Immediate = start_time {
 			self.state = State::Resuming;
 			self.volume_fade
-				.set(Value::Fixed(Dbfs::IDENTITY), fade_in_tween);
+				.set(Value::Fixed(Decibels::IDENTITY), fade_in_tween);
 		} else {
 			self.state = State::WaitingToResume {
 				start_time,
@@ -71,7 +74,7 @@ impl PlaybackStateManager {
 		}
 		self.state = State::Stopping;
 		self.volume_fade
-			.set(Value::Fixed(Dbfs::SILENCE), fade_out_tween);
+			.set(Value::Fixed(Decibels::SILENCE), fade_out_tween);
 	}
 
 	pub fn mark_as_stopped(&mut self) {

@@ -16,7 +16,7 @@ use crate::{
 	frame::Frame,
 	info::Info,
 	tween::Parameter,
-	Dbfs, Mix,
+	Decibels, Mix,
 };
 
 use super::Effect;
@@ -27,7 +27,7 @@ struct Compressor {
 	ratio: Parameter,
 	attack_duration: Parameter<Duration>,
 	release_duration: Parameter<Duration>,
-	makeup_gain: Parameter<Dbfs>,
+	makeup_gain: Parameter<Decibels>,
 	mix: Parameter<Mix>,
 	envelope_follower: [f32; 2],
 }
@@ -117,6 +117,6 @@ command_writers_and_readers! {
 	set_ratio: ValueChangeCommand<f64>,
 	set_attack_duration: ValueChangeCommand<Duration>,
 	set_release_duration: ValueChangeCommand<Duration>,
-	set_makeup_gain: ValueChangeCommand<Dbfs>,
+	set_makeup_gain: ValueChangeCommand<Decibels>,
 	set_mix: ValueChangeCommand<Mix>,
 }

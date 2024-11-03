@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::{
 	command::{CommandWriter, ValueChangeCommand},
 	tween::{Tween, Value},
-	Dbfs,
+	Decibels,
 };
 
 use super::{SendTrackId, TrackShared};
@@ -16,7 +16,7 @@ use super::{SendTrackId, TrackShared};
 pub struct SendTrackHandle {
 	pub(crate) id: SendTrackId,
 	pub(crate) shared: Arc<TrackShared>,
-	pub(crate) set_volume_command_writer: CommandWriter<ValueChangeCommand<Dbfs>>,
+	pub(crate) set_volume_command_writer: CommandWriter<ValueChangeCommand<Decibels>>,
 }
 
 impl SendTrackHandle {
@@ -26,7 +26,7 @@ impl SendTrackHandle {
 	}
 
 	/// Sets the (post-effects) volume of the send track.
-	pub fn set_volume(&mut self, volume: impl Into<Value<Dbfs>>, tween: Tween) {
+	pub fn set_volume(&mut self, volume: impl Into<Value<Decibels>>, tween: Tween) {
 		self.set_volume_command_writer.write(ValueChangeCommand {
 			target: volume.into(),
 			tween,

@@ -10,7 +10,7 @@ use crate::{
 	sound::{Sound, SoundData},
 	track::TrackPlaybackState,
 	tween::{Tween, Value},
-	PlaySoundError, ResourceLimitReached, StartTime, Dbfs,
+	PlaySoundError, ResourceLimitReached, StartTime, Decibels,
 };
 
 use super::{
@@ -30,7 +30,7 @@ pub struct SpatialTrackHandle {
 	pub(crate) sound_controller: ResourceController<Box<dyn Sound>>,
 	pub(crate) sub_track_controller: ResourceController<Track>,
 	pub(crate) send_volume_command_writers:
-		HashMap<SendTrackId, CommandWriter<ValueChangeCommand<Dbfs>>>,
+		HashMap<SendTrackId, CommandWriter<ValueChangeCommand<Decibels>>>,
 }
 
 impl SpatialTrackHandle {
@@ -83,7 +83,7 @@ impl SpatialTrackHandle {
 	}
 
 	/// Sets the (post-effects) volume of the mixer track.
-	pub fn set_volume(&mut self, volume: impl Into<Value<Dbfs>>, tween: Tween) {
+	pub fn set_volume(&mut self, volume: impl Into<Value<Decibels>>, tween: Tween) {
 		self.command_writers.set_volume.write(ValueChangeCommand {
 			target: volume.into(),
 			tween,
@@ -106,7 +106,7 @@ impl SpatialTrackHandle {
 	pub fn set_send(
 		&mut self,
 		to: impl Into<SendTrackId>,
-		volume: impl Into<Value<Dbfs>>,
+		volume: impl Into<Value<Decibels>>,
 		tween: Tween,
 	) -> Result<(), NonexistentRoute> {
 		let to = to.into();

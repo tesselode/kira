@@ -1,4 +1,4 @@
-use crate::{command::handle_param_setters, Dbfs, Mix};
+use crate::{command::handle_param_setters, Decibels, Mix};
 
 use super::CommandWriters;
 
@@ -14,7 +14,7 @@ impl DelayHandle {
 		delay_time: f64,
 
 		/// Sets the amount of feedback.
-		feedback: Dbfs,
+		feedback: Decibels,
 
 		/// Sets how much dry (unprocessed) signal should be blended
 		/// with the wet (processed) signal. `0.0` means only the dry

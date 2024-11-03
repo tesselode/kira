@@ -4,7 +4,7 @@ use crate::{
 	command::handle_param_setters,
 	sound::{IntoOptionalRegion, PlaybackState},
 	tween::Tween,
-	Dbfs, Panning, PlaybackRate, StartTime,
+	Decibels, Panning, PlaybackRate, StartTime,
 };
 
 use super::{sound::Shared, CommandWriters};
@@ -92,7 +92,7 @@ impl StaticSoundHandle {
 		# Result::<(), Box<dyn std::error::Error>>::Ok(())
 		```
 		*/
-		volume: Dbfs,
+		volume: Decibels,
 
 		/**
 		Sets the playback rate of the sound.

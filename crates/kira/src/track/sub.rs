@@ -24,7 +24,7 @@ use crate::{
 	playback_state_manager::PlaybackStateManager,
 	sound::Sound,
 	tween::{Easing, Parameter, Tween, Tweenable},
-	Dbfs, Frame, StartTime,
+	Decibels, Frame, StartTime,
 };
 
 use super::{SendTrack, SendTrackId, SendTrackRoute, TrackShared};
@@ -45,7 +45,7 @@ impl Error for NonexistentRoute {}
 pub(crate) struct Track {
 	shared: Arc<TrackShared>,
 	command_readers: CommandReaders,
-	volume: Parameter<Dbfs>,
+	volume: Parameter<Decibels>,
 	sounds: ResourceStorage<Box<dyn Sound>>,
 	sub_tracks: ResourceStorage<Track>,
 	effects: Vec<Box<dyn Effect>>,
@@ -246,7 +246,7 @@ impl SpatialData {
 			let relative_volume =
 				attenuation_function.apply((1.0 - relative_distance).into()) as f32;
 			let amplitude =
-				Tweenable::interpolate(Dbfs::SILENCE, Dbfs::IDENTITY, relative_volume.into())
+				Tweenable::interpolate(Decibels::SILENCE, Decibels::IDENTITY, relative_volume.into())
 					.as_amplitude();
 			output *= amplitude;
 		}
@@ -295,7 +295,7 @@ fn listener_ear_directions(listener_orientation: Quat) -> (Vec3, Vec3) {
 }
 
 command_writers_and_readers! {
-	set_volume: ValueChangeCommand<Dbfs>,
+	set_volume: ValueChangeCommand<Decibels>,
 	set_position: ValueChangeCommand<Vec3>,
 	pause: Tween,
 	resume: (StartTime, Tween),

@@ -16,7 +16,7 @@ use crate::{
 	frame::Frame,
 	info::Info,
 	tween::Parameter,
-	Dbfs,
+	Decibels,
 };
 
 use super::Effect;
@@ -27,7 +27,7 @@ struct EqFilter {
 	command_readers: CommandReaders,
 	kind: EqFilterKind,
 	frequency: Parameter,
-	gain: Parameter<Dbfs>,
+	gain: Parameter<Decibels>,
 	q: Parameter,
 	ic1eq: Frame,
 	ic2eq: Frame,
@@ -40,7 +40,7 @@ impl EqFilter {
 			command_readers,
 			kind: builder.kind,
 			frequency: Parameter::new(builder.frequency, 500.0),
-			gain: Parameter::new(builder.gain, Dbfs::IDENTITY),
+			gain: Parameter::new(builder.gain, Decibels::IDENTITY),
 			q: Parameter::new(builder.q, 1.0),
 			ic1eq: Frame::ZERO,
 			ic2eq: Frame::ZERO,
@@ -168,6 +168,6 @@ struct Coefficients {
 command_writers_and_readers! {
 	set_kind: EqFilterKind,
 	set_frequency: ValueChangeCommand<f64>,
-	set_gain: ValueChangeCommand<Dbfs>,
+	set_gain: ValueChangeCommand<Decibels>,
 	set_q: ValueChangeCommand<f64>,
 }

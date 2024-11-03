@@ -11,12 +11,12 @@ use crate::{
 	manager::backend::resources::ResourceStorage,
 	sound::Sound,
 	tween::Parameter,
-	Dbfs, Frame,
+	Decibels, Frame,
 };
 
 pub(crate) struct MainTrack {
-	volume: Parameter<Dbfs>,
-	set_volume_command_reader: CommandReader<ValueChangeCommand<Dbfs>>,
+	volume: Parameter<Decibels>,
+	set_volume_command_reader: CommandReader<ValueChangeCommand<Decibels>>,
 	sounds: ResourceStorage<Box<dyn Sound>>,
 	effects: Vec<Box<dyn Effect>>,
 }

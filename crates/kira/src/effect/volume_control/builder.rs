@@ -1,22 +1,22 @@
-use crate::{effect::EffectBuilder, tween::Value, Dbfs};
+use crate::{effect::EffectBuilder, tween::Value, Decibels};
 
 use super::{command_writers_and_readers, VolumeControl, VolumeControlHandle};
 
 /// Configures a volume control effect.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct VolumeControlBuilder(pub Value<Dbfs>);
+pub struct VolumeControlBuilder(pub Value<Decibels>);
 
 impl VolumeControlBuilder {
 	/// Creates a new [`VolumeControlBuilder`].
 	#[must_use]
-	pub fn new(volume: impl Into<Value<Dbfs>>) -> Self {
+	pub fn new(volume: impl Into<Value<Decibels>>) -> Self {
 		Self(volume.into())
 	}
 }
 
 impl Default for VolumeControlBuilder {
 	fn default() -> Self {
-		Self(Value::Fixed(Dbfs::IDENTITY))
+		Self(Value::Fixed(Decibels::IDENTITY))
 	}
 }
 

@@ -14,7 +14,7 @@ use crate::{
 	frame::Frame,
 	sound::{EndPosition, IntoOptionalRegion, PlaybackPosition, Region, Sound, SoundData},
 	tween::{Tween, Value},
-	Dbfs, Panning, PlaybackRate, StartTime,
+	Decibels, Panning, PlaybackRate, StartTime,
 };
 
 use super::{
@@ -164,7 +164,7 @@ impl StaticSoundData {
 	```
 	*/
 	#[must_use = "This method returns a modified StaticSoundData and does not mutate the original value"]
-	pub fn volume(&self, volume: impl Into<Value<Dbfs>>) -> Self {
+	pub fn volume(&self, volume: impl Into<Value<Decibels>>) -> Self {
 		let mut new = self.clone();
 		new.settings.volume = volume.into();
 		new

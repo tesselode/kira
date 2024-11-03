@@ -13,7 +13,7 @@ use crate::{
 	frame::Frame,
 	info::Info,
 	tween::Parameter,
-	Dbfs, Mix,
+	Decibels, Mix,
 };
 
 /// Different types of distortion.
@@ -43,7 +43,7 @@ impl Default for DistortionKind {
 struct Distortion {
 	command_readers: CommandReaders,
 	kind: DistortionKind,
-	drive: Parameter<Dbfs>,
+	drive: Parameter<Decibels>,
 	mix: Parameter<Mix>,
 }
 
@@ -79,6 +79,6 @@ impl Effect for Distortion {
 
 command_writers_and_readers! {
 	set_kind: DistortionKind,
-	set_drive: ValueChangeCommand<Dbfs>,
+	set_drive: ValueChangeCommand<Decibels>,
 	set_mix: ValueChangeCommand<Mix>,
 }

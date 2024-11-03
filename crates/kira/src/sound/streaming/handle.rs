@@ -7,7 +7,7 @@ use crate::{
 	command::handle_param_setters,
 	sound::{IntoOptionalRegion, PlaybackState},
 	tween::Tween,
-	Dbfs, Panning, PlaybackRate, StartTime,
+	Decibels, Panning, PlaybackRate, StartTime,
 };
 use ringbuf::HeapConsumer;
 
@@ -96,7 +96,7 @@ impl<Error> StreamingSoundHandle<Error> {
 		# Result::<(), Box<dyn std::error::Error>>::Ok(())
 		```
 		*/
-		volume: Dbfs,
+		volume: Decibels,
 
 		/**
 		Sets the playback rate of the sound.

@@ -249,7 +249,7 @@ and compile times for games.
 mod arena;
 pub mod clock;
 pub mod command;
-mod dbfs;
+mod decibels;
 pub mod effect;
 mod error;
 mod frame;
@@ -267,7 +267,7 @@ mod start_time;
 pub mod track;
 pub mod tween;
 
-pub use dbfs::*;
+pub use decibels::*;
 pub use error::*;
 pub use frame::*;
 pub use mix::*;
