@@ -147,12 +147,13 @@ pub struct MockInfoBuilder {
 }
 
 impl MockInfoBuilder {
-	pub fn new(spatial_track_position: Option<Vec3>) -> Self {
+	/// Creates a new `MockInfoBuilder`.
+	pub fn new() -> Self {
 		Self {
 			clock_info: Arena::new(100),
 			modulator_values: Arena::new(100),
 			listener_info: Arena::new(100),
-			spatial_track_position,
+			spatial_track_position: None,
 		}
 	}
 
@@ -212,6 +213,12 @@ impl MockInfoBuilder {
 			},
 			spatial_track_position: self.spatial_track_position,
 		}
+	}
+}
+
+impl Default for MockInfoBuilder {
+	fn default() -> Self {
+		Self::new()
 	}
 }
 

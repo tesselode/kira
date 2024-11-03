@@ -15,7 +15,7 @@ use super::{Mapping, Parameter};
 #[allow(clippy::float_cmp)]
 fn tweening() {
 	let mut parameter = Parameter::new(Value::Fixed(0.0), 0.0);
-	let info = MockInfoBuilder::new(None).build();
+	let info = MockInfoBuilder::new().build();
 
 	// value should not be changing yet
 	for _ in 0..3 {
@@ -44,7 +44,7 @@ fn tweening() {
 #[test]
 #[allow(clippy::float_cmp)]
 fn waits_for_delay() {
-	let info = MockInfoBuilder::new(None).build();
+	let info = MockInfoBuilder::new().build();
 
 	let mut parameter = Parameter::new(Value::Fixed(0.0), 0.0);
 	parameter.set(
@@ -73,7 +73,7 @@ fn waits_for_delay() {
 #[test]
 #[allow(clippy::float_cmp)]
 fn waits_for_start_time() {
-	let mut info_builder = MockInfoBuilder::new(None);
+	let mut info_builder = MockInfoBuilder::new();
 	let clock_id_1 = info_builder.add_clock(true, 0, 0.0);
 	let info = info_builder.build();
 
@@ -98,7 +98,7 @@ fn waits_for_start_time() {
 	}
 
 	let info = {
-		let mut builder = MockInfoBuilder::new(None);
+		let mut builder = MockInfoBuilder::new();
 		builder.add_clock(true, 1, 0.0);
 		builder.add_clock(true, 0, 0.0);
 		builder.build()
@@ -112,7 +112,7 @@ fn waits_for_start_time() {
 	}
 
 	let info = {
-		let mut builder = MockInfoBuilder::new(None);
+		let mut builder = MockInfoBuilder::new();
 		builder.add_clock(true, 1, 0.0);
 		builder.add_clock(true, 2, 0.0);
 		builder.build()
@@ -126,7 +126,7 @@ fn waits_for_start_time() {
 	}
 
 	let info = {
-		let mut builder = MockInfoBuilder::new(None);
+		let mut builder = MockInfoBuilder::new();
 		builder.add_clock(true, 2, 0.0);
 		builder.add_clock(true, 2, 0.0);
 		builder.build()
@@ -142,7 +142,7 @@ fn waits_for_start_time() {
 #[test]
 #[allow(clippy::float_cmp)]
 fn tweens_to_modulator_values() {
-	let mut info_builder = MockInfoBuilder::new(None);
+	let mut info_builder = MockInfoBuilder::new();
 	let modulator_id = info_builder.add_modulator(0.0);
 	let mut parameter = Parameter::new(Value::Fixed(0.0), 0.0);
 	parameter.set(
@@ -163,7 +163,7 @@ fn tweens_to_modulator_values() {
 	for i in 1..=4 {
 		let time = i as f64 / 4.0;
 		let info = {
-			let mut builder = MockInfoBuilder::new(None);
+			let mut builder = MockInfoBuilder::new();
 			builder.add_modulator(time);
 			builder.build()
 		};
