@@ -104,10 +104,6 @@ impl<'a> Info<'a> {
 			},
 		)
 	}
-
-	pub fn spatial_track_position(&self) -> Option<Vec3> {
-		self.spatial_track_position
-	}
 }
 
 /// Information about the current state of a [clock](super::clock).
