@@ -171,7 +171,7 @@ impl Effect for Reverb {
 				output.left * wet_1 + output.right * wet_2,
 				output.right * wet_1 + output.left * wet_2,
 			);
-			let mix = self.mix.value().0 as f32;
+			let mix = self.mix.value().0;
 			output * mix.sqrt() + input * (1.0 - mix).sqrt()
 		} else {
 			panic!("Reverb should be initialized before the first process call")

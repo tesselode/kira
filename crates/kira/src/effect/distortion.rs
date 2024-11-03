@@ -61,10 +61,9 @@ impl Effect for Distortion {
 		let drive = self.drive.value().as_amplitude();
 		let mut output = input * drive;
 		output = match self.kind {
-			DistortionKind::HardClip => Frame::new(
-				output.left.max(-1.0).min(1.0),
-				output.right.max(-1.0).min(1.0),
-			),
+			DistortionKind::HardClip => {
+				Frame::new(output.left.clamp(-1.0, 1.0), output.right.clamp(-1.0, 1.0))
+			}
 			DistortionKind::SoftClip => Frame::new(
 				output.left / (1.0 + output.left.abs()),
 				output.right / (1.0 + output.right.abs()),
@@ -72,7 +71,7 @@ impl Effect for Distortion {
 		};
 		output /= drive;
 
-		let mix = self.mix.value().0 as f32;
+		let mix = self.mix.value().0;
 		output * mix.sqrt() + input * (1.0 - mix).sqrt()
 	}
 }

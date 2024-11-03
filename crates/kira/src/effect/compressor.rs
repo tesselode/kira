@@ -107,7 +107,7 @@ impl Effect for Compressor {
 			right: amplitude[1] * input.right,
 		} * makeup_gain_linear;
 
-		let mix = self.mix.value().0 as f32;
+		let mix = self.mix.value().0;
 		output * mix.sqrt() + input * (1.0 - mix).sqrt()
 	}
 }
