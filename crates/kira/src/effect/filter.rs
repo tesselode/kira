@@ -75,7 +75,7 @@ impl Effect for Filter {
 		self.mix.update(dt, info);
 		let sample_rate = 1.0 / dt;
 		let g = (PI * (self.cutoff.value() / sample_rate)).tan();
-		let k = 2.0 - (1.9 * self.resonance.value().min(1.0).max(0.0));
+		let k = 2.0 - (1.9 * self.resonance.value().clamp(0.0, 1.0));
 		let a1 = 1.0 / (1.0 + (g * (g + k)));
 		let a2 = g * a1;
 		let a3 = g * a2;
@@ -90,7 +90,7 @@ impl Effect for Filter {
 			FilterMode::HighPass => input - v1 * (k as f32) - v2,
 			FilterMode::Notch => input - v1 * (k as f32),
 		};
-		let mix = self.mix.value().0 as f32;
+		let mix = self.mix.value().0;
 		output * mix.sqrt() + input * (1.0 - mix).sqrt()
 	}
 }

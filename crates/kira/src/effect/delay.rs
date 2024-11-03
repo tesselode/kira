@@ -138,7 +138,7 @@ impl Effect for Delay {
 			*write_position %= buffer.len();
 			buffer[*write_position] = input + output * self.feedback.value().as_amplitude();
 
-			let mix = self.mix.value().0 as f32;
+			let mix = self.mix.value().0;
 			output * mix.sqrt() + input * (1.0 - mix).sqrt()
 		} else {
 			panic!("The delay should be initialized by the first process call")
