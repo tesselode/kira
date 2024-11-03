@@ -15,7 +15,7 @@ become handy when:
 
 - You want to control multiple properties of objects in lockstep
 - You need to change a property in a way that's more complicated than a simple
-transition
+  transition
 
 # Tweener example
 
@@ -58,24 +58,26 @@ on this track so we can make it sound more or less muffled.
 # use kira::{
 # 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
 # 	modulator::tweener::TweenerBuilder,
-#   track::TrackBuilder,
-#   effect::filter::FilterBuilder,
-#   tween::{ModulatorMapping, Value},
 # };
+use kira::{
+	effect::filter::FilterBuilder,
+	tween::{Mapping, Value, Easing},
+	track::TrackBuilder,
+};
 
 # let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 # let mut tweener = manager.add_modulator(TweenerBuilder { initial_value: 0.0 })?;
 let filter_builder = FilterBuilder::new()
-	.cutoff(Value::from_modulator(&tweener, ModulatorMapping {
+	.cutoff(Value::from_modulator(&tweener, Mapping {
 		input_range: (0.0, 1.0),
 		output_range: (20_000.0, 500.0),
-		..Default::default()
+		easing: Easing::Linear,
 	}));
-let piano_track = manager.add_sub_track(TrackBuilder::new().with_effect(filter_builder))?;
+let mut piano_track = manager.add_sub_track(TrackBuilder::new().with_effect(filter_builder))?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
-We use a `ModulatorMapping` to map the input values of the tweener to the output values
+We use a `Mapping` to map the input values of the tweener to the output values
 of the filter cutoff frequency.
 
 Finally, we'll play the sounds:
@@ -86,36 +88,33 @@ Finally, we'll play the sounds:
 # 	modulator::tweener::TweenerBuilder,
 #   effect::filter::FilterBuilder,
 # 	track::TrackBuilder,
-#   sound::static_sound::{StaticSoundData, StaticSoundSettings},
-# 	tween::{ModulatorMapping, Value},
-#   Dbfs,
+# 	tween::{Mapping, Value, Easing},
+#   Decibels,
 # };
+use kira::sound::static_sound::StaticSoundData;
 
 # let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 # let mut tweener = manager.add_modulator(TweenerBuilder { initial_value: 0.0 })?;
 # let filter_builder = FilterBuilder::new()
-# 	.cutoff(Value::from_modulator(&tweener, ModulatorMapping {
+# 	.cutoff(Value::from_modulator(&tweener, Mapping {
 # 		input_range: (0.0, 1.0),
 # 		output_range: (20_000.0, 500.0),
-# 		..Default::default()
+# 		easing: Easing::Linear,
 # 	}));
-# let piano_track = manager.add_sub_track(TrackBuilder::new().with_effect(filter_builder))?;
-manager.play(
-	StaticSoundData::from_file("piano.ogg")?
-		.output_destination(&piano_track)
-)?;
+# let mut piano_track = manager.add_sub_track(TrackBuilder::new().with_effect(filter_builder))?;
+piano_track.play(StaticSoundData::from_file("piano.ogg")?)?;
 manager.play(
 	StaticSoundData::from_file("drums.ogg")?
-		.volume(Value::from_modulator(&tweener, ModulatorMapping {
+		.volume(Value::from_modulator(&tweener, Mapping {
 			input_range: (0.0, 1.0),
-			output_range: (Dbfs::MAX, Dbfs::MIN),
-			..Default::default()
+			output_range: (Decibels::IDENTITY, Decibels::SILENCE),
+			easing: Easing::Linear,
 		}))
 )?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
-Notice how we also use a `ModulatorMapping` to map the input range of the tweener to the
+Notice how we also use a `Mapping` to map the input range of the tweener to the
 output values of the sound volume.
 
 Once the player goes underwater, we can smoothly transition the tweener's value from
@@ -127,9 +126,9 @@ Once the player goes underwater, we can smoothly transition the tweener's value 
 # 	modulator::tweener::TweenerBuilder,
 # 	track::TrackBuilder,
 #   effect::filter::FilterBuilder,
-# 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
-# 	tween::{ModulatorMapping, Value},
-# 	Dbfs,
+# 	sound::static_sound::StaticSoundData,
+# 	tween::{Mapping, Value, Easing},
+# 	Decibels,
 # };
 use kira::tween::Tween;
 use std::time::Duration;
@@ -137,22 +136,19 @@ use std::time::Duration;
 # let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 # let mut tweener = manager.add_modulator(TweenerBuilder { initial_value: 0.0 })?;
 # let filter_builder = FilterBuilder::new()
-# 	.cutoff(Value::from_modulator(&tweener, ModulatorMapping {
+# 	.cutoff(Value::from_modulator(&tweener, Mapping {
 # 		input_range: (0.0, 1.0),
 # 		output_range: (20_000.0, 500.0),
-# 		..Default::default()
+# 		easing: Easing::Linear,
 # 	}));
-# let piano_track = manager.add_sub_track(TrackBuilder::new().with_effect(filter_builder))?;
-# manager.play(
-# 	StaticSoundData::from_file("piano.ogg")?
-# 		.output_destination(&piano_track)
-# )?;
+# let mut piano_track = manager.add_sub_track(TrackBuilder::new().with_effect(filter_builder))?;
+# piano_track.play(StaticSoundData::from_file("piano.ogg")?)?;
 # manager.play(
 # 	StaticSoundData::from_file("drums.ogg")?
-# 		.volume(Value::from_modulator(&tweener, ModulatorMapping {
+# 		.volume(Value::from_modulator(&tweener, Mapping {
 # 	 		input_range: (0.0, 1.0),
-# 	 		output_range: (Dbfs::MAX, Dbfs::MIN),
-# 	 		..Default::default()
+# 	 		output_range: (Decibels::IDENTITY, Decibels::SILENCE),
+# 	 		easing: Easing::Linear,
 # 	 	}))
 # )?;
 tweener.set(1.0, Tween {

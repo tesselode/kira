@@ -109,8 +109,8 @@ fn test() {
 		(Decibels::SILENCE, 0.0),
 	];
 
-	for (dbfs, amplitude) in TEST_CALCULATIONS {
-		assert!((dbfs.as_amplitude() - amplitude).abs() < 0.00001);
+	for (decibels, amplitude) in TEST_CALCULATIONS {
+		assert!((decibels.as_amplitude() - amplitude).abs() < 0.00001);
 	}
 
 	// test some special cases

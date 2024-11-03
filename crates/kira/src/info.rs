@@ -1,3 +1,10 @@
+/*!
+ * Types for providing info about resources to trait implementors.
+ *
+ * You'll only need this if you're implementing one of Kira's traits,
+ * like [`Sound`](crate::sound::Sound) or [`Effect`](crate::effect::Effect).
+ */
+
 use glam::Vec3;
 
 use crate::{
@@ -7,6 +14,10 @@ use crate::{
 	modulator::{Modulator, ModulatorId},
 };
 
+/// Provides info about resources on the audio thread.
+///
+/// You'll only need this if you're implementing one of Kira's traits,
+/// like [`Sound`](crate::sound::Sound) or [`Effect`](crate::effect::Effect).
 pub struct Info<'a> {
 	kind: InfoKind<'a>,
 	spatial_track_position: Option<Vec3>,
@@ -97,6 +108,8 @@ impl<'a> Info<'a> {
 		}
 	}
 
+	/// If this is called from an effect on a spatial track, returns the distance
+	/// of the given listener from the spatial track. Otherwise, returns `None`.
 	pub fn listener_distance(&self, id: ListenerId) -> Option<f32> {
 		self.spatial_track_position.zip(self.listener_info(id)).map(
 			|(spatial_track_position, listener_info)| {
@@ -133,12 +146,16 @@ pub enum WhenToStart {
 	Never,
 }
 
+/// Information about a listener.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ListenerInfo {
+	/// The position of the listener.
 	pub position: mint::Vector3<f32>,
+	/// The rotation of the listener.
 	pub orientation: mint::Quaternion<f32>,
 }
 
+/// Generates a fake `Info` with arbitrary data. Useful for writing unit tests.
 pub struct MockInfoBuilder {
 	clock_info: Arena<ClockInfo>,
 	modulator_values: Arena<f64>,
@@ -157,6 +174,8 @@ impl MockInfoBuilder {
 		}
 	}
 
+	/// Adds a fake clock with the given ticking state and time. Returns a fake
+	/// `ClockId`.
 	pub fn add_clock(&mut self, ticking: bool, ticks: u64, fraction: f64) -> ClockId {
 		let id = ClockId(
 			self.clock_info
@@ -180,6 +199,7 @@ impl MockInfoBuilder {
 		id
 	}
 
+	/// Adds a fake modulator outputting the given value. Returns a fake `ModulatorId`.
 	pub fn add_modulator(&mut self, value: f64) -> ModulatorId {
 		let id = ModulatorId(
 			self.modulator_values
@@ -191,6 +211,7 @@ impl MockInfoBuilder {
 		id
 	}
 
+	/// Adds a fake listener at the given position and orientation. Returns a fake `ListenerId`.
 	pub fn add_listener(&mut self, listener_info: ListenerInfo) -> ListenerId {
 		let id = ListenerId(
 			self.listener_info
@@ -204,6 +225,7 @@ impl MockInfoBuilder {
 		id
 	}
 
+	/// Consumes the `MockInfoProvider` and returns a fake `Info`.
 	pub fn build(self) -> Info<'static> {
 		Info {
 			kind: InfoKind::Mock {

@@ -22,8 +22,11 @@ pub enum Value<T> {
 		/// How the modulator's value should be converted to the parameter's value.
 		mapping: Mapping<T>,
 	},
+	/// The distance of the current spatial track to a listener.
 	FromListenerDistance {
+		/// The listener to link to.
 		id: ListenerId,
+		/// How the distance from the listener should be converted to the parameter's value.
 		mapping: Mapping<T>,
 	},
 }
@@ -262,12 +265,13 @@ pub struct Mapping<T> {
 	pub input_range: (f64, f64),
 	/// The corresponding range of values of the parameter.
 	pub output_range: (T, T),
+	/// The curve to apply to the output.
 	pub easing: Easing,
 }
 
 impl<T> Mapping<T> {
-	/// Converts a `ModulatorMapping<T>` to a `ModulatorMapping<T2>`.
-	#[must_use = "This method returns a new ModulatorMapping and does not mutate the original."]
+	/// Converts a `Mapping<T>` to a `Mapping<T2>`.
+	#[must_use = "This method returns a new Mapping and does not mutate the original."]
 	pub fn to_<T2: From<T>>(self) -> Mapping<T2> {
 		Mapping {
 			input_range: self.input_range,
@@ -288,6 +292,7 @@ impl<T> Mapping<T> {
 		T::interpolate(self.output_range.0, self.output_range.1, amount)
 	}
 
+	/// Adds `rhs` to the minimum and maximum values of the output range.
 	pub fn add_output<Rhs>(self, rhs: Rhs) -> Self
 	where
 		T: Add<Rhs, Output = T>,
@@ -299,6 +304,7 @@ impl<T> Mapping<T> {
 		}
 	}
 
+	/// Subtracts `rhs` from the minimum and maximum values of the output range.
 	pub fn sub_output<Rhs>(self, rhs: Rhs) -> Self
 	where
 		T: Sub<Rhs, Output = T>,
@@ -310,6 +316,7 @@ impl<T> Mapping<T> {
 		}
 	}
 
+	/// Multiplies the minimum and maximum values of the output range by `rhs`.
 	pub fn mul_output<Rhs>(self, rhs: Rhs) -> Self
 	where
 		T: Mul<Rhs, Output = T>,
@@ -321,6 +328,7 @@ impl<T> Mapping<T> {
 		}
 	}
 
+	/// Divides the minimum and maximum values of the output range by `rhs`.
 	pub fn div_output<Rhs>(self, rhs: Rhs) -> Self
 	where
 		T: Div<Rhs, Output = T>,
@@ -332,6 +340,7 @@ impl<T> Mapping<T> {
 		}
 	}
 
+	/// Sets the minimum and maximum values of the output range to `x % rhs`.
 	pub fn rem_output<Rhs>(self, rhs: Rhs) -> Self
 	where
 		T: Rem<Rhs, Output = T>,
@@ -343,6 +352,7 @@ impl<T> Mapping<T> {
 		}
 	}
 
+	/// Negates the minimum and maximum values of the output range.
 	pub fn neg_output(self) -> Self
 	where
 		T: Neg<Output = T>,

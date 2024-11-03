@@ -39,7 +39,7 @@ impl<Error> StreamingSoundHandle<Error> {
 
 		# Examples
 
-		Set the volume of the sound as a factor immediately:
+		Set the volume of the sound immediately:
 
 		```no_run
 		# use kira::{
@@ -54,7 +54,7 @@ impl<Error> StreamingSoundHandle<Error> {
 		# Result::<(), Box<dyn std::error::Error>>::Ok(())
 		```
 
-		Smoothly transition the volume to a target value in decibels:
+		Smoothly transition the volume to a target volume:
 
 		```no_run
 		# use kira::{
@@ -66,7 +66,7 @@ impl<Error> StreamingSoundHandle<Error> {
 		use kira::tween::Tween;
 		use std::time::Duration;
 
-		sound.set_volume(kira::Dbfs(-6.0), Tween {
+		sound.set_volume(-6.0, Tween {
 			duration: Duration::from_secs(3),
 			..Default::default()
 		});
@@ -80,7 +80,8 @@ impl<Error> StreamingSoundHandle<Error> {
 			manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
 			sound::streaming::{StreamingSoundData, StreamingSoundSettings},
 			modulator::tweener::TweenerBuilder,
-			tween::Tween,
+			tween::{Value, Tween, Mapping, Easing},
+			Decibels,
 		};
 		use std::time::Duration;
 
@@ -89,7 +90,14 @@ impl<Error> StreamingSoundHandle<Error> {
 			initial_value: 0.5,
 		})?;
 		let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg")?)?;
-		sound.set_volume(&tweener, Tween {
+		sound.set_volume(Value::FromModulator {
+			id: tweener.id(),
+			mapping: Mapping {
+				input_range: (0.0, 1.0),
+				output_range: (Decibels::SILENCE, Decibels::IDENTITY),
+				easing: Easing::Linear,
+			}
+		}, Tween {
 			duration: Duration::from_secs(3),
 			..Default::default()
 		});
@@ -106,7 +114,7 @@ impl<Error> StreamingSoundHandle<Error> {
 
 		# Examples
 
-		Set the playback rate of the sound as a factor immediately:
+		Set the playback rate of the sound immediately:
 
 		```no_run
 		# use kira::{
@@ -130,11 +138,7 @@ impl<Error> StreamingSoundHandle<Error> {
 		# };
 		# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 		# let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg")?)?;
-		use kira::{
-			tween::Tween,
-			Semitones,
-			sound::PlaybackRate,
-		};
+		use kira::{tween::Tween, Semitones};
 		use std::time::Duration;
 
 		sound.set_playback_rate(Semitones(-2.0), Tween {
@@ -151,7 +155,8 @@ impl<Error> StreamingSoundHandle<Error> {
 			manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
 			sound::streaming::{StreamingSoundData, StreamingSoundSettings},
 			modulator::tweener::TweenerBuilder,
-			tween::Tween,
+			tween::{Value, Easing, Mapping, Tween},
+			PlaybackRate,
 		};
 		use std::time::Duration;
 
@@ -160,7 +165,14 @@ impl<Error> StreamingSoundHandle<Error> {
 			initial_value: 0.5,
 		})?;
 		let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg")?)?;
-		sound.set_playback_rate(&tweener, Tween {
+		sound.set_playback_rate(Value::FromModulator {
+			id: tweener.id(),
+			mapping: Mapping {
+				input_range: (0.0, 1.0),
+				output_range: (PlaybackRate(0.0), PlaybackRate(1.0)),
+				easing: Easing::Linear,
+			},
+		}, Tween {
 			duration: Duration::from_secs(3),
 			..Default::default()
 		});
@@ -187,7 +199,7 @@ impl<Error> StreamingSoundHandle<Error> {
 		use kira::tween::Tween;
 		use std::time::Duration;
 
-		sound.set_panning(0.25, Tween {
+		sound.set_panning(-0.5, Tween {
 			duration: Duration::from_secs(3),
 			..Default::default()
 		});
@@ -201,16 +213,24 @@ impl<Error> StreamingSoundHandle<Error> {
 			manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
 			sound::streaming::{StreamingSoundData, StreamingSoundSettings},
 			modulator::tweener::TweenerBuilder,
-			tween::Tween,
+			tween::{Value, Easing, Mapping, Tween},
+			Panning,
 		};
 		use std::time::Duration;
 
 		let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 		let tweener = manager.add_modulator(TweenerBuilder {
-			initial_value: 0.25,
+			initial_value: -0.5,
 		})?;
 		let mut sound = manager.play(StreamingSoundData::from_file("sound.ogg")?)?;
-		sound.set_panning(&tweener, Tween {
+		sound.set_panning(Value::FromModulator {
+			id: tweener.id(),
+			mapping: Mapping {
+				input_range: (-1.0, 1.0),
+				output_range: (Panning::LEFT, Panning::RIGHT),
+				easing: Easing::Linear,
+			},
+		}, Tween {
 			duration: Duration::from_secs(3),
 			..Default::default()
 		});

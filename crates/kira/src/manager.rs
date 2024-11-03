@@ -11,10 +11,7 @@ mod settings;
 pub use backend::DefaultBackend;
 pub use settings::*;
 
-use std::sync::{
-	atomic::{AtomicU32, Ordering},
-	Arc,
-};
+use std::sync::{atomic::Ordering, Arc};
 
 use crate::{
 	clock::{Clock, ClockHandle, ClockId, ClockSpeed},
@@ -62,12 +59,12 @@ impl<B: Backend> AudioManager<B> {
 	```no_run
 	use kira::{
 		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
-		track::TrackBuilder,
+		track::MainTrackBuilder,
 		effect::reverb::ReverbBuilder,
 	};
 
 	let audio_manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings {
-		main_track_builder: TrackBuilder::new().with_effect(ReverbBuilder::new()),
+		main_track_builder: MainTrackBuilder::new().with_effect(ReverbBuilder::new()),
 		..Default::default()
 	})?;
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
@@ -75,9 +72,7 @@ impl<B: Backend> AudioManager<B> {
 	*/
 	pub fn new(settings: AudioManagerSettings<B>) -> Result<Self, B::Error> {
 		let (mut backend, sample_rate) = B::setup(settings.backend_settings)?;
-		let renderer_shared = Arc::new(RendererShared {
-			sample_rate: AtomicU32::new(sample_rate),
-		});
+		let renderer_shared = Arc::new(RendererShared::new(sample_rate));
 		let (resources, resource_controllers) = create_resources(
 			settings.capacities,
 			settings.main_track_builder,
@@ -236,6 +231,26 @@ impl<B: Backend> AudioManager<B> {
 		Ok(handle)
 	}
 
+	/**
+	Creates a listener.
+
+	# Examples
+
+	```no_run
+	# use kira::{
+	# 	manager::{
+	# 		AudioManager, AudioManagerSettings,
+	# 		backend::DefaultBackend,
+	# 	},
+	# };
+
+	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	// This example uses `glam`, but you can use any math library that has interoperability
+	// with `mint`.
+	let listener = manager.add_listener(glam::vec3(0.0, 0.0, 0.0), glam::Quat::IDENTITY)?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
 	pub fn add_listener(
 		&mut self,
 		position: impl Into<Value<mint::Vector3<f32>>>,

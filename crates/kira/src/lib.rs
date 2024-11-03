@@ -4,7 +4,7 @@
 Kira is a backend-agnostic library to create expressive audio for games. It provides
 [tweens](tween) for smoothly adjusting properties of sounds, a flexible [mixer](track)
 for applying [effects](effect) to audio, a [clock] system for precisely timing audio events,
-and [spatial audio](spatial) support.
+and [spatial audio](listener) support.
 
 To get started, create an [`AudioManager`](crate::manager::AudioManager) and use it to
 [play](crate::manager::AudioManager::play) a
@@ -84,15 +84,14 @@ use kira::{
 
 let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 // Create a mixer sub-track with a filter.
-let track = manager.add_sub_track({
+let mut track = manager.add_sub_track({
 	let mut builder = TrackBuilder::new();
 	builder.add_effect(FilterBuilder::new().cutoff(1000.0));
 	builder
 })?;
 // Play the sound on the track.
-let sound_data = StaticSoundData::from_file("sound.ogg")?
-	.output_destination(&track);
-manager.play(sound_data)?;
+let sound_data = StaticSoundData::from_file("sound.ogg")?;
+track.play(sound_data)?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
@@ -135,18 +134,18 @@ clock.start();
 The Kira crate has the following feature flags:
 
 - `cpal` (enabled by default) - enables the cpal backend and makes it the default for
-audio managers. This allows Kira to talk to the operating system to output audio. Most
-users should leave this enabled.
+  audio managers. This allows Kira to talk to the operating system to output audio. Most
+  users should leave this enabled.
 - `symphonia` (enabled by default) - allows loading and streaming audio from common
-audio formats, like MP3 and WAV.
+  audio formats, like MP3 and WAV.
 	- `mp3` (enabled by default) - enables support for loading and streaming MP3 audio (enables
-	the `symphonia` feature automatically)
+	  the `symphonia` feature automatically)
 	- `ogg` (enabled by default) - enables support for loading and streaming OGG audio (enables
-	the `symphonia` feature automatically)
+	  the `symphonia` feature automatically)
 	- `flac` (enabled by default) - enables support for loading and streaming FLAC audio (enables
-	the `symphonia` feature automatically)
+	  the `symphonia` feature automatically)
 	- `wav` (enabled by default) - enables support for loading and streaming WAV audio (enables
-	the `symphonia` feature automatically)
+	  the `symphonia` feature automatically)
 - `serde` - adds `Serialize` and `Deserialize` implementations for the following types:
 	- [`Capacities`](crate::manager::Capacities)
 	- [`ClockSpeed`](crate::clock::ClockSpeed)
@@ -156,18 +155,18 @@ audio formats, like MP3 and WAV.
 	- [`EqFilterKind`](crate::effect::eq_filter::EqFilterKind)
 	- [`FilterMode`](crate::effect::filter::FilterMode)
 	- [`Frame`]
-	- [`ModulatorMapping`](crate::tween::ModulatorMapping)
+	- [`Mapping`](crate::tween::Mapping)
 	- [`PlaybackPosition`](crate::sound::PlaybackPosition)
 	- [`PlaybackRate`](crate::sound::PlaybackRate)
 	- [`PlaybackState`](crate::sound::PlaybackState)
 	- [`Region`](crate::sound::Region)
-	- [`Dbfs`]
+	- [`Decibels`]
 	- [`Waveform`](crate::modulator::lfo::Waveform)
 - `assert_no_alloc` - uses the [`assert_no_alloc`](https://crates.io/crates/assert_no_alloc) crate
-to cause panics if memory is allocated or deallocated on the audio thread. This is mainly useful
-for people developing Kira itself.
+  to cause panics if memory is allocated or deallocated on the audio thread. This is mainly useful
+  for people developing Kira itself.
 - `android_shared_stdcxx` - enables cpal's `oboe-shared-stdcxx` which can be helpful
-for Android compilation
+  for Android compilation
 
 ## Loading other audio file formats
 

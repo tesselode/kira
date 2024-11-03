@@ -7,10 +7,22 @@ use crate::tween::{Tweenable, Value};
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
+/**
+An amount to blend the "dry" and "wet" outputs from an effect.
+
+The "dry" signal is the audio before the effect is applied.
+The "wet" signal is the audio after the effect is applied.
+
+Valid mix values range from `0.0` to `1.0`, where `0.0` is
+the dry signal only, `1.0` is the wet signal only, and `0.5`
+is an equal mix of both.
+*/
 pub struct Mix(pub f32);
 
 impl Mix {
+	/// Only output the dry signal.
 	pub const DRY: Self = Self(0.0);
+	/// Only output the wet signal.
 	pub const WET: Self = Self(1.0);
 }
 

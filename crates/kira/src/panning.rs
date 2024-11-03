@@ -7,11 +7,21 @@ use crate::tween::{Tweenable, Value};
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
+/// The stereo positioning of a sound.
+///
+/// Valid panning values range from `-1.0` to `1.0`. A value of `-1.0`
+/// will cause a sound to only be output from the left speaker. A value
+/// of `1.0` will cause a sound to only be output from the right speaker.
+/// A value of `0.0` will cause a sound to be played at an equal volume
+/// from both speakers.
 pub struct Panning(pub f32);
 
 impl Panning {
+	/// Play the sound from the left speaker only.
 	pub const LEFT: Self = Self(-1.0);
+	/// Play the sound from both speakers at the same volume.
 	pub const CENTER: Self = Self(0.0);
+	/// Play the sound from the right speaker only.
 	pub const RIGHT: Self = Self(1.0);
 }
 

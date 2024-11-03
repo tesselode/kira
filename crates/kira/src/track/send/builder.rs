@@ -34,18 +34,11 @@ impl SendTrackBuilder {
 
 	# Examples
 
-	Set the volume as a factor:
+	Set the volume to a fixed decibel value:
 
 	```
 	# use kira::track::SendTrackBuilder;
-	let builder = SendTrackBuilder::new().volume(0.5);
-	```
-
-	Set the volume as a gain in decibels:
-
-	```
-	# use kira::track::SendTrackBuilder;
-	let builder = SendTrackBuilder::new().volume(kira::Dbfs(-6.0));
+	let builder = SendTrackBuilder::new().volume(-6.0);
 	```
 
 	Link the volume to a modulator:
@@ -55,13 +48,22 @@ impl SendTrackBuilder {
 		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
 		modulator::tweener::TweenerBuilder,
 		track::SendTrackBuilder,
+		tween::{Easing, Value, Mapping},
+		Decibels,
 	};
 
 	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	let tweener = manager.add_modulator(TweenerBuilder {
 		initial_value: 0.5,
 	})?;
-	let builder = SendTrackBuilder::new().volume(&tweener);
+	let builder = SendTrackBuilder::new().volume(Value::FromModulator {
+		id: tweener.id(),
+		mapping: Mapping {
+			input_range: (0.0, 1.0),
+			output_range: (Decibels::SILENCE, Decibels::IDENTITY),
+			easing: Easing::Linear,
+		},
+	});
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
