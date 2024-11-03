@@ -5,7 +5,7 @@ use std::{sync::Arc, time::Duration};
 
 use crate::sound::{EndPosition, IntoOptionalRegion, PlaybackPosition, Region, SoundData};
 use crate::tween::{Tween, Value};
-use crate::{Dbfs, Panning, PlaybackRate, StartTime};
+use crate::{Decibels, Panning, PlaybackRate, StartTime};
 use ringbuf::HeapRb;
 
 use super::sound::Shared;
@@ -146,7 +146,7 @@ impl<Error: Send> StreamingSoundData<Error> {
 	```
 	*/
 	#[must_use = "This method consumes self and returns a modified StreamingSoundData, so the return value should be used"]
-	pub fn volume(mut self, volume: impl Into<Value<Dbfs>>) -> Self {
+	pub fn volume(mut self, volume: impl Into<Value<Decibels>>) -> Self {
 		self.settings.volume = volume.into();
 		self
 	}

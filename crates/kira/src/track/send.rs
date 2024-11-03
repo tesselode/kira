@@ -12,7 +12,7 @@ use crate::{
 	effect::Effect,
 	info::Info,
 	tween::Parameter,
-	Dbfs, Frame,
+	Decibels, Frame,
 };
 
 use super::TrackShared;
@@ -29,8 +29,8 @@ impl From<&SendTrackHandle> for SendTrackId {
 
 pub(crate) struct SendTrack {
 	shared: Arc<TrackShared>,
-	volume: Parameter<Dbfs>,
-	set_volume_command_reader: CommandReader<ValueChangeCommand<Dbfs>>,
+	volume: Parameter<Decibels>,
+	set_volume_command_reader: CommandReader<ValueChangeCommand<Decibels>>,
 	effects: Vec<Box<dyn Effect>>,
 	input: Frame,
 }
@@ -76,8 +76,8 @@ impl SendTrack {
 }
 
 pub(crate) struct SendTrackRoute {
-	pub(crate) volume: Parameter<Dbfs>,
-	pub(crate) set_volume_command_reader: CommandReader<ValueChangeCommand<Dbfs>>,
+	pub(crate) volume: Parameter<Decibels>,
+	pub(crate) set_volume_command_reader: CommandReader<ValueChangeCommand<Decibels>>,
 }
 
 impl SendTrackRoute {

@@ -9,7 +9,7 @@ use crate::{
 	manager::backend::{resources::ResourceStorage, RendererShared},
 	playback_state_manager::PlaybackStateManager,
 	tween::{Easing, Parameter, Value},
-	Dbfs,
+	Decibels,
 };
 
 use super::{
@@ -20,7 +20,7 @@ use super::{
 /// Configures a spatial mixer track.
 pub struct SpatialTrackBuilder {
 	/// The volume of the track.
-	pub(crate) volume: Value<Dbfs>,
+	pub(crate) volume: Value<Decibels>,
 	/// The effects that should be applied to the input audio
 	/// for this track.
 	pub(crate) effects: Vec<Box<dyn Effect>>,
@@ -28,7 +28,7 @@ pub struct SpatialTrackBuilder {
 	pub(crate) sub_track_capacity: u16,
 	/// The maximum number of sounds that can be played simultaneously on this track.
 	pub(crate) sound_capacity: u16,
-	pub(crate) sends: HashMap<SendTrackId, Value<Dbfs>>,
+	pub(crate) sends: HashMap<SendTrackId, Value<Decibels>>,
 	pub(crate) persist_until_sounds_finish: bool,
 	/// The distances from a listener at which the track is loudest and quietest.
 	pub(crate) distances: SpatialTrackDistances,
@@ -46,7 +46,7 @@ impl SpatialTrackBuilder {
 	#[must_use]
 	pub fn new() -> Self {
 		Self {
-			volume: Value::Fixed(Dbfs::IDENTITY),
+			volume: Value::Fixed(Decibels::IDENTITY),
 			effects: vec![],
 			sub_track_capacity: 128,
 			sound_capacity: 128,
@@ -95,7 +95,7 @@ impl SpatialTrackBuilder {
 	```
 	*/
 	#[must_use = "This method consumes self and returns a modified TrackBuilder, so the return value should be used"]
-	pub fn volume(self, volume: impl Into<Value<Dbfs>>) -> Self {
+	pub fn volume(self, volume: impl Into<Value<Decibels>>) -> Self {
 		Self {
 			volume: volume.into(),
 			..self
@@ -123,7 +123,7 @@ impl SpatialTrackBuilder {
 	pub fn with_send(
 		mut self,
 		track: impl Into<SendTrackId>,
-		volume: impl Into<Value<Dbfs>>,
+		volume: impl Into<Value<Decibels>>,
 	) -> Self {
 		self.sends.insert(track.into(), volume.into());
 		self
@@ -281,7 +281,7 @@ impl SpatialTrackBuilder {
 			sends.push((
 				send_track_id,
 				SendTrackRoute {
-					volume: Parameter::new(volume, Dbfs::IDENTITY),
+					volume: Parameter::new(volume, Decibels::IDENTITY),
 					set_volume_command_reader,
 				},
 			));
@@ -290,7 +290,7 @@ impl SpatialTrackBuilder {
 		let track = Track {
 			shared: shared.clone(),
 			command_readers,
-			volume: Parameter::new(self.volume, Dbfs::IDENTITY),
+			volume: Parameter::new(self.volume, Decibels::IDENTITY),
 			sounds,
 			sub_tracks,
 			effects: self.effects,

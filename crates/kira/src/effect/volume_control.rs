@@ -12,14 +12,14 @@ use crate::{
 	frame::Frame,
 	info::Info,
 	tween::Parameter,
-	Dbfs,
+	Decibels,
 };
 
 use super::Effect;
 
 struct VolumeControl {
 	command_readers: CommandReaders,
-	volume: Parameter<Dbfs>,
+	volume: Parameter<Decibels>,
 }
 
 impl VolumeControl {
@@ -27,7 +27,7 @@ impl VolumeControl {
 	fn new(builder: VolumeControlBuilder, command_readers: CommandReaders) -> Self {
 		Self {
 			command_readers,
-			volume: Parameter::new(builder.0, Dbfs::IDENTITY),
+			volume: Parameter::new(builder.0, Decibels::IDENTITY),
 		}
 	}
 }
@@ -44,5 +44,5 @@ impl Effect for VolumeControl {
 }
 
 command_writers_and_readers! {
-	set_volume: ValueChangeCommand<Dbfs>,
+	set_volume: ValueChangeCommand<Decibels>,
 }

@@ -1,4 +1,4 @@
-use crate::{command::handle_param_setters, Dbfs, Mix};
+use crate::{command::handle_param_setters, Decibels, Mix};
 
 use super::{CommandWriters, DistortionKind};
 
@@ -16,7 +16,7 @@ impl DistortionHandle {
 
 	handle_param_setters! {
 		/// Sets how much distortion should be applied.
-		drive: Dbfs,
+		drive: Decibels,
 
 		/// Sets how much dry (unprocessed) signal should be blended
 		/// with the wet (processed) signal. `0.0` means only the dry

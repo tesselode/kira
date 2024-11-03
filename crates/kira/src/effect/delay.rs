@@ -12,7 +12,7 @@ use crate::{
 	frame::{interpolate_frame, Frame},
 	info::Info,
 	tween::Parameter,
-	Dbfs, Mix,
+	Decibels, Mix,
 };
 
 use super::Effect;
@@ -32,7 +32,7 @@ enum DelayState {
 struct Delay {
 	command_readers: CommandReaders,
 	delay_time: Parameter,
-	feedback: Parameter<Dbfs>,
+	feedback: Parameter<Decibels>,
 	mix: Parameter<Mix>,
 	state: DelayState,
 	feedback_effects: Vec<Box<dyn Effect>>,
@@ -45,7 +45,7 @@ impl Delay {
 		Self {
 			command_readers,
 			delay_time: Parameter::new(builder.delay_time, 0.5),
-			feedback: Parameter::new(builder.feedback, Dbfs(-6.0)),
+			feedback: Parameter::new(builder.feedback, Decibels(-6.0)),
 			mix: Parameter::new(builder.mix, Mix(0.5)),
 			state: DelayState::Uninitialized {
 				buffer_length: builder.buffer_length,
@@ -148,6 +148,6 @@ impl Effect for Delay {
 
 command_writers_and_readers! {
 	set_delay_time: ValueChangeCommand<f64>,
-	set_feedback: ValueChangeCommand<Dbfs>,
+	set_feedback: ValueChangeCommand<Decibels>,
 	set_mix: ValueChangeCommand<Mix>,
 }

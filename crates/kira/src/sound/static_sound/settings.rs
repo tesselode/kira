@@ -1,7 +1,7 @@
 use crate::{
 	sound::{IntoOptionalRegion, PlaybackPosition, Region},
 	tween::{Tween, Value},
-	Dbfs, Panning, PlaybackRate, StartTime,
+	Decibels, Panning, PlaybackRate, StartTime,
 };
 
 /// Settings for a static sound.
@@ -16,7 +16,7 @@ pub struct StaticSoundSettings {
 	/// Whether the sound should be played in reverse.
 	pub reverse: bool,
 	/// The volume of the sound.
-	pub volume: Value<Dbfs>,
+	pub volume: Value<Decibels>,
 	/// The playback rate of the sound.
 	///
 	/// Changing the playback rate will change both the speed
@@ -38,7 +38,7 @@ impl StaticSoundSettings {
 			start_position: PlaybackPosition::Seconds(0.0),
 			reverse: false,
 			loop_region: None,
-			volume: Value::Fixed(Dbfs::IDENTITY),
+			volume: Value::Fixed(Decibels::IDENTITY),
 			playback_rate: Value::Fixed(PlaybackRate(1.0)),
 			panning: Value::Fixed(Panning::CENTER),
 			fade_in_tween: None,
@@ -80,7 +80,7 @@ impl StaticSoundSettings {
 
 	/** Sets the volume of the sound. */
 	#[must_use = "This method consumes self and returns a modified StaticSoundSettings, so the return value should be used"]
-	pub fn volume(self, volume: impl Into<Value<Dbfs>>) -> Self {
+	pub fn volume(self, volume: impl Into<Value<Decibels>>) -> Self {
 		Self {
 			volume: volume.into(),
 			..self

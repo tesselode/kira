@@ -33,14 +33,14 @@ pub use handle::*;
 pub use settings::*;
 
 use crate::{
-	command::ValueChangeCommand, command_writers_and_readers, tween::Tween, Dbfs, Panning,
+	command::ValueChangeCommand, command_writers_and_readers, tween::Tween, Decibels, Panning,
 	PlaybackRate, StartTime,
 };
 
 use super::Region;
 
 command_writers_and_readers! {
-	set_volume: ValueChangeCommand<Dbfs>,
+	set_volume: ValueChangeCommand<Decibels>,
 	set_playback_rate: ValueChangeCommand<PlaybackRate>,
 	set_panning: ValueChangeCommand<Panning>,
 	set_loop_region: Option<Region>,

@@ -1,7 +1,7 @@
 use crate::{
 	effect::{Effect, EffectBuilder},
 	tween::Value,
-	Dbfs, Mix,
+	Decibels, Mix,
 };
 
 use super::{command_writers_and_readers, Delay, DelayHandle};
@@ -11,7 +11,7 @@ pub struct DelayBuilder {
 	/// The delay time (in seconds).
 	pub(super) delay_time: Value<f64>,
 	/// The amount of feedback.
-	pub(super) feedback: Value<Dbfs>,
+	pub(super) feedback: Value<Decibels>,
 	/// The amount of audio the delay can store (in seconds).
 	/// This affects the maximum delay time.
 	pub(super) buffer_length: f64,
@@ -42,7 +42,7 @@ impl DelayBuilder {
 
 	/// Sets the amount of feedback.
 	#[must_use = "This method consumes self and returns a modified DelayBuilder, so the return value should be used"]
-	pub fn feedback(self, feedback: impl Into<Value<Dbfs>>) -> Self {
+	pub fn feedback(self, feedback: impl Into<Value<Decibels>>) -> Self {
 		Self {
 			feedback: feedback.into(),
 			..self
@@ -82,7 +82,7 @@ impl Default for DelayBuilder {
 	fn default() -> Self {
 		Self {
 			delay_time: Value::Fixed(0.5),
-			feedback: Value::Fixed(Dbfs(-6.0)),
+			feedback: Value::Fixed(Decibels(-6.0)),
 			buffer_length: 10.0,
 			feedback_effects: vec![],
 			mix: Value::Fixed(Mix(0.5)),

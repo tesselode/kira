@@ -1,4 +1,4 @@
-use crate::{command::handle_param_setters, Dbfs};
+use crate::{command::handle_param_setters, Decibels};
 
 use super::CommandWriters;
 
@@ -11,6 +11,6 @@ pub struct VolumeControlHandle {
 impl VolumeControlHandle {
 	handle_param_setters! {
 		/// Sets the volume adjustment to apply to input audio.
-		volume: Dbfs,
+		volume: Decibels,
 	}
 }
