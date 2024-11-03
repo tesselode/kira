@@ -7,6 +7,10 @@ use crate::tween::{Tweenable, Value};
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
+/// How quickly a sound should be played, where `1.0` is the default
+/// playback rate.
+///
+/// Changing the playback rate of a sound will affect both the speed and pitch.
 pub struct PlaybackRate(pub f64);
 
 impl Default for PlaybackRate {

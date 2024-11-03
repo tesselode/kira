@@ -128,22 +128,14 @@ impl StaticSoundData {
 	/**
 	Sets the volume of the sound.
 
-	This returns a cheap clone of the [`StaticSoundData`] with the modified volume.
-
 	# Examples
 
-	Set the volume as a factor:
+	Set the volume to a fixed value:
 
-	```
-	# use kira::sound::static_sound::StaticSoundSettings;
-	let settings = StaticSoundSettings::new().volume(0.5);
-	```
-
-	Set the volume as a gain in decibels:
-
-	```
-	# use kira::sound::static_sound::StaticSoundSettings;
-	let settings = StaticSoundSettings::new().volume(kira::Dbfs(-6.0));
+	```no_run
+	# use kira::sound::static_sound::StaticSoundData;
+	let sound = StaticSoundData::from_file("sound.ogg")?.volume(-6.0);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
 	Link the volume to a modulator:
@@ -152,14 +144,23 @@ impl StaticSoundData {
 	use kira::{
 		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
 		modulator::tweener::TweenerBuilder,
-		sound::static_sound::{StaticSoundSettings},
+		sound::static_sound::StaticSoundData,
+		tween::{Value, Mapping, Easing},
+		Decibels,
 	};
 
 	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	let tweener = manager.add_modulator(TweenerBuilder {
 		initial_value: 0.5,
 	})?;
-	let settings = StaticSoundSettings::new().volume(&tweener);
+	let sound = StaticSoundData::from_file("sound.ogg")?.volume(Value::FromModulator {
+		id: tweener.id(),
+		mapping: Mapping {
+			input_range: (0.0, 1.0),
+			output_range: (Decibels::SILENCE, Decibels::IDENTITY),
+			easing: Easing::Linear,
+		},
+	});
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
@@ -173,25 +174,26 @@ impl StaticSoundData {
 	/**
 	Sets the playback rate of the sound.
 
-	Changing the playback rate will change both the speed and the pitch of the sound.
-
-	This returns a cheap clone of the [`StaticSoundData`] with the modified playback rate.
+	Changing the playback rate will change both the speed
+	and the pitch of the sound.
 
 	# Examples
 
 	Set the playback rate as a factor:
 
-	```
-	# use kira::sound::static_sound::StaticSoundSettings;
-	let settings = StaticSoundSettings::new().playback_rate(0.5);
+	```no_run
+	# use kira::sound::static_sound::StaticSoundData;
+	let sound = StaticSoundData::from_file("sound.ogg")?.playback_rate(0.5);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
 	Set the playback rate as a change in semitones:
 
-	```
-	# use kira::sound::static_sound::StaticSoundSettings;
-	use kira::{Semitones, sound::PlaybackRate};
-	let settings = StaticSoundSettings::new().playback_rate(Semitones(-2.0));
+	```no_run
+	# use kira::sound::static_sound::StaticSoundData;
+	use kira::Semitones;
+	let sound = StaticSoundData::from_file("sound.ogg")?.playback_rate(Semitones(-2.0));
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
 	Link the playback rate to a modulator:
@@ -200,14 +202,23 @@ impl StaticSoundData {
 	use kira::{
 		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
 		modulator::tweener::TweenerBuilder,
-		sound::static_sound::{StaticSoundSettings},
+		sound::static_sound::StaticSoundData,
+		tween::{Value, Easing, Mapping},
+		PlaybackRate,
 	};
 
 	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	let tweener = manager.add_modulator(TweenerBuilder {
 		initial_value: 0.5,
 	})?;
-	let settings = StaticSoundSettings::new().playback_rate(&tweener);
+	let sound = StaticSoundData::from_file("sound.ogg")?.playback_rate(Value::FromModulator {
+		id: tweener.id(),
+		mapping: Mapping {
+			input_range: (0.0, 1.0),
+			output_range: (PlaybackRate(0.0), PlaybackRate(1.0)),
+			easing: Easing::Linear,
+		},
+	});
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
@@ -219,17 +230,17 @@ impl StaticSoundData {
 	}
 
 	/**
-	Sets the panning of the sound, where -1.0 is hard left and 1.0 is hard right.
-
-	This returns a cheap clone of the [`StaticSoundData`] with the modified panning.
+	Sets the panning of the sound, where 0 is hard left
+	and 1 is hard right.
 
 	# Examples
 
-	Set the panning to a static value:
+	Set the panning to a fixed value:
 
-	```
-	# use kira::sound::static_sound::StaticSoundSettings;
-	let settings = StaticSoundSettings::new().panning(0.25);
+	``` no_run
+	# use kira::sound::static_sound::StaticSoundData;
+	let sound = StaticSoundData::from_file("sound.ogg")?.panning(-0.5);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
 	Link the panning to a modulator:
@@ -238,14 +249,23 @@ impl StaticSoundData {
 	use kira::{
 		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
 		modulator::tweener::TweenerBuilder,
-		sound::static_sound::{StaticSoundSettings},
+		sound::static_sound::StaticSoundData,
+		tween::{Value, Easing, Mapping},
+		Panning,
 	};
 
 	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	let tweener = manager.add_modulator(TweenerBuilder {
-		initial_value: 0.25,
+		initial_value: -0.5,
 	})?;
-	let settings = StaticSoundSettings::new().panning(&tweener);
+	let sound = StaticSoundData::from_file("sound.ogg")?.panning(Value::FromModulator {
+		id: tweener.id(),
+		mapping: Mapping {
+			input_range: (-1.0, 1.0),
+			output_range: (Panning::LEFT, Panning::RIGHT),
+			easing: Easing::Linear,
+		},
+	});
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/

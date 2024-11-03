@@ -10,6 +10,10 @@ use crate::{
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
+/// A change in pitch in semitones.
+///
+/// This can be used where [`PlaybackRate`](crate::PlaybackRate)s are expected to control
+/// the pitch of a sound.
 pub struct Semitones(pub f64);
 
 impl Tweenable for Semitones {

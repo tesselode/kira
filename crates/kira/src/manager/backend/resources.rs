@@ -66,11 +66,6 @@ impl<T> ResourceStorage<T> {
 	}
 
 	#[must_use]
-	pub fn get(&self, key: Key) -> Option<&T> {
-		self.resources.get(key)
-	}
-
-	#[must_use]
 	pub fn get_mut(&mut self, key: Key) -> Option<&mut T> {
 		self.resources.get_mut(key)
 	}

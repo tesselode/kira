@@ -112,19 +112,11 @@ impl<Error: Send> StreamingSoundData<Error> {
 
 	# Examples
 
-	Set the volume as a factor:
+	Set the volume to a fixed value:
 
 	```no_run
 	# use kira::sound::streaming::StreamingSoundData;
-	let sound = StreamingSoundData::from_file("sound.ogg")?.volume(0.5);
-	# Result::<(), Box<dyn std::error::Error>>::Ok(())
-	```
-
-	Set the volume as a gain in decibels:
-
-	```no_run
-	# use kira::sound::streaming::StreamingSoundData;
-	let sound = StreamingSoundData::from_file("sound.ogg")?.volume(kira::Dbfs(-6.0));
+	let sound = StreamingSoundData::from_file("sound.ogg")?.volume(-6.0);
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
@@ -135,13 +127,22 @@ impl<Error: Send> StreamingSoundData<Error> {
 		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
 		modulator::tweener::TweenerBuilder,
 		sound::streaming::StreamingSoundData,
+		tween::{Value, Mapping, Easing},
+		Decibels,
 	};
 
 	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	let tweener = manager.add_modulator(TweenerBuilder {
 		initial_value: 0.5,
 	})?;
-	let sound = StreamingSoundData::from_file("sound.ogg")?.volume(&tweener);
+	let sound = StreamingSoundData::from_file("sound.ogg")?.volume(Value::FromModulator {
+		id: tweener.id(),
+		mapping: Mapping {
+			input_range: (0.0, 1.0),
+			output_range: (Decibels::SILENCE, Decibels::IDENTITY),
+			easing: Easing::Linear,
+		},
+	});
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
@@ -171,7 +172,7 @@ impl<Error: Send> StreamingSoundData<Error> {
 
 	```no_run
 	# use kira::sound::streaming::StreamingSoundData;
-	use kira::{Semitones, sound::PlaybackRate};
+	use kira::Semitones;
 	let sound = StreamingSoundData::from_file("sound.ogg")?.playback_rate(Semitones(-2.0));
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
@@ -183,13 +184,22 @@ impl<Error: Send> StreamingSoundData<Error> {
 		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
 		modulator::tweener::TweenerBuilder,
 		sound::streaming::StreamingSoundData,
+		tween::{Value, Easing, Mapping},
+		PlaybackRate,
 	};
 
 	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	let tweener = manager.add_modulator(TweenerBuilder {
 		initial_value: 0.5,
 	})?;
-	let sound = StreamingSoundData::from_file("sound.ogg")?.playback_rate(&tweener);
+	let sound = StreamingSoundData::from_file("sound.ogg")?.playback_rate(Value::FromModulator {
+		id: tweener.id(),
+		mapping: Mapping {
+			input_range: (0.0, 1.0),
+			output_range: (PlaybackRate(0.0), PlaybackRate(1.0)),
+			easing: Easing::Linear,
+		},
+	});
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
@@ -205,11 +215,11 @@ impl<Error: Send> StreamingSoundData<Error> {
 
 	# Examples
 
-	Set the panning to a streaming value:
+	Set the panning to a fixed value:
 
 	``` no_run
 	# use kira::sound::streaming::StreamingSoundData;
-	let sound = StreamingSoundData::from_file("sound.ogg")?.panning(0.25);
+	let sound = StreamingSoundData::from_file("sound.ogg")?.panning(-0.5);
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
@@ -220,13 +230,22 @@ impl<Error: Send> StreamingSoundData<Error> {
 		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
 		modulator::tweener::TweenerBuilder,
 		sound::streaming::StreamingSoundData,
+		tween::{Value, Easing, Mapping},
+		Panning,
 	};
 
 	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	let tweener = manager.add_modulator(TweenerBuilder {
-		initial_value: 0.25,
+		initial_value: -0.5,
 	})?;
-	let sound = StreamingSoundData::from_file("sound.ogg")?.panning(&tweener);
+	let sound = StreamingSoundData::from_file("sound.ogg")?.panning(Value::FromModulator {
+		id: tweener.id(),
+		mapping: Mapping {
+			input_range: (-1.0, 1.0),
+			output_range: (Panning::LEFT, Panning::RIGHT),
+			easing: Easing::Linear,
+		},
+	});
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/

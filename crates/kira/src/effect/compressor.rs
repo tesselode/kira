@@ -83,19 +83,20 @@ impl Effect for Compressor {
 		let attack_duration = self.attack_duration.value();
 		let release_duration = self.release_duration.value();
 
-		let input_dbfs = [
+		let input_decibels = [
 			20.0 * input.left.abs().log10(),
 			20.0 * input.right.abs().log10(),
 		];
-		let over_dbfs = input_dbfs.map(|input| (input - threshold).max(0.0));
+		let over_decibels = input_decibels.map(|input| (input - threshold).max(0.0));
 		for (i, envelope_follower) in self.envelope_follower.iter_mut().enumerate() {
-			let duration = if *envelope_follower > over_dbfs[i] {
+			let duration = if *envelope_follower > over_decibels[i] {
 				release_duration
 			} else {
 				attack_duration
 			};
 			let speed = (-1.0 / (duration.as_secs_f64() / dt)).exp();
-			*envelope_follower = over_dbfs[i] + speed as f32 * (*envelope_follower - over_dbfs[i]);
+			*envelope_follower =
+				over_decibels[i] + speed as f32 * (*envelope_follower - over_decibels[i]);
 		}
 		let gain_reduction = self
 			.envelope_follower

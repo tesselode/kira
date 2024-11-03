@@ -48,18 +48,11 @@ impl TrackBuilder {
 
 	# Examples
 
-	Set the volume as a factor:
+	Set the volume to a fixed decibel value:
 
 	```
 	# use kira::track::TrackBuilder;
-	let builder = TrackBuilder::new().volume(0.5);
-	```
-
-	Set the volume as a gain in decibels:
-
-	```
-	# use kira::track::TrackBuilder;
-	let builder = TrackBuilder::new().volume(kira::Dbfs(-6.0));
+	let builder = TrackBuilder::new().volume(-6.0);
 	```
 
 	Link the volume to a modulator:
@@ -69,13 +62,22 @@ impl TrackBuilder {
 		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
 		modulator::tweener::TweenerBuilder,
 		track::TrackBuilder,
+		tween::{Easing, Value, Mapping},
+		Decibels,
 	};
 
 	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	let tweener = manager.add_modulator(TweenerBuilder {
 		initial_value: 0.5,
 	})?;
-	let builder = TrackBuilder::new().volume(&tweener);
+	let builder = TrackBuilder::new().volume(Value::FromModulator {
+		id: tweener.id(),
+		mapping: Mapping {
+			input_range: (0.0, 1.0),
+			output_range: (Decibels::SILENCE, Decibels::IDENTITY),
+			easing: Easing::Linear,
+		},
+	});
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
@@ -105,6 +107,7 @@ impl TrackBuilder {
 		}
 	}
 
+	/// Routes this track to the given send track with the given volume.
 	pub fn with_send(
 		mut self,
 		track: impl Into<SendTrackId>,
@@ -183,11 +186,11 @@ impl TrackBuilder {
 
 	/** Add an already-built effect and return the [`TrackBuilder`].
 
-	 `Box<dyn Effect>` values are created when calling `build` on an effect builder, which gives you
-	 an effect handle, as well as this boxed effect, which is the actual audio effect.
+	`Box<dyn Effect>` values are created when calling `build` on an effect builder, which gives you
+	an effect handle, as well as this boxed effect, which is the actual audio effect.
 
-	 This is a lower-level method than [`Self::with_effect`], and you should probably use it rather
-	 than this method, unless you have a reason to.
+	This is a lower-level method than [`Self::with_effect`], and you should probably use it rather
+	than this method, unless you have a reason to.
 
 	# Examples
 
@@ -210,6 +213,11 @@ impl TrackBuilder {
 		self
 	}
 
+	/// Sets whether the track should stay alive while sounds are playing on it.
+	///
+	/// By default, as soon as a track's handle is dropped, the track is unloaded.
+	/// If this is set to `true`, the track will wait until all sounds on the track
+	/// are finished before unloading.
 	pub fn persist_until_sounds_finish(self, persist: bool) -> Self {
 		Self {
 			persist_until_sounds_finish: persist,

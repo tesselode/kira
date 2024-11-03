@@ -12,7 +12,7 @@ pub struct CompressorHandle {
 
 impl CompressorHandle {
 	handle_param_setters! {
-		/// Sets the volume above which volume will start to be decreased (in dBFS).
+		/// Sets the volume above which volume will start to be decreased (in decibels).
 		threshold: f64,
 
 		/// Sets how much the signal will be compressed.

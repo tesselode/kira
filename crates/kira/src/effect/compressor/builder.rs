@@ -10,7 +10,7 @@ use super::{command_writers_and_readers, Compressor, CompressorHandle};
 
 /// Configures a compressor.
 pub struct CompressorBuilder {
-	/// The volume above which volume will start to be decreased (in dBFS).
+	/// The volume above which volume will start to be decreased (in decibels).
 	pub threshold: Value<f64>,
 	/// How much the signal will be compressed.
 	///
@@ -58,7 +58,7 @@ impl CompressorBuilder {
 		}
 	}
 
-	/// Sets the volume above which volume will start to be decreased (in dBFS).
+	/// Sets the volume above which volume will start to be decreased (in decibels).
 	#[must_use = "This method consumes self and returns a modified CompressorBuilder, so the return value should be used"]
 	pub fn threshold(self, threshold: impl Into<Value<f64>>) -> Self {
 		Self {
@@ -100,7 +100,7 @@ impl CompressorBuilder {
 		}
 	}
 
-	/// Sets the amount to change the volume after processing (in dBFS).
+	/// Sets the amount to change the volume after processing (in decibels).
 	///
 	/// This can be used to compensate for the decrease in volume resulting
 	/// from compression. This is only applied to the wet signal, nto the
