@@ -17,7 +17,7 @@ use crate::{
 fn tweening() {
 	let (mut tweener, mut handle) =
 		TweenerBuilder { initial_value: 0.0 }.build(generate_fake_modulator_id());
-	let info = MockInfoBuilder::new(None).build();
+	let info = MockInfoBuilder::new().build();
 
 	// value should not be changing yet
 	for _ in 0..3 {
@@ -47,7 +47,7 @@ fn tweening() {
 #[test]
 #[allow(clippy::float_cmp)]
 fn waits_for_delay() {
-	let info = MockInfoBuilder::new(None).build();
+	let info = MockInfoBuilder::new().build();
 
 	let (mut tweener, mut handle) =
 		TweenerBuilder { initial_value: 0.0 }.build(generate_fake_modulator_id());
@@ -80,7 +80,7 @@ fn waits_for_delay() {
 fn waits_for_start_time() {
 	let (mut tweener, mut handle) =
 		TweenerBuilder { initial_value: 0.0 }.build(generate_fake_modulator_id());
-	let mut info_builder = MockInfoBuilder::new(None);
+	let mut info_builder = MockInfoBuilder::new();
 	let clock_id_1 = info_builder.add_clock(true, 0, 0.0);
 	let info = info_builder.build();
 
@@ -105,7 +105,7 @@ fn waits_for_start_time() {
 	}
 
 	let info = {
-		let mut builder = MockInfoBuilder::new(None);
+		let mut builder = MockInfoBuilder::new();
 		builder.add_clock(true, 1, 0.0);
 		builder.add_clock(true, 0, 0.0);
 		builder.build()
@@ -119,7 +119,7 @@ fn waits_for_start_time() {
 	}
 
 	let info = {
-		let mut builder = MockInfoBuilder::new(None);
+		let mut builder = MockInfoBuilder::new();
 		builder.add_clock(true, 1, 0.0);
 		builder.add_clock(true, 2, 0.0);
 		builder.build()
@@ -133,7 +133,7 @@ fn waits_for_start_time() {
 	}
 
 	let info = {
-		let mut builder = MockInfoBuilder::new(None);
+		let mut builder = MockInfoBuilder::new();
 		builder.add_clock(true, 2, 0.0);
 		builder.add_clock(true, 2, 0.0);
 		builder.build()
