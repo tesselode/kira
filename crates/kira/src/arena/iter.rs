@@ -81,7 +81,7 @@ impl<'a, T> Iterator for IterMut<'a, T> {
 	fn next(&mut self) -> Option<Self::Item> {
 		if let Some(index) = self.next_occupied_slot_index {
 			let index_usize = usize::from(index);
-			// Since next_occupied_slot_index isn't always increasing/increasing there aren't any
+			// Since next_occupied_slot_index isn't always increasing/decreasing there aren't any
 			// easy safe ways to iterate following this order.
 			let slot = if index_usize < self.slots.len() {
 				// as_mut_ptr and get_unchecked_mut on *mut [T] are unstable :(
