@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{atomic::Ordering, Arc};
 
 use crate::command::handle_param_setters;
 
@@ -58,6 +58,13 @@ impl ClockHandle {
 	pub fn stop(&mut self) {
 		self.command_writers.set_ticking.write(false);
 		self.command_writers.reset.write(());
+		// store 0 as the current time so any reads that happen
+		// immediately after a stop don't errantly get the previous
+		// clock time
+		self.shared.ticks.store(0, Ordering::SeqCst);
+		self.shared
+			.fractional_position
+			.store(0.0f64.to_bits(), Ordering::SeqCst);
 	}
 }
 
