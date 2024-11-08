@@ -117,12 +117,19 @@ impl Add<f64> for ClockTime {
 	type Output = ClockTime;
 
 	fn add(self, ticks: f64) -> Self::Output {
-		let mut fraction = self.fraction + ticks;
-		let mut ticks = self.ticks;
-		while fraction >= 1.0 {
-			fraction -= 1.0;
-			ticks += 1;
+		debug_assert!(
+			ticks.is_finite(),
+			"Cannot add a non-finite amount to ClockTime: {ticks:?}"
+		);
+
+		// This implementation does not allow adding negative numbers, use the Sub<f64> impl instead
+		if ticks.is_sign_negative() {
+			return self.sub(-ticks);
 		}
+
+		let fraction = (self.fraction + ticks).fract();
+		let ticks = self.ticks + (self.fraction + ticks).trunc() as u64;
+
 		Self {
 			clock: self.clock,
 			ticks,
@@ -159,12 +166,21 @@ impl Sub<f64> for ClockTime {
 	type Output = ClockTime;
 
 	fn sub(self, ticks: f64) -> Self::Output {
-		let mut fraction = self.fraction - ticks;
-		let mut ticks = self.ticks;
-		while fraction < 0.0 {
-			fraction += 1.0;
-			ticks -= 1;
+		debug_assert!(
+			ticks.is_finite(),
+			"Cannot subtract a non-finite amount from ClockTime: {ticks:?}"
+		);
+
+		// This implementation does not allow subtracting negative numbers, use the Add<f64> impl instead
+		if ticks.is_sign_negative() {
+			return self.add(-ticks);
 		}
+
+		let fraction = ((self.fraction - ticks).fract() + 1.0) % 1.0;
+		let ticks = self
+			.ticks
+			.saturating_sub((ticks - self.fraction).ceil() as u64);
+
 		Self {
 			clock: self.clock,
 			ticks,
