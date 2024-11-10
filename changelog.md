@@ -1,3 +1,9 @@
+# v0.9.6 - November 10, 2024
+
+- Improve performance when adding or subtracting large `f64`s from a `ClockTime`
+(thanks @crabm4n!)
+- Fix UB detected by miri in the stacked borrows model (thanks @Imberflur!)
+
 # v0.9.5 - September 2, 2024
 
 - Update `glam` to 0.29.0
