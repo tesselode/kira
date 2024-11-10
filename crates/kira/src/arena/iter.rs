@@ -81,20 +81,16 @@ impl<'a, T> Iterator for IterMut<'a, T> {
 	fn next(&mut self) -> Option<Self::Item> {
 		if let Some(index) = self.next_occupied_slot_index {
 			let index_usize = usize::from(index);
-			// Since next_occupied_slot_index isn't always increasing/decreasing there aren't any
-			// easy safe ways to iterate following this order.
-			let slot = if index_usize < self.slots.len() {
+			let slot = {
 				// as_mut_ptr and get_unchecked_mut on *mut [T] are unstable :(
 				let start_ptr = self.slots.cast::<ArenaSlot<T>>();
-				// SAFETY: We checked that this is in bounds.
+				// SAFETY: This is always in bounds.
 				let slot_ptr = unsafe { start_ptr.add(index_usize) };
 				// SAFETY:
 				// * This relies on the invariant that `next_occupied_slot_index` never repeats. If
 				//   it did repeat, we could create aliasing mutable references here.
 				// * Lifetime is the same that we mutably borrow the Arena for.
 				unsafe { slot_ptr.as_mut::<'a>() }.unwrap()
-			} else {
-				unreachable!("next_occupied_slot_index should always point to valid slot");
 			};
 
 			if let ArenaSlotState::Occupied {
