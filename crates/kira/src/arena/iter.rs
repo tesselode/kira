@@ -1,6 +1,10 @@
 //! [`Arena`] iterators.
 
-use crate::arena::{slot::ArenaSlotState, Arena, Key};
+use crate::arena::{
+	slot::{ArenaSlot, ArenaSlotState},
+	Arena, Key,
+};
+use core::marker::PhantomData;
 
 /// Iterates over shared references to the items in
 /// the [`Arena`].
@@ -56,7 +60,8 @@ impl<'a, T> Iterator for Iter<'a, T> {
 /// The most recently added items will be visited first.
 pub struct IterMut<'a, T> {
 	next_occupied_slot_index: Option<u16>,
-	arena: &'a mut Arena<T>,
+	slots: *mut [ArenaSlot<T>],
+	marker: PhantomData<&'a mut Arena<T>>,
 }
 
 impl<'a, T> IterMut<'a, T> {
@@ -64,7 +69,8 @@ impl<'a, T> IterMut<'a, T> {
 	pub(super) fn new(arena: &'a mut Arena<T>) -> Self {
 		Self {
 			next_occupied_slot_index: arena.first_occupied_slot_index,
-			arena,
+			slots: arena.slots.as_mut_slice(),
+			marker: PhantomData,
 		}
 	}
 }
@@ -74,7 +80,19 @@ impl<'a, T> Iterator for IterMut<'a, T> {
 
 	fn next(&mut self) -> Option<Self::Item> {
 		if let Some(index) = self.next_occupied_slot_index {
-			let slot = &mut self.arena.slots[index as usize];
+			let index_usize = usize::from(index);
+			let slot = {
+				// as_mut_ptr and get_unchecked_mut on *mut [T] are unstable :(
+				let start_ptr = self.slots.cast::<ArenaSlot<T>>();
+				// SAFETY: This is always in bounds.
+				let slot_ptr = unsafe { start_ptr.add(index_usize) };
+				// SAFETY:
+				// * This relies on the invariant that `next_occupied_slot_index` never repeats. If
+				//   it did repeat, we could create aliasing mutable references here.
+				// * Lifetime is the same that we mutably borrow the Arena for.
+				unsafe { slot_ptr.as_mut::<'a>() }.unwrap()
+			};
+
 			if let ArenaSlotState::Occupied {
 				data,
 				next_occupied_slot_index,
@@ -87,13 +105,7 @@ impl<'a, T> Iterator for IterMut<'a, T> {
 						index,
 						generation: slot.generation,
 					},
-					// using a small bit of unsafe code here to get around
-					// borrow checker limitations. this workaround is stolen
-					// from slotmap: https://github.com/orlp/slotmap/blob/master/src/hop.rs#L1165
-					unsafe {
-						let data: *mut T = &mut *data;
-						&mut *data
-					},
+					data,
 				))
 			} else {
 				panic!("the iterator should not encounter a free slot");

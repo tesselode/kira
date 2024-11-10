@@ -265,6 +265,19 @@ fn iter_mut() {
 	assert_eq!(iter.next(), None);
 }
 
+// Useful for using miri to test unsafe code in the mutable iteration implementation.
+#[test]
+fn iter_mut_use_after_next() {
+	let mut arena = Arena::new(2);
+	let _ = arena.insert(1).unwrap();
+	let _ = arena.insert(2).unwrap();
+	let mut iter = arena.iter_mut();
+	let first = iter.next().unwrap();
+	let _second = iter.next().unwrap();
+	// Let miri detect if `first` was invalidated by trying to use it.
+	*first.1 = 3;
+}
+
 #[test]
 fn drain_filter() {
 	let mut arena = Arena::new(6);
