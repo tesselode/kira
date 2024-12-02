@@ -31,7 +31,7 @@ impl MainTrackBuilder {
 	}
 
 	/// Sets the volume of the main mixer track.
-	#[must_use = "This method consumes self and returns a modified TrackBuilder, so the return value should be used"]
+	#[must_use = "This method consumes self and returns a modified MainTrackBuilder, so the return value should be used"]
 	pub fn volume(self, volume: impl Into<Value<Decibels>>) -> Self {
 		Self {
 			volume: volume.into(),
@@ -40,7 +40,7 @@ impl MainTrackBuilder {
 	}
 
 	/// Sets the maximum number of sounds that can be played simultaneously on this track.
-	#[must_use = "This method consumes self and returns a modified TrackBuilder, so the return value should be used"]
+	#[must_use = "This method consumes self and returns a modified MainTrackBuilder, so the return value should be used"]
 	pub fn sound_capacity(self, capacity: u16) -> Self {
 		Self {
 			sound_capacity: capacity,
@@ -54,9 +54,9 @@ impl MainTrackBuilder {
 	# Examples
 
 	```
-	use kira::{track::TrackBuilder, effect::delay::DelayBuilder};
+	use kira::{track::MainTrackBuilder, effect::delay::DelayBuilder};
 
-	let mut builder = TrackBuilder::new();
+	let mut builder = MainTrackBuilder::new();
 	let delay_handle = builder.add_effect(DelayBuilder::new());
 	```
 	*/
@@ -67,7 +67,7 @@ impl MainTrackBuilder {
 	}
 
 	/**
-	Adds an effect to the track and returns the [`TrackBuilder`].
+	Adds an effect to the track and returns the [`MainTrackBuilder`].
 
 	If you need to modify the effect later, use [`add_effect`](Self::add_effect),
 	which returns the effect handle.
@@ -76,16 +76,16 @@ impl MainTrackBuilder {
 
 	```
 	use kira::{
-		track::TrackBuilder,
+		track::MainTrackBuilder,
 		effect::{filter::FilterBuilder, reverb::ReverbBuilder},
 	};
 
-	let mut builder = TrackBuilder::new()
+	let mut builder = MainTrackBuilder::new()
 		.with_effect(FilterBuilder::new())
 		.with_effect(ReverbBuilder::new());
 	```
 	*/
-	#[must_use = "This method consumes self and returns a modified TrackBuilder, so the return value should be used"]
+	#[must_use = "This method consumes self and returns a modified MainTrackBuilder, so the return value should be used"]
 	pub fn with_effect<B: EffectBuilder>(mut self, builder: B) -> Self {
 		self.add_effect(builder);
 		self
@@ -102,10 +102,10 @@ impl MainTrackBuilder {
 	# Examples
 
 	```
-	use kira::track::TrackBuilder;
+	use kira::track::MainTrackBuilder;
 	use kira::effect::{EffectBuilder, delay::DelayBuilder};
 
-	let mut builder = TrackBuilder::new();
+	let mut builder = MainTrackBuilder::new();
 	let delay_builder = DelayBuilder::new();
 	let (effect, delay_handle) = delay_builder.build();
 	let delay_handle = builder.add_built_effect(effect);
@@ -115,7 +115,7 @@ impl MainTrackBuilder {
 		self.effects.push(effect);
 	}
 
-	/** Add an already-built effect and return the [`TrackBuilder`].
+	/** Add an already-built effect and return the [`MainTrackBuilder`].
 
 	 `Box<dyn Effect>` values are created when calling `build` on an effect builder, which gives you
 	 an effect handle, as well as this boxed effect, which is the actual audio effect.
@@ -127,18 +127,18 @@ impl MainTrackBuilder {
 
 	```
 	use kira::{
-		track::TrackBuilder,
+		track::MainTrackBuilder,
 		effect::{filter::FilterBuilder, reverb::ReverbBuilder, EffectBuilder},
 	};
 
 	let (filter_effect, filter_handle) = FilterBuilder::new().build();
 	let (reverb_effect, reverb_handle) = ReverbBuilder::new().build();
-	let mut builder = TrackBuilder::new()
+	let mut builder = MainTrackBuilder::new()
 		.with_built_effect(filter_effect)
 		.with_built_effect(reverb_effect);
 	```
 	 */
-	#[must_use = "This method consumes self and returns a modified TrackBuilder, so the return value should be used"]
+	#[must_use = "This method consumes self and returns a modified MainTrackBuilder, so the return value should be used"]
 	pub fn with_built_effect(mut self, effect: Box<dyn Effect>) -> Self {
 		self.add_built_effect(effect);
 		self

@@ -10,7 +10,7 @@ use crate::{
 	sound::{Sound, SoundData},
 	track::TrackPlaybackState,
 	tween::{Tween, Value},
-	PlaySoundError, ResourceLimitReached, StartTime, Decibels,
+	Decibels, PlaySoundError, ResourceLimitReached, StartTime,
 };
 
 use super::{
@@ -20,7 +20,7 @@ use super::{
 
 /// Controls a mixer track.
 ///
-/// When a [`MainTrackHandle`] is dropped, the corresponding mixer
+/// When a [`SpatialTrackHandle`] is dropped, the corresponding mixer
 /// track will be removed.
 #[derive(Debug)]
 pub struct SpatialTrackHandle {
