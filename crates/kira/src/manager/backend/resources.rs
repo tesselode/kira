@@ -18,7 +18,7 @@ use crate::{
 	ResourceLimitReached,
 };
 use listeners::Listeners;
-use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
+use rtrb::{Consumer, Producer, RingBuffer};
 
 use crate::{clock::Clock, manager::settings::Capacities, modulator::Modulator};
 
@@ -26,16 +26,16 @@ use self::{clocks::Clocks, mixer::Mixer, modulators::Modulators};
 
 pub(crate) struct ResourceStorage<T> {
 	pub(crate) resources: Arena<T>,
-	new_resource_consumer: HeapConsumer<(Key, T)>,
-	unused_resource_producer: HeapProducer<T>,
+	new_resource_consumer: Consumer<(Key, T)>,
+	unused_resource_producer: Producer<T>,
 }
 
 impl<T> ResourceStorage<T> {
 	#[must_use]
 	pub fn new(capacity: u16) -> (Self, ResourceController<T>) {
-		let (new_resource_producer, new_resource_consumer) = HeapRb::new(capacity as usize).split();
+		let (new_resource_producer, new_resource_consumer) = RingBuffer::new(capacity as usize);
 		let (unused_resource_producer, unused_resource_consumer) =
-			HeapRb::new(capacity as usize).split();
+			RingBuffer::new(capacity as usize);
 		let resources = Arena::new(capacity);
 		let arena_controller = resources.controller();
 		(
@@ -58,7 +58,7 @@ impl<T> ResourceStorage<T> {
 				.push(resource)
 				.unwrap_or_else(|_| panic!("unused resource producer is full"));
 		}
-		while let Some((key, resource)) = self.new_resource_consumer.pop() {
+		while let Ok((key, resource)) = self.new_resource_consumer.pop() {
 			self.resources
 				.insert_with_key(key, resource)
 				.expect("error inserting resource");
@@ -99,8 +99,8 @@ impl<'a, T> IntoIterator for &'a mut ResourceStorage<T> {
 pub(crate) struct SelfReferentialResourceStorage<T> {
 	pub(crate) resources: Arena<T>,
 	keys: Vec<Key>,
-	new_resource_consumer: HeapConsumer<(Key, T)>,
-	unused_resource_producer: HeapProducer<T>,
+	new_resource_consumer: Consumer<(Key, T)>,
+	unused_resource_producer: Producer<T>,
 	dummy: T,
 }
 
@@ -109,9 +109,9 @@ impl<T> SelfReferentialResourceStorage<T> {
 	where
 		T: Default,
 	{
-		let (new_resource_producer, new_resource_consumer) = HeapRb::new(capacity as usize).split();
+		let (new_resource_producer, new_resource_consumer) = RingBuffer::new(capacity as usize);
 		let (unused_resource_producer, unused_resource_consumer) =
-			HeapRb::new(capacity as usize).split();
+			RingBuffer::new(capacity as usize);
 		let resources = Arena::new(capacity);
 		let arena_controller = resources.controller();
 		(
@@ -132,7 +132,7 @@ impl<T> SelfReferentialResourceStorage<T> {
 
 	pub fn remove_and_add(&mut self, remove_test: impl FnMut(&T) -> bool) {
 		self.remove_unused(remove_test);
-		while let Some((key, resource)) = self.new_resource_consumer.pop() {
+		while let Ok((key, resource)) = self.new_resource_consumer.pop() {
 			self.resources
 				.insert_with_key(key, resource)
 				.expect("error inserting resource");
@@ -189,8 +189,8 @@ impl<'a, T> IntoIterator for &'a mut SelfReferentialResourceStorage<T> {
 
 pub(crate) struct ResourceController<T> {
 	pub arena_controller: Controller,
-	pub new_resource_producer: Mutex<HeapProducer<(Key, T)>>,
-	pub unused_resource_consumer: Mutex<HeapConsumer<T>>,
+	pub new_resource_producer: Mutex<Producer<(Key, T)>>,
+	pub unused_resource_consumer: Mutex<Consumer<T>>,
 }
 
 impl<T> ResourceController<T> {
@@ -220,7 +220,7 @@ impl<T> ResourceController<T> {
 			.unused_resource_consumer
 			.get_mut()
 			.expect("unused resource consumer mutex poisoned");
-		while unused_resource_consumer.pop().is_some() {}
+		while unused_resource_consumer.pop().is_ok() {}
 	}
 
 	#[must_use]
@@ -238,25 +238,25 @@ impl<T> Debug for ResourceController<T> {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		f.debug_struct("ResourceController")
 			.field("arena_controller", &self.arena_controller)
-			.field("new_resource_producer", &HeapProducerDebug)
-			.field("unused_resource_consumer", &HeapConsumerDebug)
+			.field("new_resource_producer", &ProducerDebug)
+			.field("unused_resource_consumer", &ConsumerDebug)
 			.finish()
 	}
 }
 
-struct HeapProducerDebug;
+struct ProducerDebug;
 
-impl Debug for HeapProducerDebug {
+impl Debug for ProducerDebug {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		f.debug_struct("HeapProducer").finish()
+		f.debug_struct("Producer").finish()
 	}
 }
 
-struct HeapConsumerDebug;
+struct ConsumerDebug;
 
-impl Debug for HeapConsumerDebug {
+impl Debug for ConsumerDebug {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		f.debug_struct("HeapConsumer").finish()
+		f.debug_struct("Consumer").finish()
 	}
 }
 

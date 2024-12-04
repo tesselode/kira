@@ -35,7 +35,7 @@ pub trait EffectBuilder {
 /// For performance reasons, avoid allocating and deallocating in any methods
 /// of this trait besides [`on_change_sample_rate`](Effect::on_change_sample_rate).
 #[allow(unused_variables)]
-pub trait Effect: Send + Sync {
+pub trait Effect: Send {
 	/// Called when the effect is first sent to the renderer.
 	fn init(&mut self, sample_rate: u32) {}
 

@@ -135,7 +135,7 @@ impl<'a, T, F: FnMut(&T) -> bool> DrainFilter<'a, T, F> {
 	}
 }
 
-impl<'a, T, F: FnMut(&T) -> bool> Iterator for DrainFilter<'a, T, F> {
+impl<T, F: FnMut(&T) -> bool> Iterator for DrainFilter<'_, T, F> {
 	type Item = (Key, T);
 
 	fn next(&mut self) -> Option<Self::Item> {

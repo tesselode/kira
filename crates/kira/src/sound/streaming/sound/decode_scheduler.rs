@@ -11,7 +11,7 @@ use crate::{
 		PlaybackState,
 	},
 };
-use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
+use rtrb::{Consumer, Producer, RingBuffer};
 
 use super::{Shared, TimestampedFrame};
 
@@ -33,8 +33,8 @@ pub(crate) struct DecodeScheduler<Error: Send + 'static> {
 	decoder_current_frame_index: usize,
 	decoded_chunk: Option<DecodedChunk>,
 	command_readers: DecodeSchedulerCommandReaders,
-	frame_producer: HeapProducer<TimestampedFrame>,
-	error_producer: HeapProducer<Error>,
+	frame_producer: Producer<TimestampedFrame>,
+	error_producer: Producer<Error>,
 	shared: Arc<Shared>,
 }
 
@@ -45,9 +45,9 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		settings: StreamingSoundSettings,
 		shared: Arc<Shared>,
 		command_readers: DecodeSchedulerCommandReaders,
-		error_producer: HeapProducer<Error>,
-	) -> Result<(Self, HeapConsumer<TimestampedFrame>), Error> {
-		let (mut frame_producer, frame_consumer) = HeapRb::new(BUFFER_SIZE).split();
+		error_producer: Producer<Error>,
+	) -> Result<(Self, Consumer<TimestampedFrame>), Error> {
+		let (mut frame_producer, frame_consumer) = RingBuffer::new(BUFFER_SIZE);
 		// pre-seed the frame ringbuffer with a zero frame. this is the "previous" frame
 		// when the sound just started.
 		frame_producer

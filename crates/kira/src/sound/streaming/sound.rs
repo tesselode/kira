@@ -17,7 +17,7 @@ use crate::{
 	tween::{Parameter, Tween},
 	Decibels, Panning, PlaybackRate, StartTime,
 };
-use ringbuf::HeapConsumer;
+use rtrb::Consumer;
 
 use super::{CommandReaders, StreamingSoundSettings};
 
@@ -79,7 +79,7 @@ impl Shared {
 pub(crate) struct StreamingSound {
 	command_readers: CommandReaders,
 	sample_rate: u32,
-	frame_consumer: HeapConsumer<TimestampedFrame>,
+	frame_consumer: Consumer<TimestampedFrame>,
 	start_time: StartTime,
 	playback_state_manager: PlaybackStateManager,
 	current_frame: usize,
@@ -96,7 +96,7 @@ impl StreamingSound {
 		sample_rate: u32,
 		settings: StreamingSoundSettings,
 		shared: Arc<Shared>,
-		frame_consumer: HeapConsumer<TimestampedFrame>,
+		frame_consumer: Consumer<TimestampedFrame>,
 		command_readers: CommandReaders,
 		scheduler: &DecodeScheduler<Error>,
 	) -> Self {
@@ -126,18 +126,25 @@ impl StreamingSound {
 	}
 
 	fn update_current_frame(&mut self) {
-		let current_frame = &mut self.current_frame;
-		let (a, b) = self.frame_consumer.as_slices();
+		let chunk = self
+			.frame_consumer
+			.read_chunk(self.frame_consumer.slots().min(4))
+			.unwrap();
+		let (a, b) = chunk.as_slices();
 		let mut iter = a.iter().chain(b.iter());
 		if let Some(TimestampedFrame { index, .. }) = iter.nth(1) {
-			*current_frame = *index;
+			self.current_frame = *index;
 		}
 	}
 
 	#[must_use]
 	fn next_frames(&mut self) -> [Frame; 4] {
 		let mut frames = [Frame::ZERO; 4];
-		let (a, b) = self.frame_consumer.as_slices();
+		let chunk = self
+			.frame_consumer
+			.read_chunk(self.frame_consumer.slots().min(4))
+			.unwrap();
+		let (a, b) = chunk.as_slices();
 		let mut iter = a.iter().chain(b.iter());
 		for frame in &mut frames {
 			*frame = iter
@@ -224,7 +231,7 @@ impl Sound for StreamingSound {
 		// pause playback while waiting for audio data. the first frame
 		// in the ringbuffer is the previous frame, so we need to make
 		// sure there's at least 2 before we continue playing.
-		if self.frame_consumer.len() < 2 && !self.shared.reached_end() {
+		if self.frame_consumer.slots() < 2 && !self.shared.reached_end() {
 			return Frame::ZERO;
 		}
 		let next_frames = self.next_frames();
@@ -239,7 +246,7 @@ impl Sound for StreamingSound {
 			self.sample_rate as f64 * self.playback_rate.value().0.max(0.0) * dt;
 		while self.fractional_position >= 1.0 {
 			self.fractional_position -= 1.0;
-			self.frame_consumer.pop();
+			self.frame_consumer.pop().ok();
 		}
 		if self.shared.reached_end() && self.frame_consumer.is_empty() {
 			self.playback_state_manager.mark_as_stopped();

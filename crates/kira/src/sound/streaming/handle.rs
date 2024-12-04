@@ -9,7 +9,7 @@ use crate::{
 	tween::Tween,
 	Decibels, Panning, PlaybackRate, StartTime,
 };
-use ringbuf::HeapConsumer;
+use rtrb::Consumer;
 
 use super::{sound::Shared, CommandWriters};
 
@@ -17,7 +17,7 @@ use super::{sound::Shared, CommandWriters};
 pub struct StreamingSoundHandle<Error> {
 	pub(super) shared: Arc<Shared>,
 	pub(super) command_writers: CommandWriters,
-	pub(super) error_consumer: HeapConsumer<Error>,
+	pub(super) error_consumer: Consumer<Error>,
 }
 
 impl<Error> StreamingSoundHandle<Error> {
@@ -329,7 +329,7 @@ impl<Error> StreamingSoundHandle<Error> {
 	/// Returns an error that occurred while decoding audio, if any.
 	#[must_use]
 	pub fn pop_error(&mut self) -> Option<Error> {
-		self.error_consumer.pop()
+		self.error_consumer.pop().ok()
 	}
 }
 
@@ -338,15 +338,15 @@ impl<Error: Debug> Debug for StreamingSoundHandle<Error> {
 		f.debug_struct("StreamingSoundHandle")
 			.field("shared", &self.shared)
 			.field("command_writers", &self.command_writers)
-			.field("error_consumer", &HeapConsumerDebug)
+			.field("error_consumer", &ConsumerDebug)
 			.finish()
 	}
 }
 
-struct HeapConsumerDebug;
+struct ConsumerDebug;
 
-impl Debug for HeapConsumerDebug {
+impl Debug for ConsumerDebug {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		f.debug_struct("HeapConsumer").finish()
+		f.debug_struct("Consumer").finish()
 	}
 }

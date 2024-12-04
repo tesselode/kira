@@ -15,7 +15,7 @@ values will overwrite older values that haven't been read yet. Therefore, this
 is only suitable when the reader only cares about the most recent value that
 has been written; i.e. new values supercede all older values. If you need a
 realtime-safe FIFO queue of multiple values, consider using a ring buffer, such as
-[`HeapRb`](ringbuf::HeapRb) from the [ringbuf](https://crates.io/crates/ringbuf) crate,
+[`RingBuffer`](rtrb::RingBuffer) from the [rtrb](https://crates.io/crates/rtrb) crate,
 which Kira uses internally.
 */
 
