@@ -1,8 +1,6 @@
 use crate::{info::Info, modulator::Modulator};
 
-use super::{
-	clocks::Clocks, listeners::Listeners, ResourceController, SelfReferentialResourceStorage,
-};
+use super::{clocks::Clocks, ResourceController, SelfReferentialResourceStorage};
 
 pub(crate) struct Modulators(pub(crate) SelfReferentialResourceStorage<Box<dyn Modulator>>);
 
@@ -20,12 +18,9 @@ impl Modulators {
 		}
 	}
 
-	pub fn process(&mut self, dt: f64, clocks: &Clocks, listeners: &Listeners) {
+	pub fn process(&mut self, dt: f64, clocks: &Clocks) {
 		self.0.for_each(|modulator, others| {
-			modulator.update(
-				dt,
-				&Info::new(&clocks.0.resources, others, &listeners.0.resources, None),
-			);
+			modulator.update(dt, &Info::new(&clocks.0.resources, others));
 		});
 	}
 }

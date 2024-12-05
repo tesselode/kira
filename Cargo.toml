@@ -8,6 +8,5 @@ members = [
 	"crates/examples/score-counter",
 	"crates/examples/seamless-loop-with-intro",
 	"crates/examples/simple-sound-playback",
-	"crates/examples/spatial-audio",
 ]
 resolver = "2"

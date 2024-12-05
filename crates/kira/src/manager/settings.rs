@@ -18,8 +18,6 @@ pub struct Capacities {
 	pub clock_capacity: u16,
 	/// The maximum number of modulators that can exist at a time.
 	pub modulator_capacity: u16,
-	/// The maximum number of listeners that can exist at a time.
-	pub listener_capacity: u16,
 }
 
 impl Default for Capacities {
@@ -30,7 +28,6 @@ impl Default for Capacities {
 			send_track_capacity: 16,
 			clock_capacity: 8,
 			modulator_capacity: 16,
-			listener_capacity: 8,
 		}
 	}
 }

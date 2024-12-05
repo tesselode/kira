@@ -44,7 +44,6 @@ impl<T: Tweenable> Parameter<T> {
 			raw_value: match initial_value {
 				Value::Fixed(value) => value,
 				Value::FromModulator { .. } => default_raw_value,
-				Value::FromListenerDistance { .. } => default_raw_value,
 			},
 			stagnant: matches!(initial_value, Value::Fixed(_)),
 		}

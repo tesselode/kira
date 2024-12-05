@@ -1,29 +1,20 @@
 mod builder;
 mod handle;
-mod spatial_builder;
-mod spatial_handle;
 
 pub use builder::*;
 pub use handle::*;
-pub use spatial_builder::*;
-pub use spatial_handle::*;
 
-use std::{error::Error, f32::consts::FRAC_PI_8, fmt::Display, sync::Arc};
-
-use glam::{Quat, Vec3};
+use std::{error::Error, fmt::Display, sync::Arc};
 
 use crate::{
 	command::ValueChangeCommand,
 	command_writers_and_readers,
 	effect::Effect,
-	info::{Info, ListenerInfo, SpatialTrackInfo},
-	listener::ListenerId,
-	manager::backend::resources::{
-		clocks::Clocks, listeners::Listeners, modulators::Modulators, ResourceStorage,
-	},
+	info::Info,
+	manager::backend::resources::{clocks::Clocks, modulators::Modulators, ResourceStorage},
 	playback_state_manager::PlaybackStateManager,
 	sound::Sound,
-	tween::{Easing, Parameter, Tween, Tweenable},
+	tween::{Parameter, Tween},
 	Decibels, Frame, StartTime,
 };
 
@@ -51,7 +42,6 @@ pub(crate) struct Track {
 	effects: Vec<Box<dyn Effect>>,
 	sends: Vec<(SendTrackId, SendTrackRoute)>,
 	persist_until_sounds_finish: bool,
-	spatial_data: Option<SpatialData>,
 	playback_state_manager: PlaybackStateManager,
 }
 
@@ -131,24 +121,10 @@ impl Track {
 		dt: f64,
 		clocks: &Clocks,
 		modulators: &Modulators,
-		listeners: &Listeners,
-		parent_spatial_track_info: Option<SpatialTrackInfo>,
 		send_tracks: &mut ResourceStorage<SendTrack>,
 	) -> Frame {
-		let spatial_track_info = self
-			.spatial_data
-			.as_ref()
-			.map(|spatial_data| SpatialTrackInfo {
-				position: spatial_data.position.value(),
-				listener_id: spatial_data.listener_id,
-			})
-			.or(parent_spatial_track_info);
-		let info = Info::new(
-			&clocks.0.resources,
-			&modulators.0.resources,
-			&listeners.0.resources,
-			spatial_track_info,
-		);
+		let info = Info::new(&clocks.0.resources, &modulators.0.resources);
+
 		self.volume.update(dt, &info);
 		for (_, route) in &mut self.sends {
 			route.volume.update(dt, &info);
@@ -164,27 +140,10 @@ impl Track {
 
 		let mut output = Frame::ZERO;
 		for (_, sub_track) in &mut self.sub_tracks {
-			output += sub_track.process(
-				dt,
-				clocks,
-				modulators,
-				listeners,
-				spatial_track_info,
-				send_tracks,
-			);
+			output += sub_track.process(dt, clocks, modulators, send_tracks);
 		}
 		for (_, sound) in &mut self.sounds {
 			output += sound.process(dt, &info);
-		}
-		if let Some(spatial_data) = &mut self.spatial_data {
-			spatial_data.position.update(dt, &info);
-			if let Some(ListenerInfo {
-				position,
-				orientation,
-			}) = info.listener_info()
-			{
-				output = spatial_data.spatialize(output, position.into(), orientation.into());
-			}
 		}
 		for effect in &mut self.effects {
 			output = effect.process(output, dt, &info);
@@ -206,9 +165,6 @@ impl Track {
 		for (_, route) in &mut self.sends {
 			route.read_commands();
 		}
-		if let Some(SpatialData { position, .. }) = &mut self.spatial_data {
-			position.read_command(&mut self.command_readers.set_position);
-		}
 		if let Some(tween) = self.command_readers.pause.read() {
 			self.pause(tween);
 		}
@@ -218,91 +174,8 @@ impl Track {
 	}
 }
 
-struct SpatialData {
-	listener_id: ListenerId,
-	position: Parameter<Vec3>,
-	/// The distances from a listener at which the track is loudest and quietest.
-	distances: SpatialTrackDistances,
-	/// How the track's volume will change with distance.
-	///
-	/// If `None`, the track will output at a constant volume.
-	attenuation_function: Option<Easing>,
-	/// Whether the track's output should be panned left or right depending on its
-	/// direction from the listener.
-	enable_spatialization: bool,
-}
-
-impl SpatialData {
-	fn spatialize(
-		&self,
-		input: Frame,
-		listener_position: Vec3,
-		listener_orientation: Quat,
-	) -> Frame {
-		const MIN_EAR_AMPLITUDE: f32 = 0.5;
-
-		let mut output = input;
-		// attenuate volume
-		if let Some(attenuation_function) = self.attenuation_function {
-			let distance = (listener_position - self.position.value()).length();
-			let relative_distance = self.distances.relative_distance(distance);
-			let relative_volume =
-				attenuation_function.apply((1.0 - relative_distance).into()) as f32;
-			let amplitude = Tweenable::interpolate(
-				Decibels::SILENCE,
-				Decibels::IDENTITY,
-				relative_volume.into(),
-			)
-			.as_amplitude();
-			output *= amplitude;
-		}
-		// apply spatialization
-		if self.enable_spatialization {
-			output = output.as_mono();
-			let (left_ear_position, right_ear_position) =
-				listener_ear_positions(listener_position, listener_orientation);
-			let (left_ear_direction, right_ear_direction) =
-				listener_ear_directions(listener_orientation);
-			let emitter_direction_relative_to_left_ear =
-				(self.position.value() - left_ear_position).normalize_or_zero();
-			let emitter_direction_relative_to_right_ear =
-				(self.position.value() - right_ear_position).normalize_or_zero();
-			let left_ear_volume =
-				(left_ear_direction.dot(emitter_direction_relative_to_left_ear) + 1.0) / 2.0;
-			let right_ear_volume =
-				(right_ear_direction.dot(emitter_direction_relative_to_right_ear) + 1.0) / 2.0;
-			output.left *= MIN_EAR_AMPLITUDE + (1.0 - MIN_EAR_AMPLITUDE) * left_ear_volume;
-			output.right *= MIN_EAR_AMPLITUDE + (1.0 - MIN_EAR_AMPLITUDE) * right_ear_volume;
-		}
-		output
-	}
-}
-
-#[must_use]
-fn listener_ear_positions(listener_position: Vec3, listener_orientation: Quat) -> (Vec3, Vec3) {
-	const EAR_DISTANCE: f32 = 0.1;
-	let position = listener_position;
-	let orientation = listener_orientation;
-	let left = position + orientation * (Vec3::NEG_X * EAR_DISTANCE);
-	let right = position + orientation * (Vec3::X * EAR_DISTANCE);
-	(left, right)
-}
-
-#[must_use]
-fn listener_ear_directions(listener_orientation: Quat) -> (Vec3, Vec3) {
-	const EAR_ANGLE_FROM_HEAD: f32 = FRAC_PI_8;
-	let left_ear_direction_relative_to_head =
-		Quat::from_rotation_y(-EAR_ANGLE_FROM_HEAD) * Vec3::NEG_X;
-	let right_ear_direction_relative_to_head = Quat::from_rotation_y(EAR_ANGLE_FROM_HEAD) * Vec3::X;
-	let orientation = listener_orientation;
-	let left = orientation * left_ear_direction_relative_to_head;
-	let right = orientation * right_ear_direction_relative_to_head;
-	(left, right)
-}
-
 command_writers_and_readers! {
 	set_volume: ValueChangeCommand<Decibels>,
-	set_position: ValueChangeCommand<Vec3>,
 	pause: Tween,
 	resume: (StartTime, Tween),
 }

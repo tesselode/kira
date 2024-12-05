@@ -5,7 +5,6 @@ use std::{
 
 use crate::{
 	command::{CommandWriter, ValueChangeCommand},
-	listener::ListenerId,
 	manager::backend::{resources::ResourceController, RendererShared},
 	sound::{Sound, SoundData},
 	track::TrackPlaybackState,
@@ -13,10 +12,7 @@ use crate::{
 	Decibels, PlaySoundError, ResourceLimitReached, StartTime,
 };
 
-use super::{
-	CommandWriters, NonexistentRoute, SendTrackId, SpatialTrackBuilder, SpatialTrackHandle, Track,
-	TrackBuilder, TrackShared,
-};
+use super::{CommandWriters, NonexistentRoute, SendTrackId, Track, TrackBuilder, TrackShared};
 
 /// Controls a mixer track.
 ///
@@ -60,23 +56,6 @@ impl TrackHandle {
 		builder: TrackBuilder,
 	) -> Result<TrackHandle, ResourceLimitReached> {
 		let (mut track, handle) = builder.build(self.renderer_shared.clone());
-		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
-		self.sub_track_controller.insert(track)?;
-		Ok(handle)
-	}
-
-	/// Adds a spatial child track to this track.
-	pub fn add_spatial_sub_track(
-		&mut self,
-		listener: impl Into<ListenerId>,
-		position: impl Into<Value<mint::Vector3<f32>>>,
-		builder: SpatialTrackBuilder,
-	) -> Result<SpatialTrackHandle, ResourceLimitReached> {
-		let (mut track, handle) = builder.build(
-			self.renderer_shared.clone(),
-			listener.into(),
-			position.into().to_(),
-		);
 		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
 		self.sub_track_controller.insert(track)?;
 		Ok(handle)

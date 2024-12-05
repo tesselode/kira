@@ -4,10 +4,7 @@ use crate::{
 	track::{MainTrack, MainTrackBuilder, MainTrackHandle, SendTrack, Track},
 };
 
-use super::{
-	clocks::Clocks, listeners::Listeners, modulators::Modulators, ResourceController,
-	ResourceStorage,
-};
+use super::{clocks::Clocks, modulators::Modulators, ResourceController, ResourceStorage};
 
 pub(crate) struct Mixer {
 	main_track: MainTrack,
@@ -69,30 +66,12 @@ impl Mixer {
 	}
 
 	#[must_use]
-	pub fn process(
-		&mut self,
-		dt: f64,
-		clocks: &Clocks,
-		modulators: &Modulators,
-		listeners: &Listeners,
-	) -> Frame {
+	pub fn process(&mut self, dt: f64, clocks: &Clocks, modulators: &Modulators) -> Frame {
 		let mut main_track_input = Frame::ZERO;
 		for (_, track) in &mut self.sub_tracks {
-			main_track_input += track.process(
-				dt,
-				clocks,
-				modulators,
-				listeners,
-				None,
-				&mut self.send_tracks,
-			);
+			main_track_input += track.process(dt, clocks, modulators, &mut self.send_tracks);
 		}
-		let info = Info::new(
-			&clocks.0.resources,
-			&modulators.0.resources,
-			&listeners.0.resources,
-			None,
-		);
+		let info = Info::new(&clocks.0.resources, &modulators.0.resources);
 		for (_, track) in &mut self.send_tracks {
 			main_track_input += track.process(dt, &info);
 		}

@@ -1,5 +1,4 @@
 pub(crate) mod clocks;
-pub(crate) mod listeners;
 pub(crate) mod mixer;
 pub(crate) mod modulators;
 
@@ -13,11 +12,9 @@ use std::{
 
 use crate::{
 	arena::{Arena, Controller, Key},
-	listener::Listener,
 	track::{MainTrackBuilder, MainTrackHandle, SendTrack, Track},
 	ResourceLimitReached,
 };
-use listeners::Listeners;
 use rtrb::{Consumer, Producer, RingBuffer};
 
 use crate::{clock::Clock, manager::settings::Capacities, modulator::Modulator};
@@ -264,7 +261,6 @@ pub(crate) struct Resources {
 	pub mixer: Mixer,
 	pub clocks: Clocks,
 	pub modulators: Modulators,
-	pub listeners: Listeners,
 }
 
 pub(crate) struct ResourceControllers {
@@ -272,7 +268,6 @@ pub(crate) struct ResourceControllers {
 	pub send_track_controller: ResourceController<SendTrack>,
 	pub clock_controller: ResourceController<Clock>,
 	pub modulator_controller: ResourceController<Box<dyn Modulator>>,
-	pub listener_controller: ResourceController<Listener>,
 	pub main_track_handle: MainTrackHandle,
 }
 
@@ -289,20 +284,17 @@ pub(crate) fn create_resources(
 	);
 	let (clocks, clock_controller) = Clocks::new(capacities.clock_capacity);
 	let (modulators, modulator_controller) = Modulators::new(capacities.modulator_capacity);
-	let (listeners, listener_controller) = Listeners::new(capacities.listener_capacity);
 	(
 		Resources {
 			mixer,
 			clocks,
 			modulators,
-			listeners,
 		},
 		ResourceControllers {
 			sub_track_controller,
 			send_track_controller,
 			clock_controller,
 			modulator_controller,
-			listener_controller,
 			main_track_handle,
 		},
 	)

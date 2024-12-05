@@ -2,8 +2,8 @@
 //!
 //! In order to play audio, you'll need to create an [`AudioManager`].
 //! The [`AudioManager`] keeps track of playing sounds and manages other
-//! resources like clocks, mixer tracks, and spatial scenes. Once the
-//! [`AudioManager`] is dropped, its audio output will be stopped.
+//! resources like clocks and mixer tracks. Once the [`AudioManager`] is
+//! dropped, its audio output will be stopped.
 
 pub mod backend;
 mod settings;
@@ -15,12 +15,10 @@ use std::sync::{atomic::Ordering, Arc};
 
 use crate::{
 	clock::{Clock, ClockHandle, ClockId, ClockSpeed},
-	listener::{Listener, ListenerHandle, ListenerId},
 	modulator::{ModulatorBuilder, ModulatorId},
 	sound::SoundData,
 	track::{
-		MainTrackHandle, SendTrackBuilder, SendTrackHandle, SendTrackId, SpatialTrackBuilder,
-		SpatialTrackHandle, TrackBuilder, TrackHandle,
+		MainTrackHandle, SendTrackBuilder, SendTrackHandle, SendTrackId, TrackBuilder, TrackHandle,
 	},
 	tween::Value,
 	PlaySoundError, ResourceLimitReached,
@@ -127,25 +125,6 @@ impl<B: Backend> AudioManager<B> {
 		Ok(handle)
 	}
 
-	/// Adds a spatial mixer sub-track.
-	pub fn add_spatial_sub_track(
-		&mut self,
-		listener: impl Into<ListenerId>,
-		position: impl Into<Value<mint::Vector3<f32>>>,
-		builder: SpatialTrackBuilder,
-	) -> Result<SpatialTrackHandle, ResourceLimitReached> {
-		let (mut track, handle) = builder.build(
-			self.renderer_shared.clone(),
-			listener.into(),
-			position.into().to_(),
-		);
-		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
-		self.resource_controllers
-			.sub_track_controller
-			.insert(track)?;
-		Ok(handle)
-	}
-
 	/// Creates a mixer send track.
 	pub fn add_send_track(
 		&mut self,
@@ -228,43 +207,6 @@ impl<B: Backend> AudioManager<B> {
 		self.resource_controllers
 			.modulator_controller
 			.insert_with_key(key, modulator);
-		Ok(handle)
-	}
-
-	/**
-	Creates a listener.
-
-	# Examples
-
-	```no_run
-	# use kira::{
-	# 	manager::{
-	# 		AudioManager, AudioManagerSettings,
-	# 		backend::DefaultBackend,
-	# 	},
-	# };
-
-	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	// This example uses `glam`, but you can use any math library that has interoperability
-	// with `mint`.
-	let listener = manager.add_listener(glam::vec3(0.0, 0.0, 0.0), glam::Quat::IDENTITY)?;
-	# Result::<(), Box<dyn std::error::Error>>::Ok(())
-	```
-	*/
-	pub fn add_listener(
-		&mut self,
-		position: impl Into<Value<mint::Vector3<f32>>>,
-		orientation: impl Into<Value<mint::Quaternion<f32>>>,
-	) -> Result<ListenerHandle, ResourceLimitReached> {
-		let key = self
-			.resource_controllers
-			.listener_controller
-			.try_reserve()?;
-		let id = ListenerId(key);
-		let (listener, handle) = Listener::new(id, position.into().to_(), orientation.into().to_());
-		self.resource_controllers
-			.listener_controller
-			.insert_with_key(key, listener);
 		Ok(handle)
 	}
 

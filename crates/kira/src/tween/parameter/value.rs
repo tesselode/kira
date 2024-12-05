@@ -21,8 +21,6 @@ pub enum Value<T> {
 		/// How the modulator's value should be converted to the parameter's value.
 		mapping: Mapping<T>,
 	},
-	/// The distance of the current spatial track to a listener.
-	FromListenerDistance(Mapping<T>),
 }
 
 impl<T> Value<T> {
@@ -44,7 +42,6 @@ impl<T> Value<T> {
 				id,
 				mapping: mapping.to_(),
 			},
-			Value::FromListenerDistance(mapping) => Value::FromListenerDistance(mapping.to_()),
 		}
 	}
 }
@@ -59,9 +56,6 @@ where
 			Value::FromModulator { id, mapping } => {
 				info.modulator_value(id).map(|value| mapping.map(value))
 			}
-			Value::FromListenerDistance(mapping) => info
-				.listener_distance()
-				.map(|value| mapping.map(value.into())),
 		}
 	}
 }
@@ -122,9 +116,6 @@ where
 				id,
 				mapping: mapping.add_output(rhs),
 			},
-			Value::FromListenerDistance(mapping) => {
-				Value::FromListenerDistance(mapping.add_output(rhs))
-			}
 		}
 	}
 }
@@ -143,9 +134,6 @@ where
 				id,
 				mapping: mapping.sub_output(rhs),
 			},
-			Value::FromListenerDistance(mapping) => {
-				Value::FromListenerDistance(mapping.sub_output(rhs))
-			}
 		}
 	}
 }
@@ -164,9 +152,6 @@ where
 				id,
 				mapping: mapping.mul_output(rhs),
 			},
-			Value::FromListenerDistance(mapping) => {
-				Value::FromListenerDistance(mapping.mul_output(rhs))
-			}
 		}
 	}
 }
@@ -185,9 +170,6 @@ where
 				id,
 				mapping: mapping.div_output(rhs),
 			},
-			Value::FromListenerDistance(mapping) => {
-				Value::FromListenerDistance(mapping.div_output(rhs))
-			}
 		}
 	}
 }
@@ -206,9 +188,6 @@ where
 				id,
 				mapping: mapping.rem_output(rhs),
 			},
-			Value::FromListenerDistance(mapping) => {
-				Value::FromListenerDistance(mapping.rem_output(rhs))
-			}
 		}
 	}
 }
@@ -226,9 +205,6 @@ where
 				id,
 				mapping: mapping.neg_output(),
 			},
-			Value::FromListenerDistance(mapping) => {
-				Value::FromListenerDistance(mapping.neg_output())
-			}
 		}
 	}
 }

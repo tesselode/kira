@@ -254,7 +254,6 @@ impl TrackBuilder {
 			effects: self.effects,
 			sends,
 			persist_until_sounds_finish: self.persist_until_sounds_finish,
-			spatial_data: None,
 			playback_state_manager: PlaybackStateManager::new(None),
 		};
 		let handle = TrackHandle {

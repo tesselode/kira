@@ -55,33 +55,20 @@ impl Renderer {
 	pub fn on_start_processing(&mut self) {
 		self.resources.mixer.on_start_processing();
 		self.resources.clocks.on_start_processing();
-		self.resources.listeners.on_start_processing();
 		self.resources.modulators.on_start_processing();
 	}
 
 	/// Produces the next [`Frame`] of audio.
 	#[must_use]
 	pub fn process(&mut self) -> Frame {
-		self.resources.modulators.process(
-			self.dt,
-			&self.resources.clocks,
-			&self.resources.listeners,
-		);
-		self.resources.clocks.update(
-			self.dt,
-			&self.resources.modulators,
-			&self.resources.listeners,
-		);
-		self.resources.listeners.update(
-			self.dt,
-			&self.resources.clocks,
-			&self.resources.modulators,
-		);
-		self.resources.mixer.process(
-			self.dt,
-			&self.resources.clocks,
-			&self.resources.modulators,
-			&self.resources.listeners,
-		)
+		self.resources
+			.modulators
+			.process(self.dt, &self.resources.clocks);
+		self.resources
+			.clocks
+			.update(self.dt, &self.resources.modulators);
+		self.resources
+			.mixer
+			.process(self.dt, &self.resources.clocks, &self.resources.modulators)
 	}
 }

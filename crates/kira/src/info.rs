@@ -5,12 +5,9 @@
  * like [`Sound`](crate::sound::Sound) or [`Effect`](crate::effect::Effect).
  */
 
-use glam::Vec3;
-
 use crate::{
 	arena::Arena,
 	clock::{Clock, ClockId, ClockTime, State as ClockState},
-	listener::{Listener, ListenerId},
 	modulator::{Modulator, ModulatorId},
 };
 
@@ -20,23 +17,12 @@ use crate::{
 /// like [`Sound`](crate::sound::Sound) or [`Effect`](crate::effect::Effect).
 pub struct Info<'a> {
 	kind: InfoKind<'a>,
-	spatial_track_info: Option<SpatialTrackInfo>,
 }
 
 impl<'a> Info<'a> {
-	pub(crate) fn new(
-		clocks: &'a Arena<Clock>,
-		modulators: &'a Arena<Box<dyn Modulator>>,
-		listeners: &'a Arena<Listener>,
-		spatial_track_info: Option<SpatialTrackInfo>,
-	) -> Self {
+	pub(crate) fn new(clocks: &'a Arena<Clock>, modulators: &'a Arena<Box<dyn Modulator>>) -> Self {
 		Self {
-			kind: InfoKind::Real {
-				clocks,
-				modulators,
-				listeners,
-			},
-			spatial_track_info,
+			kind: InfoKind::Real { clocks, modulators },
 		}
 	}
 
@@ -94,34 +80,6 @@ impl<'a> Info<'a> {
 			} => modulator_values.get(id.0).copied(),
 		}
 	}
-
-	/// Gets information about the listener linked to the current spatial track
-	/// if there is one.
-	#[must_use]
-	pub fn listener_info(&self) -> Option<ListenerInfo> {
-		self.spatial_track_info.and_then(|spatial_track_info| {
-			let listener_id = spatial_track_info.listener_id;
-			match &self.kind {
-				InfoKind::Real { listeners, .. } => {
-					listeners.get(listener_id.0).map(|listener| ListenerInfo {
-						position: listener.position.value().into(),
-						orientation: listener.orientation.value().into(),
-					})
-				}
-				InfoKind::Mock { listener_info, .. } => listener_info.get(listener_id.0).copied(),
-			}
-		})
-	}
-
-	/// If this is called from an effect on a spatial track, returns the distance
-	/// of the spatial track's from the spatial track. Otherwise, returns `None`.
-	pub fn listener_distance(&self) -> Option<f32> {
-		self.spatial_track_info.zip(self.listener_info()).map(
-			|(spatial_track_info, listener_info)| {
-				Vec3::from(listener_info.position).distance(spatial_track_info.position)
-			},
-		)
-	}
 }
 
 /// Information about the current state of a [clock](super::clock).
@@ -151,21 +109,10 @@ pub enum WhenToStart {
 	Never,
 }
 
-/// Information about a listener.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct ListenerInfo {
-	/// The position of the listener.
-	pub position: mint::Vector3<f32>,
-	/// The rotation of the listener.
-	pub orientation: mint::Quaternion<f32>,
-}
-
 /// Generates a fake `Info` with arbitrary data. Useful for writing unit tests.
 pub struct MockInfoBuilder {
 	clock_info: Arena<ClockInfo>,
 	modulator_values: Arena<f64>,
-	listener_info: Arena<ListenerInfo>,
-	spatial_track_info: Option<SpatialTrackInfo>,
 }
 
 impl MockInfoBuilder {
@@ -174,8 +121,6 @@ impl MockInfoBuilder {
 		Self {
 			clock_info: Arena::new(100),
 			modulator_values: Arena::new(100),
-			listener_info: Arena::new(100),
-			spatial_track_info: None,
 		}
 	}
 
@@ -216,29 +161,13 @@ impl MockInfoBuilder {
 		id
 	}
 
-	/// Adds a fake listener at the given position and orientation. Returns a fake `ListenerId`.
-	pub fn add_listener(&mut self, listener_info: ListenerInfo) -> ListenerId {
-		let id = ListenerId(
-			self.listener_info
-				.controller()
-				.try_reserve()
-				.expect("listener info arena is full"),
-		);
-		self.listener_info
-			.insert_with_key(id.0, listener_info)
-			.unwrap();
-		id
-	}
-
 	/// Consumes the `MockInfoProvider` and returns a fake `Info`.
 	pub fn build(self) -> Info<'static> {
 		Info {
 			kind: InfoKind::Mock {
 				clock_info: self.clock_info,
 				modulator_values: self.modulator_values,
-				listener_info: self.listener_info,
 			},
-			spatial_track_info: self.spatial_track_info,
 		}
 	}
 }
@@ -253,17 +182,9 @@ enum InfoKind<'a> {
 	Real {
 		clocks: &'a Arena<Clock>,
 		modulators: &'a Arena<Box<dyn Modulator>>,
-		listeners: &'a Arena<Listener>,
 	},
 	Mock {
 		clock_info: Arena<ClockInfo>,
 		modulator_values: Arena<f64>,
-		listener_info: Arena<ListenerInfo>,
 	},
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) struct SpatialTrackInfo {
-	pub position: Vec3,
-	pub listener_id: ListenerId,
 }

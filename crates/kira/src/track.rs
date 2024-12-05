@@ -5,10 +5,6 @@ Kira has an internal mixer which works like a real-life mixing console. Sounds
 can be played on "tracks", which are individual streams of audio that can
 optionally have effects that modify the audio.
 
-Tracks can also be spatialized, which gives them a position in a 3D space
-relative to a [listener](crate::listener). The distance from the listener
-can be used to drive settings on effects on that track.
-
 ## Creating and using tracks
 
 The mixer has a "main" track by default, and you can add any number of
@@ -191,93 +187,6 @@ let enemy_track = manager.add_sub_track(TrackBuilder::new().with_send(&reverb_se
 We can use the second argument of `with_send` to change the volume of the track before sending
 it to the send track. This allows the player and enemy to have different amounts of reverb
 without having to instantiate two separate effects.
-
-## Spatial tracks
-
-Oftentimes, it’s useful to give sounds a location in a 3D (or 2D) space and play back those sounds
-from the perspective of a character’s ears located somewhere else in that space. For example, as a
-player character gets closer to a waterfall, you may want the sound of the waterfall to get louder.
-
-We can use **spatial tracks** as the sound source and [listener](crate::listener)s for the
-character's ears.
-
-First, let's create a listener using
-[`AudioManager::add_listener`](crate::manager::AudioManager::add_listener):
-
-```no_run
-# use std::error::Error;
-use kira::manager::{AudioManager, AudioManagerSettings, DefaultBackend};
-
-let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-let listener = manager.add_listener(glam::Vec3::ZERO, glam::Quat::IDENTITY)?;
-# Result::<(), Box<dyn Error>>::Ok(())
-```
-
-This example uses `glam`, but you can use any math library that has interoperability
-with `mint`.
-
-Next, we'll create a spatial track that's linked to the listener using
-[`AudioManager::add_spatial_sub_track`](crate::manager::AudioManager::add_spatial_sub_track):
-
-```no_run
-# use std::error::Error;
-# use kira::{
-# 	manager::{AudioManager, AudioManagerSettings, DefaultBackend},
-# };
-use kira::track::SpatialTrackBuilder;
-
-# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-# let listener = manager.add_listener(glam::Vec3::ZERO, glam::Quat::IDENTITY)?;
-let spatial_track = manager.add_spatial_sub_track(
-	&listener,
-	glam::vec3(0.0, 0.0, 10.0), // track position
-	SpatialTrackBuilder::new(),
-)?;
-# Result::<(), Box<dyn Error>>::Ok(())
-```
-
-Now any sounds played on the spatial track will automatically have the following behaviors:
-
-- Attenuation: sounds will get quieter the farther away they are from the listener
-- Spatialization: sounds will be panned left or right depending on their direction from
-  the listener
-
-We can customize or disable these behaviors using the methods on [`SpatialTrackBuilder`].
-
-We can also map any effect setting that uses `Value` to the distance between the spatial
-track and the listener using `Value::FromListenerDistance`. One common use for this is to
-change the amount of reverb a sound has based on distance:
-
-```no_run
-# use std::error::Error;
-use kira::{
-	effect::reverb::ReverbBuilder,
-	tween::{Easing, Mapping, Value},
-	Mix,
-};
-# use kira::{
-# 	manager::{AudioManager, AudioManagerSettings, DefaultBackend},
-# 	track::SpatialTrackBuilder,
-# };
-
-# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-# let listener = manager.add_listener(glam::Vec3::ZERO, glam::Quat::IDENTITY)?;
-manager.add_spatial_sub_track(
-	&listener,
-	glam::vec3(0.0, 0.0, 10.0),
-	SpatialTrackBuilder::new().with_effect(ReverbBuilder::new().mix(
-		Value::FromListenerDistance {
-			id: listener.id(),
-			mapping: Mapping {
-				input_range: (0.0, 100.0),
-				output_range: (Mix::DRY, Mix::WET),
-				easing: Easing::Linear,
-			},
-		},
-	)),
-)?;
-# Result::<(), Box<dyn Error>>::Ok(())
-```
 */
 
 mod main;
