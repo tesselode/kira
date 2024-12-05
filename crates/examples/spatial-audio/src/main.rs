@@ -43,14 +43,11 @@ async fn main() {
 			SPATIAL_TRACK_POSITION,
 			SpatialTrackBuilder::new().with_send(
 				&reverb_send,
-				Value::FromListenerDistance {
-					id: listener.id(),
-					mapping: Mapping {
-						input_range: (0.0, 20.0),
-						output_range: (Decibels::SILENCE, Decibels(-6.0)),
-						easing: Easing::Linear,
-					},
-				},
+				Value::FromListenerDistance(Mapping {
+					input_range: (0.0, 20.0),
+					output_range: (Decibels::SILENCE, Decibels(-6.0)),
+					easing: Easing::Linear,
+				}),
 			),
 		)
 		.unwrap();

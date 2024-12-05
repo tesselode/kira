@@ -20,7 +20,7 @@ use crate::{
 /// like [`Sound`](crate::sound::Sound) or [`Effect`](crate::effect::Effect).
 pub struct Info<'a> {
 	kind: InfoKind<'a>,
-	spatial_track_position: Option<Vec3>,
+	spatial_track_info: Option<SpatialTrackInfo>,
 }
 
 impl<'a> Info<'a> {
@@ -28,7 +28,7 @@ impl<'a> Info<'a> {
 		clocks: &'a Arena<Clock>,
 		modulators: &'a Arena<Box<dyn Modulator>>,
 		listeners: &'a Arena<Listener>,
-		spatial_track_position: Option<Vec3>,
+		spatial_track_info: Option<SpatialTrackInfo>,
 	) -> Self {
 		Self {
 			kind: InfoKind::Real {
@@ -36,7 +36,7 @@ impl<'a> Info<'a> {
 				modulators,
 				listeners,
 			},
-			spatial_track_position,
+			spatial_track_info,
 		}
 	}
 
@@ -95,25 +95,30 @@ impl<'a> Info<'a> {
 		}
 	}
 
-	/// Gets information about the listener with the given ID if it
-	/// exists, returns `None` otherwise.
+	/// Gets information about the listener linked to the current spatial track
+	/// if there is one.
 	#[must_use]
-	pub fn listener_info(&self, id: ListenerId) -> Option<ListenerInfo> {
-		match &self.kind {
-			InfoKind::Real { listeners, .. } => listeners.get(id.0).map(|listener| ListenerInfo {
-				position: listener.position.value().into(),
-				orientation: listener.orientation.value().into(),
-			}),
-			InfoKind::Mock { listener_info, .. } => listener_info.get(id.0).copied(),
-		}
+	pub fn listener_info(&self) -> Option<ListenerInfo> {
+		self.spatial_track_info.and_then(|spatial_track_info| {
+			let listener_id = spatial_track_info.listener_id;
+			match &self.kind {
+				InfoKind::Real { listeners, .. } => {
+					listeners.get(listener_id.0).map(|listener| ListenerInfo {
+						position: listener.position.value().into(),
+						orientation: listener.orientation.value().into(),
+					})
+				}
+				InfoKind::Mock { listener_info, .. } => listener_info.get(listener_id.0).copied(),
+			}
+		})
 	}
 
 	/// If this is called from an effect on a spatial track, returns the distance
-	/// of the given listener from the spatial track. Otherwise, returns `None`.
-	pub fn listener_distance(&self, id: ListenerId) -> Option<f32> {
-		self.spatial_track_position.zip(self.listener_info(id)).map(
-			|(spatial_track_position, listener_info)| {
-				Vec3::from(listener_info.position).distance(spatial_track_position)
+	/// of the spatial track's from the spatial track. Otherwise, returns `None`.
+	pub fn listener_distance(&self) -> Option<f32> {
+		self.spatial_track_info.zip(self.listener_info()).map(
+			|(spatial_track_info, listener_info)| {
+				Vec3::from(listener_info.position).distance(spatial_track_info.position)
 			},
 		)
 	}
@@ -160,7 +165,7 @@ pub struct MockInfoBuilder {
 	clock_info: Arena<ClockInfo>,
 	modulator_values: Arena<f64>,
 	listener_info: Arena<ListenerInfo>,
-	spatial_track_position: Option<Vec3>,
+	spatial_track_info: Option<SpatialTrackInfo>,
 }
 
 impl MockInfoBuilder {
@@ -170,7 +175,7 @@ impl MockInfoBuilder {
 			clock_info: Arena::new(100),
 			modulator_values: Arena::new(100),
 			listener_info: Arena::new(100),
-			spatial_track_position: None,
+			spatial_track_info: None,
 		}
 	}
 
@@ -233,7 +238,7 @@ impl MockInfoBuilder {
 				modulator_values: self.modulator_values,
 				listener_info: self.listener_info,
 			},
-			spatial_track_position: self.spatial_track_position,
+			spatial_track_info: self.spatial_track_info,
 		}
 	}
 }
@@ -255,4 +260,10 @@ enum InfoKind<'a> {
 		modulator_values: Arena<f64>,
 		listener_info: Arena<ListenerInfo>,
 	},
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct SpatialTrackInfo {
+	pub position: Vec3,
+	pub listener_id: ListenerId,
 }

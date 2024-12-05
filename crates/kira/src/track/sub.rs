@@ -16,7 +16,7 @@ use crate::{
 	command::ValueChangeCommand,
 	command_writers_and_readers,
 	effect::Effect,
-	info::{Info, ListenerInfo},
+	info::{Info, ListenerInfo, SpatialTrackInfo},
 	listener::ListenerId,
 	manager::backend::resources::{
 		clocks::Clocks, listeners::Listeners, modulators::Modulators, ResourceStorage,
@@ -132,19 +132,22 @@ impl Track {
 		clocks: &Clocks,
 		modulators: &Modulators,
 		listeners: &Listeners,
-		spatial_track_position: Option<Vec3>,
+		parent_spatial_track_info: Option<SpatialTrackInfo>,
 		send_tracks: &mut ResourceStorage<SendTrack>,
 	) -> Frame {
-		let spatial_track_position = self
+		let spatial_track_info = self
 			.spatial_data
 			.as_ref()
-			.map(|spatial_data| spatial_data.position.value())
-			.or(spatial_track_position);
+			.map(|spatial_data| SpatialTrackInfo {
+				position: spatial_data.position.value(),
+				listener_id: spatial_data.listener_id,
+			})
+			.or(parent_spatial_track_info);
 		let info = Info::new(
 			&clocks.0.resources,
 			&modulators.0.resources,
 			&listeners.0.resources,
-			spatial_track_position,
+			spatial_track_info,
 		);
 		self.volume.update(dt, &info);
 		for (_, route) in &mut self.sends {
@@ -166,7 +169,7 @@ impl Track {
 				clocks,
 				modulators,
 				listeners,
-				spatial_track_position,
+				spatial_track_info,
 				send_tracks,
 			);
 		}
@@ -178,7 +181,7 @@ impl Track {
 			if let Some(ListenerInfo {
 				position,
 				orientation,
-			}) = info.listener_info(spatial_data.listener_id)
+			}) = info.listener_info()
 			{
 				output = spatial_data.spatialize(output, position.into(), orientation.into());
 			}
@@ -245,9 +248,12 @@ impl SpatialData {
 			let relative_distance = self.distances.relative_distance(distance);
 			let relative_volume =
 				attenuation_function.apply((1.0 - relative_distance).into()) as f32;
-			let amplitude =
-				Tweenable::interpolate(Decibels::SILENCE, Decibels::IDENTITY, relative_volume.into())
-					.as_amplitude();
+			let amplitude = Tweenable::interpolate(
+				Decibels::SILENCE,
+				Decibels::IDENTITY,
+				relative_volume.into(),
+			)
+			.as_amplitude();
 			output *= amplitude;
 		}
 		// apply spatialization

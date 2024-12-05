@@ -5,7 +5,6 @@ use std::{
 
 use crate::{
 	info::Info,
-	listener::ListenerId,
 	modulator::ModulatorId,
 	tween::{Easing, Tweenable},
 };
@@ -23,12 +22,7 @@ pub enum Value<T> {
 		mapping: Mapping<T>,
 	},
 	/// The distance of the current spatial track to a listener.
-	FromListenerDistance {
-		/// The listener to link to.
-		id: ListenerId,
-		/// How the distance from the listener should be converted to the parameter's value.
-		mapping: Mapping<T>,
-	},
+	FromListenerDistance(Mapping<T>),
 }
 
 impl<T> Value<T> {
@@ -36,15 +30,6 @@ impl<T> Value<T> {
 	#[must_use]
 	pub fn from_modulator(id: impl Into<ModulatorId>, mapping: Mapping<T>) -> Self {
 		Self::FromModulator {
-			id: id.into(),
-			mapping,
-		}
-	}
-
-	/// Creates a `Value::FromListener` from a listener ID or handle.
-	#[must_use]
-	pub fn from_listener_distance(id: impl Into<ListenerId>, mapping: Mapping<T>) -> Self {
-		Self::FromListenerDistance {
 			id: id.into(),
 			mapping,
 		}
@@ -59,10 +44,7 @@ impl<T> Value<T> {
 				id,
 				mapping: mapping.to_(),
 			},
-			Value::FromListenerDistance { id, mapping } => Value::FromListenerDistance {
-				id,
-				mapping: mapping.to_(),
-			},
+			Value::FromListenerDistance(mapping) => Value::FromListenerDistance(mapping.to_()),
 		}
 	}
 }
@@ -77,8 +59,8 @@ where
 			Value::FromModulator { id, mapping } => {
 				info.modulator_value(id).map(|value| mapping.map(value))
 			}
-			Value::FromListenerDistance { id, mapping } => info
-				.listener_distance(id)
+			Value::FromListenerDistance(mapping) => info
+				.listener_distance()
 				.map(|value| mapping.map(value.into())),
 		}
 	}
@@ -140,10 +122,9 @@ where
 				id,
 				mapping: mapping.add_output(rhs),
 			},
-			Value::FromListenerDistance { id, mapping } => Value::FromListenerDistance {
-				id,
-				mapping: mapping.add_output(rhs),
-			},
+			Value::FromListenerDistance(mapping) => {
+				Value::FromListenerDistance(mapping.add_output(rhs))
+			}
 		}
 	}
 }
@@ -162,10 +143,9 @@ where
 				id,
 				mapping: mapping.sub_output(rhs),
 			},
-			Value::FromListenerDistance { id, mapping } => Value::FromListenerDistance {
-				id,
-				mapping: mapping.sub_output(rhs),
-			},
+			Value::FromListenerDistance(mapping) => {
+				Value::FromListenerDistance(mapping.sub_output(rhs))
+			}
 		}
 	}
 }
@@ -184,10 +164,9 @@ where
 				id,
 				mapping: mapping.mul_output(rhs),
 			},
-			Value::FromListenerDistance { id, mapping } => Value::FromListenerDistance {
-				id,
-				mapping: mapping.mul_output(rhs),
-			},
+			Value::FromListenerDistance(mapping) => {
+				Value::FromListenerDistance(mapping.mul_output(rhs))
+			}
 		}
 	}
 }
@@ -206,10 +185,9 @@ where
 				id,
 				mapping: mapping.div_output(rhs),
 			},
-			Value::FromListenerDistance { id, mapping } => Value::FromListenerDistance {
-				id,
-				mapping: mapping.div_output(rhs),
-			},
+			Value::FromListenerDistance(mapping) => {
+				Value::FromListenerDistance(mapping.div_output(rhs))
+			}
 		}
 	}
 }
@@ -228,10 +206,9 @@ where
 				id,
 				mapping: mapping.rem_output(rhs),
 			},
-			Value::FromListenerDistance { id, mapping } => Value::FromListenerDistance {
-				id,
-				mapping: mapping.rem_output(rhs),
-			},
+			Value::FromListenerDistance(mapping) => {
+				Value::FromListenerDistance(mapping.rem_output(rhs))
+			}
 		}
 	}
 }
@@ -249,10 +226,9 @@ where
 				id,
 				mapping: mapping.neg_output(),
 			},
-			Value::FromListenerDistance { id, mapping } => Value::FromListenerDistance {
-				id,
-				mapping: mapping.neg_output(),
-			},
+			Value::FromListenerDistance(mapping) => {
+				Value::FromListenerDistance(mapping.neg_output())
+			}
 		}
 	}
 }
