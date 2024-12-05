@@ -1,5 +1,5 @@
 use kira::{
-	effect::reverb::ReverbBuilder,
+	effect::{filter::FilterBuilder, reverb::ReverbBuilder},
 	manager::{backend::DefaultBackend, AudioManager, AudioManagerSettings},
 	sound::static_sound::StaticSoundData,
 	track::{SendTrackBuilder, SpatialTrackBuilder},
@@ -35,20 +35,30 @@ async fn main() {
 		.add_listener(camera_controller.position, camera_controller.orientation())
 		.unwrap();
 	let reverb_send = audio_manager
-		.add_send_track(SendTrackBuilder::new().with_effect(ReverbBuilder::new().mix(Mix::WET)))
+		.add_send_track(
+			SendTrackBuilder::new().with_effect(ReverbBuilder::new().mix(Mix::WET).damping(0.5)),
+		)
 		.unwrap();
 	let mut spatial_track = audio_manager
 		.add_spatial_sub_track(
 			&listener,
 			SPATIAL_TRACK_POSITION,
-			SpatialTrackBuilder::new().with_send(
-				&reverb_send,
-				Value::FromListenerDistance(Mapping {
-					input_range: (0.0, 20.0),
-					output_range: (Decibels::SILENCE, Decibels(-6.0)),
-					easing: Easing::Linear,
-				}),
-			),
+			SpatialTrackBuilder::new()
+				.with_effect(
+					FilterBuilder::new().cutoff(Value::FromListenerDistance(Mapping {
+						input_range: (0.0, 100.0),
+						output_range: (18000.0, 2000.0),
+						easing: Easing::Linear,
+					})),
+				)
+				.with_send(
+					&reverb_send,
+					Value::FromListenerDistance(Mapping {
+						input_range: (0.0, 100.0),
+						output_range: (Decibels(-12.0), Decibels(24.0)),
+						easing: Easing::Linear,
+					}),
+				),
 		)
 		.unwrap();
 	spatial_track
