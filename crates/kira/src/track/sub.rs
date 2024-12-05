@@ -176,6 +176,9 @@ impl Track {
 		for (_, sound) in &mut self.sounds {
 			output += sound.process(dt, &info);
 		}
+		for effect in &mut self.effects {
+			output = effect.process(output, dt, &info);
+		}
 		if let Some(spatial_data) = &mut self.spatial_data {
 			spatial_data.position.update(dt, &info);
 			if let Some(ListenerInfo {
@@ -186,17 +189,14 @@ impl Track {
 				output = spatial_data.spatialize(output, position.into(), orientation.into());
 			}
 		}
-		for effect in &mut self.effects {
-			output = effect.process(output, dt, &info);
-		}
+		output *= self.volume.value().as_amplitude()
+			* self.playback_state_manager.fade_volume().as_amplitude();
 		for (send_track_id, SendTrackRoute { volume, .. }) in &self.sends {
 			let Some(send_track) = send_tracks.get_mut(send_track_id.0) else {
 				continue;
 			};
 			send_track.add_input(output * volume.value().as_amplitude());
 		}
-		output *= self.volume.value().as_amplitude()
-			* self.playback_state_manager.fade_volume().as_amplitude();
 		output
 	}
 
