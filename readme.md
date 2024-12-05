@@ -1,6 +1,6 @@
 # Kira
 
-#### [crates.io](https://crates.io/crates/kira) | [docs](https://docs.rs/kira/) | [examples](https://github.com/tesselode/kira-examples)
+#### [crates.io](https://crates.io/crates/kira) | [docs](https://docs.rs/kira/)
 
 Kira is a backend-agnostic library to create expressive audio for games. It
 provides tweens for smoothly adjusting properties of sounds, a flexible mixer
