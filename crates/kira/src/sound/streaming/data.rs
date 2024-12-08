@@ -320,6 +320,14 @@ impl<Error: Send> StreamingSoundData<Error> {
 		Duration::from_secs_f64(self.num_frames() as f64 / self.decoder.sample_rate() as f64)
 	}
 
+	/// Returns the total duration of the audio, regardless of its slice.
+	#[must_use]
+	pub fn total_duration(&self) -> Duration {
+		Duration::from_secs_f64(
+			self.decoder.num_frames() as f64 / self.decoder.sample_rate() as f64,
+		)
+	}
+
 	/**
 	Sets the portion of the audio this [`StreamingSoundData`] represents.
 	*/

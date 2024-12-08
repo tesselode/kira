@@ -344,6 +344,12 @@ impl StaticSoundData {
 		Duration::from_secs_f64(self.num_frames() as f64 / self.sample_rate as f64)
 	}
 
+	/// Returns the total duration of the audio, regardless of its slice.
+	#[must_use]
+	pub fn total_duration(&self) -> Duration {
+		Duration::from_secs_f64(self.frames.len() as f64 / self.sample_rate as f64)
+	}
+
 	/// Returns the nth [`Frame`] of audio in the [`StaticSoundData`].
 	///
 	/// If [`StaticSoundData::slice`] is `Some`, this will behave as if the [`StaticSoundData`]
