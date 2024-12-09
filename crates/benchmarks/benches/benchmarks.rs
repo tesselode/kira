@@ -1,7 +1,7 @@
 use std::{f32::consts::TAU, sync::Arc};
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use kira::{
+use kira_old::{
 	manager::{
 		backend::mock::{MockBackend, MockBackendSettings},
 		AudioManager, AudioManagerSettings, Capacities,

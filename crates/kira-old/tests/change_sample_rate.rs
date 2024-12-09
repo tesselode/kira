@@ -3,7 +3,7 @@ use std::sync::{
 	Arc,
 };
 
-use kira::{
+use kira_old::{
 	effect::{Effect, EffectBuilder},
 	info::Info,
 	manager::{

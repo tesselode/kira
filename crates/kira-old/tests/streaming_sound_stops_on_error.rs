@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use kira::{
+use kira_old::{
 	manager::{backend::mock::MockBackend, AudioManager, AudioManagerSettings},
 	sound::{
 		streaming::{Decoder, StreamingSoundData},

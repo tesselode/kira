@@ -1,5 +1,5 @@
 [package]
-name = "kira"
+name = "kira-old"
 version = "0.9.6"
 authors = ["Andrew Minnich <aminnich3@gmail.com>"]
 edition = "2021"

@@ -1,6 +1,6 @@
 use std::{error::Error, io::stdin};
 
-use kira::{
+use kira_old::{
 	manager::{backend::DefaultBackend, AudioManager, AudioManagerSettings},
 	modulator::lfo::LfoBuilder,
 	sound::static_sound::StaticSoundData,

@@ -1,4 +1,4 @@
-use kira::{
+use kira_old::{
 	effect::{filter::FilterBuilder, reverb::ReverbBuilder},
 	manager::{backend::DefaultBackend, AudioManager, AudioManagerSettings},
 	sound::static_sound::StaticSoundData,

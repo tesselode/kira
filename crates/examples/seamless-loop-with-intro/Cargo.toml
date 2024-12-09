@@ -4,4 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-kira = { path = "../../kira" }
+kira-old = { path = "../../kira-old" }

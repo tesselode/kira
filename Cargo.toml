@@ -1,6 +1,6 @@
 [workspace]
 members = [
-	"crates/kira",
+	"crates/kira-old",
 	"crates/benchmarks",
 	"crates/examples/dynamic-music",
 	"crates/examples/ghost-noise",

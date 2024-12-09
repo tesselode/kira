@@ -1,6 +1,6 @@
 use std::{error::Error, io::stdin, time::Duration};
 
-use kira::{
+use kira_old::{
 	effect::{filter::FilterBuilder, reverb::ReverbBuilder},
 	manager::{backend::DefaultBackend, AudioManager, AudioManagerSettings},
 	modulator::tweener::TweenerBuilder,
@@ -40,8 +40,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 	let common_sound_settings =
 		StaticSoundSettings::new().loop_region(music_duration / 2.0..music_duration);
 	// load the sounds, linking the volumes to the tweener when appropriate
-	let arp =
-		StaticSoundData::from_file("crates/examples/assets/dynamic/arp.ogg")?.with_settings(common_sound_settings);
+	let arp = StaticSoundData::from_file("crates/examples/assets/dynamic/arp.ogg")?
+		.with_settings(common_sound_settings);
 	let bass = StaticSoundData::from_file("crates/examples/assets/dynamic/bass.ogg")?
 		.with_settings(common_sound_settings)
 		.volume(Value::from_modulator(
@@ -62,8 +62,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 				easing: Easing::Linear,
 			},
 		));
-	let lead =
-		StaticSoundData::from_file("crates/examples/assets/dynamic/lead.ogg")?.with_settings(common_sound_settings);
+	let lead = StaticSoundData::from_file("crates/examples/assets/dynamic/lead.ogg")?
+		.with_settings(common_sound_settings);
 	let pad = StaticSoundData::from_file("crates/examples/assets/dynamic/pad.ogg")?
 		.with_settings(common_sound_settings)
 		.volume(Value::from_modulator(

@@ -1,6 +1,6 @@
 use std::{error::Error, io::stdin, time::Duration};
 
-use kira::{
+use kira_old::{
 	clock::{ClockSpeed, ClockTime},
 	manager::{backend::DefaultBackend, AudioManager, AudioManagerSettings},
 	sound::static_sound::StaticSoundData,

@@ -7,7 +7,7 @@
 /// Otherwise the test is incorrect.
 ///
 /// In the current setting we expect a tick every 24000 frames.
-use kira::{
+use kira_old::{
 	clock::{ClockHandle, ClockSpeed, ClockTime},
 	effect::{Effect, EffectBuilder},
 	info::{Info, WhenToStart},
