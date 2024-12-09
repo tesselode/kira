@@ -12,7 +12,7 @@ impl Sounds {
 	}
 
 	pub(crate) fn on_start_processing(&mut self) {
-		self.0.remove_and_add(|sound| false);
+		self.0.remove_and_add(|sound| sound.finished());
 		for (_, sound) in &mut self.0 {
 			sound.on_start_processing();
 		}

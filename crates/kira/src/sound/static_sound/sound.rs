@@ -1,17 +1,19 @@
-use std::f64::consts::TAU;
-
-use crate::{sound::Sound, Frame, INTERNAL_BUFFER_SIZE};
+use crate::{
+	sound::{transport::Transport, Sound},
+	Frame, INTERNAL_BUFFER_SIZE,
+};
 
 use super::StaticSoundData;
 
 pub struct StaticSound {
 	data: StaticSoundData,
-	phase: f64,
+	transport: Transport,
 }
 
 impl StaticSound {
 	pub fn new(data: StaticSoundData) -> Self {
-		Self { data, phase: 0.0 }
+		let transport = Transport::new(0, false, data.num_frames());
+		Self { data, transport }
 	}
 }
 
@@ -23,15 +25,16 @@ impl Sound for StaticSound {
 	fn process(&mut self) -> [Frame; INTERNAL_BUFFER_SIZE] {
 		let mut frames = [Frame::ZERO; INTERNAL_BUFFER_SIZE];
 		for frame in &mut frames {
-			let out = Frame::from_mono(0.25 * (self.phase * TAU).sin() as f32);
-			self.phase += 440.0 / self.sample_rate() as f64;
-			self.phase %= 1.0;
-			*frame = out;
+			*frame = self
+				.data
+				.frame_at_index(self.transport.position)
+				.unwrap_or_default();
+			self.transport.increment_position(self.data.num_frames());
 		}
 		frames
 	}
 
 	fn finished(&self) -> bool {
-		false
+		!self.transport.playing
 	}
 }

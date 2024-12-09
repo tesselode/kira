@@ -3,6 +3,7 @@ mod error;
 pub mod static_sound;
 #[cfg(feature = "symphonia")]
 mod symphonia;
+mod transport;
 
 pub use error::*;
 
