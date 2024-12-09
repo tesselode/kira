@@ -6,7 +6,7 @@ use crate::{
 	backend::{Backend, DefaultBackend},
 	renderer::Renderer,
 	resources::{create_resources, ResourceControllers},
-	sound::SoundData,
+	sound::{wrapper::SoundWrapper, SoundData},
 	PlaySoundError,
 };
 
@@ -38,7 +38,7 @@ impl<B: Backend> AudioManager<B> {
 			.map_err(PlaySoundError::IntoSoundError)?;
 		self.resource_controllers
 			.sound_controller
-			.insert(sound)
+			.insert(SoundWrapper::new(sound))
 			.map_err(|_| PlaySoundError::SoundLimitReached)?;
 		Ok(handle)
 	}

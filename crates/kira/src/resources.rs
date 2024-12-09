@@ -10,7 +10,7 @@ use sounds::Sounds;
 
 use crate::{
 	arena::{Arena, Controller, Key},
-	sound::Sound,
+	sound::{wrapper::SoundWrapper, Sound},
 	ResourceLimitReached,
 };
 
@@ -19,7 +19,7 @@ pub(crate) struct Resources {
 }
 
 pub(crate) struct ResourceControllers {
-	pub sound_controller: ResourceController<Box<dyn Sound>>,
+	pub sound_controller: ResourceController<SoundWrapper>,
 }
 
 pub(crate) fn create_resources(sample_rate: u32) -> (Resources, ResourceControllers) {

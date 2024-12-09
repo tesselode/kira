@@ -5,6 +5,7 @@ pub mod static_sound;
 #[cfg(feature = "symphonia")]
 mod symphonia;
 mod transport;
+pub(crate) mod wrapper;
 
 use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
 
