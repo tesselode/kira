@@ -23,7 +23,7 @@ pub(crate) struct ResourceControllers {
 }
 
 pub(crate) fn create_resources(sample_rate: u32) -> (Resources, ResourceControllers) {
-	let (sounds, sound_controller) = Sounds::new(100);
+	let (sounds, sound_controller) = Sounds::new(5000);
 	(
 		Resources { sounds },
 		ResourceControllers { sound_controller },

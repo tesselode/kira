@@ -1,13 +1,10 @@
 use std::{f32::consts::TAU, sync::Arc};
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use kira_old::{
-	manager::{
-		backend::mock::{MockBackend, MockBackendSettings},
-		AudioManager, AudioManagerSettings, Capacities,
-	},
+use kira::{
+	backend::mock::{MockBackend, MockBackendSettings},
+	manager::{AudioManager, AudioManagerSettings, Capacities},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
-	track::MainTrackBuilder,
 	Frame,
 };
 
@@ -31,7 +28,7 @@ fn sounds(c: &mut Criterion) {
 	// a simple test case where many sounds are being played at once
 	c.bench_function("simple", |b| {
 		const SAMPLE_RATE: u32 = 48_000;
-		const NUM_SOUNDS: u16 = 50_000;
+		const NUM_SOUNDS: u16 = 5_000;
 		let mut manager = AudioManager::<MockBackend>::new(AudioManagerSettings {
 			capacities: Capacities {
 				command_capacity: NUM_SOUNDS as usize,
@@ -40,7 +37,6 @@ fn sounds(c: &mut Criterion) {
 			backend_settings: MockBackendSettings {
 				sample_rate: SAMPLE_RATE,
 			},
-			main_track_builder: MainTrackBuilder::new().sound_capacity(NUM_SOUNDS),
 		})
 		.unwrap();
 		let sound_data = create_test_sound(SAMPLE_RATE as usize);
@@ -56,7 +52,7 @@ fn sounds(c: &mut Criterion) {
 	// impact on the performance
 	c.bench_function("with on_start_processing callback", |b| {
 		const SAMPLE_RATE: u32 = 48_000;
-		const NUM_SOUNDS: u16 = 50_000;
+		const NUM_SOUNDS: u16 = 5_000;
 		let mut manager = AudioManager::<MockBackend>::new(AudioManagerSettings {
 			capacities: Capacities {
 				command_capacity: NUM_SOUNDS as usize,
@@ -65,7 +61,6 @@ fn sounds(c: &mut Criterion) {
 			backend_settings: MockBackendSettings {
 				sample_rate: SAMPLE_RATE,
 			},
-			main_track_builder: MainTrackBuilder::new().sound_capacity(NUM_SOUNDS),
 		})
 		.unwrap();
 		let sound_data = create_test_sound(SAMPLE_RATE as usize);

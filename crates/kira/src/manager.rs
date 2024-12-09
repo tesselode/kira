@@ -42,4 +42,10 @@ impl<B: Backend> AudioManager<B> {
 			.map_err(|_| PlaySoundError::SoundLimitReached)?;
 		Ok(handle)
 	}
+
+	/// Returns a mutable reference to this manager's backend.
+	#[must_use]
+	pub fn backend_mut(&mut self) -> &mut B {
+		&mut self.backend
+	}
 }

@@ -1,5 +1,5 @@
-mod cpal;
-mod mock;
+pub mod cpal;
+pub mod mock;
 
 use crate::renderer::Renderer;
 
