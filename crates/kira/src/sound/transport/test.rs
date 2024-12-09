@@ -4,7 +4,7 @@ use super::Transport;
 fn stops_at_end() {
 	let mut transport = Transport {
 		position: 2,
-		// loop_region: None,
+		loop_region: None,
 		playing: true,
 	};
 	for i in 2..4 {
@@ -20,7 +20,7 @@ fn stops_at_end() {
 fn stops_at_start_when_playing_backwards() {
 	let mut transport = Transport {
 		position: 2,
-		// loop_region: None,
+		loop_region: None,
 		playing: true,
 	};
 	for i in (0..=2).rev() {
@@ -32,7 +32,7 @@ fn stops_at_start_when_playing_backwards() {
 	assert!(!transport.playing);
 }
 
-/* #[test]
+#[test]
 fn loops() {
 	let mut transport = Transport {
 		position: 0,
@@ -97,11 +97,11 @@ fn seek_loop_wrapping() {
 	assert_eq!(transport.position, 4);
 	transport.seek_to(0, 10);
 	assert_eq!(transport.position, 3);
-} */
+}
 
 #[test]
 fn seek_out_of_bounds() {
-	let mut transport = Transport::new(5, /* None, */ false, /* 1, */ 10);
+	let mut transport = Transport::new(5, None, false, 1, 10);
 	transport.seek_to(10, 10);
 	assert!(!transport.playing);
 }

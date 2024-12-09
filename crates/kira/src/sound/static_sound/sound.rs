@@ -12,7 +12,13 @@ pub struct StaticSound {
 
 impl StaticSound {
 	pub fn new(data: StaticSoundData) -> Self {
-		let transport = Transport::new(0, false, data.num_frames());
+		let transport = Transport::new(
+			0,
+			data.settings.loop_region,
+			false,
+			data.sample_rate,
+			data.num_frames(),
+		);
 		Self { data, transport }
 	}
 }

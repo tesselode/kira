@@ -2,7 +2,9 @@ use std::io::Cursor;
 
 use symphonia::core::io::{MediaSource, MediaSourceStream};
 
-use crate::sound::{symphonia::load_frames_from_buffer_ref, FromFileError};
+use crate::sound::{
+	static_sound::StaticSoundSettings, symphonia::load_frames_from_buffer_ref, FromFileError,
+};
 
 use super::StaticSoundData;
 
@@ -72,6 +74,7 @@ impl StaticSoundData {
 		Ok(Self {
 			sample_rate,
 			frames: frames.into(),
+			settings: StaticSoundSettings::default(),
 			slice: None,
 		})
 	}
