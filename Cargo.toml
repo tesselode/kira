@@ -1,5 +1,6 @@
 [workspace]
 members = [
+	"crates/kira",
 	"crates/kira-old",
 	"crates/benchmarks",
 	"crates/examples/dynamic-music",
@@ -8,6 +9,6 @@ members = [
 	"crates/examples/score-counter",
 	"crates/examples/seamless-loop-with-intro",
 	"crates/examples/simple-sound-playback",
-	"crates/examples/spatial-audio",
+	"crates/examples/spatial-audio", "crates/examples/new-test",
 ]
 resolver = "2"
