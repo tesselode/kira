@@ -3,10 +3,13 @@ use std::{error::Error, io::stdin};
 use kira::{
 	backend::DefaultBackend,
 	manager::{AudioManager, AudioManagerSettings},
+	sound::static_sound::StaticSoundData,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
-	let _manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let sound_data = StaticSoundData::from_file("crates/examples/assets/blip.ogg")?;
+	manager.play(sound_data)?;
 
 	wait_for_enter_press()?;
 

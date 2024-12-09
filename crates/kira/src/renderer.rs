@@ -1,17 +1,15 @@
-use std::f64::consts::TAU;
-
-use crate::{Frame, INTERNAL_BUFFER_SIZE};
+use crate::{resources::Resources, Frame, INTERNAL_BUFFER_SIZE};
 
 pub struct Renderer {
 	dt: f64,
-	phase: f64,
+	resources: Resources,
 }
 
 impl Renderer {
-	pub fn new(sample_rate: u32) -> Self {
+	pub fn new(sample_rate: u32, resources: Resources) -> Self {
 		Self {
 			dt: 1.0 / sample_rate as f64,
-			phase: 0.0,
+			resources,
 		}
 	}
 
@@ -23,16 +21,11 @@ impl Renderer {
 
 	/// Called by the backend when it's time to process
 	/// a new batch of samples.
-	pub fn on_start_processing(&mut self) {}
+	pub fn on_start_processing(&mut self) {
+		self.resources.sounds.on_start_processing();
+	}
 
 	pub fn process(&mut self) -> [Frame; INTERNAL_BUFFER_SIZE] {
-		let mut frames = [Frame::ZERO; INTERNAL_BUFFER_SIZE];
-		for frame in &mut frames {
-			let out = Frame::from_mono(0.25 * (self.phase * TAU).sin() as f32);
-			self.phase += 440.0 * self.dt;
-			self.phase %= 1.0;
-			*frame = out;
-		}
-		frames
+		self.resources.sounds.process(self.dt)
 	}
 }
