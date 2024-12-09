@@ -51,7 +51,7 @@ pub trait Sound: Send {
 	///
 	/// `dt` is the time that's elapsed since the previous round of
 	/// processing (in seconds).
-	fn process(&mut self) -> [Frame; INTERNAL_BUFFER_SIZE];
+	fn process(&mut self) -> Frame;
 
 	/// Returns `true` if the sound is finished and can be unloaded.
 	///

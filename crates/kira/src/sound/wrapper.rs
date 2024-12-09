@@ -4,8 +4,6 @@ use super::Sound;
 
 pub struct SoundWrapper {
 	sound: Box<dyn Sound>,
-	chunk: [Frame; INTERNAL_BUFFER_SIZE],
-	chunk_frame_index: usize,
 	resample_buffer: [Frame; 4],
 	fractional_position: f64,
 }
@@ -14,8 +12,6 @@ impl SoundWrapper {
 	pub fn new(sound: Box<dyn Sound>) -> Self {
 		Self {
 			sound,
-			chunk: [Frame::ZERO; INTERNAL_BUFFER_SIZE],
-			chunk_frame_index: 0,
 			resample_buffer: [Frame::ZERO; 4],
 			fractional_position: 0.0,
 		}
@@ -32,7 +28,7 @@ impl SoundWrapper {
 			self.fractional_position += self.sound.sample_rate() as f64 * dt;
 			while self.fractional_position >= 1.0 {
 				self.fractional_position -= 1.0;
-				let next_frame = self.next_frame();
+				let next_frame = self.sound.process();
 				self.push_to_resample_buffer(next_frame);
 			}
 		}
@@ -66,15 +62,5 @@ impl SoundWrapper {
 			self.resample_buffer[i] = self.resample_buffer[i + 1];
 		}
 		self.resample_buffer[self.resample_buffer.len() - 1] = frame;
-	}
-
-	fn next_frame(&mut self) -> Frame {
-		if self.chunk_frame_index == 0 {
-			self.chunk = self.sound.process();
-		}
-		let frame = self.chunk[self.chunk_frame_index];
-		self.chunk_frame_index += 1;
-		self.chunk_frame_index %= INTERNAL_BUFFER_SIZE;
-		frame
 	}
 }

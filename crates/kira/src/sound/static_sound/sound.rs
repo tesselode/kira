@@ -1,6 +1,6 @@
 use crate::{
 	sound::{transport::Transport, Sound},
-	Frame, INTERNAL_BUFFER_SIZE,
+	Frame,
 };
 
 use super::StaticSoundData;
@@ -28,16 +28,13 @@ impl Sound for StaticSound {
 		self.data.sample_rate
 	}
 
-	fn process(&mut self) -> [Frame; INTERNAL_BUFFER_SIZE] {
-		let mut frames = [Frame::ZERO; INTERNAL_BUFFER_SIZE];
-		for frame in &mut frames {
-			*frame = self
-				.data
-				.frame_at_index(self.transport.position)
-				.unwrap_or_default();
-			self.transport.increment_position(self.data.num_frames());
-		}
-		frames
+	fn process(&mut self) -> Frame {
+		let frame = self
+			.data
+			.frame_at_index(self.transport.position)
+			.unwrap_or_default();
+		self.transport.increment_position(self.data.num_frames());
+		frame
 	}
 
 	fn finished(&self) -> bool {
