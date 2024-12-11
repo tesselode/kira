@@ -1,19 +1,15 @@
-use std::f32::consts::TAU;
-
-use crate::{sound::Sound, Frame};
-
-const INTERNAL_BUFFER_SIZE: usize = 128;
+use crate::{resources::Resources, Frame, INTERNAL_BUFFER_SIZE};
 
 pub struct Renderer {
 	dt: f64,
-	sound: Sine,
+	resources: Resources,
 }
 
 impl Renderer {
-	pub fn new(sample_rate: u32) -> Self {
+	pub(crate) fn new(sample_rate: u32, resources: Resources) -> Self {
 		Self {
 			dt: 1.0 / sample_rate as f64,
-			sound: Sine::new(),
+			resources,
 		}
 	}
 
@@ -21,7 +17,9 @@ impl Renderer {
 		self.dt = 1.0 / sample_rate as f64;
 	}
 
-	pub fn on_start_processing(&mut self) {}
+	pub fn on_start_processing(&mut self) {
+		self.resources.sounds.on_start_processing();
+	}
 
 	pub fn process(&mut self, out: &mut [f32], num_channels: u16) {
 		for chunk in out.chunks_mut(INTERNAL_BUFFER_SIZE * num_channels as usize) {
@@ -32,7 +30,9 @@ impl Renderer {
 	fn process_chunk(&mut self, chunk: &mut [f32], num_channels: u16) {
 		let mut frames = [Frame::ZERO; INTERNAL_BUFFER_SIZE];
 		let num_frames = chunk.len() / num_channels as usize;
-		self.sound.process(&mut frames[0..num_frames], self.dt);
+		self.resources
+			.sounds
+			.process(&mut frames[..num_frames], self.dt);
 		for (i, channels) in chunk.chunks_mut(num_channels.into()).enumerate() {
 			let frame = frames[i];
 			if num_channels == 1 {
@@ -50,29 +50,5 @@ impl Renderer {
 				}
 			}
 		}
-	}
-}
-
-pub struct Sine {
-	phase: f32,
-}
-
-impl Sine {
-	pub fn new() -> Self {
-		Self { phase: 0.0 }
-	}
-}
-
-impl Sound for Sine {
-	fn process(&mut self, out: &mut [Frame], dt: f64) {
-		for frame in out {
-			*frame = Frame::from_mono(0.1 * (self.phase * TAU).sin());
-			self.phase += 440.0 * dt as f32;
-			self.phase %= 1.0;
-		}
-	}
-
-	fn finished(&self) -> bool {
-		false
 	}
 }

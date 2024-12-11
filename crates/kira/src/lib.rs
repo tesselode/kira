@@ -7,12 +7,18 @@
 // #![warn(missing_docs)]
 #![allow(clippy::tabs_in_doc_comments)]
 
+const INTERNAL_BUFFER_SIZE: usize = 128;
+
+mod arena;
 pub mod backend;
+mod error;
 mod frame;
 pub mod manager;
 mod panning;
 pub mod renderer;
+mod resources;
 pub mod sound;
 
+pub use error::*;
 pub use frame::*;
 pub use panning::*;
