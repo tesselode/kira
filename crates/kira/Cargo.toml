@@ -1,0 +1,36 @@
+[package]
+name = "kira"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+assert_no_alloc = { version = "1.1.2", optional = true }
+rtrb = "0.3.1"
+serde = { version = "1.0.164", features = ["derive"], optional = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies.cpal]
+version = "0.15.1"
+optional = true
+
+[target.'cfg(target_arch = "wasm32")'.dependencies.cpal]
+version = "0.15.1"
+optional = true
+features = ["wasm-bindgen"]
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+send_wrapper = "0.6.0"
+
+[features]
+default = ["cpal"]
+# mp3 = ["symphonia", "symphonia/mp3"]
+# ogg = ["symphonia", "symphonia/ogg", "symphonia/vorbis"]
+# flac = ["symphonia", "symphonia/flac"]
+# wav = ["symphonia", "symphonia/wav", "symphonia/pcm"]
+android_shared_stdcxx = ["cpal/oboe-shared-stdcxx"]
+
+# docs.rs-specific configuration
+[package.metadata.docs.rs]
+# document all features
+all-features = true
+# defines the configuration attribute `docsrs`
+rustdoc-args = ["--cfg", "docsrs"]
