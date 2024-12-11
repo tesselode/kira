@@ -1,7 +1,0 @@
-[package]
-name = "score-counter"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-kira = { path = "../../kira" }

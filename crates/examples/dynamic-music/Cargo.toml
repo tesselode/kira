@@ -1,7 +1,0 @@
-[package]
-name = "dynamic-music"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-kira = { path = "../../kira" }
