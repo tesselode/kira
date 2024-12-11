@@ -12,6 +12,7 @@ mod frame;
 pub mod manager;
 mod panning;
 pub mod renderer;
+pub mod sound;
 
 pub use frame::*;
 pub use panning::*;
