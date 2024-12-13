@@ -20,6 +20,7 @@ impl Renderer {
 	pub fn on_start_processing(&mut self) {
 		self.resources.clocks.on_start_processing();
 		self.resources.sounds.on_start_processing();
+		self.resources.modulators.on_start_processing();
 	}
 
 	pub fn process(&mut self, out: &mut [f32], num_channels: u16) {
@@ -30,14 +31,23 @@ impl Renderer {
 
 	fn process_chunk(&mut self, chunk: &mut [f32], num_channels: u16) {
 		let num_frames = chunk.len() / num_channels as usize;
+
+		// update modulation sources (one frame at a time so they can react
+		// to each other sample-accurately)
 		self.resources.clocks.reset_buffers();
+		self.resources.modulators.reset_buffers();
 		for _ in 0..num_frames {
 			self.resources.clocks.update(self.dt);
+			self.resources.modulators.update(self.dt);
 		}
+
+		// process sounds in chunks
 		let mut frames = [Frame::ZERO; INTERNAL_BUFFER_SIZE];
 		self.resources
 			.sounds
 			.process(&mut frames[..num_frames], self.dt);
+
+		// convert from frames to requested number of channels
 		for (i, channels) in chunk.chunks_mut(num_channels.into()).enumerate() {
 			let frame = frames[i];
 			if num_channels == 1 {

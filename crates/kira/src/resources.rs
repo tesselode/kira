@@ -1,4 +1,5 @@
 pub(crate) mod clocks;
+pub(crate) mod modulators;
 pub(crate) mod sounds;
 
 use std::{
@@ -7,6 +8,7 @@ use std::{
 };
 
 use clocks::{buffered_clock::BufferedClock, Clocks};
+use modulators::{buffered_modulator::BufferedModulator, Modulators};
 use rtrb::{Consumer, Producer, RingBuffer};
 use sounds::Sounds;
 
@@ -23,11 +25,17 @@ pub(crate) fn create_resources(
 ) -> (Resources, ResourceControllers) {
 	let (sounds, sound_controller) = Sounds::new(5000);
 	let (clocks, clock_controller) = Clocks::new(capacities.clock_capacity);
+	let (modulators, modulator_controller) = Modulators::new(capacities.modulator_capacity);
 	(
-		Resources { sounds, clocks },
+		Resources {
+			sounds,
+			clocks,
+			modulators,
+		},
 		ResourceControllers {
 			sound_controller,
 			clock_controller,
+			modulator_controller,
 		},
 	)
 }
@@ -35,11 +43,13 @@ pub(crate) fn create_resources(
 pub(crate) struct Resources {
 	pub sounds: Sounds,
 	pub clocks: Clocks,
+	pub modulators: Modulators,
 }
 
 pub(crate) struct ResourceControllers {
 	pub sound_controller: ResourceController<Box<dyn Sound>>,
 	pub clock_controller: ResourceController<BufferedClock>,
+	pub modulator_controller: ResourceController<BufferedModulator>,
 }
 
 pub(crate) struct ResourceStorage<T> {

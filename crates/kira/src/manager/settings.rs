@@ -31,10 +31,15 @@ where
 pub struct Capacities {
 	/// The maximum number of clocks that can exist at a time.
 	pub clock_capacity: u16,
+	/// The maximum number of modulators that can exist at a time.
+	pub modulator_capacity: u16,
 }
 
 impl Default for Capacities {
 	fn default() -> Self {
-		Self { clock_capacity: 8 }
+		Self {
+			clock_capacity: 8,
+			modulator_capacity: 16,
+		}
 	}
 }

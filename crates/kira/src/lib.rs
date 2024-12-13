@@ -16,6 +16,7 @@ pub mod command;
 mod error;
 mod frame;
 pub mod manager;
+pub mod modulator;
 mod panning;
 pub mod renderer;
 mod resources;

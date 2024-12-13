@@ -5,8 +5,12 @@ pub use settings::*;
 use crate::{
 	backend::{Backend, DefaultBackend},
 	clock::{Clock, ClockHandle, ClockId, ClockSpeed},
+	modulator::{ModulatorBuilder, ModulatorId},
 	renderer::Renderer,
-	resources::{clocks::buffered_clock::BufferedClock, create_resources, ResourceControllers},
+	resources::{
+		clocks::buffered_clock::BufferedClock, create_resources,
+		modulators::buffered_modulator::BufferedModulator, ResourceControllers,
+	},
 	sound::SoundData,
 	PlaySoundError, ResourceLimitReached,
 };
@@ -49,6 +53,22 @@ impl<B: Backend> AudioManager<B> {
 		self.resource_controllers
 			.clock_controller
 			.insert_with_key(key, BufferedClock::new(clock));
+		Ok(handle)
+	}
+
+	pub fn add_modulator<Builder: ModulatorBuilder>(
+		&mut self,
+		builder: Builder,
+	) -> Result<Builder::Handle, ResourceLimitReached> {
+		let key = self
+			.resource_controllers
+			.modulator_controller
+			.try_reserve()?;
+		let id = ModulatorId(key);
+		let (modulator, handle) = builder.build(id);
+		self.resource_controllers
+			.modulator_controller
+			.insert_with_key(key, BufferedModulator::new(modulator));
 		Ok(handle)
 	}
 
