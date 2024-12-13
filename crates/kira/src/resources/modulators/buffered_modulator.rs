@@ -1,45 +1,34 @@
 use std::ops::{Deref, DerefMut};
 
-use crate::{modulator::Modulator, INTERNAL_BUFFER_SIZE};
+use arrayvec::ArrayVec;
 
+use crate::{info::SingleFrameInfo, modulator::Modulator, INTERNAL_BUFFER_SIZE};
+
+#[derive(Default)]
 pub(crate) struct BufferedModulator {
 	modulator: Box<dyn Modulator>,
-	value_buffer: [f64; INTERNAL_BUFFER_SIZE],
-	current_frame: usize,
+	value_buffer: ArrayVec<f64, INTERNAL_BUFFER_SIZE>,
 }
 
 impl BufferedModulator {
 	pub fn new(modulator: Box<dyn Modulator>) -> Self {
 		Self {
 			modulator,
-			value_buffer: [0.0; INTERNAL_BUFFER_SIZE],
-			current_frame: 0,
+			value_buffer: ArrayVec::new(),
 		}
 	}
 
-	pub fn value_buffer(&self) -> [f64; INTERNAL_BUFFER_SIZE] {
-		self.value_buffer
+	pub fn value_buffer(&self) -> &[f64] {
+		&self.value_buffer
 	}
 
-	pub fn update(&mut self, dt: f64) {
-		self.modulator.update(dt);
-		self.value_buffer[self.current_frame] = self.modulator.value();
-		self.current_frame += 1;
+	pub fn update(&mut self, dt: f64, info: &SingleFrameInfo) {
+		self.modulator.update(dt, info);
+		self.value_buffer.push(self.modulator.value());
 	}
 
-	pub fn reset_buffer(&mut self) {
-		self.value_buffer = [0.0; INTERNAL_BUFFER_SIZE];
-		self.current_frame = 0;
-	}
-}
-
-impl Default for BufferedModulator {
-	fn default() -> Self {
-		Self {
-			modulator: Default::default(),
-			value_buffer: [0.0; INTERNAL_BUFFER_SIZE],
-			current_frame: Default::default(),
-		}
+	pub fn clear_buffer(&mut self) {
+		self.value_buffer.clear();
 	}
 }
 
@@ -66,7 +55,7 @@ impl DerefMut for BufferedModulator {
 struct DummyModulator;
 
 impl Modulator for DummyModulator {
-	fn update(&mut self, _dt: f64) {}
+	fn update(&mut self, _dt: f64, _info: &SingleFrameInfo) {}
 
 	fn value(&self) -> f64 {
 		0.0

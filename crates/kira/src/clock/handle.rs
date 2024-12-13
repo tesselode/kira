@@ -1,6 +1,8 @@
 use std::sync::{atomic::Ordering, Arc};
 
-use super::{ClockId, ClockShared, ClockTime, CommandWriters};
+use crate::command::handle_param_setters;
+
+use super::{ClockId, ClockShared, ClockSpeed, ClockTime, CommandWriters};
 
 /// Controls a clock.
 ///
@@ -37,10 +39,10 @@ impl ClockHandle {
 		}
 	}
 
-	/* handle_param_setters! {
+	handle_param_setters! {
 		/// Sets the speed of the clock.
 		speed: ClockSpeed,
-	} */
+	}
 
 	/// Starts or resumes the clock.
 	pub fn start(&mut self) {

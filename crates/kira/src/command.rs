@@ -21,7 +21,7 @@ which Kira uses internally.
 
 use triple_buffer::{triple_buffer, Input, Output};
 
-// use crate::tween::{Tween, Value};
+use crate::{tween::Tween, Value};
 
 /** Writes values that can be sent to a [`CommandReader`]. */
 #[derive(Debug)]
@@ -60,7 +60,7 @@ pub fn command_writer_and_reader<T: Send + Copy>() -> (CommandWriter<T>, Command
 	(CommandWriter(input), CommandReader(output))
 }
 
-/* /**
+/**
  * A command that holds a target [`Value`] and a [`Tween`].
  *
  * Setting something to a [`Value`] with a given [`Tween`] is a common
@@ -75,7 +75,7 @@ pub struct ValueChangeCommand<T> {
 	pub target: Value<T>,
 	/// The tween to use to smoothly transition the value.
 	pub tween: Tween,
-} */
+}
 
 /**
 Creates a set of command writers and readers and a constructor for them.
@@ -152,20 +152,20 @@ macro_rules! command_writers_and_readers {
 	};
 }
 
-/* macro_rules! read_commands_into_parameters {
+macro_rules! read_commands_into_parameters {
 	($self:ident, $($parameter_name:ident),*$(,)?) => {
 		paste::paste! {
 			$($self.$parameter_name.read_command(&mut $self.command_readers.[<set_ $parameter_name>]);)*
 		}
 	};
-} */
+}
 
-/* macro_rules! handle_param_setters {
+macro_rules! handle_param_setters {
 	($($(#[$m:meta])* $name:ident: $type:ty),*$(,)?) => {
 		paste::paste! {
 			$(
 				$(#[$m])*
-				pub fn [<set_ $name>](&mut self, $name: impl Into<$crate::tween::Value<$type>>, tween: $crate::tween::Tween) {
+				pub fn [<set_ $name>](&mut self, $name: impl Into<$crate::Value<$type>>, tween: $crate::tween::Tween) {
 					self.command_writers.[<set_ $name>].write($crate::command::ValueChangeCommand {
 						target: $name.into(),
 						tween,
@@ -174,7 +174,7 @@ macro_rules! command_writers_and_readers {
 			)*
 		}
 	};
-} */
+}
 
-// pub(crate) use handle_param_setters;
-// pub(crate) use read_commands_into_parameters;
+pub(crate) use handle_param_setters;
+pub(crate) use read_commands_into_parameters;

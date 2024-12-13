@@ -1,4 +1,7 @@
-use crate::arena::Key;
+pub mod lfo;
+pub mod tweener;
+
+use crate::{arena::Key, info::SingleFrameInfo};
 
 /// Configures a modulator.
 pub trait ModulatorBuilder {
@@ -22,7 +25,7 @@ pub trait Modulator: Send {
 	///
 	/// `dt` is the time that's elapsed since the previous round of
 	/// processing (in seconds).
-	fn update(&mut self, dt: f64);
+	fn update(&mut self, dt: f64, info: &SingleFrameInfo);
 
 	/// Returns the current output of the modulator.
 	#[must_use]

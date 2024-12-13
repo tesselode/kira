@@ -2,7 +2,9 @@ pub(crate) mod buffered_clock;
 
 use buffered_clock::BufferedClock;
 
-use super::{ResourceController, SelfReferentialResourceStorage};
+use crate::{arena::Arena, info::Info};
+
+use super::{BufferedModulator, ResourceController, SelfReferentialResourceStorage};
 
 pub(crate) struct Clocks(pub(crate) SelfReferentialResourceStorage<BufferedClock>);
 
@@ -23,13 +25,22 @@ impl Clocks {
 
 	pub(crate) fn reset_buffers(&mut self) {
 		for (_, clock) in &mut self.0 {
-			clock.reset_buffer();
+			clock.clear_buffer();
 		}
 	}
 
-	pub(crate) fn update(&mut self, dt: f64) {
+	pub(crate) fn update(
+		&mut self,
+		dt: f64,
+		modulators: &Arena<BufferedModulator>,
+		frame_index: usize,
+	) {
 		self.0.for_each(|clock, others| {
-			clock.update(dt);
+			let info = Info::new(others, modulators);
+			// TODO: find a better way to make sure clocks can always read the latest
+			// modulator value available
+			let single_frame_info = info.for_single_frame(frame_index.saturating_sub(1));
+			clock.update(dt, &single_frame_info);
 		});
 	}
 }

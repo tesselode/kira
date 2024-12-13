@@ -36,16 +36,27 @@ impl Renderer {
 		// to each other sample-accurately)
 		self.resources.clocks.reset_buffers();
 		self.resources.modulators.reset_buffers();
-		for _ in 0..num_frames {
-			self.resources.clocks.update(self.dt);
-			self.resources.modulators.update(self.dt);
+		for frame_index in 0..num_frames {
+			self.resources.clocks.update(
+				self.dt,
+				&self.resources.modulators.0.resources,
+				frame_index,
+			);
+			self.resources.modulators.update(
+				self.dt,
+				&self.resources.clocks.0.resources,
+				frame_index,
+			);
 		}
 
 		// process sounds in chunks
 		let mut frames = [Frame::ZERO; INTERNAL_BUFFER_SIZE];
-		self.resources
-			.sounds
-			.process(&mut frames[..num_frames], self.dt);
+		self.resources.sounds.process(
+			&mut frames[..num_frames],
+			self.dt,
+			&self.resources.clocks,
+			&self.resources.modulators,
+		);
 
 		// convert from frames to requested number of channels
 		for (i, channels) in chunk.chunks_mut(num_channels.into()).enumerate() {

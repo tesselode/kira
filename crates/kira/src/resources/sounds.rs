@@ -1,6 +1,6 @@
-use crate::{sound::Sound, Frame, INTERNAL_BUFFER_SIZE};
+use crate::{info::Info, sound::Sound, Frame, INTERNAL_BUFFER_SIZE};
 
-use super::{ResourceController, ResourceStorage};
+use super::{Clocks, Modulators, ResourceController, ResourceStorage};
 
 pub(crate) struct Sounds(pub(crate) ResourceStorage<Box<dyn Sound>>);
 
@@ -18,10 +18,17 @@ impl Sounds {
 		}
 	}
 
-	pub(crate) fn process(&mut self, out: &mut [Frame], dt: f64) {
+	pub(crate) fn process(
+		&mut self,
+		out: &mut [Frame],
+		dt: f64,
+		clocks: &Clocks,
+		modulators: &Modulators,
+	) {
 		let mut per_sound_buffer = [Frame::ZERO; INTERNAL_BUFFER_SIZE];
+		let info = Info::new(&clocks.0.resources, &modulators.0.resources);
 		for (_, sound) in &mut self.0 {
-			sound.process(&mut per_sound_buffer[..out.len()], dt);
+			sound.process(&mut per_sound_buffer[..out.len()], dt, &info);
 			for (summed_out, sound_out) in out.iter_mut().zip(per_sound_buffer.iter_mut()) {
 				*summed_out += *sound_out;
 			}

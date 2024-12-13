@@ -2,7 +2,9 @@ pub(crate) mod buffered_modulator;
 
 use buffered_modulator::BufferedModulator;
 
-use super::{ResourceController, SelfReferentialResourceStorage};
+use crate::{arena::Arena, info::Info};
+
+use super::{BufferedClock, ResourceController, SelfReferentialResourceStorage};
 
 pub(crate) struct Modulators(pub(crate) SelfReferentialResourceStorage<BufferedModulator>);
 
@@ -22,13 +24,15 @@ impl Modulators {
 
 	pub(crate) fn reset_buffers(&mut self) {
 		for (_, modulator) in &mut self.0 {
-			modulator.reset_buffer();
+			modulator.clear_buffer();
 		}
 	}
 
-	pub(crate) fn update(&mut self, dt: f64) {
+	pub(crate) fn update(&mut self, dt: f64, clocks: &Arena<BufferedClock>, frame_index: usize) {
 		self.0.for_each(|modulator, others| {
-			modulator.update(dt);
+			let info = Info::new(clocks, others);
+			let single_frame_info = info.for_single_frame(frame_index);
+			modulator.update(dt, &single_frame_info);
 		});
 	}
 }

@@ -12,7 +12,7 @@ use crate::{
 		modulators::buffered_modulator::BufferedModulator, ResourceControllers,
 	},
 	sound::SoundData,
-	PlaySoundError, ResourceLimitReached,
+	PlaySoundError, ResourceLimitReached, Value,
 };
 
 pub struct AudioManager<B: Backend = DefaultBackend> {
@@ -46,10 +46,13 @@ impl<B: Backend> AudioManager<B> {
 		Ok(handle)
 	}
 
-	pub fn add_clock(&mut self, speed: ClockSpeed) -> Result<ClockHandle, ResourceLimitReached> {
+	pub fn add_clock(
+		&mut self,
+		speed: impl Into<Value<ClockSpeed>>,
+	) -> Result<ClockHandle, ResourceLimitReached> {
 		let key = self.resource_controllers.clock_controller.try_reserve()?;
 		let id = ClockId(key);
-		let (clock, handle) = Clock::new(speed, id);
+		let (clock, handle) = Clock::new(speed.into(), id);
 		self.resource_controllers
 			.clock_controller
 			.insert_with_key(key, BufferedClock::new(clock));

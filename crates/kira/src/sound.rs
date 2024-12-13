@@ -1,4 +1,6 @@
-use crate::Frame;
+pub mod sine;
+
+use crate::{info::Info, Frame};
 
 /// A source of audio that is loaded, but not yet playing.
 pub trait SoundData {
@@ -35,7 +37,7 @@ pub trait Sound: Send {
 	///
 	/// `dt` is the time that's elapsed since the previous round of
 	/// processing (in seconds).
-	fn process(&mut self, out: &mut [Frame], dt: f64);
+	fn process(&mut self, out: &mut [Frame], dt: f64, info: &Info);
 
 	/// Returns `true` if the sound is finished and can be unloaded.
 	///

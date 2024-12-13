@@ -12,7 +12,13 @@ pub use time::*;
 
 use std::sync::{atomic::Ordering, Arc};
 
-use crate::{arena::Key, command_writers_and_readers};
+use crate::{
+	arena::Key,
+	command::{read_commands_into_parameters, ValueChangeCommand},
+	command_writers_and_readers,
+	info::SingleFrameInfo,
+	Parameter, Value,
+};
 
 /// A unique identifier for a clock.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -35,13 +41,13 @@ pub(crate) struct Clock {
 	command_readers: CommandReaders,
 	shared: Arc<ClockShared>,
 	ticking: bool,
-	speed: ClockSpeed,
+	speed: Parameter<ClockSpeed>,
 	state: State,
 }
 
 impl Clock {
 	#[must_use]
-	pub(crate) fn new(speed: ClockSpeed, id: ClockId) -> (Self, ClockHandle) {
+	pub(crate) fn new(speed: Value<ClockSpeed>, id: ClockId) -> (Self, ClockHandle) {
 		let (command_writers, command_readers) = command_writers_and_readers();
 		let shared = Arc::new(ClockShared::new());
 		(
@@ -49,7 +55,7 @@ impl Clock {
 				command_readers,
 				shared: shared.clone(),
 				ticking: false,
-				speed,
+				speed: Parameter::new(speed, ClockSpeed::TicksPerMinute(120.0)),
 				state: State::NotStarted,
 			},
 			ClockHandle {
@@ -61,13 +67,13 @@ impl Clock {
 	}
 
 	#[must_use]
-	pub(crate) fn without_handle(speed: ClockSpeed) -> Self {
+	pub(crate) fn without_handle(speed: Value<ClockSpeed>) -> Self {
 		let (_, command_readers) = command_writers_and_readers();
 		Self {
 			command_readers,
 			shared: Arc::new(ClockShared::new()),
 			ticking: false,
-			speed,
+			speed: Parameter::new(speed, ClockSpeed::TicksPerMinute(120.0)),
 			state: State::NotStarted,
 		}
 	}
@@ -88,7 +94,7 @@ impl Clock {
 	}
 
 	pub(crate) fn on_start_processing(&mut self) {
-		// read_commands_into_parameters!(self, speed);
+		read_commands_into_parameters!(self, speed);
 		if let Some(ticking) = self.command_readers.set_ticking.read() {
 			self.set_ticking(ticking);
 		}
@@ -126,7 +132,8 @@ impl Clock {
 	///
 	/// If the tick count changes this update, returns `Some(tick_number)`.
 	/// Otherwise, returns `None`.
-	pub(crate) fn update(&mut self, dt: f64) {
+	pub(crate) fn update(&mut self, dt: f64, info: &SingleFrameInfo) {
+		self.speed.update(dt, info);
 		if !self.ticking {
 			return;
 		}
@@ -141,7 +148,7 @@ impl Clock {
 			fractional_position: tick_timer,
 		} = &mut self.state
 		{
-			*tick_timer += self.speed.as_ticks_per_second() * dt;
+			*tick_timer += self.speed.value().as_ticks_per_second() * dt;
 			while *tick_timer >= 1.0 {
 				*tick_timer -= 1.0;
 				*ticks += 1;
@@ -154,7 +161,7 @@ impl Clock {
 
 impl Default for Clock {
 	fn default() -> Self {
-		Self::without_handle(ClockSpeed::TicksPerSecond(0.0))
+		Self::without_handle(Value::Fixed(ClockSpeed::TicksPerSecond(0.0)))
 	}
 }
 
@@ -168,7 +175,7 @@ pub(crate) enum State {
 }
 
 command_writers_and_readers! {
-	// set_speed: ValueChangeCommand<ClockSpeed>,
+	set_speed: ValueChangeCommand<ClockSpeed>,
 	set_ticking: bool,
 	reset: (),
 }

@@ -1,5 +1,7 @@
 // use crate::tween::{Tweenable, Value};
 
+use crate::{Tweenable, Value};
+
 /// The rate that a [clock](crate::clock) ticks at.
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -44,7 +46,7 @@ impl ClockSpeed {
 	}
 }
 
-/* impl Tweenable for ClockSpeed {
+impl Tweenable for ClockSpeed {
 	fn interpolate(a: Self, b: Self, amount: f64) -> Self {
 		match b {
 			ClockSpeed::SecondsPerTick(b) => ClockSpeed::SecondsPerTick(Tweenable::interpolate(
@@ -70,7 +72,7 @@ impl From<ClockSpeed> for Value<ClockSpeed> {
 	fn from(clock_speed: ClockSpeed) -> Self {
 		Value::Fixed(clock_speed)
 	}
-} */
+}
 
 #[cfg(test)]
 #[test]

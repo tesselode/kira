@@ -1,16 +1,41 @@
-use std::{error::Error, f32::consts::TAU, io::stdin, time::Duration};
+use std::{error::Error, io::stdin, time::Duration};
 
 use kira::{
 	backend::DefaultBackend,
 	clock::ClockSpeed,
 	manager::{AudioManager, AudioManagerSettings},
-	sound::{Sound, SoundData},
-	Frame,
+	modulator::tweener::TweenerBuilder,
+	sound::sine::SineBuilder,
+	Easing, Mapping, StartTime, Tween, Value,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
 	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	let mut clock = manager.add_clock(ClockSpeed::TicksPerMinute(120.0))?;
+	let mut tweener = manager.add_modulator(TweenerBuilder { initial_value: 0.0 })?;
+	let mut clock = manager.add_clock(Value::FromModulator {
+		id: tweener.id(),
+		mapping: Mapping {
+			input_range: (0.0, 1.0),
+			output_range: (
+				ClockSpeed::TicksPerMinute(120.0),
+				ClockSpeed::TicksPerMinute(240.0),
+			),
+			easing: Easing::Linear,
+		},
+	})?;
+	tweener.set(
+		1.0,
+		Tween {
+			duration: Duration::from_secs(5),
+			..Default::default()
+		},
+	);
+	for i in 0..8 {
+		manager.play(SineBuilder {
+			frequency: Value::Fixed(100.0 + 100.0 * i as f64),
+			start_time: StartTime::ClockTime(clock.time() + i),
+		})?;
+	}
 	clock.start();
 
 	loop {
@@ -22,42 +47,4 @@ fn main() -> Result<(), Box<dyn Error>> {
 fn wait_for_enter_press() -> Result<(), Box<dyn Error>> {
 	stdin().read_line(&mut "".into())?;
 	Ok(())
-}
-
-pub struct Sine {
-	frequency: f32,
-	phase: f32,
-}
-
-impl Sine {
-	pub fn new(frequency: f32) -> Self {
-		Self {
-			frequency,
-			phase: 0.0,
-		}
-	}
-}
-
-impl SoundData for Sine {
-	type Error = ();
-
-	type Handle = ();
-
-	fn into_sound(self) -> Result<(Box<dyn Sound>, Self::Handle), Self::Error> {
-		Ok((Box::new(self), ()))
-	}
-}
-
-impl Sound for Sine {
-	fn process(&mut self, out: &mut [Frame], dt: f64) {
-		for frame in out {
-			*frame = Frame::from_mono(0.1 * (self.phase * TAU).sin());
-			self.phase += self.frequency * dt as f32;
-			self.phase %= 1.0;
-		}
-	}
-
-	fn finished(&self) -> bool {
-		false
-	}
 }

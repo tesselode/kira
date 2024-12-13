@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+arrayvec = "0.7.6"
 assert_no_alloc = { version = "1.1.2", optional = true }
 paste = "1.0.14"
 rtrb = "0.3.1"
