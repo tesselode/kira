@@ -5,8 +5,10 @@ edition = "2021"
 
 [dependencies]
 assert_no_alloc = { version = "1.1.2", optional = true }
+paste = "1.0.14"
 rtrb = "0.3.1"
 serde = { version = "1.0.164", features = ["derive"], optional = true }
+triple_buffer = "8.0.0"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies.cpal]
 version = "0.15.1"
@@ -27,6 +29,9 @@ default = ["cpal"]
 # flac = ["symphonia", "symphonia/flac"]
 # wav = ["symphonia", "symphonia/wav", "symphonia/pcm"]
 android_shared_stdcxx = ["cpal/oboe-shared-stdcxx"]
+
+[dev-dependencies]
+approx = "0.5.1"
 
 # docs.rs-specific configuration
 [package.metadata.docs.rs]

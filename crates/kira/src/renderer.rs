@@ -18,6 +18,7 @@ impl Renderer {
 	}
 
 	pub fn on_start_processing(&mut self) {
+		self.resources.clocks.on_start_processing();
 		self.resources.sounds.on_start_processing();
 	}
 
@@ -28,8 +29,12 @@ impl Renderer {
 	}
 
 	fn process_chunk(&mut self, chunk: &mut [f32], num_channels: u16) {
-		let mut frames = [Frame::ZERO; INTERNAL_BUFFER_SIZE];
 		let num_frames = chunk.len() / num_channels as usize;
+		self.resources.clocks.reset_buffers();
+		for _ in 0..num_frames {
+			self.resources.clocks.update(self.dt);
+		}
+		let mut frames = [Frame::ZERO; INTERNAL_BUFFER_SIZE];
 		self.resources
 			.sounds
 			.process(&mut frames[..num_frames], self.dt);

@@ -2,9 +2,9 @@ use crate::backend::Backend;
 
 /// Settings for an [`AudioManager`](super::AudioManager).
 pub struct AudioManagerSettings<B: Backend> {
-	/* /// Specifies how many of each resource type an audio context
+	/// Specifies how many of each resource type an audio context
 	/// can have.
-	pub capacities: Capacities, */
+	pub capacities: Capacities,
 	/* /// Configures the main mixer track.
 	pub main_track_builder: MainTrackBuilder, */
 	/// Configures the backend.
@@ -17,9 +17,24 @@ where
 {
 	fn default() -> Self {
 		Self {
-			// capacities: Capacities::default(),
+			capacities: Capacities::default(),
 			// main_track_builder: MainTrackBuilder::default(),
 			backend_settings: B::Settings::default(),
 		}
+	}
+}
+
+/// Specifies how many of each resource type an audio context
+/// can have.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct Capacities {
+	/// The maximum number of clocks that can exist at a time.
+	pub clock_capacity: u16,
+}
+
+impl Default for Capacities {
+	fn default() -> Self {
+		Self { clock_capacity: 8 }
 	}
 }

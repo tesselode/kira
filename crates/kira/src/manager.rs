@@ -4,10 +4,11 @@ pub use settings::*;
 
 use crate::{
 	backend::{Backend, DefaultBackend},
+	clock::{Clock, ClockHandle, ClockId, ClockSpeed},
 	renderer::Renderer,
-	resources::{create_resources, ResourceControllers},
+	resources::{clocks::buffered_clock::BufferedClock, create_resources, ResourceControllers},
 	sound::SoundData,
-	PlaySoundError,
+	PlaySoundError, ResourceLimitReached,
 };
 
 pub struct AudioManager<B: Backend = DefaultBackend> {
@@ -18,7 +19,7 @@ pub struct AudioManager<B: Backend = DefaultBackend> {
 impl<B: Backend> AudioManager<B> {
 	pub fn new(settings: AudioManagerSettings<B>) -> Result<Self, B::Error> {
 		let (mut backend, sample_rate) = B::setup(settings.backend_settings)?;
-		let (resources, resource_controllers) = create_resources(sample_rate);
+		let (resources, resource_controllers) = create_resources(sample_rate, settings.capacities);
 		let renderer = Renderer::new(sample_rate, resources);
 		backend.start(renderer)?;
 		Ok(Self {
@@ -38,6 +39,16 @@ impl<B: Backend> AudioManager<B> {
 			.sound_controller
 			.insert(sound)
 			.map_err(|_| PlaySoundError::SoundLimitReached)?;
+		Ok(handle)
+	}
+
+	pub fn add_clock(&mut self, speed: ClockSpeed) -> Result<ClockHandle, ResourceLimitReached> {
+		let key = self.resource_controllers.clock_controller.try_reserve()?;
+		let id = ClockId(key);
+		let (clock, handle) = Clock::new(speed, id);
+		self.resource_controllers
+			.clock_controller
+			.insert_with_key(key, BufferedClock::new(clock));
 		Ok(handle)
 	}
 

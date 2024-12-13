@@ -11,6 +11,8 @@ const INTERNAL_BUFFER_SIZE: usize = 128;
 
 mod arena;
 pub mod backend;
+pub mod clock;
+pub mod command;
 mod error;
 mod frame;
 pub mod manager;

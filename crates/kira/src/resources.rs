@@ -1,3 +1,4 @@
+pub(crate) mod clocks;
 pub(crate) mod sounds;
 
 use std::{
@@ -5,29 +6,40 @@ use std::{
 	sync::Mutex,
 };
 
+use clocks::{buffered_clock::BufferedClock, Clocks};
 use rtrb::{Consumer, Producer, RingBuffer};
 use sounds::Sounds;
 
 use crate::{
 	arena::{Arena, Controller, Key},
+	manager::Capacities,
 	sound::Sound,
 	ResourceLimitReached,
 };
 
-pub(crate) fn create_resources(sample_rate: u32) -> (Resources, ResourceControllers) {
+pub(crate) fn create_resources(
+	sample_rate: u32,
+	capacities: Capacities,
+) -> (Resources, ResourceControllers) {
 	let (sounds, sound_controller) = Sounds::new(5000);
+	let (clocks, clock_controller) = Clocks::new(capacities.clock_capacity);
 	(
-		Resources { sounds },
-		ResourceControllers { sound_controller },
+		Resources { sounds, clocks },
+		ResourceControllers {
+			sound_controller,
+			clock_controller,
+		},
 	)
 }
 
 pub(crate) struct Resources {
 	pub sounds: Sounds,
+	pub clocks: Clocks,
 }
 
 pub(crate) struct ResourceControllers {
 	pub sound_controller: ResourceController<Box<dyn Sound>>,
+	pub clock_controller: ResourceController<BufferedClock>,
 }
 
 pub(crate) struct ResourceStorage<T> {

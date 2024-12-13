@@ -1,7 +1,8 @@
-use std::{error::Error, f32::consts::TAU, io::stdin};
+use std::{error::Error, f32::consts::TAU, io::stdin, time::Duration};
 
 use kira::{
 	backend::DefaultBackend,
+	clock::ClockSpeed,
 	manager::{AudioManager, AudioManagerSettings},
 	sound::{Sound, SoundData},
 	Frame,
@@ -9,11 +10,13 @@ use kira::{
 
 fn main() -> Result<(), Box<dyn Error>> {
 	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	manager.play(Sine::new(440.0))?;
-	wait_for_enter_press()?;
-	manager.play(Sine::new(220.0))?;
-	wait_for_enter_press()?;
-	Ok(())
+	let mut clock = manager.add_clock(ClockSpeed::TicksPerMinute(120.0))?;
+	clock.start();
+
+	loop {
+		println!("{:?}", clock.time());
+		std::thread::sleep(Duration::from_millis(50));
+	}
 }
 
 fn wait_for_enter_press() -> Result<(), Box<dyn Error>> {
