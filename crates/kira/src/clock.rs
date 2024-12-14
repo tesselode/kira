@@ -84,13 +84,19 @@ impl Clock {
 	}
 
 	#[must_use]
-	pub(crate) fn state(&self) -> State {
-		self.state
-	}
-
-	#[must_use]
-	pub(crate) fn ticking(&self) -> bool {
-		self.ticking
+	pub(crate) fn info(&self) -> ClockInfo {
+		let (ticks, fraction) = match self.state {
+			State::NotStarted => (0, 0.0),
+			State::Started {
+				ticks,
+				fractional_position,
+			} => (ticks, fractional_position),
+		};
+		ClockInfo {
+			ticking: self.ticking,
+			ticks,
+			fraction,
+		}
 	}
 
 	pub(crate) fn on_start_processing(&mut self) {
@@ -166,7 +172,7 @@ impl Default for Clock {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) enum State {
+enum State {
 	NotStarted,
 	Started {
 		ticks: u64,

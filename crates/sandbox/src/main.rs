@@ -27,10 +27,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 		1.0,
 		Tween {
 			duration: Duration::from_secs(5),
+			start_time: StartTime::ClockTime(clock.time() + 4),
 			..Default::default()
 		},
 	);
-	for i in 0..8 {
+	for i in 0..16 {
 		manager.play(SineBuilder {
 			frequency: Value::Fixed(100.0 + 100.0 * i as f64),
 			start_time: StartTime::ClockTime(clock.time() + i),

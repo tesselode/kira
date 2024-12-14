@@ -29,17 +29,10 @@ impl Clocks {
 		}
 	}
 
-	pub(crate) fn update(
-		&mut self,
-		dt: f64,
-		modulators: &Arena<BufferedModulator>,
-		frame_index: usize,
-	) {
+	pub(crate) fn update(&mut self, dt: f64, modulators: &Arena<BufferedModulator>) {
 		self.0.for_each(|clock, others| {
 			let info = Info::new(others, modulators);
-			// TODO: find a better way to make sure clocks can always read the latest
-			// modulator value available
-			let single_frame_info = info.for_single_frame(frame_index.saturating_sub(1));
+			let single_frame_info = info.latest();
 			clock.update(dt, &single_frame_info);
 		});
 	}

@@ -3,7 +3,7 @@ use std::ops::{Deref, DerefMut};
 use arrayvec::ArrayVec;
 
 use crate::{
-	clock::{Clock, ClockInfo, State},
+	clock::{Clock, ClockInfo},
 	info::SingleFrameInfo,
 	INTERNAL_BUFFER_SIZE,
 };
@@ -28,18 +28,7 @@ impl BufferedClock {
 
 	pub fn update(&mut self, dt: f64, info: &SingleFrameInfo) {
 		self.clock.update(dt, info);
-		let (ticks, fraction) = match self.clock.state() {
-			State::NotStarted => (0, 0.0),
-			State::Started {
-				ticks,
-				fractional_position,
-			} => (ticks, fractional_position),
-		};
-		self.info_buffer.push(ClockInfo {
-			ticking: self.clock.ticking(),
-			ticks,
-			fraction,
-		});
+		self.info_buffer.push(self.clock.info());
 	}
 
 	pub fn clear_buffer(&mut self) {

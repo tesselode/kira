@@ -28,10 +28,10 @@ impl Modulators {
 		}
 	}
 
-	pub(crate) fn update(&mut self, dt: f64, clocks: &Arena<BufferedClock>, frame_index: usize) {
+	pub(crate) fn update(&mut self, dt: f64, clocks: &Arena<BufferedClock>) {
 		self.0.for_each(|modulator, others| {
 			let info = Info::new(clocks, others);
-			let single_frame_info = info.for_single_frame(frame_index);
+			let single_frame_info = info.latest();
 			modulator.update(dt, &single_frame_info);
 		});
 	}

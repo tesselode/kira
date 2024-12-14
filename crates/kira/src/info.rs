@@ -5,11 +5,17 @@
  * like [`Sound`](crate::sound::Sound) or [`Effect`](crate::effect::Effect).
  */
 
+mod mock_info_builder;
+mod single_frame_info;
+
+pub use mock_info_builder::*;
+pub use single_frame_info::*;
+
 // use glam::Vec3;
 
 use crate::{
 	arena::Arena,
-	clock::{ClockId, ClockInfo, ClockTime},
+	clock::{ClockId, ClockInfo},
 	// listener::{Listener, ListenerId},
 	modulator::ModulatorId,
 	resources::{
@@ -46,7 +52,14 @@ impl<'a> Info<'a> {
 	pub fn for_single_frame(&self, frame_index: usize) -> SingleFrameInfo {
 		SingleFrameInfo {
 			info: self,
-			frame_index,
+			info_frame: InfoFrame::Specified(frame_index),
+		}
+	}
+
+	pub(crate) fn latest(&self) -> SingleFrameInfo {
+		SingleFrameInfo {
+			info: self,
+			info_frame: InfoFrame::Latest,
 		}
 	}
 
@@ -71,6 +84,28 @@ impl<'a> Info<'a> {
 			InfoKind::Mock {
 				modulator_values, ..
 			} => modulator_values.get(id.0).map(|values| values.as_slice()),
+		}
+	}
+
+	fn latest_clock_info(&self, id: ClockId) -> Option<ClockInfo> {
+		match &self.kind {
+			InfoKind::Real { clocks, .. } => clocks.get(id.0).map(|clock| clock.info()),
+			InfoKind::Mock { clock_info, .. } => {
+				clock_info.get(id.0).and_then(|info| info.last().copied())
+			}
+		}
+	}
+
+	fn latest_modulator_value(&self, id: ModulatorId) -> Option<f64> {
+		match &self.kind {
+			InfoKind::Real { modulators, .. } => {
+				modulators.get(id.0).map(|modulator| modulator.value())
+			}
+			InfoKind::Mock {
+				modulator_values, ..
+			} => modulator_values
+				.get(id.0)
+				.and_then(|values| values.last().copied()),
 		}
 	}
 
@@ -103,42 +138,6 @@ impl<'a> Info<'a> {
 	} */
 }
 
-pub struct SingleFrameInfo<'a> {
-	info: &'a Info<'a>,
-	frame_index: usize,
-}
-
-impl SingleFrameInfo<'_> {
-	pub fn clock_info(&self, id: ClockId) -> Option<ClockInfo> {
-		self.info
-			.clock_info(id)
-			.and_then(|info| info.get(self.frame_index))
-			.copied()
-	}
-
-	pub fn modulator_value(&self, id: ModulatorId) -> Option<f64> {
-		self.info
-			.modulator_values(id)
-			.and_then(|values| values.get(self.frame_index))
-			.copied()
-	}
-
-	/// Returns whether something with the given start time should
-	/// start now, later, or never given the current state of the clocks.
-	#[must_use]
-	pub fn when_to_start(&self, time: ClockTime) -> WhenToStart {
-		if let Some(clock_info) = self.clock_info(time.clock) {
-			if clock_info.ticking && clock_info.ticks >= time.ticks {
-				WhenToStart::Now
-			} else {
-				WhenToStart::Later
-			}
-		} else {
-			WhenToStart::Never
-		}
-	}
-}
-
 /// When something should start given the current state
 /// of the clocks.
 ///
@@ -165,83 +164,6 @@ pub struct ListenerInfo {
 	/// The rotation of the listener.
 	pub orientation: mint::Quaternion<f32>,
 } */
-
-/// Generates a fake `Info` with arbitrary data. Useful for writing unit tests.
-pub struct MockInfoBuilder {
-	clock_info: Arena<Vec<ClockInfo>>,
-	modulator_values: Arena<Vec<f64>>,
-	// listener_info: Arena<ListenerInfo>,
-	// spatial_track_info: Option<SpatialTrackInfo>,
-}
-
-impl MockInfoBuilder {
-	/// Creates a new `MockInfoBuilder`.
-	pub fn new() -> Self {
-		Self {
-			clock_info: Arena::new(100),
-			modulator_values: Arena::new(100),
-			// listener_info: Arena::new(100),
-			// spatial_track_info: None,
-		}
-	}
-
-	/// Adds a fake clock with the given ticking state and time. Returns a fake
-	/// `ClockId`.
-	pub fn add_clock(&mut self, clock_info: Vec<ClockInfo>) -> ClockId {
-		let id = ClockId(
-			self.clock_info
-				.controller()
-				.try_reserve()
-				.expect("clock info arena is full"),
-		);
-		self.clock_info.insert_with_key(id.0, clock_info).unwrap();
-		id
-	}
-
-	/// Adds a fake modulator outputting the given value. Returns a fake `ModulatorId`.
-	pub fn add_modulator(&mut self, values: Vec<f64>) -> ModulatorId {
-		let id = ModulatorId(
-			self.modulator_values
-				.controller()
-				.try_reserve()
-				.expect("modulator info arena is full"),
-		);
-		self.modulator_values.insert_with_key(id.0, values).unwrap();
-		id
-	}
-
-	/* /// Adds a fake listener at the given position and orientation. Returns a fake `ListenerId`.
-	pub fn add_listener(&mut self, listener_info: ListenerInfo) -> ListenerId {
-		let id = ListenerId(
-			self.listener_info
-				.controller()
-				.try_reserve()
-				.expect("listener info arena is full"),
-		);
-		self.listener_info
-			.insert_with_key(id.0, listener_info)
-			.unwrap();
-		id
-	} */
-
-	/// Consumes the `MockInfoProvider` and returns a fake `Info`.
-	pub fn build(self) -> Info<'static> {
-		Info {
-			kind: InfoKind::Mock {
-				clock_info: self.clock_info,
-				modulator_values: self.modulator_values,
-				// listener_info: self.listener_info,
-			},
-			// spatial_track_info: self.spatial_track_info,
-		}
-	}
-}
-
-impl Default for MockInfoBuilder {
-	fn default() -> Self {
-		Self::new()
-	}
-}
 
 enum InfoKind<'a> {
 	Real {
