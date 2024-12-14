@@ -6,7 +6,7 @@ use kira::{
 	manager::{AudioManager, AudioManagerSettings},
 	modulator::tweener::TweenerBuilder,
 	sound::sine::SineBuilder,
-	Easing, Mapping, StartTime, Tween, Value,
+	Decibels, Easing, Mapping, StartTime, Tween, Value,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -38,6 +38,14 @@ fn main() -> Result<(), Box<dyn Error>> {
 		})?;
 	}
 	clock.start();
+	manager.main_track().set_volume(
+		Decibels::SILENCE,
+		Tween {
+			duration: Duration::from_secs(5),
+			start_time: StartTime::ClockTime(clock.time() + 4),
+			..Default::default()
+		},
+	);
 
 	loop {
 		println!("{:?}", clock.time());

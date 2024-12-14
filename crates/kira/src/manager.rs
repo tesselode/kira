@@ -12,6 +12,7 @@ use crate::{
 		modulators::buffered_modulator::BufferedModulator, ResourceControllers,
 	},
 	sound::SoundData,
+	track::MainTrackHandle,
 	PlaySoundError, ResourceLimitReached, Value,
 };
 
@@ -23,7 +24,11 @@ pub struct AudioManager<B: Backend = DefaultBackend> {
 impl<B: Backend> AudioManager<B> {
 	pub fn new(settings: AudioManagerSettings<B>) -> Result<Self, B::Error> {
 		let (mut backend, sample_rate) = B::setup(settings.backend_settings)?;
-		let (resources, resource_controllers) = create_resources(sample_rate, settings.capacities);
+		let (resources, resource_controllers) = create_resources(
+			sample_rate,
+			settings.capacities,
+			settings.main_track_builder,
+		);
 		let renderer = Renderer::new(sample_rate, resources);
 		backend.start(renderer)?;
 		Ok(Self {
@@ -36,14 +41,7 @@ impl<B: Backend> AudioManager<B> {
 		&mut self,
 		sound_data: D,
 	) -> Result<D::Handle, PlaySoundError<D::Error>> {
-		let (sound, handle) = sound_data
-			.into_sound()
-			.map_err(PlaySoundError::IntoSoundError)?;
-		self.resource_controllers
-			.sound_controller
-			.insert(sound)
-			.map_err(|_| PlaySoundError::SoundLimitReached)?;
-		Ok(handle)
+		self.resource_controllers.main_track_handle.play(sound_data)
 	}
 
 	pub fn add_clock(
@@ -73,6 +71,32 @@ impl<B: Backend> AudioManager<B> {
 			.modulator_controller
 			.insert_with_key(key, BufferedModulator::new(modulator));
 		Ok(handle)
+	}
+
+	/**
+	Returns a handle to the main mixer track.
+
+	# Examples
+
+	Use the main track handle to adjust the volume of all audio:
+
+	```no_run
+	# use kira::{
+	# 	manager::{
+	# 		AudioManager, AudioManagerSettings,
+	# 		backend::DefaultBackend,
+	# 	},
+	# };
+	use kira::tween::Tween;
+
+	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	manager.main_track().set_volume(-6.0, Tween::default());
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
+	#[must_use]
+	pub fn main_track(&mut self) -> &mut MainTrackHandle {
+		&mut self.resource_controllers.main_track_handle
 	}
 
 	/// Returns a mutable reference to this manager's backend.

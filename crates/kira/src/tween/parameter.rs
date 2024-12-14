@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use crate::{
 	command::{CommandReader, ValueChangeCommand},
-	info::{SingleFrameInfo, WhenToStart},
+	info::{Info, SingleFrameInfo, WhenToStart},
 	tween::{Tween, Tweenable},
 	StartTime, Value,
 };
@@ -87,6 +87,13 @@ impl<T: Tweenable> Parameter<T> {
 			self.raw_value = raw_value;
 		}
 		just_finished_tween
+	}
+
+	pub fn update_chunk(&mut self, out: &mut [T], dt: f64, info: &Info) {
+		for (i, value) in out.iter_mut().enumerate() {
+			self.update(dt, &info.for_single_frame(i));
+			*value = self.value();
+		}
 	}
 
 	fn update_tween(&mut self, dt: f64, info: &SingleFrameInfo) -> JustFinishedTween {

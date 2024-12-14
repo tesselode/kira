@@ -19,7 +19,7 @@ impl Renderer {
 
 	pub fn on_start_processing(&mut self) {
 		self.resources.clocks.on_start_processing();
-		self.resources.sounds.on_start_processing();
+		self.resources.mixer.on_start_processing();
 		self.resources.modulators.on_start_processing();
 	}
 
@@ -47,7 +47,7 @@ impl Renderer {
 
 		// process sounds in chunks
 		let mut frames = [Frame::ZERO; INTERNAL_BUFFER_SIZE];
-		self.resources.sounds.process(
+		self.resources.mixer.process(
 			&mut frames[..num_frames],
 			self.dt,
 			&self.resources.clocks,

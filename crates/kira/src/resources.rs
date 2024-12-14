@@ -1,6 +1,6 @@
 pub(crate) mod clocks;
+pub(crate) mod mixer;
 pub(crate) mod modulators;
-pub(crate) mod sounds;
 
 use std::{
 	fmt::{Debug, Formatter},
@@ -8,32 +8,38 @@ use std::{
 };
 
 use clocks::{buffered_clock::BufferedClock, Clocks};
+use mixer::Mixer;
 use modulators::{buffered_modulator::BufferedModulator, Modulators};
 use rtrb::{Consumer, Producer, RingBuffer};
-use sounds::Sounds;
 
 use crate::{
 	arena::{Arena, Controller, Key},
 	manager::Capacities,
-	sound::Sound,
+	track::{MainTrackBuilder, MainTrackHandle},
 	ResourceLimitReached,
 };
 
 pub(crate) fn create_resources(
 	sample_rate: u32,
 	capacities: Capacities,
+	main_track_builder: MainTrackBuilder,
 ) -> (Resources, ResourceControllers) {
-	let (sounds, sound_controller) = Sounds::new(5000);
+	let (mixer, /* sub_track_controller, send_track_controller, */ main_track_handle) = Mixer::new(
+		// capacities.sub_track_capacity,
+		// capacities.send_track_capacity,
+		// sample_rate,
+		main_track_builder,
+	);
 	let (clocks, clock_controller) = Clocks::new(capacities.clock_capacity);
 	let (modulators, modulator_controller) = Modulators::new(capacities.modulator_capacity);
 	(
 		Resources {
-			sounds,
+			mixer,
 			clocks,
 			modulators,
 		},
 		ResourceControllers {
-			sound_controller,
+			main_track_handle,
 			clock_controller,
 			modulator_controller,
 		},
@@ -41,13 +47,13 @@ pub(crate) fn create_resources(
 }
 
 pub(crate) struct Resources {
-	pub sounds: Sounds,
+	pub mixer: Mixer,
 	pub clocks: Clocks,
 	pub modulators: Modulators,
 }
 
 pub(crate) struct ResourceControllers {
-	pub sound_controller: ResourceController<Box<dyn Sound>>,
+	pub main_track_handle: MainTrackHandle,
 	pub clock_controller: ResourceController<BufferedClock>,
 	pub modulator_controller: ResourceController<BufferedModulator>,
 }
