@@ -1,14 +1,21 @@
+use std::sync::{
+	atomic::{AtomicU32, Ordering},
+	Arc,
+};
+
 use crate::{resources::Resources, Frame, INTERNAL_BUFFER_SIZE};
 
 pub struct Renderer {
 	dt: f64,
+	shared: Arc<RendererShared>,
 	resources: Resources,
 }
 
 impl Renderer {
-	pub(crate) fn new(sample_rate: u32, resources: Resources) -> Self {
+	pub(crate) fn new(shared: Arc<RendererShared>, resources: Resources) -> Self {
 		Self {
-			dt: 1.0 / sample_rate as f64,
+			dt: 1.0 / shared.sample_rate.load(Ordering::SeqCst) as f64,
+			shared,
 			resources,
 		}
 	}
@@ -17,7 +24,7 @@ impl Renderer {
 	/// audio output changes.
 	pub fn on_change_sample_rate(&mut self, sample_rate: u32) {
 		self.dt = 1.0 / sample_rate as f64;
-		// self.shared.sample_rate.store(sample_rate, Ordering::SeqCst);
+		self.shared.sample_rate.store(sample_rate, Ordering::SeqCst);
 		self.resources.mixer.on_change_sample_rate(sample_rate);
 	}
 
@@ -75,6 +82,20 @@ impl Renderer {
 					*channel = 0.0;
 				}
 			}
+		}
+	}
+}
+
+#[derive(Debug)]
+pub(crate) struct RendererShared {
+	pub(crate) sample_rate: AtomicU32,
+}
+
+impl RendererShared {
+	#[must_use]
+	pub fn new(sample_rate: u32) -> Self {
+		Self {
+			sample_rate: AtomicU32::new(sample_rate),
 		}
 	}
 }

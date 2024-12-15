@@ -1,39 +1,44 @@
 mod settings;
 
+use std::sync::{atomic::Ordering, Arc};
+
 pub use settings::*;
 
 use crate::{
 	backend::{Backend, DefaultBackend},
 	clock::{Clock, ClockHandle, ClockId, ClockSpeed},
 	modulator::{ModulatorBuilder, ModulatorId},
-	renderer::Renderer,
+	renderer::{Renderer, RendererShared},
 	resources::{
 		clocks::buffered_clock::BufferedClock, create_resources,
 		modulators::buffered_modulator::BufferedModulator, ResourceControllers,
 	},
 	sound::SoundData,
-	track::MainTrackHandle,
+	track::{MainTrackHandle, TrackBuilder, TrackHandle},
 	PlaySoundError, ResourceLimitReached, Value,
 };
 
 pub struct AudioManager<B: Backend = DefaultBackend> {
 	backend: B,
 	resource_controllers: ResourceControllers,
+	renderer_shared: Arc<RendererShared>,
 }
 
 impl<B: Backend> AudioManager<B> {
 	pub fn new(settings: AudioManagerSettings<B>) -> Result<Self, B::Error> {
 		let (mut backend, sample_rate) = B::setup(settings.backend_settings)?;
+		let renderer_shared = Arc::new(RendererShared::new(sample_rate));
 		let (resources, resource_controllers) = create_resources(
 			sample_rate,
 			settings.capacities,
 			settings.main_track_builder,
 		);
-		let renderer = Renderer::new(sample_rate, resources);
+		let renderer = Renderer::new(renderer_shared.clone(), resources);
 		backend.start(renderer)?;
 		Ok(Self {
 			backend,
 			resource_controllers,
+			renderer_shared,
 		})
 	}
 
@@ -42,6 +47,19 @@ impl<B: Backend> AudioManager<B> {
 		sound_data: D,
 	) -> Result<D::Handle, PlaySoundError<D::Error>> {
 		self.resource_controllers.main_track_handle.play(sound_data)
+	}
+
+	/// Creates a mixer sub-track.
+	pub fn add_sub_track(
+		&mut self,
+		builder: TrackBuilder,
+	) -> Result<TrackHandle, ResourceLimitReached> {
+		let (mut track, handle) = builder.build(self.renderer_shared.clone());
+		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
+		self.resource_controllers
+			.sub_track_controller
+			.insert(track)?;
+		Ok(handle)
 	}
 
 	pub fn add_clock(

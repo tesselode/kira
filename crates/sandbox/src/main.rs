@@ -7,56 +7,34 @@ use kira::{
 	manager::{AudioManager, AudioManagerSettings},
 	modulator::tweener::TweenerBuilder,
 	sound::sine::SineBuilder,
-	track::MainTrackBuilder,
+	track::{MainTrackBuilder, TrackBuilder},
 	Decibels, Easing, Mapping, Panning, StartTime, Tween, Value,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
-	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings {
-		main_track_builder: MainTrackBuilder::new()
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let mut track_1 = manager.add_sub_track(
+		TrackBuilder::new()
+			.volume(-6.0)
 			.with_effect(PanningControlBuilder(Value::Fixed(Panning::LEFT))),
+	)?;
+	track_1.play(SineBuilder {
+		frequency: Value::Fixed(440.0),
 		..Default::default()
 	})?;
-	let mut tweener = manager.add_modulator(TweenerBuilder { initial_value: 0.0 })?;
-	let mut clock = manager.add_clock(Value::FromModulator {
-		id: tweener.id(),
-		mapping: Mapping {
-			input_range: (0.0, 1.0),
-			output_range: (
-				ClockSpeed::TicksPerMinute(120.0),
-				ClockSpeed::TicksPerMinute(240.0),
-			),
-			easing: Easing::Linear,
-		},
+	let mut track_2 = manager.add_sub_track(
+		TrackBuilder::new()
+			.volume(-6.0)
+			.with_effect(PanningControlBuilder(Value::Fixed(Panning::RIGHT))),
+	)?;
+	track_2.play(SineBuilder {
+		frequency: Value::Fixed(660.0),
+		..Default::default()
 	})?;
-	tweener.set(
-		1.0,
-		Tween {
-			duration: Duration::from_secs(5),
-			start_time: StartTime::ClockTime(clock.time() + 4),
-			..Default::default()
-		},
-	);
-	for i in 0..16 {
-		manager.play(SineBuilder {
-			frequency: Value::Fixed(100.0 + 100.0 * i as f64),
-			start_time: StartTime::ClockTime(clock.time() + i),
-		})?;
-	}
-	clock.start();
-	manager.main_track().set_volume(
-		Decibels::SILENCE,
-		Tween {
-			duration: Duration::from_secs(5),
-			start_time: StartTime::ClockTime(clock.time() + 4),
-			..Default::default()
-		},
-	);
 
-	loop {
-		println!("{:?}", clock.time());
-		std::thread::sleep(Duration::from_millis(50));
-	}
+	wait_for_enter_press()?;
+
+	Ok(())
 }
 
 fn wait_for_enter_press() -> Result<(), Box<dyn Error>> {
