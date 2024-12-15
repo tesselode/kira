@@ -53,6 +53,7 @@ pub(crate) struct Track {
 	persist_until_sounds_finish: bool,
 	spatial_data: Option<SpatialData>,
 	playback_state_manager: PlaybackStateManager,
+	temp_buffer: Vec<Frame>,
 }
 
 impl Track {
@@ -128,13 +129,14 @@ impl Track {
 
 	pub fn process(
 		&mut self,
+		out: &mut [Frame],
 		dt: f64,
 		clocks: &Clocks,
 		modulators: &Modulators,
 		listeners: &Listeners,
 		parent_spatial_track_info: Option<SpatialTrackInfo>,
 		send_tracks: &mut ResourceStorage<SendTrack>,
-	) -> Frame {
+	) {
 		let spatial_track_info = self
 			.spatial_data
 			.as_ref()
@@ -149,22 +151,25 @@ impl Track {
 			&listeners.0.resources,
 			spatial_track_info,
 		);
-		self.volume.update(dt, &info);
+		self.volume.update(dt * out.len() as f64, &info);
 		for (_, route) in &mut self.sends {
-			route.volume.update(dt, &info);
+			route.volume.update(dt * out.len() as f64, &info);
 		}
 
-		let changed_playback_state = self.playback_state_manager.update(dt, &info);
+		let changed_playback_state = self
+			.playback_state_manager
+			.update(dt * out.len() as f64, &info);
 		if changed_playback_state {
 			self.update_shared_playback_state();
 		}
 		if !self.playback_state_manager.playback_state().is_advancing() {
-			return Frame::ZERO;
+			out.fill(Frame::ZERO);
+			return;
 		}
 
-		let mut output = Frame::ZERO;
 		for (_, sub_track) in &mut self.sub_tracks {
-			output += sub_track.process(
+			sub_track.process(
+				&mut self.temp_buffer[..out.len()],
 				dt,
 				clocks,
 				modulators,
@@ -172,32 +177,43 @@ impl Track {
 				spatial_track_info,
 				send_tracks,
 			);
+			for (summed_out, track_out) in out.iter_mut().zip(self.temp_buffer.iter().copied()) {
+				*summed_out += track_out;
+			}
+			self.temp_buffer.fill(Frame::ZERO);
 		}
 		for (_, sound) in &mut self.sounds {
-			output += sound.process(dt, &info);
+			sound.process(&mut self.temp_buffer[..out.len()], dt, &info);
+			for (summed_out, sound_out) in out.iter_mut().zip(self.temp_buffer.iter().copied()) {
+				*summed_out += sound_out;
+			}
+			self.temp_buffer.fill(Frame::ZERO);
 		}
 		for effect in &mut self.effects {
-			output = effect.process(output, dt, &info);
+			effect.process(out, dt, &info);
 		}
 		if let Some(spatial_data) = &mut self.spatial_data {
-			spatial_data.position.update(dt, &info);
+			spatial_data.position.update(dt * out.len() as f64, &info);
 			if let Some(ListenerInfo {
 				position,
 				orientation,
 			}) = info.listener_info()
 			{
-				output = spatial_data.spatialize(output, position.into(), orientation.into());
+				for frame in out.iter_mut() {
+					*frame = spatial_data.spatialize(*frame, position.into(), orientation.into());
+				}
 			}
 		}
-		output *= self.volume.value().as_amplitude()
-			* self.playback_state_manager.fade_volume().as_amplitude();
+		for frame in out.iter_mut() {
+			*frame *= self.volume.value().as_amplitude()
+				* self.playback_state_manager.fade_volume().as_amplitude();
+		}
 		for (send_track_id, SendTrackRoute { volume, .. }) in &self.sends {
 			let Some(send_track) = send_tracks.get_mut(send_track_id.0) else {
 				continue;
 			};
-			send_track.add_input(output * volume.value().as_amplitude());
+			send_track.add_input(out, volume.value());
 		}
-		output
 	}
 
 	fn read_commands(&mut self) {

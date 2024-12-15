@@ -19,6 +19,7 @@ pub(crate) struct MainTrack {
 	set_volume_command_reader: CommandReader<ValueChangeCommand<Decibels>>,
 	sounds: ResourceStorage<Box<dyn Sound>>,
 	effects: Vec<Box<dyn Effect>>,
+	temp_buffer: Vec<Frame>,
 }
 
 impl MainTrack {
@@ -46,16 +47,20 @@ impl MainTrack {
 		}
 	}
 
-	pub fn process(&mut self, input: Frame, dt: f64, info: &Info) -> Frame {
-		self.volume.update(dt, info);
-		let mut output = input;
+	pub fn process(&mut self, out: &mut [Frame], dt: f64, info: &Info) {
+		self.volume.update(dt * out.len() as f64, info);
 		for (_, sound) in &mut self.sounds {
-			output += sound.process(dt, info);
+			sound.process(&mut self.temp_buffer[..out.len()], dt, info);
+			for (summed_out, sound_out) in out.iter_mut().zip(self.temp_buffer.iter().copied()) {
+				*summed_out += sound_out;
+			}
+			self.temp_buffer.fill(Frame::ZERO);
 		}
 		for effect in &mut self.effects {
-			output = effect.process(output, dt, info);
+			effect.process(out, dt, info);
 		}
-		output *= self.volume.value().as_amplitude();
-		output
+		for frame in out {
+			*frame *= self.volume.value().as_amplitude();
+		}
 	}
 }

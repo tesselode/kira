@@ -2,7 +2,7 @@
 
 use std::sync::Mutex;
 
-use crate::frame::Frame;
+use crate::INTERNAL_BUFFER_SIZE;
 
 use super::{Backend, Renderer};
 
@@ -32,6 +32,7 @@ impl Default for MockBackendSettings {
 pub struct MockBackend {
 	sample_rate: u32,
 	state: State,
+	frames: Vec<f32>,
 }
 
 impl MockBackend {
@@ -60,10 +61,12 @@ impl MockBackend {
 	}
 
 	/// Calls the [`process`](Renderer::process) callback of the [`Renderer`].
-	#[must_use]
-	pub fn process(&mut self) -> Frame {
+	pub fn process(&mut self) {
 		if let State::Initialized { renderer } = &mut self.state {
-			renderer.get_mut().expect("mutex poisoned").process()
+			renderer
+				.get_mut()
+				.expect("mutex poisoned")
+				.process(&mut self.frames, 2)
 		} else {
 			panic!("backend is not initialized")
 		}
@@ -80,6 +83,7 @@ impl Backend for MockBackend {
 			Self {
 				sample_rate: settings.sample_rate,
 				state: State::Uninitialized,
+				frames: vec![0.0; INTERNAL_BUFFER_SIZE * 2],
 			},
 			settings.sample_rate,
 		))

@@ -29,9 +29,8 @@ impl Effect for TestEffect {
 		self.sample_rate.store(sample_rate, Ordering::SeqCst);
 	}
 
-	fn process(&mut self, _input: Frame, dt: f64, _info: &Info) -> Frame {
+	fn process(&mut self, _input: &mut [Frame], dt: f64, _info: &Info) {
 		self.dt_producer.push(dt).unwrap();
-		Frame::ZERO
 	}
 }
 
@@ -79,10 +78,10 @@ fn change_sample_rate() {
 	let backend = manager.backend_mut();
 	backend.on_start_processing();
 	assert_eq!(effect_handle.sample_rate.load(Ordering::SeqCst), 100);
-	let _ = backend.process();
+	backend.process();
 	assert_eq!(effect_handle.dt_consumer.pop(), Ok(1.0 / 100.0));
 	backend.set_sample_rate(200);
 	assert_eq!(effect_handle.sample_rate.load(Ordering::SeqCst), 200);
-	let _ = backend.process();
+	backend.process();
 	assert_eq!(effect_handle.dt_consumer.pop(), Ok(1.0 / 200.0));
 }

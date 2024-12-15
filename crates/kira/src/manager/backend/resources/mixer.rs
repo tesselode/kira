@@ -2,6 +2,7 @@ use crate::{
 	frame::Frame,
 	info::Info,
 	track::{MainTrack, MainTrackBuilder, MainTrackHandle, SendTrack, Track},
+	INTERNAL_BUFFER_SIZE,
 };
 
 use super::{
@@ -13,6 +14,7 @@ pub(crate) struct Mixer {
 	main_track: MainTrack,
 	sub_tracks: ResourceStorage<Track>,
 	send_tracks: ResourceStorage<SendTrack>,
+	temp_buffer: Vec<Frame>,
 }
 
 impl Mixer {
@@ -37,6 +39,7 @@ impl Mixer {
 				main_track,
 				sub_tracks,
 				send_tracks,
+				temp_buffer: vec![Frame::ZERO; INTERNAL_BUFFER_SIZE],
 			},
 			sub_track_controller,
 			send_track_controller,
@@ -68,17 +71,17 @@ impl Mixer {
 		self.main_track.on_start_processing();
 	}
 
-	#[must_use]
 	pub fn process(
 		&mut self,
+		out: &mut [Frame],
 		dt: f64,
 		clocks: &Clocks,
 		modulators: &Modulators,
 		listeners: &Listeners,
-	) -> Frame {
-		let mut main_track_input = Frame::ZERO;
+	) {
 		for (_, track) in &mut self.sub_tracks {
-			main_track_input += track.process(
+			track.process(
+				&mut self.temp_buffer[..out.len()],
 				dt,
 				clocks,
 				modulators,
@@ -86,6 +89,10 @@ impl Mixer {
 				None,
 				&mut self.send_tracks,
 			);
+			for (summed_out, sound_out) in out.iter_mut().zip(self.temp_buffer.iter().copied()) {
+				*summed_out += sound_out;
+			}
+			self.temp_buffer.fill(Frame::ZERO);
 		}
 		let info = Info::new(
 			&clocks.0.resources,
@@ -94,8 +101,12 @@ impl Mixer {
 			None,
 		);
 		for (_, track) in &mut self.send_tracks {
-			main_track_input += track.process(dt, &info);
+			track.process(&mut self.temp_buffer[..out.len()], dt, &info);
+			for (summed_out, sound_out) in out.iter_mut().zip(self.temp_buffer.iter().copied()) {
+				*summed_out += sound_out;
+			}
+			self.temp_buffer.fill(Frame::ZERO);
 		}
-		self.main_track.process(main_track_input, dt, &info)
+		self.main_track.process(out, dt, &info);
 	}
 }

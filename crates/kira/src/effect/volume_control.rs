@@ -37,9 +37,11 @@ impl Effect for VolumeControl {
 		read_commands_into_parameters!(self, volume);
 	}
 
-	fn process(&mut self, input: Frame, dt: f64, info: &Info) -> Frame {
-		self.volume.update(dt, info);
-		input * self.volume.value().as_amplitude()
+	fn process(&mut self, input: &mut [Frame], dt: f64, info: &Info) {
+		self.volume.update(dt * input.len() as f64, info);
+		for frame in input {
+			*frame *= self.volume.value().as_amplitude();
+		}
 	}
 }
 

@@ -207,34 +207,39 @@ impl Sound for StaticSound {
 		self.read_commands();
 	}
 
-	fn process(&mut self, dt: f64, info: &Info) -> Frame {
+	fn process(&mut self, out: &mut [Frame], dt: f64, info: &Info) {
 		// update parameters
-		self.volume.update(dt, info);
-		self.playback_rate.update(dt, info);
-		self.panning.update(dt, info);
-		let changed_playback_state = self.playback_state_manager.update(dt, info);
+		self.volume.update(dt * out.len() as f64, info);
+		self.playback_rate.update(dt * out.len() as f64, info);
+		self.panning.update(dt * out.len() as f64, info);
+		let changed_playback_state = self
+			.playback_state_manager
+			.update(dt * out.len() as f64, info);
 		if changed_playback_state {
 			self.update_shared_playback_state();
 		}
 
-		let will_never_start = self.start_time.update(dt, info);
+		let will_never_start = self.start_time.update(dt * out.len() as f64, info);
 		if will_never_start {
 			self.playback_state_manager.mark_as_stopped();
 			self.update_shared_playback_state();
 		}
 		if self.start_time != StartTime::Immediate {
-			return Frame::ZERO;
+			out.fill(Frame::ZERO);
+			return;
 		}
 
 		// play back audio
-		let out = self.resampler.get(self.fractional_position as f32);
-		self.fractional_position +=
-			self.sample_rate as f64 * self.playback_rate.value().0.abs() * dt;
-		while self.fractional_position >= 1.0 {
-			self.fractional_position -= 1.0;
-			self.update_position();
+		for frame in out {
+			let out = self.resampler.get(self.fractional_position as f32);
+			self.fractional_position +=
+				self.sample_rate as f64 * self.playback_rate.value().0.abs() * dt;
+			while self.fractional_position >= 1.0 {
+				self.fractional_position -= 1.0;
+				self.update_position();
+			}
+			*frame = out;
 		}
-		out
 	}
 
 	fn finished(&self) -> bool {

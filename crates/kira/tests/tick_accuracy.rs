@@ -30,7 +30,7 @@ struct TestEffect {
 }
 
 impl Effect for TestEffect {
-	fn process(&mut self, input: Frame, _dt: f64, info: &Info) -> Frame {
+	fn process(&mut self, _input: &mut [Frame], _dt: f64, info: &Info) {
 		self.frames += 1;
 		if self.frames == 24000 {
 			println!("asdf");
@@ -46,7 +46,6 @@ impl Effect for TestEffect {
 			);
 			self.ticks += EVENT_TIME_TICKS;
 		}
-		input
 	}
 }
 
@@ -100,6 +99,6 @@ fn tick_accuracy() {
 		if i % 512 == 0 {
 			backend.on_start_processing();
 		}
-		let _ = backend.process();
+		backend.process();
 	}
 }

@@ -200,61 +200,71 @@ impl Sound for StreamingSound {
 		self.read_commands();
 	}
 
-	fn process(&mut self, dt: f64, info: &Info) -> Frame {
+	fn process(&mut self, out: &mut [Frame], dt: f64, info: &Info) {
 		if self.shared.encountered_error() {
 			self.playback_state_manager.mark_as_stopped();
 			self.update_shared_playback_state();
-			return Frame::ZERO;
+			out.fill(Frame::ZERO);
+			return;
 		}
 
 		// update parameters
-		self.volume.update(dt, info);
-		self.playback_rate.update(dt, info);
-		self.panning.update(dt, info);
-		let changed_playback_state = self.playback_state_manager.update(dt, info);
+		self.volume.update(dt * out.len() as f64, info);
+		self.playback_rate.update(dt * out.len() as f64, info);
+		self.panning.update(dt * out.len() as f64, info);
+		let changed_playback_state = self
+			.playback_state_manager
+			.update(dt * out.len() as f64, info);
 		if changed_playback_state {
 			self.update_shared_playback_state();
 		}
 
-		let will_never_start = self.start_time.update(dt, info);
+		let will_never_start = self.start_time.update(dt * out.len() as f64, info);
 		if will_never_start {
 			self.playback_state_manager.mark_as_stopped();
 			self.update_shared_playback_state();
 		}
 		if self.start_time != StartTime::Immediate {
-			return Frame::ZERO;
+			out.fill(Frame::ZERO);
+			return;
 		}
 
 		if !self.playback_state_manager.playback_state().is_advancing() {
-			return Frame::ZERO;
+			out.fill(Frame::ZERO);
+			return;
 		}
 		// pause playback while waiting for audio data. the first frame
 		// in the ringbuffer is the previous frame, so we need to make
 		// sure there's at least 2 before we continue playing.
 		if self.frame_consumer.slots() < 2 && !self.shared.reached_end() {
-			return Frame::ZERO;
+			out.fill(Frame::ZERO);
+			return;
 		}
-		let next_frames = self.next_frames();
-		let out = interpolate_frame(
-			next_frames[0],
-			next_frames[1],
-			next_frames[2],
-			next_frames[3],
-			self.fractional_position as f32,
-		);
-		self.fractional_position +=
-			self.sample_rate as f64 * self.playback_rate.value().0.max(0.0) * dt;
-		while self.fractional_position >= 1.0 {
-			self.fractional_position -= 1.0;
-			self.frame_consumer.pop().ok();
+
+		for frame in out {
+			let next_frames = self.next_frames();
+			let out = interpolate_frame(
+				next_frames[0],
+				next_frames[1],
+				next_frames[2],
+				next_frames[3],
+				self.fractional_position as f32,
+			);
+			self.fractional_position +=
+				self.sample_rate as f64 * self.playback_rate.value().0.max(0.0) * dt;
+			while self.fractional_position >= 1.0 {
+				self.fractional_position -= 1.0;
+				self.frame_consumer.pop().ok();
+			}
+			if self.shared.reached_end() && self.frame_consumer.is_empty() {
+				self.playback_state_manager.mark_as_stopped();
+				self.update_shared_playback_state();
+			}
+			*frame = (out
+				* self.playback_state_manager.fade_volume().as_amplitude()
+				* self.volume.value().as_amplitude())
+			.panned(self.panning.value());
 		}
-		if self.shared.reached_end() && self.frame_consumer.is_empty() {
-			self.playback_state_manager.mark_as_stopped();
-			self.update_shared_playback_state();
-		}
-		(out * self.playback_state_manager.fade_volume().as_amplitude()
-			* self.volume.value().as_amplitude())
-		.panned(self.panning.value())
 	}
 
 	fn finished(&self) -> bool {

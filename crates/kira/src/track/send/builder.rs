@@ -5,7 +5,7 @@ use crate::{
 	effect::EffectBuilder,
 	frame::Frame,
 	tween::{Parameter, Value},
-	Decibels,
+	Decibels, INTERNAL_BUFFER_SIZE,
 };
 
 use super::{Effect, SendTrack, SendTrackHandle, SendTrackId, TrackShared};
@@ -180,7 +180,7 @@ impl SendTrackBuilder {
 			volume: Parameter::new(self.volume, Decibels::IDENTITY),
 			set_volume_command_reader,
 			effects: self.effects,
-			input: Frame::ZERO,
+			input: vec![Frame::ZERO; INTERNAL_BUFFER_SIZE],
 		};
 		let handle = SendTrackHandle {
 			id,

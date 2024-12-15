@@ -56,15 +56,7 @@ impl Backend for CpalBackend {
 				&config,
 				move |data: &mut [f32], _| {
 					renderer.on_start_processing();
-					for frame in data.chunks_exact_mut(channels as usize) {
-						let out = renderer.process();
-						if channels == 1 {
-							frame[0] = (out.left + out.right) / 2.0;
-						} else {
-							frame[0] = out.left;
-							frame[1] = out.right;
-						}
-					}
+					renderer.process(data, channels);
 				},
 				move |_| {},
 				None,

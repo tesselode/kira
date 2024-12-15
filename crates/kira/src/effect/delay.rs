@@ -95,16 +95,16 @@ impl Effect for Delay {
 		}
 	}
 
-	fn process(&mut self, input: Frame, dt: f64, info: &Info) -> Frame {
+	fn process(&mut self, input: &mut [Frame], dt: f64, info: &Info) {
 		if let DelayState::Initialized {
 			buffer,
 			write_position,
 			..
 		} = &mut self.state
 		{
-			self.delay_time.update(dt, info);
-			self.feedback.update(dt, info);
-			self.mix.update(dt, info);
+			self.delay_time.update(dt * input.len() as f64, info);
+			self.feedback.update(dt * input.len() as f64, info);
+			self.mix.update(dt * input.len() as f64, info);
 
 			// get the read position (in samples)
 			let mut read_position = *write_position as f32 - (self.delay_time.value() / dt) as f32;

@@ -123,10 +123,10 @@ impl Effect for EqFilter {
 		read_commands_into_parameters!(self, frequency, gain, q);
 	}
 
-	fn process(&mut self, input: Frame, dt: f64, info: &Info) -> Frame {
-		self.frequency.update(dt, info);
-		self.gain.update(dt, info);
-		self.q.update(dt, info);
+	fn process(&mut self, input: &mut [Frame], dt: f64, info: &Info) {
+		self.frequency.update(dt * input.len() as f64, info);
+		self.gain.update(dt * input.len() as f64, info);
+		self.q.update(dt * input.len() as f64, info);
 		let Coefficients {
 			a1,
 			a2,
@@ -135,12 +135,15 @@ impl Effect for EqFilter {
 			m1,
 			m2,
 		} = self.calculate_coefficients(dt);
-		let v3 = input - self.ic2eq;
-		let v1 = self.ic1eq * (a1 as f32) + v3 * (a2 as f32);
-		let v2 = self.ic2eq + self.ic1eq * (a2 as f32) + v3 * (a3 as f32);
-		self.ic1eq = v1 * 2.0 - self.ic1eq;
-		self.ic2eq = v2 * 2.0 - self.ic2eq;
-		input * (m0 as f32) + v1 * (m1 as f32) + v2 * (m2 as f32)
+
+		for frame in input {
+			let v3 = *frame - self.ic2eq;
+			let v1 = self.ic1eq * (a1 as f32) + v3 * (a2 as f32);
+			let v2 = self.ic2eq + self.ic1eq * (a2 as f32) + v3 * (a3 as f32);
+			self.ic1eq = v1 * 2.0 - self.ic1eq;
+			self.ic2eq = v2 * 2.0 - self.ic2eq;
+			*frame = *frame * (m0 as f32) + v1 * (m1 as f32) + v2 * (m2 as f32)
+		}
 	}
 }
 

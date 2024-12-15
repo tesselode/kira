@@ -10,7 +10,7 @@ and [`Effect`] traits.
 */
 
 pub mod compressor;
-pub mod delay;
+// pub mod delay;
 pub mod distortion;
 pub mod eq_filter;
 pub mod filter;
@@ -48,9 +48,8 @@ pub trait Effect: Send {
 	/// but not for every single audio sample.
 	fn on_start_processing(&mut self) {}
 
-	/// Transforms an input [`Frame`].
+	/// Transforms a slice of input [`Frame`]s.
 	///
-	/// `dt` is the time that's elapsed since the previous round of
-	/// processing (in seconds).
-	fn process(&mut self, input: Frame, dt: f64, info: &Info) -> Frame;
+	/// `dt` is the time between each frame (in seconds).
+	fn process(&mut self, input: &mut [Frame], dt: f64, info: &Info);
 }

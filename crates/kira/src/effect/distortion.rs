@@ -55,24 +55,27 @@ impl Effect for Distortion {
 		read_commands_into_parameters!(self, drive, mix);
 	}
 
-	fn process(&mut self, input: Frame, dt: f64, info: &Info) -> Frame {
-		self.drive.update(dt, info);
-		self.mix.update(dt, info);
+	fn process(&mut self, input: &mut [Frame], dt: f64, info: &Info) {
+		self.drive.update(dt * input.len() as f64, info);
+		self.mix.update(dt * input.len() as f64, info);
 		let drive = self.drive.value().as_amplitude();
-		let mut output = input * drive;
-		output = match self.kind {
-			DistortionKind::HardClip => {
-				Frame::new(output.left.clamp(-1.0, 1.0), output.right.clamp(-1.0, 1.0))
-			}
-			DistortionKind::SoftClip => Frame::new(
-				output.left / (1.0 + output.left.abs()),
-				output.right / (1.0 + output.right.abs()),
-			),
-		};
-		output /= drive;
 
-		let mix = self.mix.value().0;
-		output * mix.sqrt() + input * (1.0 - mix).sqrt()
+		for frame in input {
+			let mut output = *frame * drive;
+			output = match self.kind {
+				DistortionKind::HardClip => {
+					Frame::new(output.left.clamp(-1.0, 1.0), output.right.clamp(-1.0, 1.0))
+				}
+				DistortionKind::SoftClip => Frame::new(
+					output.left / (1.0 + output.left.abs()),
+					output.right / (1.0 + output.right.abs()),
+				),
+			};
+			output /= drive;
+
+			let mix = self.mix.value().0;
+			*frame = output * mix.sqrt() + *frame * (1.0 - mix).sqrt()
+		}
 	}
 }
 

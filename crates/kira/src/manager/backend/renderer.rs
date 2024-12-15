@@ -3,7 +3,7 @@ use std::sync::{
 	Arc,
 };
 
-use crate::Frame;
+use crate::{Frame, INTERNAL_BUFFER_SIZE};
 
 use super::resources::Resources;
 
@@ -30,6 +30,7 @@ pub struct Renderer {
 	dt: f64,
 	shared: Arc<RendererShared>,
 	resources: Resources,
+	temp_buffer: Vec<Frame>,
 }
 
 impl Renderer {
@@ -39,6 +40,7 @@ impl Renderer {
 			dt: 1.0 / shared.sample_rate.load(Ordering::SeqCst) as f64,
 			shared,
 			resources,
+			temp_buffer: vec![Frame::ZERO; INTERNAL_BUFFER_SIZE],
 		}
 	}
 
@@ -59,29 +61,58 @@ impl Renderer {
 		self.resources.modulators.on_start_processing();
 	}
 
-	/// Produces the next [`Frame`] of audio.
-	#[must_use]
-	pub fn process(&mut self) -> Frame {
+	/// Produces the next [`Frame`]s of audio.
+	pub fn process(&mut self, out: &mut [f32], num_channels: u16) {
+		for chunk in out.chunks_mut(INTERNAL_BUFFER_SIZE * num_channels as usize) {
+			self.process_chunk(chunk, num_channels);
+		}
+	}
+
+	fn process_chunk(&mut self, chunk: &mut [f32], num_channels: u16) {
+		let num_frames = chunk.len() / num_channels as usize;
+
 		self.resources.modulators.process(
-			self.dt,
+			self.dt * num_frames as f64,
 			&self.resources.clocks,
 			&self.resources.listeners,
 		);
 		self.resources.clocks.update(
-			self.dt,
+			self.dt * num_frames as f64,
 			&self.resources.modulators,
 			&self.resources.listeners,
 		);
 		self.resources.listeners.update(
-			self.dt,
+			self.dt * num_frames as f64,
 			&self.resources.clocks,
 			&self.resources.modulators,
 		);
+
 		self.resources.mixer.process(
+			&mut self.temp_buffer[..num_frames],
 			self.dt,
 			&self.resources.clocks,
 			&self.resources.modulators,
 			&self.resources.listeners,
-		)
+		);
+
+		// convert from frames to requested number of channels
+		for (i, channels) in chunk.chunks_mut(num_channels.into()).enumerate() {
+			let frame = self.temp_buffer[i];
+			if num_channels == 1 {
+				channels[0] = (frame.left + frame.right) / 2.0;
+			} else {
+				channels[0] = frame.left;
+				channels[1] = frame.right;
+				/*
+					if there's more channels, send silence to them. if we don't,
+					we might get bad sounds outputted to those channels.
+					(https://github.com/tesselode/kira/issues/50)
+				*/
+				for channel in channels.iter_mut().skip(2) {
+					*channel = 0.0;
+				}
+			}
+		}
+		self.temp_buffer.fill(Frame::ZERO);
 	}
 }

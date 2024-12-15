@@ -37,9 +37,11 @@ impl Effect for PanningControl {
 		read_commands_into_parameters!(self, panning);
 	}
 
-	fn process(&mut self, input: Frame, dt: f64, info: &Info) -> Frame {
-		self.panning.update(dt, info);
-		input.panned(self.panning.value())
+	fn process(&mut self, input: &mut [Frame], dt: f64, info: &Info) {
+		self.panning.update(dt * input.len() as f64, info);
+		for frame in input {
+			*frame = frame.panned(self.panning.value())
+		}
 	}
 }
 

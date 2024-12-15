@@ -9,7 +9,7 @@ use crate::{
 	manager::backend::{resources::ResourceStorage, RendererShared},
 	playback_state_manager::PlaybackStateManager,
 	tween::{Easing, Parameter, Value},
-	Decibels,
+	Decibels, Frame, INTERNAL_BUFFER_SIZE,
 };
 
 use super::{
@@ -312,6 +312,7 @@ impl SpatialTrackBuilder {
 				enable_spatialization: self.enable_spatialization,
 			}),
 			playback_state_manager: PlaybackStateManager::new(None),
+			temp_buffer: vec![Frame::ZERO; INTERNAL_BUFFER_SIZE],
 		};
 		let handle = SpatialTrackHandle {
 			renderer_shared,

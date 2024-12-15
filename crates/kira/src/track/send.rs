@@ -32,7 +32,7 @@ pub(crate) struct SendTrack {
 	volume: Parameter<Decibels>,
 	set_volume_command_reader: CommandReader<ValueChangeCommand<Decibels>>,
 	effects: Vec<Box<dyn Effect>>,
-	input: Frame,
+	input: Vec<Frame>,
 }
 
 impl SendTrack {
@@ -53,8 +53,10 @@ impl SendTrack {
 		self.shared.clone()
 	}
 
-	pub fn add_input(&mut self, input: Frame) {
-		self.input += input;
+	pub fn add_input(&mut self, input: &[Frame], volume: Decibels) {
+		for (input, added) in self.input.iter_mut().zip(input.iter().copied()) {
+			*input += added * volume.as_amplitude();
+		}
 	}
 
 	pub fn on_start_processing(&mut self) {
@@ -65,13 +67,18 @@ impl SendTrack {
 		}
 	}
 
-	pub fn process(&mut self, dt: f64, info: &Info) -> Frame {
-		self.volume.update(dt, info);
-		let mut output = std::mem::replace(&mut self.input, Frame::ZERO);
-		for effect in &mut self.effects {
-			output = effect.process(output, dt, info);
+	pub fn process(&mut self, out: &mut [Frame], dt: f64, info: &Info) {
+		self.volume.update(dt * out.len() as f64, info);
+		for (out_frame, input_frame) in out.iter_mut().zip(self.input.iter().copied()) {
+			*out_frame += input_frame;
 		}
-		output * self.volume.value().as_amplitude()
+		self.input.fill(Frame::ZERO);
+		for effect in &mut self.effects {
+			effect.process(out, dt, info);
+		}
+		for frame in out {
+			*frame *= self.volume.value().as_amplitude();
+		}
 	}
 }
 

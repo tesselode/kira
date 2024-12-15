@@ -48,7 +48,13 @@ fn sounds(c: &mut Criterion) {
 			manager.play(sound_data.clone()).unwrap();
 		}
 		manager.backend_mut().on_start_processing();
-		b.iter(|| manager.backend_mut().process());
+		let mut num_iterations = 0;
+		b.iter(|| {
+			if num_iterations % 128 == 0 {
+				manager.backend_mut().process();
+			}
+			num_iterations += 1
+		});
 	});
 
 	// similar to "simple", but also periodically calls the
@@ -78,7 +84,9 @@ fn sounds(c: &mut Criterion) {
 			if num_iterations % 1000 == 0 {
 				manager.backend_mut().on_start_processing();
 			}
-			let _ = manager.backend_mut().process();
+			if num_iterations % 128 == 0 {
+				manager.backend_mut().process();
+			}
 			num_iterations += 1;
 		});
 	});

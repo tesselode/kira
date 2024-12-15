@@ -138,41 +138,43 @@ impl Effect for Reverb {
 		read_commands_into_parameters!(self, feedback, damping, stereo_width, mix);
 	}
 
-	fn process(&mut self, input: Frame, dt: f64, info: &Info) -> Frame {
+	fn process(&mut self, input: &mut [Frame], dt: f64, info: &Info) {
 		if let ReverbState::Initialized {
 			comb_filters,
 			all_pass_filters,
 		} = &mut self.state
 		{
-			self.feedback.update(dt, info);
-			self.damping.update(dt, info);
-			self.stereo_width.update(dt, info);
-			self.mix.update(dt, info);
+			self.feedback.update(dt * input.len() as f64, info);
+			self.damping.update(dt * input.len() as f64, info);
+			self.stereo_width.update(dt * input.len() as f64, info);
+			self.mix.update(dt * input.len() as f64, info);
 
 			let feedback = self.feedback.value() as f32;
 			let damping = self.damping.value() as f32;
 			let stereo_width = self.stereo_width.value() as f32;
 
-			let mut output = Frame::ZERO;
-			let mono_input = (input.left + input.right) * GAIN;
-			// accumulate comb filters in parallel
-			for comb_filter in comb_filters {
-				output.left += comb_filter.0.process(mono_input, feedback, damping);
-				output.right += comb_filter.1.process(mono_input, feedback, damping);
+			for frame in input {
+				let mut output = Frame::ZERO;
+				let mono_input = (frame.left + frame.right) * GAIN;
+				// accumulate comb filters in parallel
+				for comb_filter in comb_filters.iter_mut() {
+					output.left += comb_filter.0.process(mono_input, feedback, damping);
+					output.right += comb_filter.1.process(mono_input, feedback, damping);
+				}
+				// feed through all-pass filters in series
+				for all_pass_filter in all_pass_filters.iter_mut() {
+					output.left = all_pass_filter.0.process(output.left);
+					output.right = all_pass_filter.1.process(output.right);
+				}
+				let wet_1 = stereo_width / 2.0 + 0.5;
+				let wet_2 = (1.0 - stereo_width) / 2.0;
+				let output = Frame::new(
+					output.left * wet_1 + output.right * wet_2,
+					output.right * wet_1 + output.left * wet_2,
+				);
+				let mix = self.mix.value().0;
+				*frame = output * mix.sqrt() + *frame * (1.0 - mix).sqrt()
 			}
-			// feed through all-pass filters in series
-			for all_pass_filter in all_pass_filters {
-				output.left = all_pass_filter.0.process(output.left);
-				output.right = all_pass_filter.1.process(output.right);
-			}
-			let wet_1 = stereo_width / 2.0 + 0.5;
-			let wet_2 = (1.0 - stereo_width) / 2.0;
-			let output = Frame::new(
-				output.left * wet_1 + output.right * wet_2,
-				output.right * wet_1 + output.left * wet_2,
-			);
-			let mix = self.mix.value().0;
-			output * mix.sqrt() + input * (1.0 - mix).sqrt()
 		} else {
 			panic!("Reverb should be initialized before the first process call")
 		}

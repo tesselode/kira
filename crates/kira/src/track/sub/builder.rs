@@ -6,7 +6,7 @@ use crate::{
 	manager::backend::{resources::ResourceStorage, RendererShared},
 	playback_state_manager::PlaybackStateManager,
 	tween::{Parameter, Value},
-	Decibels,
+	Decibels, Frame, INTERNAL_BUFFER_SIZE,
 };
 
 use super::{
@@ -256,6 +256,7 @@ impl TrackBuilder {
 			persist_until_sounds_finish: self.persist_until_sounds_finish,
 			spatial_data: None,
 			playback_state_manager: PlaybackStateManager::new(None),
+			temp_buffer: vec![Frame::ZERO; INTERNAL_BUFFER_SIZE],
 		};
 		let handle = TrackHandle {
 			renderer_shared,

@@ -198,21 +198,5 @@ fn device_name(device: &Device) -> String {
 
 fn process_renderer(renderer_wrapper: &mut RendererWrapper, data: &mut [f32], channels: u16) {
 	renderer_wrapper.on_start_processing();
-	for frame in data.chunks_exact_mut(channels as usize) {
-		let out = renderer_wrapper.process();
-		if channels == 1 {
-			frame[0] = (out.left + out.right) / 2.0;
-		} else {
-			frame[0] = out.left;
-			frame[1] = out.right;
-			/*
-				if there's more channels, send silence to them. if we don't,
-				we might get bad sounds outputted to those channels.
-				(https://github.com/tesselode/kira/issues/50)
-			*/
-			for channel in frame.iter_mut().skip(2) {
-				*channel = 0.0;
-			}
-		}
-	}
+	renderer_wrapper.process(data, channels);
 }
