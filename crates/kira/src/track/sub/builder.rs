@@ -6,8 +6,7 @@ use crate::{
 };
 
 use super::{
-	command_writers_and_readers, Effect, /* SendTrackId, SendTrackRoute, */ Track,
-	TrackHandle, TrackShared,
+	command_writers_and_readers, Effect, PlaybackStateManager, Track, TrackHandle, TrackShared,
 };
 
 /// Configures a mixer track.
@@ -251,7 +250,7 @@ impl TrackBuilder {
 			// sends,
 			persist_until_sounds_finish: self.persist_until_sounds_finish,
 			// spatial_data: None,
-			// playback_state_manager: PlaybackStateManager::new(None),
+			playback_state_manager: PlaybackStateManager::new(None),
 		};
 		let handle = TrackHandle {
 			renderer_shared,

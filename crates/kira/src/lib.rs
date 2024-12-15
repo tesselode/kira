@@ -21,6 +21,7 @@ pub mod info;
 pub mod manager;
 pub mod modulator;
 mod panning;
+mod playback_state_manager;
 pub mod renderer;
 mod resources;
 pub mod sound;

@@ -13,7 +13,7 @@ use crate::{
 	command_writers_and_readers,
 	effect::Effect,
 	info::Info,
-	// playback_state_manager::PlaybackStateManager,
+	playback_state_manager::PlaybackStateManager,
 	// listener::ListenerId,
 	resources::{
 		clocks::Clocks, /* listeners::Listeners, */ modulators::Modulators, ResourceStorage,
@@ -53,11 +53,11 @@ pub(crate) struct Track {
 	// sends: Vec<(SendTrackId, SendTrackRoute)>,
 	persist_until_sounds_finish: bool,
 	// spatial_data: Option<SpatialData>,
-	// playback_state_manager: PlaybackStateManager,
+	playback_state_manager: PlaybackStateManager,
 }
 
 impl Track {
-	/* fn update_shared_playback_state(&mut self) {
+	fn update_shared_playback_state(&mut self) {
 		self.shared
 			.set_state(self.playback_state_manager.playback_state());
 	}
@@ -71,7 +71,7 @@ impl Track {
 		self.playback_state_manager
 			.resume(start_time, fade_in_tween);
 		self.update_shared_playback_state();
-	} */
+	}
 
 	pub fn init_effects(&mut self, sample_rate: u32) {
 		for effect in &mut self.effects {
@@ -137,6 +137,40 @@ impl Track {
 		// parent_spatial_track_info: Option<SpatialTrackInfo>,
 		// send_tracks: &mut ResourceStorage<SendTrack>,
 	) {
+		let info = Info::new(
+			&clocks.0.resources,
+			&modulators.0.resources,
+			// &listeners.0.resources,
+			// spatial_track_info,
+		);
+
+		for (i, frame) in out.iter_mut().enumerate() {
+			let changed_playback_state = self
+				.playback_state_manager
+				.update(dt, &info.for_single_frame(i));
+			if changed_playback_state {
+				self.update_shared_playback_state();
+			}
+			if !self.playback_state_manager.playback_state().is_advancing() {
+				*frame = Frame::ZERO;
+				continue;
+			}
+
+			let mut single_frame_out = [Frame::ZERO];
+
+			// process sounds
+			for (_, sound) in &mut self.sounds {
+				sound.process(&mut single_frame_out, dt, &info);
+			}
+
+			// process effects
+			for effect in &mut self.effects {
+				effect.process(&mut single_frame_out, dt, &info);
+			}
+
+			*frame = single_frame_out[0] * self.playback_state_manager.fade_volume().as_amplitude();
+		}
+
 		/* let spatial_track_info = self
 		.spatial_data
 		.as_ref()
@@ -145,35 +179,6 @@ impl Track {
 			listener_id: spatial_data.listener_id,
 		})
 		.or(parent_spatial_track_info); */
-		let info = Info::new(
-			&clocks.0.resources,
-			&modulators.0.resources,
-			// &listeners.0.resources,
-			// spatial_track_info,
-		);
-
-		/* let changed_playback_state = self.playback_state_manager.update(dt, &info);
-		if changed_playback_state {
-			self.update_shared_playback_state();
-		}
-		if !self.playback_state_manager.playback_state().is_advancing() {
-			return Frame::ZERO;
-		} */
-
-		// process sounds
-		let mut per_sound_buffer = [Frame::ZERO; INTERNAL_BUFFER_SIZE];
-		for (_, sound) in &mut self.sounds {
-			sound.process(&mut per_sound_buffer[..out.len()], dt, &info);
-			for (summed_out, sound_out) in out.iter_mut().zip(per_sound_buffer.iter_mut()) {
-				*summed_out += *sound_out;
-			}
-			per_sound_buffer = [Frame::ZERO; INTERNAL_BUFFER_SIZE];
-		}
-
-		// process effects
-		for effect in &mut self.effects {
-			effect.process(out, dt, &info);
-		}
 
 		/* if let Some(spatial_data) = &mut self.spatial_data {
 			spatial_data.position.update(dt, &info);
@@ -204,12 +209,12 @@ impl Track {
 		/* if let Some(SpatialData { position, .. }) = &mut self.spatial_data {
 			position.read_command(&mut self.command_readers.set_position);
 		} */
-		/* if let Some(tween) = self.command_readers.pause.read() {
+		if let Some(tween) = self.command_readers.pause.read() {
 			self.pause(tween);
 		}
 		if let Some((start_time, tween)) = self.command_readers.resume.read() {
 			self.resume(start_time, tween);
-		} */
+		}
 	}
 }
 

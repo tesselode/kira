@@ -34,6 +34,20 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 	wait_for_enter_press()?;
 
+	track_1.pause(Tween {
+		duration: Duration::from_secs(1),
+		..Default::default()
+	});
+
+	wait_for_enter_press()?;
+
+	track_1.resume(Tween {
+		duration: Duration::from_secs(1),
+		..Default::default()
+	});
+
+	wait_for_enter_press()?;
+
 	Ok(())
 }
 
