@@ -13,20 +13,12 @@ use kira::{
 
 fn main() -> Result<(), Box<dyn Error>> {
 	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	let mut track_1 = manager.add_sub_track(
-		TrackBuilder::new()
-			.volume(-6.0)
-			.with_effect(PanningControlBuilder(Value::Fixed(Panning::LEFT))),
-	)?;
+	let mut track_1 = manager.add_sub_track(TrackBuilder::new().volume(-6.0))?;
 	track_1.play(SineBuilder {
 		frequency: Value::Fixed(440.0),
 		..Default::default()
 	})?;
-	let mut track_2 = manager.add_sub_track(
-		TrackBuilder::new()
-			.volume(-6.0)
-			.with_effect(PanningControlBuilder(Value::Fixed(Panning::RIGHT))),
-	)?;
+	let mut track_2 = manager.add_sub_track(TrackBuilder::new().volume(-6.0))?;
 	track_2.play(SineBuilder {
 		frequency: Value::Fixed(660.0),
 		..Default::default()

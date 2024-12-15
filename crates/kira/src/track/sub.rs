@@ -158,9 +158,18 @@ impl Track {
 
 			let mut single_frame_out = [Frame::ZERO];
 
+			// process sub-tracks
+			for (_, sub_track) in &mut self.sub_tracks {
+				let mut sub_track_out = [Frame::ZERO];
+				sub_track.process(&mut sub_track_out, dt, clocks, modulators);
+				single_frame_out[0] += sub_track_out[0];
+			}
+
 			// process sounds
 			for (_, sound) in &mut self.sounds {
-				sound.process(&mut single_frame_out, dt, &info);
+				let mut sound_out = [Frame::ZERO];
+				sound.process(&mut sound_out, dt, &info);
+				single_frame_out[0] += sound_out[0];
 			}
 
 			// process effects
