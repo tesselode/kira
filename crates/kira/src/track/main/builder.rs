@@ -1,6 +1,9 @@
 use crate::{
-	command::command_writer_and_reader, resources::ResourceStorage, tween::Parameter, Decibels,
-	Value,
+	command::command_writer_and_reader,
+	effect::{Effect, EffectBuilder},
+	resources::ResourceStorage,
+	tween::Parameter,
+	Decibels, Value,
 };
 
 use super::{MainTrack, MainTrackHandle};
@@ -9,9 +12,9 @@ use super::{MainTrack, MainTrackHandle};
 pub struct MainTrackBuilder {
 	/// The volume of the track.
 	pub(crate) volume: Value<Decibels>,
-	/* /// The effects that should be applied to the input audio
+	/// The effects that should be applied to the input audio
 	/// for this track.
-	pub(crate) effects: Vec<Box<dyn Effect>>, */
+	pub(crate) effects: Vec<Box<dyn Effect>>,
 	/// The maximum number of sounds that can be played simultaneously on this track.
 	pub(crate) sound_capacity: u16,
 }
@@ -22,7 +25,7 @@ impl MainTrackBuilder {
 	pub fn new() -> Self {
 		Self {
 			volume: Value::Fixed(Decibels::IDENTITY),
-			// effects: vec![],
+			effects: vec![],
 			sound_capacity: 128,
 		}
 	}
@@ -45,7 +48,7 @@ impl MainTrackBuilder {
 		}
 	}
 
-	/* /**
+	/**
 	Adds an effect to the track.
 
 	# Examples
@@ -63,7 +66,7 @@ impl MainTrackBuilder {
 		handle
 	}
 
-	/* /**
+	/**
 	Adds an effect to the track and returns the [`MainTrackBuilder`].
 
 	If you need to modify the effect later, use [`add_effect`](Self::add_effect),
@@ -86,7 +89,7 @@ impl MainTrackBuilder {
 	pub fn with_effect<B: EffectBuilder>(mut self, builder: B) -> Self {
 		self.add_effect(builder);
 		self
-	} */
+	}
 
 	/** Adds an already built effect into this track.
 
@@ -110,15 +113,15 @@ impl MainTrackBuilder {
 	*/
 	pub fn add_built_effect(&mut self, effect: Box<dyn Effect>) {
 		self.effects.push(effect);
-	} */
+	}
 
-	/* /** Add an already-built effect and return the [`MainTrackBuilder`].
+	/** Add an already-built effect and return the [`MainTrackBuilder`].
 
-	 `Box<dyn Effect>` values are created when calling `build` on an effect builder, which gives you
-	 an effect handle, as well as this boxed effect, which is the actual audio effect.
+	`Box<dyn Effect>` values are created when calling `build` on an effect builder, which gives you
+	an effect handle, as well as this boxed effect, which is the actual audio effect.
 
-	 This is a lower-level method than [`Self::with_effect`], and you should probably use it rather
-	 than this method, unless you have a reason to.
+	This is a lower-level method than [`Self::with_effect`], and you should probably use it rather
+	than this method, unless you have a reason to.
 
 	# Examples
 
@@ -139,7 +142,7 @@ impl MainTrackBuilder {
 	pub fn with_built_effect(mut self, effect: Box<dyn Effect>) -> Self {
 		self.add_built_effect(effect);
 		self
-	} */
+	}
 
 	#[must_use]
 	pub(crate) fn build(self) -> (MainTrack, MainTrackHandle) {
@@ -149,7 +152,7 @@ impl MainTrackBuilder {
 			volume: Parameter::new(self.volume, Decibels::IDENTITY),
 			set_volume_command_reader,
 			sounds,
-			// effects: self.effects,
+			effects: self.effects,
 		};
 		let handle = MainTrackHandle {
 			set_volume_command_writer,

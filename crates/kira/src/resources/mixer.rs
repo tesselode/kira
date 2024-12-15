@@ -11,6 +11,7 @@ pub struct Mixer {
 
 impl Mixer {
 	pub fn new(
+		sample_rate: u32,
 		main_track_builder: MainTrackBuilder,
 	) -> (
 		Self,
@@ -18,8 +19,19 @@ impl Mixer {
 		// ResourceController<SendTrack>,
 		MainTrackHandle,
 	) {
-		let (main_track, main_track_handle) = main_track_builder.build();
+		let (mut main_track, main_track_handle) = main_track_builder.build();
+		main_track.init_effects(sample_rate);
 		(Self { main_track }, main_track_handle)
+	}
+
+	pub fn on_change_sample_rate(&mut self, sample_rate: u32) {
+		self.main_track.on_change_sample_rate(sample_rate);
+		/* for (_, track) in &mut self.sub_tracks {
+			track.on_change_sample_rate(sample_rate);
+		}
+		for (_, track) in &mut self.send_tracks {
+			track.on_change_sample_rate(sample_rate);
+		} */
 	}
 
 	pub fn on_start_processing(&mut self) {

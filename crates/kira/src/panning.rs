@@ -2,6 +2,8 @@ use std::ops::{
 	Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
 };
 
+use crate::{Tweenable, Value};
+
 // use crate::tween::{Tweenable, Value};
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
@@ -31,11 +33,11 @@ impl Default for Panning {
 	}
 }
 
-/* impl Tweenable for Panning {
+impl Tweenable for Panning {
 	fn interpolate(a: Self, b: Self, amount: f64) -> Self {
 		Self(Tweenable::interpolate(a.0, b.0, amount))
 	}
-} */
+}
 
 impl From<f32> for Panning {
 	fn from(value: f32) -> Self {
@@ -43,7 +45,7 @@ impl From<f32> for Panning {
 	}
 }
 
-/* impl From<f32> for Value<Panning> {
+impl From<f32> for Value<Panning> {
 	fn from(value: f32) -> Self {
 		Self::Fixed(Panning(value))
 	}
@@ -53,7 +55,7 @@ impl From<Panning> for Value<Panning> {
 	fn from(value: Panning) -> Self {
 		Self::Fixed(value)
 	}
-} */
+}
 
 impl Add<Panning> for Panning {
 	type Output = Panning;

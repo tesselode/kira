@@ -14,6 +14,7 @@ pub mod backend;
 pub mod clock;
 pub mod command;
 mod decibels;
+pub mod effect;
 mod error;
 mod frame;
 pub mod info;

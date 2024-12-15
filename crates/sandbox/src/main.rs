@@ -3,14 +3,20 @@ use std::{error::Error, io::stdin, time::Duration};
 use kira::{
 	backend::DefaultBackend,
 	clock::ClockSpeed,
+	effect::panning_control::PanningControlBuilder,
 	manager::{AudioManager, AudioManagerSettings},
 	modulator::tweener::TweenerBuilder,
 	sound::sine::SineBuilder,
-	Decibels, Easing, Mapping, StartTime, Tween, Value,
+	track::MainTrackBuilder,
+	Decibels, Easing, Mapping, Panning, StartTime, Tween, Value,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
-	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings {
+		main_track_builder: MainTrackBuilder::new()
+			.with_effect(PanningControlBuilder(Value::Fixed(Panning::LEFT))),
+		..Default::default()
+	})?;
 	let mut tweener = manager.add_modulator(TweenerBuilder { initial_value: 0.0 })?;
 	let mut clock = manager.add_clock(Value::FromModulator {
 		id: tweener.id(),

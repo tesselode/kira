@@ -13,8 +13,12 @@ impl Renderer {
 		}
 	}
 
+	/// Called by the backend when the sample rate of the
+	/// audio output changes.
 	pub fn on_change_sample_rate(&mut self, sample_rate: u32) {
 		self.dt = 1.0 / sample_rate as f64;
+		// self.shared.sample_rate.store(sample_rate, Ordering::SeqCst);
+		self.resources.mixer.on_change_sample_rate(sample_rate);
 	}
 
 	pub fn on_start_processing(&mut self) {
