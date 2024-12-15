@@ -1,12 +1,13 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use crate::{
-	effect::EffectBuilder, renderer::RendererShared, resources::ResourceStorage, tween::Parameter,
-	Decibels, Value,
+	command::command_writer_and_reader, effect::EffectBuilder, renderer::RendererShared,
+	resources::ResourceStorage, track::SendTrackId, tween::Parameter, Decibels, Value,
 };
 
 use super::{
-	command_writers_and_readers, Effect, PlaybackStateManager, Track, TrackHandle, TrackShared,
+	command_writers_and_readers, Effect, PlaybackStateManager, SendTrackRoute, Track, TrackHandle,
+	TrackShared,
 };
 
 /// Configures a mixer track.
@@ -20,7 +21,7 @@ pub struct TrackBuilder {
 	pub(crate) sub_track_capacity: u16,
 	/// The maximum number of sounds that can be played simultaneously on this track.
 	pub(crate) sound_capacity: u16,
-	// pub(crate) sends: HashMap<SendTrackId, Value<Decibels>>,
+	pub(crate) sends: HashMap<SendTrackId, Value<Decibels>>,
 	pub(crate) persist_until_sounds_finish: bool,
 }
 
@@ -33,7 +34,7 @@ impl TrackBuilder {
 			effects: vec![],
 			sub_track_capacity: 128,
 			sound_capacity: 128,
-			// sends: HashMap::new(),
+			sends: HashMap::new(),
 			persist_until_sounds_finish: false,
 		}
 	}
@@ -102,7 +103,7 @@ impl TrackBuilder {
 		}
 	}
 
-	/* /// Routes this track to the given send track with the given volume.
+	/// Routes this track to the given send track with the given volume.
 	pub fn with_send(
 		mut self,
 		track: impl Into<SendTrackId>,
@@ -110,7 +111,7 @@ impl TrackBuilder {
 	) -> Self {
 		self.sends.insert(track.into(), volume.into());
 		self
-	} */
+	}
 
 	/**
 	Adds an effect to the track.
@@ -226,9 +227,9 @@ impl TrackBuilder {
 		let shared = Arc::new(TrackShared::new());
 		let (sounds, sound_controller) = ResourceStorage::new(self.sound_capacity);
 		let (sub_tracks, sub_track_controller) = ResourceStorage::new(self.sub_track_capacity);
-		// let mut sends = vec![];
-		// let mut send_volume_command_writers = HashMap::new();
-		/* for (send_track_id, volume) in self.sends {
+		let mut sends = vec![];
+		let mut send_volume_command_writers = HashMap::new();
+		for (send_track_id, volume) in self.sends {
 			let (set_volume_command_writer, set_volume_command_reader) =
 				command_writer_and_reader();
 			sends.push((
@@ -239,7 +240,7 @@ impl TrackBuilder {
 				},
 			));
 			send_volume_command_writers.insert(send_track_id, set_volume_command_writer);
-		} */
+		}
 		let track = Track {
 			shared: shared.clone(),
 			command_readers,
@@ -247,7 +248,7 @@ impl TrackBuilder {
 			sounds,
 			sub_tracks,
 			effects: self.effects,
-			// sends,
+			sends,
 			persist_until_sounds_finish: self.persist_until_sounds_finish,
 			// spatial_data: None,
 			playback_state_manager: PlaybackStateManager::new(None),
@@ -258,7 +259,7 @@ impl TrackBuilder {
 			command_writers,
 			sound_controller,
 			sub_track_controller,
-			// send_volume_command_writers,
+			send_volume_command_writers,
 		};
 		(track, handle)
 	}

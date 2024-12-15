@@ -1,42 +1,32 @@
-use std::{error::Error, io::stdin, time::Duration};
+use std::{error::Error, io::stdin};
 
 use kira::{
 	backend::DefaultBackend,
-	clock::ClockSpeed,
-	effect::panning_control::PanningControlBuilder,
+	effect::reverb::ReverbBuilder,
 	manager::{AudioManager, AudioManagerSettings},
-	modulator::tweener::TweenerBuilder,
+	modulator::lfo::LfoBuilder,
 	sound::sine::SineBuilder,
-	track::{MainTrackBuilder, TrackBuilder},
-	Decibels, Easing, Mapping, Panning, StartTime, Tween, Value,
+	track::{SendTrackBuilder, TrackBuilder},
+	Easing, Mapping, Mix, Value,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
 	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	let mut track_1 = manager.add_sub_track(TrackBuilder::new().volume(-6.0))?;
-	track_1.play(SineBuilder {
-		frequency: Value::Fixed(440.0),
+	let reverb_send = manager
+		.add_send_track(SendTrackBuilder::new().with_effect(ReverbBuilder::new().mix(Mix::WET)))?;
+	let mut track = manager.add_sub_track(TrackBuilder::new().with_send(&reverb_send, -6.0))?;
+	let lfo = manager.add_modulator(LfoBuilder::new())?;
+	track.play(SineBuilder {
+		frequency: Value::FromModulator {
+			id: lfo.id(),
+			mapping: Mapping {
+				input_range: (-1.0, 1.0),
+				output_range: (220.0, 440.0),
+				easing: Easing::Linear,
+			},
+		},
 		..Default::default()
 	})?;
-	let mut track_2 = manager.add_sub_track(TrackBuilder::new().volume(-6.0))?;
-	track_2.play(SineBuilder {
-		frequency: Value::Fixed(660.0),
-		..Default::default()
-	})?;
-
-	wait_for_enter_press()?;
-
-	track_1.pause(Tween {
-		duration: Duration::from_secs(1),
-		..Default::default()
-	});
-
-	wait_for_enter_press()?;
-
-	track_1.resume(Tween {
-		duration: Duration::from_secs(1),
-		..Default::default()
-	});
 
 	wait_for_enter_press()?;
 

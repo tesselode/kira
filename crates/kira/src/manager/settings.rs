@@ -31,6 +31,8 @@ where
 pub struct Capacities {
 	/// The maximum number of mixer sub-tracks that can exist at a time.
 	pub sub_track_capacity: u16,
+	/// The maximum number of mixer send tracks that can exist at a time.
+	pub send_track_capacity: u16,
 	/// The maximum number of clocks that can exist at a time.
 	pub clock_capacity: u16,
 	/// The maximum number of modulators that can exist at a time.
@@ -41,6 +43,7 @@ impl Default for Capacities {
 	fn default() -> Self {
 		Self {
 			sub_track_capacity: 128,
+			send_track_capacity: 16,
 			clock_capacity: 8,
 			modulator_capacity: 16,
 		}

@@ -15,7 +15,7 @@ and [`Effect`] traits.
 // pub mod eq_filter;
 // pub mod filter;
 pub mod panning_control;
-// pub mod reverb;
+pub mod reverb;
 pub mod volume_control;
 
 use crate::{frame::Frame, info::Info};

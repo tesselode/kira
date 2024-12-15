@@ -15,7 +15,7 @@ use rtrb::{Consumer, Producer, RingBuffer};
 use crate::{
 	arena::{Arena, Controller, Key},
 	manager::Capacities,
-	track::{MainTrackBuilder, MainTrackHandle, Track},
+	track::{MainTrackBuilder, MainTrackHandle, SendTrack, Track},
 	ResourceLimitReached,
 };
 
@@ -24,9 +24,9 @@ pub(crate) fn create_resources(
 	capacities: Capacities,
 	main_track_builder: MainTrackBuilder,
 ) -> (Resources, ResourceControllers) {
-	let (mixer, sub_track_controller, /* send_track_controller, */ main_track_handle) = Mixer::new(
+	let (mixer, sub_track_controller, send_track_controller, main_track_handle) = Mixer::new(
 		capacities.sub_track_capacity,
-		// capacities.send_track_capacity,
+		capacities.send_track_capacity,
 		sample_rate,
 		main_track_builder,
 	);
@@ -40,6 +40,7 @@ pub(crate) fn create_resources(
 		},
 		ResourceControllers {
 			sub_track_controller,
+			send_track_controller,
 			main_track_handle,
 			clock_controller,
 			modulator_controller,
@@ -55,6 +56,7 @@ pub(crate) struct Resources {
 
 pub(crate) struct ResourceControllers {
 	pub sub_track_controller: ResourceController<Track>,
+	pub send_track_controller: ResourceController<SendTrack>,
 	pub main_track_handle: MainTrackHandle,
 	pub clock_controller: ResourceController<BufferedClock>,
 	pub modulator_controller: ResourceController<BufferedModulator>,

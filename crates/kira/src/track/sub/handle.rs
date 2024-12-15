@@ -1,16 +1,19 @@
-use std::sync::{atomic::Ordering, Arc};
+use std::{
+	collections::HashMap,
+	sync::{atomic::Ordering, Arc},
+};
 
 use crate::{
-	command::ValueChangeCommand,
+	command::{CommandWriter, ValueChangeCommand},
 	renderer::RendererShared,
 	resources::ResourceController,
 	sound::{Sound, SoundData},
-	track::TrackPlaybackState,
+	track::{SendTrackId, TrackPlaybackState},
 	tween::Tween,
 	Decibels, PlaySoundError, ResourceLimitReached, StartTime, Value,
 };
 
-use super::{CommandWriters, /* SendTrackId, */ Track, TrackBuilder, TrackShared};
+use super::{CommandWriters, NonexistentRoute, Track, TrackBuilder, TrackShared};
 
 /// Controls a mixer track.
 ///
@@ -23,8 +26,8 @@ pub struct TrackHandle {
 	pub(crate) command_writers: CommandWriters,
 	pub(crate) sound_controller: ResourceController<Box<dyn Sound>>,
 	pub(crate) sub_track_controller: ResourceController<Track>,
-	/* pub(crate) send_volume_command_writers:
-	HashMap<SendTrackId, CommandWriter<ValueChangeCommand<Decibels>>>, */
+	pub(crate) send_volume_command_writers:
+		HashMap<SendTrackId, CommandWriter<ValueChangeCommand<Decibels>>>,
 }
 
 impl TrackHandle {
@@ -84,7 +87,7 @@ impl TrackHandle {
 		})
 	}
 
-	/* /// Sets the volume of this track's route to a send track.
+	/// Sets the volume of this track's route to a send track.
 	///
 	/// This can only be used to change the volume of existing routes,
 	/// not to add new routes.
@@ -103,7 +106,7 @@ impl TrackHandle {
 				tween,
 			});
 		Ok(())
-	} */
+	}
 
 	/// Fades out the track to silence with the given tween and then
 	/// pauses playback, pausing all sounds and emitters playing on this

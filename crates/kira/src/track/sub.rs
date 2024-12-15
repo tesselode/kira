@@ -26,9 +26,7 @@ use crate::{
 	INTERNAL_BUFFER_SIZE,
 };
 
-use super::TrackShared;
-
-// use super::{SendTrack, SendTrackId, SendTrackRoute, TrackShared};
+use super::{SendTrack, SendTrackId, SendTrackRoute, TrackShared};
 
 /// An error that's returned when trying to change the volume of a track route
 /// that did not exist originally.
@@ -50,7 +48,7 @@ pub(crate) struct Track {
 	sounds: ResourceStorage<Box<dyn Sound>>,
 	sub_tracks: ResourceStorage<Track>,
 	effects: Vec<Box<dyn Effect>>,
-	// sends: Vec<(SendTrackId, SendTrackRoute)>,
+	sends: Vec<(SendTrackId, SendTrackRoute)>,
 	persist_until_sounds_finish: bool,
 	// spatial_data: Option<SpatialData>,
 	playback_state_manager: PlaybackStateManager,
@@ -135,7 +133,7 @@ impl Track {
 		modulators: &Modulators,
 		// listeners: &Listeners,
 		// parent_spatial_track_info: Option<SpatialTrackInfo>,
-		// send_tracks: &mut ResourceStorage<SendTrack>,
+		send_tracks: &mut ResourceStorage<SendTrack>,
 	) {
 		let info = Info::new(
 			&clocks.0.resources,
@@ -161,7 +159,7 @@ impl Track {
 			// process sub-tracks
 			for (_, sub_track) in &mut self.sub_tracks {
 				let mut sub_track_out = [Frame::ZERO];
-				sub_track.process(&mut sub_track_out, dt, clocks, modulators);
+				sub_track.process(&mut sub_track_out, dt, clocks, modulators, send_tracks);
 				single_frame_out[0] += sub_track_out[0];
 			}
 
@@ -207,14 +205,24 @@ impl Track {
 		for (frame, volume) in out.iter_mut().zip(volume_buffer.iter().copied()) {
 			*frame *= volume.as_amplitude();
 		}
+
+		for (send_track_id, SendTrackRoute { volume, .. }) in &mut self.sends {
+			let Some(send_track) = send_tracks.get_mut(send_track_id.0) else {
+				continue;
+			};
+			for (i, frame) in out.iter().copied().enumerate() {
+				volume.update(dt, &info.for_single_frame(i));
+				send_track.add_input(i, frame * volume.value().as_amplitude());
+			}
+		}
 	}
 
 	fn read_commands(&mut self) {
 		self.volume
 			.read_command(&mut self.command_readers.set_volume);
-		// for (_, route) in &mut self.sends {
-		// 	route.read_commands();
-		// }
+		for (_, route) in &mut self.sends {
+			route.read_commands();
+		}
 		/* if let Some(SpatialData { position, .. }) = &mut self.spatial_data {
 			position.read_command(&mut self.command_readers.set_position);
 		} */

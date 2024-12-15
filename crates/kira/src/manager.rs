@@ -14,7 +14,9 @@ use crate::{
 		modulators::buffered_modulator::BufferedModulator, ResourceControllers,
 	},
 	sound::SoundData,
-	track::{MainTrackHandle, TrackBuilder, TrackHandle},
+	track::{
+		MainTrackHandle, SendTrackBuilder, SendTrackHandle, SendTrackId, TrackBuilder, TrackHandle,
+	},
 	PlaySoundError, ResourceLimitReached, Value,
 };
 
@@ -59,6 +61,24 @@ impl<B: Backend> AudioManager<B> {
 		self.resource_controllers
 			.sub_track_controller
 			.insert(track)?;
+		Ok(handle)
+	}
+
+	/// Creates a mixer send track.
+	pub fn add_send_track(
+		&mut self,
+		builder: SendTrackBuilder,
+	) -> Result<SendTrackHandle, ResourceLimitReached> {
+		let key = self
+			.resource_controllers
+			.send_track_controller
+			.try_reserve()?;
+		let id = SendTrackId(key);
+		let (mut track, handle) = builder.build(id);
+		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
+		self.resource_controllers
+			.send_track_controller
+			.insert_with_key(key, track);
 		Ok(handle)
 	}
 
