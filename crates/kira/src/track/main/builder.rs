@@ -3,7 +3,7 @@ use crate::{
 	effect::EffectBuilder,
 	manager::backend::resources::ResourceStorage,
 	tween::{Parameter, Value},
-	Decibels, Frame, INTERNAL_BUFFER_SIZE,
+	Decibels, Frame,
 };
 
 use super::{Effect, MainTrack, MainTrackHandle};
@@ -145,7 +145,7 @@ impl MainTrackBuilder {
 	}
 
 	#[must_use]
-	pub(crate) fn build(self) -> (MainTrack, MainTrackHandle) {
+	pub(crate) fn build(self, internal_buffer_size: usize) -> (MainTrack, MainTrackHandle) {
 		let (set_volume_command_writer, set_volume_command_reader) = command_writer_and_reader();
 		let (sounds, sound_controller) = ResourceStorage::new(self.sound_capacity);
 		let track = MainTrack {
@@ -153,7 +153,7 @@ impl MainTrackBuilder {
 			set_volume_command_reader,
 			sounds,
 			effects: self.effects,
-			temp_buffer: vec![Frame::ZERO; INTERNAL_BUFFER_SIZE],
+			temp_buffer: vec![Frame::ZERO; internal_buffer_size],
 		};
 		let handle = MainTrackHandle {
 			set_volume_command_writer,

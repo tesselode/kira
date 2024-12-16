@@ -2,8 +2,6 @@
 
 use std::sync::Mutex;
 
-use crate::INTERNAL_BUFFER_SIZE;
-
 use super::{Backend, Renderer};
 
 enum State {
@@ -78,12 +76,15 @@ impl Backend for MockBackend {
 
 	type Error = ();
 
-	fn setup(settings: Self::Settings) -> Result<(Self, u32), Self::Error> {
+	fn setup(
+		settings: Self::Settings,
+		internal_buffer_size: usize,
+	) -> Result<(Self, u32), Self::Error> {
 		Ok((
 			Self {
 				sample_rate: settings.sample_rate,
 				state: State::Uninitialized,
-				frames: vec![0.0; INTERNAL_BUFFER_SIZE * 2],
+				frames: vec![0.0; internal_buffer_size * 2],
 			},
 			settings.sample_rate,
 		))

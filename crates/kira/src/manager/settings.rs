@@ -7,9 +7,6 @@ use super::backend::Backend;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Capacities {
-	/// The number of resources (sounds, clocks, etc.) that be sent to the
-	/// renderer at a time.
-	pub command_capacity: usize,
 	/// The maximum number of mixer sub-tracks that can exist at a time.
 	pub sub_track_capacity: u16,
 	/// The maximum number of mixer send tracks that can exist at a time.
@@ -25,7 +22,6 @@ pub struct Capacities {
 impl Default for Capacities {
 	fn default() -> Self {
 		Self {
-			command_capacity: 128,
 			sub_track_capacity: 128,
 			send_track_capacity: 16,
 			clock_capacity: 8,
@@ -42,6 +38,14 @@ pub struct AudioManagerSettings<B: Backend> {
 	pub capacities: Capacities,
 	/// Configures the main mixer track.
 	pub main_track_builder: MainTrackBuilder,
+	/// Determines how often modulators and clocks will be updated (in samples).
+	///
+	/// At the default size of 128 samples, at a sample rate of 44100hz,
+	/// modulators and clocks will update about every 3 milliseconds.
+	///
+	/// Decreasing this value increases the precision of clocks and modulators
+	/// at the expense of higher CPU usage.
+	pub internal_buffer_size: usize,
 	/// Configures the backend.
 	pub backend_settings: B::Settings,
 }
@@ -54,6 +58,7 @@ where
 		Self {
 			capacities: Capacities::default(),
 			main_track_builder: MainTrackBuilder::default(),
+			internal_buffer_size: 128,
 			backend_settings: B::Settings::default(),
 		}
 	}

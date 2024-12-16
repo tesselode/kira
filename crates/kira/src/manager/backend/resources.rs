@@ -280,11 +280,13 @@ pub(crate) fn create_resources(
 	capacities: Capacities,
 	main_track_builder: MainTrackBuilder,
 	sample_rate: u32,
+	internal_buffer_size: usize,
 ) -> (Resources, ResourceControllers) {
 	let (mixer, sub_track_controller, send_track_controller, main_track_handle) = Mixer::new(
 		capacities.sub_track_capacity,
 		capacities.send_track_capacity,
 		sample_rate,
+		internal_buffer_size,
 		main_track_builder,
 	);
 	let (clocks, clock_controller) = Clocks::new(capacities.clock_capacity);

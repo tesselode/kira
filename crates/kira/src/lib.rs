@@ -245,8 +245,6 @@ and compile times for games.
 #![warn(missing_docs)]
 #![allow(clippy::tabs_in_doc_comments)]
 
-const INTERNAL_BUFFER_SIZE: usize = 128;
-
 mod arena;
 pub mod clock;
 pub mod command;
