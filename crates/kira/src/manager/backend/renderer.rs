@@ -3,7 +3,7 @@ use std::sync::{
 	Arc,
 };
 
-use crate::{Frame, INTERNAL_BUFFER_SIZE};
+use crate::Frame;
 
 use super::resources::Resources;
 
@@ -30,17 +30,23 @@ pub struct Renderer {
 	dt: f64,
 	shared: Arc<RendererShared>,
 	resources: Resources,
+	internal_buffer_size: usize,
 	temp_buffer: Vec<Frame>,
 }
 
 impl Renderer {
 	#[must_use]
-	pub(crate) fn new(shared: Arc<RendererShared>, resources: Resources) -> Self {
+	pub(crate) fn new(
+		shared: Arc<RendererShared>,
+		internal_buffer_size: usize,
+		resources: Resources,
+	) -> Self {
 		Self {
 			dt: 1.0 / shared.sample_rate.load(Ordering::SeqCst) as f64,
 			shared,
 			resources,
-			temp_buffer: vec![Frame::ZERO; INTERNAL_BUFFER_SIZE],
+			internal_buffer_size,
+			temp_buffer: vec![Frame::ZERO; internal_buffer_size],
 		}
 	}
 
@@ -63,7 +69,7 @@ impl Renderer {
 
 	/// Produces the next [`Frame`]s of audio.
 	pub fn process(&mut self, out: &mut [f32], num_channels: u16) {
-		for chunk in out.chunks_mut(INTERNAL_BUFFER_SIZE * num_channels as usize) {
+		for chunk in out.chunks_mut(self.internal_buffer_size * num_channels as usize) {
 			self.process_chunk(chunk, num_channels);
 		}
 	}

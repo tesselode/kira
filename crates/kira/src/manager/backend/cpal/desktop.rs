@@ -35,7 +35,10 @@ impl Backend for CpalBackend {
 
 	type Error = Error;
 
-	fn setup(settings: Self::Settings) -> Result<(Self, u32), Self::Error> {
+	fn setup(
+		settings: Self::Settings,
+		_internal_buffer_size: usize,
+	) -> Result<(Self, u32), Self::Error> {
 		let host = cpal::default_host();
 
 		let (device, custom_device) = if let Some(device) = settings.device {

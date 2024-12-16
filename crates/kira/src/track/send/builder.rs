@@ -5,7 +5,7 @@ use crate::{
 	effect::EffectBuilder,
 	frame::Frame,
 	tween::{Parameter, Value},
-	Decibels, INTERNAL_BUFFER_SIZE,
+	Decibels,
 };
 
 use super::{Effect, SendTrack, SendTrackHandle, SendTrackId, TrackShared};
@@ -172,7 +172,11 @@ impl SendTrackBuilder {
 	}
 
 	#[must_use]
-	pub(crate) fn build(self, id: SendTrackId) -> (SendTrack, SendTrackHandle) {
+	pub(crate) fn build(
+		self,
+		id: SendTrackId,
+		internal_buffer_size: usize,
+	) -> (SendTrack, SendTrackHandle) {
 		let (set_volume_command_writer, set_volume_command_reader) = command_writer_and_reader();
 		let shared = Arc::new(TrackShared::new());
 		let track = SendTrack {
@@ -180,7 +184,7 @@ impl SendTrackBuilder {
 			volume: Parameter::new(self.volume, Decibels::IDENTITY),
 			set_volume_command_reader,
 			effects: self.effects,
-			input: vec![Frame::ZERO; INTERNAL_BUFFER_SIZE],
+			input: vec![Frame::ZERO; internal_buffer_size],
 		};
 		let handle = SendTrackHandle {
 			id,

@@ -2,7 +2,6 @@ use crate::{
 	frame::Frame,
 	info::Info,
 	track::{MainTrack, MainTrackBuilder, MainTrackHandle, SendTrack, Track},
-	INTERNAL_BUFFER_SIZE,
 };
 
 use super::{
@@ -23,6 +22,7 @@ impl Mixer {
 		sub_track_capacity: u16,
 		send_track_capacity: u16,
 		sample_rate: u32,
+		internal_buffer_size: usize,
 		main_track_builder: MainTrackBuilder,
 	) -> (
 		Self,
@@ -30,7 +30,7 @@ impl Mixer {
 		ResourceController<SendTrack>,
 		MainTrackHandle,
 	) {
-		let (mut main_track, main_track_handle) = main_track_builder.build();
+		let (mut main_track, main_track_handle) = main_track_builder.build(internal_buffer_size);
 		main_track.init_effects(sample_rate);
 		let (sub_tracks, sub_track_controller) = ResourceStorage::new(sub_track_capacity);
 		let (send_tracks, send_track_controller) = ResourceStorage::new(send_track_capacity);
@@ -39,7 +39,7 @@ impl Mixer {
 				main_track,
 				sub_tracks,
 				send_tracks,
-				temp_buffer: vec![Frame::ZERO; INTERNAL_BUFFER_SIZE],
+				temp_buffer: vec![Frame::ZERO; internal_buffer_size],
 			},
 			sub_track_controller,
 			send_track_controller,

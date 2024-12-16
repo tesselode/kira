@@ -71,6 +71,9 @@ pub trait Sound: Send {
 	/// `dt` is the time between each frame (in seconds).
 	fn process(&mut self, out: &mut [Frame], dt: f64, info: &Info);
 
+	/// Processes a single [`Frame`]. Mostly useful for testing.
+	///
+	/// `dt` is the time elapsed since the previous frame (in seconds).
 	fn process_one(&mut self, dt: f64, info: &Info) -> Frame {
 		let mut out = [Frame::ZERO];
 		self.process(&mut out, dt, info);

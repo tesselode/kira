@@ -31,6 +31,7 @@ pub struct TrackHandle {
 	pub(crate) sub_track_controller: ResourceController<Track>,
 	pub(crate) send_volume_command_writers:
 		HashMap<SendTrackId, CommandWriter<ValueChangeCommand<Decibels>>>,
+	pub(crate) internal_buffer_size: usize,
 }
 
 impl TrackHandle {
@@ -59,7 +60,8 @@ impl TrackHandle {
 		&mut self,
 		builder: TrackBuilder,
 	) -> Result<TrackHandle, ResourceLimitReached> {
-		let (mut track, handle) = builder.build(self.renderer_shared.clone());
+		let (mut track, handle) =
+			builder.build(self.renderer_shared.clone(), self.internal_buffer_size);
 		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
 		self.sub_track_controller.insert(track)?;
 		Ok(handle)
@@ -74,6 +76,7 @@ impl TrackHandle {
 	) -> Result<SpatialTrackHandle, ResourceLimitReached> {
 		let (mut track, handle) = builder.build(
 			self.renderer_shared.clone(),
+			self.internal_buffer_size,
 			listener.into(),
 			position.into().to_(),
 		);

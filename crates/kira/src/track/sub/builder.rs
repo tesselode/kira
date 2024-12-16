@@ -6,7 +6,7 @@ use crate::{
 	manager::backend::{resources::ResourceStorage, RendererShared},
 	playback_state_manager::PlaybackStateManager,
 	tween::{Parameter, Value},
-	Decibels, Frame, INTERNAL_BUFFER_SIZE,
+	Decibels, Frame,
 };
 
 use super::{
@@ -226,7 +226,11 @@ impl TrackBuilder {
 	}
 
 	#[must_use]
-	pub(crate) fn build(self, renderer_shared: Arc<RendererShared>) -> (Track, TrackHandle) {
+	pub(crate) fn build(
+		self,
+		renderer_shared: Arc<RendererShared>,
+		internal_buffer_size: usize,
+	) -> (Track, TrackHandle) {
 		let (command_writers, command_readers) = command_writers_and_readers();
 		let shared = Arc::new(TrackShared::new());
 		let (sounds, sound_controller) = ResourceStorage::new(self.sound_capacity);
@@ -256,7 +260,7 @@ impl TrackBuilder {
 			persist_until_sounds_finish: self.persist_until_sounds_finish,
 			spatial_data: None,
 			playback_state_manager: PlaybackStateManager::new(None),
-			temp_buffer: vec![Frame::ZERO; INTERNAL_BUFFER_SIZE],
+			temp_buffer: vec![Frame::ZERO; internal_buffer_size],
 		};
 		let handle = TrackHandle {
 			renderer_shared,
@@ -265,6 +269,7 @@ impl TrackBuilder {
 			sound_controller,
 			sub_track_controller,
 			send_volume_command_writers,
+			internal_buffer_size,
 		};
 		(track, handle)
 	}

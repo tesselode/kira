@@ -36,6 +36,7 @@ pub struct AudioManager<B: Backend = DefaultBackend> {
 	backend: B,
 	resource_controllers: ResourceControllers,
 	renderer_shared: Arc<RendererShared>,
+	internal_buffer_size: usize,
 }
 
 impl<B: Backend> AudioManager<B> {
@@ -71,19 +72,26 @@ impl<B: Backend> AudioManager<B> {
 	```
 	*/
 	pub fn new(settings: AudioManagerSettings<B>) -> Result<Self, B::Error> {
-		let (mut backend, sample_rate) = B::setup(settings.backend_settings)?;
+		let (mut backend, sample_rate) =
+			B::setup(settings.backend_settings, settings.internal_buffer_size)?;
 		let renderer_shared = Arc::new(RendererShared::new(sample_rate));
 		let (resources, resource_controllers) = create_resources(
 			settings.capacities,
 			settings.main_track_builder,
 			sample_rate,
+			settings.internal_buffer_size,
 		);
-		let renderer = Renderer::new(renderer_shared.clone(), resources);
+		let renderer = Renderer::new(
+			renderer_shared.clone(),
+			settings.internal_buffer_size,
+			resources,
+		);
 		backend.start(renderer)?;
 		Ok(Self {
 			backend,
 			resource_controllers,
 			renderer_shared,
+			internal_buffer_size: settings.internal_buffer_size,
 		})
 	}
 
@@ -119,7 +127,8 @@ impl<B: Backend> AudioManager<B> {
 		&mut self,
 		builder: TrackBuilder,
 	) -> Result<TrackHandle, ResourceLimitReached> {
-		let (mut track, handle) = builder.build(self.renderer_shared.clone());
+		let (mut track, handle) =
+			builder.build(self.renderer_shared.clone(), self.internal_buffer_size);
 		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
 		self.resource_controllers
 			.sub_track_controller
@@ -136,6 +145,7 @@ impl<B: Backend> AudioManager<B> {
 	) -> Result<SpatialTrackHandle, ResourceLimitReached> {
 		let (mut track, handle) = builder.build(
 			self.renderer_shared.clone(),
+			self.internal_buffer_size,
 			listener.into(),
 			position.into().to_(),
 		);
@@ -156,7 +166,7 @@ impl<B: Backend> AudioManager<B> {
 			.send_track_controller
 			.try_reserve()?;
 		let id = SendTrackId(key);
-		let (mut track, handle) = builder.build(id);
+		let (mut track, handle) = builder.build(id, self.internal_buffer_size);
 		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
 		self.resource_controllers
 			.send_track_controller

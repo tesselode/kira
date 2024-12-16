@@ -4,7 +4,7 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use kira::{
 	manager::{
 		backend::mock::{MockBackend, MockBackendSettings},
-		AudioManager, AudioManagerSettings, Capacities,
+		AudioManager, AudioManagerSettings,
 	},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	track::MainTrackBuilder,
@@ -33,14 +33,11 @@ fn sounds(c: &mut Criterion) {
 		const SAMPLE_RATE: u32 = 48_000;
 		const NUM_SOUNDS: u16 = 50_000;
 		let mut manager = AudioManager::<MockBackend>::new(AudioManagerSettings {
-			capacities: Capacities {
-				command_capacity: NUM_SOUNDS as usize,
-				..Default::default()
-			},
 			backend_settings: MockBackendSettings {
 				sample_rate: SAMPLE_RATE,
 			},
 			main_track_builder: MainTrackBuilder::new().sound_capacity(NUM_SOUNDS),
+			..Default::default()
 		})
 		.unwrap();
 		let sound_data = create_test_sound(SAMPLE_RATE as usize);
@@ -64,14 +61,11 @@ fn sounds(c: &mut Criterion) {
 		const SAMPLE_RATE: u32 = 48_000;
 		const NUM_SOUNDS: u16 = 50_000;
 		let mut manager = AudioManager::<MockBackend>::new(AudioManagerSettings {
-			capacities: Capacities {
-				command_capacity: NUM_SOUNDS as usize,
-				..Default::default()
-			},
 			backend_settings: MockBackendSettings {
 				sample_rate: SAMPLE_RATE,
 			},
 			main_track_builder: MainTrackBuilder::new().sound_capacity(NUM_SOUNDS),
+			..Default::default()
 		})
 		.unwrap();
 		let sound_data = create_test_sound(SAMPLE_RATE as usize);

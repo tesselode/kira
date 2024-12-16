@@ -30,7 +30,10 @@ pub trait Backend: Sized {
 	type Error;
 
 	/// Starts the backend and returns itself and the initial sample rate.
-	fn setup(settings: Self::Settings) -> Result<(Self, u32), Self::Error>;
+	fn setup(
+		settings: Self::Settings,
+		internal_buffer_size: usize,
+	) -> Result<(Self, u32), Self::Error>;
 
 	/// Sends the renderer to the backend to start audio playback.
 	fn start(&mut self, renderer: Renderer) -> Result<(), Self::Error>;
