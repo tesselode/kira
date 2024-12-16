@@ -127,6 +127,7 @@ impl Track {
 		}
 	}
 
+	#[allow(clippy::too_many_arguments)]
 	pub fn process(
 		&mut self,
 		out: &mut [Frame],
