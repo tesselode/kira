@@ -263,6 +263,8 @@ mod playback_state_manager;
 mod semitones;
 pub mod sound;
 mod start_time;
+#[cfg(test)]
+mod test_helpers;
 pub mod track;
 pub mod tween;
 

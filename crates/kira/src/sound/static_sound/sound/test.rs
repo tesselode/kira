@@ -8,11 +8,10 @@ use crate::{
 		static_sound::{StaticSoundData, StaticSoundSettings},
 		PlaybackState, Sound,
 	},
+	test_helpers::expect_frame_soon,
 	tween::Tween,
 	Decibels, Panning, StartTime,
 };
-
-use super::StaticSound;
 
 /// Tests that a `StaticSound` will play all of its samples before finishing.
 #[test]
@@ -833,18 +832,4 @@ fn reverse() {
 			Frame::from_mono(i as f32).panned(Panning::CENTER)
 		);
 	}
-}
-
-fn expect_frame_soon(expected_frame: Frame, sound: &mut StaticSound) {
-	const NUM_SAMPLES_TO_WAIT: usize = 10;
-	for _ in 0..NUM_SAMPLES_TO_WAIT {
-		let frame = sound.process_one(1.0, &MockInfoBuilder::new().build());
-		if frame == expected_frame {
-			return;
-		}
-	}
-	panic!(
-		"Sound did not output frame with value {:?} within {} samples",
-		expected_frame, NUM_SAMPLES_TO_WAIT
-	);
 }
