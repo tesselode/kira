@@ -8,11 +8,12 @@ use crate::{
 		streaming::{decoder::mock::MockDecoder, StreamingSoundData, StreamingSoundSettings},
 		PlaybackState, Sound,
 	},
+	test_helpers::expect_frame_soon,
 	tween::Tween,
 	Decibels, Panning, StartTime,
 };
 
-use super::{decode_scheduler::NextStep, StreamingSound};
+use super::decode_scheduler::NextStep;
 
 /// Tests that a `StreamingSound` will play all of its samples before finishing.
 #[test]
@@ -868,18 +869,4 @@ fn seek_by() {
 	sound.on_start_processing();
 	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
 	expect_frame_soon(Frame::from_mono(20.0).panned(Panning::CENTER), &mut sound);
-}
-
-fn expect_frame_soon(expected_frame: Frame, sound: &mut StreamingSound) {
-	const NUM_SAMPLES_TO_WAIT: usize = 10;
-	for _ in 0..NUM_SAMPLES_TO_WAIT {
-		let frame = sound.process_one(1.0, &MockInfoBuilder::new().build());
-		if frame == expected_frame {
-			return;
-		}
-	}
-	panic!(
-		"Sound did not output frame with value {:?} within {} samples",
-		expected_frame, NUM_SAMPLES_TO_WAIT
-	);
 }
