@@ -31,6 +31,10 @@ impl PlaybackStateManager {
 		self.volume_fade.value()
 	}
 
+	pub fn interpolated_fade_volume(&self, amount: f64) -> Decibels {
+		self.volume_fade.interpolated_value(amount)
+	}
+
 	pub fn playback_state(&self) -> PlaybackState {
 		match self.state {
 			State::Playing => PlaybackState::Playing,

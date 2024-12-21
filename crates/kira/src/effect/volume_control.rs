@@ -39,8 +39,10 @@ impl Effect for VolumeControl {
 
 	fn process(&mut self, input: &mut [Frame], dt: f64, info: &Info) {
 		self.volume.update(dt * input.len() as f64, info);
-		for frame in input {
-			*frame *= self.volume.value().as_amplitude();
+		let num_frames = input.len();
+		for (i, frame) in input.iter_mut().enumerate() {
+			let time_in_chunk = (i + 1) as f64 / num_frames as f64;
+			*frame *= self.volume.interpolated_value(time_in_chunk).as_amplitude();
 		}
 	}
 }

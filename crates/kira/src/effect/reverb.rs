@@ -151,9 +151,13 @@ impl Effect for Reverb {
 
 			let feedback = self.feedback.value() as f32;
 			let damping = self.damping.value() as f32;
-			let stereo_width = self.stereo_width.value() as f32;
 
-			for frame in input {
+			let num_frames = input.len();
+			for (i, frame) in input.iter_mut().enumerate() {
+				let time_in_chunk = (i + 1) as f64 / num_frames as f64;
+				let stereo_width = self.stereo_width.interpolated_value(time_in_chunk) as f32;
+				let mix = self.mix.interpolated_value(time_in_chunk).0;
+
 				let mut output = Frame::ZERO;
 				let mono_input = (frame.left + frame.right) * GAIN;
 				// accumulate comb filters in parallel
@@ -172,7 +176,6 @@ impl Effect for Reverb {
 					output.left * wet_1 + output.right * wet_2,
 					output.right * wet_1 + output.left * wet_2,
 				);
-				let mix = self.mix.value().0;
 				*frame = output * mix.sqrt() + *frame * (1.0 - mix).sqrt()
 			}
 		} else {

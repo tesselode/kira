@@ -46,73 +46,6 @@ impl EqFilter {
 			ic2eq: Frame::ZERO,
 		}
 	}
-
-	#[must_use]
-	fn calculate_coefficients(&self, dt: f64) -> Coefficients {
-		// In my testing, the filter goes unstable when the frequency exceeds half the sample rate,
-		// so I'm clamping this value to 0.5
-		let relative_frequency = (self.frequency.value() * dt).clamp(0.0, 0.5);
-		let q = self.q.value().max(MIN_Q);
-		match self.kind {
-			EqFilterKind::Bell => {
-				let a = 10.0f64.powf(self.gain.value().0 as f64 / 40.0);
-				let g = (PI * relative_frequency).tan();
-				let k = 1.0 / (q * a);
-				let a1 = 1.0 / (1.0 + g * (g + k));
-				let a2 = g * a1;
-				let a3 = g * a2;
-				let m0 = 1.0;
-				let m1 = k * (a * a - 1.0);
-				let m2 = 0.0;
-				Coefficients {
-					a1,
-					a2,
-					a3,
-					m0,
-					m1,
-					m2,
-				}
-			}
-			EqFilterKind::LowShelf => {
-				let a = 10.0f64.powf(self.gain.value().0 as f64 / 40.0);
-				let g = (PI * relative_frequency).tan() / a.sqrt();
-				let k = 1.0 / q;
-				let a1 = 1.0 / (1.0 + g * (g + k));
-				let a2 = g * a1;
-				let a3 = g * a2;
-				let m0 = 1.0;
-				let m1 = k * (a - 1.0);
-				let m2 = a * a - 1.0;
-				Coefficients {
-					a1,
-					a2,
-					a3,
-					m0,
-					m1,
-					m2,
-				}
-			}
-			EqFilterKind::HighShelf => {
-				let a = 10.0f64.powf(self.gain.value().0 as f64 / 40.0);
-				let g = (PI * relative_frequency).tan() * a.sqrt();
-				let k = 1.0 / q;
-				let a1 = 1.0 / (1.0 + g * (g + k));
-				let a2 = g * a1;
-				let a3 = g * a2;
-				let m0 = a * a;
-				let m1 = k * (1.0 - a) * a;
-				let m2 = 1.0 - a * a;
-				Coefficients {
-					a1,
-					a2,
-					a3,
-					m0,
-					m1,
-					m2,
-				}
-			}
-		}
-	}
 }
 
 impl Effect for EqFilter {
@@ -127,16 +60,22 @@ impl Effect for EqFilter {
 		self.frequency.update(dt * input.len() as f64, info);
 		self.gain.update(dt * input.len() as f64, info);
 		self.q.update(dt * input.len() as f64, info);
-		let Coefficients {
-			a1,
-			a2,
-			a3,
-			m0,
-			m1,
-			m2,
-		} = self.calculate_coefficients(dt);
 
-		for frame in input {
+		let num_frames = input.len();
+		for (i, frame) in input.iter_mut().enumerate() {
+			let time_in_chunk = (i + 1) as f64 / num_frames as f64;
+			let frequency = self.frequency.interpolated_value(time_in_chunk);
+			let q = self.q.interpolated_value(time_in_chunk);
+			let gain = self.gain.interpolated_value(time_in_chunk);
+
+			let Coefficients {
+				a1,
+				a2,
+				a3,
+				m0,
+				m1,
+				m2,
+			} = Coefficients::calculate(self.kind, frequency, q, gain, dt);
 			let v3 = *frame - self.ic2eq;
 			let v1 = self.ic1eq * (a1 as f32) + v3 * (a2 as f32);
 			let v2 = self.ic2eq + self.ic1eq * (a2 as f32) + v3 * (a3 as f32);
@@ -166,6 +105,75 @@ struct Coefficients {
 	m0: f64,
 	m1: f64,
 	m2: f64,
+}
+
+impl Coefficients {
+	#[must_use]
+	fn calculate(kind: EqFilterKind, frequency: f64, q: f64, gain: Decibels, dt: f64) -> Self {
+		// In my testing, the filter goes unstable when the frequency exceeds half the sample rate,
+		// so I'm clamping this value to 0.5
+		let relative_frequency = (frequency * dt).clamp(0.0, 0.5);
+		let q = q.max(MIN_Q);
+		match kind {
+			EqFilterKind::Bell => {
+				let a = 10.0f64.powf(gain.0 as f64 / 40.0);
+				let g = (PI * relative_frequency).tan();
+				let k = 1.0 / (q * a);
+				let a1 = 1.0 / (1.0 + g * (g + k));
+				let a2 = g * a1;
+				let a3 = g * a2;
+				let m0 = 1.0;
+				let m1 = k * (a * a - 1.0);
+				let m2 = 0.0;
+				Self {
+					a1,
+					a2,
+					a3,
+					m0,
+					m1,
+					m2,
+				}
+			}
+			EqFilterKind::LowShelf => {
+				let a = 10.0f64.powf(gain.0 as f64 / 40.0);
+				let g = (PI * relative_frequency).tan() / a.sqrt();
+				let k = 1.0 / q;
+				let a1 = 1.0 / (1.0 + g * (g + k));
+				let a2 = g * a1;
+				let a3 = g * a2;
+				let m0 = 1.0;
+				let m1 = k * (a - 1.0);
+				let m2 = a * a - 1.0;
+				Self {
+					a1,
+					a2,
+					a3,
+					m0,
+					m1,
+					m2,
+				}
+			}
+			EqFilterKind::HighShelf => {
+				let a = 10.0f64.powf(gain.0 as f64 / 40.0);
+				let g = (PI * relative_frequency).tan() * a.sqrt();
+				let k = 1.0 / q;
+				let a1 = 1.0 / (1.0 + g * (g + k));
+				let a2 = g * a1;
+				let a3 = g * a2;
+				let m0 = a * a;
+				let m1 = k * (1.0 - a) * a;
+				let m2 = 1.0 - a * a;
+				Self {
+					a1,
+					a2,
+					a3,
+					m0,
+					m1,
+					m2,
+				}
+			}
+		}
+	}
 }
 
 command_writers_and_readers! {

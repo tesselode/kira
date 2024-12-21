@@ -27,6 +27,7 @@ use crate::{
 pub struct Parameter<T: Tweenable = f64> {
 	state: State<T>,
 	raw_value: T,
+	previous_raw_value: T,
 	stagnant: bool,
 }
 
@@ -37,15 +38,17 @@ impl<T: Tweenable> Parameter<T> {
 	/// that doesn't exist.
 	#[must_use]
 	pub fn new(initial_value: Value<T>, default_raw_value: T) -> Self {
+		let raw_value = match initial_value {
+			Value::Fixed(value) => value,
+			Value::FromModulator { .. } => default_raw_value,
+			Value::FromListenerDistance { .. } => default_raw_value,
+		};
 		Self {
 			state: State::Idle {
 				value: initial_value,
 			},
-			raw_value: match initial_value {
-				Value::Fixed(value) => value,
-				Value::FromModulator { .. } => default_raw_value,
-				Value::FromListenerDistance { .. } => default_raw_value,
-			},
+			raw_value,
+			previous_raw_value: raw_value,
 			stagnant: matches!(initial_value, Value::Fixed(_)),
 		}
 	}
@@ -54,6 +57,19 @@ impl<T: Tweenable> Parameter<T> {
 	#[must_use]
 	pub fn value(&self) -> T {
 		self.raw_value
+	}
+
+	/// Returns the previous actual value of the parameter.
+	#[must_use]
+	pub fn previous_value(&self) -> T {
+		self.previous_raw_value
+	}
+
+	/// Returns the interpolated value between the previous and current
+	/// actual value of the parameter.
+	#[must_use]
+	pub fn interpolated_value(&self, amount: f64) -> T {
+		T::interpolate(self.previous_raw_value, self.raw_value, amount)
 	}
 
 	/// Starts a transition from the current value to the target value.
@@ -88,6 +104,7 @@ impl<T: Tweenable> Parameter<T> {
 		}
 		let just_finished_tween = self.update_tween(dt, info);
 		if let Some(raw_value) = self.calculate_new_raw_value(info) {
+			self.previous_raw_value = self.raw_value;
 			self.raw_value = raw_value;
 		}
 		just_finished_tween
