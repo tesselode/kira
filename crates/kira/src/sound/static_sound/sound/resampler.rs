@@ -3,7 +3,7 @@ use crate::frame::{interpolate_frame, Frame};
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct RecentFrame {
 	/// A frame of audio.
-	frame: Frame,
+	frame: Option<Frame>,
 	/// The current frame index of the source sound at the
 	/// time this frame was pushed to the resampler.
 	frame_index: usize,
@@ -18,13 +18,13 @@ impl Resampler {
 	pub fn new(starting_frame_index: usize) -> Self {
 		Self {
 			frames: [RecentFrame {
-				frame: Frame::ZERO,
+				frame: None,
 				frame_index: starting_frame_index,
 			}; 4],
 		}
 	}
 
-	pub fn push_frame(&mut self, frame: Frame, sample_index: usize) {
+	pub fn push_frame(&mut self, frame: Option<Frame>, sample_index: usize) {
 		for i in 0..self.frames.len() - 1 {
 			self.frames[i] = self.frames[i + 1];
 		}
@@ -37,10 +37,10 @@ impl Resampler {
 	#[must_use]
 	pub fn get(&self, fractional_position: f32) -> Frame {
 		interpolate_frame(
-			self.frames[0].frame,
-			self.frames[1].frame,
-			self.frames[2].frame,
-			self.frames[3].frame,
+			self.frames[0].frame.unwrap_or_default(),
+			self.frames[1].frame.unwrap_or_default(),
+			self.frames[2].frame.unwrap_or_default(),
+			self.frames[3].frame.unwrap_or_default(),
 			fractional_position,
 		)
 	}
@@ -59,9 +59,9 @@ impl Resampler {
 	}
 
 	#[must_use]
-	pub fn outputting_silence(&self) -> bool {
+	pub fn empty(&self) -> bool {
 		self.frames
 			.iter()
-			.all(|RecentFrame { frame, .. }| *frame == Frame::ZERO)
+			.all(|RecentFrame { frame, .. }| frame.is_none())
 	}
 }

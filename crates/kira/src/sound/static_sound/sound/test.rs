@@ -172,7 +172,7 @@ fn pauses_and_resumes_with_fades() {
 	);
 	assert_eq!(
 		sound.playback_state_manager.playback_state(),
-		PlaybackState::Playing
+		PlaybackState::Resuming
 	);
 	assert_eq!(
 		sound.process_one(1.0, &MockInfoBuilder::new().build()),
@@ -180,7 +180,7 @@ fn pauses_and_resumes_with_fades() {
 	);
 	assert_eq!(
 		sound.playback_state_manager.playback_state(),
-		PlaybackState::Playing
+		PlaybackState::Resuming
 	);
 	assert_eq!(
 		sound.process_one(1.0, &MockInfoBuilder::new().build()),
@@ -188,7 +188,7 @@ fn pauses_and_resumes_with_fades() {
 	);
 	assert_eq!(
 		sound.playback_state_manager.playback_state(),
-		PlaybackState::Playing
+		PlaybackState::Resuming
 	);
 
 	for _ in 0..3 {

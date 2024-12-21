@@ -115,11 +115,6 @@ impl StaticSound {
 
 	/// Updates the current frame index by 1 and pushes a new sample to the resampler.
 	fn update_position(&mut self) {
-		if !self.playback_state_manager.playback_state().is_advancing() {
-			self.resampler
-				.push_frame(Frame::ZERO, self.transport.position);
-			return;
-		}
 		self.push_frame_to_resampler();
 		if self.is_playing_backwards() {
 			self.transport.decrement_position();
@@ -127,7 +122,7 @@ impl StaticSound {
 			self.transport
 				.increment_position(num_frames(&self.frames, self.slice));
 		}
-		if !self.transport.playing && self.resampler.outputting_silence() {
+		if !self.transport.playing && self.resampler.empty() {
 			self.playback_state_manager.mark_as_stopped();
 			self.update_shared_playback_state();
 		}
@@ -145,15 +140,12 @@ impl StaticSound {
 
 	fn push_frame_to_resampler(&mut self) {
 		let frame = if self.transport.playing {
-			let frame_index: usize = self.transport.position;
-			let fade_volume = self.playback_state_manager.fade_volume().as_amplitude();
-			let volume = self.volume.value().as_amplitude();
-			(frame_at_index(frame_index, &self.frames, self.slice).unwrap_or_default()
-				* fade_volume
-				* volume)
-				.panned(self.panning.value())
+			Some(
+				frame_at_index(self.transport.position, &self.frames, self.slice)
+					.unwrap_or_default(),
+			)
 		} else {
-			Frame::ZERO
+			None
 		};
 		self.resampler.push_frame(frame, self.transport.position);
 	}
@@ -229,6 +221,11 @@ impl Sound for StaticSound {
 			return;
 		}
 
+		if !self.playback_state_manager.playback_state().is_advancing() {
+			out.fill(Frame::ZERO);
+			return;
+		}
+
 		// play back audio
 		for frame in out {
 			let out = self.resampler.get(self.fractional_position as f32);
@@ -238,7 +235,10 @@ impl Sound for StaticSound {
 				self.fractional_position -= 1.0;
 				self.update_position();
 			}
-			*frame = out;
+			*frame = (out
+				* self.playback_state_manager.fade_volume().as_amplitude()
+				* self.volume.value().as_amplitude())
+			.panned(self.panning.value());
 		}
 	}
 
