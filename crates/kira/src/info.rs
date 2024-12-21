@@ -5,7 +5,7 @@
  * like [`Sound`](crate::sound::Sound) or [`Effect`](crate::effect::Effect).
  */
 
-use glam::Vec3;
+use glam::{Quat, Vec3};
 
 use crate::{
 	arena::Arena,
@@ -106,6 +106,8 @@ impl<'a> Info<'a> {
 					listeners.get(listener_id.0).map(|listener| ListenerInfo {
 						position: listener.position.value().into(),
 						orientation: listener.orientation.value().into(),
+						previous_position: listener.position.previous_value().into(),
+						previous_orientation: listener.orientation.previous_value().into(),
 					})
 				}
 				InfoKind::Mock { listener_info, .. } => listener_info.get(listener_id.0).copied(),
@@ -158,6 +160,28 @@ pub struct ListenerInfo {
 	pub position: mint::Vector3<f32>,
 	/// The rotation of the listener.
 	pub orientation: mint::Quaternion<f32>,
+	/// The position of the listener prior to the last update.
+	pub previous_position: mint::Vector3<f32>,
+	/// The rotation of the listener prior to the last update.
+	pub previous_orientation: mint::Quaternion<f32>,
+}
+
+impl ListenerInfo {
+	/// Returns the interpolated position between the previous and current
+	/// position of the listener.
+	pub fn interpolated_position(self, amount: f32) -> mint::Vector3<f32> {
+		let position: Vec3 = self.position.into();
+		let previous_position: Vec3 = self.previous_position.into();
+		previous_position.lerp(position, amount).into()
+	}
+
+	/// Returns the interpolated orientation between the previous and current
+	/// orientation of the listener.
+	pub fn interpolated_orientation(self, amount: f32) -> mint::Quaternion<f32> {
+		let orientation: Quat = self.orientation.into();
+		let previous_orientation: Quat = self.previous_orientation.into();
+		previous_orientation.lerp(orientation, amount).into()
+	}
 }
 
 /// Generates a fake `Info` with arbitrary data. Useful for writing unit tests.

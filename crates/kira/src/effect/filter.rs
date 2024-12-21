@@ -73,14 +73,23 @@ impl Effect for Filter {
 		self.cutoff.update(dt * input.len() as f64, info);
 		self.resonance.update(dt * input.len() as f64, info);
 		self.mix.update(dt * input.len() as f64, info);
-		let sample_rate = 1.0 / dt;
-		let g = (PI * (self.cutoff.value() / sample_rate)).tan();
-		let k = 2.0 - (1.9 * self.resonance.value().clamp(0.0, 1.0));
-		let a1 = 1.0 / (1.0 + (g * (g + k)));
-		let a2 = g * a1;
-		let a3 = g * a2;
 
-		for frame in input {
+		let num_frames = input.len();
+		for (i, frame) in input.iter_mut().enumerate() {
+			let time_in_chunk = (i + 1) as f64 / num_frames as f64;
+			let cutoff = self.cutoff.interpolated_value(time_in_chunk);
+			let resonance = self
+				.resonance
+				.interpolated_value(time_in_chunk)
+				.clamp(0.0, 1.0);
+			let mix = self.mix.interpolated_value(time_in_chunk).0;
+
+			let sample_rate = 1.0 / dt;
+			let g = (PI * (cutoff / sample_rate)).tan();
+			let k = 2.0 - (1.9 * resonance);
+			let a1 = 1.0 / (1.0 + (g * (g + k)));
+			let a2 = g * a1;
+			let a3 = g * a2;
 			let v3 = *frame - self.ic2eq;
 			let v1 = (self.ic1eq * (a1 as f32)) + (v3 * (a2 as f32));
 			let v2 = self.ic2eq + (self.ic1eq * (a2 as f32)) + (v3 * (a3 as f32));
@@ -92,7 +101,6 @@ impl Effect for Filter {
 				FilterMode::HighPass => *frame - v1 * (k as f32) - v2,
 				FilterMode::Notch => *frame - v1 * (k as f32),
 			};
-			let mix = self.mix.value().0;
 			*frame = output * mix.sqrt() + *frame * (1.0 - mix).sqrt()
 		}
 	}

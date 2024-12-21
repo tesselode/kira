@@ -58,9 +58,13 @@ impl Effect for Distortion {
 	fn process(&mut self, input: &mut [Frame], dt: f64, info: &Info) {
 		self.drive.update(dt * input.len() as f64, info);
 		self.mix.update(dt * input.len() as f64, info);
-		let drive = self.drive.value().as_amplitude();
 
-		for frame in input {
+		let num_frames = input.len();
+		for (i, frame) in input.iter_mut().enumerate() {
+			let time_in_chunk = (i + 1) as f64 / num_frames as f64;
+			let drive = self.drive.interpolated_value(time_in_chunk).as_amplitude();
+			let mix = self.mix.interpolated_value(time_in_chunk);
+
 			let mut output = *frame * drive;
 			output = match self.kind {
 				DistortionKind::HardClip => {
@@ -73,8 +77,7 @@ impl Effect for Distortion {
 			};
 			output /= drive;
 
-			let mix = self.mix.value().0;
-			*frame = output * mix.sqrt() + *frame * (1.0 - mix).sqrt()
+			*frame = output * mix.0.sqrt() + *frame * (1.0 - mix.0).sqrt()
 		}
 	}
 }

@@ -83,7 +83,12 @@ impl Effect for Compressor {
 		let attack_duration = self.attack_duration.value();
 		let release_duration = self.release_duration.value();
 
-		for frame in input {
+		let num_frames = input.len();
+		for (i, frame) in input.iter_mut().enumerate() {
+			let time_in_chunk = (i + 1) as f64 / num_frames as f64;
+			let makeup_gain = self.makeup_gain.interpolated_value(time_in_chunk);
+			let mix = self.mix.interpolated_value(time_in_chunk);
+
 			let input_decibels = [
 				20.0 * frame.left.abs().log10(),
 				20.0 * frame.right.abs().log10(),
@@ -104,14 +109,13 @@ impl Effect for Compressor {
 				.map(|envelope_follower| envelope_follower * ((1.0 / ratio) - 1.0));
 			let amplitude =
 				gain_reduction.map(|gain_reduction| 10.0f32.powf(gain_reduction / 20.0));
-			let makeup_gain_linear = 10.0f32.powf(self.makeup_gain.value().0 / 20.0);
+			let makeup_gain_linear = 10.0f32.powf(makeup_gain.0 / 20.0);
 			let output = Frame {
 				left: amplitude[0] * frame.left,
 				right: amplitude[1] * frame.right,
 			} * makeup_gain_linear;
 
-			let mix = self.mix.value().0;
-			*frame = output * mix.sqrt() + *frame * (1.0 - mix).sqrt()
+			*frame = output * mix.0.sqrt() + *frame * (1.0 - mix.0).sqrt()
 		}
 	}
 }

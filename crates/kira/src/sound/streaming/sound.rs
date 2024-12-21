@@ -241,17 +241,25 @@ impl Sound for StreamingSound {
 			return;
 		}
 
-		for frame in out {
+		let num_frames = out.len();
+		for (i, frame) in out.iter_mut().enumerate() {
+			let time_in_chunk = (i + 1) as f64 / num_frames as f64;
+			let volume = self.volume.interpolated_value(time_in_chunk).as_amplitude();
+			let fade_volume = self
+				.playback_state_manager
+				.interpolated_fade_volume(time_in_chunk)
+				.as_amplitude();
+			let panning = self.panning.interpolated_value(time_in_chunk);
+			let playback_rate = self.playback_rate.interpolated_value(time_in_chunk);
 			let next_frames = self.next_frames();
-			let out = interpolate_frame(
+			let interpolated_out = interpolate_frame(
 				next_frames[0],
 				next_frames[1],
 				next_frames[2],
 				next_frames[3],
 				self.fractional_position as f32,
 			);
-			self.fractional_position +=
-				self.sample_rate as f64 * self.playback_rate.value().0.max(0.0) * dt;
+			self.fractional_position += self.sample_rate as f64 * playback_rate.0.max(0.0) * dt;
 			while self.fractional_position >= 1.0 {
 				self.fractional_position -= 1.0;
 				self.frame_consumer.pop().ok();
@@ -260,10 +268,7 @@ impl Sound for StreamingSound {
 				self.playback_state_manager.mark_as_stopped();
 				self.update_shared_playback_state();
 			}
-			*frame = (out
-				* self.playback_state_manager.fade_volume().as_amplitude()
-				* self.volume.value().as_amplitude())
-			.panned(self.panning.value());
+			*frame = (interpolated_out * fade_volume * volume).panned(panning);
 		}
 	}
 

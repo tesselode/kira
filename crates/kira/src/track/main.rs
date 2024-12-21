@@ -59,8 +59,11 @@ impl MainTrack {
 		for effect in &mut self.effects {
 			effect.process(out, dt, info);
 		}
-		for frame in out {
-			*frame *= self.volume.value().as_amplitude();
+		let num_frames = out.len();
+		for (i, frame) in out.iter_mut().enumerate() {
+			let time_in_chunk = (i + 1) as f64 / num_frames as f64;
+			let volume = self.volume.interpolated_value(time_in_chunk).as_amplitude();
+			*frame *= volume;
 		}
 	}
 }

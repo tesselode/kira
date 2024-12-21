@@ -16,7 +16,7 @@ use crate::{
 	command::ValueChangeCommand,
 	command_writers_and_readers,
 	effect::Effect,
-	info::{Info, ListenerInfo, SpatialTrackInfo},
+	info::{Info, SpatialTrackInfo},
 	listener::ListenerId,
 	manager::backend::resources::{
 		clocks::Clocks, listeners::Listeners, modulators::Modulators, ResourceStorage,
@@ -168,6 +168,7 @@ impl Track {
 			return;
 		}
 
+		let num_frames = out.len();
 		for (_, sub_track) in &mut self.sub_tracks {
 			sub_track.process(
 				&mut self.temp_buffer[..out.len()],
@@ -195,19 +196,28 @@ impl Track {
 		}
 		if let Some(spatial_data) = &mut self.spatial_data {
 			spatial_data.position.update(dt * out.len() as f64, &info);
-			if let Some(ListenerInfo {
-				position,
-				orientation,
-			}) = info.listener_info()
-			{
-				for frame in out.iter_mut() {
-					*frame = spatial_data.spatialize(*frame, position.into(), orientation.into());
+			for (i, frame) in out.iter_mut().enumerate() {
+				let time_in_chunk = i as f32 / num_frames as f32;
+				if let Some(listener_info) = info.listener_info() {
+					let interpolated_position = listener_info.interpolated_position(time_in_chunk);
+					let interpolated_orientation =
+						listener_info.interpolated_orientation(time_in_chunk);
+					*frame = spatial_data.spatialize(
+						*frame,
+						interpolated_position.into(),
+						interpolated_orientation.into(),
+					);
 				}
 			}
 		}
-		for frame in out.iter_mut() {
-			*frame *= self.volume.value().as_amplitude()
-				* self.playback_state_manager.fade_volume().as_amplitude();
+		for (i, frame) in out.iter_mut().enumerate() {
+			let time_in_chunk = (i + 1) as f64 / num_frames as f64;
+			let volume = self.volume.interpolated_value(time_in_chunk).as_amplitude();
+			let fade_volume = self
+				.playback_state_manager
+				.interpolated_fade_volume(time_in_chunk)
+				.as_amplitude();
+			*frame *= volume * fade_volume;
 		}
 		for (send_track_id, SendTrackRoute { volume, .. }) in &self.sends {
 			let Some(send_track) = send_tracks.get_mut(send_track_id.0) else {
