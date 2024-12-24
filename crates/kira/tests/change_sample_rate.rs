@@ -21,7 +21,7 @@ struct TestEffect {
 }
 
 impl Effect for TestEffect {
-	fn init(&mut self, sample_rate: u32) {
+	fn init(&mut self, sample_rate: u32, _internal_buffer_size: usize) {
 		self.sample_rate.store(sample_rate, Ordering::SeqCst);
 	}
 

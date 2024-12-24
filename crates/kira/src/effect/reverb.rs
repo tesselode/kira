@@ -126,7 +126,7 @@ impl Reverb {
 }
 
 impl Effect for Reverb {
-	fn init(&mut self, sample_rate: u32) {
+	fn init(&mut self, sample_rate: u32, _internal_buffer_size: usize) {
 		self.init_filters(sample_rate);
 	}
 

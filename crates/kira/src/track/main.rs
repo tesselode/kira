@@ -20,12 +20,13 @@ pub(crate) struct MainTrack {
 	sounds: ResourceStorage<Box<dyn Sound>>,
 	effects: Vec<Box<dyn Effect>>,
 	temp_buffer: Vec<Frame>,
+	internal_buffer_size: usize,
 }
 
 impl MainTrack {
 	pub fn init_effects(&mut self, sample_rate: u32) {
 		for effect in &mut self.effects {
-			effect.init(sample_rate);
+			effect.init(sample_rate, self.internal_buffer_size);
 		}
 	}
 
