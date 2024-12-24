@@ -54,6 +54,7 @@ pub(crate) struct Track {
 	spatial_data: Option<SpatialData>,
 	playback_state_manager: PlaybackStateManager,
 	temp_buffer: Vec<Frame>,
+	internal_buffer_size: usize,
 }
 
 impl Track {
@@ -75,7 +76,7 @@ impl Track {
 
 	pub fn init_effects(&mut self, sample_rate: u32) {
 		for effect in &mut self.effects {
-			effect.init(sample_rate);
+			effect.init(sample_rate, self.internal_buffer_size);
 		}
 		for (_, sub_track) in &mut self.sub_tracks {
 			sub_track.init_effects(sample_rate);

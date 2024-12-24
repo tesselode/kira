@@ -154,6 +154,7 @@ impl MainTrackBuilder {
 			sounds,
 			effects: self.effects,
 			temp_buffer: vec![Frame::ZERO; internal_buffer_size],
+			internal_buffer_size,
 		};
 		let handle = MainTrackHandle {
 			set_volume_command_writer,

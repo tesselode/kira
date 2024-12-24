@@ -261,6 +261,7 @@ impl TrackBuilder {
 			spatial_data: None,
 			playback_state_manager: PlaybackStateManager::new(None),
 			temp_buffer: vec![Frame::ZERO; internal_buffer_size],
+			internal_buffer_size,
 		};
 		let handle = TrackHandle {
 			renderer_shared,

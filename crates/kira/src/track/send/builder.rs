@@ -185,6 +185,7 @@ impl SendTrackBuilder {
 			set_volume_command_reader,
 			effects: self.effects,
 			input: vec![Frame::ZERO; internal_buffer_size],
+			internal_buffer_size,
 		};
 		let handle = SendTrackHandle {
 			id,

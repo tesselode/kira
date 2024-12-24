@@ -33,12 +33,13 @@ pub(crate) struct SendTrack {
 	set_volume_command_reader: CommandReader<ValueChangeCommand<Decibels>>,
 	effects: Vec<Box<dyn Effect>>,
 	input: Vec<Frame>,
+	internal_buffer_size: usize,
 }
 
 impl SendTrack {
 	pub fn init_effects(&mut self, sample_rate: u32) {
 		for effect in &mut self.effects {
-			effect.init(sample_rate);
+			effect.init(sample_rate, self.internal_buffer_size);
 		}
 	}
 
