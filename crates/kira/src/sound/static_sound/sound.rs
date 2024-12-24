@@ -139,14 +139,9 @@ impl StaticSound {
 	}
 
 	fn push_frame_to_resampler(&mut self) {
-		let frame = if self.transport.playing {
-			Some(
-				frame_at_index(self.transport.position, &self.frames, self.slice)
-					.unwrap_or_default(),
-			)
-		} else {
-			None
-		};
+		let frame = self.transport.playing.then(|| {
+			frame_at_index(self.transport.position, &self.frames, self.slice).unwrap_or_default()
+		});
 		self.resampler.push_frame(frame, self.transport.position);
 	}
 
