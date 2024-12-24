@@ -33,9 +33,7 @@ impl Resampler {
 			self.time_until_empty = self.time_until_empty.saturating_sub(1);
 		}
 		let frame = frame.unwrap_or_default();
-		for i in 0..self.frames.len() - 1 {
-			self.frames[i] = self.frames[i + 1];
-		}
+		self.frames.copy_within(1.., 0);
 		self.frames[self.frames.len() - 1] = RecentFrame {
 			frame,
 			frame_index: sample_index,
