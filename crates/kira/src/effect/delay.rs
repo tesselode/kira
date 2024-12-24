@@ -6,10 +6,12 @@ mod handle;
 pub use builder::*;
 pub use handle::*;
 
+use std::time::Duration;
+
 use crate::{
 	command::{read_commands_into_parameters, ValueChangeCommand},
 	command_writers_and_readers,
-	frame::{interpolate_frame, Frame},
+	frame::Frame,
 	info::Info,
 	tween::Parameter,
 	Decibels, Mix,
@@ -17,25 +19,14 @@ use crate::{
 
 use super::Effect;
 
-#[derive(Debug, Clone)]
-enum DelayState {
-	Uninitialized {
-		buffer_length: f64,
-	},
-	Initialized {
-		buffer: Vec<Frame>,
-		buffer_length: f64,
-		write_position: usize,
-	},
-}
-
 struct Delay {
 	command_readers: CommandReaders,
-	delay_time: Parameter,
+	delay_time: Duration,
 	feedback: Parameter<Decibels>,
 	mix: Parameter<Mix>,
-	state: DelayState,
+	buffer: Vec<Frame>,
 	feedback_effects: Vec<Box<dyn Effect>>,
+	temp_buffer: Vec<Frame>,
 }
 
 impl Delay {
@@ -44,110 +35,81 @@ impl Delay {
 	fn new(builder: DelayBuilder, command_readers: CommandReaders) -> Self {
 		Self {
 			command_readers,
-			delay_time: Parameter::new(builder.delay_time, 0.5),
+			delay_time: builder.delay_time,
 			feedback: Parameter::new(builder.feedback, Decibels(-6.0)),
 			mix: Parameter::new(builder.mix, Mix(0.5)),
-			state: DelayState::Uninitialized {
-				buffer_length: builder.buffer_length,
-			},
+			buffer: Vec::with_capacity(0),
 			feedback_effects: builder.feedback_effects,
+			temp_buffer: vec![],
 		}
 	}
 }
 
 impl Effect for Delay {
-	fn init(&mut self, sample_rate: u32) {
-		if let DelayState::Uninitialized { buffer_length } = &self.state {
-			self.state = DelayState::Initialized {
-				buffer: vec![Frame::ZERO; (buffer_length * sample_rate as f64) as usize],
-				buffer_length: *buffer_length,
-				write_position: 0,
-			};
-			for effect in &mut self.feedback_effects {
-				effect.init(sample_rate);
-			}
-		} else {
-			panic!("The delay should be in the uninitialized state before init")
+	fn init(&mut self, sample_rate: u32, internal_buffer_size: usize) {
+		let delay_time_frames = (self.delay_time.as_secs_f64() * sample_rate as f64) as usize;
+		self.buffer = vec![Frame::ZERO; delay_time_frames];
+		self.temp_buffer = vec![Frame::ZERO; internal_buffer_size];
+		for effect in &mut self.feedback_effects {
+			effect.init(sample_rate, internal_buffer_size);
 		}
 	}
 
 	fn on_change_sample_rate(&mut self, sample_rate: u32) {
-		if let DelayState::Initialized {
-			buffer,
-			buffer_length,
-			write_position,
-		} = &mut self.state
-		{
-			*buffer = vec![Frame::ZERO; (*buffer_length * sample_rate as f64) as usize];
-			*write_position = 0;
-			for effect in &mut self.feedback_effects {
-				effect.on_change_sample_rate(sample_rate);
-			}
-		} else {
-			panic!("The delay should be initialized when the change sample rate callback is called")
+		let delay_time_frames = (self.delay_time.as_secs_f64() * sample_rate as f64) as usize;
+		self.buffer = vec![Frame::ZERO; delay_time_frames];
+		for effect in &mut self.feedback_effects {
+			effect.on_change_sample_rate(sample_rate);
 		}
 	}
 
 	fn on_start_processing(&mut self) {
-		read_commands_into_parameters!(self, delay_time, feedback, mix);
+		read_commands_into_parameters!(self, feedback, mix);
 		for effect in &mut self.feedback_effects {
 			effect.on_start_processing();
 		}
 	}
 
 	fn process(&mut self, input: &mut [Frame], dt: f64, info: &Info) {
-		if let DelayState::Initialized {
-			buffer,
-			write_position,
-			..
-		} = &mut self.state
-		{
-			self.delay_time.update(dt * input.len() as f64, info);
-			self.feedback.update(dt * input.len() as f64, info);
-			self.mix.update(dt * input.len() as f64, info);
+		self.feedback.update(dt * input.len() as f64, info);
+		self.mix.update(dt * input.len() as f64, info);
 
-			// get the read position (in samples)
-			let mut read_position = *write_position as f32 - (self.delay_time.value() / dt) as f32;
-			while read_position < 0.0 {
-				read_position += buffer.len() as f32;
-			}
+		for input in input.chunks_mut(self.buffer.len()) {
+			let num_frames = input.len();
 
-			// read an interpolated sample
-			let current_sample_index = read_position as usize;
-			let previous_sample_index = if current_sample_index == 0 {
-				buffer.len() - 2
-			} else {
-				current_sample_index - 1
-			};
-			let next_sample_index = (current_sample_index + 1) % buffer.len();
-			let next_sample_index_2 = (current_sample_index + 2) % buffer.len();
-			let fraction = read_position % 1.0;
-			let mut output = interpolate_frame(
-				buffer[previous_sample_index],
-				buffer[current_sample_index],
-				buffer[next_sample_index],
-				buffer[next_sample_index_2],
-				fraction,
-			);
+			// read from the beginning of the buffer and apply effects and feedback gain
+			self.temp_buffer[..input.len()].copy_from_slice(&self.buffer[..input.len()]);
 			for effect in &mut self.feedback_effects {
-				output = effect.process(output, dt, info);
+				effect.process(&mut self.temp_buffer[..input.len()], dt, info);
+			}
+			for (i, frame) in self.temp_buffer[..input.len()].iter_mut().enumerate() {
+				let time_in_chunk = (i + 1) as f64 / num_frames as f64;
+				let feedback = self.feedback.interpolated_value(time_in_chunk);
+				*frame *= feedback.as_amplitude();
 			}
 
-			// write output audio to the buffer
-			*write_position += 1;
-			*write_position %= buffer.len();
-			buffer[*write_position] = input + output * self.feedback.value().as_amplitude();
+			// write input + read buffer to the end of the buffer
+			self.buffer.copy_within(input.len().., 0);
+			let write_range = self.buffer.len() - input.len()..;
+			for ((out, input), read) in self.buffer[write_range]
+				.iter_mut()
+				.zip(input.iter())
+				.zip(&mut self.temp_buffer[..input.len()])
+			{
+				*out = *input + *read;
+			}
 
-			let mix = self.mix.value().0;
-			output * mix.sqrt() + input * (1.0 - mix).sqrt()
-		} else {
-			panic!("The delay should be initialized by the first process call")
+			// output mix of input and read buffer
+			for (i, frame) in input.iter_mut().enumerate() {
+				let time_in_chunk = (i + 1) as f64 / num_frames as f64;
+				let mix = self.mix.interpolated_value(time_in_chunk);
+				*frame = self.temp_buffer[i] * mix.0.sqrt() + *frame * (1.0 - mix.0).sqrt()
+			}
 		}
 	}
 }
 
 command_writers_and_readers! {
-	set_delay_time: ValueChangeCommand<f64>,
 	set_feedback: ValueChangeCommand<Decibels>,
 	set_mix: ValueChangeCommand<Mix>,
 }

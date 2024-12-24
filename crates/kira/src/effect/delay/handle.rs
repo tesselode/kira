@@ -10,9 +10,6 @@ pub struct DelayHandle {
 
 impl DelayHandle {
 	handle_param_setters! {
-		/// Sets the delay time (in seconds).
-		delay_time: f64,
-
 		/// Sets the amount of feedback.
 		feedback: Decibels,
 

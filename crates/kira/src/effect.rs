@@ -10,7 +10,7 @@ and [`Effect`] traits.
 */
 
 pub mod compressor;
-// pub mod delay;
+pub mod delay;
 pub mod distortion;
 pub mod eq_filter;
 pub mod filter;
