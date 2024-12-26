@@ -1,4 +1,4 @@
-mod renderer_wrapper;
+mod send_on_drop;
 
 use std::{
 	sync::{
@@ -8,16 +8,15 @@ use std::{
 	time::Duration,
 };
 
-use crate::manager::backend::Renderer;
+use super::renderer_with_cpu_usage::RendererWithCpuUsage;
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	BufferSize, Device, Stream, StreamConfig, StreamError,
 };
 use rtrb::{Consumer, RingBuffer};
+use send_on_drop::SendOnDrop;
 
 use super::super::Error;
-
-use self::renderer_wrapper::RendererWrapper;
 
 const CHECK_STREAM_INTERVAL: Duration = Duration::from_millis(500);
 
@@ -25,12 +24,12 @@ const CHECK_STREAM_INTERVAL: Duration = Duration::from_millis(500);
 enum State {
 	Empty,
 	Idle {
-		renderer: Renderer,
+		renderer: RendererWithCpuUsage,
 	},
 	Running {
 		stream: Stream,
 		stream_error_consumer: Consumer<StreamError>,
-		renderer_consumer: Consumer<Renderer>,
+		renderer_consumer: Consumer<RendererWithCpuUsage>,
 	},
 }
 
@@ -56,7 +55,7 @@ pub(super) struct StreamManager {
 
 impl StreamManager {
 	pub fn start(
-		renderer: Renderer,
+		renderer: RendererWithCpuUsage,
 		device: Device,
 		mut config: StreamConfig,
 		custom_device: bool,
@@ -134,7 +133,7 @@ impl StreamManager {
 		}
 		self.device_name = device_name;
 		self.sample_rate = sample_rate;
-		let (mut renderer_wrapper, renderer_consumer) = RendererWrapper::new(renderer);
+		let (mut renderer_wrapper, renderer_consumer) = SendOnDrop::new(renderer);
 		let (mut stream_error_producer, stream_error_consumer) = RingBuffer::new(1);
 		let channels = config.channels;
 		let stream = device.build_output_stream(
@@ -142,10 +141,10 @@ impl StreamManager {
 			move |data: &mut [f32], _| {
 				#[cfg(feature = "assert_no_alloc")]
 				assert_no_alloc::assert_no_alloc(|| {
-					process_renderer(&mut renderer_wrapper, data, channels);
+					process_renderer(&mut renderer_wrapper, data, channels, sample_rate);
 				});
 				#[cfg(not(feature = "assert_no_alloc"))]
-				process_renderer(&mut renderer_wrapper, data, channels);
+				process_renderer(&mut renderer_wrapper, data, channels, sample_rate);
 			},
 			move |error| {
 				stream_error_producer
@@ -196,7 +195,12 @@ fn device_name(device: &Device) -> String {
 		.unwrap_or_else(|_| "device name unavailable".to_string())
 }
 
-fn process_renderer(renderer_wrapper: &mut RendererWrapper, data: &mut [f32], channels: u16) {
-	renderer_wrapper.on_start_processing();
-	renderer_wrapper.process(data, channels);
+fn process_renderer(
+	renderer: &mut SendOnDrop<RendererWithCpuUsage>,
+	data: &mut [f32],
+	channels: u16,
+	sample_rate: u32,
+) {
+	renderer.on_start_processing();
+	renderer.process(data, channels, sample_rate);
 }

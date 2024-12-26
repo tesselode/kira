@@ -1,5 +1,10 @@
+mod renderer_with_cpu_usage;
 mod stream_manager;
 
+use std::sync::Mutex;
+
+use renderer_with_cpu_usage::RendererWithCpuUsage;
+use rtrb::Consumer;
 use stream_manager::{StreamManager, StreamManagerController};
 
 use crate::manager::backend::{Backend, Renderer};
@@ -28,6 +33,29 @@ pub struct CpalBackend {
 	/// Whether the device was specified by the user.
 	custom_device: bool,
 	buffer_size: BufferSize,
+	cpu_usage_consumer: Option<Mutex<Consumer<f32>>>,
+}
+
+impl CpalBackend {
+	/**
+	Returns the oldest reported CPU usage in the queue.
+
+	The formula for the CPU usage is time elapsed / time allotted, where
+	- time elapsed is the amount of time it took to fill the audio buffer
+	  requested by the OS
+	- time allotted is the maximum amount of time Kira could take to process
+	  audio and still finish in time to avoid audio stuttering (num frames / sample
+	  rate)
+	*/
+	pub fn pop_cpu_usage(&mut self) -> Option<f32> {
+		self.cpu_usage_consumer
+			.as_mut()
+			.unwrap()
+			.get_mut()
+			.unwrap()
+			.pop()
+			.ok()
+	}
 }
 
 impl Backend for CpalBackend {
@@ -58,6 +86,7 @@ impl Backend for CpalBackend {
 				state: State::Uninitialized { device, config },
 				custom_device,
 				buffer_size: settings.buffer_size,
+				cpu_usage_consumer: None,
 			},
 			sample_rate,
 		))
@@ -66,6 +95,7 @@ impl Backend for CpalBackend {
 	fn start(&mut self, renderer: Renderer) -> Result<(), Self::Error> {
 		let state = std::mem::replace(&mut self.state, State::Empty);
 		if let State::Uninitialized { device, config } = state {
+			let (renderer, cpu_usage_consumer) = RendererWithCpuUsage::new(renderer);
 			self.state = State::Initialized {
 				stream_manager_controller: StreamManager::start(
 					renderer,
@@ -75,6 +105,7 @@ impl Backend for CpalBackend {
 					self.buffer_size,
 				),
 			};
+			self.cpu_usage_consumer = Some(Mutex::new(cpu_usage_consumer));
 		} else {
 			panic!("Cannot initialize the backend multiple times")
 		}
