@@ -66,14 +66,9 @@ fn sounds(c: &mut Criterion) {
 		for _ in 0..NUM_SOUNDS {
 			manager.play(sound_data.clone()).unwrap();
 		}
-		manager.backend_mut().on_start_processing();
-		let mut num_iterations = 0;
 		b.iter(|| {
-			if num_iterations % 1000 == 0 {
-				manager.backend_mut().on_start_processing();
-			}
+			manager.backend_mut().on_start_processing();
 			manager.backend_mut().process();
-			num_iterations += 1;
 		});
 	});
 }
