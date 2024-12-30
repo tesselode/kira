@@ -9,8 +9,7 @@ use crate::{
 	listener::ListenerId,
 	sound::{Sound, SoundData},
 	track::TrackPlaybackState,
-	Tween,
-	Decibels, PlaySoundError, ResourceLimitReached, StartTime, Value,
+	Decibels, PlaySoundError, ResourceLimitReached, StartTime, Tween, Value,
 };
 
 use super::{
@@ -100,6 +99,24 @@ impl SpatialTrackHandle {
 			target: position.to_(),
 			tween,
 		})
+	}
+
+	/// Sets how much the track's output should be panned left or right depending on its
+	/// direction from the listener.
+	///
+	/// This value should be between `0.0` and `1.0`. `0.0` disables spatialization
+	/// entirely.
+	pub fn set_spatialization_strength(
+		&mut self,
+		spatialization_strength: impl Into<Value<f32>>,
+		tween: Tween,
+	) {
+		self.command_writers
+			.set_spatialization_strength
+			.write(ValueChangeCommand {
+				target: spatialization_strength.into(),
+				tween,
+			})
 	}
 
 	/// Sets the volume of this track's route to a send track.

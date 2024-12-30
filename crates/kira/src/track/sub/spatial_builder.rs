@@ -36,9 +36,12 @@ pub struct SpatialTrackBuilder {
 	///
 	/// If `None`, the track will output at a constant volume.
 	pub(crate) attenuation_function: Option<Easing>,
-	/// Whether the track's output should be panned left or right depending on its
+	/// How much the track's output should be panned left or right depending on its
 	/// direction from the listener.
-	pub(crate) enable_spatialization: bool,
+	///
+	/// This value should be between `0.0` and `1.0`. `0.0` disables spatialization
+	/// entirely.
+	pub(crate) spatialization_strength: Value<f32>,
 }
 
 impl SpatialTrackBuilder {
@@ -54,7 +57,7 @@ impl SpatialTrackBuilder {
 			persist_until_sounds_finish: false,
 			distances: SpatialTrackDistances::default(),
 			attenuation_function: Some(Easing::Linear),
-			enable_spatialization: true,
+			spatialization_strength: Value::Fixed(0.75),
 		}
 	}
 
@@ -260,12 +263,15 @@ impl SpatialTrackBuilder {
 		}
 	}
 
-	/// Sets whether the emitter's output should be panned left or right depending on its
+	/// Sets how much the track's output should be panned left or right depending on its
 	/// direction from the listener.
+	///
+	/// This value should be between `0.0` and `1.0`. `0.0` disables spatialization
+	/// entirely.
 	#[must_use = "This method consumes self and returns a modified SpatialTrackBuilder, so the return value should be used"]
-	pub fn enable_spatialization(self, enable_spatialization: bool) -> Self {
+	pub fn spatialization_strength(self, spatialization_strength: impl Into<Value<f32>>) -> Self {
 		Self {
-			enable_spatialization,
+			spatialization_strength: spatialization_strength.into(),
 			..self
 		}
 	}
@@ -310,7 +316,7 @@ impl SpatialTrackBuilder {
 				position: Parameter::new(position, Vec3::ZERO),
 				distances: self.distances,
 				attenuation_function: self.attenuation_function,
-				enable_spatialization: self.enable_spatialization,
+				spatialization_strength: Parameter::new(self.spatialization_strength, 0.75),
 			}),
 			playback_state_manager: PlaybackStateManager::new(None),
 			temp_buffer: vec![Frame::ZERO; internal_buffer_size],

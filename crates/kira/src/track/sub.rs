@@ -23,8 +23,7 @@ use crate::{
 	listener::ListenerId,
 	playback_state_manager::PlaybackStateManager,
 	sound::Sound,
-	Easing, Tween, Tweenable,
-	Decibels, Frame, Parameter, StartTime,
+	Decibels, Easing, Frame, Parameter, StartTime, Tween, Tweenable,
 };
 
 use super::{SendTrack, SendTrackId, SendTrackRoute, TrackShared};
@@ -197,16 +196,21 @@ impl Track {
 		}
 		if let Some(spatial_data) = &mut self.spatial_data {
 			spatial_data.position.update(dt * out.len() as f64, &info);
+			spatial_data
+				.spatialization_strength
+				.update(dt * out.len() as f64, &info);
 			for (i, frame) in out.iter_mut().enumerate() {
-				let time_in_chunk = i as f32 / num_frames as f32;
+				let time_in_chunk = i as f64 / num_frames as f64;
 				if let Some(listener_info) = info.listener_info() {
-					let interpolated_position = listener_info.interpolated_position(time_in_chunk);
+					let interpolated_position =
+						listener_info.interpolated_position(time_in_chunk as f32);
 					let interpolated_orientation =
-						listener_info.interpolated_orientation(time_in_chunk);
+						listener_info.interpolated_orientation(time_in_chunk as f32);
 					*frame = spatial_data.spatialize(
 						*frame,
 						interpolated_position.into(),
 						interpolated_orientation.into(),
+						time_in_chunk,
 					);
 				}
 			}
@@ -234,8 +238,15 @@ impl Track {
 		for (_, route) in &mut self.sends {
 			route.read_commands();
 		}
-		if let Some(SpatialData { position, .. }) = &mut self.spatial_data {
+		if let Some(SpatialData {
+			position,
+			spatialization_strength,
+			..
+		}) = &mut self.spatial_data
+		{
 			position.read_command(&mut self.command_readers.set_position);
+			spatialization_strength
+				.read_command(&mut self.command_readers.set_spatialization_strength);
 		}
 		if let Some(tween) = self.command_readers.pause.read() {
 			self.pause(tween);
@@ -255,9 +266,12 @@ struct SpatialData {
 	///
 	/// If `None`, the track will output at a constant volume.
 	attenuation_function: Option<Easing>,
-	/// Whether the track's output should be panned left or right depending on its
+	/// How much the track's output should be panned left or right depending on its
 	/// direction from the listener.
-	enable_spatialization: bool,
+	///
+	/// This value should be between `0.0` and `1.0`. `0.0` disables spatialization
+	/// entirely.
+	spatialization_strength: Parameter<f32>,
 }
 
 impl SpatialData {
@@ -266,13 +280,19 @@ impl SpatialData {
 		input: Frame,
 		listener_position: Vec3,
 		listener_orientation: Quat,
+		time_in_chunk: f64,
 	) -> Frame {
-		const MIN_EAR_AMPLITUDE: f32 = 0.5;
+		let position = self.position.interpolated_value(time_in_chunk);
+		let spatialization_strength = self
+			.spatialization_strength
+			.interpolated_value(time_in_chunk)
+			.clamp(0.0, 1.0);
+		let min_ear_amplitude = 1.0 - spatialization_strength;
 
 		let mut output = input;
 		// attenuate volume
 		if let Some(attenuation_function) = self.attenuation_function {
-			let distance = (listener_position - self.position.value()).length();
+			let distance = (listener_position - position).length();
 			let relative_distance = self.distances.relative_distance(distance);
 			let relative_volume =
 				attenuation_function.apply((1.0 - relative_distance).into()) as f32;
@@ -285,22 +305,22 @@ impl SpatialData {
 			output *= amplitude;
 		}
 		// apply spatialization
-		if self.enable_spatialization {
+		if spatialization_strength != 0.0 {
 			output = output.as_mono();
 			let (left_ear_position, right_ear_position) =
 				listener_ear_positions(listener_position, listener_orientation);
 			let (left_ear_direction, right_ear_direction) =
 				listener_ear_directions(listener_orientation);
 			let emitter_direction_relative_to_left_ear =
-				(self.position.value() - left_ear_position).normalize_or_zero();
+				(position - left_ear_position).normalize_or_zero();
 			let emitter_direction_relative_to_right_ear =
-				(self.position.value() - right_ear_position).normalize_or_zero();
+				(position - right_ear_position).normalize_or_zero();
 			let left_ear_volume =
 				(left_ear_direction.dot(emitter_direction_relative_to_left_ear) + 1.0) / 2.0;
 			let right_ear_volume =
 				(right_ear_direction.dot(emitter_direction_relative_to_right_ear) + 1.0) / 2.0;
-			output.left *= MIN_EAR_AMPLITUDE + (1.0 - MIN_EAR_AMPLITUDE) * left_ear_volume;
-			output.right *= MIN_EAR_AMPLITUDE + (1.0 - MIN_EAR_AMPLITUDE) * right_ear_volume;
+			output.left *= min_ear_amplitude + (1.0 - min_ear_amplitude) * left_ear_volume;
+			output.right *= min_ear_amplitude + (1.0 - min_ear_amplitude) * right_ear_volume;
 		}
 		output
 	}
@@ -331,6 +351,7 @@ fn listener_ear_directions(listener_orientation: Quat) -> (Vec3, Vec3) {
 command_writers_and_readers! {
 	set_volume: ValueChangeCommand<Decibels>,
 	set_position: ValueChangeCommand<Vec3>,
+	set_spatialization_strength: ValueChangeCommand<f32>,
 	pause: Tween,
 	resume: (StartTime, Tween),
 }
