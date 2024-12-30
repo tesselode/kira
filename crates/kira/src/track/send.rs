@@ -3,11 +3,11 @@ mod handle;
 
 use std::sync::Arc;
 
+use atomic_arena::Key;
 pub use builder::*;
 pub use handle::*;
 
 use crate::{
-	arena::Key,
 	command::{CommandReader, ValueChangeCommand},
 	effect::Effect,
 	info::Info,

@@ -12,11 +12,11 @@ use std::{
 };
 
 use crate::{
-	arena::{Arena, Controller, Key},
 	listener::Listener,
 	track::{MainTrackBuilder, MainTrackHandle, SendTrack, Track},
 	ResourceLimitReached,
 };
+use atomic_arena::{Arena, Controller, Key};
 use listeners::Listeners;
 use rtrb::{Consumer, Producer, RingBuffer};
 
@@ -32,10 +32,9 @@ pub(crate) struct ResourceStorage<T> {
 
 impl<T> ResourceStorage<T> {
 	#[must_use]
-	pub fn new(capacity: u16) -> (Self, ResourceController<T>) {
-		let (new_resource_producer, new_resource_consumer) = RingBuffer::new(capacity as usize);
-		let (unused_resource_producer, unused_resource_consumer) =
-			RingBuffer::new(capacity as usize);
+	pub fn new(capacity: usize) -> (Self, ResourceController<T>) {
+		let (new_resource_producer, new_resource_consumer) = RingBuffer::new(capacity);
+		let (unused_resource_producer, unused_resource_consumer) = RingBuffer::new(capacity);
 		let resources = Arena::new(capacity);
 		let arena_controller = resources.controller();
 		(
@@ -71,12 +70,12 @@ impl<T> ResourceStorage<T> {
 	}
 
 	#[must_use]
-	pub fn iter(&self) -> crate::arena::iter::Iter<T> {
+	pub fn iter(&self) -> atomic_arena::iter::Iter<T> {
 		self.resources.iter()
 	}
 
 	#[must_use]
-	pub fn iter_mut(&mut self) -> crate::arena::iter::IterMut<T> {
+	pub fn iter_mut(&mut self) -> atomic_arena::iter::IterMut<T> {
 		self.resources.iter_mut()
 	}
 
@@ -89,7 +88,7 @@ impl<T> ResourceStorage<T> {
 impl<'a, T> IntoIterator for &'a mut ResourceStorage<T> {
 	type Item = (Key, &'a mut T);
 
-	type IntoIter = crate::arena::iter::IterMut<'a, T>;
+	type IntoIter = atomic_arena::iter::IterMut<'a, T>;
 
 	fn into_iter(self) -> Self::IntoIter {
 		self.iter_mut()
@@ -105,19 +104,18 @@ pub(crate) struct SelfReferentialResourceStorage<T> {
 }
 
 impl<T> SelfReferentialResourceStorage<T> {
-	pub fn new(capacity: u16) -> (Self, ResourceController<T>)
+	pub fn new(capacity: usize) -> (Self, ResourceController<T>)
 	where
 		T: Default,
 	{
-		let (new_resource_producer, new_resource_consumer) = RingBuffer::new(capacity as usize);
-		let (unused_resource_producer, unused_resource_consumer) =
-			RingBuffer::new(capacity as usize);
+		let (new_resource_producer, new_resource_consumer) = RingBuffer::new(capacity);
+		let (unused_resource_producer, unused_resource_consumer) = RingBuffer::new(capacity);
 		let resources = Arena::new(capacity);
 		let arena_controller = resources.controller();
 		(
 			Self {
 				resources,
-				keys: Vec::with_capacity(capacity as usize),
+				keys: Vec::with_capacity(capacity),
 				new_resource_consumer,
 				unused_resource_producer,
 				dummy: T::default(),
@@ -147,7 +145,7 @@ impl<T> SelfReferentialResourceStorage<T> {
 	}
 
 	#[must_use]
-	pub fn iter_mut(&mut self) -> crate::arena::iter::IterMut<T> {
+	pub fn iter_mut(&mut self) -> atomic_arena::iter::IterMut<T> {
 		self.resources.iter_mut()
 	}
 
@@ -180,7 +178,7 @@ impl<T> SelfReferentialResourceStorage<T> {
 impl<'a, T> IntoIterator for &'a mut SelfReferentialResourceStorage<T> {
 	type Item = (Key, &'a mut T);
 
-	type IntoIter = crate::arena::iter::IterMut<'a, T>;
+	type IntoIter = atomic_arena::iter::IterMut<'a, T>;
 
 	fn into_iter(self) -> Self::IntoIter {
 		self.iter_mut()
@@ -224,12 +222,12 @@ impl<T> ResourceController<T> {
 	}
 
 	#[must_use]
-	pub fn capacity(&self) -> u16 {
+	pub fn capacity(&self) -> usize {
 		self.arena_controller.capacity()
 	}
 
 	#[must_use]
-	pub fn len(&self) -> u16 {
+	pub fn len(&self) -> usize {
 		self.arena_controller.len()
 	}
 }

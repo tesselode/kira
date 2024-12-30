@@ -13,7 +13,7 @@ pub struct MainTrackBuilder {
 	/// for this track.
 	pub(crate) effects: Vec<Box<dyn Effect>>,
 	/// The maximum number of sounds that can be played simultaneously on this track.
-	pub(crate) sound_capacity: u16,
+	pub(crate) sound_capacity: usize,
 }
 
 impl MainTrackBuilder {
@@ -38,7 +38,7 @@ impl MainTrackBuilder {
 
 	/// Sets the maximum number of sounds that can be played simultaneously on this track.
 	#[must_use = "This method consumes self and returns a modified MainTrackBuilder, so the return value should be used"]
-	pub fn sound_capacity(self, capacity: u16) -> Self {
+	pub fn sound_capacity(self, capacity: usize) -> Self {
 		Self {
 			sound_capacity: capacity,
 			..self

@@ -19,8 +19,8 @@ pub(crate) struct Mixer {
 impl Mixer {
 	#[must_use]
 	pub fn new(
-		sub_track_capacity: u16,
-		send_track_capacity: u16,
+		sub_track_capacity: usize,
+		send_track_capacity: usize,
 		sample_rate: u32,
 		internal_buffer_size: usize,
 		main_track_builder: MainTrackBuilder,

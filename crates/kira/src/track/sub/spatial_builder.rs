@@ -25,9 +25,9 @@ pub struct SpatialTrackBuilder {
 	/// for this track.
 	pub(crate) effects: Vec<Box<dyn Effect>>,
 	/// The number of child tracks that can be added to this track.
-	pub(crate) sub_track_capacity: u16,
+	pub(crate) sub_track_capacity: usize,
 	/// The maximum number of sounds that can be played simultaneously on this track.
-	pub(crate) sound_capacity: u16,
+	pub(crate) sound_capacity: usize,
 	pub(crate) sends: HashMap<SendTrackId, Value<Decibels>>,
 	pub(crate) persist_until_sounds_finish: bool,
 	/// The distances from a listener at which the track is loudest and quietest.
@@ -109,7 +109,7 @@ impl SpatialTrackBuilder {
 
 	/// Sets the maximum number of sub-tracks this track can have.
 	#[must_use = "This method consumes self and returns a modified SpatialTrackBuilder, so the return value should be used"]
-	pub fn sub_track_capacity(self, capacity: u16) -> Self {
+	pub fn sub_track_capacity(self, capacity: usize) -> Self {
 		Self {
 			sub_track_capacity: capacity,
 			..self
@@ -118,7 +118,7 @@ impl SpatialTrackBuilder {
 
 	/// Sets the maximum number of sounds that can be played simultaneously on this track.
 	#[must_use = "This method consumes self and returns a modified SpatialTrackBuilder, so the return value should be used"]
-	pub fn sound_capacity(self, capacity: u16) -> Self {
+	pub fn sound_capacity(self, capacity: usize) -> Self {
 		Self {
 			sound_capacity: capacity,
 			..self

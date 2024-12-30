@@ -276,49 +276,49 @@ impl<B: Backend> AudioManager<B> {
 
 	/// Returns the number of mixer sub-tracks that can exist at a time.
 	#[must_use]
-	pub fn sub_track_capacity(&self) -> u16 {
+	pub fn sub_track_capacity(&self) -> usize {
 		self.resource_controllers.sub_track_controller.capacity()
 	}
 
 	/// Returns the number of mixer send tracks that can exist at a time.
 	#[must_use]
-	pub fn send_track_capacity(&self) -> u16 {
+	pub fn send_track_capacity(&self) -> usize {
 		self.resource_controllers.send_track_controller.capacity()
 	}
 
 	/// Returns the number of clocks that can exist at a time.
 	#[must_use]
-	pub fn clock_capacity(&self) -> u16 {
+	pub fn clock_capacity(&self) -> usize {
 		self.resource_controllers.clock_controller.capacity()
 	}
 
 	/// Returns the number of modulators that can exist at a time.
 	#[must_use]
-	pub fn modulator_capacity(&self) -> u16 {
+	pub fn modulator_capacity(&self) -> usize {
 		self.resource_controllers.modulator_controller.capacity()
 	}
 
 	/// Returns the number of mixer sub-tracks that currently exist.
 	#[must_use]
-	pub fn num_sub_tracks(&self) -> u16 {
+	pub fn num_sub_tracks(&self) -> usize {
 		self.resource_controllers.sub_track_controller.len()
 	}
 
 	/// Returns the number of mixer send tracks that currently exist.
 	#[must_use]
-	pub fn num_send_tracks(&self) -> u16 {
+	pub fn num_send_tracks(&self) -> usize {
 		self.resource_controllers.send_track_controller.len()
 	}
 
 	/// Returns the number of clocks that currently exist.
 	#[must_use]
-	pub fn num_clocks(&self) -> u16 {
+	pub fn num_clocks(&self) -> usize {
 		self.resource_controllers.clock_controller.len()
 	}
 
 	/// Returns the number of modulators that currently exist.
 	#[must_use]
-	pub fn num_modulators(&self) -> u16 {
+	pub fn num_modulators(&self) -> usize {
 		self.resource_controllers.modulator_controller.len()
 	}
 

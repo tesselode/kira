@@ -162,25 +162,25 @@ impl SpatialTrackHandle {
 
 	/// Returns the maximum number of sounds that can play simultaneously on this track.
 	#[must_use]
-	pub fn sound_capacity(&self) -> u16 {
+	pub fn sound_capacity(&self) -> usize {
 		self.sound_controller.capacity()
 	}
 
 	/// Returns the number of sounds currently playing on this track.
 	#[must_use]
-	pub fn num_sounds(&self) -> u16 {
+	pub fn num_sounds(&self) -> usize {
 		self.sound_controller.len()
 	}
 
 	/// Returns the maximum number of child tracks this track can have.
 	#[must_use]
-	pub fn sub_track_capacity(&self) -> u16 {
+	pub fn sub_track_capacity(&self) -> usize {
 		self.sub_track_controller.capacity()
 	}
 
 	/// Returns the number of child tracks this track has.
 	#[must_use]
-	pub fn num_sub_tracks(&self) -> u16 {
+	pub fn num_sub_tracks(&self) -> usize {
 		self.sub_track_controller.len()
 	}
 }

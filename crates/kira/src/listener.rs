@@ -8,6 +8,7 @@ For more information, see the documentation on [spatial mixer tracks](crate::tra
 
 mod handle;
 
+use atomic_arena::Key;
 pub use handle::*;
 
 use std::sync::{
@@ -18,7 +19,6 @@ use std::sync::{
 use glam::{Quat, Vec3};
 
 use crate::{
-	arena::Key,
 	command::{read_commands_into_parameters, ValueChangeCommand},
 	command_writers_and_readers,
 	info::Info,

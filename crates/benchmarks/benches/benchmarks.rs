@@ -28,7 +28,7 @@ fn sounds(c: &mut Criterion) {
 	// a simple test case where many sounds are being played at once
 	c.bench_function("simple", |b| {
 		const SAMPLE_RATE: u32 = 48_000;
-		const NUM_SOUNDS: u16 = 5000;
+		const NUM_SOUNDS: usize = 5000;
 		let mut manager = AudioManager::<MockBackend>::new(AudioManagerSettings {
 			backend_settings: MockBackendSettings {
 				sample_rate: SAMPLE_RATE,
@@ -50,7 +50,7 @@ fn sounds(c: &mut Criterion) {
 	// impact on the performance
 	c.bench_function("with on_start_processing callback", |b| {
 		const SAMPLE_RATE: u32 = 48_000;
-		const NUM_SOUNDS: u16 = 5000;
+		const NUM_SOUNDS: usize = 5000;
 		let mut manager = AudioManager::<MockBackend>::new(AudioManagerSettings {
 			backend_settings: MockBackendSettings {
 				sample_rate: SAMPLE_RATE,

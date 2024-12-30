@@ -2,8 +2,7 @@ use crate::{
 	backend::resources::ResourceController,
 	command::{CommandWriter, ValueChangeCommand},
 	sound::{Sound, SoundData},
-	Tween,
-	Decibels, PlaySoundError, Value,
+	Decibels, PlaySoundError, Tween, Value,
 };
 
 /// Controls the main mixer track.
@@ -38,13 +37,13 @@ impl MainTrackHandle {
 
 	/// Returns the maximum number of sounds that can play simultaneously on this track.
 	#[must_use]
-	pub fn sound_capacity(&self) -> u16 {
+	pub fn sound_capacity(&self) -> usize {
 		self.sound_controller.capacity()
 	}
 
 	/// Returns the number of sounds currently playing on this track.
 	#[must_use]
-	pub fn num_sounds(&self) -> u16 {
+	pub fn num_sounds(&self) -> usize {
 		self.sound_controller.len()
 	}
 }

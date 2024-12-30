@@ -1,13 +1,12 @@
 use std::time::Duration;
 
-use crate::arena::Arena;
+use atomic_arena::Arena;
 
 use crate::info::MockInfoBuilder;
 use crate::{
 	clock::ClockTime,
 	modulator::{tweener::TweenerBuilder, ModulatorBuilder, ModulatorId},
-	Tween,
-	StartTime,
+	StartTime, Tween,
 };
 
 /// Tests that the basic tweening behavior of a `Tweener`

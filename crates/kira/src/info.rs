@@ -5,10 +5,10 @@
  * like [`Sound`](crate::sound::Sound) or [`Effect`](crate::effect::Effect).
  */
 
+use atomic_arena::Arena;
 use glam::{Quat, Vec3};
 
 use crate::{
-	arena::Arena,
 	clock::{Clock, ClockId, ClockTime, State as ClockState},
 	listener::{Listener, ListenerId},
 	modulator::{Modulator, ModulatorId},

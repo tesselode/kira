@@ -8,7 +8,7 @@ pub(crate) struct Listeners(pub(crate) SelfReferentialResourceStorage<Listener>)
 
 impl Listeners {
 	#[must_use]
-	pub(crate) fn new(capacity: u16) -> (Self, ResourceController<Listener>) {
+	pub(crate) fn new(capacity: usize) -> (Self, ResourceController<Listener>) {
 		let (storage, controller) = SelfReferentialResourceStorage::new(capacity);
 		(Self(storage), controller)
 	}

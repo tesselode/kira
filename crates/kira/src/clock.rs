@@ -142,6 +142,7 @@ mod time;
 #[cfg(test)]
 mod test;
 
+use atomic_arena::Key;
 pub use clock_speed::*;
 pub use handle::*;
 pub use time::*;
@@ -152,7 +153,6 @@ use std::sync::{
 };
 
 use crate::{
-	arena::Key,
 	command::{read_commands_into_parameters, ValueChangeCommand},
 	command_writers_and_readers,
 	info::Info,

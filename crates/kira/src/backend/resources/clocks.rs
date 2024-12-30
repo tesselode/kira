@@ -9,7 +9,7 @@ pub(crate) struct Clocks(pub(crate) SelfReferentialResourceStorage<Clock>);
 
 impl Clocks {
 	#[must_use]
-	pub(crate) fn new(capacity: u16) -> (Self, ResourceController<Clock>) {
+	pub(crate) fn new(capacity: usize) -> (Self, ResourceController<Clock>) {
 		let (storage, controller) = SelfReferentialResourceStorage::new(capacity);
 		(Self(storage), controller)
 	}

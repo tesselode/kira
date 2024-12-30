@@ -163,7 +163,9 @@ tweener.set(1.0, Tween {
 pub mod lfo;
 pub mod tweener;
 
-use crate::{arena::Key, info::Info};
+use atomic_arena::Key;
+
+use crate::info::Info;
 
 /// Configures a modulator.
 pub trait ModulatorBuilder {
