@@ -21,7 +21,7 @@ use crate::{
 	command::{read_commands_into_parameters, ValueChangeCommand},
 	command_writers_and_readers,
 	info::Info,
-	tween::Parameter,
+	Parameter,
 };
 
 use super::Modulator;

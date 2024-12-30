@@ -11,8 +11,7 @@ use crate::{
 	command_writers_and_readers,
 	frame::Frame,
 	info::Info,
-	tween::Parameter,
-	Panning,
+	Panning, Parameter,
 };
 
 use super::Effect;

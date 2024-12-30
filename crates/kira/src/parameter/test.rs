@@ -1,11 +1,6 @@
 use std::time::Duration;
 
-use crate::{
-	clock::ClockTime,
-	info::MockInfoBuilder,
-	tween::{Easing, Tween},
-	Mapping, StartTime, Value,
-};
+use crate::{clock::ClockTime, info::MockInfoBuilder, Easing, Mapping, StartTime, Tween, Value};
 
 use super::Parameter;
 

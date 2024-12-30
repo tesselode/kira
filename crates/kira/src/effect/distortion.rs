@@ -12,8 +12,7 @@ use crate::{
 	effect::Effect,
 	frame::Frame,
 	info::Info,
-	tween::Parameter,
-	Decibels, Mix,
+	Decibels, Mix, Parameter,
 };
 
 /// Different types of distortion.

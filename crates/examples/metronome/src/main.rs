@@ -3,8 +3,8 @@ use std::{error::Error, io::stdin, time::Duration};
 use kira::{
 	backend::DefaultBackend,
 	clock::{ClockSpeed, ClockTime},
-	AudioManager, AudioManagerSettings,
 	sound::static_sound::StaticSoundData,
+	AudioManager, AudioManagerSettings,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {

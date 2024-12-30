@@ -2,12 +2,11 @@ use std::time::Duration;
 
 use kira::{
 	backend::mock::MockBackend,
-	AudioManager, AudioManagerSettings,
 	sound::{
 		streaming::{Decoder, StreamingSoundData},
 		PlaybackState,
 	},
-	Frame,
+	AudioManager, AudioManagerSettings, Frame,
 };
 
 struct MockDecoder;

@@ -1,8 +1,6 @@
 use crate::{
-	info::Info,
-	sound::PlaybackState,
-	tween::{Parameter, Tween},
-	Decibels, StartTime, Value,
+	info::Info, parameter::Parameter, sound::PlaybackState, tween::Tween, Decibels, StartTime,
+	Value,
 };
 
 pub(crate) struct PlaybackStateManager {

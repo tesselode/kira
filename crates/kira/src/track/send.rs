@@ -11,8 +11,7 @@ use crate::{
 	command::{CommandReader, ValueChangeCommand},
 	effect::Effect,
 	info::Info,
-	tween::Parameter,
-	Decibels, Frame,
+	Decibels, Frame, Parameter,
 };
 
 use super::TrackShared;

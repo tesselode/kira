@@ -23,8 +23,8 @@ use crate::{
 	listener::ListenerId,
 	playback_state_manager::PlaybackStateManager,
 	sound::Sound,
-	tween::{Easing, Parameter, Tween, Tweenable},
-	Decibels, Frame, StartTime,
+	tween::{Easing, Tween, Tweenable},
+	Decibels, Frame, Parameter, StartTime,
 };
 
 use super::{SendTrack, SendTrackId, SendTrackRoute, TrackShared};

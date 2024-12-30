@@ -15,8 +15,7 @@ use crate::{
 	command_writers_and_readers,
 	frame::Frame,
 	info::Info,
-	tween::Parameter,
-	Decibels,
+	Decibels, Parameter,
 };
 
 use super::Effect;

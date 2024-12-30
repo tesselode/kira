@@ -12,9 +12,8 @@ use kira::{
 	clock::{ClockHandle, ClockSpeed, ClockTime},
 	effect::{Effect, EffectBuilder},
 	info::{Info, WhenToStart},
-	AudioManager, AudioManagerSettings,
 	track::TrackBuilder,
-	Frame,
+	AudioManager, AudioManagerSettings, Frame,
 };
 
 const SAMPLE_RATE: u32 = 48_000;

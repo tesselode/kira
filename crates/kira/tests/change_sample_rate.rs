@@ -7,9 +7,8 @@ use kira::{
 	backend::mock::{MockBackend, MockBackendSettings},
 	effect::{Effect, EffectBuilder},
 	info::Info,
-	AudioManager, AudioManagerSettings,
 	track::TrackBuilder,
-	Frame,
+	AudioManager, AudioManagerSettings, Frame,
 };
 use rtrb::{Consumer, Producer, RingBuffer};
 

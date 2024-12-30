@@ -12,8 +12,7 @@ use crate::{
 	effect::Effect,
 	frame::Frame,
 	info::Info,
-	tween::Parameter,
-	Mix,
+	Mix, Parameter,
 };
 use all_pass::AllPassFilter;
 use comb::CombFilter;

@@ -4,9 +4,9 @@ use std::{
 };
 
 use crate::{
+	backend::{resources::ResourceController, RendererShared},
 	command::{CommandWriter, ValueChangeCommand},
 	listener::ListenerId,
-	backend::{resources::ResourceController, RendererShared},
 	sound::{Sound, SoundData},
 	track::TrackPlaybackState,
 	tween::Tween,

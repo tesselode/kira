@@ -6,8 +6,7 @@ use kira::{
 	modulator::tweener::TweenerBuilder,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	track::TrackBuilder,
-	tween::{Easing, Tween},
-	AudioManager, AudioManagerSettings, Decibels, Mapping, Mix, Value,
+	AudioManager, AudioManagerSettings, Decibels, Easing, Mapping, Mix, Tween, Value,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {

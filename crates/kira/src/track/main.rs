@@ -10,8 +10,7 @@ use crate::{
 	effect::Effect,
 	info::Info,
 	sound::Sound,
-	tween::Parameter,
-	Decibels, Frame,
+	Decibels, Frame, Parameter,
 };
 
 pub(crate) struct MainTrack {

@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use crate::{
-	command::command_writer_and_reader, effect::EffectBuilder, frame::Frame, tween::Parameter,
-	Decibels, Value,
+	command::command_writer_and_reader, effect::EffectBuilder, frame::Frame, Decibels, Parameter,
+	Value,
 };
 
 use super::{Effect, SendTrack, SendTrackHandle, SendTrackId, TrackShared};

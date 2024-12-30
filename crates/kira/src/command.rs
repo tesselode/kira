@@ -66,7 +66,7 @@ pub fn command_writer_and_reader<T: Send + Copy>() -> (CommandWriter<T>, Command
  * Setting something to a [`Value`] with a given [`Tween`] is a common
  * pattern in Kira.
  *
- * `CommandReader<ValueChangeCommand>`s can be passed to [`Parameter`](crate::tween::Parameter)s
+ * `CommandReader<ValueChangeCommand>`s can be passed to [`Parameter`](crate::Parameter)s
  * to quickly set the parameter to a new value read from the [`CommandReader`].
  */
 #[derive(Debug, Clone, Copy, PartialEq)]

@@ -258,6 +258,7 @@ mod manager;
 mod mix;
 pub mod modulator;
 mod panning;
+mod parameter;
 mod playback_rate;
 mod playback_state_manager;
 mod semitones;
@@ -266,7 +267,7 @@ mod start_time;
 #[cfg(test)]
 mod test_helpers;
 pub mod track;
-pub mod tween;
+mod tween;
 mod value;
 
 pub use backend::DefaultBackend;
@@ -276,7 +277,9 @@ pub use frame::*;
 pub use manager::*;
 pub use mix::*;
 pub use panning::*;
+pub use parameter::*;
 pub use playback_rate::*;
 pub use semitones::*;
 pub use start_time::*;
+pub use tween::*;
 pub use value::*;

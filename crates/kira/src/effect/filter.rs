@@ -14,8 +14,7 @@ use crate::{
 	effect::Effect,
 	frame::Frame,
 	info::Info,
-	tween::Parameter,
-	Mix,
+	Mix, Parameter,
 };
 
 // This filter code is based on the filter code from baseplug:

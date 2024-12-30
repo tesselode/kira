@@ -1,12 +1,8 @@
 use std::{error::Error, io::stdin};
 
 use kira::{
-	backend::DefaultBackend,
-	AudioManager, AudioManagerSettings,
-	modulator::lfo::LfoBuilder,
-	sound::static_sound::StaticSoundData,
-	tween::Easing,
-	Mapping, Semitones, Value,
+	backend::DefaultBackend, modulator::lfo::LfoBuilder, sound::static_sound::StaticSoundData,
+	AudioManager, AudioManagerSettings, Easing, Mapping, Semitones, Value,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
