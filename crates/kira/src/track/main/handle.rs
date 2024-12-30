@@ -1,6 +1,6 @@
 use crate::{
 	command::{CommandWriter, ValueChangeCommand},
-	manager::backend::resources::ResourceController,
+	backend::resources::ResourceController,
 	sound::{Sound, SoundData},
 	tween::Tween,
 	Decibels, PlaySoundError, Value,

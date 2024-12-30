@@ -1,8 +1,9 @@
 use std::{error::Error, io::stdin, time::Duration};
 
 use kira::{
+	backend::DefaultBackend,
 	effect::{filter::FilterBuilder, reverb::ReverbBuilder},
-	manager::{backend::DefaultBackend, AudioManager, AudioManagerSettings},
+	manager::{AudioManager, AudioManagerSettings},
 	modulator::tweener::TweenerBuilder,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	track::TrackBuilder,

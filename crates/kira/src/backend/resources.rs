@@ -20,7 +20,7 @@ use crate::{
 use listeners::Listeners;
 use rtrb::{Consumer, Producer, RingBuffer};
 
-use crate::{clock::Clock, manager::settings::Capacities, modulator::Modulator};
+use crate::{clock::Clock, manager::Capacities, modulator::Modulator};
 
 use self::{clocks::Clocks, mixer::Mixer, modulators::Modulators};
 

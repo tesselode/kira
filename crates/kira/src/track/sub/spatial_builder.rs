@@ -6,7 +6,7 @@ use crate::{
 	command::command_writer_and_reader,
 	effect::EffectBuilder,
 	listener::ListenerId,
-	manager::backend::{resources::ResourceStorage, RendererShared},
+	backend::{resources::ResourceStorage, RendererShared},
 	playback_state_manager::PlaybackStateManager,
 	tween::{Easing, Parameter},
 	Decibels, Frame, Value,

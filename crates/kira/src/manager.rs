@@ -5,15 +5,17 @@
 //! resources like clocks, mixer tracks, and spatial scenes. Once the
 //! [`AudioManager`] is dropped, its audio output will be stopped.
 
-pub mod backend;
 mod settings;
 
-pub use backend::DefaultBackend;
 pub use settings::*;
 
 use std::sync::{atomic::Ordering, Arc};
 
 use crate::{
+	backend::{
+		resources::{create_resources, ResourceControllers},
+		Backend, DefaultBackend, Renderer, RendererShared,
+	},
 	clock::{Clock, ClockHandle, ClockId, ClockSpeed},
 	listener::{Listener, ListenerHandle, ListenerId},
 	modulator::{ModulatorBuilder, ModulatorId},
@@ -23,11 +25,6 @@ use crate::{
 		SpatialTrackHandle, TrackBuilder, TrackHandle,
 	},
 	PlaySoundError, ResourceLimitReached, Value,
-};
-
-use self::backend::{
-	resources::{create_resources, ResourceControllers},
-	Backend, Renderer, RendererShared,
 };
 
 /// Controls audio from gameplay code.

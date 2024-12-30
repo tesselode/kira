@@ -2,10 +2,8 @@ use std::{f32::consts::TAU, sync::Arc};
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use kira::{
-	manager::{
-		backend::mock::{MockBackend, MockBackendSettings},
-		AudioManager, AudioManagerSettings,
-	},
+	backend::mock::{MockBackend, MockBackendSettings},
+	manager::{AudioManager, AudioManagerSettings},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	track::MainTrackBuilder,
 	Frame,

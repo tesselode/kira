@@ -1,4 +1,4 @@
-use crate::manager::backend::{Backend, Renderer};
+use crate::backend::{Backend, Renderer};
 use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	Device, Stream, StreamConfig,

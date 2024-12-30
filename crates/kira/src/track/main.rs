@@ -5,10 +5,10 @@ pub use builder::*;
 pub use handle::*;
 
 use crate::{
+	backend::resources::ResourceStorage,
 	command::{CommandReader, ValueChangeCommand},
 	effect::Effect,
 	info::Info,
-	manager::backend::resources::ResourceStorage,
 	sound::Sound,
 	tween::Parameter,
 	Decibels, Frame,

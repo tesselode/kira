@@ -246,6 +246,7 @@ and compile times for games.
 #![allow(clippy::tabs_in_doc_comments)]
 
 mod arena;
+pub mod backend;
 pub mod clock;
 pub mod command;
 mod decibels;

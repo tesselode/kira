@@ -5,7 +5,7 @@ use std::{
 
 use rtrb::{Consumer, Producer, RingBuffer};
 
-use crate::manager::backend::Renderer;
+use crate::backend::Renderer;
 
 const CPU_USAGE_RINGBUFFER_CAPACITY: usize = 100;
 

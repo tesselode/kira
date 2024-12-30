@@ -1,6 +1,6 @@
 use crate::track::MainTrackBuilder;
 
-use super::backend::Backend;
+use crate::backend::Backend;
 
 /// Specifies how many of each resource type an audio context
 /// can have.

@@ -8,13 +8,11 @@
 ///
 /// In the current setting we expect a tick every 24000 frames.
 use kira::{
+	backend::mock::{MockBackend, MockBackendSettings},
 	clock::{ClockHandle, ClockSpeed, ClockTime},
 	effect::{Effect, EffectBuilder},
 	info::{Info, WhenToStart},
-	manager::{
-		backend::mock::{MockBackend, MockBackendSettings},
-		AudioManager, AudioManagerSettings,
-	},
+	manager::{AudioManager, AudioManagerSettings},
 	track::TrackBuilder,
 	Frame,
 };

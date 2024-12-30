@@ -13,14 +13,14 @@ use std::{error::Error, f32::consts::FRAC_PI_8, fmt::Display, sync::Arc};
 use glam::{Quat, Vec3};
 
 use crate::{
+	backend::resources::{
+		clocks::Clocks, listeners::Listeners, modulators::Modulators, ResourceStorage,
+	},
 	command::ValueChangeCommand,
 	command_writers_and_readers,
 	effect::Effect,
 	info::{Info, SpatialTrackInfo},
 	listener::ListenerId,
-	manager::backend::resources::{
-		clocks::Clocks, listeners::Listeners, modulators::Modulators, ResourceStorage,
-	},
 	playback_state_manager::PlaybackStateManager,
 	sound::Sound,
 	tween::{Easing, Parameter, Tween, Tweenable},

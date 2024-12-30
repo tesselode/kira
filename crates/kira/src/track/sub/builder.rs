@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 use crate::{
 	command::command_writer_and_reader,
 	effect::EffectBuilder,
-	manager::backend::{resources::ResourceStorage, RendererShared},
+	backend::{resources::ResourceStorage, RendererShared},
 	playback_state_manager::PlaybackStateManager,
 	tween::Parameter,
 	Decibels, Frame, Value,

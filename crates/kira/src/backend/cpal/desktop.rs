@@ -7,7 +7,7 @@ use renderer_with_cpu_usage::RendererWithCpuUsage;
 use rtrb::Consumer;
 use stream_manager::{StreamManager, StreamManagerController};
 
-use crate::manager::backend::{Backend, Renderer};
+use crate::backend::{Backend, Renderer};
 use cpal::{
 	traits::{DeviceTrait, HostTrait},
 	BufferSize, Device, StreamConfig,

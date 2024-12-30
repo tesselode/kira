@@ -6,7 +6,7 @@ use std::{
 use crate::{
 	command::{CommandWriter, ValueChangeCommand},
 	listener::ListenerId,
-	manager::backend::{resources::ResourceController, RendererShared},
+	backend::{resources::ResourceController, RendererShared},
 	sound::{Sound, SoundData},
 	track::TrackPlaybackState,
 	tween::Tween,

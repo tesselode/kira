@@ -6,7 +6,7 @@ mod error;
 use cpal::{BufferSize, Device};
 pub use error::*;
 
-/// Settings for the [`cpal`] backend.
+/// Settings for the cpal backend.
 pub struct CpalBackendSettings {
 	/// The output audio device to use. If [`None`], the default output
 	/// device will be used.

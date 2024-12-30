@@ -4,12 +4,10 @@ use std::sync::{
 };
 
 use kira::{
+	backend::mock::{MockBackend, MockBackendSettings},
 	effect::{Effect, EffectBuilder},
 	info::Info,
-	manager::{
-		backend::mock::{MockBackend, MockBackendSettings},
-		AudioManager, AudioManagerSettings,
-	},
+	manager::{AudioManager, AudioManagerSettings},
 	track::TrackBuilder,
 	Frame,
 };

@@ -1,6 +1,7 @@
 use kira::{
+	backend::DefaultBackend,
 	effect::{filter::FilterBuilder, reverb::ReverbBuilder},
-	manager::{backend::DefaultBackend, AudioManager, AudioManagerSettings},
+	manager::{AudioManager, AudioManagerSettings},
 	sound::static_sound::StaticSoundData,
 	track::{SendTrackBuilder, SpatialTrackBuilder},
 	tween::{Easing, Tween},

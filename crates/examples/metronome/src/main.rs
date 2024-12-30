@@ -1,8 +1,9 @@
 use std::{error::Error, io::stdin, time::Duration};
 
 use kira::{
+	backend::DefaultBackend,
 	clock::{ClockSpeed, ClockTime},
-	manager::{backend::DefaultBackend, AudioManager, AudioManagerSettings},
+	manager::{AudioManager, AudioManagerSettings},
 	sound::static_sound::StaticSoundData,
 };
 
