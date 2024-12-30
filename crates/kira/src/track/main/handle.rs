@@ -2,8 +2,8 @@ use crate::{
 	command::{CommandWriter, ValueChangeCommand},
 	manager::backend::resources::ResourceController,
 	sound::{Sound, SoundData},
-	tween::{Tween, Value},
-	PlaySoundError, Decibels,
+	tween::Tween,
+	Decibels, PlaySoundError, Value,
 };
 
 /// Controls the main mixer track.

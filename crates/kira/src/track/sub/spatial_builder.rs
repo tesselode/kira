@@ -8,8 +8,8 @@ use crate::{
 	listener::ListenerId,
 	manager::backend::{resources::ResourceStorage, RendererShared},
 	playback_state_manager::PlaybackStateManager,
-	tween::{Easing, Parameter, Value},
-	Decibels, Frame,
+	tween::{Easing, Parameter},
+	Decibels, Frame, Value,
 };
 
 use super::{

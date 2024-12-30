@@ -1,7 +1,7 @@
 use crate::{
 	effect::{Effect, EffectBuilder},
-	tween::{Parameter, Value},
-	Decibels, Mix,
+	tween::Parameter,
+	Decibels, Mix, Value,
 };
 
 use super::{command_writers_and_readers, handle::DistortionHandle, Distortion, DistortionKind};

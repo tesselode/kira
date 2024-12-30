@@ -1,17 +1,13 @@
 #[cfg(test)]
 mod test;
 
-mod value;
-
 use std::time::Duration;
-
-pub use value::*;
 
 use crate::{
 	command::{CommandReader, ValueChangeCommand},
 	info::{Info, WhenToStart},
 	tween::{Tween, Tweenable},
-	StartTime,
+	StartTime, Value,
 };
 
 /// Manages and updates a value that can be smoothly transitioned

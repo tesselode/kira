@@ -9,8 +9,8 @@ use crate::{
 	manager::backend::{resources::ResourceController, RendererShared},
 	sound::{Sound, SoundData},
 	track::TrackPlaybackState,
-	tween::{Tween, Value},
-	Decibels, PlaySoundError, ResourceLimitReached, StartTime,
+	tween::Tween,
+	Decibels, PlaySoundError, ResourceLimitReached, StartTime, Value,
 };
 
 use super::{

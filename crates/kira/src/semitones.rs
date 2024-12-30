@@ -2,10 +2,7 @@ use std::ops::{
 	Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
 };
 
-use crate::{
-	tween::{Tweenable, Value},
-	PlaybackRate,
-};
+use crate::{tween::Tweenable, PlaybackRate, Value};
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

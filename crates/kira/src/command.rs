@@ -21,7 +21,7 @@ which Kira uses internally.
 
 use triple_buffer::{triple_buffer, Input, Output};
 
-use crate::tween::{Tween, Value};
+use crate::{tween::Tween, Value};
 
 /** Writes values that can be sent to a [`CommandReader`]. */
 #[derive(Debug)]
@@ -165,7 +165,7 @@ macro_rules! handle_param_setters {
 		paste::paste! {
 			$(
 				$(#[$m])*
-				pub fn [<set_ $name>](&mut self, $name: impl Into<$crate::tween::Value<$type>>, tween: $crate::tween::Tween) {
+				pub fn [<set_ $name>](&mut self, $name: impl Into<$crate::Value<$type>>, tween: $crate::tween::Tween) {
 					self.command_writers.[<set_ $name>].write($crate::command::ValueChangeCommand {
 						target: $name.into(),
 						tween,

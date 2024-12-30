@@ -4,8 +4,8 @@ use kira::{
 	manager::{backend::DefaultBackend, AudioManager, AudioManagerSettings},
 	modulator::lfo::LfoBuilder,
 	sound::static_sound::StaticSoundData,
-	tween::{Easing, Mapping, Value},
-	Semitones,
+	tween::Easing,
+	Mapping, Semitones, Value,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {

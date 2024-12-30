@@ -267,6 +267,7 @@ mod start_time;
 mod test_helpers;
 pub mod track;
 pub mod tween;
+mod value;
 
 pub use decibels::*;
 pub use error::*;
@@ -276,3 +277,4 @@ pub use panning::*;
 pub use playback_rate::*;
 pub use semitones::*;
 pub use start_time::*;
+pub use value::*;

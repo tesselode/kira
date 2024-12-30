@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use crate::{
 	command::{CommandWriter, ValueChangeCommand},
-	tween::{Tween, Value},
-	Decibels,
+	tween::Tween,
+	Decibels, Value,
 };
 
 use super::{SendTrackId, TrackShared};

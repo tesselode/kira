@@ -3,11 +3,11 @@ use std::time::Duration;
 use crate::{
 	clock::ClockTime,
 	info::MockInfoBuilder,
-	tween::{Easing, Tween, Value},
-	StartTime,
+	tween::{Easing, Tween},
+	Mapping, StartTime, Value,
 };
 
-use super::{Mapping, Parameter};
+use super::Parameter;
 
 /// Tests that the basic tweening behavior of a `Parameter`
 /// works properly.

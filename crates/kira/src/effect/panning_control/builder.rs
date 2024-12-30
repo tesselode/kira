@@ -1,4 +1,4 @@
-use crate::{effect::EffectBuilder, tween::Value, Panning};
+use crate::{effect::EffectBuilder, Panning, Value};
 
 use super::{command_writers_and_readers, PanningControl, PanningControlHandle};
 

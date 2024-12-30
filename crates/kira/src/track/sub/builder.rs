@@ -5,8 +5,8 @@ use crate::{
 	effect::EffectBuilder,
 	manager::backend::{resources::ResourceStorage, RendererShared},
 	playback_state_manager::PlaybackStateManager,
-	tween::{Parameter, Value},
-	Decibels, Frame,
+	tween::Parameter,
+	Decibels, Frame, Value,
 };
 
 use super::{

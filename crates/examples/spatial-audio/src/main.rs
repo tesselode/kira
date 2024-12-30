@@ -3,8 +3,8 @@ use kira::{
 	manager::{backend::DefaultBackend, AudioManager, AudioManagerSettings},
 	sound::static_sound::StaticSoundData,
 	track::{SendTrackBuilder, SpatialTrackBuilder},
-	tween::{Easing, Mapping, Tween, Value},
-	Decibels, Mix,
+	tween::{Easing, Tween},
+	Decibels, Mapping, Mix, Value,
 };
 use macroquad::prelude::*;
 

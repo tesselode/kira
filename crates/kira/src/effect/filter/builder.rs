@@ -1,7 +1,6 @@
 use crate::{
 	effect::{Effect, EffectBuilder},
-	tween::Value,
-	Mix,
+	Mix, Value,
 };
 
 use super::{command_writers_and_readers, Filter, FilterHandle, FilterMode};

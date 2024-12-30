@@ -1,9 +1,6 @@
 use std::sync::Arc;
 
-use crate::{
-	command::ValueChangeCommand,
-	tween::{Tween, Value},
-};
+use crate::{command::ValueChangeCommand, tween::Tween, Value};
 
 use super::{CommandWriters, ListenerId, ListenerShared};
 

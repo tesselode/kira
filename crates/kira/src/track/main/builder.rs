@@ -1,9 +1,6 @@
 use crate::{
-	command::command_writer_and_reader,
-	effect::EffectBuilder,
-	manager::backend::resources::ResourceStorage,
-	tween::{Parameter, Value},
-	Decibels, Frame,
+	command::command_writer_and_reader, effect::EffectBuilder,
+	manager::backend::resources::ResourceStorage, tween::Parameter, Decibels, Frame, Value,
 };
 
 use super::{Effect, MainTrack, MainTrackHandle};

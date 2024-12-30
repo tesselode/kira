@@ -22,7 +22,8 @@ use crate::{
 	command::{read_commands_into_parameters, ValueChangeCommand},
 	command_writers_and_readers,
 	info::Info,
-	tween::{Parameter, Value},
+	tween::Parameter,
+	Value,
 };
 
 /// A unique identifier for a listener.

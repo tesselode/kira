@@ -1,4 +1,4 @@
-use crate::{effect::EffectBuilder, tween::Value, Decibels};
+use crate::{effect::EffectBuilder, Decibels, Value};
 
 use super::{command_writers_and_readers, EqFilter, EqFilterHandle, EqFilterKind};
 

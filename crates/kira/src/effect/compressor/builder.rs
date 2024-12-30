@@ -2,8 +2,7 @@ use std::time::Duration;
 
 use crate::{
 	effect::{Effect, EffectBuilder},
-	tween::Value,
-	Decibels, Mix,
+	Decibels, Mix, Value,
 };
 
 use super::{command_writers_and_readers, Compressor, CompressorHandle};

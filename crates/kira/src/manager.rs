@@ -22,8 +22,7 @@ use crate::{
 		MainTrackHandle, SendTrackBuilder, SendTrackHandle, SendTrackId, SpatialTrackBuilder,
 		SpatialTrackHandle, TrackBuilder, TrackHandle,
 	},
-	tween::Value,
-	PlaySoundError, ResourceLimitReached,
+	PlaySoundError, ResourceLimitReached, Value,
 };
 
 use self::backend::{
