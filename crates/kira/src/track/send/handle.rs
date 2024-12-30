@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::{
 	command::{CommandWriter, ValueChangeCommand},
-	tween::Tween,
+	Tween,
 	Decibels, Value,
 };
 

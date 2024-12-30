@@ -14,7 +14,7 @@ use crate::{
 	info::Info,
 	playback_state_manager::PlaybackStateManager,
 	sound::{PlaybackState, Sound},
-	tween::Tween,
+	Tween,
 	Decibels, Panning, Parameter, PlaybackRate, StartTime,
 };
 use rtrb::Consumer;

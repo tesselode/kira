@@ -1,7 +1,7 @@
 /*!
 Types related to spatial listeners.
 
-To create a listener, use [`AudioManager::add_listener`](crate::manager::AudioManager::add_listener).
+To create a listener, use [`AudioManager::add_listener`](crate::AudioManager::add_listener).
 
 For more information, see the documentation on [spatial mixer tracks](crate::track#spatial-tracks).
 */

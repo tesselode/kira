@@ -21,7 +21,7 @@ which Kira uses internally.
 
 use triple_buffer::{triple_buffer, Input, Output};
 
-use crate::{tween::Tween, Value};
+use crate::{Tween, Value};
 
 /** Writes values that can be sent to a [`CommandReader`]. */
 #[derive(Debug)]

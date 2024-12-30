@@ -2,14 +2,11 @@
 Playable chunks of audio that are loaded into memory all at once.
 
 To play a static sound, pass a [`StaticSoundData`] to
-[`AudioManager::play`](crate::manager::AudioManager::play).
+[`AudioManager::play`](crate::AudioManager::play).
 
 ```no_run
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 };
 

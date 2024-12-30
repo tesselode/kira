@@ -4,7 +4,7 @@ mod test;
 use std::{sync::Arc, time::Duration};
 
 use crate::sound::{EndPosition, IntoOptionalRegion, PlaybackPosition, Region, SoundData};
-use crate::{tween::Tween, Value};
+use crate::{Tween, Value};
 use crate::{Decibels, Panning, PlaybackRate, StartTime};
 use rtrb::RingBuffer;
 
@@ -55,7 +55,7 @@ impl<Error: Send> StreamingSoundData<Error> {
 
 	```no_run
 	use kira::{
-		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		AudioManager, AudioManagerSettings, DefaultBackend,
 		sound::streaming::{StreamingSoundData, StreamingSoundSettings},
 		clock::ClockSpeed,
 	};
@@ -124,10 +124,10 @@ impl<Error: Send> StreamingSoundData<Error> {
 
 	```no_run
 	use kira::{
-		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		AudioManager, AudioManagerSettings, DefaultBackend,
 		modulator::tweener::TweenerBuilder,
 		sound::streaming::StreamingSoundData,
-		tween::{Value, Mapping, Easing},
+		Value, Mapping, Easing,
 		Decibels,
 	};
 
@@ -181,10 +181,10 @@ impl<Error: Send> StreamingSoundData<Error> {
 
 	```no_run
 	use kira::{
-		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		AudioManager, AudioManagerSettings, DefaultBackend,
 		modulator::tweener::TweenerBuilder,
 		sound::streaming::StreamingSoundData,
-		tween::{Value, Easing, Mapping},
+		Value, Easing, Mapping,
 		PlaybackRate,
 	};
 
@@ -227,10 +227,10 @@ impl<Error: Send> StreamingSoundData<Error> {
 
 	```no_run
 	use kira::{
-		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		AudioManager, AudioManagerSettings, DefaultBackend,
 		modulator::tweener::TweenerBuilder,
 		sound::streaming::StreamingSoundData,
-		tween::{Value, Easing, Mapping},
+		Value, Easing, Mapping,
 		Panning,
 	};
 

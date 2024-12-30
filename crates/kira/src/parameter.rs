@@ -6,8 +6,7 @@ use std::time::Duration;
 use crate::{
 	command::{CommandReader, ValueChangeCommand},
 	info::{Info, WhenToStart},
-	tween::{Tween, Tweenable},
-	StartTime, Value,
+	StartTime, Tween, Tweenable, Value,
 };
 
 /// Manages and updates a value that can be smoothly transitioned

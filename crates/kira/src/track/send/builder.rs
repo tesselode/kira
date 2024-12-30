@@ -42,10 +42,10 @@ impl SendTrackBuilder {
 
 	```no_run
 	use kira::{
-		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		AudioManager, AudioManagerSettings, DefaultBackend,
 		modulator::tweener::TweenerBuilder,
 		track::SendTrackBuilder,
-		tween::{Easing, Value, Mapping},
+		Easing, Value, Mapping,
 		Decibels,
 	};
 

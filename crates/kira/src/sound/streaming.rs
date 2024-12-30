@@ -2,14 +2,11 @@
 Decodes data gradually from an audio file.
 
 To play a streaming sound, pass a [`StreamingSoundData`] to
-[`AudioManager::play`](crate::manager::AudioManager::play).
+[`AudioManager::play`](crate::AudioManager::play).
 
 ```no_run
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	sound::streaming::{StreamingSoundData, StreamingSoundSettings},
 };
 
@@ -38,8 +35,7 @@ pub use settings::*;
 
 use crate::{
 	command::{command_writer_and_reader, CommandReader, CommandWriter, ValueChangeCommand},
-	tween::Tween,
-	Decibels, Panning, PlaybackRate, StartTime,
+	Decibels, Panning, PlaybackRate, StartTime, Tween,
 };
 
 use super::Region;

@@ -2,7 +2,7 @@
 # Kira
 
 Kira is a backend-agnostic library to create expressive audio for games. It provides
-[tweens](tween) for smoothly adjusting properties of sounds, a flexible [mixer](track)
+tweens for smoothly adjusting properties of sounds, a flexible [mixer](track)
 for applying [effects](effect) to audio, a [clock] system for precisely timing audio events,
 and [spatial audio](listener) support.
 
@@ -18,10 +18,7 @@ Playing a sound multiple times simultaneously:
 # extern crate kira;
 #
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 };
 
@@ -43,12 +40,9 @@ Gradually speeding up a sound over time:
 use std::time::Duration;
 
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
-	tween::Tween,
+	Tween,
 };
 
 let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
@@ -72,10 +66,7 @@ audio sound muffled):
 # extern crate kira;
 #
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	track::TrackBuilder,
 	effect::filter::FilterBuilder,
@@ -100,10 +91,7 @@ Playing sounds in time with a musical beat:
 # extern crate kira;
 #
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	clock::ClockSpeed,
 };
@@ -149,7 +137,7 @@ The Kira crate has the following feature flags:
 	- [`Capacities`]
 	- [`ClockSpeed`](crate::clock::ClockSpeed)
 	- [`DistortionKind`](crate::effect::distortion::DistortionKind)
-	- [`Easing`](crate::tween::Easing)
+	- [`Easing`]
 	- [`EndPosition`](crate::sound::EndPosition)
 	- [`EqFilterKind`](crate::effect::eq_filter::EqFilterKind)
 	- [`FilterMode`](crate::effect::filter::FilterMode)

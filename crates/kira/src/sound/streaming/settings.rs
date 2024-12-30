@@ -1,6 +1,6 @@
 use crate::{
 	sound::{IntoOptionalRegion, PlaybackPosition, Region},
-	tween::Tween,
+	Tween,
 	Decibels, Panning, PlaybackRate, StartTime, Value,
 };
 

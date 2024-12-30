@@ -2,7 +2,7 @@
 Sources of audio.
 
 Any type that implements [`SoundData`] can be played using
-[`AudioManager::play`](crate::manager::AudioManager::play). Kira comes with two
+[`AudioManager::play`](crate::AudioManager::play). Kira comes with two
 [`SoundData`] implementations:
 
 - [`StaticSoundData`](static_sound::StaticSoundData), which loads an entire chunk of audio
@@ -48,7 +48,7 @@ pub trait SoundData {
 	///
 	/// The [`Sound`] implementation will be sent to the audio renderer
 	/// for playback, and the handle will be returned to the user by
-	/// [`AudioManager::play`](crate::manager::AudioManager::play).
+	/// [`AudioManager::play`](crate::AudioManager::play).
 	#[allow(clippy::type_complexity)]
 	fn into_sound(self) -> Result<(Box<dyn Sound>, Self::Handle), Self::Error>;
 }

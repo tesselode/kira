@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use crate::{
-	arena::Arena, clock::ClockTime, info::MockInfoBuilder, tween::Tween, StartTime, Value,
+	arena::Arena, clock::ClockTime, info::MockInfoBuilder, Tween, StartTime, Value,
 };
 
 use super::{Clock, ClockId, ClockSpeed};

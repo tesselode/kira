@@ -13,15 +13,12 @@ can be used to drive settings on effects on that track.
 
 The mixer has a "main" track by default, and you can add any number of
 sub-tracks. To add a sub-track, use
-[`AudioManager::add_sub_track`](crate::manager::AudioManager::add_sub_track).
+[`AudioManager::add_sub_track`](crate::AudioManager::add_sub_track).
 
 ```no_run
 # use std::error::Error;
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	track::TrackBuilder,
 };
 
@@ -35,10 +32,7 @@ To play a sound on the track, use [`TrackHandle::play`].
 ```no_run
 # use std::error::Error;
 # use kira::{
-# 	manager::{
-# 		AudioManager, AudioManagerSettings,
-# 		backend::DefaultBackend,
-# 	},
+# 	AudioManager, AudioManagerSettings, backend::DefaultBackend,
 # 	track::TrackBuilder,
 # };
 use kira::sound::static_sound::StaticSoundData;
@@ -69,10 +63,7 @@ low pass mode will remove high frequencies from sounds, making them sound muffle
 ```no_run
 # use std::error::Error;
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	track::TrackBuilder,
 	effect::filter::FilterBuilder,
@@ -93,14 +84,11 @@ after the track has been created.
 ```no_run
 # use std::error::Error;
 # use kira::{
-# 	manager::{
-#     AudioManager, AudioManagerSettings,
-#     backend::DefaultBackend,
-# 	},
+#   AudioManager, AudioManagerSettings, DefaultBackend,
 #   sound::static_sound::{StaticSoundData, StaticSoundSettings},
 #   track::TrackBuilder,
 #   effect::filter::FilterBuilder,
-#   tween::Tween,
+#   Tween,
 # };
 # let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 let mut filter;
@@ -147,13 +135,13 @@ In the following example, we'll set up mixer tracks to have the following flow o
 ```
 
 To start, we'll create the reverb send with
-[`AudioManager::add_send_track`](crate::manager::AudioManager::add_send_track):
+[`AudioManager::add_send_track`](crate::AudioManager::add_send_track):
 
 ```no_run
 # use std::error::Error;
 use kira::{
 	effect::reverb::ReverbBuilder,
-	manager::{AudioManager, AudioManagerSettings, DefaultBackend},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	track::SendTrackBuilder,
 };
 
@@ -176,7 +164,7 @@ Next, we'll create the player and enemy tracks and route them to the reverb send
 use kira::track::TrackBuilder;
 # use kira::{
 # 	effect::reverb::ReverbBuilder,
-# 	manager::{AudioManager, AudioManagerSettings, DefaultBackend},
+# 	AudioManager, AudioManagerSettings, DefaultBackend,
 # 	track::SendTrackBuilder,
 # };
 
@@ -202,11 +190,11 @@ We can use **spatial tracks** as the sound source and [listener](crate::listener
 character's ears.
 
 First, let's create a listener using
-[`AudioManager::add_listener`](crate::manager::AudioManager::add_listener):
+[`AudioManager::add_listener`](crate::AudioManager::add_listener):
 
 ```no_run
 # use std::error::Error;
-use kira::manager::{AudioManager, AudioManagerSettings, DefaultBackend};
+use kira::{AudioManager, AudioManagerSettings, DefaultBackend};
 
 let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 let listener = manager.add_listener(glam::Vec3::ZERO, glam::Quat::IDENTITY)?;
@@ -217,12 +205,12 @@ This example uses `glam`, but you can use any math library that has interoperabi
 with `mint`.
 
 Next, we'll create a spatial track that's linked to the listener using
-[`AudioManager::add_spatial_sub_track`](crate::manager::AudioManager::add_spatial_sub_track):
+[`AudioManager::add_spatial_sub_track`](crate::AudioManager::add_spatial_sub_track):
 
 ```no_run
 # use std::error::Error;
 # use kira::{
-# 	manager::{AudioManager, AudioManagerSettings, DefaultBackend},
+# 	AudioManager, AudioManagerSettings, DefaultBackend,
 # };
 use kira::track::SpatialTrackBuilder;
 
@@ -252,11 +240,11 @@ change the amount of reverb a sound has based on distance:
 # use std::error::Error;
 use kira::{
 	effect::reverb::ReverbBuilder,
-	tween::{Easing, Mapping, Value},
+	Easing, Mapping, Value,
 	Mix,
 };
 # use kira::{
-# 	manager::{AudioManager, AudioManagerSettings, DefaultBackend},
+# 	AudioManager, AudioManagerSettings, DefaultBackend,
 # 	track::SpatialTrackBuilder,
 # };
 
@@ -266,14 +254,13 @@ manager.add_spatial_sub_track(
 	&listener,
 	glam::vec3(0.0, 0.0, 10.0),
 	SpatialTrackBuilder::new().with_effect(ReverbBuilder::new().mix(
-		Value::FromListenerDistance {
-			id: listener.id(),
-			mapping: Mapping {
+		Value::FromListenerDistance(
+			Mapping {
 				input_range: (0.0, 100.0),
 				output_range: (Mix::DRY, Mix::WET),
 				easing: Easing::Linear,
 			},
-		},
+		),
 	)),
 )?;
 # Result::<(), Box<dyn Error>>::Ok(())

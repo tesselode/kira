@@ -36,7 +36,9 @@ impl ClockTime {
 
 	```no_run
 	use kira::{
-		manager::{AudioManager, backend::DefaultBackend, AudioManagerSettings},
+		AudioManager,
+		AudioManagerSettings,
+		DefaultBackend,
 		clock::{ClockSpeed, ClockTime},
 	};
 
@@ -69,7 +71,9 @@ impl ClockTime {
 
 	```no_run
 	use kira::{
-		manager::{AudioManager, backend::DefaultBackend, AudioManagerSettings},
+		AudioManager,
+		AudioManagerSettings,
+		DefaultBackend,
 		clock::{ClockSpeed, ClockTime},
 	};
 

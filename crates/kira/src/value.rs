@@ -3,11 +3,7 @@ use std::{
 	time::Duration,
 };
 
-use crate::{
-	info::Info,
-	modulator::ModulatorId,
-	tween::{Easing, Tweenable},
-};
+use crate::{info::Info, modulator::ModulatorId, Easing, Tweenable};
 
 /// A value that a parameter can be linked to.
 #[derive(Debug, Clone, Copy, PartialEq)]

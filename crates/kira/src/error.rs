@@ -30,7 +30,7 @@ impl<E: std::fmt::Debug> Error for PlaySoundError<E> {}
 /// An error that is returned when a resource cannot be added because the
 /// maximum capacity for that resource has been reached.
 ///
-/// You can adjust these capacities using [`Capacities`](crate::manager::Capacities).
+/// You can adjust these capacities using [`Capacities`](crate::Capacities).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ResourceLimitReached;
 

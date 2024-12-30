@@ -2,7 +2,7 @@
 Global values that parameters (like volume and playback rate) can be linked to.
 
 Any type that implements [`ModulatorBuilder`] can be added to an audio manager by
-using [`AudioManager::add_modulator`](crate::manager::AudioManager::add_modulator).
+using [`AudioManager::add_modulator`](crate::AudioManager::add_modulator).
 
 If needed, you can create custom modulators by implementing the [`ModulatorBuilder`]
 and [`Modulator`] traits.
@@ -42,7 +42,7 @@ First, let's create the tweener:
 
 ```no_run
 use kira::{
-	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	modulator::tweener::TweenerBuilder,
 };
 
@@ -56,12 +56,12 @@ on this track so we can make it sound more or less muffled.
 
 ```no_run
 # use kira::{
-# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+# 	AudioManager, AudioManagerSettings, DefaultBackend,
 # 	modulator::tweener::TweenerBuilder,
 # };
 use kira::{
 	effect::filter::FilterBuilder,
-	tween::{Mapping, Value, Easing},
+	Mapping, Value, Easing,
 	track::TrackBuilder,
 };
 
@@ -84,11 +84,11 @@ Finally, we'll play the sounds:
 
 ```no_run
 # use kira::{
-# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+# 	AudioManager, AudioManagerSettings, DefaultBackend,
 # 	modulator::tweener::TweenerBuilder,
 #   effect::filter::FilterBuilder,
 # 	track::TrackBuilder,
-# 	tween::{Mapping, Value, Easing},
+# 	Mapping, Value, Easing,
 #   Decibels,
 # };
 use kira::sound::static_sound::StaticSoundData;
@@ -122,15 +122,15 @@ Once the player goes underwater, we can smoothly transition the tweener's value 
 
 ```no_run
 # use kira::{
-# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+# 	AudioManager, AudioManagerSettings, DefaultBackend,
 # 	modulator::tweener::TweenerBuilder,
 # 	track::TrackBuilder,
 #   effect::filter::FilterBuilder,
 # 	sound::static_sound::StaticSoundData,
-# 	tween::{Mapping, Value, Easing},
+# 	Mapping, Value, Easing,
 # 	Decibels,
 # };
-use kira::tween::Tween;
+use kira::Tween;
 use std::time::Duration;
 
 # let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;

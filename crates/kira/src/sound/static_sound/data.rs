@@ -13,7 +13,7 @@ use std::{
 use crate::{
 	frame::Frame,
 	sound::{EndPosition, IntoOptionalRegion, PlaybackPosition, Region, Sound, SoundData},
-	tween::Tween,
+	Tween,
 	Decibels, Panning, PlaybackRate, StartTime, Value,
 };
 
@@ -58,7 +58,7 @@ impl StaticSoundData {
 
 	```no_run
 	use kira::{
-		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		AudioManager, AudioManagerSettings, DefaultBackend,
 		sound::static_sound::{StaticSoundData, StaticSoundSettings},
 		clock::ClockSpeed,
 	};
@@ -142,10 +142,10 @@ impl StaticSoundData {
 
 	```no_run
 	use kira::{
-		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		AudioManager, AudioManagerSettings, DefaultBackend,
 		modulator::tweener::TweenerBuilder,
 		sound::static_sound::StaticSoundData,
-		tween::{Value, Mapping, Easing},
+		Value, Mapping, Easing,
 		Decibels,
 	};
 
@@ -200,10 +200,10 @@ impl StaticSoundData {
 
 	```no_run
 	use kira::{
-		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		AudioManager, AudioManagerSettings, DefaultBackend,
 		modulator::tweener::TweenerBuilder,
 		sound::static_sound::StaticSoundData,
-		tween::{Value, Easing, Mapping},
+		Value, Easing, Mapping,
 		PlaybackRate,
 	};
 
@@ -247,10 +247,10 @@ impl StaticSoundData {
 
 	```no_run
 	use kira::{
-		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		AudioManager, AudioManagerSettings, DefaultBackend,
 		modulator::tweener::TweenerBuilder,
 		sound::static_sound::StaticSoundData,
-		tween::{Value, Easing, Mapping},
+		Value, Easing, Mapping,
 		Panning,
 	};
 

@@ -9,7 +9,7 @@ use crate::{
 		PlaybackState, Sound,
 	},
 	test_helpers::expect_frame_soon,
-	tween::Tween,
+	Tween,
 	Decibels, Panning, StartTime,
 };
 

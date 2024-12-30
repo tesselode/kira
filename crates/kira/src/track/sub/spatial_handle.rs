@@ -9,7 +9,7 @@ use crate::{
 	listener::ListenerId,
 	sound::{Sound, SoundData},
 	track::TrackPlaybackState,
-	tween::Tween,
+	Tween,
 	Decibels, PlaySoundError, ResourceLimitReached, StartTime, Value,
 };
 

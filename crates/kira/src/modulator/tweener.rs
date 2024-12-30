@@ -20,7 +20,7 @@ pub use handle::*;
 use crate::{
 	command_writers_and_readers,
 	info::{Info, WhenToStart},
-	tween::{Tween, Tweenable},
+	Tween, Tweenable,
 	StartTime,
 };
 

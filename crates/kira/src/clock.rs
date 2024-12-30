@@ -2,14 +2,11 @@
 Precise timing for audio events.
 
 Clocks can be used to set the start times of sounds and tweens. To create a
-clock, use [`AudioManager::add_clock`](crate::manager::AudioManager::add_clock).
+clock, use [`AudioManager::add_clock`](crate::AudioManager::add_clock).
 
 ```no_run
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	clock::ClockSpeed,
 };
 
@@ -35,10 +32,7 @@ or [`StreamingSoundSettings::start_time`](crate::sound::streaming::StreamingSoun
 ```no_run
 use kira::{
 	clock::{ClockTime, ClockSpeed},
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	StartTime,
 };
@@ -63,10 +57,9 @@ the `start_time` function.
 ```no_run
 # use kira::{
 # 	clock::{ClockTime, ClockSpeed},
-# 	manager::{
-# 	 	AudioManager, AudioManagerSettings,
-# 		backend::DefaultBackend,
-# 	},
+# 	AudioManager,
+# 	AudioManagerSettings,
+# 	DefaultBackend,
 # 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 # 	StartTime,
 # };
@@ -92,10 +85,7 @@ current [`ClockTime`], and then add to it to get a time in the future:
 
 ```no_run
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	clock::ClockSpeed,
 };
@@ -122,12 +112,9 @@ tick.
 use std::time::Duration;
 
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
-	tween::Tween,
+	Tween,
 	clock::ClockSpeed,
 	StartTime,
 };

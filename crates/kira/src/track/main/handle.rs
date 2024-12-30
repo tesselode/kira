@@ -2,7 +2,7 @@ use crate::{
 	backend::resources::ResourceController,
 	command::{CommandWriter, ValueChangeCommand},
 	sound::{Sound, SoundData},
-	tween::Tween,
+	Tween,
 	Decibels, PlaySoundError, Value,
 };
 

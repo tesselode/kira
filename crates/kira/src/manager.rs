@@ -45,7 +45,7 @@ impl<B: Backend> AudioManager<B> {
 	default settings:
 
 	```no_run
-	use kira::manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend};
+	use kira::{AudioManager, AudioManagerSettings, DefaultBackend};
 
 	let audio_manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
@@ -55,7 +55,7 @@ impl<B: Backend> AudioManager<B> {
 
 	```no_run
 	use kira::{
-		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		AudioManager, AudioManagerSettings, DefaultBackend,
 		track::MainTrackBuilder,
 		effect::reverb::ReverbBuilder,
 	};
@@ -97,12 +97,7 @@ impl<B: Backend> AudioManager<B> {
 	# Examples
 
 	```no_run
-	# use kira::{
-	# 	manager::{
-	# 		AudioManager, AudioManagerSettings,
-	# 		backend::DefaultBackend,
-	# 	},
-	# };
+	# use kira::{AudioManager, AudioManagerSettings, DefaultBackend};
 	use kira::sound::static_sound::{StaticSoundData, StaticSoundSettings};
 
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
@@ -176,13 +171,8 @@ impl<B: Backend> AudioManager<B> {
 	# Examples
 
 	```no_run
-	# use kira::{
-	# 	manager::{
-	# 		AudioManager, AudioManagerSettings,
-	# 		backend::DefaultBackend,
-	# 	},
-	# 	clock::ClockSpeed
-	# };
+	# use kira::{AudioManager, AudioManagerSettings, DefaultBackend};
+	use kira::clock::ClockSpeed;
 
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	let clock = manager.add_clock(ClockSpeed::TicksPerMinute(120.0))?;
@@ -208,12 +198,7 @@ impl<B: Backend> AudioManager<B> {
 	# Examples
 
 	```no_run
-	# use kira::{
-	# 	manager::{
-	# 		AudioManager, AudioManagerSettings,
-	# 		backend::DefaultBackend,
-	# 	},
-	# };
+	# use kira::{AudioManager, AudioManagerSettings, DefaultBackend};
 	use kira::modulator::lfo::LfoBuilder;
 
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
@@ -243,13 +228,7 @@ impl<B: Backend> AudioManager<B> {
 	# Examples
 
 	```no_run
-	# use kira::{
-	# 	manager::{
-	# 		AudioManager, AudioManagerSettings,
-	# 		backend::DefaultBackend,
-	# 	},
-	# };
-
+	# use kira::{AudioManager, AudioManagerSettings, DefaultBackend};
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	// This example uses `glam`, but you can use any math library that has interoperability
 	// with `mint`.
@@ -282,13 +261,8 @@ impl<B: Backend> AudioManager<B> {
 	Use the main track handle to adjust the volume of all audio:
 
 	```no_run
-	# use kira::{
-	# 	manager::{
-	# 		AudioManager, AudioManagerSettings,
-	# 		backend::DefaultBackend,
-	# 	},
-	# };
-	use kira::tween::Tween;
+	# use kira::{AudioManager, AudioManagerSettings, DefaultBackend};
+	use kira::Tween;
 
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	manager.main_track().set_volume(-6.0, Tween::default());

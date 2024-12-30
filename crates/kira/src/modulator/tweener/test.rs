@@ -6,7 +6,7 @@ use crate::info::MockInfoBuilder;
 use crate::{
 	clock::ClockTime,
 	modulator::{tweener::TweenerBuilder, ModulatorBuilder, ModulatorId},
-	tween::Tween,
+	Tween,
 	StartTime,
 };
 

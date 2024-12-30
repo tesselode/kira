@@ -58,10 +58,10 @@ impl TrackBuilder {
 
 	```no_run
 	use kira::{
-		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		AudioManager, AudioManagerSettings, DefaultBackend,
 		modulator::tweener::TweenerBuilder,
 		track::TrackBuilder,
-		tween::{Easing, Value, Mapping},
+		Easing, Value, Mapping,
 		Decibels,
 	};
 
