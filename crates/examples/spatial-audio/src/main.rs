@@ -1,11 +1,10 @@
 use kira::{
 	backend::DefaultBackend,
 	effect::{filter::FilterBuilder, reverb::ReverbBuilder},
-	manager::{AudioManager, AudioManagerSettings},
 	sound::static_sound::StaticSoundData,
 	track::{SendTrackBuilder, SpatialTrackBuilder},
 	tween::{Easing, Tween},
-	Decibels, Mapping, Mix, Value,
+	AudioManager, AudioManagerSettings, Decibels, Mapping, Mix, Value,
 };
 use macroquad::prelude::*;
 

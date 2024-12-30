@@ -7,7 +7,7 @@ use kira::{
 	backend::mock::{MockBackend, MockBackendSettings},
 	effect::{Effect, EffectBuilder},
 	info::Info,
-	manager::{AudioManager, AudioManagerSettings},
+	AudioManager, AudioManagerSettings,
 	track::TrackBuilder,
 	Frame,
 };

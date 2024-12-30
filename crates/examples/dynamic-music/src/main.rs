@@ -3,12 +3,11 @@ use std::{error::Error, io::stdin, time::Duration};
 use kira::{
 	backend::DefaultBackend,
 	effect::{filter::FilterBuilder, reverb::ReverbBuilder},
-	manager::{AudioManager, AudioManagerSettings},
 	modulator::tweener::TweenerBuilder,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	track::TrackBuilder,
 	tween::{Easing, Tween},
-	Decibels, Mapping, Mix, Value,
+	AudioManager, AudioManagerSettings, Decibels, Mapping, Mix, Value,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {

@@ -1,4 +1,4 @@
-use kira::{backend::cpal::CpalBackend, manager::AudioManager};
+use kira::{backend::cpal::CpalBackend, AudioManager};
 
 fn main() {
 	sync_send::<AudioManager<CpalBackend>>()

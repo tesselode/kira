@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use kira::{
 	backend::mock::MockBackend,
-	manager::{AudioManager, AudioManagerSettings},
+	AudioManager, AudioManagerSettings,
 	sound::{
 		streaming::{Decoder, StreamingSoundData},
 		PlaybackState,

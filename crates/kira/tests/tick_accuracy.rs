@@ -12,7 +12,7 @@ use kira::{
 	clock::{ClockHandle, ClockSpeed, ClockTime},
 	effect::{Effect, EffectBuilder},
 	info::{Info, WhenToStart},
-	manager::{AudioManager, AudioManagerSettings},
+	AudioManager, AudioManagerSettings,
 	track::TrackBuilder,
 	Frame,
 };

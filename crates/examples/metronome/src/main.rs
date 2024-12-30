@@ -3,7 +3,7 @@ use std::{error::Error, io::stdin, time::Duration};
 use kira::{
 	backend::DefaultBackend,
 	clock::{ClockSpeed, ClockTime},
-	manager::{AudioManager, AudioManagerSettings},
+	AudioManager, AudioManagerSettings,
 	sound::static_sound::StaticSoundData,
 };
 

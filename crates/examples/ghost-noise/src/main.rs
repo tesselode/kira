@@ -2,7 +2,7 @@ use std::{error::Error, io::stdin};
 
 use kira::{
 	backend::DefaultBackend,
-	manager::{AudioManager, AudioManagerSettings},
+	AudioManager, AudioManagerSettings,
 	modulator::lfo::LfoBuilder,
 	sound::static_sound::StaticSoundData,
 	tween::Easing,

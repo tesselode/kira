@@ -6,8 +6,7 @@ Kira is a backend-agnostic library to create expressive audio for games. It prov
 for applying [effects](effect) to audio, a [clock] system for precisely timing audio events,
 and [spatial audio](listener) support.
 
-To get started, create an [`AudioManager`](crate::manager::AudioManager) and use it to
-[play](crate::manager::AudioManager::play) a
+To get started, create an [`AudioManager`] and use it to [play](AudioManager::play) a
 [`StaticSoundData`](crate::sound::static_sound::StaticSoundData) or
 [`StreamingSoundData`](crate::sound::streaming::StreamingSoundData).
 
@@ -147,7 +146,7 @@ The Kira crate has the following feature flags:
 	- `wav` (enabled by default) - enables support for loading and streaming WAV audio (enables
 	  the `symphonia` feature automatically)
 - `serde` - adds `Serialize` and `Deserialize` implementations for the following types:
-	- [`Capacities`](crate::manager::Capacities)
+	- [`Capacities`]
 	- [`ClockSpeed`](crate::clock::ClockSpeed)
 	- [`DistortionKind`](crate::effect::distortion::DistortionKind)
 	- [`Easing`](crate::tween::Easing)
@@ -155,7 +154,7 @@ The Kira crate has the following feature flags:
 	- [`EqFilterKind`](crate::effect::eq_filter::EqFilterKind)
 	- [`FilterMode`](crate::effect::filter::FilterMode)
 	- [`Frame`]
-	- [`Mapping`](crate::tween::Mapping)
+	- [`Mapping`]
 	- [`PlaybackPosition`](crate::sound::PlaybackPosition)
 	- [`PlaybackRate`]
 	- [`PlaybackState`](crate::sound::PlaybackState)
@@ -255,7 +254,7 @@ mod error;
 mod frame;
 pub mod info;
 pub mod listener;
-pub mod manager;
+mod manager;
 mod mix;
 pub mod modulator;
 mod panning;
@@ -270,9 +269,11 @@ pub mod track;
 pub mod tween;
 mod value;
 
+pub use backend::DefaultBackend;
 pub use decibels::*;
 pub use error::*;
 pub use frame::*;
+pub use manager::*;
 pub use mix::*;
 pub use panning::*;
 pub use playback_rate::*;
