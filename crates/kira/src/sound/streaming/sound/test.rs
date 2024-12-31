@@ -9,8 +9,7 @@ use crate::{
 		PlaybackState, Sound,
 	},
 	test_helpers::expect_frame_soon,
-	Tween,
-	Decibels, Panning, StartTime,
+	Decibels, Panning, StartTime, Tween,
 };
 
 use super::decode_scheduler::NextStep;
@@ -247,6 +246,13 @@ fn pauses_and_resumes_with_fades() {
 			PlaybackState::Playing
 		);
 	}
+
+	let mut frames = vec![Frame::ZERO; 3];
+	sound.process(&mut frames, 1.0, &MockInfoBuilder::new().build());
+	assert_eq!(
+		frames,
+		vec![Frame::from_mono(1.0).panned(Panning::CENTER); 3]
+	);
 }
 
 /// Tests that a `StreamingSound` stops and finishes after a fade-out.

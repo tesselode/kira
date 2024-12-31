@@ -83,10 +83,10 @@ impl PlaybackStateManager {
 	}
 
 	pub fn update(&mut self, dt: f64, info: &Info) -> ChangedPlaybackState {
+		let finished = self.volume_fade.update(dt, info);
 		match &mut self.state {
 			State::Playing => {}
 			State::Pausing => {
-				let finished = self.volume_fade.update(dt, info);
 				if finished {
 					self.state = State::Paused;
 					return true;
@@ -109,14 +109,12 @@ impl PlaybackStateManager {
 				}
 			}
 			State::Resuming => {
-				let finished = self.volume_fade.update(dt, info);
 				if finished {
 					self.state = State::Playing;
 					return true;
 				}
 			}
 			State::Stopping => {
-				let finished = self.volume_fade.update(dt, info);
 				if finished {
 					self.state = State::Stopped;
 					return true;

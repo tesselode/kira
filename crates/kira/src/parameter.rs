@@ -94,12 +94,12 @@ impl<T: Tweenable> Parameter<T> {
 	///
 	/// Returns `true` if a transition just finished after this update.
 	pub fn update(&mut self, dt: f64, info: &Info) -> JustFinishedTween {
+		self.previous_raw_value = self.raw_value;
 		if self.stagnant {
 			return false;
 		}
 		let just_finished_tween = self.update_tween(dt, info);
 		if let Some(raw_value) = self.calculate_new_raw_value(info) {
-			self.previous_raw_value = self.raw_value;
 			self.raw_value = raw_value;
 		}
 		just_finished_tween
