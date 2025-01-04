@@ -18,9 +18,7 @@ pub struct ReverbBuilder {
 	/// 1.0 being fully stereo).
 	pub stereo_width: Value<f64>,
 	/// How much dry (unprocessed) signal should be blended
-	/// with the wet (processed) signal. `0.0` means
-	/// only the dry signal will be heard. `1.0` means
-	/// only the wet signal will be heard.
+	/// with the wet (processed) signal.
 	pub mix: Value<Mix>,
 }
 

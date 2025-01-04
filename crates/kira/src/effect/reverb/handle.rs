@@ -23,9 +23,7 @@ impl ReverbHandle {
 		stereo_width: f64,
 
 		/// Sets how much dry (unprocessed) signal should be blended
-		/// with the wet (processed) signal. `0.0` means only the dry
-		/// signal will be heard. `1.0` means only the wet signal will
-		/// be heard.
+		/// with the wet (processed) signal.
 		mix: Mix,
 	}
 }

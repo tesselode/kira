@@ -30,9 +30,7 @@ pub struct CompressorBuilder {
 	/// dry signal.
 	pub makeup_gain: Value<Decibels>,
 	/// How much dry (unprocessed) signal should be blended
-	/// with the wet (processed) signal. `0.0` means
-	/// only the dry signal will be heard. `1.0` means
-	/// only the wet signal will be heard.
+	/// with the wet (processed) signal.
 	pub mix: Value<Mix>,
 }
 
@@ -113,9 +111,7 @@ impl CompressorBuilder {
 	}
 
 	/// Sets how much dry (unprocessed) signal should be blended
-	/// with the wet (processed) signal. `0.0` means
-	/// only the dry signal will be heard. `1.0` means
-	/// only the wet signal will be heard.
+	/// with the wet (processed) signal.
 	#[must_use = "This method consumes self and returns a modified CompressorBuilder, so the return value should be used"]
 	pub fn mix(self, mix: impl Into<Value<Mix>>) -> Self {
 		Self {

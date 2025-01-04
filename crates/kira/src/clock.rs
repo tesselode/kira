@@ -26,8 +26,8 @@ Clocks are stopped when you first create them, so be sure to explicitly call
 
 Sounds can be set to only start playing when a clock has ticked a certain
 number of times. You can configure this using
-[`StaticSoundSettings::start_time`](crate::sound::static_sound::StaticSoundSettings::start_time)
-or [`StreamingSoundSettings::start_time`](crate::sound::streaming::StreamingSoundSettings::start_time).
+[`StaticSoundData::start_time`](crate::sound::static_sound::StaticSoundData::start_time)
+or [`StreamingSoundData::start_time`](crate::sound::streaming::StreamingSoundData::start_time).
 
 ```no_run
 use kira::{

@@ -32,7 +32,7 @@ pub trait EffectBuilder {
 
 /// Receives input audio from a mixer track and outputs modified audio.
 ///
-/// For performance reasons, avoid allocating and deallocating in any methods
+/// For performance reasons, avoid allocating and deallocating memory in any methods
 /// of this trait besides [`on_change_sample_rate`](Effect::on_change_sample_rate).
 #[allow(unused_variables)]
 pub trait Effect: Send {

@@ -16,9 +16,7 @@ pub struct DelayBuilder {
 	/// Effects that should be applied in the feedback loop.
 	pub(super) feedback_effects: Vec<Box<dyn Effect>>,
 	/// How much dry (unprocessed) signal should be blended
-	/// with the wet (processed) signal. `0.0` means
-	/// only the dry signal will be heard. `1.0` means
-	/// only the wet signal will be heard.
+	/// with the wet (processed) signal.
 	pub(super) mix: Value<Mix>,
 }
 

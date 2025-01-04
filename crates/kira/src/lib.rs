@@ -4,7 +4,7 @@
 Kira is a backend-agnostic library to create expressive audio for games. It provides
 tweens for smoothly adjusting properties of sounds, a flexible [mixer](track)
 for applying [effects](effect) to audio, a [clock] system for precisely timing audio events,
-and [spatial audio](listener) support.
+and [spatial audio](crate::track#spatial-tracks) support.
 
 To get started, create an [`AudioManager`] and use it to [play](AudioManager::play) a
 [`StaticSoundData`](crate::sound::static_sound::StaticSoundData) or
