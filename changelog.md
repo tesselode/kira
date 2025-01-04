@@ -1,3 +1,86 @@
+# v0.10 - Unreleased
+
+## Buffered audio
+
+Kira now processes audio in chunks instead of one sample at a time. This means that
+`Sound::process` no longer returns a `Frame`; instead it receives a slice of `Frame`s
+to overwrite. `Effect::process` takes an input slice instead of a single frame,
+and it overwrites that slice instead of returning a new `Frame`.
+
+The benefit of this change is significantly improved performance. The criterion
+benchmarks aren't comparable to the ones in v0.9.x and earlier, but in my unscientific
+test, I can play about twice as many sounds on my PC without crackling.
+
+There are some tradeoffs, but I think they're reasonable:
+
+- Modulators are no longer sample accurate. Instead, they update once per internal
+  processing chunk. Sounds and effects can interpolate between the previous and
+  current modulator value using `Parameter::interpolated_value` to avoid discontinuities.
+- Clocks are no longer sample accurate. For my use case which involves dynamically
+  generating music, the default internal buffer size of 128 frames sounds almost exactly
+  the same as sample-accurate clocks. You can adjust the internal buffer size to get
+  the right tradeoff of performance vs. accuracy for your game. I have some ideas for
+  how sample-accurate clocks could be implemented within the buffered architecture, so
+  if you find yourself needing sample-accurate clocks, let me know!
+- The delay effect can no longer have its delay time changed after the fact. If you
+  know how to implement a delay that can smoothly change its delay time with the
+  buffered architecture, please make a PR!
+
+## Hierarchical mixer
+
+Sounds now live inside mixer tracks. Previously, to play a sound on a mixer track, you
+would use `StaticSoundData`/`StreamingSoundData::output_destination`. Now, you pass the
+sound to `TrackHandle::play`. Additionally, tracks can contain other tracks. Tracks
+can also route their outputs to send tracks, which are a separate concept now. This change
+enables the following feature:
+
+## Pausing and resuming mixer tracks
+
+Mixer tracks can now be paused and resumed. Pausing a mixer track pauses all sounds playing
+on the track, as well as all child tracks.
+
+## Spatial audio overhaul
+
+The concepts of spatial scenes and emitters have been removed, and listeners no longer
+output to a mixer track. Instead, mixer tracks can optionally have spatial properties,
+like position and spatialization strength. Sounds and child tracks on the track will
+have spatialization applied relative to a specified listener.
+
+This release also adds `Value::FromListenerDistance`, which can be used to map sound and
+effect parameters to the distance between a spatial track and its corresponding listener.
+
+## Simplified volume and playback rate types
+
+Previously, `Volume` was an enum with `Amplitude` and `Decibels` variants, and `PlaybackRate`
+was an enum with `Factor` and `Semitones` variants. There's a couple problems with this:
+
+- It's unclear what scale a tween uses when tweening from one variant to another. For instance,
+  if you tween a `Volume::Amplitude` to a `Volume::Decibels` with linear easing, is it
+  linear in the amplitude domain or decibels?
+- Amplitude isn't a good default representation for volume because it's not perceptually linear.
+
+Now, everything that previously used `Volume` uses the simpler `Decibels` type, and
+`PlaybackRate` always contains a factor. (`Semitones` still exists as a separate type that
+implements `Into<PlaybackRate>`).
+
+There's also a new `Panning` type that's used instead of bare `f64`s. Panning has been changed
+so `-1.0` is left instead of `0.0`, since this makes more sense mathematically.
+
+## Other changes
+
+- Reorganized some types and modules to reduce unnecessary nesting
+- Added `WaitingToResume` and `Resuming` variants to `PlaybackState`
+- Changes to `Mapping`:
+  - Added an `easing` field
+  - Inputs are now always clamped to the input range
+  - Removed the `Default` implementation
+  - Added methods for performing math operations on the output range
+- Implemented some math operations to `Value`
+- Changed the fields of `Capacities` back to `u64`s
+- `ClockInfoProvider` and `ModulatorValueProvider` and now combined into one
+  `Info` struct, which also provides info about spatial audio state
+- Added `CpalBackend::pop_cpu_usage` (desktop only for now)
+
 # v0.9.6 - November 10, 2024
 
 - Improve performance when adding or subtracting large `f64`s from a `ClockTime`
