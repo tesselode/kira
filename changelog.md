@@ -1,4 +1,4 @@
-# v0.10 - Unreleased
+# v0.10 - January 1, 2025
 
 ## Buffered audio
 
