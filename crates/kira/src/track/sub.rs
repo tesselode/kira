@@ -138,6 +138,7 @@ impl Track {
 		parent_spatial_track_info: Option<SpatialTrackInfo>,
 		send_tracks: &mut ResourceStorage<SendTrack>,
 	) {
+		// get info
 		let spatial_track_info = self
 			.spatial_data
 			.as_ref()
@@ -152,11 +153,14 @@ impl Track {
 			&listeners.0.resources,
 			spatial_track_info,
 		);
+
+		// update volume parameters
 		self.volume.update(dt * out.len() as f64, &info);
 		for (_, route) in &mut self.sends {
 			route.volume.update(dt * out.len() as f64, &info);
 		}
 
+		// update playback state
 		let changed_playback_state = self
 			.playback_state_manager
 			.update(dt * out.len() as f64, &info);
@@ -169,6 +173,8 @@ impl Track {
 		}
 
 		let num_frames = out.len();
+
+		// process sub tracks
 		for (_, sub_track) in &mut self.sub_tracks {
 			sub_track.process(
 				&mut self.temp_buffer[..out.len()],
@@ -184,6 +190,8 @@ impl Track {
 			}
 			self.temp_buffer.fill(Frame::ZERO);
 		}
+
+		// process sounds
 		for (_, sound) in &mut self.sounds {
 			sound.process(&mut self.temp_buffer[..out.len()], dt, &info);
 			for (summed_out, sound_out) in out.iter_mut().zip(self.temp_buffer.iter().copied()) {
@@ -191,9 +199,13 @@ impl Track {
 			}
 			self.temp_buffer.fill(Frame::ZERO);
 		}
+
+		// apply effects
 		for effect in &mut self.effects {
 			effect.process(out, dt, &info);
 		}
+
+		// apply spatialization
 		if let Some(spatial_data) = &mut self.spatial_data {
 			spatial_data.position.update(dt * out.len() as f64, &info);
 			spatial_data
@@ -212,9 +224,13 @@ impl Track {
 						interpolated_orientation.into(),
 						time_in_chunk,
 					);
+				} else {
+					*frame = Frame::ZERO;
 				}
 			}
 		}
+
+		// apply volume fade
 		for (i, frame) in out.iter_mut().enumerate() {
 			let time_in_chunk = (i + 1) as f64 / num_frames as f64;
 			let volume = self.volume.interpolated_value(time_in_chunk).as_amplitude();
@@ -224,6 +240,8 @@ impl Track {
 				.as_amplitude();
 			*frame *= volume * fade_volume;
 		}
+
+		// output to send tracks
 		for (send_track_id, SendTrackRoute { volume, .. }) in &self.sends {
 			let Some(send_track) = send_tracks.get_mut(send_track_id.0) else {
 				continue;
