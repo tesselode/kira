@@ -2,14 +2,14 @@ use std::time::Duration;
 
 use crate::{
 	effect::{Effect, EffectBuilder},
-	tween::Value,
+	Decibels, Mix, Value,
 };
 
 use super::{command_writers_and_readers, Compressor, CompressorHandle};
 
 /// Configures a compressor.
 pub struct CompressorBuilder {
-	/// The volume above which volume will start to be decreased (in dBFS).
+	/// The volume above which volume will start to be decreased (in decibels).
 	pub threshold: Value<f64>,
 	/// How much the signal will be compressed.
 	///
@@ -28,12 +28,10 @@ pub struct CompressorBuilder {
 	/// This can be used to compensate for the decrease in volume resulting
 	/// from compression. This is only applied to the wet signal, nto the
 	/// dry signal.
-	pub makeup_gain: Value<f64>,
+	pub makeup_gain: Value<Decibels>,
 	/// How much dry (unprocessed) signal should be blended
-	/// with the wet (processed) signal. `0.0` means
-	/// only the dry signal will be heard. `1.0` means
-	/// only the wet signal will be heard.
-	pub mix: Value<f64>,
+	/// with the wet (processed) signal.
+	pub mix: Value<Mix>,
 }
 
 impl CompressorBuilder {
@@ -41,8 +39,8 @@ impl CompressorBuilder {
 	pub(crate) const DEFAULT_RATIO: f64 = 1.0;
 	pub(crate) const DEFAULT_ATTACK_DURATION: Duration = Duration::from_millis(10);
 	pub(crate) const DEFAULT_RELEASE_DURATION: Duration = Duration::from_millis(100);
-	pub(crate) const DEFAULT_MAKEUP_GAIN: f64 = 0.0;
-	pub(crate) const DEFAULT_MIX: f64 = 1.0;
+	pub(crate) const DEFAULT_MAKEUP_GAIN: Decibels = Decibels(0.0);
+	pub(crate) const DEFAULT_MIX: Mix = Mix::WET;
 
 	/// Creates a new [`CompressorBuilder`] with the default settings.
 	#[must_use]
@@ -57,7 +55,7 @@ impl CompressorBuilder {
 		}
 	}
 
-	/// Sets the volume above which volume will start to be decreased (in dBFS).
+	/// Sets the volume above which volume will start to be decreased (in decibels).
 	#[must_use = "This method consumes self and returns a modified CompressorBuilder, so the return value should be used"]
 	pub fn threshold(self, threshold: impl Into<Value<f64>>) -> Self {
 		Self {
@@ -99,13 +97,13 @@ impl CompressorBuilder {
 		}
 	}
 
-	/// Sets the amount to change the volume after processing (in dB).
+	/// Sets the amount to change the volume after processing (in decibels).
 	///
 	/// This can be used to compensate for the decrease in volume resulting
 	/// from compression. This is only applied to the wet signal, nto the
 	/// dry signal.
 	#[must_use = "This method consumes self and returns a modified CompressorBuilder, so the return value should be used"]
-	pub fn makeup_gain(self, makeup_gain: impl Into<Value<f64>>) -> Self {
+	pub fn makeup_gain(self, makeup_gain: impl Into<Value<Decibels>>) -> Self {
 		Self {
 			makeup_gain: makeup_gain.into(),
 			..self
@@ -113,11 +111,9 @@ impl CompressorBuilder {
 	}
 
 	/// Sets how much dry (unprocessed) signal should be blended
-	/// with the wet (processed) signal. `0.0` means
-	/// only the dry signal will be heard. `1.0` means
-	/// only the wet signal will be heard.
+	/// with the wet (processed) signal.
 	#[must_use = "This method consumes self and returns a modified CompressorBuilder, so the return value should be used"]
-	pub fn mix(self, mix: impl Into<Value<f64>>) -> Self {
+	pub fn mix(self, mix: impl Into<Value<Mix>>) -> Self {
 		Self {
 			mix: mix.into(),
 			..self

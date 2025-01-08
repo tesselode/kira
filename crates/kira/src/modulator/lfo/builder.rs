@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::{
 	modulator::{Modulator, ModulatorBuilder, ModulatorId},
-	tween::Value,
+	Value,
 };
 
 use super::{command_writers_and_readers, handle::LfoHandle, Lfo, LfoShared, Waveform};

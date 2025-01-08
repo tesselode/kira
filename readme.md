@@ -1,6 +1,6 @@
 # Kira
 
-#### [crates.io](https://crates.io/crates/kira) | [docs](https://docs.rs/kira/) | [examples](https://github.com/tesselode/kira-examples)
+#### [crates.io](https://crates.io/crates/kira) | [docs](https://docs.rs/kira/)
 
 Kira is a backend-agnostic library to create expressive audio for games. It
 provides tweens for smoothly adjusting properties of sounds, a flexible mixer
@@ -13,10 +13,7 @@ Playing a sound multiple times simultaneously:
 
 ```rust
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	sound::static_sound::StaticSoundData,
 };
 
@@ -35,12 +32,9 @@ Gradually speeding up a sound over time:
 use std::time::Duration;
 
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	sound::static_sound::StaticSoundData,
-	tween::Tween,
+	Tween,
 };
 
 let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
@@ -61,10 +55,7 @@ muffled):
 
 ```rust
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	sound::static_sound::StaticSoundData,
 	track::{
 		TrackBuilder,
@@ -88,10 +79,7 @@ Playing sounds in time with a musical beat:
 
 ```rust
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	sound::static_sound::StaticSoundData,
 	clock::ClockSpeed,
 };

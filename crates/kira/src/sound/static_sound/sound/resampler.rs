@@ -11,6 +11,7 @@ struct RecentFrame {
 
 pub(super) struct Resampler {
 	frames: [RecentFrame; 4],
+	time_until_empty: usize,
 }
 
 impl Resampler {
@@ -21,13 +22,18 @@ impl Resampler {
 				frame: Frame::ZERO,
 				frame_index: starting_frame_index,
 			}; 4],
+			time_until_empty: 0,
 		}
 	}
 
-	pub fn push_frame(&mut self, frame: Frame, sample_index: usize) {
-		for i in 0..self.frames.len() - 1 {
-			self.frames[i] = self.frames[i + 1];
+	pub fn push_frame(&mut self, frame: Option<Frame>, sample_index: usize) {
+		if frame.is_some() {
+			self.time_until_empty = 4;
+		} else {
+			self.time_until_empty = self.time_until_empty.saturating_sub(1);
 		}
+		let frame = frame.unwrap_or_default();
+		self.frames.copy_within(1.., 0);
 		self.frames[self.frames.len() - 1] = RecentFrame {
 			frame,
 			frame_index: sample_index,
@@ -59,9 +65,7 @@ impl Resampler {
 	}
 
 	#[must_use]
-	pub fn outputting_silence(&self) -> bool {
-		self.frames
-			.iter()
-			.all(|RecentFrame { frame, .. }| *frame == Frame::ZERO)
+	pub fn empty(&self) -> bool {
+		self.time_until_empty == 0
 	}
 }

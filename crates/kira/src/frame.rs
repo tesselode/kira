@@ -3,6 +3,8 @@ use std::{
 	ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
+use crate::Panning;
+
 /// A stereo audio sample.
 #[derive(Debug, Copy, Clone, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -36,18 +38,22 @@ impl Frame {
 
 	/// Pans a frame to the left or right.
 	///
-	/// An `x` of 0 represents a hard left panning, an `x` of 1
+	/// A panning of -1.0 represents a hard left panning, a panning of 1.0
 	/// represents a hard right panning.
 	#[allow(clippy::float_cmp)]
 	#[must_use = "This method returns a new Frame and does not mutate the original value"]
-	pub fn panned(self, x: f32) -> Self {
+	pub fn panned(self, panning: Panning) -> Self {
 		// adding a special case for center panning improves
 		// performance in the sound playback benchmarks by
 		// about 3%
-		if x == 0.5 {
+		if panning == Panning::CENTER {
 			return self;
 		}
-		Self::new(self.left * (1.0 - x).sqrt(), self.right * x.sqrt()) * SQRT_2
+		let left_right_mix = (panning.0 + 1.0) * 0.5;
+		Self::new(
+			self.left * (1.0 - left_right_mix).sqrt(),
+			self.right * left_right_mix.sqrt(),
+		) * SQRT_2
 	}
 
 	/// Returns the frame mixed down to mono.

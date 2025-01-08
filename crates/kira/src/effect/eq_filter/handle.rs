@@ -1,4 +1,4 @@
-use crate::command::handle_param_setters;
+use crate::{command::handle_param_setters, Decibels};
 
 use super::{CommandWriters, EqFilterKind};
 
@@ -20,7 +20,7 @@ impl EqFilterHandle {
 		frequency: f64,
 
 		/// Sets the volume adjustment for frequencies in the specified range (in decibels).
-		gain: f64,
+		gain: Decibels,
 
 		/// Sets the width of the frequency range to adjust.
 		///

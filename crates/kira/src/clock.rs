@@ -2,14 +2,11 @@
 Precise timing for audio events.
 
 Clocks can be used to set the start times of sounds and tweens. To create a
-clock, use [`AudioManager::add_clock`](crate::manager::AudioManager::add_clock).
+clock, use [`AudioManager::add_clock`](crate::AudioManager::add_clock).
 
 ```no_run
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	clock::ClockSpeed,
 };
 
@@ -29,16 +26,13 @@ Clocks are stopped when you first create them, so be sure to explicitly call
 
 Sounds can be set to only start playing when a clock has ticked a certain
 number of times. You can configure this using
-[`StaticSoundSettings::start_time`](crate::sound::static_sound::StaticSoundSettings::start_time)
-or [`StreamingSoundSettings::start_time`](crate::sound::streaming::StreamingSoundSettings::start_time).
+[`StaticSoundData::start_time`](crate::sound::static_sound::StaticSoundData::start_time)
+or [`StreamingSoundData::start_time`](crate::sound::streaming::StreamingSoundData::start_time).
 
 ```no_run
 use kira::{
 	clock::{ClockTime, ClockSpeed},
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	StartTime,
 };
@@ -63,10 +57,9 @@ the `start_time` function.
 ```no_run
 # use kira::{
 # 	clock::{ClockTime, ClockSpeed},
-# 	manager::{
-# 	 	AudioManager, AudioManagerSettings,
-# 		backend::DefaultBackend,
-# 	},
+# 	AudioManager,
+# 	AudioManagerSettings,
+# 	DefaultBackend,
 # 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 # 	StartTime,
 # };
@@ -92,10 +85,7 @@ current [`ClockTime`], and then add to it to get a time in the future:
 
 ```no_run
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	clock::ClockSpeed,
 };
@@ -122,12 +112,9 @@ tick.
 use std::time::Duration;
 
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
-	tween::Tween,
+	Tween,
 	clock::ClockSpeed,
 	StartTime,
 };
@@ -148,7 +135,6 @@ clock.start();
 ```
 */
 
-pub mod clock_info;
 mod clock_speed;
 mod handle;
 mod time;
@@ -156,6 +142,7 @@ mod time;
 #[cfg(test)]
 mod test;
 
+use atomic_arena::Key;
 pub use clock_speed::*;
 pub use handle::*;
 pub use time::*;
@@ -165,17 +152,12 @@ use std::sync::{
 	Arc,
 };
 
-use crate::arena::Key;
-
 use crate::{
-	command::read_commands_into_parameters,
-	command::ValueChangeCommand,
+	command::{read_commands_into_parameters, ValueChangeCommand},
 	command_writers_and_readers,
-	modulator::value_provider::ModulatorValueProvider,
-	tween::{Parameter, Value},
+	info::Info,
+	Parameter, Value,
 };
-
-use self::clock_info::ClockInfoProvider;
 
 /// A unique identifier for a clock.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -329,14 +311,8 @@ impl Clock {
 	///
 	/// If the tick count changes this update, returns `Some(tick_number)`.
 	/// Otherwise, returns `None`.
-	pub(crate) fn update(
-		&mut self,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-	) -> Option<u64> {
-		self.speed
-			.update(dt, clock_info_provider, modulator_value_provider);
+	pub(crate) fn update(&mut self, dt: f64, info: &Info) -> Option<u64> {
+		self.speed.update(dt, info);
 		if !self.ticking {
 			return None;
 		}

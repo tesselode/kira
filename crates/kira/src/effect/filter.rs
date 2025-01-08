@@ -9,9 +9,12 @@ pub use handle::*;
 use std::f64::consts::PI;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider, command::read_commands_into_parameters,
-	command::ValueChangeCommand, command_writers_and_readers, effect::Effect, frame::Frame,
-	modulator::value_provider::ModulatorValueProvider, tween::Parameter,
+	command::{read_commands_into_parameters, ValueChangeCommand},
+	command_writers_and_readers,
+	effect::Effect,
+	frame::Frame,
+	info::Info,
+	Mix, Parameter,
 };
 
 // This filter code is based on the filter code from baseplug:
@@ -36,7 +39,7 @@ struct Filter {
 	mode: FilterMode,
 	cutoff: Parameter,
 	resonance: Parameter,
-	mix: Parameter,
+	mix: Parameter<Mix>,
 	ic1eq: Frame,
 	ic2eq: Frame,
 }
@@ -50,7 +53,7 @@ impl Filter {
 			mode: builder.mode,
 			cutoff: Parameter::new(builder.cutoff, 1000.0),
 			resonance: Parameter::new(builder.resonance, 0.0),
-			mix: Parameter::new(builder.mix, 1.0),
+			mix: Parameter::new(builder.mix, Mix(1.0)),
 			ic1eq: Frame::ZERO,
 			ic2eq: Frame::ZERO,
 		}
@@ -65,38 +68,40 @@ impl Effect for Filter {
 		read_commands_into_parameters!(self, cutoff, resonance, mix);
 	}
 
-	fn process(
-		&mut self,
-		input: Frame,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-	) -> Frame {
-		self.cutoff
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.resonance
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.mix
-			.update(dt, clock_info_provider, modulator_value_provider);
-		let sample_rate = 1.0 / dt;
-		let g = (PI * (self.cutoff.value() / sample_rate)).tan();
-		let k = 2.0 - (1.9 * self.resonance.value().min(1.0).max(0.0));
-		let a1 = 1.0 / (1.0 + (g * (g + k)));
-		let a2 = g * a1;
-		let a3 = g * a2;
-		let v3 = input - self.ic2eq;
-		let v1 = (self.ic1eq * (a1 as f32)) + (v3 * (a2 as f32));
-		let v2 = self.ic2eq + (self.ic1eq * (a2 as f32)) + (v3 * (a3 as f32));
-		self.ic1eq = (v1 * 2.0) - self.ic1eq;
-		self.ic2eq = (v2 * 2.0) - self.ic2eq;
-		let output = match self.mode {
-			FilterMode::LowPass => v2,
-			FilterMode::BandPass => v1,
-			FilterMode::HighPass => input - v1 * (k as f32) - v2,
-			FilterMode::Notch => input - v1 * (k as f32),
-		};
-		let mix = self.mix.value() as f32;
-		output * mix.sqrt() + input * (1.0 - mix).sqrt()
+	fn process(&mut self, input: &mut [Frame], dt: f64, info: &Info) {
+		self.cutoff.update(dt * input.len() as f64, info);
+		self.resonance.update(dt * input.len() as f64, info);
+		self.mix.update(dt * input.len() as f64, info);
+
+		let num_frames = input.len();
+		for (i, frame) in input.iter_mut().enumerate() {
+			let time_in_chunk = (i + 1) as f64 / num_frames as f64;
+			let cutoff = self.cutoff.interpolated_value(time_in_chunk);
+			let resonance = self
+				.resonance
+				.interpolated_value(time_in_chunk)
+				.clamp(0.0, 1.0);
+			let mix = self.mix.interpolated_value(time_in_chunk).0;
+
+			let sample_rate = 1.0 / dt;
+			let g = (PI * (cutoff / sample_rate)).tan();
+			let k = 2.0 - (1.9 * resonance);
+			let a1 = 1.0 / (1.0 + (g * (g + k)));
+			let a2 = g * a1;
+			let a3 = g * a2;
+			let v3 = *frame - self.ic2eq;
+			let v1 = (self.ic1eq * (a1 as f32)) + (v3 * (a2 as f32));
+			let v2 = self.ic2eq + (self.ic1eq * (a2 as f32)) + (v3 * (a3 as f32));
+			self.ic1eq = (v1 * 2.0) - self.ic1eq;
+			self.ic2eq = (v2 * 2.0) - self.ic2eq;
+			let output = match self.mode {
+				FilterMode::LowPass => v2,
+				FilterMode::BandPass => v1,
+				FilterMode::HighPass => *frame - v1 * (k as f32) - v2,
+				FilterMode::Notch => *frame - v1 * (k as f32),
+			};
+			*frame = output * mix.sqrt() + *frame * (1.0 - mix).sqrt()
+		}
 	}
 }
 
@@ -104,5 +109,5 @@ command_writers_and_readers!(
 	set_mode: FilterMode,
 	set_cutoff: ValueChangeCommand<f64>,
 	set_resonance: ValueChangeCommand<f64>,
-	set_mix: ValueChangeCommand<f64>,
+	set_mix: ValueChangeCommand<Mix>,
 );

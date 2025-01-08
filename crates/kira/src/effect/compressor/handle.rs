@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::command::handle_param_setters;
+use crate::{command::handle_param_setters, Decibels, Mix};
 
 use super::CommandWriters;
 
@@ -12,7 +12,7 @@ pub struct CompressorHandle {
 
 impl CompressorHandle {
 	handle_param_setters! {
-		/// Sets the volume above which volume will start to be decreased (in dBFS).
+		/// Sets the volume above which volume will start to be decreased (in decibels).
 		threshold: f64,
 
 		/// Sets how much the signal will be compressed.
@@ -35,12 +35,10 @@ impl CompressorHandle {
 		/// This can be used to compensate for the decrease in volume resulting
 		/// from compression. This is only applied to the wet signal, nto the
 		/// dry signal.
-		makeup_gain: f64,
+		makeup_gain: Decibels,
 
 		/// Sets how much dry (unprocessed) signal should be blended
-		/// with the wet (processed) signal. `0.0` means only the dry
-		/// signal will be heard. `1.0` means only the wet signal will
-		/// be heard.
-		mix: f64,
+		/// with the wet (processed) signal.
+		mix: Mix,
 	}
 }

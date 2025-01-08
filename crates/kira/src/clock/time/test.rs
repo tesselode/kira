@@ -1,11 +1,9 @@
 use std::cmp::Ordering;
 
 use approx::assert_relative_eq;
+use atomic_arena::Arena;
 
-use crate::{
-	arena::Arena,
-	clock::{ClockId, ClockTime},
-};
+use crate::clock::{ClockId, ClockTime};
 
 #[test]
 fn from_ticks_u64() {
@@ -247,7 +245,7 @@ fn fake_clock_id() -> ClockId {
 	ClockId(key)
 }
 
-fn fake_clock_ids(count: u16) -> Vec<ClockId> {
+fn fake_clock_ids(count: usize) -> Vec<ClockId> {
 	let mut arena = Arena::new(count);
 	(0..count)
 		.map(|_| arena.insert(()).unwrap())

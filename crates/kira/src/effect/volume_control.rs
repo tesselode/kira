@@ -7,16 +7,18 @@ pub use builder::*;
 pub use handle::*;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider, command::read_commands_into_parameters,
-	command::ValueChangeCommand, command_writers_and_readers, frame::Frame,
-	modulator::value_provider::ModulatorValueProvider, tween::Parameter, Volume,
+	command::{read_commands_into_parameters, ValueChangeCommand},
+	command_writers_and_readers,
+	frame::Frame,
+	info::Info,
+	Decibels, Parameter,
 };
 
 use super::Effect;
 
 struct VolumeControl {
 	command_readers: CommandReaders,
-	volume: Parameter<Volume>,
+	volume: Parameter<Decibels>,
 }
 
 impl VolumeControl {
@@ -24,7 +26,7 @@ impl VolumeControl {
 	fn new(builder: VolumeControlBuilder, command_readers: CommandReaders) -> Self {
 		Self {
 			command_readers,
-			volume: Parameter::new(builder.0, Volume::Amplitude(1.0)),
+			volume: Parameter::new(builder.0, Decibels::IDENTITY),
 		}
 	}
 }
@@ -34,19 +36,16 @@ impl Effect for VolumeControl {
 		read_commands_into_parameters!(self, volume);
 	}
 
-	fn process(
-		&mut self,
-		input: Frame,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-	) -> Frame {
-		self.volume
-			.update(dt, clock_info_provider, modulator_value_provider);
-		input * self.volume.value().as_amplitude() as f32
+	fn process(&mut self, input: &mut [Frame], dt: f64, info: &Info) {
+		self.volume.update(dt * input.len() as f64, info);
+		let num_frames = input.len();
+		for (i, frame) in input.iter_mut().enumerate() {
+			let time_in_chunk = (i + 1) as f64 / num_frames as f64;
+			*frame *= self.volume.interpolated_value(time_in_chunk).as_amplitude();
+		}
 	}
 }
 
 command_writers_and_readers! {
-	set_volume: ValueChangeCommand<Volume>,
+	set_volume: ValueChangeCommand<Decibels>,
 }

@@ -1,3 +1,13 @@
 [workspace]
-members = ["crates/kira", "crates/benchmarks"]
+members = [
+	"crates/kira",
+	"crates/benchmarks",
+	"crates/examples/dynamic-music",
+	"crates/examples/ghost-noise",
+	"crates/examples/metronome",
+	"crates/examples/score-counter",
+	"crates/examples/seamless-loop-with-intro",
+	"crates/examples/simple-sound-playback",
+	"crates/examples/spatial-audio",
+]
 resolver = "2"

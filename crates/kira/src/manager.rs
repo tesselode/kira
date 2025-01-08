@@ -5,38 +5,34 @@
 //! resources like clocks, mixer tracks, and spatial scenes. Once the
 //! [`AudioManager`] is dropped, its audio output will be stopped.
 
-pub mod backend;
-pub mod error;
 mod settings;
 
-pub use backend::DefaultBackend;
 pub use settings::*;
 
 use std::sync::{atomic::Ordering, Arc};
 
 use crate::{
-	clock::{Clock, ClockHandle, ClockId, ClockSpeed},
-	modulator::{ModulatorBuilder, ModulatorId},
-	sound::SoundData,
-	spatial::scene::{SpatialScene, SpatialSceneHandle, SpatialSceneId, SpatialSceneSettings},
-	track::{SubTrackId, TrackBuilder, TrackHandle, TrackId},
-	tween::Value,
-	ResourceLimitReached,
-};
-
-use self::{
 	backend::{
 		resources::{create_resources, ResourceControllers},
-		Backend, Renderer, RendererShared,
+		Backend, DefaultBackend, Renderer, RendererShared,
 	},
-	error::PlaySoundError,
+	clock::{Clock, ClockHandle, ClockId, ClockSpeed},
+	listener::{Listener, ListenerHandle, ListenerId},
+	modulator::{ModulatorBuilder, ModulatorId},
+	sound::SoundData,
+	track::{
+		MainTrackHandle, SendTrackBuilder, SendTrackHandle, SendTrackId, SpatialTrackBuilder,
+		SpatialTrackHandle, TrackBuilder, TrackHandle,
+	},
+	PlaySoundError, ResourceLimitReached, Value,
 };
 
 /// Controls audio from gameplay code.
 pub struct AudioManager<B: Backend = DefaultBackend> {
 	backend: B,
-	renderer_shared: Arc<RendererShared>,
 	resource_controllers: ResourceControllers,
+	renderer_shared: Arc<RendererShared>,
+	internal_buffer_size: usize,
 }
 
 impl<B: Backend> AudioManager<B> {
@@ -49,7 +45,7 @@ impl<B: Backend> AudioManager<B> {
 	default settings:
 
 	```no_run
-	use kira::manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend};
+	use kira::{AudioManager, AudioManagerSettings, DefaultBackend};
 
 	let audio_manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
@@ -59,32 +55,39 @@ impl<B: Backend> AudioManager<B> {
 
 	```no_run
 	use kira::{
-		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
-		track::TrackBuilder,
+		AudioManager, AudioManagerSettings, DefaultBackend,
+		track::MainTrackBuilder,
 		effect::reverb::ReverbBuilder,
 	};
 
 	let audio_manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings {
-		main_track_builder: TrackBuilder::new().with_effect(ReverbBuilder::new()),
+		main_track_builder: MainTrackBuilder::new().with_effect(ReverbBuilder::new()),
 		..Default::default()
 	})?;
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
 	pub fn new(settings: AudioManagerSettings<B>) -> Result<Self, B::Error> {
-		let (mut backend, sample_rate) = B::setup(settings.backend_settings)?;
+		let (mut backend, sample_rate) =
+			B::setup(settings.backend_settings, settings.internal_buffer_size)?;
+		let renderer_shared = Arc::new(RendererShared::new(sample_rate));
 		let (resources, resource_controllers) = create_resources(
 			settings.capacities,
 			settings.main_track_builder,
 			sample_rate,
+			settings.internal_buffer_size,
 		);
-		let renderer = Renderer::new(sample_rate, resources);
-		let renderer_shared = renderer.shared();
+		let renderer = Renderer::new(
+			renderer_shared.clone(),
+			settings.internal_buffer_size,
+			resources,
+		);
 		backend.start(renderer)?;
 		Ok(Self {
 			backend,
-			renderer_shared,
 			resource_controllers,
+			renderer_shared,
+			internal_buffer_size: settings.internal_buffer_size,
 		})
 	}
 
@@ -94,12 +97,7 @@ impl<B: Backend> AudioManager<B> {
 	# Examples
 
 	```no_run
-	# use kira::{
-	# 	manager::{
-	# 		AudioManager, AudioManagerSettings,
-	# 		backend::DefaultBackend,
-	# 	},
-	# };
+	# use kira::{AudioManager, AudioManagerSettings, DefaultBackend};
 	use kira::sound::static_sound::{StaticSoundData, StaticSoundSettings};
 
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
@@ -112,14 +110,7 @@ impl<B: Backend> AudioManager<B> {
 		&mut self,
 		sound_data: D,
 	) -> Result<D::Handle, PlaySoundError<D::Error>> {
-		let (sound, handle) = sound_data
-			.into_sound()
-			.map_err(PlaySoundError::IntoSoundError)?;
-		self.resource_controllers
-			.sound_controller
-			.insert(sound)
-			.map_err(|_| PlaySoundError::SoundLimitReached)?;
-		Ok(handle)
+		self.main_track().play(sound_data)
 	}
 
 	/// Creates a mixer sub-track.
@@ -127,15 +118,49 @@ impl<B: Backend> AudioManager<B> {
 		&mut self,
 		builder: TrackBuilder,
 	) -> Result<TrackHandle, ResourceLimitReached> {
-		let key = self
-			.resource_controllers
-			.sub_track_controller
-			.try_reserve()?;
-		let id = TrackId::Sub(SubTrackId(key));
-		let (mut track, handle) = builder.build(id);
+		let (mut track, handle) =
+			builder.build(self.renderer_shared.clone(), self.internal_buffer_size);
 		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
 		self.resource_controllers
 			.sub_track_controller
+			.insert(track)?;
+		Ok(handle)
+	}
+
+	/// Adds a spatial mixer sub-track.
+	pub fn add_spatial_sub_track(
+		&mut self,
+		listener: impl Into<ListenerId>,
+		position: impl Into<Value<mint::Vector3<f32>>>,
+		builder: SpatialTrackBuilder,
+	) -> Result<SpatialTrackHandle, ResourceLimitReached> {
+		let (mut track, handle) = builder.build(
+			self.renderer_shared.clone(),
+			self.internal_buffer_size,
+			listener.into(),
+			position.into().to_(),
+		);
+		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
+		self.resource_controllers
+			.sub_track_controller
+			.insert(track)?;
+		Ok(handle)
+	}
+
+	/// Creates a mixer send track.
+	pub fn add_send_track(
+		&mut self,
+		builder: SendTrackBuilder,
+	) -> Result<SendTrackHandle, ResourceLimitReached> {
+		let key = self
+			.resource_controllers
+			.send_track_controller
+			.try_reserve()?;
+		let id = SendTrackId(key);
+		let (mut track, handle) = builder.build(id, self.internal_buffer_size);
+		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
+		self.resource_controllers
+			.send_track_controller
 			.insert_with_key(key, track);
 		Ok(handle)
 	}
@@ -146,13 +171,8 @@ impl<B: Backend> AudioManager<B> {
 	# Examples
 
 	```no_run
-	# use kira::{
-	# 	manager::{
-	# 		AudioManager, AudioManagerSettings,
-	# 		backend::DefaultBackend,
-	# 	},
-	# 	clock::ClockSpeed
-	# };
+	# use kira::{AudioManager, AudioManagerSettings, DefaultBackend};
+	use kira::clock::ClockSpeed;
 
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	let clock = manager.add_clock(ClockSpeed::TicksPerMinute(120.0))?;
@@ -172,35 +192,13 @@ impl<B: Backend> AudioManager<B> {
 		Ok(handle)
 	}
 
-	/// Creates a spatial scene.
-	pub fn add_spatial_scene(
-		&mut self,
-		settings: SpatialSceneSettings,
-	) -> Result<SpatialSceneHandle, ResourceLimitReached> {
-		let key = self
-			.resource_controllers
-			.spatial_scene_controller
-			.try_reserve()?;
-		let id = SpatialSceneId(key);
-		let (spatial_scene, handle) = SpatialScene::new(id, settings);
-		self.resource_controllers
-			.spatial_scene_controller
-			.insert_with_key(key, spatial_scene);
-		Ok(handle)
-	}
-
 	/**
 	Creates a modulator.
 
 	# Examples
 
 	```no_run
-	# use kira::{
-	# 	manager::{
-	# 		AudioManager, AudioManagerSettings,
-	# 		backend::DefaultBackend,
-	# 	},
-	# };
+	# use kira::{AudioManager, AudioManagerSettings, DefaultBackend};
 	use kira::modulator::lfo::LfoBuilder;
 
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
@@ -225,6 +223,37 @@ impl<B: Backend> AudioManager<B> {
 	}
 
 	/**
+	Creates a listener.
+
+	# Examples
+
+	```no_run
+	# use kira::{AudioManager, AudioManagerSettings, DefaultBackend};
+	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+	// This example uses `glam`, but you can use any math library that has interoperability
+	// with `mint`.
+	let listener = manager.add_listener(glam::vec3(0.0, 0.0, 0.0), glam::Quat::IDENTITY)?;
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
+	```
+	*/
+	pub fn add_listener(
+		&mut self,
+		position: impl Into<Value<mint::Vector3<f32>>>,
+		orientation: impl Into<Value<mint::Quaternion<f32>>>,
+	) -> Result<ListenerHandle, ResourceLimitReached> {
+		let key = self
+			.resource_controllers
+			.listener_controller
+			.try_reserve()?;
+		let id = ListenerId(key);
+		let (listener, handle) = Listener::new(id, position.into().to_(), orientation.into().to_());
+		self.resource_controllers
+			.listener_controller
+			.insert_with_key(key, listener);
+		Ok(handle)
+	}
+
+	/**
 	Returns a handle to the main mixer track.
 
 	# Examples
@@ -232,83 +261,64 @@ impl<B: Backend> AudioManager<B> {
 	Use the main track handle to adjust the volume of all audio:
 
 	```no_run
-	# use kira::{
-	# 	manager::{
-	# 		AudioManager, AudioManagerSettings,
-	# 		backend::DefaultBackend,
-	# 	},
-	# };
-	use kira::tween::Tween;
+	# use kira::{AudioManager, AudioManagerSettings, DefaultBackend};
+	use kira::Tween;
 
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	manager.main_track().set_volume(0.5, Tween::default());
+	manager.main_track().set_volume(-6.0, Tween::default());
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
 	#[must_use]
-	pub fn main_track(&mut self) -> &mut TrackHandle {
+	pub fn main_track(&mut self) -> &mut MainTrackHandle {
 		&mut self.resource_controllers.main_track_handle
-	}
-
-	/// Returns the number of sounds that can be loaded at a time.
-	#[must_use]
-	pub fn sound_capacity(&self) -> u16 {
-		self.resource_controllers.sound_controller.capacity()
 	}
 
 	/// Returns the number of mixer sub-tracks that can exist at a time.
 	#[must_use]
-	pub fn sub_track_capacity(&self) -> u16 {
+	pub fn sub_track_capacity(&self) -> usize {
 		self.resource_controllers.sub_track_controller.capacity()
+	}
+
+	/// Returns the number of mixer send tracks that can exist at a time.
+	#[must_use]
+	pub fn send_track_capacity(&self) -> usize {
+		self.resource_controllers.send_track_controller.capacity()
 	}
 
 	/// Returns the number of clocks that can exist at a time.
 	#[must_use]
-	pub fn clock_capacity(&self) -> u16 {
+	pub fn clock_capacity(&self) -> usize {
 		self.resource_controllers.clock_controller.capacity()
-	}
-
-	/// Returns the number of spatial scenes that can exist at a time.
-	#[must_use]
-	pub fn spatial_scene_capacity(&self) -> u16 {
-		self.resource_controllers
-			.spatial_scene_controller
-			.capacity()
 	}
 
 	/// Returns the number of modulators that can exist at a time.
 	#[must_use]
-	pub fn modulator_capacity(&self) -> u16 {
+	pub fn modulator_capacity(&self) -> usize {
 		self.resource_controllers.modulator_controller.capacity()
-	}
-
-	/// Returns the number of sounds that are currently loaded.
-	#[must_use]
-	pub fn num_sounds(&self) -> u16 {
-		self.resource_controllers.sound_controller.len()
 	}
 
 	/// Returns the number of mixer sub-tracks that currently exist.
 	#[must_use]
-	pub fn num_sub_tracks(&self) -> u16 {
+	pub fn num_sub_tracks(&self) -> usize {
 		self.resource_controllers.sub_track_controller.len()
+	}
+
+	/// Returns the number of mixer send tracks that currently exist.
+	#[must_use]
+	pub fn num_send_tracks(&self) -> usize {
+		self.resource_controllers.send_track_controller.len()
 	}
 
 	/// Returns the number of clocks that currently exist.
 	#[must_use]
-	pub fn num_clocks(&self) -> u16 {
+	pub fn num_clocks(&self) -> usize {
 		self.resource_controllers.clock_controller.len()
-	}
-
-	/// Returns the number of spatial scenes that currently exist.
-	#[must_use]
-	pub fn num_spatial_scenes(&self) -> u16 {
-		self.resource_controllers.spatial_scene_controller.len()
 	}
 
 	/// Returns the number of modulators that currently exist.
 	#[must_use]
-	pub fn num_modulators(&self) -> u16 {
+	pub fn num_modulators(&self) -> usize {
 		self.resource_controllers.modulator_controller.len()
 	}
 

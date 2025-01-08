@@ -7,9 +7,12 @@ pub use builder::*;
 pub use handle::*;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider, command::read_commands_into_parameters,
-	command::ValueChangeCommand, command_writers_and_readers, effect::Effect, frame::Frame,
-	modulator::value_provider::ModulatorValueProvider, tween::Parameter,
+	command::{read_commands_into_parameters, ValueChangeCommand},
+	command_writers_and_readers,
+	effect::Effect,
+	frame::Frame,
+	info::Info,
+	Mix, Parameter,
 };
 use all_pass::AllPassFilter;
 use comb::CombFilter;
@@ -38,7 +41,7 @@ struct Reverb {
 	feedback: Parameter,
 	damping: Parameter,
 	stereo_width: Parameter,
-	mix: Parameter,
+	mix: Parameter<Mix>,
 	state: ReverbState,
 }
 
@@ -51,7 +54,7 @@ impl Reverb {
 			feedback: Parameter::new(settings.feedback, 0.9),
 			damping: Parameter::new(settings.damping, 0.1),
 			stereo_width: Parameter::new(settings.stereo_width, 1.0),
-			mix: Parameter::new(settings.mix, 0.5),
+			mix: Parameter::new(settings.mix, Mix(0.5)),
 			state: ReverbState::Uninitialized,
 		}
 	}
@@ -122,7 +125,7 @@ impl Reverb {
 }
 
 impl Effect for Reverb {
-	fn init(&mut self, sample_rate: u32) {
+	fn init(&mut self, sample_rate: u32, _internal_buffer_size: usize) {
 		self.init_filters(sample_rate);
 	}
 
@@ -134,51 +137,46 @@ impl Effect for Reverb {
 		read_commands_into_parameters!(self, feedback, damping, stereo_width, mix);
 	}
 
-	fn process(
-		&mut self,
-		input: Frame,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-	) -> Frame {
+	fn process(&mut self, input: &mut [Frame], dt: f64, info: &Info) {
 		if let ReverbState::Initialized {
 			comb_filters,
 			all_pass_filters,
 		} = &mut self.state
 		{
-			self.feedback
-				.update(dt, clock_info_provider, modulator_value_provider);
-			self.damping
-				.update(dt, clock_info_provider, modulator_value_provider);
-			self.stereo_width
-				.update(dt, clock_info_provider, modulator_value_provider);
-			self.mix
-				.update(dt, clock_info_provider, modulator_value_provider);
+			self.feedback.update(dt * input.len() as f64, info);
+			self.damping.update(dt * input.len() as f64, info);
+			self.stereo_width.update(dt * input.len() as f64, info);
+			self.mix.update(dt * input.len() as f64, info);
 
 			let feedback = self.feedback.value() as f32;
 			let damping = self.damping.value() as f32;
-			let stereo_width = self.stereo_width.value() as f32;
 
-			let mut output = Frame::ZERO;
-			let mono_input = (input.left + input.right) * GAIN;
-			// accumulate comb filters in parallel
-			for comb_filter in comb_filters {
-				output.left += comb_filter.0.process(mono_input, feedback, damping);
-				output.right += comb_filter.1.process(mono_input, feedback, damping);
+			let num_frames = input.len();
+			for (i, frame) in input.iter_mut().enumerate() {
+				let time_in_chunk = (i + 1) as f64 / num_frames as f64;
+				let stereo_width = self.stereo_width.interpolated_value(time_in_chunk) as f32;
+				let mix = self.mix.interpolated_value(time_in_chunk).0;
+
+				let mut output = Frame::ZERO;
+				let mono_input = (frame.left + frame.right) * GAIN;
+				// accumulate comb filters in parallel
+				for comb_filter in comb_filters.iter_mut() {
+					output.left += comb_filter.0.process(mono_input, feedback, damping);
+					output.right += comb_filter.1.process(mono_input, feedback, damping);
+				}
+				// feed through all-pass filters in series
+				for all_pass_filter in all_pass_filters.iter_mut() {
+					output.left = all_pass_filter.0.process(output.left);
+					output.right = all_pass_filter.1.process(output.right);
+				}
+				let wet_1 = stereo_width / 2.0 + 0.5;
+				let wet_2 = (1.0 - stereo_width) / 2.0;
+				let output = Frame::new(
+					output.left * wet_1 + output.right * wet_2,
+					output.right * wet_1 + output.left * wet_2,
+				);
+				*frame = output * mix.sqrt() + *frame * (1.0 - mix).sqrt()
 			}
-			// feed through all-pass filters in series
-			for all_pass_filter in all_pass_filters {
-				output.left = all_pass_filter.0.process(output.left);
-				output.right = all_pass_filter.1.process(output.right);
-			}
-			let wet_1 = stereo_width / 2.0 + 0.5;
-			let wet_2 = (1.0 - stereo_width) / 2.0;
-			let output = Frame::new(
-				output.left * wet_1 + output.right * wet_2,
-				output.right * wet_1 + output.left * wet_2,
-			);
-			let mix = self.mix.value() as f32;
-			output * mix.sqrt() + input * (1.0 - mix).sqrt()
 		} else {
 			panic!("Reverb should be initialized before the first process call")
 		}
@@ -189,5 +187,5 @@ command_writers_and_readers! {
 	set_feedback: ValueChangeCommand<f64>,
 	set_damping: ValueChangeCommand<f64>,
 	set_stereo_width: ValueChangeCommand<f64>,
-	set_mix: ValueChangeCommand<f64>,
+	set_mix: ValueChangeCommand<Mix>,
 }

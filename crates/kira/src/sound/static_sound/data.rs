@@ -12,11 +12,9 @@ use std::{
 
 use crate::{
 	frame::Frame,
-	sound::{
-		EndPosition, IntoOptionalRegion, PlaybackPosition, PlaybackRate, Region, Sound, SoundData,
-	},
-	tween::{Tween, Value},
-	OutputDestination, StartTime, Volume,
+	sound::{EndPosition, IntoOptionalRegion, PlaybackPosition, Region, Sound, SoundData},
+	Tween,
+	Decibels, Panning, PlaybackRate, StartTime, Value,
 };
 
 use super::{
@@ -60,7 +58,7 @@ impl StaticSoundData {
 
 	```no_run
 	use kira::{
-		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		AudioManager, AudioManagerSettings, DefaultBackend,
 		sound::static_sound::{StaticSoundData, StaticSoundSettings},
 		clock::ClockSpeed,
 	};
@@ -130,43 +128,44 @@ impl StaticSoundData {
 	/**
 	Sets the volume of the sound.
 
-	This returns a cheap clone of the [`StaticSoundData`] with the modified volume.
-
 	# Examples
 
-	Set the volume as a factor:
+	Set the volume to a fixed value:
 
-	```
-	# use kira::sound::static_sound::StaticSoundSettings;
-	let settings = StaticSoundSettings::new().volume(0.5);
-	```
-
-	Set the volume as a gain in decibels:
-
-	```
-	# use kira::sound::static_sound::StaticSoundSettings;
-	let settings = StaticSoundSettings::new().volume(kira::Volume::Decibels(-6.0));
+	```no_run
+	# use kira::sound::static_sound::StaticSoundData;
+	let sound = StaticSoundData::from_file("sound.ogg")?.volume(-6.0);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
 	Link the volume to a modulator:
 
 	```no_run
 	use kira::{
-		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		AudioManager, AudioManagerSettings, DefaultBackend,
 		modulator::tweener::TweenerBuilder,
-		sound::static_sound::{StaticSoundSettings},
+		sound::static_sound::StaticSoundData,
+		Value, Mapping, Easing,
+		Decibels,
 	};
 
 	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	let tweener = manager.add_modulator(TweenerBuilder {
 		initial_value: 0.5,
 	})?;
-	let settings = StaticSoundSettings::new().volume(&tweener);
+	let sound = StaticSoundData::from_file("sound.ogg")?.volume(Value::FromModulator {
+		id: tweener.id(),
+		mapping: Mapping {
+			input_range: (0.0, 1.0),
+			output_range: (Decibels::SILENCE, Decibels::IDENTITY),
+			easing: Easing::Linear,
+		},
+	});
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
 	#[must_use = "This method returns a modified StaticSoundData and does not mutate the original value"]
-	pub fn volume(&self, volume: impl Into<Value<Volume>>) -> Self {
+	pub fn volume(&self, volume: impl Into<Value<Decibels>>) -> Self {
 		let mut new = self.clone();
 		new.settings.volume = volume.into();
 		new
@@ -175,41 +174,51 @@ impl StaticSoundData {
 	/**
 	Sets the playback rate of the sound.
 
-	Changing the playback rate will change both the speed and the pitch of the sound.
-
-	This returns a cheap clone of the [`StaticSoundData`] with the modified playback rate.
+	Changing the playback rate will change both the speed
+	and the pitch of the sound.
 
 	# Examples
 
 	Set the playback rate as a factor:
 
-	```
-	# use kira::sound::static_sound::StaticSoundSettings;
-	let settings = StaticSoundSettings::new().playback_rate(0.5);
+	```no_run
+	# use kira::sound::static_sound::StaticSoundData;
+	let sound = StaticSoundData::from_file("sound.ogg")?.playback_rate(0.5);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
 	Set the playback rate as a change in semitones:
 
-	```
-	# use kira::sound::static_sound::StaticSoundSettings;
-	use kira::sound::PlaybackRate;
-	let settings = StaticSoundSettings::new().playback_rate(PlaybackRate::Semitones(-2.0));
+	```no_run
+	# use kira::sound::static_sound::StaticSoundData;
+	use kira::Semitones;
+	let sound = StaticSoundData::from_file("sound.ogg")?.playback_rate(Semitones(-2.0));
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
 	Link the playback rate to a modulator:
 
 	```no_run
 	use kira::{
-		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		AudioManager, AudioManagerSettings, DefaultBackend,
 		modulator::tweener::TweenerBuilder,
-		sound::static_sound::{StaticSoundSettings},
+		sound::static_sound::StaticSoundData,
+		Value, Easing, Mapping,
+		PlaybackRate,
 	};
 
 	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	let tweener = manager.add_modulator(TweenerBuilder {
 		initial_value: 0.5,
 	})?;
-	let settings = StaticSoundSettings::new().playback_rate(&tweener);
+	let sound = StaticSoundData::from_file("sound.ogg")?.playback_rate(Value::FromModulator {
+		id: tweener.id(),
+		mapping: Mapping {
+			input_range: (0.0, 1.0),
+			output_range: (PlaybackRate(0.0), PlaybackRate(1.0)),
+			easing: Easing::Linear,
+		},
+	});
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
@@ -221,89 +230,49 @@ impl StaticSoundData {
 	}
 
 	/**
-	Sets the panning of the sound, where 0 is hard left and 1 is hard right.
-
-	This returns a cheap clone of the [`StaticSoundData`] with the modified panning.
+	Sets the panning of the sound, where 0 is hard left
+	and 1 is hard right.
 
 	# Examples
 
-	Set the panning to a static value:
+	Set the panning to a fixed value:
 
-	```
-	# use kira::sound::static_sound::StaticSoundSettings;
-	let settings = StaticSoundSettings::new().panning(0.25);
+	``` no_run
+	# use kira::sound::static_sound::StaticSoundData;
+	let sound = StaticSoundData::from_file("sound.ogg")?.panning(-0.5);
+	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 
 	Link the panning to a modulator:
 
 	```no_run
 	use kira::{
-		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		AudioManager, AudioManagerSettings, DefaultBackend,
 		modulator::tweener::TweenerBuilder,
-		sound::static_sound::{StaticSoundSettings},
+		sound::static_sound::StaticSoundData,
+		Value, Easing, Mapping,
+		Panning,
 	};
 
 	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 	let tweener = manager.add_modulator(TweenerBuilder {
-		initial_value: 0.25,
+		initial_value: -0.5,
 	})?;
-	let settings = StaticSoundSettings::new().panning(&tweener);
+	let sound = StaticSoundData::from_file("sound.ogg")?.panning(Value::FromModulator {
+		id: tweener.id(),
+		mapping: Mapping {
+			input_range: (-1.0, 1.0),
+			output_range: (Panning::LEFT, Panning::RIGHT),
+			easing: Easing::Linear,
+		},
+	});
 	# Result::<(), Box<dyn std::error::Error>>::Ok(())
 	```
 	*/
 	#[must_use = "This method returns a modified StaticSoundData and does not mutate the original value"]
-	pub fn panning(&self, panning: impl Into<Value<f64>>) -> Self {
+	pub fn panning(&self, panning: impl Into<Value<Panning>>) -> Self {
 		let mut new = self.clone();
 		new.settings.panning = panning.into();
-		new
-	}
-
-	/**
-	Sets the destination that this sound should be routed to.
-
-	This returns a cheap clone of the [`StaticSoundData`] with the modified output destination.
-
-	# Examples
-
-	Set the output destination of a sound to a mixer track:
-
-	```no_run
-	use kira::{
-		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
-		track::TrackBuilder,
-		sound::static_sound::{StaticSoundSettings},
-	};
-
-	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	let sub_track = manager.add_sub_track(TrackBuilder::new())?;
-	let settings = StaticSoundSettings::new().output_destination(&sub_track);
-	# Result::<(), Box<dyn std::error::Error>>::Ok(())
-	```
-
-	Set the output destination of a sound to an emitter in a spatial scene:
-
-	```no_run
-	use kira::{
-		manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
-		spatial::{scene::SpatialSceneSettings, emitter::EmitterSettings},
-		sound::static_sound::{StaticSoundSettings},
-	};
-
-	let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-	let mut scene = manager.add_spatial_scene(SpatialSceneSettings::default())?;
-	let emitter = scene.add_emitter(mint::Vector3 {
-		x: 0.0,
-		y: 0.0,
-		z: 0.0,
-	}, EmitterSettings::default())?;
-	let settings = StaticSoundSettings::new().output_destination(&emitter);
-	# Result::<(), Box<dyn std::error::Error>>::Ok(())
-	```
-	*/
-	#[must_use = "This method returns a modified StaticSoundData and does not mutate the original value"]
-	pub fn output_destination(&self, output_destination: impl Into<OutputDestination>) -> Self {
-		let mut new = self.clone();
-		new.settings.output_destination = output_destination.into();
 		new
 	}
 

@@ -15,13 +15,13 @@ values will overwrite older values that haven't been read yet. Therefore, this
 is only suitable when the reader only cares about the most recent value that
 has been written; i.e. new values supercede all older values. If you need a
 realtime-safe FIFO queue of multiple values, consider using a ring buffer, such as
-[`HeapRb`](ringbuf::HeapRb) from the [ringbuf](https://crates.io/crates/ringbuf) crate,
+[`RingBuffer`](rtrb::RingBuffer) from the [rtrb](https://crates.io/crates/rtrb) crate,
 which Kira uses internally.
 */
 
 use triple_buffer::{triple_buffer, Input, Output};
 
-use crate::tween::{Tween, Value};
+use crate::{Tween, Value};
 
 /** Writes values that can be sent to a [`CommandReader`]. */
 #[derive(Debug)]
@@ -66,7 +66,7 @@ pub fn command_writer_and_reader<T: Send + Copy>() -> (CommandWriter<T>, Command
  * Setting something to a [`Value`] with a given [`Tween`] is a common
  * pattern in Kira.
  *
- * `CommandReader<ValueChangeCommand>`s can be passed to [`Parameter`](crate::tween::Parameter)s
+ * `CommandReader<ValueChangeCommand>`s can be passed to [`Parameter`](crate::Parameter)s
  * to quickly set the parameter to a new value read from the [`CommandReader`].
  */
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -165,7 +165,7 @@ macro_rules! handle_param_setters {
 		paste::paste! {
 			$(
 				$(#[$m])*
-				pub fn [<set_ $name>](&mut self, $name: impl Into<$crate::tween::Value<$type>>, tween: $crate::tween::Tween) {
+				pub fn [<set_ $name>](&mut self, $name: impl Into<$crate::Value<$type>>, tween: $crate::tween::Tween) {
 					self.command_writers.[<set_ $name>].write($crate::command::ValueChangeCommand {
 						target: $name.into(),
 						tween,

@@ -2,9 +2,8 @@ use std::sync::Arc;
 
 use crate::{
 	command::handle_param_setters,
-	sound::{IntoOptionalRegion, PlaybackRate, PlaybackState},
-	tween::Tween,
-	StartTime, Volume,
+	sound::{IntoOptionalRegion, PlaybackState},
+	Decibels, Panning, PlaybackRate, StartTime, Tween,
 };
 
 use super::{sound::Shared, CommandWriters};
@@ -35,34 +34,34 @@ impl StaticSoundHandle {
 
 		# Examples
 
-		Set the volume of the sound as a factor immediately:
+		Set the volume of the sound immediately:
 
 		```no_run
 		# use kira::{
-		# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		# 	AudioManager, AudioManagerSettings, DefaultBackend,
 		# 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 		# };
 		# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 		# let mut sound = manager.play(StaticSoundData::from_file("sound.ogg")?)?;
-		use kira::tween::Tween;
+		use kira::Tween;
 
-		sound.set_volume(0.5, Tween::default());
+		sound.set_volume(-6.0, Tween::default());
 		# Result::<(), Box<dyn std::error::Error>>::Ok(())
 		```
 
-		Smoothly transition the volume to a target value in decibels:
+		Smoothly transition the volume to a target volume:
 
 		```no_run
 		# use kira::{
-		# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		# 	AudioManager, AudioManagerSettings, DefaultBackend,
 		# 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 		# };
 		# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 		# let mut sound = manager.play(StaticSoundData::from_file("sound.ogg")?)?;
-		use kira::tween::Tween;
+		use kira::Tween;
 		use std::time::Duration;
 
-		sound.set_volume(kira::Volume::Decibels(-6.0), Tween {
+		sound.set_volume(-6.0, Tween {
 			duration: Duration::from_secs(3),
 			..Default::default()
 		});
@@ -73,10 +72,11 @@ impl StaticSoundHandle {
 
 		```no_run
 		use kira::{
-			manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+			AudioManager, AudioManagerSettings, DefaultBackend,
 			sound::static_sound::{StaticSoundData, StaticSoundSettings},
 			modulator::tweener::TweenerBuilder,
-			tween::Tween,
+			Value, Tween, Mapping, Easing,
+			Decibels,
 		};
 		use std::time::Duration;
 
@@ -85,14 +85,21 @@ impl StaticSoundHandle {
 			initial_value: 0.5,
 		})?;
 		let mut sound = manager.play(StaticSoundData::from_file("sound.ogg")?)?;
-		sound.set_volume(&tweener, Tween {
+		sound.set_volume(Value::FromModulator {
+			id: tweener.id(),
+			mapping: Mapping {
+				input_range: (0.0, 1.0),
+				output_range: (Decibels::SILENCE, Decibels::IDENTITY),
+				easing: Easing::Linear,
+			}
+		}, Tween {
 			duration: Duration::from_secs(3),
 			..Default::default()
 		});
 		# Result::<(), Box<dyn std::error::Error>>::Ok(())
 		```
 		*/
-		volume: Volume,
+		volume: Decibels,
 
 		/**
 		Sets the playback rate of the sound.
@@ -102,16 +109,16 @@ impl StaticSoundHandle {
 
 		# Examples
 
-		Set the playback rate of the sound as a factor immediately:
+		Set the playback rate of the sound immediately:
 
 		```no_run
 		# use kira::{
-		# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		# 	AudioManager, AudioManagerSettings, DefaultBackend,
 		# 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 		# };
 		# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 		# let mut sound = manager.play(StaticSoundData::from_file("sound.ogg")?)?;
-		use kira::tween::Tween;
+		use kira::Tween;
 
 		sound.set_playback_rate(0.5, Tween::default());
 		# Result::<(), Box<dyn std::error::Error>>::Ok(())
@@ -121,18 +128,15 @@ impl StaticSoundHandle {
 
 		```no_run
 		# use kira::{
-		# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		# 	AudioManager, AudioManagerSettings, DefaultBackend,
 		# 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 		# };
 		# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 		# let mut sound = manager.play(StaticSoundData::from_file("sound.ogg")?)?;
-		use kira::{
-			tween::Tween,
-			sound::PlaybackRate,
-		};
+		use kira::{Tween, Semitones};
 		use std::time::Duration;
 
-		sound.set_playback_rate(PlaybackRate::Semitones(-2.0), Tween {
+		sound.set_playback_rate(Semitones(-2.0), Tween {
 			duration: Duration::from_secs(3),
 			..Default::default()
 		});
@@ -143,10 +147,11 @@ impl StaticSoundHandle {
 
 		```no_run
 		use kira::{
-			manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+			AudioManager, AudioManagerSettings, DefaultBackend,
 			sound::static_sound::{StaticSoundData, StaticSoundSettings},
 			modulator::tweener::TweenerBuilder,
-			tween::Tween,
+			Value, Easing, Mapping, Tween,
+			PlaybackRate,
 		};
 		use std::time::Duration;
 
@@ -155,7 +160,14 @@ impl StaticSoundHandle {
 			initial_value: 0.5,
 		})?;
 		let mut sound = manager.play(StaticSoundData::from_file("sound.ogg")?)?;
-		sound.set_playback_rate(&tweener, Tween {
+		sound.set_playback_rate(Value::FromModulator {
+			id: tweener.id(),
+			mapping: Mapping {
+				input_range: (0.0, 1.0),
+				output_range: (PlaybackRate(0.0), PlaybackRate(1.0)),
+				easing: Easing::Linear,
+			},
+		}, Tween {
 			duration: Duration::from_secs(3),
 			..Default::default()
 		});
@@ -165,8 +177,8 @@ impl StaticSoundHandle {
 		playback_rate: PlaybackRate,
 
 		/**
-		Sets the panning of the sound, where `0.0` is hard left,
-		`0.5` is center, and `1.0` is hard right.
+		Sets the panning of the sound, where `-1.0` is hard left,
+		`0.0` is center, and `1.0` is hard right.
 
 		# Examples
 
@@ -174,15 +186,15 @@ impl StaticSoundHandle {
 
 		```no_run
 		# use kira::{
-		# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+		# 	AudioManager, AudioManagerSettings, DefaultBackend,
 		# 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 		# };
 		# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 		# let mut sound = manager.play(StaticSoundData::from_file("sound.ogg")?)?;
-		use kira::tween::Tween;
+		use kira::Tween;
 		use std::time::Duration;
 
-		sound.set_panning(0.25, Tween {
+		sound.set_panning(-0.5, Tween {
 			duration: Duration::from_secs(3),
 			..Default::default()
 		});
@@ -193,26 +205,34 @@ impl StaticSoundHandle {
 
 		```no_run
 		use kira::{
-			manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+			AudioManager, AudioManagerSettings, DefaultBackend,
 			sound::static_sound::{StaticSoundData, StaticSoundSettings},
 			modulator::tweener::TweenerBuilder,
-			tween::Tween,
+			Value, Easing, Mapping, Tween,
+			Panning,
 		};
 		use std::time::Duration;
 
 		let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 		let tweener = manager.add_modulator(TweenerBuilder {
-			initial_value: 0.25,
+			initial_value: -0.5,
 		})?;
 		let mut sound = manager.play(StaticSoundData::from_file("sound.ogg")?)?;
-		sound.set_panning(&tweener, Tween {
+		sound.set_panning(Value::FromModulator {
+			id: tweener.id(),
+			mapping: Mapping {
+				input_range: (-1.0, 1.0),
+				output_range: (Panning::LEFT, Panning::RIGHT),
+				easing: Easing::Linear,
+			},
+		}, Tween {
 			duration: Duration::from_secs(3),
 			..Default::default()
 		});
 		# Result::<(), Box<dyn std::error::Error>>::Ok(())
 		```
 		*/
-		panning: f64,
+		panning: Panning,
 	}
 
 	/**
@@ -224,7 +244,7 @@ impl StaticSoundHandle {
 
 	```no_run
 	# use kira::{
-	# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+	# 	AudioManager, AudioManagerSettings, DefaultBackend,
 	# 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	# };
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
@@ -237,7 +257,7 @@ impl StaticSoundHandle {
 
 	```no_run
 	# use kira::{
-	# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+	# 	AudioManager, AudioManagerSettings, DefaultBackend,
 	# 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	# };
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
@@ -250,7 +270,7 @@ impl StaticSoundHandle {
 
 	```no_run
 	# use kira::{
-	# 	manager::{AudioManager, AudioManagerSettings, backend::DefaultBackend},
+	# 	AudioManager, AudioManagerSettings, DefaultBackend,
 	# 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	# };
 	# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;

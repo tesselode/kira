@@ -1,6 +1,6 @@
 use crate::{
 	effect::{Effect, EffectBuilder},
-	tween::Value,
+	Mix, Value,
 };
 
 use super::{command_writers_and_readers, Reverb, ReverbHandle};
@@ -18,10 +18,8 @@ pub struct ReverbBuilder {
 	/// 1.0 being fully stereo).
 	pub stereo_width: Value<f64>,
 	/// How much dry (unprocessed) signal should be blended
-	/// with the wet (processed) signal. `0.0` means
-	/// only the dry signal will be heard. `1.0` means
-	/// only the wet signal will be heard.
-	pub mix: Value<f64>,
+	/// with the wet (processed) signal.
+	pub mix: Value<Mix>,
 }
 
 impl ReverbBuilder {
@@ -66,7 +64,7 @@ impl ReverbBuilder {
 	/// signal will be heard. `1.0` means only the wet signal will
 	/// be heard.
 	#[must_use = "This method consumes self and returns a modified ReverbBuilder, so the return value should be used"]
-	pub fn mix(self, mix: impl Into<Value<f64>>) -> Self {
+	pub fn mix(self, mix: impl Into<Value<Mix>>) -> Self {
 		Self {
 			mix: mix.into(),
 			..self
@@ -80,7 +78,7 @@ impl Default for ReverbBuilder {
 			feedback: Value::Fixed(0.9),
 			damping: Value::Fixed(0.1),
 			stereo_width: Value::Fixed(1.0),
-			mix: Value::Fixed(0.5),
+			mix: Value::Fixed(Mix(0.5)),
 		}
 	}
 }

@@ -5,102 +5,90 @@ Kira has an internal mixer which works like a real-life mixing console. Sounds
 can be played on "tracks", which are individual streams of audio that can
 optionally have effects that modify the audio.
 
+Tracks can also be spatialized, which gives them a position in a 3D space
+relative to a [listener](crate::listener). The distance from the listener
+can be used to drive settings on effects on that track.
+
 ## Creating and using tracks
 
 The mixer has a "main" track by default, and you can add any number of
-sub-tracks. To add a sub-track, use `AudioManager::add_sub_track`.
+sub-tracks. To add a sub-track, use
+[`AudioManager::add_sub_track`](crate::AudioManager::add_sub_track).
 
 ```no_run
 # use std::error::Error;
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	track::TrackBuilder,
 };
 
 let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-let track = manager.add_sub_track(TrackBuilder::default())?;
+let mut track = manager.add_sub_track(TrackBuilder::default())?;
 # Result::<(), Box<dyn Error>>::Ok(())
 ```
 
-You can configure what track a sound will play on by modifying its settings.
-This example uses `StaticSoundSettings`, but `StreamingSoundSettings` provides
-the same option.
+To play a sound on the track, use [`TrackHandle::play`].
 
 ```no_run
 # use std::error::Error;
-use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
-	sound::static_sound::{StaticSoundData, StaticSoundSettings},
-	track::TrackBuilder,
-};
+# use kira::{
+# 	AudioManager, AudioManagerSettings, backend::DefaultBackend,
+# 	track::TrackBuilder,
+# };
+use kira::sound::static_sound::StaticSoundData;
 
-let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-let track = manager.add_sub_track(TrackBuilder::default())?;
-manager.play(
-	StaticSoundData::from_file("sound.ogg")?
-		.output_destination(&track)
-)?;
+# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+# let mut track = manager.add_sub_track(TrackBuilder::default())?;
+track.play(StaticSoundData::from_file("sound.ogg")?)?;
 # Result::<(), Box<dyn Error>>::Ok(())
 ```
 
-You can set the volume and panning of a track using `TrackHandle::set_volume`
-and `TrackHandle::set_panning`, respectively. The volume and panning settings
-will affect all sounds being played on the track.
+Tracks can themselves have sub-tracks. You can create them using [`TrackHandle::add_sub_track`].
+
+You can set the volume of a track using [`TrackHandle::set_volume`]. The volume
+setting will affect all sounds being played on the track as well as all child tracks.
+
+You can pause all sounds (and child tracks) of a track using [`TrackHandle::pause`]
+and resume them using [`TrackHandle::resume`] or [`TrackHandle::resume_at`].
 
 ## Effects
 
 You can add effects to the track when creating it using
-`TrackBuilder::add_effect`. All sounds that are played on that track will have
+[`TrackBuilder::with_effect`]. All sounds that are played on that track will have
 the effects applied sequentially.
 
-In this example, we'll use the `Filter` effect, which in the low pass mode will
-remove high frequencies from sounds, making them sound muffled.
+In this example, we'll use the [filter](crate::effect::filter) effect, which in the
+low pass mode will remove high frequencies from sounds, making them sound muffled.
 
 ```no_run
 # use std::error::Error;
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
-	track::{
-		TrackBuilder,
-	},
+	track::TrackBuilder,
 	effect::filter::FilterBuilder,
 };
 
 let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-let track = manager.add_sub_track(
+let mut track = manager.add_sub_track(
 	TrackBuilder::new()
 		.with_effect(FilterBuilder::new().cutoff(1000.0))
 )?;
-manager.play(
-	StaticSoundData::from_file("sound.ogg")?
-		.output_destination(&track)
-)?;
+track.play(StaticSoundData::from_file("sound.ogg")?)?;
 # Result::<(), Box<dyn Error>>::Ok(())
 ```
 
-`TrackBuilder:add_effect` returns a handle that can be used to modify the effect
+[`TrackBuilder::add_effect`] returns a handle that can be used to modify the effect
 after the track has been created.
 
 ```no_run
+# use std::error::Error;
 # use kira::{
-# 	manager::{
-#     AudioManager, AudioManagerSettings,
-#     backend::DefaultBackend,
-# 	},
+#   AudioManager, AudioManagerSettings, DefaultBackend,
 #   sound::static_sound::{StaticSoundData, StaticSoundSettings},
 #   track::TrackBuilder,
 #   effect::filter::FilterBuilder,
-#   tween::Tween,
+#   Tween,
 # };
 # let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 let mut filter;
@@ -113,205 +101,211 @@ filter.set_cutoff(4000.0, Tween::default());
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
-## Track routing
+## Send tracks
 
-By default, the output of all sub-tracks will be fed into the input of the main
-mixer track without any volume change. It can be useful to customize this
-behavior.
+Sometimes, you may want to share effects across multiple tracks. For example, let's say
+we have a game with a player and an enemy that both make sounds, so we have a "player"
+track and an "enemy" track. We want sounds for both of these tracks to have reverb
+applied. We could add a separate reverb effect to both the player and enemy track,
+but there's a couple reasons this isn't an optimal solution:
 
-Let's say we want to be able to control the volume level of gameplay sounds
-separately from music. We may also want to apply effects to gameplay sounds that
-come from the player specifically.
+- Since the player and enemy are in the same space, they should be using the same
+  reverb settings. But if we have two reverb effects, we're duplicating the settings.
+- Having more effects takes more CPU time, and it's wasteful in this case because
+  both reverb effects are doing the same thing.
 
-We'll end up with a hierarchy like this:
+This is where send tracks come in handy. Send tracks are non-hierarchical mixer tracks
+which you can't play sounds on directly - instead, regular mixer tracks can have their
+output sent to the input of one or more send tracks. The output of the send tracks
+is then sent to the main mixer track.
+
+In the following example, we'll set up mixer tracks to have the following flow of audio:
 
 ```text
-.        ┌──────────┐
-.        │Main track│
-.        └─▲──────▲─┘
-.          │      │
-.          │      │
-.     ┌────┴─┐   ┌┴────┐
-.     │Sounds│   │Music│
-.     └──▲───┘   └─────┘
-.        │
-. ┌──────┴──────┐
-. │Player sounds│
-. └─────────────┘
+┌──────┐         ┌──────────┐
+│      ├─────────►          │
+│Player├───────┐ │Main track│
+│      │ ┌─────┼─►          │
+└──────┘ │     │ └─────▲────┘
+┌──────┐ │ ┌───▼──┐    │
+│      ├─┘ │      │    │
+│Enemy ├───►Reverb├────┘
+│      │   │(send)│
+└──────┘   └──────┘
 ```
 
-We can set up the `sounds` and `player_sounds` hierarchy using `TrackRoutes`.
+To start, we'll create the reverb send with
+[`AudioManager::add_send_track`](crate::AudioManager::add_send_track):
 
 ```no_run
 # use std::error::Error;
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
-	track::{TrackRoutes, TrackBuilder},
+	effect::reverb::ReverbBuilder,
+	AudioManager, AudioManagerSettings, DefaultBackend,
+	track::SendTrackBuilder,
 };
 
 let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-let sounds = manager.add_sub_track(TrackBuilder::default())?;
-let player_sounds = manager.add_sub_track(
-	TrackBuilder::new().routes(TrackRoutes::parent(&sounds)),
+let reverb_send = manager
+	.add_send_track(SendTrackBuilder::new().with_effect(ReverbBuilder::new().mix(1.0)))?;
+# Result::<(), Box<dyn Error>>::Ok(())
+```
+
+Note that we set the mix of the reverb to `1.0`, meaning only the reverberations will be output,
+not the dry signal. This is important because the player and enemy tracks will already
+be outputting the dry signal. If the reverb effect was also outputting the dry signal, the
+overall volume of the sound would be louder than we want.
+
+Next, we'll create the player and enemy tracks and route them to the reverb send using
+[`TrackBuilder::with_send`]:
+
+```no_run
+# use std::error::Error;
+use kira::track::TrackBuilder;
+# use kira::{
+# 	effect::reverb::ReverbBuilder,
+# 	AudioManager, AudioManagerSettings, DefaultBackend,
+# 	track::SendTrackBuilder,
+# };
+
+# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+# let reverb_send = manager
+# 	.add_send_track(SendTrackBuilder::new().with_effect(ReverbBuilder::new().mix(1.0)))?;
+let player_track = manager.add_sub_track(TrackBuilder::new().with_send(&reverb_send, -6.0))?;
+let enemy_track = manager.add_sub_track(TrackBuilder::new().with_send(&reverb_send, -12.0))?;
+# Result::<(), Box<dyn Error>>::Ok(())
+```
+
+We can use the second argument of `with_send` to change the volume of the track before sending
+it to the send track. This allows the player and enemy to have different amounts of reverb
+without having to instantiate two separate effects.
+
+## Spatial tracks
+
+Oftentimes, it’s useful to give sounds a location in a 3D (or 2D) space and play back those sounds
+from the perspective of a character’s ears located somewhere else in that space. For example, as a
+player character gets closer to a waterfall, you may want the sound of the waterfall to get louder.
+
+We can use **spatial tracks** as the sound source and [listener](crate::listener)s for the
+character's ears.
+
+First, let's create a listener using
+[`AudioManager::add_listener`](crate::AudioManager::add_listener):
+
+```no_run
+# use std::error::Error;
+use kira::{AudioManager, AudioManagerSettings, DefaultBackend};
+
+let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+let listener = manager.add_listener(glam::Vec3::ZERO, glam::Quat::IDENTITY)?;
+# Result::<(), Box<dyn Error>>::Ok(())
+```
+
+This example uses `glam`, but you can use any math library that has interoperability
+with `mint`.
+
+Next, we'll create a spatial track that's linked to the listener using
+[`AudioManager::add_spatial_sub_track`](crate::AudioManager::add_spatial_sub_track):
+
+```no_run
+# use std::error::Error;
+# use kira::{
+# 	AudioManager, AudioManagerSettings, DefaultBackend,
+# };
+use kira::track::SpatialTrackBuilder;
+
+# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+# let listener = manager.add_listener(glam::Vec3::ZERO, glam::Quat::IDENTITY)?;
+let spatial_track = manager.add_spatial_sub_track(
+	&listener,
+	glam::vec3(0.0, 0.0, 10.0), // track position
+	SpatialTrackBuilder::new(),
 )?;
 # Result::<(), Box<dyn Error>>::Ok(())
 ```
 
-The default `TrackRoutes` has a single route to the main mixer track.
-`TrackRoutes::parent` will instead create a single route to the track of your
-choosing.
+Now any sounds played on the spatial track will automatically have the following behaviors:
 
-You can also have one track feed its audio into multiple other tracks. This can
-be useful for sharing effects between tracks.
+- Attenuation: sounds will get quieter the farther away they are from the listener
+- Spatialization: sounds will be panned left or right depending on their direction from
+  the listener
 
-For example, let's say we have our sounds split up into player sounds and
-ambience. This game takes place in a vast cave, so we want all of the sounds to
-have a reverb effect. We want the ambience to have more reverb than the player
-sounds so that it feels farther away.
+We can customize or disable these behaviors using the methods on [`SpatialTrackBuilder`].
 
-We could put separate reverb effects on both the `player` and `ambience` tracks.
-Since both the player and the ambient sounds are in the same cave, we'll use the
-same settings for both reverb effects, but we'll increase the `mix` setting for
-the ambience, since ambient sounds are supposed to have more reverb. This has
-some downsides, however:
-
-- Since most of the settings are supposed to be the same between the two tracks,
-  if we want to change the reverb settings, we have to change them in two
-  different places.
-- We have two separate reverb effects running, which has a higher CPU cost than
-  if we just had one.
-
-A better alternative would be to make a separate reverb track that both the
-`player` and `ambience` tracks are routed to.
-
-```text
-.         ┌──────────┐
-.    ┌────►Main track◄───────┐
-.    │    └─▲────────┘       │
-.    │      │                │
-.    │      │            ┌───┴──┐
-.    │ ┌────┼────────────►Reverb│
-.    │ │    │            └──▲───┘
-.    │ │    │               │
-.    │ │    │               │
-. ┌──┴─┴─┐  │   ┌────────┐  │
-. │Player│  └───┤Ambience├──┘
-. └──────┘      └────────┘
-```
-
-Here's what this looks like in practice:
+We can also map any effect setting that uses `Value` to the distance between the spatial
+track and the listener using `Value::FromListenerDistance`. One common use for this is to
+change the amount of reverb a sound has based on distance:
 
 ```no_run
 # use std::error::Error;
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
-	track::{
-		TrackRoutes, TrackBuilder,
-	},
 	effect::reverb::ReverbBuilder,
+	Easing, Mapping, Value,
+	Mix,
 };
+# use kira::{
+# 	AudioManager, AudioManagerSettings, DefaultBackend,
+# 	track::SpatialTrackBuilder,
+# };
 
-let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-// 1.
-let reverb = manager.add_sub_track({
-	let mut builder = TrackBuilder::new();
-	builder.add_effect(ReverbBuilder::new().mix(1.0));
-	builder
-})?;
-// 2.
-let player = manager.add_sub_track(
-	TrackBuilder::new().routes(TrackRoutes::new().with_route(&reverb, 0.25)),
-);
-// 3.
-let ambience = manager.add_sub_track(
-	TrackBuilder::new().routes(TrackRoutes::new().with_route(&reverb, 0.5)),
-);
+# let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
+# let listener = manager.add_listener(glam::Vec3::ZERO, glam::Quat::IDENTITY)?;
+manager.add_spatial_sub_track(
+	&listener,
+	glam::vec3(0.0, 0.0, 10.0),
+	SpatialTrackBuilder::new().with_effect(ReverbBuilder::new().mix(
+		Value::FromListenerDistance(
+			Mapping {
+				input_range: (0.0, 100.0),
+				output_range: (Mix::DRY, Mix::WET),
+				easing: Easing::Linear,
+			},
+		),
+	)),
+)?;
 # Result::<(), Box<dyn Error>>::Ok(())
 ```
-
-1. We create the `reverb` track with a `Reverb` effect. We set the `mix` to `1.0`
-so that only the reverb signal is output from this track. We don't need any of
-the dry signal to come out of this track, since the `player` and `ambience`
-tracks will already be outputting their dry signal to the main track.
-
-2. We create the `player` track with two routes:
-
-	- The route to the main track with 100% volume. We don't have to set this one
-	explicitly because `TrackRoutes::new()` adds that route by default.
-	- The route to the `reverb` track with 25% volume.
-
-3. The `ambience` track is set up the same way, except the route to the `reverb`
-track has 50% volume, giving us more reverb for these sounds.
 */
 
-mod builder;
-mod handle;
-mod routes;
+mod main;
+mod send;
+mod sub;
 
-#[cfg(test)]
-mod test;
+pub use main::*;
+pub use send::*;
+pub use sub::*;
 
-pub use builder::*;
-pub use handle::*;
-pub use routes::*;
+use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 
-use std::sync::{
-	atomic::{AtomicBool, Ordering},
-	Arc,
-};
-
-use crate::{arena::Key, effect::Effect};
-
-use crate::{
-	clock::clock_info::ClockInfoProvider,
-	command::{CommandReader, ValueChangeCommand},
-	frame::Frame,
-	modulator::value_provider::ModulatorValueProvider,
-	tween::Parameter,
-	Volume,
-};
-
-/// A unique identifier for a mixer sub-track.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct SubTrackId(pub(crate) Key);
-
-/// A unique identifier for a track.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum TrackId {
-	/// The main mixer track.
-	Main,
-	/// A sub-track.
-	Sub(SubTrackId),
-}
-
-impl From<SubTrackId> for TrackId {
-	fn from(id: SubTrackId) -> Self {
-		Self::Sub(id)
-	}
-}
-
-impl From<&TrackHandle> for TrackId {
-	fn from(handle: &TrackHandle) -> Self {
-		handle.id()
-	}
-}
+use crate::sound::PlaybackState;
 
 #[derive(Debug)]
 pub(crate) struct TrackShared {
+	state: AtomicU8,
 	removed: AtomicBool,
 }
 
 impl TrackShared {
 	pub fn new() -> Self {
 		Self {
+			state: AtomicU8::new(TrackPlaybackState::Playing as u8),
 			removed: AtomicBool::new(false),
 		}
+	}
+
+	pub fn state(&self) -> TrackPlaybackState {
+		match self.state.load(Ordering::SeqCst) {
+			0 => TrackPlaybackState::Playing,
+			1 => TrackPlaybackState::Pausing,
+			2 => TrackPlaybackState::Paused,
+			3 => TrackPlaybackState::WaitingToResume,
+			4 => TrackPlaybackState::Resuming,
+			_ => panic!("Invalid playback state"),
+		}
+	}
+
+	pub fn set_state(&self, playback_state: PlaybackState) {
+		self.state.store(playback_state as u8, Ordering::SeqCst);
 	}
 
 	#[must_use]
@@ -324,88 +318,47 @@ impl TrackShared {
 	}
 }
 
-pub(crate) struct Track {
-	shared: Arc<TrackShared>,
-	volume: Parameter<Volume>,
-	set_volume_command_reader: CommandReader<ValueChangeCommand<Volume>>,
-	routes: Vec<(TrackId, TrackRoute)>,
-	effects: Vec<Box<dyn Effect>>,
-	input: Frame,
+/// The playback state of a mixer sub-track.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum TrackPlaybackState {
+	/// The track is playing normally.
+	Playing,
+	/// The track is fading out, and when the fade-out
+	/// is finished, playback will pause.
+	Pausing,
+	/// Playback is paused.
+	Paused,
+	/// The track is paused, but is schedule to resume in the future.
+	WaitingToResume,
+	/// The track is fading back in after being previously paused.
+	Resuming,
 }
 
-impl Track {
-	pub fn init_effects(&mut self, sample_rate: u32) {
-		for effect in &mut self.effects {
-			effect.init(sample_rate);
+impl TrackPlaybackState {
+	/// Whether the track is outputting audio given
+	/// its current playback state.
+	pub fn is_advancing(self) -> bool {
+		match self {
+			TrackPlaybackState::Playing => true,
+			TrackPlaybackState::Pausing => true,
+			TrackPlaybackState::Paused => false,
+			TrackPlaybackState::WaitingToResume => false,
+			TrackPlaybackState::Resuming => true,
 		}
-	}
-
-	pub fn on_change_sample_rate(&mut self, sample_rate: u32) {
-		for effect in &mut self.effects {
-			effect.on_change_sample_rate(sample_rate);
-		}
-	}
-
-	#[must_use]
-	pub fn shared(&self) -> Arc<TrackShared> {
-		self.shared.clone()
-	}
-
-	#[must_use]
-	pub fn routes_mut(&mut self) -> &mut Vec<(TrackId, TrackRoute)> {
-		&mut self.routes
-	}
-
-	pub fn add_input(&mut self, input: Frame) {
-		self.input += input;
-	}
-
-	pub fn on_start_processing(&mut self) {
-		self.volume
-			.read_command(&mut self.set_volume_command_reader);
-		for (_, route) in &mut self.routes {
-			route.read_commands();
-		}
-		for effect in &mut self.effects {
-			effect.on_start_processing();
-		}
-	}
-
-	pub fn process(
-		&mut self,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-	) -> Frame {
-		self.volume
-			.update(dt, clock_info_provider, modulator_value_provider);
-		for (_, route) in &mut self.routes {
-			route
-				.volume
-				.update(dt, clock_info_provider, modulator_value_provider);
-		}
-		let mut output = std::mem::replace(&mut self.input, Frame::ZERO);
-		for effect in &mut self.effects {
-			output = effect.process(output, dt, clock_info_provider, modulator_value_provider);
-		}
-		output * self.volume.value().as_amplitude() as f32
 	}
 }
 
-impl Default for Track {
-	fn default() -> Self {
-		TrackBuilder::new().build(TrackId::Main).0
-	}
-}
-
-pub(crate) struct TrackRoute {
-	pub(crate) volume: Parameter<Volume>,
-	pub(crate) set_volume_command_reader: CommandReader<ValueChangeCommand<Volume>>,
-}
-
-impl TrackRoute {
-	pub fn read_commands(&mut self) {
-		self.volume
-			.read_command(&mut self.set_volume_command_reader);
+impl From<PlaybackState> for TrackPlaybackState {
+	fn from(value: PlaybackState) -> Self {
+		match value {
+			PlaybackState::Playing => Self::Playing,
+			PlaybackState::Pausing => Self::Pausing,
+			PlaybackState::Paused => Self::Paused,
+			PlaybackState::WaitingToResume => Self::WaitingToResume,
+			PlaybackState::Resuming => Self::Resuming,
+			PlaybackState::Stopping => unreachable!(),
+			PlaybackState::Stopped => unreachable!(),
+		}
 	}
 }

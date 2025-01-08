@@ -9,15 +9,15 @@ use std::sync::{
 };
 
 use crate::{
-	clock::clock_info::ClockInfoProvider,
 	command::read_commands_into_parameters,
 	frame::{interpolate_frame, Frame},
-	modulator::value_provider::ModulatorValueProvider,
-	sound::{util::create_volume_fade_parameter, PlaybackRate, PlaybackState, Sound},
-	tween::{Parameter, Tween, Value},
-	OutputDestination, StartTime, Volume,
+	info::Info,
+	playback_state_manager::PlaybackStateManager,
+	sound::{PlaybackState, Sound},
+	Tween,
+	Decibels, Panning, Parameter, PlaybackRate, StartTime,
 };
-use ringbuf::HeapConsumer;
+use rtrb::Consumer;
 
 use super::{CommandReaders, StreamingSoundSettings};
 
@@ -48,10 +48,16 @@ impl Shared {
 			0 => PlaybackState::Playing,
 			1 => PlaybackState::Pausing,
 			2 => PlaybackState::Paused,
-			3 => PlaybackState::Stopping,
-			4 => PlaybackState::Stopped,
+			3 => PlaybackState::WaitingToResume,
+			4 => PlaybackState::Resuming,
+			5 => PlaybackState::Stopping,
+			6 => PlaybackState::Stopped,
 			_ => panic!("Invalid playback state"),
 		}
+	}
+
+	pub fn set_state(&self, state: PlaybackState) {
+		self.state.store(state as u8, Ordering::SeqCst);
 	}
 
 	#[must_use]
@@ -73,18 +79,14 @@ impl Shared {
 pub(crate) struct StreamingSound {
 	command_readers: CommandReaders,
 	sample_rate: u32,
-	frame_consumer: HeapConsumer<TimestampedFrame>,
-	output_destination: OutputDestination,
+	frame_consumer: Consumer<TimestampedFrame>,
 	start_time: StartTime,
-	state: PlaybackState,
-	volume_fade: Parameter<Volume>,
-	volume_fade_start_time: StartTime,
-	resume_queued: bool,
+	playback_state_manager: PlaybackStateManager,
 	current_frame: usize,
 	fractional_position: f64,
-	volume: Parameter<Volume>,
+	volume: Parameter<Decibels>,
 	playback_rate: Parameter<PlaybackRate>,
-	panning: Parameter,
+	panning: Parameter<Panning>,
 	shared: Arc<Shared>,
 }
 
@@ -94,7 +96,7 @@ impl StreamingSound {
 		sample_rate: u32,
 		settings: StreamingSoundSettings,
 		shared: Arc<Shared>,
-		frame_consumer: HeapConsumer<TimestampedFrame>,
+		frame_consumer: Consumer<TimestampedFrame>,
 		command_readers: CommandReaders,
 		scheduler: &DecodeScheduler<Error>,
 	) -> Self {
@@ -107,39 +109,42 @@ impl StreamingSound {
 			command_readers,
 			sample_rate,
 			frame_consumer,
-			output_destination: settings.output_destination,
 			start_time: settings.start_time,
-			state: PlaybackState::Playing,
-			volume_fade: create_volume_fade_parameter(settings.fade_in_tween),
-			volume_fade_start_time: StartTime::Immediate,
-			resume_queued: false,
+			playback_state_manager: PlaybackStateManager::new(settings.fade_in_tween),
 			current_frame,
 			fractional_position: 0.0,
-			volume: Parameter::new(settings.volume, Volume::Amplitude(1.0)),
-			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate::Factor(1.0)),
-			panning: Parameter::new(settings.panning, 0.5),
+			volume: Parameter::new(settings.volume, Decibels::IDENTITY),
+			playback_rate: Parameter::new(settings.playback_rate, PlaybackRate(1.0)),
+			panning: Parameter::new(settings.panning, Panning::CENTER),
 			shared,
 		}
 	}
 
-	fn set_state(&mut self, state: PlaybackState) {
-		self.state = state;
-		self.shared.state.store(state as u8, Ordering::SeqCst);
+	fn update_shared_playback_state(&mut self) {
+		self.shared
+			.set_state(self.playback_state_manager.playback_state());
 	}
 
 	fn update_current_frame(&mut self) {
-		let current_frame = &mut self.current_frame;
-		let (a, b) = self.frame_consumer.as_slices();
+		let chunk = self
+			.frame_consumer
+			.read_chunk(self.frame_consumer.slots().min(4))
+			.unwrap();
+		let (a, b) = chunk.as_slices();
 		let mut iter = a.iter().chain(b.iter());
 		if let Some(TimestampedFrame { index, .. }) = iter.nth(1) {
-			*current_frame = *index;
+			self.current_frame = *index;
 		}
 	}
 
 	#[must_use]
 	fn next_frames(&mut self) -> [Frame; 4] {
 		let mut frames = [Frame::ZERO; 4];
-		let (a, b) = self.frame_consumer.as_slices();
+		let chunk = self
+			.frame_consumer
+			.read_chunk(self.frame_consumer.slots().min(4))
+			.unwrap();
+		let (a, b) = chunk.as_slices();
 		let mut iter = a.iter().chain(b.iter());
 		for frame in &mut frames {
 			*frame = iter
@@ -156,27 +161,20 @@ impl StreamingSound {
 		(self.current_frame as f64 + self.fractional_position) / self.sample_rate as f64
 	}
 
-	fn pause(&mut self, tween: Tween) {
-		self.set_state(PlaybackState::Pausing);
-		self.volume_fade
-			.set(Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)), tween);
+	fn pause(&mut self, fade_out_tween: Tween) {
+		self.playback_state_manager.pause(fade_out_tween);
+		self.update_shared_playback_state();
 	}
 
-	fn resume(&mut self, start_time: StartTime, tween: Tween) {
-		self.volume_fade_start_time = start_time;
-		if start_time == StartTime::Immediate {
-			self.set_state(PlaybackState::Playing);
-		} else {
-			self.resume_queued = true;
-		}
-		self.volume_fade
-			.set(Value::Fixed(Volume::Decibels(0.0)), tween);
+	fn resume(&mut self, start_time: StartTime, fade_in_tween: Tween) {
+		self.playback_state_manager
+			.resume(start_time, fade_in_tween);
+		self.update_shared_playback_state();
 	}
 
-	fn stop(&mut self, tween: Tween) {
-		self.set_state(PlaybackState::Stopping);
-		self.volume_fade
-			.set(Value::Fixed(Volume::Decibels(Volume::MIN_DECIBELS)), tween);
+	fn stop(&mut self, fade_out_tween: Tween) {
+		self.playback_state_manager.stop(fade_out_tween);
+		self.update_shared_playback_state();
 	}
 
 	fn read_commands(&mut self) {
@@ -194,10 +192,6 @@ impl StreamingSound {
 }
 
 impl Sound for StreamingSound {
-	fn output_destination(&mut self) -> OutputDestination {
-		self.output_destination
-	}
-
 	fn on_start_processing(&mut self) {
 		self.update_current_frame();
 		self.shared
@@ -206,83 +200,80 @@ impl Sound for StreamingSound {
 		self.read_commands();
 	}
 
-	fn process(
-		&mut self,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-	) -> Frame {
+	fn process(&mut self, out: &mut [Frame], dt: f64, info: &Info) {
 		if self.shared.encountered_error() {
-			self.set_state(PlaybackState::Stopped);
-			return Frame::ZERO;
+			self.playback_state_manager.mark_as_stopped();
+			self.update_shared_playback_state();
+			out.fill(Frame::ZERO);
+			return;
 		}
 
 		// update parameters
-		self.volume
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.playback_rate
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.panning
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.volume_fade_start_time.update(dt, clock_info_provider);
-		if self.volume_fade_start_time == StartTime::Immediate {
-			if self.resume_queued {
-				self.resume_queued = false;
-				self.set_state(PlaybackState::Playing);
-			}
-			if self
-				.volume_fade
-				.update(dt, clock_info_provider, modulator_value_provider)
-			{
-				match self.state {
-					PlaybackState::Pausing => self.set_state(PlaybackState::Paused),
-					PlaybackState::Stopping => self.set_state(PlaybackState::Stopped),
-					_ => {}
-				}
-			}
+		self.volume.update(dt * out.len() as f64, info);
+		self.playback_rate.update(dt * out.len() as f64, info);
+		self.panning.update(dt * out.len() as f64, info);
+		let changed_playback_state = self
+			.playback_state_manager
+			.update(dt * out.len() as f64, info);
+		if changed_playback_state {
+			self.update_shared_playback_state();
 		}
 
-		let will_never_start = self.start_time.update(dt, clock_info_provider);
+		let will_never_start = self.start_time.update(dt * out.len() as f64, info);
 		if will_never_start {
-			self.set_state(PlaybackState::Stopped);
+			self.playback_state_manager.mark_as_stopped();
+			self.update_shared_playback_state();
 		}
 		if self.start_time != StartTime::Immediate {
-			return Frame::ZERO;
+			out.fill(Frame::ZERO);
+			return;
 		}
 
-		if matches!(self.state, PlaybackState::Paused | PlaybackState::Stopped) {
-			return Frame::ZERO;
+		if !self.playback_state_manager.playback_state().is_advancing() {
+			out.fill(Frame::ZERO);
+			return;
 		}
 		// pause playback while waiting for audio data. the first frame
 		// in the ringbuffer is the previous frame, so we need to make
 		// sure there's at least 2 before we continue playing.
-		if self.frame_consumer.len() < 2 && !self.shared.reached_end() {
-			return Frame::ZERO;
+		if self.frame_consumer.slots() < 2 && !self.shared.reached_end() {
+			out.fill(Frame::ZERO);
+			return;
 		}
-		let next_frames = self.next_frames();
-		let out = interpolate_frame(
-			next_frames[0],
-			next_frames[1],
-			next_frames[2],
-			next_frames[3],
-			self.fractional_position as f32,
-		);
-		self.fractional_position +=
-			self.sample_rate as f64 * self.playback_rate.value().as_factor().max(0.0) * dt;
-		while self.fractional_position >= 1.0 {
-			self.fractional_position -= 1.0;
-			self.frame_consumer.pop();
+
+		let num_frames = out.len();
+		for (i, frame) in out.iter_mut().enumerate() {
+			let time_in_chunk = (i + 1) as f64 / num_frames as f64;
+			let volume = self.volume.interpolated_value(time_in_chunk).as_amplitude();
+			let fade_volume = self
+				.playback_state_manager
+				.interpolated_fade_volume(time_in_chunk)
+				.as_amplitude();
+			let panning = self.panning.interpolated_value(time_in_chunk);
+			let playback_rate = self.playback_rate.interpolated_value(time_in_chunk);
+			let next_frames = self.next_frames();
+			let interpolated_out = interpolate_frame(
+				next_frames[0],
+				next_frames[1],
+				next_frames[2],
+				next_frames[3],
+				self.fractional_position as f32,
+			);
+			self.fractional_position += self.sample_rate as f64 * playback_rate.0.max(0.0) * dt;
+			while self.fractional_position >= 1.0 {
+				self.fractional_position -= 1.0;
+				self.frame_consumer.pop().ok();
+			}
+			if self.shared.reached_end() && self.frame_consumer.is_empty() {
+				self.playback_state_manager.mark_as_stopped();
+				self.update_shared_playback_state();
+			}
+			*frame = (interpolated_out * fade_volume * volume).panned(panning);
 		}
-		if self.shared.reached_end() && self.frame_consumer.is_empty() {
-			self.set_state(PlaybackState::Stopped);
-		}
-		(out * self.volume_fade.value().as_amplitude() as f32
-			* self.volume.value().as_amplitude() as f32)
-			.panned(self.panning.value() as f32)
 	}
 
 	fn finished(&self) -> bool {
-		self.state == PlaybackState::Stopped
+		self.playback_state_manager.playback_state() == PlaybackState::Stopped
 	}
 }
 

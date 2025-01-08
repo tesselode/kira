@@ -2,15 +2,15 @@
 Sources of audio.
 
 Any type that implements [`SoundData`] can be played using
-[`AudioManager::play`](crate::manager::AudioManager::play). Kira comes with two
+[`AudioManager::play`](crate::AudioManager::play). Kira comes with two
 [`SoundData`] implementations:
 
 - [`StaticSoundData`](static_sound::StaticSoundData), which loads an entire chunk of audio
-into memory. This is more appropriate for short sounds, sounds you want to play multiple times,
-or sounds where consistent start times are important.
+  into memory. This is more appropriate for short sounds, sounds you want to play multiple times,
+  or sounds where consistent start times are important.
 - [`StreamingSoundData`](streaming::StreamingSoundData), which streams audio from a file or cursor
-(only available on desktop platforms). This is more appropriate for long sounds that you only
-play once at a time, like background music. Streaming sounds use less memory than static sounds.
+  (only available on desktop platforms). This is more appropriate for long sounds that you only
+  play once at a time, like background music. Streaming sounds use less memory than static sounds.
 
 These two sound types should cover most use cases, but if you need something else, you can
 create your own types that implement the [`SoundData`] and [`Sound`] traits.
@@ -19,26 +19,20 @@ create your own types that implement the [`SoundData`] and [`Sound`] traits.
 #[cfg(feature = "symphonia")]
 mod error;
 mod playback_position;
-mod playback_rate;
 pub mod static_sound;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod streaming;
 #[cfg(feature = "symphonia")]
 mod symphonia;
 mod transport;
-mod util;
 
 use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
 
 #[cfg(feature = "symphonia")]
 pub use error::*;
 pub use playback_position::*;
-pub use playback_rate::*;
 
-use crate::{
-	clock::clock_info::ClockInfoProvider, frame::Frame,
-	modulator::value_provider::ModulatorValueProvider, OutputDestination,
-};
+use crate::{frame::Frame, info::Info};
 
 /// A source of audio that is loaded, but not yet playing.
 pub trait SoundData {
@@ -54,7 +48,7 @@ pub trait SoundData {
 	///
 	/// The [`Sound`] implementation will be sent to the audio renderer
 	/// for playback, and the handle will be returned to the user by
-	/// [`AudioManager::play`](crate::manager::AudioManager::play).
+	/// [`AudioManager::play`](crate::AudioManager::play).
 	#[allow(clippy::type_complexity)]
 	fn into_sound(self) -> Result<(Box<dyn Sound>, Self::Handle), Self::Error>;
 }
@@ -65,29 +59,26 @@ pub trait SoundData {
 /// or deallocate memory.
 #[allow(unused_variables)]
 pub trait Sound: Send {
-	/// Returns the destination that this sound's audio should be routed to.
-	///
-	/// This will typically be set by the user with a settings struct that's passed
-	/// to the [`SoundData`] implementor.
-	#[must_use]
-	fn output_destination(&mut self) -> OutputDestination;
-
 	/// Called whenever a new batch of audio samples is requested by the backend.
 	///
 	/// This is a good place to put code that needs to run fairly frequently,
 	/// but not for every single audio sample.
 	fn on_start_processing(&mut self) {}
 
-	/// Produces the next [`Frame`] of audio.
+	/// Produces the next [`Frame`]s of audio. This should overwrite
+	/// the entire `out` slice with new audio.
 	///
-	/// `dt` is the time that's elapsed since the previous round of
-	/// processing (in seconds).
-	fn process(
-		&mut self,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-	) -> Frame;
+	/// `dt` is the time between each frame (in seconds).
+	fn process(&mut self, out: &mut [Frame], dt: f64, info: &Info);
+
+	/// Processes a single [`Frame`]. Mostly useful for testing.
+	///
+	/// `dt` is the time elapsed since the previous frame (in seconds).
+	fn process_one(&mut self, dt: f64, info: &Info) -> Frame {
+		let mut out = [Frame::ZERO];
+		self.process(&mut out, dt, info);
+		out[0]
+	}
 
 	/// Returns `true` if the sound is finished and can be unloaded.
 	///
@@ -109,11 +100,31 @@ pub enum PlaybackState {
 	Pausing,
 	/// Playback is paused.
 	Paused,
+	/// The sound is paused, but is schedule to resume in the future.
+	WaitingToResume,
+	/// The sound is fading back in after being previously paused.
+	Resuming,
 	/// The sound is fading out, and when the fade-out
 	/// is finished, playback will stop.
 	Stopping,
 	/// The sound has stopped and can no longer be resumed.
 	Stopped,
+}
+
+impl PlaybackState {
+	/// Whether the sound is advancing and outputting audio given
+	/// its current playback state.
+	pub fn is_advancing(self) -> bool {
+		match self {
+			PlaybackState::Playing => true,
+			PlaybackState::Pausing => true,
+			PlaybackState::Paused => false,
+			PlaybackState::WaitingToResume => false,
+			PlaybackState::Resuming => true,
+			PlaybackState::Stopping => true,
+			PlaybackState::Stopped => false,
+		}
+	}
 }
 
 /// A portion of audio.

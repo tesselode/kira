@@ -7,9 +7,12 @@ pub use builder::*;
 pub use handle::*;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider, command::read_commands_into_parameters,
-	command::ValueChangeCommand, command_writers_and_readers, effect::Effect, frame::Frame,
-	modulator::value_provider::ModulatorValueProvider, tween::Parameter, Volume,
+	command::{read_commands_into_parameters, ValueChangeCommand},
+	command_writers_and_readers,
+	effect::Effect,
+	frame::Frame,
+	info::Info,
+	Decibels, Mix, Parameter,
 };
 
 /// Different types of distortion.
@@ -39,8 +42,8 @@ impl Default for DistortionKind {
 struct Distortion {
 	command_readers: CommandReaders,
 	kind: DistortionKind,
-	drive: Parameter<Volume>,
-	mix: Parameter,
+	drive: Parameter<Decibels>,
+	mix: Parameter<Mix>,
 }
 
 impl Effect for Distortion {
@@ -51,38 +54,35 @@ impl Effect for Distortion {
 		read_commands_into_parameters!(self, drive, mix);
 	}
 
-	fn process(
-		&mut self,
-		input: Frame,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-	) -> Frame {
-		self.drive
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.mix
-			.update(dt, clock_info_provider, modulator_value_provider);
-		let drive = self.drive.value().as_amplitude() as f32;
-		let mut output = input * drive;
-		output = match self.kind {
-			DistortionKind::HardClip => Frame::new(
-				output.left.max(-1.0).min(1.0),
-				output.right.max(-1.0).min(1.0),
-			),
-			DistortionKind::SoftClip => Frame::new(
-				output.left / (1.0 + output.left.abs()),
-				output.right / (1.0 + output.right.abs()),
-			),
-		};
-		output /= drive;
+	fn process(&mut self, input: &mut [Frame], dt: f64, info: &Info) {
+		self.drive.update(dt * input.len() as f64, info);
+		self.mix.update(dt * input.len() as f64, info);
 
-		let mix = self.mix.value() as f32;
-		output * mix.sqrt() + input * (1.0 - mix).sqrt()
+		let num_frames = input.len();
+		for (i, frame) in input.iter_mut().enumerate() {
+			let time_in_chunk = (i + 1) as f64 / num_frames as f64;
+			let drive = self.drive.interpolated_value(time_in_chunk).as_amplitude();
+			let mix = self.mix.interpolated_value(time_in_chunk);
+
+			let mut output = *frame * drive;
+			output = match self.kind {
+				DistortionKind::HardClip => {
+					Frame::new(output.left.clamp(-1.0, 1.0), output.right.clamp(-1.0, 1.0))
+				}
+				DistortionKind::SoftClip => Frame::new(
+					output.left / (1.0 + output.left.abs()),
+					output.right / (1.0 + output.right.abs()),
+				),
+			};
+			output /= drive;
+
+			*frame = output * mix.0.sqrt() + *frame * (1.0 - mix.0).sqrt()
+		}
 	}
 }
 
 command_writers_and_readers! {
 	set_kind: DistortionKind,
-	set_drive: ValueChangeCommand<Volume>,
-	set_mix: ValueChangeCommand<f64>,
+	set_drive: ValueChangeCommand<Decibels>,
+	set_mix: ValueChangeCommand<Mix>,
 }

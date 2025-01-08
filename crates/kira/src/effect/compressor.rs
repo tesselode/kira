@@ -11,9 +11,11 @@ pub use handle::*;
 use std::time::Duration;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider, command::read_commands_into_parameters,
-	command::ValueChangeCommand, command_writers_and_readers, frame::Frame,
-	modulator::value_provider::ModulatorValueProvider, tween::Parameter,
+	command::{read_commands_into_parameters, ValueChangeCommand},
+	command_writers_and_readers,
+	frame::Frame,
+	info::Info,
+	Decibels, Mix, Parameter,
 };
 
 use super::Effect;
@@ -24,8 +26,8 @@ struct Compressor {
 	ratio: Parameter,
 	attack_duration: Parameter<Duration>,
 	release_duration: Parameter<Duration>,
-	makeup_gain: Parameter,
-	mix: Parameter,
+	makeup_gain: Parameter<Decibels>,
+	mix: Parameter<Mix>,
 	envelope_follower: [f32; 2],
 }
 
@@ -67,57 +69,53 @@ impl Effect for Compressor {
 		);
 	}
 
-	fn process(
-		&mut self,
-		input: Frame,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-	) -> Frame {
-		self.threshold
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.ratio
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.attack_duration
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.release_duration
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.makeup_gain
-			.update(dt, clock_info_provider, modulator_value_provider);
-		self.mix
-			.update(dt, clock_info_provider, modulator_value_provider);
+	fn process(&mut self, input: &mut [Frame], dt: f64, info: &Info) {
+		self.threshold.update(dt * input.len() as f64, info);
+		self.ratio.update(dt * input.len() as f64, info);
+		self.attack_duration.update(dt * input.len() as f64, info);
+		self.release_duration.update(dt * input.len() as f64, info);
+		self.makeup_gain.update(dt * input.len() as f64, info);
+		self.mix.update(dt * input.len() as f64, info);
 
 		let threshold = self.threshold.value() as f32;
 		let ratio = self.ratio.value() as f32;
 		let attack_duration = self.attack_duration.value();
 		let release_duration = self.release_duration.value();
 
-		let input_dbfs = [
-			20.0 * input.left.abs().log10(),
-			20.0 * input.right.abs().log10(),
-		];
-		let over_dbfs = input_dbfs.map(|input| (input - threshold).max(0.0));
-		for (i, envelope_follower) in self.envelope_follower.iter_mut().enumerate() {
-			let duration = if *envelope_follower > over_dbfs[i] {
-				release_duration
-			} else {
-				attack_duration
-			};
-			let speed = (-1.0 / (duration.as_secs_f64() / dt)).exp();
-			*envelope_follower = over_dbfs[i] + speed as f32 * (*envelope_follower - over_dbfs[i]);
-		}
-		let gain_reduction = self
-			.envelope_follower
-			.map(|envelope_follower| envelope_follower * ((1.0 / ratio) - 1.0));
-		let amplitude = gain_reduction.map(|gain_reduction| 10.0f32.powf(gain_reduction / 20.0));
-		let makeup_gain_linear = 10.0f32.powf(self.makeup_gain.value() as f32 / 20.0);
-		let output = Frame {
-			left: amplitude[0] * input.left,
-			right: amplitude[1] * input.right,
-		} * makeup_gain_linear;
+		let num_frames = input.len();
+		for (i, frame) in input.iter_mut().enumerate() {
+			let time_in_chunk = (i + 1) as f64 / num_frames as f64;
+			let makeup_gain = self.makeup_gain.interpolated_value(time_in_chunk);
+			let mix = self.mix.interpolated_value(time_in_chunk);
 
-		let mix = self.mix.value() as f32;
-		output * mix.sqrt() + input * (1.0 - mix).sqrt()
+			let input_decibels = [
+				20.0 * frame.left.abs().log10(),
+				20.0 * frame.right.abs().log10(),
+			];
+			let over_decibels = input_decibels.map(|input| (input - threshold).max(0.0));
+			for (i, envelope_follower) in self.envelope_follower.iter_mut().enumerate() {
+				let duration = if *envelope_follower > over_decibels[i] {
+					release_duration
+				} else {
+					attack_duration
+				};
+				let speed = (-1.0 / (duration.as_secs_f64() / dt)).exp();
+				*envelope_follower =
+					over_decibels[i] + speed as f32 * (*envelope_follower - over_decibels[i]);
+			}
+			let gain_reduction = self
+				.envelope_follower
+				.map(|envelope_follower| envelope_follower * ((1.0 / ratio) - 1.0));
+			let amplitude =
+				gain_reduction.map(|gain_reduction| 10.0f32.powf(gain_reduction / 20.0));
+			let makeup_gain_linear = 10.0f32.powf(makeup_gain.0 / 20.0);
+			let output = Frame {
+				left: amplitude[0] * frame.left,
+				right: amplitude[1] * frame.right,
+			} * makeup_gain_linear;
+
+			*frame = output * mix.0.sqrt() + *frame * (1.0 - mix.0).sqrt()
+		}
 	}
 }
 
@@ -126,6 +124,6 @@ command_writers_and_readers! {
 	set_ratio: ValueChangeCommand<f64>,
 	set_attack_duration: ValueChangeCommand<Duration>,
 	set_release_duration: ValueChangeCommand<Duration>,
-	set_makeup_gain: ValueChangeCommand<f64>,
-	set_mix: ValueChangeCommand<f64>,
+	set_makeup_gain: ValueChangeCommand<Decibels>,
+	set_mix: ValueChangeCommand<Mix>,
 }

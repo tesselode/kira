@@ -2,12 +2,11 @@
 # Kira
 
 Kira is a backend-agnostic library to create expressive audio for games. It provides
-[tweens](tween) for smoothly adjusting properties of sounds, a flexible [mixer](track)
+tweens for smoothly adjusting properties of sounds, a flexible [mixer](track)
 for applying [effects](effect) to audio, a [clock] system for precisely timing audio events,
-and [spatial audio](spatial) support.
+and [spatial audio](crate::track#spatial-tracks) support.
 
-To get started, create an [`AudioManager`](crate::manager::AudioManager) and use it to
-[play](crate::manager::AudioManager::play) a
+To get started, create an [`AudioManager`] and use it to [play](AudioManager::play) a
 [`StaticSoundData`](crate::sound::static_sound::StaticSoundData) or
 [`StreamingSoundData`](crate::sound::streaming::StreamingSoundData).
 
@@ -19,10 +18,7 @@ Playing a sound multiple times simultaneously:
 # extern crate kira;
 #
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 };
 
@@ -44,12 +40,9 @@ Gradually speeding up a sound over time:
 use std::time::Duration;
 
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
-	tween::Tween,
+	Tween,
 };
 
 let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
@@ -73,10 +66,7 @@ audio sound muffled):
 # extern crate kira;
 #
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	track::TrackBuilder,
 	effect::filter::FilterBuilder,
@@ -84,15 +74,14 @@ use kira::{
 
 let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
 // Create a mixer sub-track with a filter.
-let track = manager.add_sub_track({
+let mut track = manager.add_sub_track({
 	let mut builder = TrackBuilder::new();
 	builder.add_effect(FilterBuilder::new().cutoff(1000.0));
 	builder
 })?;
 // Play the sound on the track.
-let sound_data = StaticSoundData::from_file("sound.ogg")?
-	.output_destination(&track);
-manager.play(sound_data)?;
+let sound_data = StaticSoundData::from_file("sound.ogg")?;
+track.play(sound_data)?;
 # Result::<(), Box<dyn std::error::Error>>::Ok(())
 ```
 
@@ -102,10 +91,7 @@ Playing sounds in time with a musical beat:
 # extern crate kira;
 #
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	clock::ClockSpeed,
 };
@@ -135,39 +121,39 @@ clock.start();
 The Kira crate has the following feature flags:
 
 - `cpal` (enabled by default) - enables the cpal backend and makes it the default for
-audio managers. This allows Kira to talk to the operating system to output audio. Most
-users should leave this enabled.
+  audio managers. This allows Kira to talk to the operating system to output audio. Most
+  users should leave this enabled.
 - `symphonia` (enabled by default) - allows loading and streaming audio from common
-audio formats, like MP3 and WAV.
+  audio formats, like MP3 and WAV.
 	- `mp3` (enabled by default) - enables support for loading and streaming MP3 audio (enables
-	the `symphonia` feature automatically)
+	  the `symphonia` feature automatically)
 	- `ogg` (enabled by default) - enables support for loading and streaming OGG audio (enables
-	the `symphonia` feature automatically)
+	  the `symphonia` feature automatically)
 	- `flac` (enabled by default) - enables support for loading and streaming FLAC audio (enables
-	the `symphonia` feature automatically)
+	  the `symphonia` feature automatically)
 	- `wav` (enabled by default) - enables support for loading and streaming WAV audio (enables
-	the `symphonia` feature automatically)
+	  the `symphonia` feature automatically)
 - `serde` - adds `Serialize` and `Deserialize` implementations for the following types:
-	- [`Capacities`](crate::manager::Capacities)
+	- [`Capacities`]
 	- [`ClockSpeed`](crate::clock::ClockSpeed)
 	- [`DistortionKind`](crate::effect::distortion::DistortionKind)
-	- [`Easing`](crate::tween::Easing)
+	- [`Easing`]
 	- [`EndPosition`](crate::sound::EndPosition)
 	- [`EqFilterKind`](crate::effect::eq_filter::EqFilterKind)
 	- [`FilterMode`](crate::effect::filter::FilterMode)
 	- [`Frame`]
-	- [`ModulatorMapping`](crate::tween::ModulatorMapping)
+	- [`Mapping`]
 	- [`PlaybackPosition`](crate::sound::PlaybackPosition)
-	- [`PlaybackRate`](crate::sound::PlaybackRate)
+	- [`PlaybackRate`]
 	- [`PlaybackState`](crate::sound::PlaybackState)
 	- [`Region`](crate::sound::Region)
-	- [`Volume`]
+	- [`Decibels`]
 	- [`Waveform`](crate::modulator::lfo::Waveform)
 - `assert_no_alloc` - uses the [`assert_no_alloc`](https://crates.io/crates/assert_no_alloc) crate
-to cause panics if memory is allocated or deallocated on the audio thread. This is mainly useful
-for people developing Kira itself.
-- `android_shared_stdcxx` - enables cpal's `oboe-shared-stdcxx` which can be helpful
-for Android compilation
+  to cause panics if memory is allocated or deallocated on the audio thread. This is mainly useful
+  for people developing Kira itself.
+- `android_shared_stdcxx` - enables cpal's `oboe-shared-stdcxx` feature, which can be helpful
+  for Android compilation.
 
 ## Loading other audio file formats
 
@@ -246,24 +232,41 @@ and compile times for games.
 #![warn(missing_docs)]
 #![allow(clippy::tabs_in_doc_comments)]
 
-mod arena;
+pub mod backend;
 pub mod clock;
 pub mod command;
+mod decibels;
 pub mod effect;
 mod error;
 mod frame;
-pub mod manager;
+pub mod info;
+pub mod listener;
+mod manager;
+mod mix;
 pub mod modulator;
-mod output_destination;
+mod panning;
+mod parameter;
+mod playback_rate;
+mod playback_state_manager;
+mod semitones;
 pub mod sound;
-pub mod spatial;
 mod start_time;
+#[cfg(test)]
+mod test_helpers;
 pub mod track;
-pub mod tween;
-mod volume;
+mod tween;
+mod value;
 
+pub use backend::DefaultBackend;
+pub use decibels::*;
 pub use error::*;
 pub use frame::*;
-pub use output_destination::*;
+pub use manager::*;
+pub use mix::*;
+pub use panning::*;
+pub use parameter::*;
+pub use playback_rate::*;
+pub use semitones::*;
 pub use start_time::*;
-pub use volume::*;
+pub use tween::*;
+pub use value::*;

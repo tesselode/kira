@@ -1,27 +1,23 @@
+use std::time::Duration;
+
 use crate::{
 	effect::{Effect, EffectBuilder},
-	tween::Value,
-	Volume,
+	Decibels, Mix, Value,
 };
 
 use super::{command_writers_and_readers, Delay, DelayHandle};
 
 /// Configures a delay effect.
 pub struct DelayBuilder {
-	/// The delay time (in seconds).
-	pub(super) delay_time: Value<f64>,
+	/// The amount of time the input audio is delayed by.
+	pub(super) delay_time: Duration,
 	/// The amount of feedback.
-	pub(super) feedback: Value<Volume>,
-	/// The amount of audio the delay can store (in seconds).
-	/// This affects the maximum delay time.
-	pub(super) buffer_length: f64,
+	pub(super) feedback: Value<Decibels>,
 	/// Effects that should be applied in the feedback loop.
 	pub(super) feedback_effects: Vec<Box<dyn Effect>>,
 	/// How much dry (unprocessed) signal should be blended
-	/// with the wet (processed) signal. `0.0` means
-	/// only the dry signal will be heard. `1.0` means
-	/// only the wet signal will be heard.
-	pub(super) mix: Value<f64>,
+	/// with the wet (processed) signal.
+	pub(super) mix: Value<Mix>,
 }
 
 impl DelayBuilder {
@@ -31,29 +27,17 @@ impl DelayBuilder {
 		Self::default()
 	}
 
-	/// Sets the delay time (in seconds).
+	/// Sets the amount of time the input audio is delayed by.
 	#[must_use = "This method consumes self and returns a modified DelayBuilder, so the return value should be used"]
-	pub fn delay_time(self, delay_time: impl Into<Value<f64>>) -> Self {
-		Self {
-			delay_time: delay_time.into(),
-			..self
-		}
+	pub fn delay_time(self, delay_time: Duration) -> Self {
+		Self { delay_time, ..self }
 	}
 
 	/// Sets the amount of feedback.
 	#[must_use = "This method consumes self and returns a modified DelayBuilder, so the return value should be used"]
-	pub fn feedback(self, feedback: impl Into<Value<Volume>>) -> Self {
+	pub fn feedback(self, feedback: impl Into<Value<Decibels>>) -> Self {
 		Self {
 			feedback: feedback.into(),
-			..self
-		}
-	}
-
-	/// Sets the amount of audio the delay can store.
-	#[must_use = "This method consumes self and returns a modified DelayBuilder, so the return value should be used"]
-	pub fn buffer_length(self, buffer_length: f64) -> Self {
-		Self {
-			buffer_length,
 			..self
 		}
 	}
@@ -65,12 +49,20 @@ impl DelayBuilder {
 		handle
 	}
 
+	/// Adds an effect to the feedback loop and returns the [`DelayBuilder`].
+	///
+	/// If you need a handle to the newly added effect, use [`DelayBuilder::add_feedback_effect`].
+	pub fn with_feedback_effect<B: EffectBuilder>(mut self, builder: B) -> Self {
+		self.add_feedback_effect(builder);
+		self
+	}
+
 	/// Sets how much dry (unprocessed) signal should be blended
 	/// with the wet (processed) signal. `0.0` means only the dry
 	/// signal will be heard. `1.0` means only the wet signal will
 	/// be heard.
 	#[must_use = "This method consumes self and returns a modified DelayBuilder, so the return value should be used"]
-	pub fn mix(self, mix: impl Into<Value<f64>>) -> Self {
+	pub fn mix(self, mix: impl Into<Value<Mix>>) -> Self {
 		Self {
 			mix: mix.into(),
 			..self
@@ -81,11 +73,10 @@ impl DelayBuilder {
 impl Default for DelayBuilder {
 	fn default() -> Self {
 		Self {
-			delay_time: Value::Fixed(0.5),
-			feedback: Value::Fixed(Volume::Amplitude(0.5)),
-			buffer_length: 10.0,
+			delay_time: Duration::from_millis(500),
+			feedback: Value::Fixed(Decibels(-6.0)),
 			feedback_effects: vec![],
-			mix: Value::Fixed(0.5),
+			mix: Value::Fixed(Mix(0.5)),
 		}
 	}
 }

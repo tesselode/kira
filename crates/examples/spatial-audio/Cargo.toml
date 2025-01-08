@@ -1,0 +1,11 @@
+[package]
+name = "spatial-audio"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+glam = { version = "0.27", features = ["mint"] }
+kira = { path = "../../kira" }
+macroquad = { version = "0.4.13", default-features = false }

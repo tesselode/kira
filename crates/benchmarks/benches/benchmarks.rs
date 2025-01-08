@@ -2,12 +2,10 @@ use std::{f32::consts::TAU, sync::Arc};
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use kira::{
-	manager::{
-		backend::mock::{MockBackend, MockBackendSettings},
-		AudioManager, AudioManagerSettings, Capacities,
-	},
+	backend::mock::{MockBackend, MockBackendSettings},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
-	Frame,
+	track::MainTrackBuilder,
+	AudioManager, AudioManagerSettings, Frame,
 };
 
 fn create_test_sound(num_samples: usize) -> StaticSoundData {
@@ -30,16 +28,12 @@ fn sounds(c: &mut Criterion) {
 	// a simple test case where many sounds are being played at once
 	c.bench_function("simple", |b| {
 		const SAMPLE_RATE: u32 = 48_000;
-		const NUM_SOUNDS: u16 = 50_000;
+		const NUM_SOUNDS: usize = 5000;
 		let mut manager = AudioManager::<MockBackend>::new(AudioManagerSettings {
-			capacities: Capacities {
-				command_capacity: NUM_SOUNDS as usize,
-				sound_capacity: NUM_SOUNDS,
-				..Default::default()
-			},
 			backend_settings: MockBackendSettings {
 				sample_rate: SAMPLE_RATE,
 			},
+			main_track_builder: MainTrackBuilder::new().sound_capacity(NUM_SOUNDS),
 			..Default::default()
 		})
 		.unwrap();
@@ -56,16 +50,12 @@ fn sounds(c: &mut Criterion) {
 	// impact on the performance
 	c.bench_function("with on_start_processing callback", |b| {
 		const SAMPLE_RATE: u32 = 48_000;
-		const NUM_SOUNDS: u16 = 50_000;
+		const NUM_SOUNDS: usize = 5000;
 		let mut manager = AudioManager::<MockBackend>::new(AudioManagerSettings {
-			capacities: Capacities {
-				command_capacity: NUM_SOUNDS as usize,
-				sound_capacity: NUM_SOUNDS,
-				..Default::default()
-			},
 			backend_settings: MockBackendSettings {
 				sample_rate: SAMPLE_RATE,
 			},
+			main_track_builder: MainTrackBuilder::new().sound_capacity(NUM_SOUNDS),
 			..Default::default()
 		})
 		.unwrap();
@@ -73,14 +63,9 @@ fn sounds(c: &mut Criterion) {
 		for _ in 0..NUM_SOUNDS {
 			manager.play(sound_data.clone()).unwrap();
 		}
-		manager.backend_mut().on_start_processing();
-		let mut num_iterations = 0;
 		b.iter(|| {
-			if num_iterations % 1000 == 0 {
-				manager.backend_mut().on_start_processing();
-			}
-			let _ = manager.backend_mut().process();
-			num_iterations += 1;
+			manager.backend_mut().on_start_processing();
+			manager.backend_mut().process();
 		});
 	});
 }

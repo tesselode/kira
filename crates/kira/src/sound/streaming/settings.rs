@@ -1,7 +1,7 @@
 use crate::{
-	sound::{IntoOptionalRegion, PlaybackPosition, PlaybackRate, Region},
-	tween::{Tween, Value},
-	OutputDestination, StartTime, Volume,
+	sound::{IntoOptionalRegion, PlaybackPosition, Region},
+	Tween,
+	Decibels, Panning, PlaybackRate, StartTime, Value,
 };
 
 /// Settings for a streaming sound.
@@ -14,7 +14,7 @@ pub struct StreamingSoundSettings {
 	/// The portion of the sound that should be looped.
 	pub loop_region: Option<Region>,
 	/// The volume of the sound.
-	pub volume: Value<Volume>,
+	pub volume: Value<Decibels>,
 	/// The playback rate of the sound.
 	///
 	/// Changing the playback rate will change both the speed
@@ -22,9 +22,7 @@ pub struct StreamingSoundSettings {
 	pub playback_rate: Value<PlaybackRate>,
 	/// The panning of the sound, where 0 is hard left
 	/// and 1 is hard right.
-	pub panning: Value<f64>,
-	/// The destination that this sound should be routed to.
-	pub output_destination: OutputDestination,
+	pub panning: Value<Panning>,
 	/// An optional fade-in from silence.
 	pub fade_in_tween: Option<Tween>,
 }
@@ -37,10 +35,9 @@ impl StreamingSoundSettings {
 			start_time: StartTime::Immediate,
 			start_position: PlaybackPosition::Seconds(0.0),
 			loop_region: None,
-			volume: Value::Fixed(Volume::Amplitude(1.0)),
-			playback_rate: Value::Fixed(PlaybackRate::Factor(1.0)),
-			panning: Value::Fixed(0.5),
-			output_destination: OutputDestination::default(),
+			volume: Value::Fixed(Decibels::IDENTITY),
+			playback_rate: Value::Fixed(PlaybackRate(1.0)),
+			panning: Value::Fixed(Panning::CENTER),
 			fade_in_tween: None,
 		}
 	}
@@ -74,7 +71,7 @@ impl StreamingSoundSettings {
 
 	/** Sets the volume of the sound. */
 	#[must_use = "This method consumes self and returns a modified StreamingSoundSettings, so the return value should be used"]
-	pub fn volume(self, volume: impl Into<Value<Volume>>) -> Self {
+	pub fn volume(self, volume: impl Into<Value<Decibels>>) -> Self {
 		Self {
 			volume: volume.into(),
 			..self
@@ -96,22 +93,13 @@ impl StreamingSoundSettings {
 	}
 
 	/**
-	Sets the panning of the sound, where 0 is hard left
-	and 1 is hard right.
+	Sets the panning of the sound, where -1.0 is hard left
+	and 1.0 is hard right.
 	*/
 	#[must_use = "This method consumes self and returns a modified StreamingSoundSettings, so the return value should be used"]
-	pub fn panning(self, panning: impl Into<Value<f64>>) -> Self {
+	pub fn panning(self, panning: impl Into<Value<Panning>>) -> Self {
 		Self {
 			panning: panning.into(),
-			..self
-		}
-	}
-
-	/** Sets the destination that this sound should be routed to. */
-	#[must_use = "This method consumes self and returns a modified StreamingSoundSettings, so the return value should be used"]
-	pub fn output_destination(self, output_destination: impl Into<OutputDestination>) -> Self {
-		Self {
-			output_destination: output_destination.into(),
 			..self
 		}
 	}

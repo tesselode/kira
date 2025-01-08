@@ -1,15 +1,12 @@
 use std::time::Duration;
 
-use crate::arena::Arena;
+use atomic_arena::Arena;
 
+use crate::info::MockInfoBuilder;
 use crate::{
-	clock::{clock_info::MockClockInfoProviderBuilder, ClockTime},
-	modulator::{
-		tweener::TweenerBuilder, value_provider::MockModulatorValueProviderBuilder,
-		ModulatorBuilder, ModulatorId,
-	},
-	tween::Tween,
-	StartTime,
+	clock::ClockTime,
+	modulator::{tweener::TweenerBuilder, ModulatorBuilder, ModulatorId},
+	StartTime, Tween,
 };
 
 /// Tests that the basic tweening behavior of a `Tweener`
@@ -19,12 +16,11 @@ use crate::{
 fn tweening() {
 	let (mut tweener, mut handle) =
 		TweenerBuilder { initial_value: 0.0 }.build(generate_fake_modulator_id());
-	let clock_info_provider = MockClockInfoProviderBuilder::new(1).build();
-	let modulator_value_provider = MockModulatorValueProviderBuilder::new(0).build();
+	let info = MockInfoBuilder::new().build();
 
 	// value should not be changing yet
 	for _ in 0..3 {
-		tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
+		tweener.update(1.0, &info);
 		assert_eq!(tweener.value(), 0.0);
 	}
 
@@ -37,11 +33,11 @@ fn tweening() {
 	);
 	tweener.on_start_processing();
 
-	tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
+	tweener.update(1.0, &info);
 	assert_eq!(tweener.value(), 0.5);
-	tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
+	tweener.update(1.0, &info);
 	assert_eq!(tweener.value(), 1.0);
-	tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
+	tweener.update(1.0, &info);
 	assert_eq!(tweener.value(), 1.0);
 }
 
@@ -50,8 +46,7 @@ fn tweening() {
 #[test]
 #[allow(clippy::float_cmp)]
 fn waits_for_delay() {
-	let clock_info_provider = MockClockInfoProviderBuilder::new(0).build();
-	let modulator_value_provider = MockModulatorValueProviderBuilder::new(0).build();
+	let info = MockInfoBuilder::new().build();
 
 	let (mut tweener, mut handle) =
 		TweenerBuilder { initial_value: 0.0 }.build(generate_fake_modulator_id());
@@ -68,11 +63,11 @@ fn waits_for_delay() {
 	// value should not be changing yet
 	for _ in 0..2 {
 		assert_eq!(tweener.value(), 0.0);
-		tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
+		tweener.update(1.0, &info);
 	}
 
 	// the tween should start now
-	tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
+	tweener.update(1.0, &info);
 	assert_eq!(tweener.value(), 1.0);
 }
 
@@ -84,13 +79,9 @@ fn waits_for_delay() {
 fn waits_for_start_time() {
 	let (mut tweener, mut handle) =
 		TweenerBuilder { initial_value: 0.0 }.build(generate_fake_modulator_id());
-	let (clock_info_provider, clock_id_1) = {
-		let mut builder = MockClockInfoProviderBuilder::new(2);
-		let clock_id_1 = builder.add(true, 0, 0.0).unwrap();
-		builder.add(true, 0, 0.0).unwrap();
-		(builder.build(), clock_id_1)
-	};
-	let modulator_value_provider = MockModulatorValueProviderBuilder::new(0).build();
+	let mut info_builder = MockInfoBuilder::new();
+	let clock_id_1 = info_builder.add_clock(true, 0, 0.0);
+	let info = info_builder.build();
 
 	handle.set(
 		1.0,
@@ -108,47 +99,47 @@ fn waits_for_start_time() {
 
 	// value should not be changing yet
 	for _ in 0..3 {
-		tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
+		tweener.update(1.0, &info);
 		assert_eq!(tweener.value(), 0.0);
 	}
 
-	let clock_info_provider = {
-		let mut builder = MockClockInfoProviderBuilder::new(2);
-		builder.add(true, 1, 0.0).unwrap();
-		builder.add(true, 0, 0.0).unwrap();
+	let info = {
+		let mut builder = MockInfoBuilder::new();
+		builder.add_clock(true, 1, 0.0);
+		builder.add_clock(true, 0, 0.0);
 		builder.build()
 	};
 
 	// the tween is set to start at tick 2, so it should not
 	// start yet
 	for _ in 0..3 {
-		tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
+		tweener.update(1.0, &info);
 		assert_eq!(tweener.value(), 0.0);
 	}
 
-	let clock_info_provider = {
-		let mut builder = MockClockInfoProviderBuilder::new(2);
-		builder.add(true, 1, 0.0).unwrap();
-		builder.add(true, 2, 0.0).unwrap();
+	let info = {
+		let mut builder = MockInfoBuilder::new();
+		builder.add_clock(true, 1, 0.0);
+		builder.add_clock(true, 2, 0.0);
 		builder.build()
 	};
 
 	// a different clock reached tick 2, so the tween should not
 	// start yet
 	for _ in 0..3 {
-		tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
+		tweener.update(1.0, &info);
 		assert_eq!(tweener.value(), 0.0);
 	}
 
-	let clock_info_provider = {
-		let mut builder = MockClockInfoProviderBuilder::new(2);
-		builder.add(true, 2, 0.0).unwrap();
-		builder.add(true, 2, 0.0).unwrap();
+	let info = {
+		let mut builder = MockInfoBuilder::new();
+		builder.add_clock(true, 2, 0.0);
+		builder.add_clock(true, 2, 0.0);
 		builder.build()
 	};
 
 	// the tween should start now
-	tweener.update(1.0, &clock_info_provider, &modulator_value_provider);
+	tweener.update(1.0, &info);
 	assert_eq!(tweener.value(), 1.0);
 }
 

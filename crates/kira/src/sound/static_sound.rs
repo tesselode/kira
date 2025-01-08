@@ -2,14 +2,11 @@
 Playable chunks of audio that are loaded into memory all at once.
 
 To play a static sound, pass a [`StaticSoundData`] to
-[`AudioManager::play`](crate::manager::AudioManager::play).
+[`AudioManager::play`](crate::AudioManager::play).
 
 ```no_run
 use kira::{
-	manager::{
-		AudioManager, AudioManagerSettings,
-		backend::DefaultBackend,
-	},
+	AudioManager, AudioManagerSettings, DefaultBackend,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 };
 
@@ -33,15 +30,16 @@ pub use handle::*;
 pub use settings::*;
 
 use crate::{
-	command::ValueChangeCommand, command_writers_and_readers, tween::Tween, StartTime, Volume,
+	command::ValueChangeCommand, command_writers_and_readers, tween::Tween, Decibels, Panning,
+	PlaybackRate, StartTime,
 };
 
-use super::{PlaybackRate, Region};
+use super::Region;
 
 command_writers_and_readers! {
-	set_volume: ValueChangeCommand<Volume>,
+	set_volume: ValueChangeCommand<Decibels>,
 	set_playback_rate: ValueChangeCommand<PlaybackRate>,
-	set_panning: ValueChangeCommand<f64>,
+	set_panning: ValueChangeCommand<Panning>,
 	set_loop_region: Option<Region>,
 	pause: Tween,
 	resume: (StartTime, Tween),

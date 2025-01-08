@@ -7,16 +7,18 @@ pub use builder::*;
 pub use handle::*;
 
 use crate::{
-	clock::clock_info::ClockInfoProvider, command::read_commands_into_parameters,
-	command::ValueChangeCommand, command_writers_and_readers, frame::Frame,
-	modulator::value_provider::ModulatorValueProvider, tween::Parameter,
+	command::{read_commands_into_parameters, ValueChangeCommand},
+	command_writers_and_readers,
+	frame::Frame,
+	info::Info,
+	Panning, Parameter,
 };
 
 use super::Effect;
 
 struct PanningControl {
 	command_readers: CommandReaders,
-	panning: Parameter,
+	panning: Parameter<Panning>,
 }
 
 impl PanningControl {
@@ -24,7 +26,7 @@ impl PanningControl {
 	fn new(builder: PanningControlBuilder, command_readers: CommandReaders) -> Self {
 		Self {
 			command_readers,
-			panning: Parameter::new(builder.0, 0.5),
+			panning: Parameter::new(builder.0, Panning::CENTER),
 		}
 	}
 }
@@ -34,19 +36,16 @@ impl Effect for PanningControl {
 		read_commands_into_parameters!(self, panning);
 	}
 
-	fn process(
-		&mut self,
-		input: Frame,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		modulator_value_provider: &ModulatorValueProvider,
-	) -> Frame {
-		self.panning
-			.update(dt, clock_info_provider, modulator_value_provider);
-		input.panned(self.panning.value() as f32)
+	fn process(&mut self, input: &mut [Frame], dt: f64, info: &Info) {
+		self.panning.update(dt * input.len() as f64, info);
+		let num_frames = input.len();
+		for (i, frame) in input.iter_mut().enumerate() {
+			let time_in_chunk = (i + 1) as f64 / num_frames as f64;
+			*frame = frame.panned(self.panning.interpolated_value(time_in_chunk))
+		}
 	}
 }
 
 command_writers_and_readers! {
-	set_panning: ValueChangeCommand<f64>,
+	set_panning: ValueChangeCommand<Panning>,
 }

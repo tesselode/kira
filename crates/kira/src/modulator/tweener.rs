@@ -18,13 +18,13 @@ pub use builder::*;
 pub use handle::*;
 
 use crate::{
-	clock::clock_info::{ClockInfoProvider, WhenToStart},
 	command_writers_and_readers,
-	tween::{Tween, Tweenable},
+	info::{Info, WhenToStart},
+	Tween, Tweenable,
 	StartTime,
 };
 
-use super::{value_provider::ModulatorValueProvider, Modulator};
+use super::Modulator;
 
 struct Tweener {
 	state: State,
@@ -64,12 +64,7 @@ impl Modulator for Tweener {
 		}
 	}
 
-	fn update(
-		&mut self,
-		dt: f64,
-		clock_info_provider: &ClockInfoProvider,
-		_modulator_value_provider: &ModulatorValueProvider,
-	) {
+	fn update(&mut self, dt: f64, info: &Info) {
 		if let State::Tweening {
 			values,
 			time,
@@ -88,7 +83,7 @@ impl Modulator for Tweener {
 					}
 				}
 				StartTime::ClockTime(clock_time) => {
-					clock_info_provider.when_to_start(*clock_time) == WhenToStart::Now
+					info.when_to_start(*clock_time) == WhenToStart::Now
 				}
 			};
 			if !started {
