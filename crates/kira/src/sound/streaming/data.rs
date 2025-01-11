@@ -293,7 +293,7 @@ impl<Error: Send> StreamingSoundData<Error> {
 
 	/// Returns the total duration of the audio, regardless of its slice.
 	#[must_use]
-	pub fn total_duration(&self) -> Duration {
+	pub fn unsliced_duration(&self) -> Duration {
 		Duration::from_secs_f64(
 			self.decoder.num_frames() as f64 / self.decoder.sample_rate() as f64,
 		)

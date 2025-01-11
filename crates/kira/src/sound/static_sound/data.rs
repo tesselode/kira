@@ -315,7 +315,7 @@ impl StaticSoundData {
 
 	/// Returns the total duration of the audio, regardless of its slice.
 	#[must_use]
-	pub fn total_duration(&self) -> Duration {
+	pub fn unsliced_duration(&self) -> Duration {
 		Duration::from_secs_f64(self.frames.len() as f64 / self.sample_rate as f64)
 	}
 
