@@ -122,8 +122,6 @@ Features I'd like to have:
 - C API
 - Spatial audio features:
   - Doppler effect
-  - Reverb
-  - Filtering
 
 ## Contributing
 

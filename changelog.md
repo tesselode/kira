@@ -1,3 +1,10 @@
+# v0.10.1 - January 8, 2025
+
+- Fix spatial audio tracks immediately outputting non-spatialized audio if the
+  corresponding listener is dropped. This could result in unexpectedly loud
+  audio playback. Now if the listener is dropped, the spatial track will output
+  silence.
+
 # v0.10 - January 1, 2025
 
 ## Buffered audio
