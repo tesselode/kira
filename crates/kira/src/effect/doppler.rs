@@ -90,7 +90,7 @@ impl Doppler {
 
 impl Effect for Doppler {
 	fn on_start_processing(&mut self) {
-		read_commands_into_parameters!(self, temperature, mass);
+		read_commands_into_parameters!(self, temperature, mass, index);
 	}
 
 	fn process(&mut self, input: &mut [Frame], dt: f64, info: &Info) {
