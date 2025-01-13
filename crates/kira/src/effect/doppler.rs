@@ -96,6 +96,7 @@ impl Effect for Doppler {
 	fn process(&mut self, input: &mut [Frame], dt: f64, info: &Info) {
 		self.temperature.update(dt * input.len() as f64, info);
 		self.mass.update(dt * input.len() as f64, info);
+		self.index.update(dt * input.len() as f64, info);
 
 		if let (Some(listener), Some(spatial)) = (info.listener_info(), info.spatial_track_info()) {
 			match (listener.stationary(), spatial.stationary()) {
@@ -206,4 +207,5 @@ impl Effect for Doppler {
 command_writers_and_readers! {
 	set_temperature: ValueChangeCommand<f64>,
 	set_mass: ValueChangeCommand<f64>,
+	set_index: ValueChangeCommand<f64>,
 }

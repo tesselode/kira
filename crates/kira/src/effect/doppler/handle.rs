@@ -15,5 +15,8 @@ impl DopplerHandle {
 
 		/// Sets the molar mass in kg/mol.
 		mass: f64,
+
+		/// Sets the adiabetic index.
+		index: f64,
 	}
 }
