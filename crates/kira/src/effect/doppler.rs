@@ -19,6 +19,9 @@ use glam::Vec3;
 /// Universal gas constant in J/(mol·K)
 pub const R: f32 = 8.314;
 
+/// Speed of sound in the air, in m/s.
+const DEFAULT_SPEED: f64 = 343.;
+
 #[derive(Debug, PartialEq)]
 struct Motion {
 	velocity: f32,
@@ -56,9 +59,7 @@ enum MotionDirection {
 /// https://phys.libretexts.org/Bookshelves/University_Physics/University_Physics_(OpenStax)/Book%3A_University_Physics_I_-_Mechanics_Sound_Oscillations_and_Waves_(OpenStax)/17%3A_Sound/17.08%3A_The_Doppler_Effect
 struct Doppler {
 	command_readers: CommandReaders,
-	temperature: Parameter,
-	mass: Parameter,
-	index: Parameter,
+	speed: Parameter,
 	state: Option<MotionState>,
 }
 
@@ -68,35 +69,19 @@ impl Doppler {
 	fn new(settings: DopplerBuilder, command_readers: CommandReaders) -> Self {
 		Self {
 			command_readers,
-			temperature: Parameter::new(settings.temperature, 0.9),
-			mass: Parameter::new(settings.mass, 0.1),
-			index: Parameter::new(settings.index, 0.1),
+			speed: Parameter::new(settings.speed, DEFAULT_SPEED),
 			state: None,
 		}
-	}
-
-	fn speed_of_sound(&self, time_in_chunk: f64) -> f32 {
-		let temperature = self.temperature.interpolated_value(time_in_chunk) as f32;
-		let mass = self.mass.interpolated_value(time_in_chunk) as f32;
-		let index = self.index.interpolated_value(time_in_chunk) as f32;
-
-		// Convert temperature from Celsius to Kelvin
-		let kelvin = temperature + 273.15;
-
-		// Calculate speed of sound
-		(index * R * kelvin / mass).sqrt()
 	}
 }
 
 impl Effect for Doppler {
 	fn on_start_processing(&mut self) {
-		read_commands_into_parameters!(self, temperature, mass, index);
+		read_commands_into_parameters!(self, speed);
 	}
 
 	fn process(&mut self, input: &mut [Frame], dt: f64, info: &Info) {
-		self.temperature.update(dt * input.len() as f64, info);
-		self.mass.update(dt * input.len() as f64, info);
-		self.index.update(dt * input.len() as f64, info);
+		self.speed.update(dt * input.len() as f64, info);
 
 		if let (Some(listener), Some(spatial)) = (info.listener_info(), info.spatial_track_info()) {
 			match (listener.stationary(), spatial.stationary()) {
@@ -149,7 +134,7 @@ impl Effect for Doppler {
 				let num_frames = input.len();
 				for (i, frame) in input.iter_mut().enumerate() {
 					let time_in_chunk = (i + 1) as f64 / num_frames as f64;
-					let speed_of_sound = self.speed_of_sound(time_in_chunk);
+					let speed_of_sound = self.speed.interpolated_value(time_in_chunk) as f32;
 
 					let quotient = match state {
 						MotionState::OnlyEmitterMoving(Motion {
@@ -205,7 +190,5 @@ impl Effect for Doppler {
 }
 
 command_writers_and_readers! {
-	set_temperature: ValueChangeCommand<f64>,
-	set_mass: ValueChangeCommand<f64>,
-	set_index: ValueChangeCommand<f64>,
+	set_speed: ValueChangeCommand<f64>,
 }

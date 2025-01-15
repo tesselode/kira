@@ -3,17 +3,13 @@ use crate::{
 	Value,
 };
 
-use super::{command_writers_and_readers, Doppler, DopplerHandle};
+use super::{command_writers_and_readers, Doppler, DopplerHandle, DEFAULT_SPEED};
 
 /// Configures a doppler effect.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct DopplerBuilder {
-	/// The temperature in celsius.
-	pub temperature: Value<f64>,
-	/// The molar mass in kg/mol.
-	pub mass: Value<f64>,
-	/// The adiabetic index.
-	pub index: Value<f64>,
+	/// The speed of sound in m/s.
+	pub speed: Value<f64>,
 }
 
 impl DopplerBuilder {
@@ -23,29 +19,11 @@ impl DopplerBuilder {
 		Self::default()
 	}
 
-	/// Sets the temperature.
+	/// Sets the speed of sound in m/s.
 	#[must_use = "This method consumes self and returns a modified DopplerBuilder, so the return value should be used"]
-	pub fn temperature(self, temperature: impl Into<Value<f64>>) -> Self {
+	pub fn speed(self, speed: impl Into<Value<f64>>) -> Self {
 		Self {
-			temperature: temperature.into(),
-			..self
-		}
-	}
-
-	/// Sets the molar mass in kg/mol.
-	#[must_use = "This method consumes self and returns a modified DopplerBuilder, so the return value should be used"]
-	pub fn mass(self, mass: impl Into<Value<f64>>) -> Self {
-		Self {
-			mass: mass.into(),
-			..self
-		}
-	}
-
-	/// Sets the adiabetic index.
-	#[must_use = "This method consumes self and returns a modified DopplerBuilder, so the return value should be used"]
-	pub fn index(self, index: impl Into<Value<f64>>) -> Self {
-		Self {
-			index: index.into(),
+			speed: speed.into(),
 			..self
 		}
 	}
@@ -54,9 +32,7 @@ impl DopplerBuilder {
 impl Default for DopplerBuilder {
 	fn default() -> Self {
 		Self {
-			temperature: Value::Fixed(20.0), // Celsius
-			mass: Value::Fixed(0.02897),     // air
-			index: Value::Fixed(1.4),        // air
+			speed: Value::Fixed(DEFAULT_SPEED),
 		}
 	}
 }

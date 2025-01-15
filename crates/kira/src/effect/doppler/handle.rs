@@ -10,13 +10,7 @@ pub struct DopplerHandle {
 
 impl DopplerHandle {
 	handle_param_setters! {
-		/// Sets the temperature in celsius.
-		temperature: f64,
-
-		/// Sets the molar mass in kg/mol.
-		mass: f64,
-
-		/// Sets the adiabetic index.
-		index: f64,
+		/// Sets the speed of sound in m/s.
+		speed: f64,
 	}
 }
