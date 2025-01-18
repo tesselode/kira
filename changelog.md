@@ -1,3 +1,7 @@
+# v0.10.2 - January 17, 2025
+
+- Add `Static/StreamingSoundData::unsliced_duration` (thanks @Roms1383!)
+
 # v0.10.1 - January 8, 2025
 
 - Fix spatial audio tracks immediately outputting non-spatialized audio if the
