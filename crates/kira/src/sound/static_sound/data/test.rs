@@ -16,6 +16,17 @@ fn duration() {
 }
 
 #[test]
+fn unsliced_duration() {
+	let static_sound = StaticSoundData {
+		sample_rate: 1,
+		frames: Arc::new([Frame::from_mono(0.0); 4]),
+		settings: Default::default(),
+		slice: Some((2, 3)),
+	};
+	assert_eq!(static_sound.unsliced_duration(), Duration::from_secs(4));
+}
+
+#[test]
 fn sliced_duration() {
 	let static_sound = StaticSoundData {
 		sample_rate: 1,
