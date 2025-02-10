@@ -143,6 +143,7 @@ impl Track {
 			.spatial_data
 			.as_ref()
 			.map(|spatial_data| SpatialTrackInfo {
+				previous_position: spatial_data.position.previous_value(),
 				position: spatial_data.position.value(),
 				listener_id: spatial_data.listener_id,
 			})

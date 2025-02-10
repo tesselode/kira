@@ -124,6 +124,12 @@ impl<'a> Info<'a> {
 			},
 		)
 	}
+
+	/// Gets information about the current spatial track
+	/// if there is one.
+	pub fn spatial_track_info(&self) -> Option<&SpatialTrackInfo> {
+		self.spatial_track_info.as_ref()
+	}
 }
 
 /// Information about the current state of a [clock](super::clock).
@@ -181,6 +187,16 @@ impl ListenerInfo {
 		let orientation: Quat = self.orientation.into();
 		let previous_orientation: Quat = self.previous_orientation.into();
 		previous_orientation.lerp(orientation, amount).into()
+	}
+
+	/// Returns the velocity.
+	pub fn velocity(&self) -> Vec3 {
+		Vec3::from(self.position) - Vec3::from(self.previous_position)
+	}
+
+	/// Returns `true` when not moving.
+	pub fn stationary(&self) -> bool {
+		self.position == self.previous_position
 	}
 }
 
@@ -286,8 +302,25 @@ enum InfoKind<'a> {
 	},
 }
 
+/// Information about a spatial track.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) struct SpatialTrackInfo {
+pub struct SpatialTrackInfo {
+	/// Previous position.
+	pub previous_position: Vec3,
+	/// Current position.
 	pub position: Vec3,
+	/// Related listener ID.
 	pub listener_id: ListenerId,
+}
+
+impl SpatialTrackInfo {
+	/// Returns the velocity.
+	pub fn velocity(&self) -> Vec3 {
+		self.position - self.previous_position
+	}
+
+	/// Returns `true` when not moving.
+	pub fn stationary(&self) -> bool {
+		self.position == self.previous_position
+	}
 }

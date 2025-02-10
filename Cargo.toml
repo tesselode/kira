@@ -2,6 +2,7 @@
 members = [
 	"crates/kira",
 	"crates/benchmarks",
+	"crates/examples/doppler-effect",
 	"crates/examples/dynamic-music",
 	"crates/examples/ghost-noise",
 	"crates/examples/metronome",
