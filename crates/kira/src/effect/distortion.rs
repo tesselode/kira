@@ -62,7 +62,7 @@ impl Effect for Distortion {
 		for (i, frame) in input.iter_mut().enumerate() {
 			let time_in_chunk = (i + 1) as f64 / num_frames as f64;
 			let drive = self.drive.interpolated_value(time_in_chunk).as_amplitude();
-			let mix = self.mix.interpolated_value(time_in_chunk);
+			let mix = self.mix.interpolated_value(time_in_chunk).0.clamp(0.0, 1.0);
 
 			let mut output = *frame * drive;
 			output = match self.kind {
@@ -76,7 +76,7 @@ impl Effect for Distortion {
 			};
 			output /= drive;
 
-			*frame = output * mix.0.sqrt() + *frame * (1.0 - mix.0).sqrt()
+			*frame = output * mix.sqrt() + *frame * (1.0 - mix).sqrt()
 		}
 	}
 }

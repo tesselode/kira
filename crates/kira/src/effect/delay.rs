@@ -101,8 +101,8 @@ impl Effect for Delay {
 			// output mix of input and read buffer
 			for (i, frame) in input.iter_mut().enumerate() {
 				let time_in_chunk = (i + 1) as f64 / num_frames as f64;
-				let mix = self.mix.interpolated_value(time_in_chunk);
-				*frame = self.temp_buffer[i] * mix.0.sqrt() + *frame * (1.0 - mix.0).sqrt()
+				let mix = self.mix.interpolated_value(time_in_chunk).0.clamp(0.0, 1.0);
+				*frame = self.temp_buffer[i] * mix.sqrt() + *frame * (1.0 - mix).sqrt()
 			}
 		}
 	}

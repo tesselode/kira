@@ -155,7 +155,7 @@ impl Effect for Reverb {
 			for (i, frame) in input.iter_mut().enumerate() {
 				let time_in_chunk = (i + 1) as f64 / num_frames as f64;
 				let stereo_width = self.stereo_width.interpolated_value(time_in_chunk) as f32;
-				let mix = self.mix.interpolated_value(time_in_chunk).0;
+				let mix = self.mix.interpolated_value(time_in_chunk).0.clamp(0.0, 1.0);
 
 				let mut output = Frame::ZERO;
 				let mono_input = (frame.left + frame.right) * GAIN;

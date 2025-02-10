@@ -81,10 +81,10 @@ impl Effect for Filter {
 				.resonance
 				.interpolated_value(time_in_chunk)
 				.clamp(0.0, 1.0);
-			let mix = self.mix.interpolated_value(time_in_chunk).0;
+			let mix = self.mix.interpolated_value(time_in_chunk).0.clamp(0.0, 1.0);
 
 			let sample_rate = 1.0 / dt;
-			let g = (PI * (cutoff / sample_rate)).tan();
+			let g = (PI * (cutoff / sample_rate).clamp(0.0001, 0.5)).tan();
 			let k = 2.0 - (1.9 * resonance);
 			let a1 = 1.0 / (1.0 + (g * (g + k)));
 			let a2 = g * a1;

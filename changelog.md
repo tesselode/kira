@@ -1,3 +1,7 @@
+# v0.10.3 - February 9, 2025
+
+- Clamp some parameters to valid values
+
 # v0.10.2 - January 17, 2025
 
 - Add `Static/StreamingSoundData::unsliced_duration` (thanks @Roms1383!)

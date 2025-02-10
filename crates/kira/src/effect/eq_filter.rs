@@ -111,7 +111,7 @@ impl Coefficients {
 	fn calculate(kind: EqFilterKind, frequency: f64, q: f64, gain: Decibels, dt: f64) -> Self {
 		// In my testing, the filter goes unstable when the frequency exceeds half the sample rate,
 		// so I'm clamping this value to 0.5
-		let relative_frequency = (frequency * dt).clamp(0.0, 0.5);
+		let relative_frequency = (frequency * dt).clamp(0.0001, 0.5);
 		let q = q.max(MIN_Q);
 		match kind {
 			EqFilterKind::Bell => {
