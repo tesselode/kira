@@ -1,3 +1,13 @@
+# v0.10.4 - February 16, 2025
+
+- Clamp all audio internally to the -1.0 to 1.0 range
+
+From my testing, not all audio drivers clamp audio signals to the -1.0 to 1.0 range
+before applying the operating system volume, so in cases where Kira would have previously
+played sounds outside of that range, your application would play audio that's unexpectedly
+loud for the operating system's volume setting. This change prevents Kira from playing
+anything louder than it's "supposed" to.
+
 # v0.10.3 - February 9, 2025
 
 - Clamp some parameters to valid values
