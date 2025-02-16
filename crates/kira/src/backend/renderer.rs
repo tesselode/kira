@@ -103,7 +103,9 @@ impl Renderer {
 
 		// convert from frames to requested number of channels
 		for (i, channels) in chunk.chunks_mut(num_channels.into()).enumerate() {
-			let frame = self.temp_buffer[i];
+			let mut frame = self.temp_buffer[i];
+			frame.left = frame.left.clamp(-1.0, 1.0);
+			frame.right = frame.right.clamp(-1.0, 1.0);
 			if num_channels == 1 {
 				channels[0] = (frame.left + frame.right) / 2.0;
 			} else {
