@@ -3,7 +3,7 @@ mod send_on_drop;
 use std::{
 	sync::{
 		atomic::{AtomicBool, AtomicU64, Ordering},
-		Arc,
+		Arc, Mutex,
 	},
 	time::Duration,
 };
@@ -13,7 +13,7 @@ use cpal::{
 	traits::{DeviceTrait, HostTrait, StreamTrait},
 	BufferSize, Device, Stream, StreamConfig, StreamError,
 };
-use rtrb::{Consumer, PushError, RingBuffer};
+use rtrb::{Consumer, Producer, PushError, RingBuffer};
 use send_on_drop::SendOnDrop;
 
 use super::super::Error;
@@ -28,18 +28,37 @@ enum State {
 	},
 	Running {
 		stream: Stream,
-		_stream_errors_discarded: Arc<AtomicU64>,
 		renderer_consumer: Consumer<RendererWithCpuUsage>,
 	},
 }
 
 pub(super) struct StreamManagerController {
 	should_drop: Arc<AtomicBool>,
+	unhandled_stream_errors_discarded: Arc<AtomicU64>,
+	handled_stream_errors_discarded: Arc<AtomicU64>,
+	handled_stream_error_consumer: Mutex<Consumer<StreamError>>,
 }
 
 impl StreamManagerController {
 	pub fn stop(&self) {
 		self.should_drop.store(true, Ordering::SeqCst);
+	}
+
+	pub fn unhandled_stream_errors_discarded(&self) -> u64 {
+		self.unhandled_stream_errors_discarded
+			.load(Ordering::Acquire)
+	}
+
+	pub fn handled_stream_errors_discarded(&self) -> u64 {
+		self.handled_stream_errors_discarded.load(Ordering::Acquire)
+	}
+
+	pub fn pop_handled_error(&mut self) -> Option<StreamError> {
+		self.handled_stream_error_consumer
+			.get_mut()
+			.unwrap()
+			.pop()
+			.ok()
 	}
 }
 
@@ -63,6 +82,16 @@ impl StreamManager {
 	) -> StreamManagerController {
 		let should_drop = Arc::new(AtomicBool::new(false));
 		let should_drop_clone = should_drop.clone();
+
+		let unhandled_stream_errors_discarded = Arc::new(AtomicU64::new(0));
+		let unhandled_stream_errors_discarded_clone = unhandled_stream_errors_discarded.clone();
+
+		let handled_stream_errors_discarded = Arc::new(AtomicU64::new(0));
+		let handled_stream_errors_discarded_clone = handled_stream_errors_discarded.clone();
+
+		let (mut handled_stream_error_producer, handled_stream_error_consumer) =
+			RingBuffer::new(64);
+
 		std::thread::spawn(move || {
 			let mut stream_manager = StreamManager {
 				state: State::Idle { renderer },
@@ -71,35 +100,66 @@ impl StreamManager {
 				custom_device,
 				buffer_size,
 			};
-			let mut stream_error_consumer =
-				stream_manager.start_stream(&device, &mut config).unwrap();
+			let mut unhandled_stream_error_consumer = stream_manager
+				.start_stream(
+					&device,
+					&mut config,
+					unhandled_stream_errors_discarded.clone(),
+				)
+				.unwrap();
 			loop {
 				std::thread::sleep(CHECK_STREAM_INTERVAL);
 				if should_drop.load(Ordering::SeqCst) {
 					break;
 				}
-				stream_manager.check_stream(&mut stream_error_consumer);
+				stream_manager.check_stream(
+					&mut unhandled_stream_error_consumer,
+					&unhandled_stream_errors_discarded,
+					&mut handled_stream_error_producer,
+					&handled_stream_errors_discarded,
+				);
 			}
 		});
 		StreamManagerController {
 			should_drop: should_drop_clone,
+			unhandled_stream_errors_discarded: unhandled_stream_errors_discarded_clone,
+			handled_stream_errors_discarded: handled_stream_errors_discarded_clone,
+			handled_stream_error_consumer: Mutex::new(handled_stream_error_consumer),
 		}
 	}
 
 	/// Restarts the stream if the audio device gets disconnected.
-	fn check_stream(&mut self, stream_error_consumer: &mut Consumer<StreamError>) {
+	fn check_stream(
+		&mut self,
+		unhandled_stream_error_consumer: &mut Consumer<StreamError>,
+		unhandled_stream_errors_discarded: &Arc<AtomicU64>,
+		handled_stream_error_producer: &mut Producer<StreamError>,
+		handled_stream_errors_discarded: &Arc<AtomicU64>,
+	) {
 		if let State::Running { .. } = &self.state {
-			while let Ok(error) = stream_error_consumer.pop() {
+			while let Ok(error) = unhandled_stream_error_consumer.pop() {
 				match error {
 					// check for device disconnection
 					StreamError::DeviceNotAvailable => {
 						self.stop_stream();
 						if let Ok((device, mut config)) = default_device_and_config() {
 							// TODO: gracefully handle errors that occur in this function
-							self.start_stream(&device, &mut config).unwrap();
+							*unhandled_stream_error_consumer = self
+								.start_stream(
+									&device,
+									&mut config,
+									unhandled_stream_errors_discarded.clone(),
+								)
+								.unwrap();
 						}
 					}
 					StreamError::BackendSpecific { err: _ } => {}
+				}
+				match handled_stream_error_producer.push(error) {
+					Ok(()) => {}
+					Err(PushError::Full(_stream_error)) => {
+						handled_stream_errors_discarded.fetch_add(1, Ordering::AcqRel);
+					}
 				}
 			}
 			// check for device changes if a custom device hasn't been specified
@@ -113,7 +173,13 @@ impl StreamManager {
 					let sample_rate = config.sample_rate.0;
 					if device_name != self.device_name || sample_rate != self.sample_rate {
 						self.stop_stream();
-						self.start_stream(&device, &mut config).unwrap();
+						*unhandled_stream_error_consumer = self
+							.start_stream(
+								&device,
+								&mut config,
+								unhandled_stream_errors_discarded.clone(),
+							)
+							.unwrap();
 					}
 				}
 			}
@@ -124,6 +190,7 @@ impl StreamManager {
 		&mut self,
 		device: &Device,
 		config: &mut StreamConfig,
+		unhandled_stream_errors_discarded: Arc<AtomicU64>,
 	) -> Result<Consumer<StreamError>, Error> {
 		let mut renderer =
 			if let State::Idle { renderer } = std::mem::replace(&mut self.state, State::Empty) {
@@ -140,9 +207,8 @@ impl StreamManager {
 		self.device_name = device_name;
 		self.sample_rate = sample_rate;
 		let (mut renderer_wrapper, renderer_consumer) = SendOnDrop::new(renderer);
-		let (mut stream_error_producer, stream_error_consumer) = RingBuffer::new(64);
-		let stream_errors_discarded = Arc::new(AtomicU64::new(0));
-		let stream_errors_discarded_clone = Arc::clone(&stream_errors_discarded);
+		let (mut unhandled_stream_error_producer, unhandled_stream_error_consumer) =
+			RingBuffer::new(64);
 		let channels = config.channels;
 		let stream = device.build_output_stream(
 			config,
@@ -154,10 +220,10 @@ impl StreamManager {
 				#[cfg(not(feature = "assert_no_alloc"))]
 				process_renderer(&mut renderer_wrapper, data, channels, sample_rate);
 			},
-			move |error| match stream_error_producer.push(error) {
+			move |error| match unhandled_stream_error_producer.push(error) {
 				Ok(()) => {}
 				Err(PushError::Full(_stream_error)) => {
-					stream_errors_discarded.fetch_add(1, Ordering::AcqRel);
+					unhandled_stream_errors_discarded.fetch_add(1, Ordering::AcqRel);
 				}
 			},
 			None,
@@ -165,10 +231,9 @@ impl StreamManager {
 		stream.play()?;
 		self.state = State::Running {
 			stream,
-			_stream_errors_discarded: stream_errors_discarded_clone,
 			renderer_consumer,
 		};
-		Ok(stream_error_consumer)
+		Ok(unhandled_stream_error_consumer)
 	}
 
 	fn stop_stream(&mut self) {
