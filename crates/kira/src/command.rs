@@ -46,7 +46,7 @@ impl<T: Send + Copy> CommandReader<T> {
 	#[must_use]
 	pub fn read(&mut self) -> Option<T> {
 		if self.0.update() {
-			*self.0.output_buffer()
+			*self.0.output_buffer_mut()
 		} else {
 			None
 		}
