@@ -46,7 +46,7 @@ async fn main() {
 					max_distance: 400.0,
 				})
 				// NOTE: Even though the doppler effect is enabled, the sound will not be affected by it
-				// until the listener and the spatial track have set the same game loop delta time. See below!
+				// until the listener and the spatial track have set the game loop delta time. See below!
 				.doppler_effect(true)
 		)
 		.unwrap();
