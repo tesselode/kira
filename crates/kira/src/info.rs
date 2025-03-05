@@ -307,14 +307,10 @@ enum InfoKind<'a> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate)struct SpatialTrackInfo {
-	/// Previous position.
+pub(crate) struct SpatialTrackInfo {
 	pub previous_position: Vec3,
-	/// Current position.
 	pub position: Vec3,
-	/// Related listener ID.
 	pub listener_id: ListenerId,
-	/// The delta time of the game loop.
 	pub game_loop_delta_time: f64,
 }
 
