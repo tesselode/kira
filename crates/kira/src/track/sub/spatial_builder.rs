@@ -141,7 +141,7 @@ impl SpatialTrackBuilder {
 		self
 	}
 
-	/// Sets the speed of sound in the scene.
+	/// Sets the speed of sound, used for the doppler effect.
 	#[must_use = "This method consumes self and returns a modified SpatialTrackBuilder, so the return value should be used"]
 	pub fn speed_of_sound(self, speed_of_sound: impl Into<Value<f64>>) -> Self {
 		Self {
