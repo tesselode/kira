@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Instant};
 
 use crate::{command::ValueChangeCommand, Tween, Value};
 
@@ -27,6 +27,15 @@ impl ListenerHandle {
 		self.command_writers.set_position.write(ValueChangeCommand {
 			target: position.to_(),
 			tween,
+		})
+	}
+
+	/// Sets the delta time of the game loop. Needed for things like doppler on spatial tracks.
+	pub fn set_game_loop_delta_time(&mut self, game_loop_delta_time: f64) {
+		let game_loop_delta_time: Value<f64> = game_loop_delta_time.into();
+		self.command_writers.set_game_loop_delta_time.write(ValueChangeCommand {
+			target: game_loop_delta_time.to_(),
+			tween: Tween::default(),
 		})
 	}
 

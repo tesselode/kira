@@ -1,6 +1,6 @@
 use std::{
 	collections::HashMap,
-	sync::{atomic::Ordering, Arc},
+	sync::{atomic::Ordering, Arc}, time::Instant,
 };
 
 use crate::{
@@ -71,6 +71,7 @@ impl SpatialTrackHandle {
 		&mut self,
 		listener: impl Into<ListenerId>,
 		position: impl Into<Value<mint::Vector3<f32>>>,
+		game_loop_delta_time: impl Into<Value<f64>>,
 		builder: SpatialTrackBuilder,
 	) -> Result<SpatialTrackHandle, ResourceLimitReached> {
 		let (mut track, handle) = builder.build(
@@ -78,6 +79,7 @@ impl SpatialTrackHandle {
 			self.internal_buffer_size,
 			listener.into(),
 			position.into().to_(),
+			game_loop_delta_time.into().to_(),
 		);
 		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
 		self.sub_track_controller.insert(track)?;
@@ -98,6 +100,15 @@ impl SpatialTrackHandle {
 		self.command_writers.set_position.write(ValueChangeCommand {
 			target: position.to_(),
 			tween,
+		})
+	}
+
+	/// Sets the delta time of the game loop. Needed for things like the doppler effect.
+	pub fn set_game_loop_delta_time(&mut self, game_loop_delta_time: f64) {
+		let game_loop_delta_time: Value<f64> = game_loop_delta_time.into();
+		self.command_writers.set_game_loop_delta_time.write(ValueChangeCommand {
+			target: game_loop_delta_time.to_(),
+			tween: Tween::default(),
 		})
 	}
 

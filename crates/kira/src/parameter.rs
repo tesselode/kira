@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod test;
 
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use crate::{
 	command::{CommandReader, ValueChangeCommand},
@@ -24,6 +24,7 @@ pub struct Parameter<T: Tweenable = f64> {
 	raw_value: T,
 	previous_raw_value: T,
 	stagnant: bool,
+	last_command_timestamp: Option<Instant>,
 }
 
 impl<T: Tweenable> Parameter<T> {
@@ -45,6 +46,7 @@ impl<T: Tweenable> Parameter<T> {
 			raw_value,
 			previous_raw_value: raw_value,
 			stagnant: matches!(initial_value, Value::Fixed(_)),
+			last_command_timestamp: None,
 		}
 	}
 
@@ -58,6 +60,12 @@ impl<T: Tweenable> Parameter<T> {
 	#[must_use]
 	pub fn previous_value(&self) -> T {
 		self.previous_raw_value
+	}
+
+	/// Returns the instant the last command was written.
+	#[must_use]
+	pub fn last_command_timestamp(&self) -> Option<Instant> {
+		self.last_command_timestamp
 	}
 
 	/// Returns the interpolated value between the previous and current

@@ -42,6 +42,10 @@ pub struct SpatialTrackBuilder {
 	/// This value should be between `0.0` and `1.0`. `0.0` disables spatialization
 	/// entirely.
 	pub(crate) spatialization_strength: Value<f32>,
+	/// The speed of sound in the scene, to make the doppler effect more obvious you can set this to a lower value.
+	pub(crate) speed_of_sound: Value<f64>,
+	/// Doppler effect enabled.
+	pub(crate) doppler_effect: bool,
 }
 
 impl SpatialTrackBuilder {
@@ -58,6 +62,8 @@ impl SpatialTrackBuilder {
 			distances: SpatialTrackDistances::default(),
 			attenuation_function: Some(Easing::Linear),
 			spatialization_strength: Value::Fixed(0.75),
+			speed_of_sound: Value::Fixed(343.0),
+			doppler_effect: false,
 		}
 	}
 
@@ -132,6 +138,22 @@ impl SpatialTrackBuilder {
 		volume: impl Into<Value<Decibels>>,
 	) -> Self {
 		self.sends.insert(track.into(), volume.into());
+		self
+	}
+
+	/// Sets the speed of sound in the scene.
+	#[must_use = "This method consumes self and returns a modified SpatialTrackBuilder, so the return value should be used"]
+	pub fn speed_of_sound(self, speed_of_sound: impl Into<Value<f64>>) -> Self {
+		Self {
+			speed_of_sound: speed_of_sound.into(),
+			..self
+		}
+	}
+
+	/// Enables the doppler effect.
+	#[must_use = "This method consumes self and returns a modified SpatialTrackBuilder, so the return value should be used"]
+	pub fn doppler_effect(mut self, doppler_effect: bool) -> Self {
+		self.doppler_effect = doppler_effect;
 		self
 	}
 
@@ -283,6 +305,7 @@ impl SpatialTrackBuilder {
 		internal_buffer_size: usize,
 		listener_id: ListenerId,
 		position: Value<Vec3>,
+		game_loop_delta_time: Value<f64>,
 	) -> (Track, SpatialTrackHandle) {
 		let (command_writers, command_readers) = command_writers_and_readers();
 		let shared = Arc::new(TrackShared::new());
@@ -314,9 +337,13 @@ impl SpatialTrackBuilder {
 			spatial_data: Some(SpatialData {
 				listener_id,
 				position: Parameter::new(position, Vec3::ZERO),
+				game_loop_delta_time: Parameter::new(game_loop_delta_time, 0.0),
 				distances: self.distances,
 				attenuation_function: self.attenuation_function,
 				spatialization_strength: Parameter::new(self.spatialization_strength, 0.75),
+				current_doppler_scale: None,
+				speed_of_sound: Parameter::new(self.speed_of_sound, 343.0),
+				doppler_effect: self.doppler_effect,
 			}),
 			playback_state_manager: PlaybackStateManager::new(None),
 			temp_buffer: vec![Frame::ZERO; internal_buffer_size],

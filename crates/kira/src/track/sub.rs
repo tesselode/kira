@@ -146,6 +146,7 @@ impl Track {
 				previous_position: spatial_data.position.previous_value(),
 				position: spatial_data.position.value(),
 				listener_id: spatial_data.listener_id,
+				game_loop_delta_time: spatial_data.game_loop_delta_time.value(),
 			})
 			.or(parent_spatial_track_info);
 		let info = Info::new(
@@ -194,7 +195,18 @@ impl Track {
 
 		// process sounds
 		for (_, sound) in &mut self.sounds {
-			sound.process(&mut self.temp_buffer[..out.len()], dt, &info);
+
+			// apply the playback rate computed by the doppler effect if applicable
+			if let Some(spatial_data) = &mut self.spatial_data {
+				if let Some(playback_multiplier) = spatial_data.current_doppler_scale {
+					sound.process(&mut self.temp_buffer[..out.len()], dt * playback_multiplier, &info);
+				} else {
+					sound.process(&mut self.temp_buffer[..out.len()], dt, &info);
+				}
+			} else {
+				sound.process(&mut self.temp_buffer[..out.len()], dt, &info);
+			}
+			
 			for (summed_out, sound_out) in out.iter_mut().zip(self.temp_buffer.iter().copied()) {
 				*summed_out += sound_out;
 			}
@@ -209,6 +221,10 @@ impl Track {
 		// apply spatialization
 		if let Some(spatial_data) = &mut self.spatial_data {
 			spatial_data.position.update(dt * out.len() as f64, &info);
+			spatial_data.game_loop_delta_time.update(dt * out.len() as f64, &info);
+			if spatial_data.doppler_effect {
+				spatial_data.current_doppler_scale = spatial_data.compute_doppler_scale(&info);
+			}
 			spatial_data
 				.spatialization_strength
 				.update(dt * out.len() as f64, &info);
@@ -260,10 +276,12 @@ impl Track {
 		if let Some(SpatialData {
 			position,
 			spatialization_strength,
+			game_loop_delta_time,
 			..
 		}) = &mut self.spatial_data
 		{
 			position.read_command(&mut self.command_readers.set_position);
+			game_loop_delta_time.read_command(&mut self.command_readers.set_game_loop_delta_time);
 			spatialization_strength
 				.read_command(&mut self.command_readers.set_spatialization_strength);
 		}
@@ -279,6 +297,7 @@ impl Track {
 struct SpatialData {
 	listener_id: ListenerId,
 	position: Parameter<Vec3>,
+	game_loop_delta_time: Parameter<f64>,
 	/// The distances from a listener at which the track is loudest and quietest.
 	distances: SpatialTrackDistances,
 	/// How the track's volume will change with distance.
@@ -291,9 +310,56 @@ struct SpatialData {
 	/// This value should be between `0.0` and `1.0`. `0.0` disables spatialization
 	/// entirely.
 	spatialization_strength: Parameter<f32>,
+	/// The actual playback rate computed by the doppler effect.
+	current_doppler_scale: Option<f64>,
+	/// Speed of sound in units per second
+	speed_of_sound: Parameter<f64>,
+	/// Doppler effect enabled.
+	doppler_effect: bool,
 }
 
 impl SpatialData {
+	fn compute_doppler_scale(&mut self, info: &Info) -> Option<f64> {
+		if let (Some(listener), Some(spatial)) = (info.listener_info(), info.spatial_track_info()) {
+			let emitter_position = Vec3::from(spatial.position);
+			let listener_position = Vec3::from(listener.position);
+			let direction_vector = listener_position - emitter_position;
+
+			// Handle the case where objects are at the same position
+			if direction_vector.length_squared() < 1e-6 {
+				return Some(1.0);
+			}
+
+			let direction = direction_vector.normalize();
+
+			let emitter_velocity = spatial.velocity();
+			let listener_velocity = listener.velocity();
+
+			let v_emitter = emitter_velocity.dot(direction.into());
+			let v_listener = -listener_velocity.dot(direction.into());
+
+			// "Sonic boom"
+			// It may sonic boom at the start of the emitter's life because the previous position 
+			// is 0,0,0 not sure how to get around this, or if it even matters.
+			// But it would be kind of cool to emit an event when this happens.
+			let c = self.speed_of_sound.value();
+			if v_emitter > c {
+				return Some(1.0);
+			}
+
+			let scale = (c + v_listener) / (c - v_emitter);
+
+			// Failsafe
+			if scale.is_nan() {
+				return Some(1.0);
+			}
+
+			Some(scale)
+		} else {
+			None
+		}
+	}
+
 	fn spatialize(
 		&self,
 		input: Frame,
@@ -370,6 +436,7 @@ fn listener_ear_directions(listener_orientation: Quat) -> (Vec3, Vec3) {
 command_writers_and_readers! {
 	set_volume: ValueChangeCommand<Decibels>,
 	set_position: ValueChangeCommand<Vec3>,
+	set_game_loop_delta_time: ValueChangeCommand<f64>,
 	set_spatialization_strength: ValueChangeCommand<f32>,
 	pause: Tween,
 	resume: (StartTime, Tween),

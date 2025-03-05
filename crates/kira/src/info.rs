@@ -5,8 +5,10 @@
  * like [`Sound`](crate::sound::Sound) or [`Effect`](crate::effect::Effect).
  */
 
+use std::time::Instant;
+
 use atomic_arena::Arena;
-use glam::{Quat, Vec3};
+use glam::{DVec3, Quat, Vec3};
 
 use crate::{
 	clock::{Clock, ClockId, ClockTime, State as ClockState},
@@ -108,6 +110,7 @@ impl<'a> Info<'a> {
 						orientation: listener.orientation.value().into(),
 						previous_position: listener.position.previous_value().into(),
 						previous_orientation: listener.orientation.previous_value().into(),
+						game_loop_delta_time: listener.game_loop_delta_time.value(),
 					})
 				}
 				InfoKind::Mock { listener_info, .. } => listener_info.get(listener_id.0).copied(),
@@ -170,6 +173,8 @@ pub struct ListenerInfo {
 	pub previous_position: mint::Vector3<f32>,
 	/// The rotation of the listener prior to the last update.
 	pub previous_orientation: mint::Quaternion<f32>,
+	/// The delta time of the game loop.
+	pub game_loop_delta_time: f64,
 }
 
 impl ListenerInfo {
@@ -189,14 +194,13 @@ impl ListenerInfo {
 		previous_orientation.lerp(orientation, amount).into()
 	}
 
-	/// Returns the velocity.
-	pub fn velocity(&self) -> Vec3 {
-		Vec3::from(self.position) - Vec3::from(self.previous_position)
-	}
-
-	/// Returns `true` when not moving.
-	pub fn stationary(&self) -> bool {
-		self.position == self.previous_position
+	/// Returns the velocity of the listener.
+	pub fn velocity(&self) -> DVec3 {
+		let current: Vec3 = self.position.into();
+		let current: DVec3 = current.into();
+		let previous: Vec3 = self.previous_position.into();
+		let previous: DVec3 = previous.into();
+		(current - previous) / self.game_loop_delta_time
 	}
 }
 
@@ -311,16 +315,15 @@ pub struct SpatialTrackInfo {
 	pub position: Vec3,
 	/// Related listener ID.
 	pub listener_id: ListenerId,
+	/// The delta time of the game loop.
+	pub game_loop_delta_time: f64,
 }
 
 impl SpatialTrackInfo {
-	/// Returns the velocity.
-	pub fn velocity(&self) -> Vec3 {
-		self.position - self.previous_position
-	}
-
-	/// Returns `true` when not moving.
-	pub fn stationary(&self) -> bool {
-		self.position == self.previous_position
+	/// Returns the velocity of the spatial track. Make sure you correctly set the game loop delta time.
+	pub fn velocity(&self) -> DVec3 {
+		let position: DVec3 = self.position.into();
+		let previous_position: DVec3 = self.previous_position.into();
+		(position - previous_position) / self.game_loop_delta_time
 	}
 }

@@ -12,7 +12,6 @@ and [`Effect`] traits.
 pub mod compressor;
 pub mod delay;
 pub mod distortion;
-pub mod doppler;
 pub mod eq_filter;
 pub mod filter;
 pub mod panning_control;
