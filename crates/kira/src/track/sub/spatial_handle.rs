@@ -1,6 +1,6 @@
 use std::{
 	collections::HashMap,
-	sync::{atomic::Ordering, Arc}, time::Instant,
+	sync::{atomic::Ordering, Arc},
 };
 
 use crate::{

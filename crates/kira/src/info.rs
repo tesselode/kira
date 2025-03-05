@@ -130,7 +130,7 @@ impl<'a> Info<'a> {
 
 	/// Gets information about the current spatial track
 	/// if there is one.
-	pub fn spatial_track_info(&self) -> Option<&SpatialTrackInfo> {
+	pub(crate) fn spatial_track_info(&self) -> Option<&SpatialTrackInfo> {
 		self.spatial_track_info.as_ref()
 	}
 }
