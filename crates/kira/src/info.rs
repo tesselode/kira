@@ -306,9 +306,8 @@ enum InfoKind<'a> {
 	},
 }
 
-/// Information about a spatial track.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct SpatialTrackInfo {
+pub(crate)struct SpatialTrackInfo {
 	/// Previous position.
 	pub previous_position: Vec3,
 	/// Current position.
