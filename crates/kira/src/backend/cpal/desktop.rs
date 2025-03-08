@@ -69,27 +69,20 @@ impl CpalBackend {
 		}
 	}
 
-	/// Returns the number of unhandled stream errors discarded because of overcrowding.
-	/// This increases when cpal produces errors faster than they are polled by kira.
-	pub fn num_unhandled_stream_errors_discarded(&self) -> Option<u64> {
-		if let State::Initialized {
-			stream_manager_controller,
-		} = &self.state
-		{
-			Some(stream_manager_controller.unhandled_stream_errors_discarded())
-		} else {
-			None
-		}
-	}
+	/**
+	Returns the number of unhandled stream errors discarded because of overcrowding.
+	This increases either:
 
-	/// Returns the number of handled stream errors discarded because of overcrowding.
-	/// This increases when kira produces errors faster than they are polled by [`Self::pop_error`].
-	pub fn num_handled_stream_errors_discarded(&self) -> Option<u64> {
+	1. When `cpal` produces errors faster than they are polled by `kira`, or
+	2. When `kira` produces errors faster than they are polled by [`Self::pop_error`].
+	*/
+	#[must_use]
+	pub fn num_stream_errors_discarded(&self) -> Option<u64> {
 		if let State::Initialized {
 			stream_manager_controller,
 		} = &self.state
 		{
-			Some(stream_manager_controller.handled_stream_errors_discarded())
+			Some(stream_manager_controller.num_stream_errors_discarded())
 		} else {
 			None
 		}
