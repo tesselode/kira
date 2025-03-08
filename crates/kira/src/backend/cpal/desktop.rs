@@ -10,7 +10,7 @@ use stream_manager::{StreamManager, StreamManagerController};
 use crate::backend::{Backend, Renderer};
 use cpal::{
 	traits::{DeviceTrait, HostTrait},
-	BufferSize, Device, StreamConfig,
+	BufferSize, Device, StreamConfig, StreamError,
 };
 
 use super::{CpalBackendSettings, Error};
@@ -55,6 +55,37 @@ impl CpalBackend {
 			.unwrap()
 			.pop()
 			.ok()
+	}
+
+	/// Returns the oldest available stream error in the queue.
+	pub fn pop_error(&mut self) -> Option<StreamError> {
+		if let State::Initialized {
+			stream_manager_controller,
+		} = &mut self.state
+		{
+			stream_manager_controller.pop_handled_error()
+		} else {
+			None
+		}
+	}
+
+	/**
+	Returns the number of unhandled stream errors discarded because of overcrowding.
+	This increases either:
+
+	1. When `cpal` produces errors faster than they are polled by `kira`, or
+	2. When `kira` produces errors faster than they are polled by [`Self::pop_error`].
+	*/
+	#[must_use]
+	pub fn num_stream_errors_discarded(&self) -> Option<u64> {
+		if let State::Initialized {
+			stream_manager_controller,
+		} = &self.state
+		{
+			Some(stream_manager_controller.num_stream_errors_discarded())
+		} else {
+			None
+		}
 	}
 }
 
