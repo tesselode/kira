@@ -1,3 +1,9 @@
+# v0.10.5 - April 6, 2025
+
+- Allow getting unhandled errors from `CpalBackend` and querying the number of errors
+  discarded due to the error buffer being full (desktop only) (thanks @voidentente!)
+- Update glam to 0.30 (thanks @a1phyr!)
+
 # v0.10.4 - February 16, 2025
 
 - Clamp all audio internally to the -1.0 to 1.0 range
