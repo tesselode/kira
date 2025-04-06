@@ -47,6 +47,7 @@ impl CpalBackend {
 	  audio and still finish in time to avoid audio stuttering (num frames / sample
 	  rate)
 	*/
+	#[cfg_attr(docsrs, doc(cfg(not(wasm32))))]
 	pub fn pop_cpu_usage(&mut self) -> Option<f32> {
 		self.cpu_usage_consumer
 			.as_mut()
@@ -58,6 +59,7 @@ impl CpalBackend {
 	}
 
 	/// Returns the oldest available stream error in the queue.
+	#[cfg_attr(docsrs, doc(cfg(not(wasm32))))]
 	pub fn pop_error(&mut self) -> Option<StreamError> {
 		if let State::Initialized {
 			stream_manager_controller,
@@ -77,6 +79,7 @@ impl CpalBackend {
 	2. When `kira` produces errors faster than they are polled by [`Self::pop_error`].
 	*/
 	#[must_use]
+	#[cfg_attr(docsrs, doc(cfg(not(wasm32))))]
 	pub fn num_stream_errors_discarded(&self) -> Option<u64> {
 		if let State::Initialized {
 			stream_manager_controller,
