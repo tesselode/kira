@@ -139,6 +139,7 @@ impl<B: Backend> AudioManager<B> {
 			self.internal_buffer_size,
 			listener.into(),
 			position.into().to_(),
+			Value::Fixed(0.0), // Initial game loop delta time is 0
 		);
 		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
 		self.resource_controllers

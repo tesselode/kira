@@ -163,7 +163,7 @@ macro_rules! read_commands_into_parameters {
 macro_rules! handle_param_setters {
 	($($(#[$m:meta])* $name:ident: $type:ty),*$(,)?) => {
 		paste::paste! {
-			$(
+		$(
 				$(#[$m])*
 				pub fn [<set_ $name>](&mut self, $name: impl Into<$crate::Value<$type>>, tween: $crate::tween::Tween) {
 					self.command_writers.[<set_ $name>].write($crate::command::ValueChangeCommand {
