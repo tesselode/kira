@@ -113,7 +113,10 @@ impl Backend for CpalBackend {
 			)
 		};
 
-		let config = device.default_output_config()?.config();
+		let mut config = device.default_output_config()?.config();
+		if let Some(sample_rate) = settings.sample_rate {
+			config.sample_rate = cpal::SampleRate(sample_rate)
+		}
 		let sample_rate = config.sample_rate.0;
 		Ok((
 			Self {

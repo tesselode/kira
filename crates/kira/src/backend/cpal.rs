@@ -18,6 +18,8 @@ pub struct CpalBackendSettings {
 	/// with the [`cpal::SupportedBufferSize`] range provided by the [`cpal::SupportedStreamConfig`]
 	/// API.
 	pub buffer_size: BufferSize,
+	/// The sample rate to be used when building the output stream. If [`None`], the device's default sample rate will be used.
+	pub sample_rate: Option<u32>,
 }
 
 impl Default for CpalBackendSettings {
@@ -25,6 +27,7 @@ impl Default for CpalBackendSettings {
 		Self {
 			device: None,
 			buffer_size: BufferSize::Default,
+			sample_rate: None,
 		}
 	}
 }
