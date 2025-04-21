@@ -137,7 +137,7 @@ impl Backend for CpalBackend {
 					config,
 					self.custom_device,
 					self.buffer_size,
-				),
+				)?,
 			};
 			self.cpu_usage_consumer = Some(Mutex::new(cpu_usage_consumer));
 		} else {

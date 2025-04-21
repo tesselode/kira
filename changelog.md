@@ -1,3 +1,8 @@
+# v0.10.6 - April 21, 2025
+
+- Fix cpal (desktop) errors on startup causing a panic on another thread instead
+of being returned to the caller
+
 # v0.10.5 - April 6, 2025
 
 - Allow getting unhandled errors from `CpalBackend` and querying the number of errors

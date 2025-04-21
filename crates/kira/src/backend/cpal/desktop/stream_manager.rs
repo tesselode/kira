@@ -74,7 +74,7 @@ impl StreamManager {
 		mut config: StreamConfig,
 		custom_device: bool,
 		buffer_size: BufferSize,
-	) -> StreamManagerController {
+	) -> Result<StreamManagerController, Error> {
 		let should_drop = Arc::new(AtomicBool::new(false));
 		let should_drop_clone = should_drop.clone();
 
@@ -84,6 +84,8 @@ impl StreamManager {
 		let (mut handled_stream_error_producer, handled_stream_error_consumer) =
 			RingBuffer::new(64);
 
+		let (mut initial_result_producer, mut initial_result_consumer) = RingBuffer::new(1);
+
 		std::thread::spawn(move || {
 			let mut stream_manager = StreamManager {
 				state: State::Idle { renderer },
@@ -92,9 +94,20 @@ impl StreamManager {
 				custom_device,
 				buffer_size,
 			};
-			let mut unhandled_stream_error_consumer = stream_manager
-				.start_stream(&device, &mut config, num_stream_errors_discarded.clone())
-				.unwrap();
+			let mut unhandled_stream_error_consumer = match stream_manager.start_stream(
+				&device,
+				&mut config,
+				num_stream_errors_discarded.clone(),
+			) {
+				Ok(unhandled_stream_error_consumer) => {
+					initial_result_producer.push(Ok(())).unwrap();
+					unhandled_stream_error_consumer
+				}
+				Err(err) => {
+					initial_result_producer.push(Err(err)).unwrap();
+					return;
+				}
+			};
 			loop {
 				std::thread::sleep(CHECK_STREAM_INTERVAL);
 				if should_drop.load(Ordering::SeqCst) {
@@ -107,11 +120,20 @@ impl StreamManager {
 				);
 			}
 		});
-		StreamManagerController {
+
+		loop {
+			if let Ok(result) = initial_result_consumer.pop() {
+				result?;
+				break;
+			}
+			std::thread::sleep(Duration::from_micros(100));
+		}
+
+		Ok(StreamManagerController {
 			should_drop: should_drop_clone,
 			num_stream_errors_discarded: num_stream_errors_discarded_clone,
 			handled_stream_error_consumer: Mutex::new(handled_stream_error_consumer),
-		}
+		})
 	}
 
 	/// Restarts the stream if the audio device gets disconnected.
