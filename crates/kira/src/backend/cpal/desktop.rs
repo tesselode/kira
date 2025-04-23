@@ -113,16 +113,20 @@ impl Backend for CpalBackend {
 			)
 		};
 
-		let mut config = device.default_output_config()?.config();
-		if let Some(sample_rate) = settings.sample_rate {
-			config.sample_rate = cpal::SampleRate(sample_rate)
-		}
+		let config = if let Some(config) = settings.config {
+			config
+		} else {
+			device.default_output_config()?.config()
+		};
+		
 		let sample_rate = config.sample_rate.0;
+		let buffer_size = config.buffer_size;
+
 		Ok((
 			Self {
 				state: State::Uninitialized { device, config },
 				custom_device,
-				buffer_size: settings.buffer_size,
+				buffer_size,
 				cpu_usage_consumer: None,
 			},
 			sample_rate,
