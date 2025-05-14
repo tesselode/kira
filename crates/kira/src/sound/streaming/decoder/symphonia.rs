@@ -69,7 +69,12 @@ impl super::Decoder for SymphoniaDecoder {
 	}
 
 	fn decode(&mut self) -> Result<Vec<Frame>, Self::Error> {
-		let packet = self.format_reader.next_packet()?;
+		let packet = loop {
+			let packet = self.format_reader.next_packet()?;
+			if self.track_id == packet.track_id() {
+				break packet;
+			}
+		};
 		let buffer = self.decoder.decode(&packet)?;
 		load_frames_from_buffer_ref(&buffer)
 	}
