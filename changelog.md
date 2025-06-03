@@ -1,3 +1,7 @@
+# v0.10.7 - June 2, 2025
+
+- Make `StreamingSoundHandle` `Sync`
+
 # v0.10.6 - April 21, 2025
 
 - Fix cpal (desktop) errors on startup causing a panic on another thread instead

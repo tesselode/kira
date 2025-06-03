@@ -1,11 +1,12 @@
 #[cfg(test)]
 mod test;
 
+use std::sync::Mutex;
 use std::{sync::Arc, time::Duration};
 
 use crate::sound::{EndPosition, IntoOptionalRegion, PlaybackPosition, Region, SoundData};
-use crate::{Tween, Value};
 use crate::{Decibels, Panning, PlaybackRate, StartTime};
+use crate::{Tween, Value};
 use rtrb::RingBuffer;
 
 use super::sound::Shared;
@@ -390,7 +391,7 @@ impl<Error: Send + 'static> StreamingSoundData<Error> {
 		let handle = StreamingSoundHandle {
 			shared,
 			command_writers,
-			error_consumer,
+			error_consumer: Mutex::new(error_consumer),
 		};
 		Ok((sound, handle, scheduler))
 	}
