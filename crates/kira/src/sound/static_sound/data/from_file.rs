@@ -45,10 +45,11 @@ impl StaticSoundData {
 				&Default::default(),
 			)?
 			.format;
-		let codec_params = &format_reader
+		let default_track = format_reader
 			.default_track()
-			.ok_or(FromFileError::NoDefaultTrack)?
-			.codec_params;
+			.ok_or(FromFileError::NoDefaultTrack)?;
+		let default_track_id = default_track.id;
+		let codec_params = &default_track.codec_params;
 		let sample_rate = codec_params
 			.sample_rate
 			.ok_or(FromFileError::UnknownSampleRate)?;
@@ -57,8 +58,10 @@ impl StaticSoundData {
 		loop {
 			match format_reader.next_packet() {
 				Ok(packet) => {
-					let buffer = decoder.decode(&packet)?;
-					frames.append(&mut load_frames_from_buffer_ref(&buffer)?);
+					if default_track_id == packet.track_id() {
+						let buffer = decoder.decode(&packet)?;
+						frames.append(&mut load_frames_from_buffer_ref(&buffer)?);
+					}
 				}
 				Err(error) => match error {
 					symphonia::core::errors::Error::IoError(error) => {
