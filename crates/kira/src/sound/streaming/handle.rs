@@ -1,6 +1,6 @@
 use std::{
 	fmt::{Debug, Formatter},
-	sync::Arc,
+	sync::{Arc, Mutex},
 };
 
 use crate::{
@@ -16,7 +16,7 @@ use super::{sound::Shared, CommandWriters};
 pub struct StreamingSoundHandle<Error> {
 	pub(super) shared: Arc<Shared>,
 	pub(super) command_writers: CommandWriters,
-	pub(super) error_consumer: Consumer<Error>,
+	pub(super) error_consumer: Mutex<Consumer<Error>>,
 }
 
 impl<Error> StreamingSoundHandle<Error> {
@@ -328,7 +328,11 @@ impl<Error> StreamingSoundHandle<Error> {
 	/// Returns an error that occurred while decoding audio, if any.
 	#[must_use]
 	pub fn pop_error(&mut self) -> Option<Error> {
-		self.error_consumer.pop().ok()
+		self.error_consumer
+			.lock()
+			.expect("error consumer mutex poisoned")
+			.pop()
+			.ok()
 	}
 }
 
