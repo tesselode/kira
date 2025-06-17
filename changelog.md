@@ -1,3 +1,7 @@
+# v0.10.8 - June 17, 2025
+
+- Decode default audio track when multiple tracks are present (thanks @siavashserver!)
+
 # v0.10.7 - June 2, 2025
 
 - Make `StreamingSoundHandle` `Sync`
