@@ -33,6 +33,7 @@ pub(crate) struct Listener {
 	pub shared: Arc<ListenerShared>,
 	pub position: Parameter<Vec3>,
 	pub orientation: Parameter<Quat>,
+	pub game_loop_delta_time: Parameter<f64>,
 	pub command_readers: CommandReaders,
 }
 
@@ -49,6 +50,7 @@ impl Listener {
 				shared: shared.clone(),
 				position: Parameter::new(position, Vec3::ZERO),
 				orientation: Parameter::new(orientation, Quat::IDENTITY),
+				game_loop_delta_time: Parameter::new(Value::Fixed(0.0), 0.0),
 				command_readers,
 			},
 			ListenerHandle {
@@ -60,12 +62,13 @@ impl Listener {
 	}
 
 	pub fn on_start_processing(&mut self) {
-		read_commands_into_parameters!(self, position, orientation);
+		read_commands_into_parameters!(self, position, orientation, game_loop_delta_time);
 	}
 
 	pub(crate) fn update(&mut self, dt: f64, info: &Info) {
 		self.position.update(dt, info);
 		self.orientation.update(dt, info);
+		self.game_loop_delta_time.update(dt, info);
 	}
 }
 
@@ -76,6 +79,7 @@ impl Default for Listener {
 			shared: Arc::new(ListenerShared::new()),
 			position: Parameter::new(Value::Fixed(Vec3::ZERO), Vec3::ZERO),
 			orientation: Parameter::new(Value::Fixed(Quat::IDENTITY), Quat::IDENTITY),
+			game_loop_delta_time: Parameter::new(Value::Fixed(0.0), 0.0),
 			command_readers,
 		}
 	}
@@ -106,4 +110,5 @@ impl ListenerShared {
 command_writers_and_readers! {
 	set_position: ValueChangeCommand<Vec3>,
 	set_orientation: ValueChangeCommand<Quat>,
+	set_game_loop_delta_time: ValueChangeCommand<f64>,
 }
