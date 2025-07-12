@@ -87,7 +87,7 @@ use kira::{
 const TEMPO: f64 = 120.0;
 
 let mut manager = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())?;
-// Create a clock that ticks 120 times per second. In this case,
+// Create a clock that ticks 120 times per minute. In this case,
 // each tick is one musical beat. We can use a tick to represent any
 // arbitrary amount of time.
 let mut clock = manager.add_clock(ClockSpeed::TicksPerMinute(TEMPO))?;
