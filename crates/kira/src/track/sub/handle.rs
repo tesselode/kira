@@ -71,6 +71,7 @@ impl TrackHandle {
 		&mut self,
 		listener: impl Into<ListenerId>,
 		position: impl Into<Value<mint::Vector3<f32>>>,
+		game_loop_delta_time: impl Into<Value<f64>>,
 		builder: SpatialTrackBuilder,
 	) -> Result<SpatialTrackHandle, ResourceLimitReached> {
 		let (mut track, handle) = builder.build(
@@ -78,6 +79,7 @@ impl TrackHandle {
 			self.internal_buffer_size,
 			listener.into(),
 			position.into().to_(),
+			game_loop_delta_time.into().to_(),
 		);
 		track.init_effects(self.renderer_shared.sample_rate.load(Ordering::SeqCst));
 		self.sub_track_controller.insert(track)?;

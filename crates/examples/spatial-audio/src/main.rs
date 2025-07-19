@@ -79,9 +79,10 @@ async fn main() {
 		let mouse_delta = mouse_position - last_mouse_position;
 		last_mouse_position = mouse_position;
 		camera_controller.update(delta_time, mouse_delta);
+
 		listener.set_position(camera_controller.position, Tween::default());
 		listener.set_orientation(camera_controller.orientation(), Tween::default());
-
+		
 		clear_background(LIGHTGRAY);
 
 		// Going 3d!
