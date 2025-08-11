@@ -70,12 +70,12 @@ impl<T> ResourceStorage<T> {
 	}
 
 	#[must_use]
-	pub fn iter(&self) -> atomic_arena::iter::Iter<T> {
+	pub fn iter(&self) -> atomic_arena::iter::Iter<'_, T> {
 		self.resources.iter()
 	}
 
 	#[must_use]
-	pub fn iter_mut(&mut self) -> atomic_arena::iter::IterMut<T> {
+	pub fn iter_mut(&mut self) -> atomic_arena::iter::IterMut<'_, T> {
 		self.resources.iter_mut()
 	}
 
@@ -145,7 +145,7 @@ impl<T> SelfReferentialResourceStorage<T> {
 	}
 
 	#[must_use]
-	pub fn iter_mut(&mut self) -> atomic_arena::iter::IterMut<T> {
+	pub fn iter_mut(&mut self) -> atomic_arena::iter::IterMut<'_, T> {
 		self.resources.iter_mut()
 	}
 
