@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        platform: ['', 'wasm32-unknown-unuknown']
+        platform: ['', 'wasm32-unknown-unknown']
         feature: ['', 'cpal', 'mp3', 'all']
     steps:
       - uses: actions/checkout@v4
@@ -20,7 +20,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
-      - name: clippy (${{ matrix.platform == '' && 'desktop' || matrix.platform }} - ${{ (matrix.feature == 'all' && 'all features') || (matrix.feature == '' && 'no feature') || matrix.feature }})
+      - name: clippy (${{ matrix.platform == '' && 'desktop' || 'wasm32' }} - ${{ (matrix.feature == 'all' && 'all features') || (matrix.feature == '' && 'no feature') || matrix.feature }})
         run: |
           cargo clippy \
           ${{ ( matrix.platform != '' ) && join('--target=', matrix.platform) }} \
