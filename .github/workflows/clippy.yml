@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        toolchain: ['1.85.0', '1.89.0']
         platform: ['desktop', 'wasm32']
         feature: ['none', 'cpal', 'mp3', 'all']
     steps:
@@ -19,7 +20,9 @@ jobs:
       - name: install toolchain ${{ matrix.platform == 'wasm32' && 'and wasm32' || '' }}
         uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: ${{ matrix.toolchain }}
           targets: ${{ matrix.platform == 'wasm32' && 'wasm32-unknown-unknown' || '' }}
+          components: clippy
       - name: cache
         uses: Swatinem/rust-cache@v2
       - name: clippy (${{ matrix.platform }} - ${{ (matrix.feature == 'all' && 'all features') || (matrix.feature == 'none' && 'no feature' || matrix.feature) }})

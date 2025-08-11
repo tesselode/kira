@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        toolchain: ['1.85.0', '1.89.0']
         feature: ['none', 'cpal', 'mp3', 'all']
     steps:
       - uses: actions/checkout@v4
@@ -17,6 +18,8 @@ jobs:
         run: sudo apt-get install libasound2-dev
       - name: install toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.toolchain }}
       - name: cache
         uses: Swatinem/rust-cache@v2
       - name: run tests (desktop - ${{ (matrix.feature == 'all' && 'all features') || (matrix.feature == 'none' && 'no feature' || matrix.feature) }})
