@@ -8,16 +8,20 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+    strategy:
+      matrix:
+        feature: ['none', 'cpal', 'mp3', 'all']
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: install cpal dependencies
         run: sudo apt-get install libasound2-dev
-      - name: run tests (desktop - all features)
-        run: cargo test -p kira --all-features
-      - name: run tests (desktop - no features)
-        run: cargo test -p kira --no-default-features --lib
-      - name: run tests (desktop - with cpal feature)
-        run: cargo test -p kira --no-default-features --features=cpal --lib
-      - name: run tests (desktop - with mp3 feature)
-        run: cargo test -p kira --no-default-features --features=mp3 --lib
+      - name: install toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: cache
+        uses: Swatinem/rust-cache@v2
+      - name: run tests (desktop - ${{ (matrix.feature == 'all' && 'all features') || (matrix.feature == 'none' && 'no feature' || matrix.feature) }})
+        run: >
+          cargo test
+          --package kira
+          ${{ ( matrix.feature == 'all' ) && '--all-features' || '--no-default-features' }}
+          ${{ ( matrix.feature != 'all' && matrix.feature != 'none' ) && format('--features={0} --lib', matrix.feature) || '' }}
