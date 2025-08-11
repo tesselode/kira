@@ -16,10 +16,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: install cpal dependencies
         run: sudo apt-get install libasound2-dev
-      - name: install toolchain and wasm32
+      - name: install toolchain ${{ matrix.platform == 'wasm32' && 'and wasm32' || '' }}
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: wasm32-unknown-unknown
+          targets: ${{ matrix.platform == 'wasm32' && 'wasm32-unknown-unknown' || '' }}
+      - name: cache
+        uses: Swatinem/rust-cache@v2
       - name: clippy (${{ matrix.platform }} - ${{ (matrix.feature == 'all' && 'all features') || (matrix.feature == 'none' && 'no feature' || matrix.feature) }})
         run: >
           cargo clippy
