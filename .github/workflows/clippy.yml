@@ -10,20 +10,20 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        platform: ['', 'wasm32-unknown-unknown']
-        feature: ['', 'cpal', 'mp3', 'all']
+        platform: ['desktop', 'wasm32']
+        feature: ['none', 'cpal', 'mp3', 'all']
     steps:
       - uses: actions/checkout@v4
       - name: install cpal dependencies
         run: sudo apt-get install libasound2-dev
-      - name: install toolchain and wasm32-unknown-unknown
+      - name: install toolchain and wasm32
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
-      - name: clippy (${{ (matrix.platform == '') && 'desktop' || 'wasm32' }} - ${{ (matrix.feature == 'all' && 'all features') || (matrix.feature == '' && 'no feature' || matrix.feature) }})
-        run: |
-          cargo clippy \
-          ${{ ( matrix.platform > 0 ) && join('--target=', matrix.platform) || '' }} \
-          --package kira \
-          ${{ ( matrix.feature == 'all' ) && '--all-features' || '--no-default-features' }} \
-          ${{ ( matrix.feature != 'all' && matrix.feature > 0 ) && join('--features=', matrix.feature) || '' }}
+      - name: clippy (${{ matrix.platform }} - ${{ (matrix.feature == 'all' && 'all features') || (matrix.feature == 'none' && 'no feature' || matrix.feature) }})
+        run: >
+          cargo clippy
+          ${{ ( matrix.platform != 'desktop' ) && join('--target=', matrix.platform) || '' }}
+          --package kira
+          ${{ ( matrix.feature == 'all' ) && '--all-features' || '--no-default-features' }}
+          ${{ ( matrix.feature != 'all' && matrix.feature != 'none' ) && join('--features=', matrix.feature) || '' }}
