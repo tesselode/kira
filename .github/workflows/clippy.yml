@@ -25,5 +25,5 @@ jobs:
           cargo clippy \
           ${{ ( matrix.platform != '' ) && join('--target=', matrix.platform) }} \
           --package kira \
-          ${{ ( matrix.feature == 'all' ) && '--all-features' || 'no-default-features' }} \
+          ${{ ( matrix.feature == 'all' ) && '--all-features' || '--no-default-features' }} \
           ${{ ( matrix.feature != 'all' && matrix.feature != '' ) && join('--features=', matrix.feature) }}
