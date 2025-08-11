@@ -25,6 +25,8 @@ jobs:
           components: clippy
       - name: cache
         uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ${{ matrix.platform }}-${{ matrix.toolchain }}
       - name: clippy (${{ matrix.platform }} - ${{ (matrix.feature == 'all' && 'all features') || (matrix.feature == 'none' && 'no feature' || matrix.feature) }})
         run: >
           cargo clippy
