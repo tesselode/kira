@@ -23,7 +23,7 @@ jobs:
       - name: clippy (${{ (matrix.platform == '') && 'desktop' || 'wasm32' }} - ${{ (matrix.feature == 'all' && 'all features') || (matrix.feature == '' && 'no feature' || matrix.feature) }})
         run: |
           cargo clippy \
-          ${{ ( matrix.platform != '' ) && join('--target=', matrix.platform) || '' }} \
+          ${{ ( matrix.platform > 0 ) && join('--target=', matrix.platform) || '' }} \
           --package kira \
           ${{ ( matrix.feature == 'all' ) && '--all-features' || '--no-default-features' }} \
-          ${{ ( matrix.feature != 'all' && matrix.feature != '' ) && join('--features=', matrix.feature) || '' }}
+          ${{ ( matrix.feature != 'all' && matrix.feature > 0 ) && join('--features=', matrix.feature) || '' }}
