@@ -2,7 +2,8 @@
 name = "kira"
 version = "0.10.8"
 authors = ["Andrew Minnich <aminnich3@gmail.com>"]
-edition = "2021"
+edition.workspace = true
+rust-version.workspace = true
 license = "MIT OR Apache-2.0"
 description = "Expressive audio library for games"
 repository = "https://github.com/tesselode/kira"
@@ -12,21 +13,21 @@ readme = "../../README.md"
 
 [dependencies]
 assert_no_alloc = { version = "1.1.2", optional = true }
-atomic-arena = "0.1.1"
-glam = { version = "0.30.0", features = ["mint"] }
+atomic-arena = "0.1.2"
+glam = { version = "0.30.5", features = ["mint"] }
 mint = "0.5.9"
-paste = "1.0.14"
-rtrb = "0.3.1"
-serde = { version = "1.0.164", features = ["derive"], optional = true }
-symphonia = { version = "0.5.0", optional = true, default-features = false }
-triple_buffer = "8.1.0"
+paste = "1.0.15"
+rtrb = "0.3.2"
+serde = { version = "1.0.219", features = ["derive"], optional = true }
+symphonia = { version = "0.5.4", optional = true, default-features = false }
+triple_buffer = "8.1.1"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies.cpal]
-version = "0.15.1"
+version = "0.16.0"
 optional = true
 
 [target.'cfg(target_arch = "wasm32")'.dependencies.cpal]
-version = "0.15.1"
+version = "0.16.0"
 optional = true
 features = ["wasm-bindgen"]
 
