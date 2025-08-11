@@ -26,4 +26,4 @@ jobs:
           ${{ ( matrix.platform != 'desktop' ) && '--target=wasm32-unknown-unknown' || '' }}
           --package kira
           ${{ ( matrix.feature == 'all' ) && '--all-features' || '--no-default-features' }}
-          ${{ ( matrix.feature != 'all' && matrix.feature != 'none' ) && join('--features=', matrix.feature) || '' }}
+          ${{ ( matrix.feature != 'all' && matrix.feature != 'none' ) && format('--features={0}', matrix.feature) || '' }}
