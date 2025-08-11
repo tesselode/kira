@@ -12,4 +12,3 @@ members = [
 ]
 resolver = "2"
 package.edition = "2024"
-package.rust-version = "1.89.0"
