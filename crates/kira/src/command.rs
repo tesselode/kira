@@ -138,7 +138,7 @@ macro_rules! command_writers_and_readers {
 
 		#[must_use]
 		pub(crate) fn command_writers_and_readers() -> (CommandWriters, CommandReaders) {
-			paste::paste! {
+			$crate::paste::paste! {
 				$(let ([<$field_name _writer>], [<$field_name _reader>]) = $crate::command::command_writer_and_reader();)*
 				let command_writers = CommandWriters {
 					$($field_name: [<$field_name _writer>]),*
@@ -154,7 +154,7 @@ macro_rules! command_writers_and_readers {
 
 macro_rules! read_commands_into_parameters {
 	($self:ident, $($parameter_name:ident),*$(,)?) => {
-		paste::paste! {
+		$crate::paste::paste! {
 			$($self.$parameter_name.read_command(&mut $self.command_readers.[<set_ $parameter_name>]);)*
 		}
 	};
@@ -162,7 +162,7 @@ macro_rules! read_commands_into_parameters {
 
 macro_rules! handle_param_setters {
 	($($(#[$m:meta])* $name:ident: $type:ty),*$(,)?) => {
-		paste::paste! {
+		$crate::paste::paste! {
 			$(
 				$(#[$m])*
 				pub fn [<set_ $name>](&mut self, $name: impl Into<$crate::Value<$type>>, tween: $crate::tween::Tween) {
