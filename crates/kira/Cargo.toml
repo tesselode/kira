@@ -15,7 +15,7 @@ assert_no_alloc = { version = "1.1.2", optional = true }
 atomic-arena = "0.1.1"
 glam = { version = "0.30.0", features = ["mint"] }
 mint = "0.5.9"
-paste = { package="pastey", version = "*"}
+pastey = "0.1.1"
 rtrb = "0.3.1"
 serde = { version = "1.0.164", features = ["derive"], optional = true }
 symphonia = { version = "0.5.0", optional = true, default-features = false }

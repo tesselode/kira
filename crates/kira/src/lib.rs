@@ -270,4 +270,4 @@ pub use semitones::*;
 pub use start_time::*;
 pub use tween::*;
 pub use value::*;
-pub use ::paste;
+pub use pastey;
