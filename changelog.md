@@ -1,3 +1,7 @@
+# v0.10.9 - Unreleased
+
+- Target both cpal v0.15 and v0.16
+
 # v0.10.8 - June 17, 2025
 
 - Decode default audio track when multiple tracks are present (thanks @siavashserver!)

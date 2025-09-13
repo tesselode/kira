@@ -1,6 +1,6 @@
 [package]
 name = "kira"
-version = "0.10.8"
+version = "0.10.9"
 authors = ["Andrew Minnich <aminnich3@gmail.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -22,11 +22,11 @@ symphonia = { version = "0.5.0", optional = true, default-features = false }
 triple_buffer = "8.1.0"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies.cpal]
-version = "0.15.1"
+version = ">=0.15, <=0.16"
 optional = true
 
 [target.'cfg(target_arch = "wasm32")'.dependencies.cpal]
-version = "0.15.1"
+version = ">=0.15, <=0.16"
 optional = true
 features = ["wasm-bindgen"]
 
