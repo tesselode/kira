@@ -19,7 +19,7 @@ realtime-safe FIFO queue of multiple values, consider using a ring buffer, such 
 which Kira uses internally.
 */
 
-use triple_buffer::{triple_buffer, Input, Output};
+use triple_buffer::{Input, Output, triple_buffer};
 
 use crate::{Tween, Value};
 

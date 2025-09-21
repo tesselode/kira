@@ -11,3 +11,4 @@ members = [
 	"crates/examples/spatial-audio",
 ]
 resolver = "2"
+package.edition = "2024"

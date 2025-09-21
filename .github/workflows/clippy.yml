@@ -8,58 +8,29 @@ env:
 jobs:
   clippy:
     runs-on: ubuntu-latest
-    
+    strategy:
+      matrix:
+        toolchain: ['1.85.0', '1.89.0']
+        platform: ['desktop', 'wasm32']
+        feature: ['none', 'cpal', 'mp3', 'all']
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: install cpal dependencies
         run: sudo apt-get install libasound2-dev
-      - name: install wasm32 target
-        run: rustup target add wasm32-unknown-unknown
-      - name: clippy (desktop - no features)
-        uses: actions-rs/clippy-check@v1
+      - name: install toolchain ${{ matrix.platform == 'wasm32' && 'and wasm32' || '' }}
+        uses: dtolnay/rust-toolchain@stable
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: -p kira --no-default-features
-          name: desktop - no features
-      - name: clippy (desktop - with cpal feature)
-        uses: actions-rs/clippy-check@v1
+          toolchain: ${{ matrix.toolchain }}
+          targets: ${{ matrix.platform == 'wasm32' && 'wasm32-unknown-unknown' || '' }}
+          components: clippy
+      - name: cache
+        uses: Swatinem/rust-cache@v2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: -p kira --no-default-features --features=cpal
-          name: desktop - with cpal feature
-      - name: clippy (desktop - with mp3 feature)
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: -p kira --no-default-features --features=mp3
-          name: desktop - with mp3 feature
-      - name: clippy (desktop - with all features)
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: -p kira --all-features
-          name: desktop - with all features
-      - name: clippy (wasm32 - no features)
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: -p kira --no-default-features --target=wasm32-unknown-unknown
-          name: wasm32 - no features
-      - name: clippy (wasm32 - with cpal feature)
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: -p kira --no-default-features --features=cpal --target=wasm32-unknown-unknown
-          name: wasm32 - with cpal feature
-      - name: clippy (wasm32 - with mp3 feature)
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: -p kira --no-default-features --features=mp3 --target=wasm32-unknown-unknown
-          name: wasm32 - with mp3 feature
-      - name: clippy (wasm32 - with all features)
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: -p kira --all-features
-          name: wasm32 - with all features
+          shared-key: ${{ matrix.platform }}-${{ matrix.toolchain }}
+      - name: clippy (${{ matrix.platform }} - ${{ (matrix.feature == 'all' && 'all features') || (matrix.feature == 'none' && 'no feature' || matrix.feature) }})
+        run: >
+          cargo clippy
+          ${{ ( matrix.platform != 'desktop' ) && '--target=wasm32-unknown-unknown' || '' }}
+          --package kira
+          ${{ ( matrix.feature == 'all' ) && '--all-features' || '--no-default-features' }}
+          ${{ ( matrix.feature != 'all' && matrix.feature != 'none' ) && format('--features={0}', matrix.feature) || '' }}
