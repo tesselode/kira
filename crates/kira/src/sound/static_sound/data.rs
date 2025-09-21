@@ -11,14 +11,13 @@ use std::{
 };
 
 use crate::{
+	Decibels, Panning, PlaybackRate, StartTime, Tween, Value,
 	frame::Frame,
 	sound::{EndPosition, IntoOptionalRegion, PlaybackPosition, Region, Sound, SoundData},
-	Tween,
-	Decibels, Panning, PlaybackRate, StartTime, Value,
 };
 
 use super::{
-	command_writers_and_readers, handle::StaticSoundHandle, sound::StaticSound, StaticSoundSettings,
+	StaticSoundSettings, command_writers_and_readers, handle::StaticSoundHandle, sound::StaticSound,
 };
 
 /// A piece of audio loaded into memory all at once.

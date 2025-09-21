@@ -1,4 +1,4 @@
-use crate::{command::handle_param_setters, Mix};
+use crate::{Mix, command::handle_param_setters};
 
 use super::{CommandWriters, FilterMode};
 

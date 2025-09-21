@@ -5,8 +5,8 @@ use crate::{
 };
 
 use super::{
-	clocks::Clocks, listeners::Listeners, modulators::Modulators, ResourceController,
-	ResourceStorage,
+	ResourceController, ResourceStorage, clocks::Clocks, listeners::Listeners,
+	modulators::Modulators,
 };
 
 pub(crate) struct Mixer {

@@ -1,11 +1,11 @@
 use std::time::Duration;
 
 use crate::{
-	effect::{Effect, EffectBuilder},
 	Decibels, Mix, Value,
+	effect::{Effect, EffectBuilder},
 };
 
-use super::{command_writers_and_readers, Delay, DelayHandle};
+use super::{Delay, DelayHandle, command_writers_and_readers};
 
 /// Configures a delay effect.
 pub struct DelayBuilder {

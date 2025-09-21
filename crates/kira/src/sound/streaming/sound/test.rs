@@ -1,15 +1,15 @@
 use std::time::Duration;
 
 use crate::{
+	Decibels, Panning, StartTime, Tween,
 	clock::ClockTime,
 	frame::Frame,
 	info::MockInfoBuilder,
 	sound::{
-		streaming::{decoder::mock::MockDecoder, StreamingSoundData, StreamingSoundSettings},
 		PlaybackState, Sound,
+		streaming::{StreamingSoundData, StreamingSoundSettings, decoder::mock::MockDecoder},
 	},
 	test_helpers::expect_frame_soon,
-	Decibels, Panning, StartTime, Tween,
 };
 
 use super::decode_scheduler::NextStep;

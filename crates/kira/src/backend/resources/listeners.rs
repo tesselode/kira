@@ -1,7 +1,7 @@
 use crate::{info::Info, listener::Listener};
 
 use super::{
-	clocks::Clocks, modulators::Modulators, ResourceController, SelfReferentialResourceStorage,
+	ResourceController, SelfReferentialResourceStorage, clocks::Clocks, modulators::Modulators,
 };
 
 pub(crate) struct Listeners(pub(crate) SelfReferentialResourceStorage<Listener>);

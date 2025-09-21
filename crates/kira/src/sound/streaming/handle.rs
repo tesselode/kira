@@ -4,13 +4,13 @@ use std::{
 };
 
 use crate::{
+	Decibels, Panning, PlaybackRate, StartTime, Tween,
 	command::handle_param_setters,
 	sound::{IntoOptionalRegion, PlaybackState},
-	Decibels, Panning, PlaybackRate, StartTime, Tween,
 };
 use rtrb::Consumer;
 
-use super::{sound::Shared, CommandWriters};
+use super::{CommandWriters, sound::Shared};
 
 /// Controls a streaming sound.
 pub struct StreamingSoundHandle<Error> {

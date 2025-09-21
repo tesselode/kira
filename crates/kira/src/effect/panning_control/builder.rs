@@ -1,6 +1,6 @@
-use crate::{effect::EffectBuilder, Panning, Value};
+use crate::{Panning, Value, effect::EffectBuilder};
 
-use super::{command_writers_and_readers, PanningControl, PanningControlHandle};
+use super::{PanningControl, PanningControlHandle, command_writers_and_readers};
 
 /// Configures a panning control effect.
 #[derive(Debug, Copy, Clone, PartialEq)]

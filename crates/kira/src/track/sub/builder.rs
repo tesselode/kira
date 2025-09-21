@@ -1,16 +1,16 @@
 use std::{collections::HashMap, sync::Arc};
 
 use crate::{
-	backend::{resources::ResourceStorage, RendererShared},
+	Decibels, Frame, Parameter, Value,
+	backend::{RendererShared, resources::ResourceStorage},
 	command::command_writer_and_reader,
 	effect::EffectBuilder,
 	playback_state_manager::PlaybackStateManager,
-	Decibels, Frame, Parameter, Value,
 };
 
 use super::{
-	command_writers_and_readers, Effect, SendTrackId, SendTrackRoute, Track, TrackHandle,
-	TrackShared,
+	Effect, SendTrackId, SendTrackRoute, Track, TrackHandle, TrackShared,
+	command_writers_and_readers,
 };
 
 /// Configures a mixer track.

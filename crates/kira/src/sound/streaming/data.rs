@@ -10,11 +10,11 @@ use crate::{Tween, Value};
 use rtrb::RingBuffer;
 
 use super::sound::Shared;
-use super::{command_writers_and_readers, StreamingSoundHandle, StreamingSoundSettings};
+use super::{StreamingSoundHandle, StreamingSoundSettings, command_writers_and_readers};
 
 use super::{
 	decoder::Decoder,
-	sound::{decode_scheduler::DecodeScheduler, StreamingSound},
+	sound::{StreamingSound, decode_scheduler::DecodeScheduler},
 };
 
 const ERROR_BUFFER_CAPACITY: usize = 1;

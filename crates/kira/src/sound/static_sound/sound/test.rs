@@ -1,15 +1,15 @@
 use std::{sync::Arc, time::Duration};
 
 use crate::{
+	Decibels, Panning, StartTime, Tween,
 	clock::ClockTime,
 	frame::Frame,
 	info::MockInfoBuilder,
 	sound::{
-		static_sound::{StaticSoundData, StaticSoundSettings},
 		PlaybackState, Sound,
+		static_sound::{StaticSoundData, StaticSoundSettings},
 	},
 	test_helpers::expect_frame_soon,
-	Decibels, Panning, StartTime, Tween,
 };
 
 /// Tests that a `StaticSound` will play all of its samples before finishing.

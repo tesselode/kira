@@ -148,15 +148,15 @@ pub use handle::*;
 pub use time::*;
 
 use std::sync::{
-	atomic::{AtomicBool, AtomicU64, Ordering},
 	Arc,
+	atomic::{AtomicBool, AtomicU64, Ordering},
 };
 
 use crate::{
-	command::{read_commands_into_parameters, ValueChangeCommand},
+	Parameter, Value,
+	command::{ValueChangeCommand, read_commands_into_parameters},
 	command_writers_and_readers,
 	info::Info,
-	Parameter, Value,
 };
 
 /// A unique identifier for a clock.

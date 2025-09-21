@@ -12,17 +12,17 @@ use atomic_arena::Key;
 pub use handle::*;
 
 use std::sync::{
-	atomic::{AtomicBool, Ordering},
 	Arc,
+	atomic::{AtomicBool, Ordering},
 };
 
 use glam::{Quat, Vec3};
 
 use crate::{
-	command::{read_commands_into_parameters, ValueChangeCommand},
+	Parameter, Value,
+	command::{ValueChangeCommand, read_commands_into_parameters},
 	command_writers_and_readers,
 	info::Info,
-	Parameter, Value,
 };
 
 /// A unique identifier for a listener.

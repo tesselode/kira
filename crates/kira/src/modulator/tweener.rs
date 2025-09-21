@@ -8,8 +8,8 @@ mod test;
 
 use std::{
 	sync::{
-		atomic::{AtomicBool, Ordering},
 		Arc,
+		atomic::{AtomicBool, Ordering},
 	},
 	time::Duration,
 };
@@ -18,10 +18,8 @@ pub use builder::*;
 pub use handle::*;
 
 use crate::{
-	command_writers_and_readers,
+	StartTime, Tween, Tweenable, command_writers_and_readers,
 	info::{Info, WhenToStart},
-	Tween, Tweenable,
-	StartTime,
 };
 
 use super::Modulator;

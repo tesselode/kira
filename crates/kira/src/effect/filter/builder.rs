@@ -1,9 +1,9 @@
 use crate::{
-	effect::{Effect, EffectBuilder},
 	Mix, Value,
+	effect::{Effect, EffectBuilder},
 };
 
-use super::{command_writers_and_readers, Filter, FilterHandle, FilterMode};
+use super::{Filter, FilterHandle, FilterMode, command_writers_and_readers};
 
 /// Configures a filter effect.
 #[derive(Debug, Copy, Clone, PartialEq)]

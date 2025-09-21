@@ -7,12 +7,12 @@ pub use builder::*;
 pub use handle::*;
 
 use crate::{
-	command::{read_commands_into_parameters, ValueChangeCommand},
+	Mix, Parameter,
+	command::{ValueChangeCommand, read_commands_into_parameters},
 	command_writers_and_readers,
 	effect::Effect,
 	frame::Frame,
 	info::Info,
-	Mix, Parameter,
 };
 use all_pass::AllPassFilter;
 use comb::CombFilter;

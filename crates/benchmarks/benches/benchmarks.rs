@@ -1,11 +1,11 @@
 use std::{f32::consts::TAU, sync::Arc};
 
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use kira::{
+	AudioManager, AudioManagerSettings, Frame,
 	backend::mock::{MockBackend, MockBackendSettings},
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	track::MainTrackBuilder,
-	AudioManager, AudioManagerSettings, Frame,
 };
 
 fn create_test_sound(num_samples: usize) -> StaticSoundData {

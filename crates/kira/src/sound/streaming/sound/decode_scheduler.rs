@@ -1,14 +1,14 @@
 use std::{
-	sync::{atomic::Ordering, Arc},
+	sync::{Arc, atomic::Ordering},
 	time::Duration,
 };
 
 use crate::{
 	frame::Frame,
 	sound::{
-		streaming::{decoder::Decoder, DecodeSchedulerCommandReaders, StreamingSoundSettings},
-		transport::Transport,
 		PlaybackState,
+		streaming::{DecodeSchedulerCommandReaders, StreamingSoundSettings, decoder::Decoder},
+		transport::Transport,
 	},
 };
 use rtrb::{Consumer, Producer, RingBuffer};
@@ -92,16 +92,18 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 	}
 
 	pub fn start(mut self) {
-		std::thread::spawn(move || loop {
-			match self.run() {
-				Ok(result) => match result {
-					NextStep::Continue => {}
-					NextStep::Wait => std::thread::sleep(DECODER_THREAD_SLEEP_DURATION),
-					NextStep::End => break,
-				},
-				Err(error) => {
-					self.error_producer.push(error).ok();
-					self.shared.encountered_error.store(true, Ordering::SeqCst);
+		std::thread::spawn(move || {
+			loop {
+				match self.run() {
+					Ok(result) => match result {
+						NextStep::Continue => {}
+						NextStep::Wait => std::thread::sleep(DECODER_THREAD_SLEEP_DURATION),
+						NextStep::End => break,
+					},
+					Err(error) => {
+						self.error_producer.push(error).ok();
+						self.shared.encountered_error.store(true, Ordering::SeqCst);
+					}
 				}
 			}
 		});

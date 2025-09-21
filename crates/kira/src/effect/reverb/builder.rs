@@ -1,9 +1,9 @@
 use crate::{
-	effect::{Effect, EffectBuilder},
 	Mix, Value,
+	effect::{Effect, EffectBuilder},
 };
 
-use super::{command_writers_and_readers, Reverb, ReverbHandle};
+use super::{Reverb, ReverbHandle, command_writers_and_readers};
 
 /// Configures a reverb effect.
 #[derive(Debug, Copy, Clone, PartialEq)]

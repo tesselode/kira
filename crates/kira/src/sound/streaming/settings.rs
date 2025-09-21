@@ -1,7 +1,6 @@
 use crate::{
+	Decibels, Panning, PlaybackRate, StartTime, Tween, Value,
 	sound::{IntoOptionalRegion, PlaybackPosition, Region},
-	Tween,
-	Decibels, Panning, PlaybackRate, StartTime, Value,
 };
 
 /// Settings for a streaming sound.

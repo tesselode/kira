@@ -8,10 +8,10 @@ pub use builder::*;
 pub use handle::*;
 
 use crate::{
+	Decibels, Frame, Parameter,
 	command::{CommandReader, ValueChangeCommand},
 	effect::Effect,
 	info::Info,
-	Decibels, Frame, Parameter,
 };
 
 use super::TrackShared;

@@ -9,11 +9,11 @@ pub use handle::*;
 use std::time::Duration;
 
 use crate::{
-	command::{read_commands_into_parameters, ValueChangeCommand},
+	Decibels, Mix, Parameter,
+	command::{ValueChangeCommand, read_commands_into_parameters},
 	command_writers_and_readers,
 	frame::Frame,
 	info::Info,
-	Decibels, Mix, Parameter,
 };
 
 use super::Effect;

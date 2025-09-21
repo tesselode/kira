@@ -4,9 +4,9 @@ use atomic_arena::Arena;
 
 use crate::info::MockInfoBuilder;
 use crate::{
-	clock::ClockTime,
-	modulator::{tweener::TweenerBuilder, ModulatorBuilder, ModulatorId},
 	StartTime, Tween,
+	clock::ClockTime,
+	modulator::{ModulatorBuilder, ModulatorId, tweener::TweenerBuilder},
 };
 
 /// Tests that the basic tweening behavior of a `Tweener`

@@ -1,9 +1,9 @@
 use crate::{
-	effect::{Effect, EffectBuilder},
 	Decibels, Mix, Parameter, Value,
+	effect::{Effect, EffectBuilder},
 };
 
-use super::{command_writers_and_readers, handle::DistortionHandle, Distortion, DistortionKind};
+use super::{Distortion, DistortionKind, command_writers_and_readers, handle::DistortionHandle};
 
 /// Configures a distortion effect.
 #[derive(Debug, Copy, Clone, PartialEq)]

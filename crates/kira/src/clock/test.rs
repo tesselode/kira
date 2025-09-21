@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use atomic_arena::Arena;
 
-use crate::{clock::ClockTime, info::MockInfoBuilder, StartTime, Tween, Value};
+use crate::{StartTime, Tween, Value, clock::ClockTime, info::MockInfoBuilder};
 
 use super::{Clock, ClockId, ClockSpeed};
 

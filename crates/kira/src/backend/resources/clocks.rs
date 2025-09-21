@@ -1,8 +1,8 @@
 use crate::{clock::Clock, info::Info};
 
 use super::{
-	listeners::Listeners, modulators::Modulators, ResourceController,
-	SelfReferentialResourceStorage,
+	ResourceController, SelfReferentialResourceStorage, listeners::Listeners,
+	modulators::Modulators,
 };
 
 pub(crate) struct Clocks(pub(crate) SelfReferentialResourceStorage<Clock>);

@@ -36,7 +36,9 @@ pub struct ResourceLimitReached;
 
 impl Display for ResourceLimitReached {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		f.write_str("Could not add a resource because the maximum capacity for that resource has been reached")
+		f.write_str(
+			"Could not add a resource because the maximum capacity for that resource has been reached",
+		)
 	}
 }
 

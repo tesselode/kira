@@ -9,12 +9,13 @@ mod settings;
 
 pub use settings::*;
 
-use std::sync::{atomic::Ordering, Arc};
+use std::sync::{Arc, atomic::Ordering};
 
 use crate::{
+	PlaySoundError, ResourceLimitReached, Value,
 	backend::{
-		resources::{create_resources, ResourceControllers},
 		Backend, DefaultBackend, Renderer, RendererShared,
+		resources::{ResourceControllers, create_resources},
 	},
 	clock::{Clock, ClockHandle, ClockId, ClockSpeed},
 	listener::{Listener, ListenerHandle, ListenerId},
@@ -24,7 +25,6 @@ use crate::{
 		MainTrackHandle, SendTrackBuilder, SendTrackHandle, SendTrackId, SpatialTrackBuilder,
 		SpatialTrackHandle, TrackBuilder, TrackHandle,
 	},
-	PlaySoundError, ResourceLimitReached, Value,
 };
 
 /// Controls audio from gameplay code.

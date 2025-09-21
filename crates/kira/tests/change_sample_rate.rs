@@ -1,14 +1,14 @@
 use std::sync::{
-	atomic::{AtomicU32, Ordering},
 	Arc,
+	atomic::{AtomicU32, Ordering},
 };
 
 use kira::{
+	AudioManager, AudioManagerSettings, Frame,
 	backend::mock::{MockBackend, MockBackendSettings},
 	effect::{Effect, EffectBuilder},
 	info::Info,
 	track::TrackBuilder,
-	AudioManager, AudioManagerSettings, Frame,
 };
 use rtrb::{Consumer, Producer, RingBuffer};
 

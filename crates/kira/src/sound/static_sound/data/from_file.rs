@@ -3,7 +3,7 @@ use std::io::Cursor;
 use symphonia::core::io::{MediaSource, MediaSourceStream};
 
 use crate::sound::{
-	static_sound::StaticSoundSettings, symphonia::load_frames_from_buffer_ref, FromFileError,
+	FromFileError, static_sound::StaticSoundSettings, symphonia::load_frames_from_buffer_ref,
 };
 
 use super::StaticSoundData;

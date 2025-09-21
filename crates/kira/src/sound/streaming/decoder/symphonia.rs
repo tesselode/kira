@@ -2,7 +2,7 @@ use std::convert::TryInto;
 
 use crate::{
 	frame::Frame,
-	sound::{symphonia::load_frames_from_buffer_ref, FromFileError},
+	sound::{FromFileError, symphonia::load_frames_from_buffer_ref},
 };
 use symphonia::core::{
 	codecs::Decoder,

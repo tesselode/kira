@@ -1,4 +1,4 @@
-use crate::{backend::resources::SelfReferentialResourceStorage, ResourceLimitReached};
+use crate::{ResourceLimitReached, backend::resources::SelfReferentialResourceStorage};
 
 use super::ResourceStorage;
 

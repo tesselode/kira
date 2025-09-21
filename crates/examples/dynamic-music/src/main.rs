@@ -1,12 +1,12 @@
 use std::{error::Error, io::stdin, time::Duration};
 
 use kira::{
+	AudioManager, AudioManagerSettings, Decibels, Easing, Mapping, Mix, Tween, Value,
 	backend::DefaultBackend,
 	effect::{filter::FilterBuilder, reverb::ReverbBuilder},
 	modulator::tweener::TweenerBuilder,
 	sound::static_sound::{StaticSoundData, StaticSoundSettings},
 	track::TrackBuilder,
-	AudioManager, AudioManagerSettings, Decibels, Easing, Mapping, Mix, Tween, Value,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {

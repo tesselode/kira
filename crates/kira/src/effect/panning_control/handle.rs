@@ -1,4 +1,4 @@
-use crate::{command::handle_param_setters, Panning};
+use crate::{Panning, command::handle_param_setters};
 
 use super::CommandWriters;
 

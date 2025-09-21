@@ -1,6 +1,6 @@
-use crate::{effect::EffectBuilder, Decibels, Value};
+use crate::{Decibels, Value, effect::EffectBuilder};
 
-use super::{command_writers_and_readers, VolumeControl, VolumeControlHandle};
+use super::{VolumeControl, VolumeControlHandle, command_writers_and_readers};
 
 /// Configures a volume control effect.
 #[derive(Debug, Copy, Clone, PartialEq)]

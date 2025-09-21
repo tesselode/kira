@@ -126,13 +126,13 @@ The Kira crate has the following feature flags:
 - `symphonia` (enabled by default) - allows loading and streaming audio from common
   audio formats, like MP3 and WAV.
 	- `mp3` (enabled by default) - enables support for loading and streaming MP3 audio (enables
-	    the `symphonia` feature automatically)
+		the `symphonia` feature automatically)
 	- `ogg` (enabled by default) - enables support for loading and streaming OGG audio (enables
-	    the `symphonia` feature automatically)
+		the `symphonia` feature automatically)
 	- `flac` (enabled by default) - enables support for loading and streaming FLAC audio (enables
-	    the `symphonia` feature automatically)
+		the `symphonia` feature automatically)
 	- `wav` (enabled by default) - enables support for loading and streaming WAV audio (enables
-	    the `symphonia` feature automatically)
+		the `symphonia` feature automatically)
 - `serde` - adds `Serialize` and `Deserialize` implementations for the following types:
 	- [`Capacities`]
 	- [`ClockSpeed`](crate::clock::ClockSpeed)
@@ -152,8 +152,6 @@ The Kira crate has the following feature flags:
 - `assert_no_alloc` - uses the [`assert_no_alloc`](https://crates.io/crates/assert_no_alloc) crate
   to cause panics if memory is allocated or deallocated on the audio thread. This is mainly useful
   for people developing Kira itself.
-- `android_shared_stdcxx` - enables cpal's `oboe-shared-stdcxx` feature, which can be helpful
-  for Android compilation.
 
 ## Loading other audio file formats
 
@@ -265,9 +263,9 @@ pub use manager::*;
 pub use mix::*;
 pub use panning::*;
 pub use parameter::*;
+pub use pastey;
 pub use playback_rate::*;
 pub use semitones::*;
 pub use start_time::*;
 pub use tween::*;
 pub use value::*;
-pub use pastey;

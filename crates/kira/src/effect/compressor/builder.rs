@@ -1,11 +1,11 @@
 use std::time::Duration;
 
 use crate::{
-	effect::{Effect, EffectBuilder},
 	Decibels, Mix, Value,
+	effect::{Effect, EffectBuilder},
 };
 
-use super::{command_writers_and_readers, Compressor, CompressorHandle};
+use super::{Compressor, CompressorHandle, command_writers_and_readers};
 
 /// Configures a compressor.
 pub struct CompressorBuilder {

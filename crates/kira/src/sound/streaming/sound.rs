@@ -4,18 +4,17 @@ pub(crate) mod decode_scheduler;
 mod test;
 
 use std::sync::{
-	atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering},
 	Arc,
+	atomic::{AtomicBool, AtomicU8, AtomicU64, Ordering},
 };
 
 use crate::{
+	Decibels, Panning, Parameter, PlaybackRate, StartTime, Tween,
 	command::read_commands_into_parameters,
-	frame::{interpolate_frame, Frame},
+	frame::{Frame, interpolate_frame},
 	info::Info,
 	playback_state_manager::PlaybackStateManager,
 	sound::{PlaybackState, Sound},
-	Tween,
-	Decibels, Panning, Parameter, PlaybackRate, StartTime,
 };
 use rtrb::Consumer;
 

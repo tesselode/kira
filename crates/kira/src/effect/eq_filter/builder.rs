@@ -1,6 +1,6 @@
-use crate::{effect::EffectBuilder, Decibels, Value};
+use crate::{Decibels, Value, effect::EffectBuilder};
 
-use super::{command_writers_and_readers, EqFilter, EqFilterHandle, EqFilterKind};
+use super::{EqFilter, EqFilterHandle, EqFilterKind, command_writers_and_readers};
 
 /// Configures an EQ filter.
 pub struct EqFilterBuilder {

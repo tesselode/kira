@@ -4,9 +4,9 @@ mod test;
 use std::time::Duration;
 
 use crate::{
+	StartTime, Tween, Tweenable, Value,
 	command::{CommandReader, ValueChangeCommand},
 	info::{Info, WhenToStart},
-	StartTime, Tween, Tweenable, Value,
 };
 
 /// Manages and updates a value that can be smoothly transitioned

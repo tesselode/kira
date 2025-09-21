@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
 use crate::{
-	modulator::{Modulator, ModulatorBuilder, ModulatorId},
 	Value,
+	modulator::{Modulator, ModulatorBuilder, ModulatorId},
 };
 
-use super::{command_writers_and_readers, handle::LfoHandle, Lfo, LfoShared, Waveform};
+use super::{Lfo, LfoShared, Waveform, command_writers_and_readers, handle::LfoHandle};
 
 /// Configures an LFO modulator.
 pub struct LfoBuilder {

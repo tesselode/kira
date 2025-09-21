@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::modulator::{Modulator, ModulatorBuilder, ModulatorId};
 
-use super::{command_writers_and_readers, Tweener, TweenerHandle, TweenerShared};
+use super::{Tweener, TweenerHandle, TweenerShared, command_writers_and_readers};
 
 /// Configures a tweener.
 pub struct TweenerBuilder {

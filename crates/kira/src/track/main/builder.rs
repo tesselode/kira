@@ -1,6 +1,6 @@
 use crate::{
-	backend::resources::ResourceStorage, command::command_writer_and_reader, effect::EffectBuilder,
-	Decibels, Frame, Parameter, Value,
+	Decibels, Frame, Parameter, Value, backend::resources::ResourceStorage,
+	command::command_writer_and_reader, effect::EffectBuilder,
 };
 
 use super::{Effect, MainTrack, MainTrackHandle};

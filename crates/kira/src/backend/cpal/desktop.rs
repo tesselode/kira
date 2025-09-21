@@ -9,8 +9,8 @@ use stream_manager::{StreamManager, StreamManagerController};
 
 use crate::backend::{Backend, Renderer};
 use cpal::{
-	traits::{DeviceTrait, HostTrait},
 	BufferSize, Device, StreamConfig, StreamError,
+	traits::{DeviceTrait, HostTrait},
 };
 
 use super::{CpalBackendSettings, Error};

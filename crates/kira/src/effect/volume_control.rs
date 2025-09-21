@@ -7,11 +7,11 @@ pub use builder::*;
 pub use handle::*;
 
 use crate::{
-	command::{read_commands_into_parameters, ValueChangeCommand},
+	Decibels, Parameter,
+	command::{ValueChangeCommand, read_commands_into_parameters},
 	command_writers_and_readers,
 	frame::Frame,
 	info::Info,
-	Decibels, Parameter,
 };
 
 use super::Effect;

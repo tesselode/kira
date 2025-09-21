@@ -2,16 +2,16 @@ mod send_on_drop;
 
 use std::{
 	sync::{
-		atomic::{AtomicBool, AtomicU64, Ordering},
 		Arc, Mutex,
+		atomic::{AtomicBool, AtomicU64, Ordering},
 	},
 	time::Duration,
 };
 
 use super::renderer_with_cpu_usage::RendererWithCpuUsage;
 use cpal::{
-	traits::{DeviceTrait, HostTrait, StreamTrait},
 	BufferSize, Device, Stream, StreamConfig, StreamError,
+	traits::{DeviceTrait, HostTrait, StreamTrait},
 };
 use rtrb::{Consumer, Producer, PushError, RingBuffer};
 use send_on_drop::SendOnDrop;

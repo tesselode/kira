@@ -34,8 +34,8 @@ pub use handle::*;
 pub use settings::*;
 
 use crate::{
-	command::{command_writer_and_reader, CommandReader, CommandWriter, ValueChangeCommand},
 	Decibels, Panning, PlaybackRate, StartTime, Tween,
+	command::{CommandReader, CommandWriter, ValueChangeCommand, command_writer_and_reader},
 };
 
 use super::Region;

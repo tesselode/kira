@@ -1,7 +1,7 @@
 use crate::{info::Info, modulator::Modulator};
 
 use super::{
-	clocks::Clocks, listeners::Listeners, ResourceController, SelfReferentialResourceStorage,
+	ResourceController, SelfReferentialResourceStorage, clocks::Clocks, listeners::Listeners,
 };
 
 pub(crate) struct Modulators(pub(crate) SelfReferentialResourceStorage<Box<dyn Modulator>>);

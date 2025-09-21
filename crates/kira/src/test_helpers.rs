@@ -1,4 +1,4 @@
-use crate::{info::MockInfoBuilder, sound::Sound, Frame};
+use crate::{Frame, info::MockInfoBuilder, sound::Sound};
 
 pub fn expect_frame_soon(expected_frame: Frame, sound: &mut dyn Sound) {
 	const NUM_SAMPLES_TO_WAIT: usize = 10;

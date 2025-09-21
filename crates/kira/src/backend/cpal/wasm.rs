@@ -1,7 +1,7 @@
 use crate::backend::{Backend, Renderer};
 use cpal::{
-	traits::{DeviceTrait, HostTrait, StreamTrait},
 	Device, Stream, StreamConfig,
+	traits::{DeviceTrait, HostTrait, StreamTrait},
 };
 use send_wrapper::SendWrapper;
 

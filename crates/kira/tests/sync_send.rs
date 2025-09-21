@@ -1,4 +1,5 @@
 use kira::{
+	AudioManager,
 	backend::cpal::CpalBackend,
 	clock::ClockHandle,
 	effect::{
@@ -8,9 +9,8 @@ use kira::{
 	},
 	listener::ListenerHandle,
 	modulator::{lfo::LfoHandle, tweener::TweenerHandle},
-	sound::{static_sound::StaticSoundHandle, streaming::StreamingSoundHandle, FromFileError},
+	sound::{FromFileError, static_sound::StaticSoundHandle, streaming::StreamingSoundHandle},
 	track::{MainTrackHandle, SendTrackHandle, SpatialTrackHandle, TrackHandle},
-	AudioManager,
 };
 
 fn main() {

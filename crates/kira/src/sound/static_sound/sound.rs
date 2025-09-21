@@ -4,23 +4,22 @@ mod resampler;
 mod test;
 
 use std::sync::{
-	atomic::{AtomicU64, AtomicU8, Ordering},
 	Arc,
+	atomic::{AtomicU8, AtomicU64, Ordering},
 };
 
 use crate::{
+	Decibels, Panning, Parameter, PlaybackRate, StartTime, Tween,
 	command::read_commands_into_parameters,
 	frame::Frame,
 	info::Info,
 	playback_state_manager::PlaybackStateManager,
-	sound::{transport::Transport, PlaybackState, Sound},
-	Tween,
-	Decibels, Panning, Parameter, PlaybackRate, StartTime,
+	sound::{PlaybackState, Sound, transport::Transport},
 };
 
 use self::resampler::Resampler;
 
-use super::{data::StaticSoundData, frame_at_index, num_frames, CommandReaders};
+use super::{CommandReaders, data::StaticSoundData, frame_at_index, num_frames};
 
 pub(super) struct StaticSound {
 	command_readers: CommandReaders,

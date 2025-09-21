@@ -1,4 +1,4 @@
-use crate::{command::handle_param_setters, Decibels};
+use crate::{Decibels, command::handle_param_setters};
 
 use super::{CommandWriters, EqFilterKind};
 
