@@ -7,23 +7,15 @@ use cpal::{Device, StreamConfig};
 pub use error::*;
 
 /// Settings for the cpal backend.
+#[derive(Clone, Default)]
 pub struct CpalBackendSettings {
 	/// The output audio device to use. If [`None`], the default output
 	/// device will be used.
 	pub device: Option<Device>,
-	/// A StreamConfig given by Cpal. If [`None`], the default supported 
+	/// A StreamConfig given by Cpal. If [`None`], the default supported
 	/// config will be used. You can also get a supported config of your
 	/// choosing using Cpal functions.
 	pub config: Option<StreamConfig>,
-}
-
-impl Default for CpalBackendSettings {
-	fn default() -> Self {
-		Self {
-			device: None,
-			config: None,
-		}
-	}
 }
 
 #[cfg(target_arch = "wasm32")]
