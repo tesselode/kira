@@ -3,30 +3,19 @@
 #![cfg_attr(docsrs, doc(cfg(feature = "cpal")))]
 
 mod error;
-use cpal::{BufferSize, Device};
+use cpal::{Device, StreamConfig};
 pub use error::*;
 
 /// Settings for the cpal backend.
+#[derive(Clone, Default)]
 pub struct CpalBackendSettings {
 	/// The output audio device to use. If [`None`], the default output
 	/// device will be used.
 	pub device: Option<Device>,
-	/// The buffer size used by the device. If it is set to [`BufferSize::Default`],
-	/// the default buffer size for the device will be used. Note that the default
-	/// buffer size might be surprisingly large, leading to latency issues. If
-	/// a lower latency is desired, consider using [`BufferSize::Fixed`] in accordance
-	/// with the [`cpal::SupportedBufferSize`] range provided by the [`cpal::SupportedStreamConfig`]
-	/// API.
-	pub buffer_size: BufferSize,
-}
-
-impl Default for CpalBackendSettings {
-	fn default() -> Self {
-		Self {
-			device: None,
-			buffer_size: BufferSize::Default,
-		}
-	}
+	/// A StreamConfig given by Cpal. If [`None`], the default supported
+	/// config will be used. You can also get a supported config of your
+	/// choosing using Cpal functions.
+	pub config: Option<StreamConfig>,
 }
 
 #[cfg(target_arch = "wasm32")]

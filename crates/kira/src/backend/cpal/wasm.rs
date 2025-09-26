@@ -40,7 +40,11 @@ impl Backend for CpalBackend {
 			host.default_output_device()
 				.ok_or(Error::NoDefaultOutputDevice)?
 		};
-		let config = device.default_output_config()?.config();
+		let config = if let Some(config) = settings.config {
+			config
+		} else {
+			device.default_output_config()?.config()
+		};
 		let sample_rate = config.sample_rate.0;
 		Ok((
 			Self {
