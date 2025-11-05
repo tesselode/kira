@@ -1,3 +1,20 @@
+# v0.11.0 - November 4, 2025
+
+Breaking changes:
+
+- Replaced the `buffer_size` option in `CpalBackendSettings` with `config`, which gives
+  many more configuration options (thanks @DaforLynx!)
+- Switch to 2024 edition, update dependencies, and update GitHub actions to use newer
+  rustc versions (thanks @Roms1383!)
+- Remove the `android_shared_stdcxx` feature, as `cpal` now uses `ndk::audio`, and `cpal`'s
+  `oboe-shared-stdcxx` feature is deprecated
+
+Other changes:
+
+- Switch from `paste` to `pastey`, re-export `pastey`, and update macros to not require
+  manually importing `pastey` at the call site (thanks @Keinsleif!)
+- Fix typo in readme (thanks @benjamin-lieser!)
+
 # v0.10.8 - June 17, 2025
 
 - Decode default audio track when multiple tracks are present (thanks @siavashserver!)
