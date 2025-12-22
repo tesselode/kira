@@ -224,6 +224,7 @@ and compile times for games.
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![allow(clippy::collapsible_if)]
 #![allow(clippy::collapsible_else_if)]
+#![allow(clippy::doc_lazy_continuation)]
 #![allow(clippy::large_enum_variant)]
 #![allow(clippy::enum_variant_names)]
 #![warn(clippy::todo)]
