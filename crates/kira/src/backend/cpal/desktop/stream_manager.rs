@@ -61,7 +61,7 @@ impl StreamManagerController {
 /// in the case of device changes or disconnections.
 pub(super) struct StreamManager {
 	state: State,
-	device_name: String,
+	device_id: String,
 	sample_rate: u32,
 	custom_device: bool,
 	buffer_size: BufferSize,
@@ -89,8 +89,8 @@ impl StreamManager {
 		std::thread::spawn(move || {
 			let mut stream_manager = StreamManager {
 				state: State::Idle { renderer },
-				device_name: device_name(&device),
-				sample_rate: config.sample_rate.0,
+				device_id: device_id(&device),
+				sample_rate: config.sample_rate,
 				custom_device,
 				buffer_size,
 			};
@@ -147,7 +147,7 @@ impl StreamManager {
 			while let Ok(error) = unhandled_stream_error_consumer.pop() {
 				match error {
 					// check for device disconnection
-					StreamError::DeviceNotAvailable => {
+					StreamError::DeviceNotAvailable | StreamError::StreamInvalidated => {
 						self.stop_stream();
 						if let Ok((device, mut config)) = default_device_and_config() {
 							// TODO: gracefully handle errors that occur in this function
@@ -160,7 +160,7 @@ impl StreamManager {
 								.unwrap();
 						}
 					}
-					StreamError::BackendSpecific { err: _ } => {}
+					StreamError::BackendSpecific { err: _ } | StreamError::BufferUnderrun => {}
 				}
 				match handled_stream_error_producer.push(error) {
 					Ok(()) => {}
@@ -176,9 +176,9 @@ impl StreamManager {
 			#[cfg(not(target_os = "macos"))]
 			if !self.custom_device {
 				if let Ok((device, mut config)) = default_device_and_config() {
-					let device_name = device_name(&device);
-					let sample_rate = config.sample_rate.0;
-					if device_name != self.device_name || sample_rate != self.sample_rate {
+					let device_id = device_id(&device);
+					let sample_rate = config.sample_rate;
+					if device_id != self.device_id || sample_rate != self.sample_rate {
 						self.stop_stream();
 						*unhandled_stream_error_consumer = self
 							.start_stream(&device, &mut config, num_stream_errors_discarded.clone())
@@ -202,12 +202,12 @@ impl StreamManager {
 				panic!("trying to start a stream when the stream manager is not idle");
 			};
 		config.buffer_size = self.buffer_size; // this won't change anything if the buffer size is BufferSize::Default
-		let device_name = device_name(device);
-		let sample_rate = config.sample_rate.0;
+		let device_id = device_id(device);
+		let sample_rate = config.sample_rate;
 		if sample_rate != self.sample_rate {
 			renderer.on_change_sample_rate(sample_rate);
 		}
-		self.device_name = device_name;
+		self.device_id = device_id;
 		self.sample_rate = sample_rate;
 		let (mut renderer_wrapper, renderer_consumer) = SendOnDrop::new(renderer);
 		let (mut unhandled_stream_error_producer, unhandled_stream_error_consumer) =
@@ -266,10 +266,11 @@ fn default_device_and_config() -> Result<(Device, StreamConfig), Error> {
 	Ok((device, config))
 }
 
-fn device_name(device: &Device) -> String {
-	device
-		.name()
-		.unwrap_or_else(|_| "device name unavailable".to_string())
+fn device_id(device: &Device) -> String {
+	match device.id() {
+		Ok(id) => format!("{}", id),
+		Err(_) => "device id unavailable".to_string(),
+	}
 }
 
 fn process_renderer(
