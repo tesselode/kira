@@ -118,7 +118,7 @@ impl Backend for CpalBackend {
 		} else {
 			device.default_output_config()?.config()
 		};
-		
+
 		let sample_rate = config.sample_rate.0;
 		let buffer_size = config.buffer_size;
 
