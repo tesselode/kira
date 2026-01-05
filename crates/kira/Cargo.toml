@@ -34,11 +34,12 @@ features = ["wasm-bindgen"]
 send_wrapper = "0.6.0"
 
 [features]
-default = ["cpal", "mp3", "ogg", "flac", "wav"]
+default = ["cpal", "mp3", "ogg", "flac", "wav", "aiff"]
 mp3 = ["symphonia", "symphonia/mp3"]
 ogg = ["symphonia", "symphonia/ogg", "symphonia/vorbis"]
 flac = ["symphonia", "symphonia/flac"]
 wav = ["symphonia", "symphonia/wav", "symphonia/pcm"]
+aiff = ["symphonia", "symphonia/aiff", "symphonia/pcm"]
 
 [dev-dependencies]
 approx = "0.5.1"
