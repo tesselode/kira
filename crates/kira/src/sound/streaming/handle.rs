@@ -1,6 +1,7 @@
 use std::{
 	fmt::{Debug, Formatter},
 	sync::{Arc, Mutex},
+	thread::JoinHandle,
 };
 
 use crate::{
@@ -17,6 +18,16 @@ pub struct StreamingSoundHandle<Error> {
 	pub(super) shared: Arc<Shared>,
 	pub(super) command_writers: CommandWriters,
 	pub(super) error_consumer: Mutex<Consumer<Error>>,
+	pub(super) thread: Option<JoinHandle<()>>,
+}
+
+impl<E> Drop for StreamingSoundHandle<E> {
+	fn drop(&mut self) {
+		self.shared.set_state(PlaybackState::Stopped);
+		if let Some(thread) = self.thread.take() {
+			let _ = thread.join();
+		}
+	}
 }
 
 impl<Error> StreamingSoundHandle<Error> {

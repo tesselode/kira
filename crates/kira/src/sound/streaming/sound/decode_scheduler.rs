@@ -7,7 +7,10 @@ use crate::{
 	frame::Frame,
 	sound::{
 		PlaybackState,
-		streaming::{DecodeSchedulerCommandReaders, StreamingSoundSettings, decoder::Decoder},
+		streaming::{
+			DecodeSchedulerCommandReaders, StreamingSoundHandle, StreamingSoundSettings,
+			decoder::Decoder,
+		},
 		transport::Transport,
 	},
 };
@@ -91,8 +94,8 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		self.transport.position
 	}
 
-	pub fn start(mut self) {
-		std::thread::spawn(move || {
+	pub fn start<E: Send + 'static>(mut self, handle: &mut StreamingSoundHandle<E>) {
+		handle.thread = Some(std::thread::spawn(move || {
 			loop {
 				match self.run() {
 					Ok(result) => match result {
@@ -106,7 +109,7 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 					}
 				}
 			}
-		});
+		}));
 	}
 
 	pub fn run(&mut self) -> Result<NextStep, Error> {

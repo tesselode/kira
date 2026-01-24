@@ -392,6 +392,7 @@ impl<Error: Send + 'static> StreamingSoundData<Error> {
 			shared,
 			command_writers,
 			error_consumer: Mutex::new(error_consumer),
+			thread: None,
 		};
 		Ok((sound, handle, scheduler))
 	}
@@ -404,8 +405,8 @@ impl<Error: Send + 'static> SoundData for StreamingSoundData<Error> {
 
 	#[allow(clippy::type_complexity)]
 	fn into_sound(self) -> Result<(Box<dyn crate::sound::Sound>, Self::Handle), Self::Error> {
-		let (sound, handle, scheduler) = self.split()?;
-		scheduler.start();
+		let (sound, mut handle, scheduler) = self.split()?;
+		scheduler.start(&mut handle);
 		Ok((Box::new(sound), handle))
 	}
 }
