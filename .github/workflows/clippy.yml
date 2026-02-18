@@ -16,7 +16,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: install cpal dependencies
-        run: sudo apt-get install libasound2-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install libasound2-dev
       - name: install toolchain ${{ matrix.platform == 'wasm32' && 'and wasm32' || '' }}
         uses: dtolnay/rust-toolchain@stable
         with:
