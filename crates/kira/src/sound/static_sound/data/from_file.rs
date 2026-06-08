@@ -44,26 +44,19 @@ impl StaticSoundData {
 			Default::default(),
 			Default::default(),
 		)?;
-
 		let default_track = format_reader
 			.default_track(TrackType::Audio)
 			.ok_or(FromFileError::NoDefaultTrack)?;
-
 		let default_track_id = default_track.id;
-
 		let audio_params = match default_track.codec_params.as_ref() {
 			Some(CodecParameters::Audio(p)) => p,
 			_ => return Err(FromFileError::NoDefaultTrack),
 		};
-
 		let sample_rate = audio_params
 			.sample_rate
 			.ok_or(FromFileError::UnknownSampleRate)?;
-
 		let mut decoder = codecs.make_audio_decoder(audio_params, &Default::default())?;
-
 		let mut frames = vec![];
-
 		loop {
 			match format_reader.next_packet() {
 				Ok(Some(packet)) => {
@@ -73,18 +66,9 @@ impl StaticSoundData {
 					}
 				}
 				Ok(None) => break,
-				Err(error) => match error {
-					symphonia::core::errors::Error::IoError(error) => {
-						if error.kind() == std::io::ErrorKind::UnexpectedEof {
-							break;
-						}
-						return Err(symphonia::core::errors::Error::IoError(error).into());
-					}
-					error => return Err(error.into()),
-				},
+				Err(error) => return Err(error.into()),
 			}
 		}
-
 		Ok(Self {
 			sample_rate,
 			frames: frames.into(),
