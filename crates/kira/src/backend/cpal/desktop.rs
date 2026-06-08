@@ -9,7 +9,7 @@ use stream_manager::{StreamManager, StreamManagerController};
 
 use crate::backend::{Backend, Renderer};
 use cpal::{
-	BufferSize, Device, StreamConfig, StreamError,
+	BufferSize, Device, StreamConfig,
 	traits::{DeviceTrait, HostTrait},
 };
 
@@ -60,7 +60,7 @@ impl CpalBackend {
 
 	/// Returns the oldest available stream error in the queue.
 	#[cfg_attr(docsrs, doc(cfg(not(wasm32))))]
-	pub fn pop_error(&mut self) -> Option<StreamError> {
+	pub fn pop_error(&mut self) -> Option<cpal::Error> {
 		if let State::Initialized {
 			stream_manager_controller,
 		} = &mut self.state
