@@ -116,7 +116,8 @@ impl<'a> Info<'a> {
 	}
 
 	/// If this is called from an effect on a spatial track, returns the distance
-	/// of the spatial track's from the spatial track. Otherwise, returns `None`.
+	/// of the spatial track's listener from the spatial track. Otherwise, returns
+	/// `None`.
 	pub fn listener_distance(&self) -> Option<f32> {
 		self.spatial_track_info.zip(self.listener_info()).map(
 			|(spatial_track_info, listener_info)| {

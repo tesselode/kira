@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        toolchain: ['1.85.0', '1.89.0']
+        toolchain: ['1.86.0', '1.95.0']
         feature: ['none', 'cpal', 'mp3', 'all']
     steps:
       - uses: actions/checkout@v4
