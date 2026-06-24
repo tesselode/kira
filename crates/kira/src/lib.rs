@@ -241,6 +241,7 @@ mod tween;
 mod value;
 
 pub use backend::DefaultBackend;
+pub use cpal;
 pub use decibels::*;
 pub use error::*;
 pub use frame::*;
