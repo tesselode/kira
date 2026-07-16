@@ -60,7 +60,7 @@ impl Backend for CpalBackend {
 		{
 			let channels = config.channels;
 			let stream = device.build_output_stream(
-				&config,
+				config,
 				move |data: &mut [f32], _| {
 					renderer.on_start_processing();
 					renderer.process(data, channels);
