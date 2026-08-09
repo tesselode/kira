@@ -51,6 +51,7 @@ pub(crate) struct CommandWriters {
 	stop: CommandWriter<Tween>,
 	seek_by: CommandWriter<f64>,
 	seek_to: CommandWriter<f64>,
+	on_sync: CommandWriter<()>,
 }
 
 pub(crate) struct CommandReaders {
@@ -60,6 +61,7 @@ pub(crate) struct CommandReaders {
 	pause: CommandReader<Tween>,
 	resume: CommandReader<(StartTime, Tween)>,
 	stop: CommandReader<Tween>,
+	on_sync: CommandReader<()>,
 }
 
 #[derive(Debug)]
@@ -84,6 +86,7 @@ fn command_writers_and_readers() -> (
 	let (stop_writer, stop_reader) = command_writer_and_reader();
 	let (seek_by_writer, seek_by_reader) = command_writer_and_reader();
 	let (seek_to_writer, seek_to_reader) = command_writer_and_reader();
+	let (on_sync_writer, on_sync_reader) = command_writer_and_reader();
 	(
 		CommandWriters {
 			set_volume: set_volume_writer,
@@ -95,6 +98,7 @@ fn command_writers_and_readers() -> (
 			stop: stop_writer,
 			seek_by: seek_by_writer,
 			seek_to: seek_to_writer,
+			on_sync: on_sync_writer,
 		},
 		CommandReaders {
 			set_volume: set_volume_reader,
@@ -103,6 +107,7 @@ fn command_writers_and_readers() -> (
 			pause: pause_reader,
 			resume: resume_reader,
 			stop: stop_reader,
+			on_sync: on_sync_reader,
 		},
 		DecodeSchedulerCommandReaders {
 			set_loop_region: set_loop_region_reader,

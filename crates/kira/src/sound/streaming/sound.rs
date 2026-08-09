@@ -176,6 +176,17 @@ impl StreamingSound {
 		self.update_shared_playback_state();
 	}
 
+	fn discard_buffered_frames(&mut self) {
+		if self.playback_state_manager.playback_state().is_advancing() {
+			return;
+		}
+		// the first frame in the ringbuffer is the previous frame, so we
+		// keep it to avoid consuming the first frame after seek
+		while self.frame_consumer.slots() > 1 {
+			self.frame_consumer.pop().ok();
+		}
+	}
+
 	fn read_commands(&mut self) {
 		read_commands_into_parameters!(self, volume, playback_rate, panning);
 		if let Some(tween) = self.command_readers.pause.read() {
@@ -186,6 +197,9 @@ impl StreamingSound {
 		}
 		if let Some(tween) = self.command_readers.stop.read() {
 			self.stop(tween);
+		}
+		if self.command_readers.on_sync.read().is_some() {
+			self.discard_buffered_frames();
 		}
 	}
 }

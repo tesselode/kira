@@ -317,12 +317,14 @@ impl<Error> StreamingSoundHandle<Error> {
 
 	/// Sets the playback position to the specified time in seconds.
 	pub fn seek_to(&mut self, position: f64) {
-		self.command_writers.seek_to.write(position)
+		self.command_writers.seek_to.write(position);
+		self.command_writers.on_sync.write(())
 	}
 
 	/// Moves the playback position by the specified amount of time in seconds.
 	pub fn seek_by(&mut self, amount: f64) {
-		self.command_writers.seek_by.write(amount)
+		self.command_writers.seek_by.write(amount);
+		self.command_writers.on_sync.write(())
 	}
 
 	/// Returns an error that occurred while decoding audio, if any.

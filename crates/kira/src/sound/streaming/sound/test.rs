@@ -860,6 +860,93 @@ fn seek_to() {
 	expect_frame_soon(Frame::from_mono(15.0).panned(Panning::CENTER), &mut sound);
 }
 
+/// Tests that a `StreamingSound` that seeks while paused discards the audio
+/// that was already decoded ahead of the playhead, so that no frames from the
+/// old position are played when the sound resumes.
+#[test]
+fn seek_while_paused_discards_stale_frames() {
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(
+			(0..100).map(|i| Frame::from_mono(i as f32)).collect(),
+		)),
+		settings: StreamingSoundSettings::new(),
+		slice: None,
+	};
+	let (mut sound, mut handle, mut scheduler) = data.split().unwrap();
+
+	// let the scheduler decode a chunk of audio ahead of the playhead
+	for _ in 0..10 {
+		scheduler.run().unwrap();
+	}
+
+	handle.pause(Tween {
+		duration: Duration::ZERO,
+		..Default::default()
+	});
+	sound.on_start_processing();
+	sound.process_one(1.0, &MockInfoBuilder::new().build());
+	assert_eq!(
+		sound.playback_state_manager.playback_state(),
+		PlaybackState::Paused
+	);
+
+	handle.seek_to(50.0);
+	sound.on_start_processing();
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
+	sound.on_start_processing();
+
+	handle.resume(Tween {
+		duration: Duration::ZERO,
+		..Default::default()
+	});
+	sound.on_start_processing();
+
+	// the first frame we hear after resuming should be the one we seeked to,
+	// not audio that was buffered before the seek
+	expect_frame_soon(Frame::from_mono(50.0).panned(Panning::CENTER), &mut sound);
+
+	// and playback should continue on from there
+	for i in 51..60 {
+		assert_eq!(
+			sound.process_one(1.0, &MockInfoBuilder::new().build()),
+			Frame::from_mono(i as f32).panned(Panning::CENTER)
+		);
+	}
+}
+
+/// Tests that a `StreamingSound` that seeks while playing does not discard
+/// buffered audio, since those frames are the audio that's about to be heard.
+#[test]
+fn seek_while_playing_keeps_buffered_frames() {
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(
+			(0..100).map(|i| Frame::from_mono(i as f32)).collect(),
+		)),
+		settings: StreamingSoundSettings::new(),
+		slice: None,
+	};
+	let (mut sound, mut handle, mut scheduler) = data.split().unwrap();
+
+	handle.seek_to(50.0);
+	sound.on_start_processing();
+	while matches!(scheduler.run().unwrap(), NextStep::Continue) {}
+	sound.on_start_processing();
+	expect_frame_soon(Frame::from_mono(50.0).panned(Panning::CENTER), &mut sound);
+
+	// seek again while the sound is still playing. the frames that are already
+	// buffered are the audio that's about to be heard, so they should keep
+	// playing until the sound catches up to the new position.
+	handle.seek_to(20.0);
+	sound.on_start_processing();
+
+	for i in 51..60 {
+		assert_eq!(
+			sound.process_one(1.0, &MockInfoBuilder::new().build()),
+			Frame::from_mono(i as f32).panned(Panning::CENTER)
+		);
+	}
+}
+
 /// Tests that a `StreamingSound` can seek by an amount of time.
 #[test]
 fn seek_by() {
