@@ -1,3 +1,8 @@
+# v0.12.3 - August 9, 2026
+
+- When seeking a streaming sound while paused, don't play audio from the previous
+position after resuming (thanks @nnmarcoo!)
+
 # v0.12.2 - July 16, 2026
 
 - Update to symphonia 0.6 (thanks @Eagisa!)

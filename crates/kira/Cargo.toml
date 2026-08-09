@@ -1,6 +1,6 @@
 [package]
 name = "kira"
-version = "0.12.2"
+version = "0.12.3"
 authors = ["Andrew Minnich <aminnich3@gmail.com>"]
 edition.workspace = true
 license = "MIT OR Apache-2.0"
