@@ -19,7 +19,7 @@ impl StaticSoundData {
 
 	/// Loads a cursor wrapping audio file data into a [`StaticSoundData`].
 	#[cfg_attr(docsrs, doc(cfg(feature = "symphonia")))]
-	pub fn from_cursor<T: AsRef<[u8]> + Send + Sync + 'static>(
+	pub fn from_cursor<T: AsRef<[u8]> + Send + Sync>(
 		cursor: Cursor<T>,
 	) -> Result<StaticSoundData, FromFileError> {
 		Self::from_media_source(cursor)
@@ -28,13 +28,13 @@ impl StaticSoundData {
 	/// Loads an audio file from a type that implements Symphonia's [`MediaSource`]
 	/// trait.
 	#[cfg_attr(docsrs, doc(cfg(feature = "symphonia")))]
-	pub fn from_media_source(
-		media_source: impl MediaSource + 'static,
-	) -> Result<Self, FromFileError> {
+	pub fn from_media_source(media_source: impl MediaSource) -> Result<Self, FromFileError> {
 		Self::from_boxed_media_source(Box::new(media_source))
 	}
 
-	fn from_boxed_media_source(media_source: Box<dyn MediaSource>) -> Result<Self, FromFileError> {
+	fn from_boxed_media_source(
+		media_source: Box<dyn MediaSource + '_>,
+	) -> Result<Self, FromFileError> {
 		let codecs = symphonia::default::get_codecs();
 		let probe = symphonia::default::get_probe();
 		let mss = MediaSourceStream::new(media_source, Default::default());
