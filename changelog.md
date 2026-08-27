@@ -1,3 +1,7 @@
+# v0.12.4 - August 27, 2026
+
+- Allow creating `StaticSoundData` from non-`'static` sources (thanks @a1phyr!)
+
 # v0.12.3 - August 9, 2026
 
 - When seeking a streaming sound while paused, don't play audio from the previous
