@@ -3,9 +3,12 @@ pub(crate) mod decode_scheduler;
 #[cfg(test)]
 mod test;
 
-use std::sync::{
-	Arc,
-	atomic::{AtomicBool, AtomicU8, AtomicU64, Ordering},
+use std::{
+	sync::{
+		Arc,
+		atomic::{AtomicBool, AtomicPtr, AtomicU8, AtomicU64, Ordering},
+	},
+	thread::JoinHandle,
 };
 
 use crate::{
@@ -28,6 +31,8 @@ pub(crate) struct Shared {
 	position: AtomicU64,
 	reached_end: AtomicBool,
 	encountered_error: AtomicBool,
+	dropped: AtomicBool,
+	handle: AtomicPtr<JoinHandle<()>>,
 }
 
 impl Shared {
@@ -38,6 +43,8 @@ impl Shared {
 			state: AtomicU8::new(PlaybackState::Playing as u8),
 			reached_end: AtomicBool::new(false),
 			encountered_error: AtomicBool::new(false),
+			dropped: AtomicBool::new(false),
+			handle: AtomicPtr::default(),
 		}
 	}
 
@@ -57,6 +64,11 @@ impl Shared {
 
 	pub fn set_state(&self, state: PlaybackState) {
 		self.state.store(state as u8, Ordering::SeqCst);
+	}
+
+	pub(crate) fn set_handle(&self, handle: JoinHandle<()>) {
+		self.handle
+			.store(Box::into_raw(Box::new(handle)), Ordering::SeqCst);
 	}
 
 	#[must_use]
@@ -87,6 +99,22 @@ pub(crate) struct StreamingSound {
 	playback_rate: Parameter<PlaybackRate>,
 	panning: Parameter<Panning>,
 	shared: Arc<Shared>,
+}
+
+impl Drop for StreamingSound {
+	fn drop(&mut self) {
+		self.shared.dropped.store(true, Ordering::Release);
+		let handle = self
+			.shared
+			.handle
+			.swap(std::ptr::NonNull::dangling().as_ptr(), Ordering::SeqCst);
+		if !handle.is_null() {
+			// SAFETY: pointer initially stored once from a Box
+			let handle = unsafe { Box::from_raw(handle) };
+			handle.thread().unpark();
+			let _ = handle.join();
+		}
+	}
 }
 
 impl StreamingSound {
