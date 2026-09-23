@@ -131,7 +131,7 @@ The Kira crate has the following feature flags:
 	- Audio formats: `aiff`, `caf`, `isomp4`, `mkv`, `ogg`, `wav` - these correspond to the
 	  Symphonia features of the same name
 	- Audio codecs: `aac`, `adpcm`, `alac`, `he-aac`, `he-aac-v2`, `flac`, `mp1`, `mp2`, `mp3`,
-	  `mpa`, `opus', `pcm`, `vorbis`, `wavpack` - these correspond to the Symphonia features
+	  `mpa`, `opus`, `pcm`, `vorbis`, `wavpack` - these correspond to the Symphonia features
 	  of the same name
 	- `mp3`, `ogg`, `vorbis`, `flac`, `wav`, and `pcm` are enabled by default.
 	- [See Symphonia's documentation for more information about these flags.](https://github.com/pdeljanov/Symphonia?tab=readme-ov-file#formats-demuxers)
