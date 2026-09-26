@@ -1,3 +1,8 @@
+# v0.12.5 - September 26, 2026
+
+- Fix typo in docs (thanks @ChangeCaps!)
+- Update rtrb to v0.4.0
+
 # v0.12.4 - August 27, 2026
 
 - Allow creating `StaticSoundData` from non-`'static` sources (thanks @a1phyr!)
