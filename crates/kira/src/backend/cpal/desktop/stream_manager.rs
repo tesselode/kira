@@ -3,10 +3,15 @@ mod send_on_drop;
 use std::{
 	sync::{
 		Arc, Mutex,
-		atomic::{AtomicBool, AtomicU64, Ordering},
+		atomic::{AtomicBool, Ordering},
 	},
 	time::Duration,
 };
+
+#[cfg(target_has_atomic = "64")]
+use std::sync::atomic::AtomicU64;
+#[cfg(not(target_has_atomic = "64"))]
+use portable_atomic::AtomicU64;
 
 use super::renderer_with_cpu_usage::RendererWithCpuUsage;
 use cpal::{
