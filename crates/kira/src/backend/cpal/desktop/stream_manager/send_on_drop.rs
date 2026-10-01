@@ -42,8 +42,8 @@ impl<T> DerefMut for SendOnDrop<T> {
 
 impl<T> Drop for SendOnDrop<T> {
 	fn drop(&mut self) {
-		self.producer
-			.push(self.data.take().unwrap())
-			.expect("send on drop producer full");
+		if let Some(data) = self.data.take() {
+			let _ = self.producer.push(data);
+		}
 	}
 }

@@ -92,12 +92,13 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 	}
 
 	pub fn start(mut self) {
-		std::thread::spawn(move || {
+		let shared = self.shared.clone();
+		let handle = std::thread::spawn(move || {
 			loop {
 				match self.run() {
 					Ok(result) => match result {
 						NextStep::Continue => {}
-						NextStep::Wait => std::thread::sleep(DECODER_THREAD_SLEEP_DURATION),
+						NextStep::Wait => std::thread::park_timeout(DECODER_THREAD_SLEEP_DURATION),
 						NextStep::End => break,
 					},
 					Err(error) => {
@@ -107,11 +108,14 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 				}
 			}
 		});
+		shared.set_handle(handle);
 	}
 
 	pub fn run(&mut self) -> Result<NextStep, Error> {
 		// if the sound was manually stopped, end the thread
-		if self.shared.state() == PlaybackState::Stopped {
+		if self.shared.dropped.load(Ordering::Acquire)
+			|| self.shared.state() == PlaybackState::Stopped
+		{
 			return Ok(NextStep::End);
 		}
 		// if the frame ringbuffer is full, sleep for a bit
