@@ -204,6 +204,17 @@ impl StreamingSound {
 	}
 }
 
+impl Drop for StreamingSound {
+	fn drop(&mut self) {
+		// the decode scheduler's thread only ends once the sound is stopped or
+		// reaches its end. a sound can be dropped without either happening, for
+		// example when it's refused because the sound limit was reached, or when
+		// the audio manager is dropped while it's playing, so mark it stopped here
+		// to end the thread.
+		self.shared.set_state(PlaybackState::Stopped);
+	}
+}
+
 impl Sound for StreamingSound {
 	fn on_start_processing(&mut self) {
 		self.update_current_frame();

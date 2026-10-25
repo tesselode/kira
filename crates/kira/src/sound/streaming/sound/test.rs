@@ -56,6 +56,22 @@ fn plays_all_samples() {
 	);
 }
 
+/// Tests that dropping a `StreamingSound` that was never stopped ends its
+/// decode scheduler, as happens when the sound limit refuses the sound or the
+/// audio manager is dropped while it's playing.
+#[test]
+fn dropping_sound_ends_decode_scheduler() {
+	let data = StreamingSoundData {
+		decoder: Box::new(MockDecoder::new(vec![Frame::from_mono(1.0); 100])),
+		settings: StreamingSoundSettings::new(),
+		slice: None,
+	};
+	let (sound, _, mut scheduler) = data.split().unwrap();
+	assert!(matches!(scheduler.run().unwrap(), NextStep::Continue));
+	drop(sound);
+	assert!(matches!(scheduler.run().unwrap(), NextStep::End));
+}
+
 /// Tests that a `StreamingSound` will pause playback while waiting
 /// for samples from the decoder.
 #[test]
