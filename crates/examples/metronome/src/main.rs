@@ -49,7 +49,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn is_next_tick_beginning_of_measure(current_clock_time: ClockTime) -> bool {
-	(current_clock_time.ticks + 1) % 4 == 0
+	(current_clock_time.ticks + 1).is_multiple_of(4)
 }
 
 fn wait_for_enter_press() -> Result<(), Box<dyn Error>> {

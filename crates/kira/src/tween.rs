@@ -9,10 +9,11 @@ use std::time::Duration;
 use crate::start_time::StartTime;
 
 /// Curves the motion of a [`Tween`].
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Easing {
 	/// Maintains a constant speed for the duration of the [`Tween`].
+	#[default]
 	Linear,
 	/// Causes the [`Tween`] to start slow and speed up. A higher
 	/// value causes the [`Tween`] to speed up more dramatically.
@@ -75,12 +76,6 @@ impl Easing {
 				}
 			}
 		}
-	}
-}
-
-impl Default for Easing {
-	fn default() -> Self {
-		Self::Linear
 	}
 }
 

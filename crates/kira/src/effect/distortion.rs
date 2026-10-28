@@ -16,13 +16,14 @@ use crate::{
 };
 
 /// Different types of distortion.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum DistortionKind {
 	/// The signal will be clamped to the -1.0 to 1.0 range.
 	///
 	/// This creates a harsh distortion when the signal leaves
 	/// the -1.0 to 1.0 range.
+	#[default]
 	HardClip,
 	/// The signal will be kept in the -1.0 to 1.0 range,
 	/// and the slope will gradually decrease as it reaches
@@ -31,12 +32,6 @@ pub enum DistortionKind {
 	/// This creates a smoother distortion that gradually
 	/// becomes more prominent as the signal becomes louder.
 	SoftClip,
-}
-
-impl Default for DistortionKind {
-	fn default() -> Self {
-		Self::HardClip
-	}
 }
 
 struct Distortion {
