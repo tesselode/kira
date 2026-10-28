@@ -13,7 +13,7 @@ readme = "../../README.md"
 [dependencies]
 assert_no_alloc = { version = "1.1.2", optional = true }
 atomic-arena = "0.1.2"
-glam = { version = "0.33.0", features = ["mint"] }
+glam = { version = "0.34.1", features = ["mint-05"] }
 mint = "0.5.9"
 pastey = "0.2.1"
 rtrb = "0.4.0"
