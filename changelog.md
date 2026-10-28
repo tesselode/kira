@@ -1,3 +1,8 @@
+# v0.12.6 - October 27, 2026
+
+- Stop a streaming sound's decode thread when the sound is dropped (thanks @jonatino!)
+- Update `glam` to 0.34.1
+
 # v0.12.5 - September 26, 2026
 
 - Fix typo in docs (thanks @ChangeCaps!)
