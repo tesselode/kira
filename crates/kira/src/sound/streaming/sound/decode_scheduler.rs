@@ -160,8 +160,8 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 		/*
 			otherwise, seek to the requested index and decode chunks sequentially
 			until we get the frame we want. just because we seek to an index does
-			not mean the next decoded chunk will have the frame we want (or any frame
-			at all, for that matter), so we may need to decode multiple chunks to
+			not mean the next decoded chunk will have the frame we want,
+			so we may need to decode multiple chunks to
 			get the frame we care about.
 		*/
 		if index < self.decoder_current_frame_index {
@@ -172,6 +172,11 @@ impl<Error: Send + 'static> DecodeScheduler<Error> {
 				start_index: self.decoder_current_frame_index,
 				frames: self.decoder.decode()?,
 			};
+			// The reported length can include frames the decoder never produces.
+			// Pad the remainder with silence instead of polling EOF forever.
+			if decoded_chunk.frames.is_empty() {
+				return Ok(Frame::ZERO);
+			}
 			self.decoder_current_frame_index += decoded_chunk.frames.len();
 			self.decoded_chunk = Some(decoded_chunk);
 			if let Some(chunk) = &self.decoded_chunk {
