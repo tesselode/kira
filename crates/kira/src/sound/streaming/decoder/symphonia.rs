@@ -19,6 +19,35 @@ pub(crate) struct SymphoniaDecoder {
 	track_id: u32,
 }
 
+#[cfg(all(test, feature = "ogg", feature = "vorbis"))]
+mod tests {
+	use super::*;
+	use crate::sound::streaming::Decoder;
+
+	#[test]
+	fn decodes_vorbis_through_eof_and_seeks_back() {
+		let file = std::fs::File::open(concat!(
+			env!("CARGO_MANIFEST_DIR"),
+			"/../examples/assets/blip.ogg"
+		))
+		.unwrap();
+		let mut decoder = SymphoniaDecoder::new(Box::new(file)).unwrap();
+		let mut decoded_frames = 0;
+		loop {
+			let frames = decoder.decode().unwrap();
+			if frames.is_empty() {
+				break;
+			}
+			decoded_frames += frames.len();
+			assert!(decoded_frames <= decoder.num_frames());
+		}
+		assert!(decoded_frames > 0);
+		assert!(decoder.decode().unwrap().is_empty());
+		decoder.seek(0).unwrap();
+		assert!(!decoder.decode().unwrap().is_empty());
+	}
+}
+
 impl SymphoniaDecoder {
 	pub(crate) fn new(media_source: Box<dyn MediaSource>) -> Result<Self, FromFileError> {
 		let codecs = symphonia::default::get_codecs();
@@ -69,15 +98,20 @@ impl super::Decoder for SymphoniaDecoder {
 	}
 
 	fn decode(&mut self) -> Result<Vec<Frame>, Self::Error> {
-		let packet = loop {
-			match self.format_reader.next_packet()? {
-				Some(packet) if packet.track_id == self.track_id => break packet,
-				Some(_) => continue,
-				None => return Ok(vec![]),
+		loop {
+			let packet = loop {
+				match self.format_reader.next_packet()? {
+					Some(packet) if packet.track_id == self.track_id => break packet,
+					Some(_) => continue,
+					None => return Ok(vec![]),
+				}
+			};
+			let buffer = self.decoder.decode(&packet)?;
+			let frames = load_frames_from_buffer_ref(&buffer)?;
+			if !frames.is_empty() {
+				return Ok(frames);
 			}
-		};
-		let buffer = self.decoder.decode(&packet)?;
-		load_frames_from_buffer_ref(&buffer)
+		}
 	}
 
 	fn seek(&mut self, index: usize) -> Result<usize, Self::Error> {

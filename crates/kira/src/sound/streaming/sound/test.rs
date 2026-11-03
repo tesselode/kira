@@ -14,6 +14,59 @@ use crate::{
 
 use super::decode_scheduler::NextStep;
 
+/// An overstated frame count must not keep the decoder spinning at EOF.
+#[test]
+fn finishes_when_decoder_ends_early() {
+	use crate::sound::streaming::Decoder;
+
+	struct ShortDecoder {
+		calls: usize,
+	}
+
+	impl Decoder for ShortDecoder {
+		type Error = &'static str;
+
+		fn sample_rate(&self) -> u32 {
+			1
+		}
+		fn num_frames(&self) -> usize {
+			6
+		}
+
+		fn decode(&mut self) -> Result<Vec<Frame>, Self::Error> {
+			self.calls += 1;
+			match self.calls {
+				1 => Ok(vec![Frame::from_mono(1.0); 3]),
+				2..=8 => Ok(vec![]),
+				_ => Err("decoder was polled repeatedly at EOF"),
+			}
+		}
+
+		fn seek(&mut self, _: usize) -> Result<usize, Self::Error> {
+			self.calls = 0;
+			Ok(0)
+		}
+	}
+
+	let data = StreamingSoundData::from_decoder(ShortDecoder { calls: 0 });
+	let (mut sound, _, mut scheduler) = data.split().unwrap();
+	for _ in 0..5 {
+		assert!(matches!(scheduler.run().unwrap(), NextStep::Continue));
+	}
+	assert!(matches!(scheduler.run().unwrap(), NextStep::End));
+	let info = MockInfoBuilder::new().build();
+	for _ in 0..3 {
+		assert_eq!(
+			sound.process_one(1.0, &info),
+			Frame::from_mono(1.0).panned(Panning::CENTER)
+		);
+	}
+	for _ in 0..13 {
+		assert_eq!(sound.process_one(1.0, &info), Frame::ZERO);
+	}
+	assert!(sound.finished());
+}
+
 /// Tests that a `StreamingSound` will play all of its samples before finishing.
 #[test]
 fn plays_all_samples() {

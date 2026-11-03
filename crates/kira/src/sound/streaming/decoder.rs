@@ -19,6 +19,8 @@ pub trait Decoder: Send {
 	fn num_frames(&self) -> usize;
 
 	/// Decodes the next chunk of audio.
+	///
+	/// Returns an empty vector at the end of the stream.
 	fn decode(&mut self) -> Result<Vec<Frame>, Self::Error>;
 
 	/// Seeks to an audio sample.
