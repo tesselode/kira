@@ -5,8 +5,13 @@ mod test;
 
 use std::sync::{
 	Arc,
-	atomic::{AtomicU8, AtomicU64, Ordering},
+	atomic::{AtomicU8, Ordering},
 };
+
+#[cfg(target_has_atomic = "64")]
+use std::sync::atomic::AtomicU64;
+#[cfg(not(target_has_atomic = "64"))]
+use portable_atomic::AtomicU64;
 
 use crate::{
 	Decibels, Panning, Parameter, PlaybackRate, StartTime, Tween,

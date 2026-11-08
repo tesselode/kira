@@ -149,8 +149,13 @@ pub use time::*;
 
 use std::sync::{
 	Arc,
-	atomic::{AtomicBool, AtomicU64, Ordering},
+	atomic::{AtomicBool, Ordering},
 };
+
+#[cfg(target_has_atomic = "64")]
+use std::sync::atomic::AtomicU64;
+#[cfg(not(target_has_atomic = "64"))]
+use portable_atomic::AtomicU64;
 
 use crate::{
 	Parameter, Value,
