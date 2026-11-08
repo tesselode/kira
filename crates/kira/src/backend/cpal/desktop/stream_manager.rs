@@ -5,6 +5,7 @@ use std::{
 		Arc, Mutex,
 		atomic::{AtomicBool, AtomicU64, Ordering},
 	},
+	thread::JoinHandle,
 	time::Duration,
 };
 
@@ -36,6 +37,16 @@ pub(super) struct StreamManagerController {
 	should_drop: Arc<AtomicBool>,
 	num_stream_errors_discarded: Arc<AtomicU64>,
 	handled_stream_error_consumer: Mutex<Consumer<cpal::Error>>,
+	thread_handle: Option<JoinHandle<()>>,
+}
+
+impl Drop for StreamManagerController {
+	fn drop(&mut self) {
+		self.should_drop.store(true, Ordering::SeqCst);
+		if let Some(handle) = self.thread_handle.take() {
+			let _ = handle.join();
+		}
+	}
 }
 
 impl StreamManagerController {
@@ -86,7 +97,7 @@ impl StreamManager {
 
 		let (mut initial_result_producer, mut initial_result_consumer) = RingBuffer::new(1);
 
-		std::thread::spawn(move || {
+		let handle = std::thread::spawn(move || {
 			let mut stream_manager = StreamManager {
 				state: State::Idle { renderer },
 				device_id: device_id(&device),
@@ -109,7 +120,7 @@ impl StreamManager {
 				}
 			};
 			loop {
-				std::thread::sleep(CHECK_STREAM_INTERVAL);
+				std::thread::park_timeout(CHECK_STREAM_INTERVAL);
 				if should_drop.load(Ordering::SeqCst) {
 					break;
 				}
@@ -126,13 +137,14 @@ impl StreamManager {
 				result?;
 				break;
 			}
-			std::thread::sleep(Duration::from_micros(100));
+			std::thread::park_timeout(Duration::from_micros(100));
 		}
 
 		Ok(StreamManagerController {
 			should_drop: should_drop_clone,
 			num_stream_errors_discarded: num_stream_errors_discarded_clone,
 			handled_stream_error_consumer: Mutex::new(handled_stream_error_consumer),
+			thread_handle: Some(handle),
 		})
 	}
 
